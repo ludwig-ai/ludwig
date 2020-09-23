@@ -16,6 +16,7 @@
 # ==============================================================================
 import argparse
 import logging
+from abc import ABC, abstractmethod
 
 import h5py
 import numpy as np
@@ -30,7 +31,7 @@ from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry, \
     input_type_registry
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format, \
+from ludwig.utils.data_utils import figure_data_format, \
     DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
     HDF5_FORMATS, override_in_memory_flag, TSV_FORMATS, JSON_FORMATS, \
     JSONL_FORMATS, read_tsv, read_jsonl, read_json, EXCEL_FORMATS, read_excel
@@ -48,6 +49,447 @@ from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
+
+
+class DataFormatPreprocessor(ABC):
+
+    @staticmethod
+    @abstractmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        pass
+
+
+class DictPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        num_overrides = override_in_memory_flag(features, True)
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported '
+                'with {} data format.'.format('dict')
+            )
+
+        if dataset is not None:
+            dataset = pd.DataFrame(dataset)
+        if training_set_metadata is not None:
+            training_set = pd.DataFrame(training_set)
+        if validation_set is not None:
+            validation_set = pd.DataFrame(validation_set)
+        if test_set is not None:
+            test_set = pd.DataFrame(test_set)
+
+        return _preprocess_df_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            training_set_metadata=training_set_metadata,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset, training_set_metadata = build_dataset(
+            pd.DataFrame(dataset),
+            features,
+            preprocessing_params,
+            metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class DataFramePreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        num_overrides = override_in_memory_flag(features, True)
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported '
+                'with {} data format.'.format('dataframe')
+            )
+
+        return _preprocess_df_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            training_set_metadata=training_set_metadata,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset, training_set_metadata = build_dataset(
+            dataset,
+            features,
+            preprocessing_params,
+            metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class CSVPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_csv,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_csv(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class TSVPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_tsv,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_tsv(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class JSONPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_json,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_json(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class JSONLPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_jsonl,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_jsonl(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class ExcelPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_excel,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_excel(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class HDF5Preprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        if not training_set_metadata:
+            raise ValueError('When providing HDF5 data, '
+                             'training_set_metadata must not be None.')
+
+        logger.info('Using full hdf5 and json')
+
+        if DATA_TRAIN_HDF5_FP not in training_set_metadata:
+            logger.warning(
+                'data_train_hdf5_fp not present in training_set_metadata. '
+                'Adding it with the current HDF5 file path {}'.format(dataset)
+            )
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
+        elif training_set_metadata[DATA_TRAIN_HDF5_FP] != dataset:
+            logger.warning(
+                'data_train_hdf5_fp in training_set_metadata is {}, '
+                'different from the current HDF5 file path {}. '
+                'Replacing it'.format(
+                    training_set_metadata[DATA_TRAIN_HDF5_FP],
+                    dataset
+                )
+            )
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
+
+        if dataset is not None:
+            training_set, test_set, validation_set = load_hdf5(
+                dataset,
+                features,
+                shuffle_training=True
+            )
+        elif training_set is not None:
+            kwargs = dict(features=features, split_data=False)
+            training_set = load_hdf5(training_set,
+                                     shuffle_training=True,
+                                     **kwargs)
+            if validation_set is not None:
+                validation_set = load_hdf5(validation_set,
+                                           shuffle_training=False,
+                                           **kwargs)
+            if test_set is not None:
+                test_set = load_hdf5(test_set,
+                                     shuffle_training=False,
+                                     **kwargs)
+        else:
+            raise ValueError(
+                'One of `dataset` or `training_set` must be not None')
+
+        return training_set, test_set, validation_set, training_set_metadata
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        hdf5_fp = dataset
+        dataset = load_hdf5(
+            dataset,
+            features,
+            split_data=False,
+            shuffle_training=False
+        )
+        return dataset, training_set_metadata, hdf5_fp
+
+
+data_format_preprocessor_registry = {
+    **{fmt: DictPreprocessor for fmt in DICT_FORMATS},
+    **{fmt: DataFramePreprocessor for fmt in DATAFRAME_FORMATS},
+    **{fmt: CSVPreprocessor for fmt in CSV_FORMATS},
+    **{fmt: TSVPreprocessor for fmt in TSV_FORMATS},
+    **{fmt: JSONPreprocessor for fmt in JSON_FORMATS},
+    **{fmt: JSONLPreprocessor for fmt in JSONL_FORMATS},
+    **{fmt: ExcelPreprocessor for fmt in EXCEL_FORMATS},
+    **{fmt: HDF5Preprocessor for fmt in HDF5_FORMATS},
+}
 
 
 def build_dataset(
@@ -258,8 +700,7 @@ def get_split(
 
 def load_hdf5(
         hdf5_file_path,
-        input_features,
-        output_features,
+        features,
         split_data=True,
         shuffle_training=False
 ):
@@ -267,27 +708,12 @@ def load_hdf5(
     # Load data from file
     hdf5_data = h5py.File(hdf5_file_path, 'r')
     dataset = {}
-    for input_feature in input_features:
-        if input_feature[TYPE] == TEXT:
-            text_data_field = text_feature_data_field(input_feature)
+    for feature in features:
+        if feature[TYPE] == TEXT:
+            text_data_field = text_feature_data_field(feature)
             dataset[text_data_field] = hdf5_data[text_data_field][()]
         else:
-            dataset[input_feature[NAME]] = hdf5_data[
-                input_feature[NAME]
-            ][()]
-    for output_feature in output_features:
-        if output_feature[TYPE] == TEXT:
-            dataset[text_feature_data_field(output_feature)] = hdf5_data[
-                text_feature_data_field(output_feature)
-            ][()]
-        else:
-            dataset[output_feature[NAME]] = hdf5_data[
-                output_feature[NAME]][()]
-        if 'limit' in output_feature:
-            dataset[output_feature[NAME]] = collapse_rare_labels(
-                dataset[output_feature[NAME]],
-                output_feature['limit']
-            )
+            dataset[feature[NAME]] = hdf5_data[feature[NAME]][()]
 
     if not split_data:
         hdf5_data.close()
@@ -299,7 +725,6 @@ def load_hdf5(
     hdf5_data.close()
     training_set, test_set, validation_set = split_dataset_ttv(dataset, split)
 
-    # shuffle up
     if shuffle_training:
         training_set = data_utils.shuffle_dict_unison_inplace(training_set)
 
@@ -349,16 +774,16 @@ def preprocess_for_training(
         # todo: fix no JSON for name clash
         if dataset:
             if (file_exists_with_diff_extension(dataset, 'hdf5') and
-                    file_exists_with_diff_extension(dataset, 'json')):
+                    file_exists_with_diff_extension(dataset, 'meta.json')):
                 logger.info(
                     'Found hdf5 and json with the same filename '
                     'of the csv, using them instead'
                 )
                 dataset = replace_file_extension(dataset, 'hdf5')
-                training_set_metadata_fname = replace_file_extension(dataset,
-                                                                     'json')
+                training_set_metadata_fp = replace_file_extension(dataset,
+                                                                  'meta.json')
                 training_set_metadata = data_utils.load_json(
-                    training_set_metadata_fname)
+                    training_set_metadata_fp)
                 model_definition['data_hdf5_fp'] = dataset
                 data_format = 'hdf5'
 
@@ -370,242 +795,35 @@ def preprocess_for_training(
                     'of the csv, using them instead'
                 )
                 training_set = replace_file_extension(training_set, 'hdf5')
-                training_set_metadata_fname = replace_file_extension(
-                    training_set, 'json')
+                training_set_metadata_fp = replace_file_extension(training_set,
+                                                                  'meta.json')
                 training_set_metadata = data_utils.load_json(
-                    training_set_metadata_fname)
-                validation_set = replace_file_extension(validation_set,
-                                                        'hdf5')
+                    training_set_metadata_fp
+                )
+                validation_set = replace_file_extension(validation_set, 'hdf5')
                 test_set = replace_file_extension(test_set, 'hdf5')
                 model_definition['data_hdf5_fp'] = training_set
                 data_format = 'hdf5'
 
-    if data_format in DATAFRAME_FORMATS:
-        num_overrides = override_in_memory_flag(
-            model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported '
-                'with {} data format.'.format(data_format)
-            )
-
-        (
-            training_set,
-            test_set,
-            validation_set,
-            training_set_metadata
-        ) = _preprocess_df_for_training(
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            training_set_metadata=training_set_metadata,
-            preprocessing_params=preprocessing_params,
-            random_seed=random_seed
-        )
-
-    elif data_format in CSV_FORMATS:
-        (
-            training_set,
-            test_set,
-            validation_set,
-            training_set_metadata
-        ) = _preprocess_file_for_training(
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_csv,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            random_seed=random_seed
-        )
-
-    elif data_format in TSV_FORMATS:
-        (
-            training_set,
-            test_set,
-            validation_set,
-            training_set_metadata
-        ) = _preprocess_file_for_training(
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_tsv,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            random_seed=random_seed
-        )
-
-    elif data_format in JSON_FORMATS:
-        num_overrides = override_in_memory_flag(
-            model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported '
-                'with {} data format.'.format(data_format)
-            )
-
-        (
-            training_set,
-            test_set,
-            validation_set,
-            training_set_metadata
-        ) = _preprocess_file_for_training(
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_json,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            random_seed=random_seed
-        )
-
-    elif data_format in JSONL_FORMATS:
-        (
-            training_set,
-            test_set,
-            validation_set,
-            training_set_metadata
-        ) = _preprocess_file_for_training(
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_jsonl,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            random_seed=random_seed
-        )
-
-    elif data_format in EXCEL_FORMATS:
-        (
-            training_set,
-            test_set,
-            validation_set,
-            training_set_metadata
-        ) = _preprocess_file_for_training(
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            read_fn=read_excel,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            random_seed=random_seed
-        )
-
-    elif data_format in HDF5_FORMATS:
-        if not training_set_metadata:
-            raise ValueError('When providing HDF5 data, '
-                             'training_set_metadata must not be None.')
-
-        logger.info('Using full hdf5 and json')
-
-        if DATA_TRAIN_HDF5_FP not in training_set_metadata:
-            logger.warning(
-                'data_train_hdf5_fp not present in training_set_metadata. '
-                'Adding it with the current HDF5 file path {}'.format(dataset)
-            )
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
-        elif training_set_metadata[DATA_TRAIN_HDF5_FP] != dataset:
-            logger.warning(
-                'data_train_hdf5_fp in training_set_metadata is {}, '
-                'different from the current HDF5 file path {}. '
-                'Replacing it'.format(
-                    training_set_metadata[DATA_TRAIN_HDF5_FP],
-                    dataset
-                )
-            )
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
-
-        if dataset is not None:
-            training_set, test_set, validation_set = load_hdf5(
-                dataset,
-                model_definition['input_features'],
-                model_definition['output_features'],
-                shuffle_training=True
-            )
-        elif training_set is not None:
-            kwargs = dict(
-                input_features=model_definition['input_features'],
-                output_features=model_definition['output_features'],
-                split_data=False
-            )
-            training_set = load_hdf5(training_set,
-                                     shuffle_training=True,
-                                     **kwargs)
-            if validation_set is not None:
-                validation_set = load_hdf5(validation_set,
-                                           shuffle_training=False,
-                                           **kwargs)
-            if test_set is not None:
-                test_set = load_hdf5(test_set,
-                                     shuffle_training=False,
-                                     **kwargs)
-        else:
-            raise ValueError(
-                'One of `dataset` or `training_set` must be not None')
-
-    elif data_format in DICT_FORMATS:
-        num_overrides = override_in_memory_flag(
-            model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported '
-                'with {} data format.'.format(data_format)
-            )
-
-        if dataset is not None:
-            dataset = pd.DataFrame(dataset)
-        if training_set_metadata is not None:
-            training_set = pd.DataFrame(training_set)
-        if validation_set is not None:
-            validation_set = pd.DataFrame(validation_set)
-        if test_set is not None:
-            test_set = pd.DataFrame(test_set)
-
-        (
-            training_set,
-            test_set,
-            validation_set,
-            training_set_metadata
-        ) = _preprocess_df_for_training(
-            features,
-            dataset,
-            training_set,
-            validation_set,
-            test_set,
-            training_set_metadata=training_set_metadata,
-            preprocessing_params=preprocessing_params,
-            random_seed=random_seed
-        )
-
-    else:
-        raise ValueError('{} is not a valid data format.'.format(data_format))
+    data_format_processor = get_from_registry(
+        data_format,
+        data_format_preprocessor_registry
+    )
+    processed = data_format_processor.preprocess_for_training(
+        features,
+        dataset=dataset,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        skip_save_processed_input=skip_save_processed_input,
+        preprocessing_params=preprocessing_params,
+        random_seed=random_seed
+    )
+    training_set, test_set, validation_set, training_set_metadata = processed
 
     replace_text_feature_level(
-        model_definition['input_features'] +
-        model_definition['output_features'],
+        features,
         [training_set, validation_set, test_set]
     )
 
@@ -693,7 +911,8 @@ def _preprocess_file_for_training(
             data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
             logger.info('Writing train set metadata with vocabulary')
-            training_set_metadata_fp = replace_file_extension(dataset, 'json')
+            training_set_metadata_fp = replace_file_extension(dataset,
+                                                              'meta.json')
             data_utils.save_json(training_set_metadata_fp,
                                  training_set_metadata)
 
@@ -767,7 +986,7 @@ def _preprocess_file_for_training(
             logger.info('Writing train set metadata with vocabulary')
             training_set_metadata_fp = replace_file_extension(
                 training_set,
-                'json'
+                'meta.json'
             )
             data_utils.save_json(
                 training_set_metadata_fp,
@@ -888,7 +1107,7 @@ def preprocess_for_prediction(
     if (data_format in CSV_FORMATS or data_format in TSV_FORMATS or
             data_format in JSONL_FORMATS or data_format in EXCEL_FORMATS):
         if (file_exists_with_diff_extension(dataset, 'hdf5') and
-                file_exists_with_diff_extension(dataset, 'json')):
+                file_exists_with_diff_extension(dataset, 'meta.json')):
             logger.info(
                 'Found hdf5 and json with the same filename '
                 'of the csv, using them instead'
@@ -897,88 +1116,21 @@ def preprocess_for_prediction(
             model_definition['data_hdf5_fp'] = dataset
             data_format = 'hdf5'
 
-    if data_format in DATAFRAME_FORMATS:
-        dataset, training_set_metadata = build_dataset(
-            dataset,
-            features,
-            preprocessing_params,
-            metadata=training_set_metadata
-        )
-
-    elif data_format in CSV_FORMATS:
-        dataset_df = read_csv(dataset)
-        dataset_df.src = dataset
-        dataset, training_set_metadata = build_dataset(
-            dataset_df,
-            features,
-            preprocessing_params,
-            training_set_metadata=training_set_metadata
-        )
-
-    elif data_format in TSV_FORMATS:
-        dataset_df = read_tsv(dataset)
-        dataset_df.src = dataset
-        dataset, training_set_metadata = build_dataset(
-            dataset_df,
-            features,
-            preprocessing_params,
-            training_set_metadata=training_set_metadata
-        )
-
-    elif data_format in JSON_FORMATS:
-        dataset_df = read_json(dataset)
-        dataset_df.src = dataset
-        dataset, training_set_metadata = build_dataset(
-            dataset_df,
-            features,
-            preprocessing_params,
-            training_set_metadata=training_set_metadata
-        )
-
-    elif data_format in JSONL_FORMATS:
-        dataset_df = read_jsonl(dataset)
-        dataset_df.src = dataset
-        dataset, training_set_metadata = build_dataset(
-            dataset_df,
-            features,
-            preprocessing_params,
-            training_set_metadata=training_set_metadata
-        )
-
-    elif data_format in EXCEL_FORMATS:
-        dataset_df = read_excel(dataset)
-        dataset_df.src = dataset
-        dataset, training_set_metadata = build_dataset(
-            dataset_df,
-            features,
-            preprocessing_params,
-            training_set_metadata=training_set_metadata
-        )
-
-    elif data_format in HDF5_FORMATS:
-        hdf5_fp = dataset
-        dataset = load_hdf5(
-            dataset,
-            model_definition['input_features'],
-            output_features,
-            split_data=False, shuffle_training=False
-        )
-
-    elif data_format in DICT_FORMATS:
-        dataset, training_set_metadata = build_dataset(
-            pd.DataFrame(dataset),
-            features,
-            preprocessing_params,
-            metadata=training_set_metadata
-        )
-
-    else:
-        raise ValueError('{} is not a valid data format.'.format(data_format))
-
-    replace_text_feature_level(
-        features,
-        [dataset]
+    data_format_processor = get_from_registry(
+        data_format,
+        data_format_preprocessor_registry
     )
+    processed = data_format_processor.preprocess_for_prediction(
+        dataset,
+        features,
+        preprocessing_params,
+        training_set_metadata
+    )
+    dataset, training_set_metadata, new_hdf5_fp = processed
+    if new_hdf5_fp:
+        hdf5_fp = new_hdf5_fp
+
+    replace_text_feature_level(features, [dataset])
 
     dataset = Dataset(
         dataset,
