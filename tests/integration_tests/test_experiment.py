@@ -30,7 +30,6 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
-from ludwig.utils.defaults import default_random_seed
 from tests.conftest import delete_temporary_data
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
     HF_ENCODERS_SHORT, slow
@@ -48,6 +47,7 @@ from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import run_experiment
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
+from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
@@ -73,14 +73,15 @@ def test_experiment_text_feature_non_HF(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
-def test_experiment_text_feature_HF(encoder, csv_filename):
+@spawn
+def run_experiment_hf_tokenizer(encoder, csv_filename):
+    # Run in a subprocess to clear TF and prevent OOM
+    # This also allows us to use GPU resources
     input_features = [
         text_feature(
             vocab_size=30,
             min_len=1,
             encoder=encoder,
-            preprocessing={'word_tokenizer': 'hf_tokenizer'}
         )
     ]
     output_features = [category_feature(vocab_size=2)]
@@ -89,10 +90,15 @@ def test_experiment_text_feature_HF(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+@pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
+def test_experiment_text_feature_HF(encoder, csv_filename):
+    run_experiment_hf_tokenizer(encoder, csv_filename)
+
+
 @slow
 @pytest.mark.parametrize('encoder', HF_ENCODERS)
 def test_experiment_text_feature_HF_full(encoder, csv_filename):
-    return test_experiment_text_feature_HF(encoder, csv_filename)
+    run_experiment_hf_tokenizer(encoder, csv_filename)
 
 
 def test_experiment_seq_seq(csv_filename):

@@ -17,6 +17,8 @@ import multiprocessing
 import os
 import random
 import shutil
+import sys
+import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
@@ -378,7 +380,11 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
 
 def _subproc_wrapper(fn, queue, *args, **kwargs):
     fn = cloudpickle.loads(fn)
-    results = fn(*args, **kwargs)
+    try:
+        results = fn(*args, **kwargs)
+    except Exception as e:
+        traceback.print_exc(file=sys.stderr)
+        results = e
     queue.put(results)
 
 
@@ -395,6 +401,9 @@ def spawn(fn):
         p.start()
         p.join()
         results = queue.get()
+        if isinstance(results, Exception):
+            raise RuntimeError(f'Spawned subprocess raised {type(results).__name__}, '
+                               f'check log output above for stack trace.')
         return results
 
     return wrapped_fn
