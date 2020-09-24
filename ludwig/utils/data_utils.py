@@ -145,7 +145,7 @@ def read_feather(data_fp):
 
 
 def read_html(data_fp):
-    return pd.read_html(data_fp)
+    return pd.read_html(data_fp)[0]
 
 
 def read_orc(data_fp):
@@ -161,7 +161,7 @@ def read_spss(data_fp):
 
 
 def read_stata(data_fp):
-    return pd.read_excel(data_fp)
+    return pd.read_stata(data_fp)
 
 
 def save_csv(data_fp, data):

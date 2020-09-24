@@ -327,6 +327,53 @@ def create_data_set_to_use(data_format, raw_data):
             index=False
         )
 
+    elif data_format == 'feather':
+        dataset_to_use = replace_file_extension(raw_data, 'feather')
+        pd.read_csv(raw_data).to_feather(
+            dataset_to_use
+        )
+
+    elif data_format == 'html':
+        dataset_to_use = replace_file_extension(raw_data, 'html')
+        pd.read_csv(raw_data).to_html(
+            dataset_to_use,
+            index=False
+        )
+
+    elif data_format == 'json':
+        dataset_to_use = replace_file_extension(raw_data, 'json')
+        pd.read_csv(raw_data).to_json(
+            dataset_to_use,
+            orient='records'
+        )
+
+    elif data_format == 'jsonl':
+        dataset_to_use = replace_file_extension(raw_data, 'jsonl')
+        pd.read_csv(raw_data).to_json(
+            dataset_to_use,
+            orient='records',
+            lines=True
+        )
+
+    elif data_format == 'parquet':
+        dataset_to_use = replace_file_extension(raw_data, 'parquet')
+        pd.read_csv(raw_data).to_parquet(
+            dataset_to_use,
+            index=False
+        )
+
+    elif data_format == 'pickle':
+        dataset_to_use = replace_file_extension(raw_data, 'pickle')
+        pd.read_csv(raw_data).to_pickle(
+            dataset_to_use
+        )
+
+    elif data_format == 'stata':
+        dataset_to_use = replace_file_extension(raw_data, 'stata')
+        pd.read_csv(raw_data).to_stata(
+            dataset_to_use
+        )
+
     elif data_format == 'tsv':
         dataset_to_use = replace_file_extension(raw_data, 'tsv')
         pd.read_csv(raw_data).to_csv(
@@ -334,7 +381,6 @@ def create_data_set_to_use(data_format, raw_data):
             sep='\t',
             index=False
         )
-
 
     else:
         ValueError(
@@ -448,7 +494,8 @@ def test_experiment_image_dataset(
 
 
 DATA_FORMATS_TO_TEST = [
-    'csv', 'df', 'dict', 'hdf5', 'excel', 'tsv'
+    'csv', 'df', 'dict', 'excel', 'feather', 'hdf5', 'html',
+    'json', 'jsonl', 'parquet', 'pickle', 'stata', 'tsv'
 ]
 @pytest.mark.parametrize('data_format', DATA_FORMATS_TO_TEST)
 def test_experiment_dataset_formats(data_format):
