@@ -355,98 +355,96 @@ def test_experiment_image_dataset(
 ):
     # primary focus of this test is to determine if exceptions are
     # raised for different data set formats and in_memory setting
-    with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-        # Image Inputs
-        image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    # Image Inputs
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
-        input_features = [
-            image_feature(
-                folder=image_dest_folder,
-                encoder='stacked_cnn',
-                preprocessing={
-                    'in_memory': True,
-                    'height': 12,
-                    'width': 12,
-                    'num_channels': 3,
-                    'num_processes': 5
-                },
-                fc_size=16,
-                num_filters=8
-            ),
-        ]
-        output_features = [
-            category_feature(vocab_size=2, reduce_input='sum'),
-        ]
-
-        model_definition = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {
-                'type': 'concat',
-                'fc_size': 14
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder='stacked_cnn',
+            preprocessing={
+                'in_memory': True,
+                'height': 12,
+                'width': 12,
+                'num_channels': 3,
+                'num_processes': 5
             },
-            'preprocessing': {},
-            'training': {'epochs': 2}
-        }
+            fc_size=16,
+            num_filters=8
+        ),
+    ]
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+    ]
 
-        # create temporary name for train and test data sets
-        train_csv_filename = 'train_' + uuid.uuid4().hex[:10].upper() + '.csv'
-        test_csv_filename = 'test_' + uuid.uuid4().hex[:10].upper() + '.csv'
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {
+            'type': 'concat',
+            'fc_size': 14
+        },
+        'preprocessing': {},
+        'training': {'epochs': 2}
+    }
 
-        # setup training data format to test
-        train_data = generate_data(input_features, output_features,
-                                   train_csv_filename)
-        model_definition['input_features'][0]['preprocessing']['in_memory'] \
-            = train_in_memory
-        training_set_metadata = None
+    # create temporary name for train and test data sets
+    train_csv_filename = 'train_' + uuid.uuid4().hex[:10].upper() + '.csv'
+    test_csv_filename = 'test_' + uuid.uuid4().hex[:10].upper() + '.csv'
 
-        if train_format == 'hdf5':
-            # hdf5 format
-            train_set, _, _, training_set_metadata = preprocess_for_training(
-                model_definition,
-                dataset=train_data
-            )
-            train_dataset_to_use = train_set.data_hdf5_fp
-        else:
-            train_dataset_to_use = create_data_set_to_use(train_format, train_data)
+    # setup training data format to test
+    train_data = generate_data(input_features, output_features,
+                               train_csv_filename)
+    model_definition['input_features'][0]['preprocessing']['in_memory'] \
+        = train_in_memory
+    training_set_metadata = None
 
-        # define Ludwig model
-        model = LudwigModel(
-            model_definition=model_definition,
-            random_seed=default_random_seed
+    if train_format == 'hdf5':
+        # hdf5 format
+        train_set, _, _, training_set_metadata = preprocess_for_training(
+            model_definition,
+            dataset=train_data
         )
-        model.train(
-            dataset=train_dataset_to_use,
-            training_set_metadata=training_set_metadata
+        train_dataset_to_use = train_set.data_hdf5_fp
+    else:
+        train_dataset_to_use = create_data_set_to_use(train_format, train_data)
+
+    # define Ludwig model
+    model = LudwigModel(
+        model_definition=model_definition,
+        random_seed=default_random_seed
+    )
+    model.train(
+        dataset=train_dataset_to_use,
+        training_set_metadata=training_set_metadata
+    )
+
+    model.model_definition['input_features'][0]['preprocessing']['in_memory'] \
+        = test_in_memory
+
+    # setup test data format to test
+    test_data = generate_data(input_features, output_features,
+                              test_csv_filename)
+
+    if test_format == 'hdf5':
+        # hdf5 format
+        # create hdf5 data set
+        _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
+            model.model_definition,
+            dataset=test_data
         )
+        test_dataset_to_use = test_set.data_hdf5_fp
+    else:
+        test_dataset_to_use = create_data_set_to_use(test_format, test_data)
 
-        model.model_definition['input_features'][0]['preprocessing']['in_memory'] \
-            = test_in_memory
+    # run functions with the specified data format
+    model.evaluate(dataset=test_dataset_to_use)
+    model.predict(dataset=test_dataset_to_use)
 
-        # setup test data format to test
-        test_data = generate_data(input_features, output_features,
-                                  test_csv_filename)
-
-        if test_format == 'hdf5':
-            # hdf5 format
-            # create hdf5 data set
-            _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
-                model.model_definition,
-                dataset=test_data
-            )
-            test_dataset_to_use = test_set.data_hdf5_fp
-        else:
-            test_dataset_to_use = create_data_set_to_use(test_format, test_data)
-
-        # run functions with the specified data format
-        model.evaluate(dataset=test_dataset_to_use)
-        model.predict(dataset=test_dataset_to_use)
-
-        # Delete the temporary data created
-        shutil.rmtree(image_dest_folder)
-        delete_temporary_data(train_csv_filename)
-        delete_temporary_data(test_csv_filename)
+    # Delete the temporary data created
+    shutil.rmtree(image_dest_folder)
+    delete_temporary_data(train_csv_filename)
+    delete_temporary_data(test_csv_filename)
 
 
 DATA_FORMATS_TO_TEST = [
@@ -457,71 +455,69 @@ DATA_FORMATS_TO_TEST = [
 def test_experiment_dataset_formats(data_format, in_memory):
     # primary focus of this test is to determine if exceptions are
     # raised for different data set formats and in_memory setting
-    with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
 
-        input_features = [
-            numerical_feature(),
-            category_feature()
-        ]
-        output_features = [
-            category_feature(),
-            numerical_feature()
-        ]
+    input_features = [
+        numerical_feature(),
+        category_feature()
+    ]
+    output_features = [
+        category_feature(),
+        numerical_feature()
+    ]
 
-        model_definition = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {
-                'type': 'concat',
-                'fc_size': 14
-            },
-            'preprocessing': {},
-            'training': {'epochs': 2}
-        }
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {
+            'type': 'concat',
+            'fc_size': 14
+        },
+        'preprocessing': {},
+        'training': {'epochs': 2}
+    }
 
-        # create temporary name for train and test data sets
-        csv_filename = 'train_' + uuid.uuid4().hex[:10].upper() + '.csv'
+    # create temporary name for train and test data sets
+    csv_filename = 'train_' + uuid.uuid4().hex[:10].upper() + '.csv'
 
-        # setup training data format to test
-        raw_data = generate_data(input_features, output_features,
-                                   csv_filename)
+    # setup training data format to test
+    raw_data = generate_data(input_features, output_features,
+                               csv_filename)
 
-        # set in_memory flag for all features in the data set
-        for feature in model_definition['input_features']:
-            feature['preprocessing'] = {'in_memory': in_memory}
+    # set in_memory flag for all features in the data set
+    for feature in model_definition['input_features']:
+        feature['preprocessing'] = {'in_memory': in_memory}
 
-        for feature in model_definition['output_features']:
-            feature['preprocessing'] = {'in_memory': in_memory}
+    for feature in model_definition['output_features']:
+        feature['preprocessing'] = {'in_memory': in_memory}
 
-        training_set_metadata = None
+    training_set_metadata = None
 
-        if data_format == 'hdf5':
-            # hdf5 format
-            training_set, _, _, training_set_metadata = preprocess_for_training(
-                model_definition,
-                dataset=raw_data
-            )
-            dataset_to_use = training_set.data_hdf5_fp
-        else:
-            dataset_to_use = create_data_set_to_use(data_format, raw_data)
-
-        # define Ludwig model
-        model = LudwigModel(
-            model_definition=model_definition,
-            random_seed=default_random_seed
+    if data_format == 'hdf5':
+        # hdf5 format
+        training_set, _, _, training_set_metadata = preprocess_for_training(
+            model_definition,
+            dataset=raw_data
         )
-        model.train(
-            dataset=dataset_to_use,
-            training_set_metadata=training_set_metadata
-        )
+        dataset_to_use = training_set.data_hdf5_fp
+    else:
+        dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
-        # # run functions with the specified data format
-        model.evaluate(dataset=dataset_to_use)
-        model.predict(dataset=dataset_to_use)
+    # define Ludwig model
+    model = LudwigModel(
+        model_definition=model_definition,
+        random_seed=default_random_seed
+    )
+    model.train(
+        dataset=dataset_to_use,
+        training_set_metadata=training_set_metadata
+    )
 
-        # Delete the temporary data created
-        delete_temporary_data(csv_filename)
+    # # run functions with the specified data format
+    model.evaluate(dataset=dataset_to_use)
+    model.predict(dataset=dataset_to_use)
+
+    # Delete the temporary data created
+    delete_temporary_data(csv_filename)
 
 
 
