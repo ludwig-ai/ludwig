@@ -74,7 +74,7 @@ def test_experiment_text_feature_non_HF(encoder, csv_filename):
 
 
 @spawn
-def run_experiment_hf_tokenizer(encoder, csv_filename):
+def run_experiment_with_encoder(encoder, csv_filename):
     # Run in a subprocess to clear TF and prevent OOM
     # This also allows us to use GPU resources
     input_features = [
@@ -92,13 +92,13 @@ def run_experiment_hf_tokenizer(encoder, csv_filename):
 
 @pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
 def test_experiment_text_feature_HF(encoder, csv_filename):
-    run_experiment_hf_tokenizer(encoder, csv_filename)
+    run_experiment_with_encoder(encoder, csv_filename)
 
 
 @slow
 @pytest.mark.parametrize('encoder', HF_ENCODERS)
 def test_experiment_text_feature_HF_full(encoder, csv_filename):
-    run_experiment_hf_tokenizer(encoder, csv_filename)
+    run_experiment_with_encoder(encoder, csv_filename)
 
 
 def test_experiment_seq_seq(csv_filename):
