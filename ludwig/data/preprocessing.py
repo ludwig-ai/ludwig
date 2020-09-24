@@ -35,7 +35,10 @@ from ludwig.utils.data_utils import figure_data_format, \
     DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
     HDF5_FORMATS, override_in_memory_flag, TSV_FORMATS, JSON_FORMATS, \
     JSONL_FORMATS, read_tsv, read_jsonl, read_json, EXCEL_FORMATS, read_excel, \
-    CACHEABLE_FORMATS
+    CACHEABLE_FORMATS, PARQUET_FORMATS, PICKLE_FORMATS, FWF_FORMATS, \
+    FEATHER_FORMATS, HTML_FORMATS, ORC_FORMATS, SAS_FORMATS, SPSS_FORMATS, \
+    STATA_FORMATS, read_stata, read_spss, read_sas, read_orc, read_html, \
+    read_fwf, read_feather, read_parquet, read_pickle
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
@@ -403,6 +406,402 @@ class ExcelPreprocessor(DataFormatPreprocessor):
         return dataset, training_set_metadata, None
 
 
+class ParquetPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_parquet,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_parquet(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class PicklePreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_pickle,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_pickle(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class FatherPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_feather,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_feather(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class FWFPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_fwf,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_fwf(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class HTMLPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_html,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_html(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class ORCPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_orc,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_orc(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class SASPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_sas,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_sas(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class SPSSPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_spss,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_spss(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
+class StataPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            random_seed=default_random_seed
+    ):
+        return _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_stata,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata
+    ):
+        dataset_df = read_stata(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+        return dataset, training_set_metadata, None
+
+
 class HDF5Preprocessor(DataFormatPreprocessor):
     @staticmethod
     def preprocess_for_training(
@@ -489,6 +888,15 @@ data_format_preprocessor_registry = {
     **{fmt: JSONPreprocessor for fmt in JSON_FORMATS},
     **{fmt: JSONLPreprocessor for fmt in JSONL_FORMATS},
     **{fmt: ExcelPreprocessor for fmt in EXCEL_FORMATS},
+    **{fmt: ParquetPreprocessor for fmt in PARQUET_FORMATS},
+    **{fmt: PicklePreprocessor for fmt in PICKLE_FORMATS},
+    **{fmt: FWFPreprocessor for fmt in FWF_FORMATS},
+    **{fmt: FatherPreprocessor for fmt in FEATHER_FORMATS},
+    **{fmt: HTMLPreprocessor for fmt in HTML_FORMATS},
+    **{fmt: ORCPreprocessor for fmt in ORC_FORMATS},
+    **{fmt: SASPreprocessor for fmt in SAS_FORMATS},
+    **{fmt: SPSSPreprocessor for fmt in SPSS_FORMATS},
+    **{fmt: StataPreprocessor for fmt in STATA_FORMATS},
     **{fmt: HDF5Preprocessor for fmt in HDF5_FORMATS},
 }
 

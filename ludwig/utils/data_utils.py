@@ -44,10 +44,23 @@ TSV_FORMATS = {'tsv'}
 JSON_FORMATS = {'json'}
 JSONL_FORMATS = {'jsonl'}
 EXCEL_FORMATS = {'excel'}
+PARQUET_FORMATS = {'parquet'}
+PICKLE_FORMATS = {'pickle'}
+FEATHER_FORMATS = {'feather'}
+FWF_FORMATS = {'fwf'}
+HTML_FORMATS = {'html'}
+ORC_FORMATS = {'orc'}
+SAS_FORMATS = {'sas'}
+SPSS_FORMATS = {'spss'}
+STATA_FORMATS = {'stata'}
 HDF5_FORMATS = {'hdf5', 'h5'}
 CACHEABLE_FORMATS = set.union(*(CSV_FORMATS, TSV_FORMATS,
                                 JSON_FORMATS, JSONL_FORMATS,
-                                EXCEL_FORMATS))
+                                EXCEL_FORMATS, PARQUET_FORMATS, PICKLE_FORMATS,
+                                FEATHER_FORMATS, FWF_FORMATS, HTML_FORMATS,
+                                ORC_FORMATS, SAS_FORMATS, SPSS_FORMATS,
+                                STATA_FORMATS))
+
 
 def get_abs_path(data_csv_path, file_path):
     if data_csv_path is not None:
@@ -115,7 +128,41 @@ def read_excel(data_fp):
     return pd.read_excel(data_fp)
 
 
-# todo: add read pickle, fwf, html, father, parquet, orc, sas, spss, stata
+def read_parquet(data_fp):
+    return pd.read_parquet(data_fp)
+
+
+def read_pickle(data_fp):
+    return pd.read_pickle(data_fp)
+
+
+def read_fwf(data_fp):
+    return pd.read_fwf(data_fp)
+
+
+def read_feather(data_fp):
+    return pd.read_feather(data_fp)
+
+
+def read_html(data_fp):
+    return pd.read_html(data_fp)
+
+
+def read_orc(data_fp):
+    return pd.read_orc(data_fp)
+
+
+def read_sas(data_fp):
+    return pd.read_sas(data_fp)
+
+
+def read_spss(data_fp):
+    return pd.read_spss(data_fp)
+
+
+def read_stata(data_fp):
+    return pd.read_excel(data_fp)
+
 
 def save_csv(data_fp, data):
     with open(data_fp, 'w', encoding='utf-8') as csv_file:
@@ -399,9 +446,10 @@ def replace_file_extension(file_path, extension):
     """
     if file_path is None:
         return None
-    if '.' == extension[:1]:
+    extension = extension.strip()
+    if extension.startswith('.'):
         # Handle the case if the user calls with '.hdf5' instead of 'hdf5'
-        extension = extension[1:].strip()
+        extension = extension[1:]
 
     return os.path.splitext(file_path)[0] + '.' + extension
 
@@ -524,8 +572,29 @@ def figure_data_format_dataset(dataset):
             return 'json'
         elif dataset.endswith('.jsonl'):
             return 'jsonl'
-        elif dataset.endswith('.xls') or dataset.endswith('.xslx'):
+        elif (dataset.endswith('.xls') or dataset.endswith('.xslx') or
+              dataset.endswith('.xlsm') or dataset.endswith('.xlsb') or
+              dataset.endswith('.odf') or dataset.endswith('.ods') or
+              dataset.endswith('.odt')):
             return 'excel'
+        elif dataset.endswith('.parquet'):
+            return 'parquet'
+        elif dataset.endswith('.pickle') or dataset.endswith('.p'):
+            return 'pickle'
+        elif dataset.endswith('.feather'):
+            return 'feather'
+        elif dataset.endswith('.fwf'):
+            return 'fwf'
+        elif dataset.endswith('.html'):
+            return 'html'
+        elif dataset.endswith('.orc'):
+            return 'orc'
+        elif dataset.endswith('.sas'):
+            return 'sas'
+        elif dataset.endswith('.spss'):
+            return 'spss'
+        elif dataset.endswith('.dta') or dataset.endswith('.stata'):
+            return 'stata'
         elif dataset.endswith('.h5') or dataset.endswith('.hdf5'):
             return 'hdf5'
         else:
