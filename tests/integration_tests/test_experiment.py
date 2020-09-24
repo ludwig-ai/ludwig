@@ -82,7 +82,6 @@ def run_experiment_hf_tokenizer(encoder, csv_filename):
             vocab_size=30,
             min_len=1,
             encoder=encoder,
-            preprocessing={'word_tokenizer': 'hf_tokenizer'}
         )
     ]
     output_features = [category_feature(vocab_size=2)]

@@ -76,7 +76,6 @@ class TextFeatureMixin(object):
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path']
-
         )
         (
             word_idx2str,
