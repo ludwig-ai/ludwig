@@ -30,7 +30,6 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
-from ludwig.utils.defaults import default_random_seed
 from tests.conftest import delete_temporary_data
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
     HF_ENCODERS_SHORT, slow
@@ -59,7 +58,7 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
 @spawn
-def run_experiment_encoder(encoder, csv_filename):
+def run_experiment_hf_tokenizer(encoder, csv_filename):
     # Run in a subprocess to clear TF and prevent OOM
     # This also allows us to use GPU resources
     input_features = [
@@ -94,13 +93,13 @@ def test_experiment_text_feature_non_HF(encoder, csv_filename):
 
 @pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
 def test_experiment_text_feature_HF(encoder, csv_filename):
-    run_experiment_encoder(encoder, csv_filename)
+    run_experiment_hf_tokenizer(encoder, csv_filename)
 
 
 @slow
 @pytest.mark.parametrize('encoder', HF_ENCODERS)
 def test_experiment_text_feature_HF_full(encoder, csv_filename):
-    run_experiment_encoder(encoder, csv_filename)
+    run_experiment_hf_tokenizer(encoder, csv_filename)
 
 
 def test_experiment_seq_seq(csv_filename):
