@@ -327,6 +327,15 @@ def create_data_set_to_use(data_format, raw_data):
             index=False
         )
 
+    elif data_format == 'tsv':
+        dataset_to_use = replace_file_extension(raw_data, 'tsv')
+        pd.read_csv(raw_data).to_csv(
+            dataset_to_use,
+            sep='\t',
+            index=False
+        )
+
+
     else:
         ValueError(
             "'{}' is an unrecognized data format".format(data_format)
@@ -441,7 +450,7 @@ def test_experiment_image_dataset(
 
 
 DATA_FORMATS_TO_TEST = [
-    'csv', 'df', 'dict', 'hdf5', 'excel'
+    'csv', 'df', 'dict', 'hdf5', 'excel', 'tsv'
 ]
 @pytest.mark.parametrize('in_memory', [False, True])
 @pytest.mark.parametrize('data_format', DATA_FORMATS_TO_TEST)
