@@ -16,4 +16,3 @@ absl-py
 xlwt
 xlrd
 openpyxl
-xlsxwriter
