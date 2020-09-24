@@ -524,7 +524,7 @@ def figure_data_format_dataset(dataset):
             return 'json'
         elif dataset.endswith('.jsonl'):
             return 'jsonl'
-        elif dataset.endswith('.xls') or dataset.endswith('.xslx'):
+        elif dataset.endswith('.xls') or dataset.endswith('.xlsx'):
             return 'excel'
         elif dataset.endswith('.h5') or dataset.endswith('.hdf5'):
             return 'hdf5'

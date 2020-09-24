@@ -29,7 +29,7 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
-from ludwig.utils.data_utils import read_csv
+from ludwig.utils.data_utils import read_csv, replace_file_extension
 from ludwig.utils.defaults import default_random_seed
 from tests.conftest import delete_temporary_data
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
@@ -305,9 +305,9 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
 
 
 @pytest.mark.parametrize('test_in_memory', [True, False])
-@pytest.mark.parametrize('test_format', ['csv', 'df', 'dict', 'hdf5'])
+@pytest.mark.parametrize('test_format', ['excel']) #'csv', 'df', 'dict', 'hdf5', 'excel'])
 @pytest.mark.parametrize('train_in_memory', [True, False])
-@pytest.mark.parametrize('train_format', ['csv', 'df', 'dict', 'hdf5'])
+@pytest.mark.parametrize('train_format', ['excel']) #'csv', 'df', 'dict', 'hdf5', 'excel'])
 def test_experiment_image_dataset(
         train_format, train_in_memory,
         test_format, test_in_memory
@@ -366,6 +366,13 @@ def test_experiment_image_dataset(
         if train_format == 'dict':
             train_dataset_to_use = train_dataset_to_use.to_dict(orient='list')
 
+    elif train_format == 'excel':
+        train_dataset_to_use = replace_file_extension(train_data, 'xlsx')
+        pd.read_csv(train_data).to_excel(
+            train_dataset_to_use,
+            index=False
+        )
+
     else:
         # hdf5 format
         train_set, _, _, training_set_metadata = preprocess_for_training(
@@ -397,6 +404,13 @@ def test_experiment_image_dataset(
         test_dataset_to_use = pd.read_csv(test_data)
         if test_format == 'dict':
             test_dataset_to_use = test_dataset_to_use.to_dict(orient='list')
+
+    elif test_format == 'excel':
+        test_dataset_to_use = replace_file_extension(test_data, 'xlsx')
+        pd.read_csv(train_data).to_excel(
+            test_dataset_to_use,
+            index=False
+        )
 
     else:
         # hdf5 format
