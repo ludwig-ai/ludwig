@@ -48,6 +48,7 @@ from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import run_experiment
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
+from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
@@ -55,6 +56,24 @@ from tests.integration_tests.utils import vector_feature
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
+
+
+@spawn
+def run_experiment_encoder(encoder, csv_filename):
+    # Run in a subprocess to clear TF and prevent OOM
+    # This also allows us to use GPU resources
+    input_features = [
+        text_feature(
+            vocab_size=30,
+            min_len=1,
+            encoder=encoder,
+            preprocessing={'word_tokenizer': 'hf_tokenizer'}
+        )
+    ]
+    output_features = [category_feature(vocab_size=2)]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('encoder', ENCODERS)
@@ -75,24 +94,13 @@ def test_experiment_text_feature_non_HF(encoder, csv_filename):
 
 @pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
 def test_experiment_text_feature_HF(encoder, csv_filename):
-    input_features = [
-        text_feature(
-            vocab_size=30,
-            min_len=1,
-            encoder=encoder,
-            preprocessing={'word_tokenizer': 'hf_tokenizer'}
-        )
-    ]
-    output_features = [category_feature(vocab_size=2)]
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, dataset=rel_path)
+    run_experiment_encoder(encoder, csv_filename)
 
 
 @slow
 @pytest.mark.parametrize('encoder', HF_ENCODERS)
 def test_experiment_text_feature_HF_full(encoder, csv_filename):
-    return test_experiment_text_feature_HF(encoder, csv_filename)
+    run_experiment_encoder(encoder, csv_filename)
 
 
 def test_experiment_seq_seq(csv_filename):
