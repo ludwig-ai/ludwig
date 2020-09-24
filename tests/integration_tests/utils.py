@@ -402,7 +402,7 @@ def spawn(fn):
         p.join()
         results = queue.get()
         if isinstance(results, Exception):
-            raise RuntimeError(f'Spawned subprocess raised {type(results)}, '
+            raise RuntimeError(f'Spawned subprocess raised {type(results).__name__}, '
                                f'check log output above for stack trace.')
         return results
 
