@@ -57,6 +57,22 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
+@pytest.mark.parametrize('encoder', ENCODERS)
+def test_experiment_text_feature_non_HF(encoder, csv_filename):
+    input_features = [
+        text_feature(
+            vocab_size=30,
+            min_len=1,
+            encoder=encoder,
+            preprocessing={'word_tokenizer': 'space'}
+        )
+    ]
+    output_features = [category_feature(vocab_size=2)]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
 @spawn
 def run_experiment_hf_tokenizer(encoder, csv_filename):
     # Run in a subprocess to clear TF and prevent OOM
@@ -67,22 +83,6 @@ def run_experiment_hf_tokenizer(encoder, csv_filename):
             min_len=1,
             encoder=encoder,
             preprocessing={'word_tokenizer': 'hf_tokenizer'}
-        )
-    ]
-    output_features = [category_feature(vocab_size=2)]
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, dataset=rel_path)
-
-
-@pytest.mark.parametrize('encoder', ENCODERS)
-def test_experiment_text_feature_non_HF(encoder, csv_filename):
-    input_features = [
-        text_feature(
-            vocab_size=30,
-            min_len=1,
-            encoder=encoder,
-            preprocessing={'word_tokenizer': 'space'}
         )
     ]
     output_features = [category_feature(vocab_size=2)]
