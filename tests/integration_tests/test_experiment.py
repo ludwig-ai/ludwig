@@ -443,7 +443,7 @@ def test_experiment_image_dataset(
 DATA_FORMATS_TO_TEST = [
     'csv', 'df', 'dict', 'hdf5', 'excel'
 ]
-@pytest.mark.parametrize('in_memory', [True, False])
+@pytest.mark.parametrize('in_memory', [False, True])
 @pytest.mark.parametrize('data_format', DATA_FORMATS_TO_TEST)
 def test_experiment_dataset_formats(data_format, in_memory):
     # primary focus of this test is to determine if exceptions are
@@ -472,25 +472,30 @@ def test_experiment_dataset_formats(data_format, in_memory):
         }
 
         # create temporary name for train and test data sets
-        train_csv_filename = 'train_' + uuid.uuid4().hex[:10].upper() + '.csv'
-        test_csv_filename = 'test_' + uuid.uuid4().hex[:10].upper() + '.csv'
+        csv_filename = 'train_' + uuid.uuid4().hex[:10].upper() + '.csv'
 
         # setup training data format to test
-        train_data = generate_data(input_features, output_features,
-                                   train_csv_filename)
-        model_definition['input_features'][0]['preprocessing']['in_memory'] \
-            = in_memory
+        raw_data = generate_data(input_features, output_features,
+                                   csv_filename)
+
+        # set in_memory flag for all features in the data set
+        for feature in model_definition['input_features']:
+            feature['preprocessing'] = {'in_memory': in_memory}
+
+        for feature in model_definition['output_features']:
+            feature['preprocessing'] = {'in_memory': in_memory}
+
         training_set_metadata = None
 
         if data_format == 'hdf5':
             # hdf5 format
-            train_set, _, _, training_set_metadata = preprocess_for_training(
+            training_set, _, _, training_set_metadata = preprocess_for_training(
                 model_definition,
-                dataset=train_data
+                dataset=raw_data
             )
-            train_dataset_to_use = train_set.data_hdf5_fp
+            dataset_to_use = training_set.data_hdf5_fp
         else:
-            train_dataset_to_use = create_data_set_to_use(data_format, train_data)
+            dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
         # define Ludwig model
         model = LudwigModel(
@@ -498,35 +503,16 @@ def test_experiment_dataset_formats(data_format, in_memory):
             random_seed=default_random_seed
         )
         model.train(
-            dataset=train_dataset_to_use,
+            dataset=dataset_to_use,
             training_set_metadata=training_set_metadata
         )
 
-        model.model_definition['input_features'][0]['preprocessing']['in_memory'] \
-            = in_memory
-
-        # setup test data format to test
-        test_data = generate_data(input_features, output_features,
-                                  test_csv_filename)
-
-        if data_format == 'hdf5':
-            # hdf5 format
-            # create hdf5 data set
-            _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
-                model.model_definition,
-                dataset=test_data
-            )
-            test_dataset_to_use = test_set.data_hdf5_fp
-        else:
-            test_dataset_to_use = create_data_set_to_use(data_format, test_data)
-
-        # run functions with the specified data format
-        model.evaluate(dataset=test_dataset_to_use)
-        model.predict(dataset=test_dataset_to_use)
+        # # run functions with the specified data format
+        model.evaluate(dataset=dataset_to_use)
+        model.predict(dataset=dataset_to_use)
 
         # Delete the temporary data created
-        delete_temporary_data(train_csv_filename)
-        delete_temporary_data(test_csv_filename)
+        delete_temporary_data(csv_filename)
 
 
 
