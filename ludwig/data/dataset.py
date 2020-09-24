@@ -47,23 +47,18 @@ class Dataset:
         if self.features[feature_name]['preprocessing']['in_memory']:
             return self.dataset[feature_name][idx]
 
-        if self.features[feature_name]['type'] == 'image':
-            sub_batch = self.dataset[feature_name][idx]
+        sub_batch = self.dataset[feature_name][idx]
 
-            indices = np.empty((3, len(sub_batch)), dtype=np.int64)
-            indices[0, :] = sub_batch
-            indices[1, :] = np.arange(len(sub_batch))
-            indices = indices[:, np.argsort(indices[0])]
+        indices = np.empty((3, len(sub_batch)), dtype=np.int64)
+        indices[0, :] = sub_batch
+        indices[1, :] = np.arange(len(sub_batch))
+        indices = indices[:, np.argsort(indices[0])]
 
-            with h5py.File(self.data_hdf5_fp, 'r') as h5_file:
-                im_data = h5_file[feature_name + '_data'][indices[0, :], :, :]
-            indices[2, :] = np.arange(len(sub_batch))
-            indices = indices[:, np.argsort(indices[1])]
-            return im_data[indices[2, :]]
-        else:
-            # data values were previously loaded into memory
-            # even though [in_memory] is set to False
-            return self.dataset[feature_name][idx]
+        with h5py.File(self.data_hdf5_fp, 'r') as h5_file:
+            im_data = h5_file[feature_name + '_data'][indices[0, :], :, :]
+        indices[2, :] = np.arange(len(sub_batch))
+        indices = indices[:, np.argsort(indices[1])]
+        return im_data[indices[2, :]]
 
     def get_dataset(self):
         return self.dataset

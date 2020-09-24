@@ -450,9 +450,8 @@ def test_experiment_image_dataset(
 DATA_FORMATS_TO_TEST = [
     'csv', 'df', 'dict', 'hdf5', 'excel', 'tsv'
 ]
-@pytest.mark.parametrize('in_memory', [False, True])
 @pytest.mark.parametrize('data_format', DATA_FORMATS_TO_TEST)
-def test_experiment_dataset_formats(data_format, in_memory):
+def test_experiment_dataset_formats(data_format):
     # primary focus of this test is to determine if exceptions are
     # raised for different data set formats and in_memory setting
 
@@ -482,13 +481,6 @@ def test_experiment_dataset_formats(data_format, in_memory):
     # setup training data format to test
     raw_data = generate_data(input_features, output_features,
                                csv_filename)
-
-    # set in_memory flag for all features in the data set
-    for feature in model_definition['input_features']:
-        feature['preprocessing'] = {'in_memory': in_memory}
-
-    for feature in model_definition['output_features']:
-        feature['preprocessing'] = {'in_memory': in_memory}
 
     training_set_metadata = None
 
