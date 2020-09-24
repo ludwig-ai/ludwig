@@ -16,3 +16,4 @@ absl-py
 xlwt
 xlrd
 openpyxl
+pyxlsb
