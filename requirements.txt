@@ -12,8 +12,8 @@ PyYAML>=3.12
 absl-py
 
 # new data format support
-# support excel format
-xlwt
-xlrd
-openpyxl
-pyxlsb
+xlwt            # excel
+xlrd            # excel
+openpyxl        # excel
+pyarrow         # parquet
+lxml            # html
