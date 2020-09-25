@@ -1011,18 +1011,66 @@ def kfold_cross_validate(
 
     # Inputs
 
-    :param num_folds: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: None) a dictionary containing
+    :param num_folds: (int) Number of folds to create for the cross-validation
+    :param model_definition: (dictionary, default: None) a dictionary containing
            information needed to build a model. Refer to the
            [User Guide](http://ludwig.ai/user_guide/#model-definition)
            for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-           a YAML file containing the model definition. If available it will be
-           used instead of the model_definition dict.
-    :param data_csv: (dataframe, default: None)
-    :param data_csv: (string, default: None)
-    :param output_directory: (string, default: 'results')
-    :param random_seed: (int) Random seed used k-fold splits.
+    :param data_csv: (string, default: None) file path to csv file containing
+            data to run the k-fold cross validation experiment
+    :param skip_save_training_description: (boolean, default: False) Disables
+            saving the description JSON file.
+    :param skip_save_training_statistics: (boolean, default: False) Disables
+            saving training statistics JSON file.
+    :param skip_save_model: (boolean, default: False) Disables
+               saving model weights and hyperparameters each time the model
+           improves. By default Ludwig saves model weights after each epoch
+           the validation metric improves, but if the model is really big
+           that can be time consuming if you do not want to keep
+           the weights and just find out what performance can a model get
+           with a set of hyperparameters, use this parameter to skip it,
+           but the model will not be loadable later on.
+    :param skip_save_progress: (boolean, default: False) Disables saving
+           progress each epoch. By default Ludwig saves weights and stats
+           after each epoch for enabling resuming of training, but if
+           the model is really big that can be time consuming and will uses
+           twice as much space, use this parameter to skip it, but training
+           cannot be resumed later on.
+    :param skip_save_log: (boolean, default: False ) Disables saving TensorBoard
+           logs. By default Ludwig saves logs for the TensorBoard, but if it
+           is not needed turning it off can slightly increase the
+           overall speed..
+    :param skip_save_processed_input: (boolean, default: False) If a CSV dataset
+            is provided it is
+           preprocessed and then saved as an hdf5 and json to avoid running
+           the preprocessing again. If this parameter is False,
+           the hdf5 and json file are not saved.
+    :param skip_save_predictions: (boolean, default: False) skips saving test
+            predictions CSV files
+    :param skip_save_eval_stats: (boolean, default: False) skips saving test
+            statistics JSON file
+    :param skip_collect_predictions: (boolean, default: False) skips collecting
+            post-processed predictions during eval.
+    :param skip_collect_overall_stats: (boolean, default: False)skips collecting
+            overall stats during eval.
+    :param output_directory: (string, default: 'results') The directory that will
+            contain the training statistics, the saved model and the
+            training progress files.
+    :param random_seed: (int, default: ludwig default random seed) Random seed
+            used for weights initialization,
+           splits and any other random function.
+    :param gpus: (list of strings, default: None) List of GPUs that are available
+            for training.
+    :param gpu_memory_limit: (int, default: None) maximum memory in MB to
+            allocate per GPU device.
+    :param allow_parallel_threads: (boolean, default: True) allow TensorFlow to
+            use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :param use_horovod: (boolean, default: None) Flag for using horovod
+    :param debug: (boolean, default: False) If true turns on tfdbg
+            with inf_or_nan checks.
+    :param logging_level: (int, default: INFO) Log level to send to stderr.
+
 
     # Return
 
