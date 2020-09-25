@@ -763,6 +763,16 @@ class LudwigModel:
             tensor_names=None,
             **kwargs
     ):
+        """Load a pre-trained model and collect the tensors with a specific name
+
+        # Inputs
+        :param tensor_names: (list of strings) List of tensor names to collect
+            weights
+
+        # Return
+        :return: (list) List of tensors
+
+        """
         self._check_initialization()
         collected_tensors = self.model.collect_weights(tensor_names)
         return collected_tensors
@@ -773,10 +783,28 @@ class LudwigModel:
             dataset,
             data_format=None,
             batch_size=128,
-            # output_directory='results',
             debug=False,
             **kwargs
     ):
+        """Loads a pre-trained model model and input data to collect the values
+        of the activations contained in the tensors.
+
+        # Inputs
+        :param layer_names: (list of strings) list of layer names in the model
+            to collect activations.
+        :param dataset: (Str, Dictionary, DataFrame) Source containing the
+            data to make predictions.
+        :param data_format: (Str, default: None) Format to interpret data
+            sources. Will be inferred automatically if not specified.
+        :param batch_size: (int, default: 128) Size of batch to use when making
+            predictions.
+        :param debug: (boolean, default: False) If true turns on tfdbg
+            with inf_or_nan checks.
+
+        # Return
+        :return: (list) List of collected tensors.
+
+        """
         self._check_initialization()
         logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
