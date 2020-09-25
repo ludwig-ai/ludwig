@@ -133,8 +133,6 @@ class Predictor:
 
             preds = model.evaluation_step(inputs, targets)
 
-            # todo refactoring: remove logits from predictions
-
             # accumulate predictions from batch for each output feature
             if collect_predictions:
                 for of_name, of_preds in preds.items():

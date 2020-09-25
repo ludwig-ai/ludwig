@@ -77,7 +77,7 @@ def export_neuropod(
     logger.info('Saved to: {0}'.format(output_path))
 
 
-def export_savedmodel_cli(sys_argv):
+def cli_export_savedmodel(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
                     'and saves it as a SavedModel.',
@@ -131,7 +131,7 @@ def export_savedmodel_cli(sys_argv):
     export_savedmodel(**vars(args))
 
 
-def export_neuropod_cli(sys_argv):
+def cli_export_neuropod(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
                     'and saves it as a Neuropod.',
@@ -195,10 +195,10 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'savedmodel':
             contrib_command("export_savedmodel", *sys.argv)
-            export_savedmodel_cli(sys.argv[2:])
+            cli_export_savedmodel(sys.argv[2:])
         elif sys.argv[1] == 'neuropod':
             contrib_command("export_neuropod", *sys.argv)
-            export_neuropod_cli(sys.argv[2:])
+            cli_export_neuropod(sys.argv[2:])
         else:
             print('Unrecognized command')
     else:

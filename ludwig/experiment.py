@@ -71,6 +71,7 @@ def experiment_cli(
     """Trains a model on a dataset's training and validation splits and
     uses it to predict on the test split.
     It saves the trained model and the statistics of training and testing.
+
     :param model_definition: Model definition which defines the different
            parameters of the model, features, preprocessing and training.
     :type model_definition: Dictionary
@@ -189,7 +190,6 @@ def experiment_cli(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
-            random_seed=random_seed
         )
     (
         test_results,

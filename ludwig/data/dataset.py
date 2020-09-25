@@ -63,5 +63,5 @@ class Dataset:
     def get_dataset(self):
         return self.dataset
 
-    def set_dataset(self, dataset):
-        self.dataset = dataset
+    def __len__(self):
+        return self.size

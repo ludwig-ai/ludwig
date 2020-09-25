@@ -51,36 +51,95 @@ def hyperopt(
 ) -> dict:
     """This method performs an hyperparameter optimization.
 
-    :param model_definition:
-    :param dataset:
-    :param training_set:
-    :param validation_set:
-    :param test_set:
-    :param training_set_metadata:
-    :param data_format:
-    :param experiment_name:
-    :param model_name:
-    :param skip_save_training_description:
-    :param skip_save_training_statistics:
-    :param skip_save_model:
-    :param skip_save_progress:
-    :param skip_save_log:
-    :param skip_save_processed_input:
-    :param skip_save_unprocessed_output:
-    :param skip_save_predictions:
-    :param skip_save_eval_stats:
-    :param skip_save_hyperopt_statistics:
-    :param output_directory:
-    :param gpus:
-    :param gpu_memory_limit:
-    :param allow_parallel_threads:
-    :param use_horovod:
-    :param random_seed:
-    :param debug:
-    :param kwargs:
+    :param model_definition: Model definition which defines the different
+           parameters of the model, features, preprocessing and training.
+    :type model_definition: Dictionary
+    :param dataset: Source containing the entire dataset.
+           If it has a split column, it will be used for splitting (0: train,
+           1: validation, 2: test), otherwise the dataset will be randomly split.
+    :type dataset: Str, Dictionary, DataFrame
+    :param training_set: Source containing training data.
+    :type training_set: Str, Dictionary, DataFrame
+    :param validation_set: Source containing validation data.
+    :type validation_set: Str, Dictionary, DataFrame
+    :param test_set: Source containing test data.
+    :type test_set: Str, Dictionary, DataFrame
+    :param training_set_metadata: Metadata JSON file or loaded metadata.
+           Intermediate preprocess structure containing the mappings of the input
+           CSV created the first time a CSV file is used in the same
+           directory with the same name and a '.json' extension.
+    :type training_set_metadata: Str, Dictionary
+    :param data_format: Format to interpret data sources. Will be inferred
+           automatically if not specified.
+    :type data_format: Str
+    :param experiment_name: The name for the experiment.
+    :type experiment_name: Str
+    :param model_name: Name of the model that is being used.
+    :type model_name: Str
+    :param skip_save_training_description: Disables saving
+           the description JSON file.
+    :type skip_save_training_description: Boolean
+    :param skip_save_training_statistics: Disables saving
+           training statistics JSON file.
+    :type skip_save_training_statistics: Boolean
+    :param skip_save_model: Disables
+               saving model weights and hyperparameters each time the model
+           improves. By default Ludwig saves model weights after each epoch
+           the validation metric improves, but if the model is really big
+           that can be time consuming if you do not want to keep
+           the weights and just find out what performance can a model get
+           with a set of hyperparameters, use this parameter to skip it,
+           but the model will not be loadable later on.
+    :type skip_save_model: Boolean
+    :param skip_save_progress: Disables saving
+           progress each epoch. By default Ludwig saves weights and stats
+           after each epoch for enabling resuming of training, but if
+           the model is really big that can be time consuming and will uses
+           twice as much space, use this parameter to skip it, but training
+           cannot be resumed later on.
+    :type skip_save_progress: Boolean
+    :param skip_save_log: Disables saving TensorBoard
+           logs. By default Ludwig saves logs for the TensorBoard, but if it
+           is not needed turning it off can slightly increase the
+           overall speed..
+    :type skip_save_log: Boolean
+    :param skip_save_processed_input: If a CSV dataset is provided it is
+           preprocessed and then saved as an hdf5 and json to avoid running
+           the preprocessing again. If this parameter is False,
+           the hdf5 and json file are not saved.
+    :type skip_save_processed_input: Boolean
+    :param skip_save_unprocessed_output: By default predictions and
+           their probabilities are saved in both raw unprocessed numpy files
+           containing tensors and as postprocessed CSV files
+           (one for each output feature). If this parameter is True,
+           only the CSV ones are saved and the numpy ones are skipped.
+    :type skip_save_unprocessed_output: Boolean
+    :param skip_save_predictions: skips saving test predictions CSV files
+    :type skip_save_predictions: Boolean
+    :param skip_save_eval_stats: skips saving test statistics JSON file
+    :type skip_save_eval_stats: Boolean
+    :param skip_save_hyperopt_statistics: skips saving hyperopt stats file
+    :type skip_save_hyperopt_statistics: Boolean
+    :param output_directory: The directory that will contain the training
+           statistics, the saved model and the training progress files.
+    :type output_directory: filepath (str)
+    :param gpus: List of GPUs that are available for training.
+    :type gpus: List
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :type allow_parallel_threads: Boolean
+    :param use_horovod: Flag for using horovod
+    :type use_horovod: Boolean
+    :param random_seed: Random seed used for weights initialization,
+           splits and any other random function.
+    :type random_seed: Integer
+    :param debug: If true turns on tfdbg with inf_or_nan checks.
+    :type debug: Boolean
+
     :return: (dict) The results fo the hyperparameter optimization
     """
-    # todo refactoring: complete docstrings
     # check if model definition is a path or a dict
     if isinstance(model_definition, str):  # assume path
         with open(model_definition, 'r') as def_file:

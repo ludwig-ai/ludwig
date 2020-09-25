@@ -22,8 +22,12 @@ class ECD(tf.keras.Model):
             input_features_def,
             combiner_def,
             output_features_def,
+            random_seed=None,
             **kwargs
     ):
+        if random_seed is not None:
+            tf.random.set_seed(random_seed)
+
         super().__init__()
 
         # ================ Inputs ================
