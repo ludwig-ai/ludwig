@@ -78,7 +78,7 @@ def delete_temporary_data(csv_path):
     if os.path.isfile(csv_path):
         os.remove(csv_path)
 
-    json_path = replace_file_extension(csv_path, 'json')
+    json_path = replace_file_extension(csv_path, 'meta.json')
     if os.path.isfile(json_path):
         os.remove(json_path)
 

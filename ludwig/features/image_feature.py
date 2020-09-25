@@ -238,9 +238,9 @@ class ImageFeatureMixin(object):
             'num_processes',
             preprocessing_parameters['num_processes']
         )
-        csv_path = None
-        if hasattr(dataset_df, 'csv'):
-            csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
+        src_path = None
+        if hasattr(dataset_df, 'src'):
+            src_path = os.path.dirname(os.path.abspath(dataset_df.src))
 
         num_images = len(dataset_df)
         if num_images == 0:
@@ -248,10 +248,10 @@ class ImageFeatureMixin(object):
 
         first_path = next(iter(dataset_df[feature[NAME]]))
 
-        if csv_path is None and not os.path.isabs(first_path):
+        if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
 
-        first_path = get_abs_path(csv_path, first_path)
+        first_path = get_abs_path(src_path, first_path)
 
         (
             should_resize,
@@ -278,7 +278,7 @@ class ImageFeatureMixin(object):
             resize_method=preprocessing_parameters['resize_method'],
             user_specified_num_channels=user_specified_num_channels
         )
-        all_file_paths = [get_abs_path(csv_path, file_path)
+        all_file_paths = [get_abs_path(src_path, file_path)
                           for file_path in dataset_df[feature[NAME]]]
 
         if feature['preprocessing']['in_memory']:
@@ -314,7 +314,7 @@ class ImageFeatureMixin(object):
                 img = read_image_and_resize(all_file_paths[0])
                 dataset[feature[NAME]] = np.array([img])
         else:
-            data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
+            data_fp = os.path.splitext(dataset_df.src)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
                 mode = 'r+'
