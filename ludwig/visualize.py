@@ -2355,7 +2355,7 @@ def binary_threshold_vs_metric(
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
     :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category
+        which are the numeric encoded values the category.
     :param metrics: (List[str]) metrics to display (`'f1'`, `'precision'`,
         `'recall'`, `'accuracy'`).
     :param positive_label: (int, default: `1`) numeric encoded value for the
