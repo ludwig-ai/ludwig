@@ -19,6 +19,7 @@ import logging
 import os
 import sys
 from functools import partial
+from typing import List, Union, Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -2328,13 +2329,13 @@ def confidence_thresholding_2thresholds_3d(
 
 
 def binary_threshold_vs_metric(
-        probabilities_per_model,
-        ground_truth,
-        metrics,
-        positive_label=1,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        metrics: List[str],
+        positive_label: int = 1,
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
 ):
     """Show confidence of the model against metric for the specified output_feature_name.
@@ -2342,27 +2343,33 @@ def binary_threshold_vs_metric(
     For each metric specified in metrics (options are f1, precision, recall,
     accuracy), this visualization produces a line chart plotting a threshold
     on  the confidence of the model against the metric for the specified
-    output_feature_name.  If output_feature_name is a category feature, positive_label indicates which is
-    the class to be considered positive class and all the others will be
-    considered negative. It needs to be an integer, to figure out the
-    association between classes and integers check the ground_truth_metadata
-    JSON file.
+    output_feature_name.  If output_feature_name is a category feature,
+    positive_label, which is specified as the numeric encoded value, indicates
+    the class to be considered positive class and all others will be
+    considered negative. To figure out the
+    association between classes and numeric encoded values check the
+    ground_truth_metadata JSON file.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (list) List of NumPy Arrays containing ground truth data
-    :param metrics: metrics to dispay (f1, precision, recall,
-                    accuracy)
-    :param positive_label: (string) Label of the positive class
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category
+    :param metrics: (List[str]) metrics to display (`'f1'`, `'precision'`,
+        `'recall'`, `'accuracy'`).
+    :param positive_label: (int, default: `1`) numeric encoded value for the
+        positive class.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
-    :return: (None)
+    :return: (`None`)
     """
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
