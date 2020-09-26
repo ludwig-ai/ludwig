@@ -27,6 +27,7 @@ from bayesmark.space import JointSpace
 from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, TYPE, \
     SPACE, FLOAT
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.strings_utils import str2bool
 
 logger = logging.getLogger(__name__)
 
@@ -121,9 +122,22 @@ class RandomSampler(HyperoptSampler):
                  **kwargs) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
-        for param_values in params_for_join_space.values():
+
+        cat_params_values_types = {}
+        for param_name, param_values in params_for_join_space.items():
             if param_values[TYPE] == CATEGORY:
                 param_values[TYPE] = 'cat'
+                values_str = []
+                values_types = {}
+                for value in param_values['values']:
+                    value_str = str(value)
+                    values_str.append(value_str)
+                    value_type = type(value)
+                    if value_type == bool:
+                        value_type = str2bool
+                    values_types[value_str] = value_type
+                param_values['values'] = values_str
+                cat_params_values_types[param_name] = values_types
             if param_values[TYPE] == FLOAT:
                 param_values[TYPE] = 'real'
             if param_values[TYPE] == INT or param_values[TYPE] == 'real':
@@ -134,6 +148,7 @@ class RandomSampler(HyperoptSampler):
                 del param_values['low']
                 del param_values['high']
 
+        self.cat_params_values_types = cat_params_values_types
         self.space = JointSpace(params_for_join_space)
         self.num_samples = num_samples
         self.samples = self._determine_samples()
@@ -153,6 +168,10 @@ class RandomSampler(HyperoptSampler):
         if self.sampled_so_far >= len(self.samples):
             raise IndexError()
         sample = self.samples[self.sampled_so_far]
+        for key in sample:
+            if key in self.cat_params_values_types:
+                values_types = self.cat_params_values_types[key]
+                sample[key] = values_types[sample[key]](sample[key])
         self.sampled_so_far += 1
         return sample
 
@@ -217,9 +236,22 @@ class PySOTSampler(HyperoptSampler):
                  **kwargs) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
-        for param_values in params_for_join_space.values():
+
+        cat_params_values_types = {}
+        for param_name, param_values in params_for_join_space.items():
             if param_values[TYPE] == CATEGORY:
                 param_values[TYPE] = 'cat'
+                values_str = []
+                values_types = {}
+                for value in param_values['values']:
+                    value_str = str(value)
+                    values_str.append(value_str)
+                    value_type = type(value)
+                    if value_type == bool:
+                        value_type = str2bool
+                    values_types[value_str] = value_type
+                param_values['values'] = values_str
+                cat_params_values_types[param_name] = values_types
             if param_values[TYPE] == FLOAT:
                 param_values[TYPE] = 'real'
             if param_values[TYPE] == INT or param_values[TYPE] == 'real':
@@ -230,6 +262,7 @@ class PySOTSampler(HyperoptSampler):
                 del param_values['low']
                 del param_values['high']
 
+        self.cat_params_values_types = cat_params_values_types
         self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
         self.sampled_so_far = 0
         self.num_samples = num_samples
@@ -239,10 +272,17 @@ class PySOTSampler(HyperoptSampler):
         if self.sampled_so_far >= self.num_samples:
             raise IndexError()
         sample = self.pysot_optimizer.suggest(n_suggestions=1)[0]
+        for key in sample:
+            if key in self.cat_params_values_types:
+                values_types = self.cat_params_values_types[key]
+                sample[key] = values_types[sample[key]](sample[key])
         self.sampled_so_far += 1
         return sample
 
     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
+        for key in sampled_parameters:
+            if key in self.cat_params_values_types:
+                sampled_parameters[key] = str(sampled_parameters[key])
         self.pysot_optimizer.observe([sampled_parameters], [metric_score])
 
     def finished(self) -> bool:

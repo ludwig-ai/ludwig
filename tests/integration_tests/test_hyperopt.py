@@ -48,7 +48,11 @@ HYPEROPT_CONFIG = {
         },
         "utterance.cell_type": {
             "type": "category",
-            "values": ["rnn", "gru", "lstm"]
+            "values": ["rnn", "gru"]
+        },
+        "utterance.bidirectional": {
+            "type": "category",
+            "values": [True, False]
         }
     },
     "goal": "minimize"
