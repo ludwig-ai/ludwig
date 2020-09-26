@@ -575,40 +575,39 @@ class LudwigModel:
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
             data_format: str = None,
-            batch_size=128,
-            skip_save_unprocessed_output=True,
-            skip_save_predictions=True,
-            skip_save_eval_stats=True,
-            collect_predictions=False,
-            collect_overall_stats=False,
-            output_directory='results',
-            return_type=pd.DataFrame,
-            debug=False,
+            batch_size: int = 128,
+            skip_save_unprocessed_output: bool = True,
+            skip_save_predictions: bool = True,
+            skip_save_eval_stats: bool = True,
+            collect_predictions: bool = False,
+            collect_overall_stats: bool = False,
+            output_directory: str = 'results',
+            return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+            debug: bool = False,
             **kwargs
-    ):
+    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
         """This function is used to predict the output variables given the
         input variables using the trained model and compute test statistics
         like performance measures, confusion matrices and the like.
 
         # Inputs
-        :param dataset: (Union[str, dict, pandas.DataFrame]) source containing the
-            entire dataset to be evaluated.
-        :param data_format: (str, default: 'None) string indicating the type of
+        :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
+            the entire dataset to be evaluated.
+        :param data_format: (str, default: 'None`) string indicating the type of
             dataset.  The string `'auto'` or `None` will automatically determine
             the type.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
-        :param skip_save_unprocessed_output: (boolean, default: True) if this
-            parameter is False):skip_save_unprocessed_output: If this parameter
-            is False, predictions and their probabilities are saved in both
-            raw unprocessed numpy files contaning tensors and as
-            postprocessed CSV files (one for each output feature). If this
-            parameter is True, only the CSV ones are saved and the numpy
-            ones are skipped.
+        :param skip_save_unprocessed_output: (bool, default: `True`) if this
+            parameter is `False`, predictions and their probabilities are saved
+            in both raw unprocessed numpy files containing tensors and as
+            postprocessed CSV files (one for each output feature).
+            If this parameter is `True`, only the CSV ones are saved and the
+            numpy ones are skipped.
         :param skip_save_predictions: (boolean, default: `True`) skips saving
-            test predictions CSV files
+            test predictions CSV files.
         :param skip_save_eval_stats: (boolean, default: `True`) skips saving
-            test statistics JSON file
+            test statistics JSON file.
         :param collect_predictions: (boolean, default: `False`) if `True`
             collects post-processed predictions during eval.
         :param collect_overall_stats: (boolean, default: False) if `True`
@@ -616,13 +615,17 @@ class LudwigModel:
         :param output_directory: (string, default: 'results') The directory that
             will contain the training statistics, the saved model and the
             training progress files.
-        :param return_type: (dict, pandas.DataFrame) i
+        :param return_type: (dict, pandas.DataFrame) indicates the format to
+            return predictions.
         :param debug: (boolean, default: False) If true turns on tfdbg
                 with inf_or_nan checks.
 
 
         # Return
-
+        :return: (`stats`, `postprocess_predictions`, `output_directory`)
+            `stats` dictionary containg the overall statistics,
+            `postprocess_predictions` contains predicted values,
+            `output_directory` is location where results are stored.
 
         """
         self._check_initialization()
@@ -708,11 +711,11 @@ class LudwigModel:
 
     def experiment(
             self,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
+            dataset: Union[str, dict, pd.DataFrame] = None,
+            training_set: Union[str, dict, pd.DataFrame] = None,
+            validation_set: Union[str, dict, pd.DataFrame] = None,
+            test_set: Union[str, dict, pd.DataFrame] = None,
+            training_set_metadata: dict = None,
             data_format=None,
             experiment_name='experiment',
             model_name='run',
@@ -737,7 +740,43 @@ class LudwigModel:
             random_seed=default_random_seed,
             debug=False,
             **kwargs
-    ):
+    ) -> Tuple[dict, dict, tuple, str]:
+        """
+
+        Args:
+            dataset:
+            training_set:
+            validation_set:
+            test_set:
+            training_set_metadata:
+            data_format:
+            experiment_name:
+            model_name:
+            model_load_path:
+            model_resume_path:
+            skip_save_training_description:
+            skip_save_training_statistics:
+            skip_save_model:
+            skip_save_progress:
+            skip_save_log:
+            skip_save_processed_input:
+            skip_save_unprocessed_output:
+            skip_save_predictions:
+            skip_save_eval_stats:
+            skip_collect_predictions:
+            skip_collect_overall_stats:
+            output_directory:
+            gpus:
+            gpu_memory_limit:
+            allow_parallel_threads:
+            use_horovod:
+            random_seed:
+            debug:
+            **kwargs:
+
+        Returns:
+
+        """
         (
             train_stats,
             preprocessed_data,
