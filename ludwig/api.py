@@ -1335,7 +1335,7 @@ def kfold_cross_validate(
             saving the description JSON file.
     :param skip_save_training_statistics: (bool, default: `False`) disables
             saving training statistics JSON file.
-    :param skip_save_model: (bool, default: 'False') disables
+    :param skip_save_model: (bool, default: `False`) disables
                saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
            the validation metric improves, but if the model is really big
@@ -1343,20 +1343,20 @@ def kfold_cross_validate(
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
            but the model will not be loadable later on.
-    :param skip_save_progress: (bool, default: 'False') disables saving
+    :param skip_save_progress: (bool, default: `False`) disables saving
            progress each epoch. By default Ludwig saves weights and stats
            after each epoch for enabling resuming of training, but if
            the model is really big that can be time consuming and will uses
            twice as much space, use this parameter to skip it, but training
            cannot be resumed later on.
-    :param skip_save_log: (bool, default: False) disables saving TensorBoard
+    :param skip_save_log: (bool, default: `False`) disables saving TensorBoard
            logs. By default Ludwig saves logs for the TensorBoard, but if it
            is not needed turning it off can slightly increase the
            overall speed.
-    :param skip_save_processed_input: (bool, default: False) if a CSV dataset
+    :param skip_save_processed_input: (bool, default: `False`) if a CSV dataset
             is provided it is
            preprocessed and then saved as an hdf5 and json to avoid running
-           the preprocessing again. If this parameter is False,
+           the preprocessing again. If this parameter is `False`,
            the hdf5 and json file are not saved.
     :param skip_save_predictions: (bool, default: `False`) skips saving test
             predictions CSV files.
@@ -1369,7 +1369,7 @@ def kfold_cross_validate(
     :param output_directory: (str, default: 'results') the directory that will
             contain the training statistics, the saved model and the
             training progress files.
-    :param random_seed: (int, default: ludwig default random seed) Random seed
+    :param random_seed: (int, default: `42`) Random seed
             used for weights initialization,
            splits and any other random function.
     :param gpus: (list, default: `None`) list of GPUs that are available
