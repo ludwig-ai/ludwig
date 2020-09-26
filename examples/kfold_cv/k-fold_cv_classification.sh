@@ -10,7 +10,7 @@ python prepare_classification_data_set.py
 #
 ludwig experiment \
   --model_definition_file model_definition.yaml \
-  --data_csv data/train.csv \
+  --dataset data/train.csv \
   --output_directory results \
   --logging_level 'error' \
   -kf 5

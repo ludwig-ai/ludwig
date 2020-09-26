@@ -50,12 +50,14 @@ from ludwig.models.predictor import Predictor, save_prediction_outputs, \
     calculate_overall_stats, print_evaluation_stats, save_evaluation_stats
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import save_json, load_json, generate_kfold_splits
+from ludwig.utils.data_utils import save_json, load_json, \
+    generate_kfold_splits, figure_data_format, DATAFRAME_FORMATS, \
+    DICT_FORMATS, CACHEABLE_FORMATS, external_data_reader_registry
 from ludwig.utils.horovod_utils import broadcast_return, configure_horovod, \
     set_on_master, \
     is_on_master
 from ludwig.utils.misc_utils import get_output_directory, get_file_names, \
-    get_experiment_description
+    get_experiment_description, get_from_registry, check_which_model_definition
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 import yaml
@@ -1292,8 +1294,9 @@ class LudwigModel:
 
 def kfold_cross_validate(
         num_folds: int,
-        model_definition: dict,
-        data_csv: str = None,
+        model_definition: Union[dict, str],
+        dataset: str = None,
+        data_format: str = None,
         skip_save_training_description:bool = False,
         skip_save_training_statistics: bool = False,
         skip_save_model: bool = False,
@@ -1319,12 +1322,15 @@ def kfold_cross_validate(
     # Inputs
 
     :param num_folds: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: `None`) a dictionary containing
-           information needed to build a model. Refer to the
+    :param model_definition: (Union[dict, str]) model specification
+           required to build a model. Parameter may be a dictionary or string
+           specifying the file path to a yaml configuraiton file.  Refer to the
            [User Guide](http://ludwig.ai/user_guide/#model-definition)
            for details.
-    :param data_csv: (str, default: `None`) file path to csv file containing
-            data to run the k-fold cross validation experiment
+    :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+        source containing the entire dataset to be used for k_fold processing.
+    :param data_format: (str, default: `None`) format to interpret data sources.
+        Will be inferred automatically if not specified.
     :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
     :param skip_save_training_statistics: (boolean, default: `False`) disables
@@ -1388,6 +1394,12 @@ def kfold_cross_validate(
     """
     set_on_master(use_horovod)
 
+    # if model definition is a path, convert to dictionary
+    if isinstance(model_definition, str):  # assume path
+        with open(model_definition, 'r') as def_file:
+            model_definition = yaml.safe_load(def_file)
+
+
     # check for k_fold
     if num_folds is None:
         raise ValueError(
@@ -1400,11 +1412,31 @@ def kfold_cross_validate(
     if not os.path.isdir(output_directory):
         os.mkdir(output_directory)
 
-    # read in data to split for the folds
-    data_df = pd.read_csv(data_csv)
+    # prepare data for k-fold processing
+    # use Ludwig's utility to facilitate creating a dataframe
+    # that is used as the basis for creating folds
 
-    # place each fold in a separate directory
-    data_dir = os.path.dirname(data_csv)
+    # determine data format of provided dataset
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(dataset)
+
+    # use appropriate reader to create dataframe
+    if data_format in DATAFRAME_FORMATS:
+        data_df = dataset
+        data_dir = os.getcwd()
+    elif data_format in DICT_FORMATS:
+        data_df = pd.DataFrame(dataset)
+        data_dir = os.getcwd()
+    elif data_format in CACHEABLE_FORMATS:
+        data_reader = get_from_registry(data_format,
+                                        external_data_reader_registry)
+        data_df = data_reader(dataset)
+        data_dir = os.path.dirname(dataset)
+    else:
+        ValueError(
+            "{} format is not supported for k_fold_cross_validate()"
+            .format(data_format)
+        )
 
     kfold_cv_stats = {}
     kfold_split_indices = {}

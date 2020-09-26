@@ -638,3 +638,21 @@ def is_model_dir(path: str) -> bool:
         if weights_files_count >= 2:
             is_model_dir = True
     return is_model_dir
+
+
+external_data_reader_registry = {
+    **{fmt: read_csv for fmt in CSV_FORMATS},
+    **{fmt: read_tsv for fmt in TSV_FORMATS},
+    **{fmt: read_json for fmt in JSON_FORMATS},
+    **{fmt: read_jsonl for fmt in JSONL_FORMATS},
+    **{fmt: read_excel for fmt in EXCEL_FORMATS},
+    **{fmt: read_parquet for fmt in PARQUET_FORMATS},
+    **{fmt: read_pickle for fmt in PICKLE_FORMATS},
+    **{fmt: read_fwf for fmt in FWF_FORMATS},
+    **{fmt: read_feather for fmt in FEATHER_FORMATS},
+    **{fmt: read_html for fmt in HTML_FORMATS},
+    **{fmt: read_orc for fmt in ORC_FORMATS},
+    **{fmt: read_sas for fmt in SAS_FORMATS},
+    **{fmt: read_spss for fmt in SPSS_FORMATS},
+    **{fmt: read_stata for fmt in STATA_FORMATS}
+}

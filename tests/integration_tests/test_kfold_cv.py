@@ -152,7 +152,7 @@ def test_kfold_cv_cli(features_to_use: FeaturesToUse):
         kfold_cross_validate_cli(
             k_fold=num_folds,
             model_definition_file=model_definition_fp,
-            data_csv=training_data_fp,
+            dataset=training_data_fp,
             output_directory=results_dir,
             logging_level='warn'
         )
@@ -219,7 +219,7 @@ def test_kfold_cv_api_from_file():
         ) = kfold_cross_validate(
             3,
             model_definition=model_definition_fp,
-            data_csv=training_data_fp
+            dataset=training_data_fp
         )
 
         # correct structure for results from kfold cv
@@ -270,7 +270,7 @@ def test_kfold_cv_api_in_memory():
         ) = kfold_cross_validate(
             3,
             model_definition=model_definition,
-            data_csv=training_data_fp
+            dataset=training_data_fp
         )
 
         # correct structure for results from kfold cv
