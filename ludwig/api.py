@@ -162,8 +162,13 @@ class LudwigModel:
             Intermediate preprocess structure containing the mappings of the input
             CSV created the first time a CSV file is used in the same
             directory with the same name and a '.json' extension.
-        :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred
-               automatically if not specified.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'hdf5'` (cache file produced during previous training)
+            `, 'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.
         :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
             source containing the entire dataset to be used in the experiment.
             If it has a split column, it will be used for splitting (0 for train,
@@ -180,8 +185,13 @@ class LudwigModel:
             Intermediate preprocess structure containing the mappings of the input
             CSV created the first time a CSV file is used in the same
             directory with the same name and a '.json' extension.
-        :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred
-               automatically if not specified.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'hdf5'` (cache file produced during previous training)
+            `, 'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.
         :param experiment_name: (str, default: `'experiment'`) name for
             the experiment.
         :param model_name: (str, default: `'run'`) name of the model that is
@@ -469,8 +479,12 @@ class LudwigModel:
             CSV created the first time a CSV file is used in the same
             directory with the same name and a '.json' extension.
         :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred
-            automatically if not specified.
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'hdf5'` (cache file produced during previous training)
+            `, 'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -534,9 +548,13 @@ class LudwigModel:
         # Inputs
         :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
             the entire dataset to be evaluated.
-        :param data_format: (str, default: 'None`) string indicating the type of
-            dataset.  The string `'auto'` or `None` will automatically determine
-            the type.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'hdf5'` (cache file produced during previous training)
+            `, 'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
@@ -659,9 +677,13 @@ class LudwigModel:
         # Inputs
         :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
             the entire dataset to be evaluated.
-        :param data_format: (str, default: 'None`) string indicating the type of
-            dataset.  The string `'auto'` or `None` will automatically determine
-            the type.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'hdf5'` (cache file produced during previous training)
+            `, 'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
@@ -830,8 +852,13 @@ class LudwigModel:
             Intermediate preprocess structure containing the mappings of the input
             CSV created the first time a CSV file is used in the same
             directory with the same name and a '.json' extension.
-        :param data_format: (str, default: `None`) format to interpret data sources. Will be inferred
-               automatically if not specified.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'hdf5'` (cache file produced during previous training)
+            `, 'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.
         :param experiment_name: (str, default: `'experiment'`) name for
             the experiment.
         :param model_name: (str, default: `'run'`) name of the model that is
@@ -1006,7 +1033,12 @@ class LudwigModel:
         :param dataset: (Union[str, Dict[str, list], pandas.DataFrame]) source
             containing the data to make predictions.
         :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'hdf5'` (cache file produced during previous training)
+            `, 'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param debug: (bool, default: `False`) if `True` turns on `tfdbg`
@@ -1329,8 +1361,13 @@ def kfold_cross_validate(
            for details.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used for k_fold processing.
-    :param data_format: (str, default: `None`) format to interpret data sources.
-        Will be inferred automatically if not specified.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
+            'html'` (file containing a single HTML `<table>`)`, 'json', 'jsonl',
+            'parquet', 'pickle'` (pickled Pandas DataFrame)`, 'sas', 'spss',
+            'stata', 'tsv'`.  Currenlty `hdf5` format is not supported for
+            k_fold cross validation.
     :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
     :param skip_save_training_statistics: (bool, default: `False`) disables
