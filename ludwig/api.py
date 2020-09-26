@@ -890,7 +890,9 @@ class LudwigModel:
             that can be time consuming if you do not want to keep
             the weights and just find out what performance can a model get
             with a set of hyperparameters, use this parameter to skip it,
-            but the model will not be loadable later on.
+            but the model will not be loadable later on and the returned model
+            will have the weights obtained at the end of training, instead of
+            the weights of the epoch with the best validation performance.
         :param skip_save_progress: (bool, default: `False`) disables saving
             progress each epoch. By default Ludwig saves weights and stats
             after each epoch for enabling resuming of training, but if
@@ -1383,13 +1385,15 @@ def kfold_cross_validate(
     :param skip_save_training_statistics: (bool, default: `False`) disables
             saving training statistics JSON file.
     :param skip_save_model: (bool, default: `False`) disables
-               saving model weights and hyperparameters each time the model
-           improves. By default Ludwig saves model weights after each epoch
-           the validation metric improves, but if the model is really big
-           that can be time consuming if you do not want to keep
-           the weights and just find out what performance can a model get
-           with a set of hyperparameters, use this parameter to skip it,
-           but the model will not be loadable later on.
+        saving model weights and hyperparameters each time the model
+        improves. By default Ludwig saves model weights after each epoch
+        the validation metric improves, but if the model is really big
+        that can be time consuming if you do not want to keep
+        the weights and just find out what performance can a model get
+        with a set of hyperparameters, use this parameter to skip it,
+        but the model will not be loadable later on and the returned model
+        will have the weights obtained at the end of training, instead of
+        the weights of the epoch with the best validation performance.
     :param skip_save_progress: (bool, default: `False`) disables saving
            progress each epoch. By default Ludwig saves weights and stats
            after each epoch for enabling resuming of training, but if
