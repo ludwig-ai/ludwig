@@ -158,10 +158,10 @@ class LudwigModel:
         :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
             source containing test data.
         :param training_set_metadata: (Union[str, dict], default: `None`)
-            metadata JSON file or loaded metadata.
-            Intermediate preprocess structure containing the mappings of the input
-            CSV created the first time a CSV file is used in the same
-            directory with the same name and a '.json' extension.
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
         :param data_format: (str, default: `None`) format to interpret data
             sources. Will be inferred automatically if not specified.  Valid
             formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
@@ -181,10 +181,10 @@ class LudwigModel:
         :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
             source containing test data.
         :param training_set_metadata: (Union[str, dict], default: `None`)
-            metadata JSON file or loaded metadata.
-            Intermediate preprocess structure containing the mappings of the input
-            CSV created the first time a CSV file is used in the same
-            directory with the same name and a '.json' extension.
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
         :param data_format: (str, default: `None`) format to interpret data
             sources. Will be inferred automatically if not specified.  Valid
             formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
@@ -226,13 +226,13 @@ class LudwigModel:
             TensorBoard logs. By default Ludwig saves logs for the TensorBoard,
             but if it is not needed turning it off can slightly increase the
             overall speed.
-        :param skip_save_processed_input: (bool, default: `False`) if a CSV
-            dataset is provided it is preprocessed and then saved as an hdf5
-            and json to avoid running the preprocessing again. if this
-            parameter is False, the hdf5 and json file are not saved.
+        :param skip_save_processed_input: (bool, default: `False`) if input
+            dataset is provided it is preprocessed and cached by saving an HDF5
+            and JSON files to avoid running the preprocessing again. If this
+            parameter is `False`, the HDF5 and JSON file are not saved.
         :param output_directory: (str, default: `'results'`) the directory that
-            will contain the training statistics, the saved model and
-            the training progress files.
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
         :param random_seed: (int, default: `42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -476,11 +476,11 @@ class LudwigModel:
         #Inputs
 
         :param dataset: (str, dict, DataFrame) source containing the training dataset.
-        :param training_set_metadata: (Union[str, dict], default: `None`) metadata
-            JSON file or loaded metadata.
-            Intermediate preprocess structure containing the mappings of the input
-            CSV created the first time a CSV file is used in the same
-            directory with the same name and a '.json' extension.
+        :param training_set_metadata: (Union[str, dict], default: `None`)
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
         :param data_format: (str, default: `None`) format to interpret data
             sources. Will be inferred automatically if not specified.  Valid
             formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
@@ -568,9 +568,9 @@ class LudwigModel:
             numpy ones are skipped.
         :param skip_save_predictions: (bool, default: `True`) skips saving
             test predictions CSV files.
-        :param output_directory: (str, default: 'results') The directory that
-            will contain the training statistics, the saved model and the
-            training progress files.
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
         :param return_type: (Union[dict, pandas.DataFrame], default: pd.DataFrame)
             indicates the format to
             return predictions.
@@ -703,9 +703,9 @@ class LudwigModel:
             collects post-processed predictions during eval.
         :param collect_overall_stats: (bool, default: False) if `True`
             collects overall stats during eval.
-        :param output_directory: (str, default: 'results') The directory that
-            will contain the training statistics, the saved model and the
-            training progress files.
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
         :param return_type: (Union[dict, pandas.DataFrame], default: pandas.DataFrame) indicates
             the format to
             return predictions.
@@ -851,10 +851,10 @@ class LudwigModel:
         :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
             source containing test data.
         :param training_set_metadata: (Union[str, dict], default: `None`)
-            metadata JSON file or loaded metadata.
-            Intermediate preprocess structure containing the mappings of the input
-            CSV created the first time a CSV file is used in the same
-            directory with the same name and a '.json' extension.
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
         :param data_format: (str, default: `None`) format to interpret data
             sources. Will be inferred automatically if not specified.  Valid
             formats are `'auto', 'csv', 'df', 'dict', 'excel', 'feather', 'fwf',
@@ -896,10 +896,10 @@ class LudwigModel:
             TensorBoard logs. By default Ludwig saves logs for the TensorBoard,
             but if it is not needed turning it off can slightly increase the
             overall speed.
-        :param skip_save_processed_input: (bool, default: `False`) if a CSV
-            dataset is provided it is preprocessed and then saved as an hdf5
-            and json to avoid running the preprocessing again. if this
-            parameter is False, the hdf5 and json file are not saved.
+        :param skip_save_processed_input: (bool, default: `False`) if input
+            dataset is provided it is preprocessed and cached by saving an HDF5
+            and JSON files to avoid running the preprocessing again. If this
+            parameter is `False`, the HDF5 and JSON file are not saved.
         :param skip_save_unprocessed_output: (bool, default: `False`) by default
             predictions and their probabilities are saved in both raw
             unprocessed numpy files containing tensors and as postprocessed
@@ -914,8 +914,8 @@ class LudwigModel:
         :param skip_collect_overall_stats: (bool, default: `False`) skips
             collecting overall stats during eval.
         :param output_directory: (str, default: `'results'`) the directory that
-            will contain the training statistics, the saved model and
-            the training progress files.
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
         :param gpus: (list, default: `None`) list of GPUs that are available
             for training.
         :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
@@ -1393,11 +1393,10 @@ def kfold_cross_validate(
            logs. By default Ludwig saves logs for the TensorBoard, but if it
            is not needed turning it off can slightly increase the
            overall speed.
-    :param skip_save_processed_input: (bool, default: `False`) if a CSV dataset
-            is provided it is
-           preprocessed and then saved as an hdf5 and json to avoid running
-           the preprocessing again. If this parameter is `False`,
-           the hdf5 and json file are not saved.
+    :param skip_save_processed_input: (bool, default: `False`) if input
+        dataset is provided it is preprocessed and cached by saving an HDF5
+        and JSON files to avoid running the preprocessing again. If this
+        parameter is `False`, the HDF5 and JSON file are not saved.
     :param skip_save_predictions: (bool, default: `False`) skips saving test
             predictions CSV files.
     :param skip_save_eval_stats: (bool, default: `False`) skips saving test
@@ -1406,9 +1405,9 @@ def kfold_cross_validate(
             post-processed predictions during eval.
     :param skip_collect_overall_stats: (bool, default: `False`) skips collecting
             overall stats during eval.
-    :param output_directory: (str, default: 'results') the directory that will
-            contain the training statistics, the saved model and the
-            training progress files.
+    :param output_directory: (str, default: `'results'`) the directory that
+        will contain the training statistics, TensorBoard logs, the saved
+        model and the training progress files.
     :param random_seed: (int, default: `42`) Random seed
             used for weights initialization,
            splits and any other random function.
