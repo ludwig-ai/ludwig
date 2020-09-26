@@ -248,8 +248,8 @@ class LudwigModel:
         # Return
 
         :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
-            `(train_stats, preprocessed_data, output_directory)`.
-            `train_stats` is a dictionary of training statistics for each
+            `(train_statistics, preprocessed_data, output_directory)`.
+            `train_statistics` is a dictionary of training statistics for each
             output feature containing loss and metrics values for each epoch.
             `preprocessed_data` is the tuple containing these three data sets
             `(training_set, validation_set, test_set)`.  `output_directory`
@@ -465,7 +465,7 @@ class LudwigModel:
 
     def train_online(
             self,
-            dataset: str,
+            dataset: Union[str, dict, pd.DataFrame],
             training_set_metadata: Union[str, dict] = None,
             data_format: str = 'auto',
             random_seed: int = default_random_seed,
@@ -475,7 +475,11 @@ class LudwigModel:
 
         #Inputs
 
-        :param dataset: (str, dict, DataFrame) source containing the training dataset.
+        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing the entire dataset to be used in the experiment.
+            If it has a split column, it will be used for splitting (0 for train,
+            1 for validation, 2 for test), otherwise the dataset will be
+            randomly split.
         :param training_set_metadata: (Union[str, dict], default: `None`)
             metadata JSON file or loaded metadata.  Intermediate preprocess
             structure containing the mappings of the input
@@ -579,8 +583,8 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[Union[dict, pd.DataFrame], str]) `(postproc_predictions, output_directory)`
-            `postproc_predictions` predicitons from the provided dataset,
+        :return: (Tuple[Union[dict, pd.DataFrame], str]) `(predictions, output_directory)`
+            `predictions` predictions from the provided dataset,
             `output_directory` filepath string to where data was stored.
 
         """
@@ -930,10 +934,12 @@ class LudwigModel:
             `inf_or_nan` checks.
 
         # Return
-        :return: (Tuple[dict, dict, tuple, str)) `(test_results, train_stats, preprocessed_data, output_directory)`
-            `test_results` dictionary with
-            overall statistcs on the test_set, `train_stats` dictionary with
-            overall training statistics,
+        :return: (Tuple[dict, dict, tuple, str)) `(evaluation_results, training_stats, preprocessed_data, output_directory)`
+            `evaluation_results` dictionary with evaluation performance
+                statistics on the test_set,
+            `training_stats` is a dictionary of training statistics for
+                each output
+            feature containing loss and metrics values for each epoch,
             `preprocessed_data` tuple containing preprocessed
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
@@ -1233,7 +1239,7 @@ class LudwigModel:
     def save_model_definition(
         self,
         save_path: str
-    ):
+    ) -> None:
         """
         Save model definition to specoficed location.
 
