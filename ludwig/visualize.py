@@ -2337,11 +2337,11 @@ def binary_threshold_vs_metric(
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show confidence of the model against metric for the specified output_feature_name.
 
-    For each metric specified in metrics (options are f1, precision, recall,
-    accuracy), this visualization produces a line chart plotting a threshold
+    For each metric specified in metrics (options are `f1`, `precision`, `recall`,
+    `accuracy`), this visualization produces a line chart plotting a threshold
     on  the confidence of the model against the metric for the specified
     output_feature_name.  If output_feature_name is a category feature,
     positive_label, which is specified as the numeric encoded value, indicates
@@ -2564,15 +2564,15 @@ def roc_curves_from_test_statistics(
 
 
 def calibration_1_vs_all(
-        probabilities_per_model,
-        ground_truth,
-        top_n_classes,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_n_classes: List[int],
+        labels_limit: int,
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show models probability of predictions for the specified output_feature_name.
 
     For each class or each of the k most frequent classes if top_k is
@@ -2591,15 +2591,20 @@ def calibration_1_vs_all(
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_n_classes: (list) List containing the number of classes to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # String
 
