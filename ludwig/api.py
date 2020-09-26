@@ -77,12 +77,12 @@ class LudwigModel:
                  gpu_memory_limit=None,
                  allow_parallel_threads=True):
         """
-        :param model_definition: (dict, string) in-memory representation of model definition
+        :param model_definition: (dict, str) in-memory representation of model definition
                or string path to the saved JSON model definition file.
         :param logging_level: Log level that will be sent to stderr.
         :param use_horovod: (bool) use Horovod for distributed training. Will be set
                automatically if `horovodrun` is used to launch the training script.
-        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
+        :param gpus: (str, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
               per GPU device.
@@ -462,7 +462,7 @@ class LudwigModel:
 
         #Inputs
 
-        :param dataset: (string, dict, DataFrame) source containing the training dataset.
+        :param dataset: (str, dict, DataFrame) source containing the training dataset.
         :param training_set_metadata: (Union[str, dict], default: `None`) metadata
             JSON file or loaded metadata.
             Intermediate preprocess structure containing the mappings of the input
@@ -474,7 +474,7 @@ class LudwigModel:
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
-        :param debug: (boolean, default: `False`) If `True` turns on `tfdbg`
+        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan` checks.
 
         # Return
@@ -545,15 +545,15 @@ class LudwigModel:
             postprocessed CSV files (one for each output feature).
             If this parameter is `True`, only the CSV ones are saved and the
             numpy ones are skipped.
-        :param skip_save_predictions: (boolean, default: `True`) skips saving
+        :param skip_save_predictions: (bool, default: `True`) skips saving
             test predictions CSV files.
-        :param output_directory: (string, default: 'results') The directory that
+        :param output_directory: (str, default: 'results') The directory that
             will contain the training statistics, the saved model and the
             training progress files.
         :param return_type: (Union[dict, pandas.DataFrame], default: pd.DataFrame)
             indicates the format to
             return predictions.
-        :param debug: (boolean, default: `False`) If `True` turns on `tfdbg`
+        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan checks`.
 
         # Return
@@ -670,21 +670,21 @@ class LudwigModel:
             postprocessed CSV files (one for each output feature).
             If this parameter is `True`, only the CSV ones are saved and the
             numpy ones are skipped.
-        :param skip_save_predictions: (boolean, default: `True`) skips saving
+        :param skip_save_predictions: (bool, default: `True`) skips saving
             test predictions CSV files.
-        :param skip_save_eval_stats: (boolean, default: `True`) skips saving
+        :param skip_save_eval_stats: (bool, default: `True`) skips saving
             test statistics JSON file.
-        :param collect_predictions: (boolean, default: `False`) if `True`
+        :param collect_predictions: (bool, default: `False`) if `True`
             collects post-processed predictions during eval.
-        :param collect_overall_stats: (boolean, default: False) if `True`
+        :param collect_overall_stats: (bool, default: False) if `True`
             collects overall stats during eval.
-        :param output_directory: (string, default: 'results') The directory that
+        :param output_directory: (str, default: 'results') The directory that
             will contain the training statistics, the saved model and the
             training progress files.
         :param return_type: (Union[dict, pandas.DataFrame], default: pandas.DataFrame) indicates
             the format to
             return predictions.
-        :param debug: (boolean, default: `False`) If `True` turns on `tfdbg`
+        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan` checks.
 
 
@@ -1009,7 +1009,7 @@ class LudwigModel:
             sources. Will be inferred automatically if not specified.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
-        :param debug: (boolean, default: `False`) if `True` turns on `tfdbg`
+        :param debug: (bool, default: `False`) if `True` turns on `tfdbg`
             with `inf_or_nan` checks.
 
         # Return
@@ -1333,7 +1333,7 @@ def kfold_cross_validate(
         Will be inferred automatically if not specified.
     :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
-    :param skip_save_training_statistics: (boolean, default: `False`) disables
+    :param skip_save_training_statistics: (bool, default: `False`) disables
             saving training statistics JSON file.
     :param skip_save_model: (bool, default: 'False') disables
                saving model weights and hyperparameters each time the model
@@ -1353,7 +1353,7 @@ def kfold_cross_validate(
            logs. By default Ludwig saves logs for the TensorBoard, but if it
            is not needed turning it off can slightly increase the
            overall speed.
-    :param skip_save_processed_input: (boolean, default: False) if a CSV dataset
+    :param skip_save_processed_input: (bool, default: False) if a CSV dataset
             is provided it is
            preprocessed and then saved as an hdf5 and json to avoid running
            the preprocessing again. If this parameter is False,
@@ -1380,7 +1380,7 @@ def kfold_cross_validate(
             use multithreading parallelism
            to improve performance at the cost of determinism.
     :param use_horovod: (bool, default: `None`) flag for using horovod
-    :param debug: (boolean, default: `False`) If `True` turns on tfdbg
+    :param debug: (bool, default: `False`) If `True` turns on tfdbg
             with `inf_or_nan` checks.
     :param logging_level: (int, default: INFO) log level to send to stderr.
 
