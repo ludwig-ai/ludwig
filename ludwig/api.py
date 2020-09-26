@@ -874,10 +874,11 @@ class LudwigModel:
             loaded model will be used as initialization
             (useful for transfer learning).
         :param model_resume_path: (str, default: `None`) resumes training of
-            the model from the path specified. The difference with
-            model_load_path is that also training statistics like the current
-            epoch and the loss and performance so far are also resumed
-            effectively continuing a previously interrupted training process.
+            the model from the path specified. The model definition is restored.
+            In addition to model definition, training statistics and loss for
+            epoch and the state of the optimizer are restored such that
+            training can be effectively continued from a previously interrupted
+            training process.
         :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
         :param skip_save_training_statistics: (bool, default: `False`) disables
