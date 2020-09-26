@@ -978,29 +978,34 @@ class LudwigModel:
         return activations
 
     @staticmethod
-    def load(model_dir,
-             logging_level=logging.ERROR,
-             use_horovod=None,
-             gpus=None,
-             gpu_memory_limit=None,
-             allow_parallel_threads=True):
+    def load(
+        model_dir: str,
+        logging_level: int = logging.ERROR,
+        use_horovod: bool = None,
+        gpus: Union[str, int, List[int]] = None,
+        gpu_memory_limit: int = None,
+        allow_parallel_threads: bool = True
+    ) -> 'LudwigModel':  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models
 
         # Inputs
 
-        :param logging_level: Log level that will be sent to stderr.
-        :param use_horovod: (bool) use Horovod for distributed training. Will be set
-               automatically if `horovodrun` is used to launch the training script.
-        :param model_dir: (string) path to the directory containing the model.
+        :param model_dir: (str) path to the directory containing the model.
                If the model was trained by the `train` or `experiment` command,
                the model is in `results_dir/experiment_dir/model`.
-        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
-               same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
-              per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
-               multithreading parallelism to improve performance at the cost of
-               determinism.
+        :param logging_level: (int, default: 40) log level that will be sent to
+            stderr.
+        :param use_horovod: (bool, default: `None`) use Horovod for distributed
+            training. Will be set
+            automatically if `horovodrun` is used to launch the training script.
+        :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
+            to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
+            allocate per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+            to use
+            multithreading parallelism to improve performance at the cost of
+            determinism.
 
         # Return
 
