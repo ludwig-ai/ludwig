@@ -197,10 +197,11 @@ class LudwigModel:
         :param model_name: (str, default: `'run'`) name of the model that is
             being used.
         :param model_resume_path: (str, default: `None`) resumes training of
-            the model from the path specified. The difference with
-            model_load_path is that also training statistics like the current
-            epoch and the loss and performance so far are also resumed
-            effectively continuing a previously interrupted training process.
+            the model from the path specified. The model definition is restored.
+            In addition to model definition, training statistics and loss for
+            epoch and the state of the optimizer are restored such that
+            training can be effectively continued from a previously interrupted
+            training process.
         :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
         :param skip_save_training_statistics: (bool, default: `False`) disables
@@ -212,7 +213,9 @@ class LudwigModel:
             that can be time consuming if you do not want to keep
             the weights and just find out what performance can a model get
             with a set of hyperparameters, use this parameter to skip it,
-            but the model will not be loadable later on.
+            but the model will not be loadable later on and the returned model
+            will have the weights obtained at the end of training, instead of
+            the weights of the epoch with the best validation performance.
         :param skip_save_progress: (bool, default: `False`) disables saving
             progress each epoch. By default Ludwig saves weights and stats
             after each epoch for enabling resuming of training, but if
