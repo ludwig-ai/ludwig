@@ -26,7 +26,7 @@ import logging
 import os
 import tempfile
 from pprint import pformat
-from typing import List, Union, Dict, Tuple
+from typing import List, Union, Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -57,7 +57,7 @@ from ludwig.utils.horovod_utils import broadcast_return, configure_horovod, \
     set_on_master, \
     is_on_master
 from ludwig.utils.misc_utils import get_output_directory, get_file_names, \
-    get_experiment_description, get_from_registry, check_which_model_definition
+    get_experiment_description, get_from_registry
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 import yaml
@@ -807,7 +807,7 @@ class LudwigModel:
             random_seed: int =default_random_seed,
             debug: bool = False,
             **kwargs
-    ) -> Tuple[dict, dict, tuple, str]:
+    ) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
         """
         Trains a model on a dataset's training and validation splits and
         uses it to predict on the test split.
@@ -1324,7 +1324,7 @@ def kfold_cross_validate(
     :param num_folds: (int) number of folds to create for the cross-validation
     :param model_definition: (Union[dict, str]) model specification
            required to build a model. Parameter may be a dictionary or string
-           specifying the file path to a yaml configuraiton file.  Refer to the
+           specifying the file path to a yaml configuration file.  Refer to the
            [User Guide](http://ludwig.ai/user_guide/#model-definition)
            for details.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
