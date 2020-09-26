@@ -18,7 +18,6 @@ import os
 import shutil
 import uuid
 from collections import namedtuple
-import tempfile
 
 import pandas as pd
 import pytest
@@ -564,12 +563,12 @@ def test_experiment_dataset_formats(data_format):
 
     # define Ludwig model
     model = LudwigModel(
-        model_definition=model_definition,
-        random_seed=default_random_seed
+        model_definition=model_definition
     )
     model.train(
         dataset=dataset_to_use,
-        training_set_metadata=training_set_metadata
+        training_set_metadata=training_set_metadata,
+        random_seed=default_random_seed
     )
 
     # # run functions with the specified data format
