@@ -718,8 +718,9 @@ class LudwigModel:
 
 
         # Return
-        :return: (`stats`, `postprocess_predictions`, `output_directory`)
-            `stats` dictionary containg the overall statistics,
+        :return: (`evaluation_statistics`, `predictions`, `output_directory`)
+            `evaluation_statistics` dictionary containing evaluation performance
+                statistics,
             `postprocess_predictions` contains predicted values,
             `output_directory` is location where results are stored.
 
