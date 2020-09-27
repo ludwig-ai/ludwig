@@ -1731,7 +1731,7 @@ def confidence_thresholding_data_vs_acc(
         file_format: str = 'pdf',
         **kwargs
 ) -> None:
-    """Show models comparision of confidence treshold data vs accuracy.
+    """Show models comparison of confidence threshold data vs accuracy.
 
     For each model it produces a line indicating the accuracy of the model
     and the data coverage while increasing a threshold on the probabilities
