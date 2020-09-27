@@ -2614,27 +2614,33 @@ def roc_curves(
 
 
 def roc_curves_from_test_statistics(
-        test_stats_per_model,
-        output_feature_name,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        output_feature_name: str,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show the roc curves for the specified models output binary output_feature_name.
+) -> None:
+    """Show the roc curves for the specified models output binary
+    `output_feature_name`.
 
-    This visualization uses the output_feature_name, test_statistics and model_names
-    parameters. output_feature_name needs to be binary feature. This visualization produces a
-    line chart plotting the roc curves for the specified output_feature_name.
+    This visualization uses `output_feature_name`, `test_stats_per_model` and
+    `model_names` parameters. `output_feature_name` needs to be binary feature.
+    This visualization produces a line chart plotting the roc curves for the
+    specified `output_feature_name`.
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+        performance statistics.
+    :param output_feature_name: (str) name of the output feature to use
+        for the visualization.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
