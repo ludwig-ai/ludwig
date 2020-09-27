@@ -2299,31 +2299,37 @@ def confidence_thresholding_2thresholds_2d(
 
 
 def confidence_thresholding_2thresholds_3d(
-        probabilities_per_model,
-        ground_truths,
-        threshold_output_feature_names,
-        labels_limit,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truths: np.array,
+        threshold_output_feature_names: List[str],
+        labels_limit: int,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show 3d confidence trethreshold data vs accuracy for two output_feature_name thresholds
+) -> None:
+    """Show 3d confidence threshold data vs accuracy for two output feature names.
 
     The plot shows the 3d surfaces displayed by
     confidence_thresholding_2thresholds_3d that have thresholds on the
-    confidence of the predictions of the two threshold_output_feature_names as x and y axes
-    and either the data coverage percentage or the accuracy as z axis.
+    confidence of the predictions of the two `threshold_output_feature_names`
+    as x and y axes and either the data coverage percentage or the accuracy
+    as z axis.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truths: (list) List of NumPy Arrays containing ground truth data
-    :param threshold_output_feature_names: (list) List of output_feature_names for 2d threshold
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param threshold_output_feature_names: (List[str]) List containing two output
+        feature names for visualization.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
