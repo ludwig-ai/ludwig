@@ -1028,35 +1028,43 @@ def compare_classifiers_performance_from_pred(
 
 
 def compare_classifiers_performance_subset(
-        probabilities_per_model,
-        ground_truth,
-        top_n_classes,
-        labels_limit,
-        subset,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_n_classes: List[int],
+        labels_limit: (int),
+        subset: str,
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format:str = 'pdf',
         **kwargs
-):
-    """Produces model comparision barplot visualization from train subset.
+) -> None:
+    """Produces model comparison barplot visualization from train subset.
 
     For each model  it produces bars in a bar plot, one for each overall metric
      computed on the fly from the probabilities predictions for the
-     specified output_feature_name, considering only a subset of the full training set.
-     The way the subset is obtained is using the top_n_classes and
-     subset parameters.
+     specified `model_names`, considering only a subset of the full training set.
+     The way the subset is obtained is using the `top_n_classes` and
+     `subset` parameters.
 
      # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-    :param subset: () Type of the subset filtering
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_n_classes: (List[int]) list containing the number of classes
+        to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param subset: (str) string specifying type of subset filtering.  Valid
+        values are `ground_truth` or `predictions`.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
