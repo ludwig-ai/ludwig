@@ -2547,32 +2547,38 @@ def binary_threshold_vs_metric(
 
 
 def roc_curves(
-        probabilities_per_model,
-        ground_truth,
-        positive_label=1,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        positive_label: int = 1,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show the roc curves for the specified models output output_feature_name.
+) -> None:
+    """Show the roc curves for output features in the specified models.
 
     This visualization produces a line chart plotting the roc curves for the
-    specified output_feature_name. If output_feature_name is a category feature, positive_label indicates
-    which is the class to be considered positive class and all the others will
-    be considered negative. It needs to be an integer, to figure out the
-    association between classes and integers check the ground_truth_metadata
-    JSON file.
+    specified output feature name. If output feature name is a category feature,
+    `positive_label` indicates which is the class to be considered positive
+    class and all the others will be considered negative. `positive_label is
+    the encoded numeric value for category classes. The numeric value can be
+    determined by association between classes and integers captured in the
+    training metadata JSON file.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (list) List of NumPy Arrays containing ground truth data
-    :param positive_label: (string) Label of the positive class
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param positive_label: (int, default: `1`) numeric encoded value for the
+        positive class.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
