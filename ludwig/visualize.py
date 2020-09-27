@@ -19,6 +19,7 @@ import logging
 import os
 import sys
 from functools import partial
+from typing import List, Union, Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -670,13 +671,13 @@ def frequency_vs_f1_cli(test_statistics, ground_truth_metadata, **kwargs):
 
 
 def learning_curves(
-        train_stats_per_model,
-        output_feature_name,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        train_stats_per_model: List[dict],
+        output_feature_name: Union[str, None],
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show how model metrics change over training and validation data epochs.
 
     For each model and for each output feature and metric of the model,
@@ -685,13 +686,16 @@ def learning_curves(
 
     # Inputs
 
-    :param train_stats_per_model: (list) List containing train statistics per model
-    :param output_feature_name: (string) Name of the output feature that is predicted
-           and for which is provided ground truth
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param train_stats_per_model: (List[dict]) list containing dictionary of
+        training statistics per model.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
     :return: (None)
@@ -744,14 +748,14 @@ def learning_curves(
 
 
 def compare_performance(
-        test_stats_per_model,
-        output_feature_name, model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        output_feature_name: str,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Produces model comparision barplot visualization for each overall metric
-
+) -> None:
+    """Produces model comparison barplot visualization for each overall metric
 
     For each model (in the aligned lists of test_statistics and model_names)
     it produces bars in a bar plot, one for each overall metric available
@@ -759,12 +763,16 @@ def compare_performance(
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+        performance statistics.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -841,32 +849,38 @@ def compare_performance(
 
 
 def compare_classifiers_performance_from_prob(
-        probabilities_per_model,
-        ground_truth,
-        top_n_classes,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_n_classes: List[int],
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Produces model comparision barplot visualization from probabilities.
+) -> None:
+    """Produces model comparison barplot visualization from probabilities.
 
     For each model it produces bars in a bar plot, one for each overall metric
     computed on the fly from the probabilities of predictions for the specified
-    output_feature_name.
+    `model_names`.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_n_classes: (List[int]) list containing the number of classes
+        to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -926,34 +940,41 @@ def compare_classifiers_performance_from_prob(
 
 
 def compare_classifiers_performance_from_pred(
-        predictions_per_model,
-        ground_truth,
-        metadata,
-        output_feature_name,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        predictions_per_model: List[list],
+        ground_truth: np.array,
+        metadata: dict,
+        output_feature_name: str,
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Produces model comparision barplot visualization from predictions.
+) -> None:
+    """Produces model comparison barplot visualization from predictions.
 
     For each model it produces bars in a bar plot, one for each overall metric
-    computed on the fly from the predictions for the specified output_feature_name.
+    computed on the fly from the predictions for the specified
+    `model_names`.
 
     # Inputs
 
-    :param predictions_per_model: (list) List containing the model predictions
-           for the specified output_feature_name
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param metadata: (dict) Model's input metadata
-    :param output_feature_name: output_feature_name containing ground truth
-    :param labels_limit: Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: List of the names of the models to use as labels.
-    :param output_directory: Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: File format of output plots - pdf or png
+    :param predictions_per_model: (List[list]) list containing the model
+        predictions for the specified output_feature_name.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (str) name of the output feature to use
+        for the visualization.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1014,35 +1035,43 @@ def compare_classifiers_performance_from_pred(
 
 
 def compare_classifiers_performance_subset(
-        probabilities_per_model,
-        ground_truth,
-        top_n_classes,
-        labels_limit,
-        subset,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_n_classes: List[int],
+        labels_limit: (int),
+        subset: str,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format:str = 'pdf',
         **kwargs
-):
-    """Produces model comparision barplot visualization from train subset.
+) -> None:
+    """Produces model comparison barplot visualization from train subset.
 
     For each model  it produces bars in a bar plot, one for each overall metric
      computed on the fly from the probabilities predictions for the
-     specified output_feature_name, considering only a subset of the full training set.
-     The way the subset is obtained is using the top_n_classes and
-     subset parameters.
+     specified `model_names`, considering only a subset of the full training set.
+     The way the subset is obtained is using the `top_n_classes` and
+     `subset` parameters.
 
      # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-    :param subset: () Type of the subset filtering
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_n_classes: (List[int]) list containing the number of classes
+        to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param subset: (str) string specifying type of subset filtering.  Valid
+        values are `ground_truth` or `predictions`.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1131,33 +1160,38 @@ def compare_classifiers_performance_subset(
 
 
 def compare_classifiers_performance_changing_k(
-        probabilities_per_model,
-        ground_truth,
-        top_k,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_k: int,
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Produce lineplot that show Hits@K metric while k goes from 1 to top_k.
-
+) -> None:
+    """Produce lineplot that show Hits@K metric while k goes from 1 to `top_k`.
 
     For each model it produces a line plot that shows the Hits@K metric
     (that counts a prediction as correct if the model produces it among the
-    first k) while changing k from 1 to top_k for the specified output_feature_name.
+    first k) while changing k from 1 to top_k for the specified
+    `output_feature_name`.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_k: (int) Number of elements in the ranklist to consider
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_k: (int) number of elements in the ranklist to consider.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1203,15 +1237,15 @@ def compare_classifiers_performance_changing_k(
 
 
 def compare_classifiers_multiclass_multimetric(
-        test_stats_per_model,
-        metadata,
-        output_feature_name,
-        top_n_classes,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        metadata: dict,
+        output_feature_name: str,
+        top_n_classes: List[int],
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show the precision, recall and F1 of the model for the specified output_feature_name.
 
     For each model it produces four plots that show the precision,
@@ -1219,14 +1253,20 @@ def compare_classifiers_multiclass_multimetric(
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param metadata: (dict) Model's input metadata
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) list containing dictionary of
+        evaluation performance statistics
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param top_n_classes: (List[int]) list containing the number of classes
+        to plot.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
     :return: (None)
@@ -1380,26 +1420,31 @@ def compare_classifiers_multiclass_multimetric(
 
 
 def compare_classifiers_predictions(
-        predictions_per_model,
-        ground_truth,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        predictions_per_model: List[list],
+        ground_truth: np.array,
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show two models comparision of their output_feature_name predictions.
+) -> None:
+    """Show two models comparison of their output_feature_name predictions.
 
     # Inputs
 
-    :param predictions_per_model: (list) List containing the model predictions
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param predictions_per_model: (List[list]) list containing the model
+        predictions for the specified output_feature_name.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1514,29 +1559,36 @@ def compare_classifiers_predictions(
 
 
 def compare_classifiers_predictions_distribution(
-        predictions_per_model,
-        ground_truth,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        predictions_per_model: List[list],
+        ground_truth: np.array,
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show comparision of models predictions distribution for 10 output_feature_name classes
+) -> None:
+    """Show comparision of models predictions distribution for 10
+    output_feature_name classes
 
     This visualization produces a radar plot comparing the distributions of
-    predictions of the models for the first 10 classes of the specified output_feature_name.
+    predictions of the models for the first 10 classes of the specified
+    output_feature_name.
 
     # Inputs
 
-    :param predictions_per_model: (list) List containing the model predictions
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param predictions_per_model: (List[list]) list containing the model
+        predictions for the specified output_feature_name.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1580,14 +1632,14 @@ def compare_classifiers_predictions_distribution(
 
 
 def confidence_thresholding(
-        probabilities_per_model,
-        ground_truth,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory:str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show models accuracy and data coverage while increasing treshold
 
     For each model it produces a pair of lines indicating the accuracy of
@@ -1596,14 +1648,19 @@ def confidence_thresholding(
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (sting) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1666,15 +1723,15 @@ def confidence_thresholding(
 
 
 def confidence_thresholding_data_vs_acc(
-        probabilities_per_model,
-        ground_truth,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show models comparision of confidence treshold data vs accuracy.
+) -> None:
+    """Show models comparison of confidence threshold data vs accuracy.
 
     For each model it produces a line indicating the accuracy of the model
     and the data coverage while increasing a threshold on the probabilities
@@ -1685,14 +1742,19 @@ def confidence_thresholding_data_vs_acc(
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param labels_limit:(int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
     :return: (None)
@@ -1751,48 +1813,56 @@ def confidence_thresholding_data_vs_acc(
 
 
 def confidence_thresholding_data_vs_acc_subset(
-        probabilities_per_model,
-        ground_truth,
-        top_n_classes,
-        labels_limit,
-        subset,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_n_classes: List[int],
+        labels_limit: int,
+        subset: str,
+        model_names: Union[str, List[str]]=None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show models comparision of confidence treshold data vs accuracy on a
+) -> None:
+    """Show models comparison of confidence threshold data vs accuracy on a
     subset of data.
 
     For each model it produces a line indicating the accuracy of the model
     and the data coverage while increasing a threshold on the probabilities
     of predictions for the specified output_feature_name, considering only a subset of the
-    full training set. The way the subset is obtained is using the top_n_classes
+    full training set. The way the subset is obtained is using the `top_n_classes`
     and subset parameters.
      The difference with confidence_thresholding is that it uses two axes
      instead of three, not visualizing the threshold and having coverage as
      x axis instead of the threshold.
 
-    If the values of subset is ground_truth, then only datapoints where the
+    If the values of subset is `ground_truth`, then only datapoints where the
     ground truth class is within the top n most frequent ones will be
     considered  as test set, and the percentage of datapoints that have been
     kept  from the original set will be displayed. If the values of subset is
-     predictions, then only datapoints where the the model predicts a class
+     `predictions`, then only datapoints where the the model predicts a class
      that is within the top n most frequent ones will be considered as test set,
      and the percentage of datapoints that have been kept from the original set
      will be displayed for each model.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-    :param subset: (string) Type of the subset filtering
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_n_classes: (List[int]) list containing the number of classes
+        to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param subset: (str) string specifying type of subset filtering.  Valid
+        values are `ground_truth` or `predictions`.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1876,19 +1946,19 @@ def confidence_thresholding_data_vs_acc_subset(
 
 
 def confidence_thresholding_data_vs_acc_subset_per_class(
-        probabilities_per_model,
-        ground_truth,
-        metadata,
-        output_feature_name,
-        top_n_classes,
-        labels_limit,
-        subset,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        metadata: dict,
+        output_feature_name: str,
+        top_n_classes: Union[int, List[int]],
+        labels_limit: int,
+        subset: str,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show models comparision of confidence treshold data vs accuracy on a
+) -> None:
+    """Show models comparison of confidence threshold data vs accuracy on a
     subset of data per class in top n classes.
 
     For each model (in the aligned lists of probabilities and model_names)
@@ -1896,16 +1966,16 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     coverage while increasing a threshold on the probabilities of
     predictions for the specified output_feature_name, considering only a subset of the
     full training set. The way the subset is obtained is using the
-    top_n_classes  and subset parameters.  The difference with
+    `top_n_classes`  and `subset` parameters.  The difference with
     confidence_thresholding is that it uses two axes instead of three,
     not visualizing the threshold and having coverage as x axis instead of
     the  threshold.
 
-    If the values of subset is ground_truth, then only datapoints where the
+    If the values of subset is `ground_truth`, then only datapoints where the
     ground truth class is within the top n most frequent ones will be
     considered  as test set, and the percentage of datapoints that have been
     kept from the original set will be displayed. If the values of subset is
-    predictions, then only datapoints where the the model predicts a class that
+    `predictions`, then only datapoints where the the model predicts a class that
     is within the top n most frequent ones will be considered as test set, and
     the percentage of datapoints that have been kept from the original set will
     be displayed for each model.
@@ -1915,16 +1985,27 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param metadata: (dict) Model's input metadata
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-    :param subset: (string) Type of the subset filtering
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (str) name of the output feature to use
+        for the visualization.
+    :param top_n_classes: (Union[int, List[int]]) number of top classes or list
+        containing the number of top classes to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param subset: (str) string specifying type of subset filtering.  Valid
+        values are `ground_truth` or `predictions`.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
     :return: (None)
@@ -2015,35 +2096,42 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
 
 def confidence_thresholding_2thresholds_2d(
-        probabilities_per_model,
-        ground_truths,
-        threshold_output_feature_names,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truths: np.array,
+        threshold_output_feature_names: List[str],
+        labels_limit: int,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str =None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show confidence trethreshold data vs accuracy for two output_feature_name thresholds
+) -> None:
+    """Show confidence threshold data vs accuracy for two output feature names.
 
     The first plot shows several semi transparent lines. They summarize the
     3d surfaces displayed by confidence_thresholding_2thresholds_3d that have
     thresholds on the confidence of the predictions of the two
-    threshold_output_feature_names  as x and y axes and either the data coverage percentage or
+    `threshold_output_feature_names`  as x and y axes and either the data
+    coverage percentage or
     the accuracy as z axis. Each line represents a slice of the data
     coverage  surface projected onto the accuracy surface.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truths: (list) List of NumPy Arrays containing ground truth data
-    :param threshold_output_feature_names: (list) List of output_feature_names for 2d threshold
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (string) Name of the model to use as label.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param threshold_output_feature_names: (List[str]) List containing two output
+        feature names for visualization.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -2211,31 +2299,37 @@ def confidence_thresholding_2thresholds_2d(
 
 
 def confidence_thresholding_2thresholds_3d(
-        probabilities_per_model,
-        ground_truths,
-        threshold_output_feature_names,
-        labels_limit,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truths: np.array,
+        threshold_output_feature_names: List[str],
+        labels_limit: int,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show 3d confidence trethreshold data vs accuracy for two output_feature_name thresholds
+) -> None:
+    """Show 3d confidence threshold data vs accuracy for two output feature names.
 
     The plot shows the 3d surfaces displayed by
     confidence_thresholding_2thresholds_3d that have thresholds on the
-    confidence of the predictions of the two threshold_output_feature_names as x and y axes
-    and either the data coverage percentage or the accuracy as z axis.
+    confidence of the predictions of the two `threshold_output_feature_names`
+    as x and y axes and either the data coverage percentage or the accuracy
+    as z axis.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truths: (list) List of NumPy Arrays containing ground truth data
-    :param threshold_output_feature_names: (list) List of output_feature_names for 2d threshold
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param threshold_output_feature_names: (List[str]) List containing two output
+        feature names for visualization.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -2328,41 +2422,47 @@ def confidence_thresholding_2thresholds_3d(
 
 
 def binary_threshold_vs_metric(
-        probabilities_per_model,
-        ground_truth,
-        metrics,
-        positive_label=1,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        metrics: List[str],
+        positive_label: int = 1,
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show confidence of the model against metric for the specified output_feature_name.
 
-    For each metric specified in metrics (options are f1, precision, recall,
-    accuracy), this visualization produces a line chart plotting a threshold
+    For each metric specified in metrics (options are `f1`, `precision`, `recall`,
+    `accuracy`), this visualization produces a line chart plotting a threshold
     on  the confidence of the model against the metric for the specified
-    output_feature_name.  If output_feature_name is a category feature, positive_label indicates which is
-    the class to be considered positive class and all the others will be
-    considered negative. It needs to be an integer, to figure out the
-    association between classes and integers check the ground_truth_metadata
-    JSON file.
+    output_feature_name.  If output_feature_name is a category feature,
+    positive_label, which is specified as the numeric encoded value, indicates
+    the class to be considered positive class and all others will be
+    considered negative. To figure out the
+    association between classes and numeric encoded values check the
+    ground_truth_metadata JSON file.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (list) List of NumPy Arrays containing ground truth data
-    :param metrics: metrics to dispay (f1, precision, recall,
-                    accuracy)
-    :param positive_label: (string) Label of the positive class
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param metrics: (List[str]) metrics to display (`'f1'`, `'precision'`,
+        `'recall'`, `'accuracy'`).
+    :param positive_label: (int, default: `1`) numeric encoded value for the
+        positive class.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
-    :return: (None)
+    :return: (`None`)
     """
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
@@ -2447,32 +2547,38 @@ def binary_threshold_vs_metric(
 
 
 def roc_curves(
-        probabilities_per_model,
-        ground_truth,
-        positive_label=1,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        positive_label: int = 1,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show the roc curves for the specified models output output_feature_name.
+) -> None:
+    """Show the roc curves for output features in the specified models.
 
     This visualization produces a line chart plotting the roc curves for the
-    specified output_feature_name. If output_feature_name is a category feature, positive_label indicates
-    which is the class to be considered positive class and all the others will
-    be considered negative. It needs to be an integer, to figure out the
-    association between classes and integers check the ground_truth_metadata
-    JSON file.
+    specified output feature name. If output feature name is a category feature,
+    `positive_label` indicates which is the class to be considered positive
+    class and all the others will be considered negative. `positive_label` is
+    the encoded numeric value for category classes. The numeric value can be
+    determined by association between classes and integers captured in the
+    training metadata JSON file.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (list) List of NumPy Arrays containing ground truth data
-    :param positive_label: (string) Label of the positive class
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param positive_label: (int, default: `1`) numeric encoded value for the
+        positive class.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -2508,27 +2614,33 @@ def roc_curves(
 
 
 def roc_curves_from_test_statistics(
-        test_stats_per_model,
-        output_feature_name,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        output_feature_name: str,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show the roc curves for the specified models output binary output_feature_name.
+) -> None:
+    """Show the roc curves for the specified models output binary
+    `output_feature_name`.
 
-    This visualization uses the output_feature_name, test_statistics and model_names
-    parameters. output_feature_name needs to be binary feature. This visualization produces a
-    line chart plotting the roc curves for the specified output_feature_name.
+    This visualization uses `output_feature_name`, `test_stats_per_model` and
+    `model_names` parameters. `output_feature_name` needs to be binary feature.
+    This visualization produces a line chart plotting the roc curves for the
+    specified `output_feature_name`.
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+        performance statistics.
+    :param output_feature_name: (str) name of the output feature to use
+        for the visualization.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -2557,15 +2669,15 @@ def roc_curves_from_test_statistics(
 
 
 def calibration_1_vs_all(
-        probabilities_per_model,
-        ground_truth,
-        top_n_classes,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_n_classes: List[int],
+        labels_limit: int,
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show models probability of predictions for the specified output_feature_name.
 
     For each class or each of the k most frequent classes if top_k is
@@ -2584,15 +2696,20 @@ def calibration_1_vs_all(
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_n_classes: (list) List containing the number of classes to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # String
 
@@ -2703,27 +2820,32 @@ def calibration_1_vs_all(
 
 
 def calibration_multiclass(
-        probabilities_per_model,
-        ground_truth,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        labels_limit: int,
+        model_names: str = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show models probability of predictions for each class of the the
+) -> None:
+    """Show models probability of predictions for each class of the
     specified output_feature_name.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param labels_limit: (int) Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -2809,34 +2931,42 @@ def calibration_multiclass(
 
 
 def confusion_matrix(
-        test_stats_per_model,
-        metadata,
-        output_feature_name,
-        top_n_classes,
-        normalize,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        metadata: dict,
+        output_feature_name: Union[str, None],
+        top_n_classes: List[int],
+        normalize: bool,
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show confision matrix in the models predictions for each output_feature_name.
+) -> None:
+    """Show confision matrix in the models predictions for each
+    `output_feature_name`.
 
     For each model (in the aligned lists of test_statistics and model_names)
     it  produces a heatmap of the confusion matrix in the predictions for
-    each  output_feature_name that has a confusion matrix in test_statistics. The value of
-    top_n_classes limits the heatmap to the n most frequent classes.
+    each  output_feature_name that has a confusion matrix in test_statistics.
+    The value of `top_n_classes` limits the heatmap to the n most frequent
+    classes.
 
     # Inputs
 
-    :param test_stats_per_model: (string) List containing train statistics per model
-    :param metadata: (dict) Model's input metadata
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param normalize: (bool) Flag to normalize rows in confusion matrix
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+      performance statistics.
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param top_n_classes: (List[int]) number of top classes or list
+        containing the number of top classes to plot.
+    :param normalize: (bool) flag to normalize rows in confusion matrix.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -2929,19 +3059,21 @@ def confusion_matrix(
 
 
 def frequency_vs_f1(
-        test_stats_per_model,
-        metadata,
-        output_feature_name,
-        top_n_classes,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        metadata: dict,
+        output_feature_name: Union[str, None],
+        top_n_classes: List[int],
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
 ):
-    """Show prediction statistics for the specified output_feature_name for each model.
+    """Show prediction statistics for the specified `output_feature_name` for
+    each model.
 
-    For each model (in the aligned lists of test_statistics and model_names),
-    produces two plots statistics of predictions for the specified output_feature_name.
+    For each model (in the aligned lists of `test_stats_per_model` and
+    `model_names`), produces two plots statistics of predictions for the
+    specified `output_feature_name`.
 
     The first plot is a line plot with one x axis representing the different
     classes and two vertical axes colored in orange and blue respectively.
@@ -2949,20 +3081,27 @@ def frequency_vs_f1(
     to show the trend. The blue one is the F1 score for that class and a blue
     line is plotted to show the trend. The classes on the x axis are sorted by
     f1 score.
+
     The second plot has the same structure of the first one,
-     but the axes are flipped and the classes on the x axis are sorted by
-     frequency.
+    but the axes are flipped and the classes on the x axis are sorted by
+    frequency.
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param metadata: (dict) Model's input metadata
-    :param of_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+        performance statistics.
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param top_n_classes: (List[int]) number of top classes or list
+        containing the number of top classes to plot.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
