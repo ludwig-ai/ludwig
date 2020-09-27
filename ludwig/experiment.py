@@ -229,7 +229,8 @@ def kfold_cross_validate_cli(
         k_fold,
         model_definition=None,
         model_definition_file=None,
-        data_csv=None,
+        dataset=None,
+        data_format=None,
         output_directory='results',
         random_seed=default_random_seed,
         skip_save_k_fold_split_indices=False,
@@ -253,14 +254,25 @@ def kfold_cross_validate_cli(
 
     :return: None
     """
-    model_definition = check_which_model_definition(model_definition,
-                                                    model_definition_file)
+
+    if model_definition is None and model_definition_file is None:
+        raise ValueError(
+            "No model definition is provided 'model_definition' or "
+            "'model_definition_file' must be provided."
+        )
+    elif model_definition is not None and model_definition_file is not None:
+        raise ValueError(
+            "Cannot specify both 'model_definition' and 'model_definition_file'"
+            ", proivde only one of the parameters."
+        )
 
     (kfold_cv_stats,
      kfold_split_indices) = kfold_cross_validate(
         k_fold,
-        model_definition=model_definition,
-        data_csv=data_csv,
+        model_definition=model_definition if model_definition is not None else
+            model_definition_file,
+        dataset=dataset,
+        data_format=data_format,
         output_directory=output_directory,
         random_seed=random_seed
     )

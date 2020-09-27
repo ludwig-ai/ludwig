@@ -16,6 +16,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import text_feature
+from tests.integration_tests.test_experiment import create_data_set_to_use
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -152,7 +153,7 @@ def test_kfold_cv_cli(features_to_use: FeaturesToUse):
         kfold_cross_validate_cli(
             k_fold=num_folds,
             model_definition_file=model_definition_fp,
-            data_csv=training_data_fp,
+            dataset=training_data_fp,
             output_directory=results_dir,
             logging_level='warn'
         )
@@ -219,7 +220,7 @@ def test_kfold_cv_api_from_file():
         ) = kfold_cross_validate(
             3,
             model_definition=model_definition_fp,
-            data_csv=training_data_fp
+            dataset=training_data_fp
         )
 
         # correct structure for results from kfold cv
@@ -270,7 +271,7 @@ def test_kfold_cv_api_in_memory():
         ) = kfold_cross_validate(
             3,
             model_definition=model_definition,
-            data_csv=training_data_fp
+            dataset=training_data_fp
         )
 
         # correct structure for results from kfold cv
@@ -280,3 +281,63 @@ def test_kfold_cv_api_in_memory():
 
         for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in kfold_split_indices
+
+
+
+DATA_FORMATS_FOR_KFOLDS = [
+    'csv', 'df', 'dict', 'excel', 'feather', 'fwf', 'html',
+    'json', 'jsonl', 'parquet', 'pickle', 'stata', 'tsv'
+]
+@pytest.mark.parametrize('data_format', DATA_FORMATS_FOR_KFOLDS)
+def test_kfold_cv_dataset_formats(data_format):
+
+    # k-fold_cross_validate api with in-memory model definition
+    num_folds = 3
+
+    # setup temporary directory to run test
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        # setup required data structures for test
+        training_data_fp = os.path.join(tmpdir, 'train.csv')
+
+        # generate synthetic data for the test
+        input_features = [
+            numerical_feature(normalization='zscore'),
+            numerical_feature(normalization='zscore')
+        ]
+
+        output_features = [
+            numerical_feature()
+        ]
+
+        generate_data(input_features, output_features, training_data_fp)
+        dataset_to_use = create_data_set_to_use(data_format, training_data_fp)
+
+        # generate model definition file
+        model_definition = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'combiner': {'type': 'concat', 'fc_size': 14},
+            'training': {'epochs': 2}
+        }
+
+        # test kfold_cross_validate api with model definition in-memory
+
+        # execute k-fold cross validation run
+        (
+            kfold_cv_stats,
+            kfold_split_indices
+        ) = kfold_cross_validate(
+            3,
+            model_definition=model_definition,
+            dataset=dataset_to_use
+        )
+
+        # correct structure for results from kfold cv
+        for key in ['fold_' + str(i + 1)
+                    for i in range(num_folds)] + ['overall']:
+            assert key in kfold_cv_stats
+
+        for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
+            assert key in kfold_split_indices
+

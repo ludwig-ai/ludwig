@@ -26,6 +26,7 @@ import logging
 import os
 import tempfile
 from pprint import pformat
+from typing import List, Union, Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -49,12 +50,14 @@ from ludwig.models.predictor import Predictor, save_prediction_outputs, \
     calculate_overall_stats, print_evaluation_stats, save_evaluation_stats
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import save_json, load_json, generate_kfold_splits
+from ludwig.utils.data_utils import save_json, load_json, \
+    generate_kfold_splits, figure_data_format, DATAFRAME_FORMATS, \
+    DICT_FORMATS, CACHEABLE_FORMATS, external_data_reader_registry
 from ludwig.utils.horovod_utils import broadcast_return, configure_horovod, \
     set_on_master, \
     is_on_master
 from ludwig.utils.misc_utils import get_output_directory, get_file_names, \
-    get_experiment_description
+    get_experiment_description, get_from_registry
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 import yaml
@@ -74,12 +77,12 @@ class LudwigModel:
                  gpu_memory_limit=None,
                  allow_parallel_threads=True):
         """
-        :param model_definition: (dict, string) in-memory representation of model definition
+        :param model_definition: (dict, str) in-memory representation of model definition
                or string path to the saved JSON model definition file.
         :param logging_level: Log level that will be sent to stderr.
         :param use_horovod: (bool) use Horovod for distributed training. Will be set
                automatically if `horovodrun` is used to launch the training script.
-        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
+        :param gpus: (str, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
               per GPU device.
@@ -118,10 +121,10 @@ class LudwigModel:
 
     def train(
             self,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
+            dataset: Union[str, dict, pd.DataFrame] = None,
+            training_set: Union[str, dict, pd.DataFrame] = None,
+            validation_set: Union[str, dict, pd.DataFrame] = None,
+            test_set: Union[str, dict, pd.DataFrame] = None,
             training_set_metadata=None,
             data_format=None,
             experiment_name='api_experiment',
@@ -137,75 +140,104 @@ class LudwigModel:
             random_seed=default_random_seed,
             debug=False,
             **kwargs
-    ):
+    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
         """This function is used to perform a full training of the model on the
            specified dataset.
 
         # Inputs
 
-        :param dataset: (string, dict, DataFrame) source containing the entire dataset.
-               If it has a split column, it will be used for splitting (0: train,
-               1: validation, 2: test), otherwise the dataset will be randomly split.
-        :param training_set: (string, dict, DataFrame) source containing training data.
-        :param validation_set: (string, dict, DataFrame) source containing validation data.
-        :param test_set: (string, dict, DataFrame) source containing test data.
-        :param training_set_metadata: (string, dict) metadata JSON file or loaded metadata.
-               Intermediate preprocess structure containing the mappings of the input
-               CSV created the first time a CSV file is used in the same
-               directory with the same name and a '.json' extension.
-        :param data_format: (string) format to interpret data sources. Will be inferred
-               automatically if not specified.
-        :param experiment_name: (string) a name for the experiment, used for the save
-               directory
-        :param model_name: (string) a name for the model, used for the save
-               directory
-        :param model_resume_path: (string) path of a the model directory to
-               resume training of
+        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing the entire dataset to be used in the experiment.
+            If it has a split column, it will be used for splitting (0 for train,
+            1 for validation, 2 for test), otherwise the dataset will be
+            randomly split.
+        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing training data.
+        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing validation data.
+        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing test data.
+        :param training_set_metadata: (Union[str, dict], default: `None`)
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
+        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing the entire dataset to be used in the experiment.
+            If it has a split column, it will be used for splitting (0 for train,
+            1 for validation, 2 for test), otherwise the dataset will be
+            randomly split.
+        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing training data.
+        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing validation data.
+        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing test data.
+        :param training_set_metadata: (Union[str, dict], default: `None`)
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
+        :param experiment_name: (str, default: `'experiment'`) name for
+            the experiment.
+        :param model_name: (str, default: `'run'`) name of the model that is
+            being used.
+        :param model_resume_path: (str, default: `None`) resumes training of
+            the model from the path specified. The model definition is restored.
+            In addition to model definition, training statistics, loss for each
+            epoch and the state of the optimizer are restored such that
+            training can be effectively continued from a previously interrupted
+            training process.
         :param skip_save_training_description: (bool, default: `False`) disables
-               saving the description JSON file.
+            saving the description JSON file.
         :param skip_save_training_statistics: (bool, default: `False`) disables
-               saving training statistics JSON file.
+            saving training statistics JSON file.
         :param skip_save_model: (bool, default: `False`) disables
-               saving model weights and hyperparameters each time the model
-               improves. By default Ludwig saves model weights after each epoch
-               the validation metric imrpvoes, but if the model is really big
-               that can be time consuming if you do not want to keep
-               the weights and just find out what performance can a model get
-               with a set of hyperparameters, use this parameter to skip it,
-               but the model will not be loadable later on.
+            saving model weights and hyperparameters each time the model
+            improves. By default Ludwig saves model weights after each epoch
+            the validation metric improves, but if the model is really big
+            that can be time consuming if you do not want to keep
+            the weights and just find out what performance can a model get
+            with a set of hyperparameters, use this parameter to skip it,
+            but the model will not be loadable later on and the returned model
+            will have the weights obtained at the end of training, instead of
+            the weights of the epoch with the best validation performance.
         :param skip_save_progress: (bool, default: `False`) disables saving
-               progress each epoch. By default Ludwig saves weights and stats
-               after each epoch for enabling resuming of training, but if
-               the model is really big that can be time consuming and will uses
-               twice as much space, use this parameter to skip it, but training
-               cannot be resumed later on.
-        :param skip_save_log: (bool, default: `False`) disables saving TensorBoard
-               logs. By default Ludwig saves logs for the TensorBoard, but if it
-               is not needed turning it off can slightly increase the
-               overall speed.
-        :param skip_save_processed_input: (bool, default: `False`) skips saving
-               intermediate HDF5 and JSON files
-        :param output_directory: (string, default: `'results'`) directory that
-               contains the results
-        :param random_seed: (int, default`42`) a random seed that is going to be
+            progress each epoch. By default Ludwig saves weights and stats
+            after each epoch for enabling resuming of training, but if
+            the model is really big that can be time consuming and will uses
+            twice as much space, use this parameter to skip it, but training
+            cannot be resumed later on.
+        :param skip_save_log: (bool, default: `False`) disables saving
+            TensorBoard logs. By default Ludwig saves logs for the TensorBoard,
+            but if it is not needed turning it off can slightly increase the
+            overall speed.
+        :param skip_save_processed_input: (bool, default: `False`) if input
+            dataset is provided it is preprocessed and cached by saving an HDF5
+            and JSON files to avoid running the preprocessing again. If this
+            parameter is `False`, the HDF5 and JSON file are not saved.
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
+        :param random_seed: (int, default: `42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
-        :param debug: (bool, default: `False`) enables debugging mode
-
-        There are three ways to provide data: by dataframes using the `_df`
-        parameters, by CSV using the `_csv` parameters and by HDF5 and JSON,
-        using `_hdf5` and `_json` parameters.
-        The DataFrame approach uses data previously obtained and put in a
-        dataframe, the CSV approach loads data from a CSV file, while HDF5 and
-        JSON load previously preprocessed HDF5 and JSON files (they are saved in
-        the same directory of the CSV they are obtained from).
-        For all three approaches either a full dataset can be provided (which
-        will be split randomly according to the split probabilities defined in
-        the model definition, by default 70% training, 10% validation and 20%
-        test) or, if it contanins a plit column, it will be plit according to
-        that column (interpreting 0 as training, 1 as validation and 2 as test).
-        Alternatively separated dataframes / CSV / HDF5 files can beprovided
-        for each split.
+        :param debug: (bool, default: `False`)  if `True` turns on `tfdbg` with
+            `inf_or_nan` checks.
 
         During training the model and statistics will be saved in a directory
         `[output_dir]/[experiment_name]_[model_name]_n` where all variables are
@@ -215,10 +247,13 @@ class LudwigModel:
 
         # Return
 
-        :return: ((dict, DataFrame)) tuple containing:
-            - A dictionary of training statistics for each output feature containing
-              loss and metrics values for each epoch. The second return
-            - A Pandas DataFrame of preprocessed training data.
+        :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
+            `(train_statistics, preprocessed_data, output_directory)`.
+            `train_statistics` is a dictionary of training statistics for each
+            output feature containing loss and metrics values for each epoch.
+            `preprocessed_data` is the tuple containing these three data sets
+            `(training_set, validation_set, test_set)`.  `output_directory`
+            filepath to where training results are stored.
         """
         # setup directories and file names
         if model_resume_path is not None:
@@ -428,25 +463,43 @@ class LudwigModel:
 
         return train_stats, preprocessed_data, output_directory
 
-    def train_online(self,
-                     dataset,
-                     training_set_metadata=None,
-                     data_format='auto',
-                     random_seed=default_random_seed,
-                     debug=False):
+    def train_online(
+            self,
+            dataset: Union[str, dict, pd.DataFrame],
+            training_set_metadata: Union[str, dict] = None,
+            data_format: str = 'auto',
+            random_seed: int = default_random_seed,
+            debug: bool = False
+    ) -> None:
         """Performs one epoch of training of the model on `dataset`.
 
-        :param dataset: (string, dict, DataFrame) source containing the training dataset.
-        :param training_set_metadata: (string, dict) metadata JSON file or loaded metadata.
-               Intermediate preprocess structure containing the mappings of the input
-               CSV created the first time a CSV file is used in the same
-               directory with the same name and a '.json' extension.
-        :param data_format: (string) format to interpret data sources. Will be inferred
-               automatically if not specified.
+        #Inputs
+
+        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing the entire dataset to be used in the experiment.
+            If it has a split column, it will be used for splitting (0 for train,
+            1 for validation, 2 for test), otherwise the dataset will be
+            randomly split.
+        :param training_set_metadata: (Union[str, dict], default: `None`)
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
-        :param debug: (bool, default: `False`) enables debugging mode
+        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
+                with `inf_or_nan` checks.
+
+        # Return
+        :return: `None`
 
         """
         training_set_metadata = training_set_metadata or self.training_set_metadata
@@ -486,16 +539,55 @@ class LudwigModel:
 
     def predict(
             self,
-            dataset=None,
-            data_format=None,
-            batch_size=128,
-            skip_save_unprocessed_output=True,
-            skip_save_predictions=True,
-            output_directory='results',
-            return_type=pd.DataFrame,
+            dataset: Union[str, dict, pd.DataFrame] = None,
+            data_format: str = None,
+            batch_size: int = 128,
+            skip_save_unprocessed_output: bool = True,
+            skip_save_predictions: bool = True,
+            output_directory: str = 'results',
+            return_type: Union[dict, pd.DataFrame] = pd.DataFrame,
             debug=False,
             **kwargs
-    ):
+    ) -> Tuple[Union[dict, pd.DataFrame], str]:
+        """
+        Using a trained model, make predictions from the provided dataset.
+
+        # Inputs
+        :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
+            the entire dataset to be evaluated.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
+        :param batch_size: (int, default: 128) size of batch to use when making
+            predictions.
+        :param skip_save_unprocessed_output: (bool, default: `True`) if this
+            parameter is `False`, predictions and their probabilities are saved
+            in both raw unprocessed numpy files containing tensors and as
+            postprocessed CSV files (one for each output feature).
+            If this parameter is `True`, only the CSV ones are saved and the
+            numpy ones are skipped.
+        :param skip_save_predictions: (bool, default: `True`) skips saving
+            test predictions CSV files.
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
+        :param return_type: (Union[dict, pandas.DataFrame], default: pd.DataFrame)
+            indicates the format to
+            return predictions.
+        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
+                with `inf_or_nan checks`.
+
+        # Return
+
+        :return: (Tuple[Union[dict, pd.DataFrame], str]) `(predictions, output_directory)`
+            `predictions` predictions from the provided dataset,
+            `output_directory` filepath string to where data was stored.
+
+        """
         self._check_initialization()
 
         logger.debug('Preprocessing')
@@ -572,19 +664,67 @@ class LudwigModel:
 
     def evaluate(
             self,
-            dataset=None,
-            data_format=None,
-            batch_size=128,
-            skip_save_unprocessed_output=True,
-            skip_save_predictions=True,
-            skip_save_eval_stats=True,
-            collect_predictions=False,
-            collect_overall_stats=False,
-            output_directory='results',
-            return_type=pd.DataFrame,
-            debug=False,
+            dataset: Union[str, dict, pd.DataFrame] = None,
+            data_format: str = None,
+            batch_size: int = 128,
+            skip_save_unprocessed_output: bool = True,
+            skip_save_predictions: bool = True,
+            skip_save_eval_stats: bool = True,
+            collect_predictions: bool = False,
+            collect_overall_stats: bool = False,
+            output_directory: str = 'results',
+            return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+            debug: bool = False,
             **kwargs
-    ):
+    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+        """This function is used to predict the output variables given the
+        input variables using the trained model and compute test statistics
+        like performance measures, confusion matrices and the like.
+
+        # Inputs
+        :param dataset: (Union[str, dict, pandas.DataFrame]) source containing
+            the entire dataset to be evaluated.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
+        :param batch_size: (int, default: 128) size of batch to use when making
+            predictions.
+        :param skip_save_unprocessed_output: (bool, default: `True`) if this
+            parameter is `False`, predictions and their probabilities are saved
+            in both raw unprocessed numpy files containing tensors and as
+            postprocessed CSV files (one for each output feature).
+            If this parameter is `True`, only the CSV ones are saved and the
+            numpy ones are skipped.
+        :param skip_save_predictions: (bool, default: `True`) skips saving
+            test predictions CSV files.
+        :param skip_save_eval_stats: (bool, default: `True`) skips saving
+            test statistics JSON file.
+        :param collect_predictions: (bool, default: `False`) if `True`
+            collects post-processed predictions during eval.
+        :param collect_overall_stats: (bool, default: False) if `True`
+            collects overall stats during eval.
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
+        :param return_type: (Union[dict, pandas.DataFrame], default: pandas.DataFrame) indicates
+            the format to
+            return predictions.
+        :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
+                with `inf_or_nan` checks.
+
+
+        # Return
+        :return: (`evaluation_statistics`, `predictions`, `output_directory`)
+            `evaluation_statistics` dictionary containing evaluation performance
+                statistics,
+            `postprocess_predictions` contains predicted values,
+            `output_directory` is location where results are stored.
+
+        """
         self._check_initialization()
 
         logger.debug('Preprocessing')
@@ -668,36 +808,147 @@ class LudwigModel:
 
     def experiment(
             self,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
-            data_format=None,
-            experiment_name='experiment',
-            model_name='run',
-            model_load_path=None,
-            model_resume_path=None,
-            skip_save_training_description=False,
-            skip_save_training_statistics=False,
-            skip_save_model=False,
-            skip_save_progress=False,
-            skip_save_log=False,
-            skip_save_processed_input=False,
-            skip_save_unprocessed_output=False,
-            skip_save_predictions=False,
-            skip_save_eval_stats=False,
-            skip_collect_predictions=False,
-            skip_collect_overall_stats=False,
-            output_directory='results',
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
-            use_horovod=None,
-            random_seed=default_random_seed,
-            debug=False,
+            dataset: Union[str, dict, pd.DataFrame] = None,
+            training_set: Union[str, dict, pd.DataFrame] = None,
+            validation_set: Union[str, dict, pd.DataFrame] = None,
+            test_set: Union[str, dict, pd.DataFrame] = None,
+            training_set_metadata: Union[str, dict] = None,
+            data_format: str = None,
+            experiment_name: str = 'experiment',
+            model_name: str = 'run',
+            model_load_path: str = None,
+            model_resume_path: str = None,
+            skip_save_training_description: bool = False,
+            skip_save_training_statistics: bool = False,
+            skip_save_model: bool = False,
+            skip_save_progress: bool = False,
+            skip_save_log:  bool = False,
+            skip_save_processed_input: bool = False,
+            skip_save_unprocessed_output: bool = False,
+            skip_save_predictions:bool = False,
+            skip_save_eval_stats: bool = False,
+            skip_collect_predictions: bool = False,
+            skip_collect_overall_stats: bool = False,
+            output_directory: str = 'results',
+            gpus: Union[str, int, List[int]] = None,
+            gpu_memory_limit: int  = None,
+            allow_parallel_threads: bool = True,
+            use_horovod: bool = None,
+            random_seed: int =default_random_seed,
+            debug: bool = False,
             **kwargs
-    ):
+    ) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
+        """
+        Trains a model on a dataset's training and validation splits and
+        uses it to predict on the test split.
+        It saves the trained model and the statistics of training and testing.
+
+        # Inputs
+        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing the entire dataset to be used in the experiment.
+            If it has a split column, it will be used for splitting (0 for train,
+            1 for validation, 2 for test), otherwise the dataset will be
+            randomly split.
+        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing training data.
+        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing validation data.
+        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing test data.
+        :param training_set_metadata: (Union[str, dict], default: `None`)
+            metadata JSON file or loaded metadata.  Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
+        :param experiment_name: (str, default: `'experiment'`) name for
+            the experiment.
+        :param model_name: (str, default: `'run'`) name of the model that is
+            being used.
+        :param model_load_path: (str, default: `None`) if this is specified the
+            loaded model will be used as initialization
+            (useful for transfer learning).
+        :param model_resume_path: (str, default: `None`) resumes training of
+            the model from the path specified. The model definition is restored.
+            In addition to model definition, training statistics and loss for
+            epoch and the state of the optimizer are restored such that
+            training can be effectively continued from a previously interrupted
+            training process.
+        :param skip_save_training_description: (bool, default: `False`) disables
+            saving the description JSON file.
+        :param skip_save_training_statistics: (bool, default: `False`) disables
+            saving training statistics JSON file.
+        :param skip_save_model: (bool, default: `False`) disables
+            saving model weights and hyperparameters each time the model
+            improves. By default Ludwig saves model weights after each epoch
+            the validation metric improves, but if the model is really big
+            that can be time consuming if you do not want to keep
+            the weights and just find out what performance can a model get
+            with a set of hyperparameters, use this parameter to skip it,
+            but the model will not be loadable later on and the returned model
+            will have the weights obtained at the end of training, instead of
+            the weights of the epoch with the best validation performance.
+        :param skip_save_progress: (bool, default: `False`) disables saving
+            progress each epoch. By default Ludwig saves weights and stats
+            after each epoch for enabling resuming of training, but if
+            the model is really big that can be time consuming and will uses
+            twice as much space, use this parameter to skip it, but training
+            cannot be resumed later on.
+        :param skip_save_log: (bool, default: `False`) disables saving
+            TensorBoard logs. By default Ludwig saves logs for the TensorBoard,
+            but if it is not needed turning it off can slightly increase the
+            overall speed.
+        :param skip_save_processed_input: (bool, default: `False`) if input
+            dataset is provided it is preprocessed and cached by saving an HDF5
+            and JSON files to avoid running the preprocessing again. If this
+            parameter is `False`, the HDF5 and JSON file are not saved.
+        :param skip_save_unprocessed_output: (bool, default: `False`) by default
+            predictions and their probabilities are saved in both raw
+            unprocessed numpy files containing tensors and as postprocessed
+            CSV files (one for each output feature). If this parameter is True,
+            only the CSV ones are saved and the numpy ones are skipped.
+        :param skip_save_predictions: (bool, default: `False`) skips saving test
+            predictions CSV files
+        :param skip_save_eval_stats: (bool, default: `False`) skips saving test
+            statistics JSON file
+        :param skip_collect_predictions: (bool, default: `False`) skips
+            collecting post-processed predictions during eval.
+        :param skip_collect_overall_stats: (bool, default: `False`) skips
+            collecting overall stats during eval.
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
+        :param gpus: (list, default: `None`) list of GPUs that are available
+            for training.
+        :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
+            allocate per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+            to use multithreading parallelism to improve performance at
+            the cost of determinism.
+        :param use_horovod: (bool, default: `None`) flag for using horovod.
+        :param random_seed: (int: default: 42) random seed used for weights
+            initialization, splits and any other random function.
+        :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
+            `inf_or_nan` checks.
+
+        # Return
+        :return: (Tuple[dict, dict, tuple, str)) `(evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
+            `evaluation_statistics` dictionary with evaluation performance
+                statistics on the test_set,
+            `training_statistics` is a dictionary of training statistics for
+                each output
+            feature containing loss and metrics values for each epoch,
+            `preprocessed_data` tuple containing preprocessed
+            `(training_set, validation_set, test_set)`, `output_directory`
+            filepath string to where results are stored.
+
+        """
         (
             train_stats,
             preprocessed_data,
@@ -760,23 +1011,56 @@ class LudwigModel:
 
     def collect_weights(
             self,
-            tensor_names=None,
+            tensor_names: List[str] = None,
             **kwargs
-    ):
+    ) -> list:
+        """Load a pre-trained model and collect the tensors with a specific name
+
+        # Inputs
+        :param tensor_names: (list, default: `None`) List of tensor names to collect
+            weights
+
+        # Return
+        :return: (list) List of tensors
+
+        """
         self._check_initialization()
         collected_tensors = self.model.collect_weights(tensor_names)
         return collected_tensors
 
     def collect_activations(
             self,
-            layer_names,
-            dataset,
-            data_format=None,
-            batch_size=128,
-            # output_directory='results',
-            debug=False,
+            layer_names: List[str],
+            dataset: Union[str, Dict[str, list], pd.DataFrame],
+            data_format: str = None,
+            batch_size: int = 128,
+            debug: bool = False,
             **kwargs
-    ):
+    ) -> list:
+        """Loads a pre-trained model model and input data to collect the values
+        of the activations contained in the tensors.
+
+        # Inputs
+        :param layer_names: (list) list of strings for layer names in the model
+            to collect activations.
+        :param dataset: (Union[str, Dict[str, list], pandas.DataFrame]) source
+            containing the data to make predictions.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`, `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.
+        :param batch_size: (int, default: 128) size of batch to use when making
+            predictions.
+        :param debug: (bool, default: `False`) if `True` turns on `tfdbg`
+            with `inf_or_nan` checks.
+
+        # Return
+        :return: (list) list of collected tensors.
+
+        """
         self._check_initialization()
         logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
@@ -807,29 +1091,34 @@ class LudwigModel:
         return activations
 
     @staticmethod
-    def load(model_dir,
-             logging_level=logging.ERROR,
-             use_horovod=None,
-             gpus=None,
-             gpu_memory_limit=None,
-             allow_parallel_threads=True):
+    def load(
+            model_dir: str,
+            logging_level: int = logging.ERROR,
+            use_horovod: bool = None,
+            gpus: Union[str, int, List[int]] = None,
+            gpu_memory_limit: int = None,
+            allow_parallel_threads: bool = True
+    ) -> 'LudwigModel':  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models
 
         # Inputs
 
-        :param logging_level: Log level that will be sent to stderr.
-        :param use_horovod: (bool) use Horovod for distributed training. Will be set
-               automatically if `horovodrun` is used to launch the training script.
-        :param model_dir: (string) path to the directory containing the model.
+        :param model_dir: (str) path to the directory containing the model.
                If the model was trained by the `train` or `experiment` command,
                the model is in `results_dir/experiment_dir/model`.
-        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
-               same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
-              per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
-               multithreading parallelism to improve performance at the cost of
-               determinism.
+        :param logging_level: (int, default: 40) log level that will be sent to
+            stderr.
+        :param use_horovod: (bool, default: `None`) use Horovod for distributed
+            training. Will be set
+            automatically if `horovodrun` is used to launch the training script.
+        :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
+            to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
+            allocate per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+            to use
+            multithreading parallelism to improve performance at the cost of
+            determinism.
 
         # Return
 
@@ -877,7 +1166,27 @@ class LudwigModel:
 
         return ludwig_model
 
-    def load_weights(self, model_dir):
+    def load_weights(
+            self,
+            model_dir: str
+    ) -> None:
+        """
+        Loads weights from a pre-trained model
+
+        # Inputs
+        :param model_dir: (str) filepath string to location of a pre-trained
+            model
+
+        # Return
+        :return: `None`
+
+        # Example usage
+
+        ```python
+        ludwig_model.load_weights(model_dir)
+        ```
+
+        """
         if is_on_master():
             weights_save_path = os.path.join(
                 model_dir,
@@ -891,16 +1200,22 @@ class LudwigModel:
             self._horovod.broadcast_variables(self.model.variables,
                                               root_rank=0)
 
-    def save(self, save_path):
+    def save(
+        self,
+        save_path: str
+    ) -> None:
         """This function allows to save models on disk
 
         # Inputs
 
-        :param  save_path: (string) path to the directory where the model is
+        :param  save_path: (str) path to the directory where the model is
                 going to be saved. Both a JSON file containing the model
                 architecture hyperparameters and checkpoints files containing
                 model weights will be saved.
 
+        # Return
+
+        :return: `None`
 
         # Example usage
 
@@ -925,7 +1240,22 @@ class LudwigModel:
         )
         save_json(training_set_metadata_path, self.training_set_metadata)
 
-    def save_model_definition(self, save_path):
+    def save_model_definition(
+        self,
+        save_path: str
+    ) -> None:
+        """
+        Save model definition to specoficed location.
+
+        # Inputs
+
+        :param save_path: (str) filepath string to save model definition as a
+            JSON file.
+
+        # Return
+        :return: `None`
+
+        """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(
             save_path,
@@ -933,14 +1263,17 @@ class LudwigModel:
         )
         save_json(model_hyperparameters_path, self.model_definition)
 
-    def save_savedmodel(self, save_path):
+    def save_savedmodel(self, save_path: str) -> None:
         """This function allows to save models on disk
 
         # Inputs
 
-        :param  save_path: (string) path to the directory where the SavedModel
+        :param  save_path: (str) path to the directory where the SavedModel
                 is going to be saved.
 
+        # Return
+
+        :return: `None`
 
         # Example usage
 
@@ -959,7 +1292,22 @@ class LudwigModel:
             raise ValueError('Model has not been trained or loaded')
 
     @staticmethod
-    def create_model(model_definition, random_seed=default_random_seed):
+    def create_model(
+            model_definition: dict,
+            random_seed: int = default_random_seed
+    ) -> ECD:
+        """Instantiates Encoder-Combiner-Decoder (ECD) object
+
+        # Inputs
+        :param model_definition: (dict) Ludwig model definition
+        :param random_seed: (int, default: ludwig default random seed) Random
+            seed used for weights initialization,
+            splits and any other random function.
+
+        # Return
+        :return: (ludwig.models.ECD) Instance of the Ludwig model object.
+
+        """
         # todo: support loading other model types based on definition
         return ECD(
             input_features_def=model_definition['input_features'],
@@ -969,12 +1317,18 @@ class LudwigModel:
         )
 
     @staticmethod
-    def set_logging_level(logging_level):
+    def set_logging_level(logging_level: int) -> None:
         """
-        :param logging_level: Set/Update the logging level. Use logging
+        Sets level for log messages.
+
+        # Inputs
+
+        :param logging_level: (int) Set/Update the logging level. Use logging
         constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
 
-        :return: None
+        # Return
+
+        :return: `None`
         """
         logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
@@ -984,45 +1338,104 @@ class LudwigModel:
 
 
 def kfold_cross_validate(
-        num_folds,
-        model_definition,
-        data_csv=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        skip_collect_predictions=False,
-        skip_collect_overall_stats=False,
-        output_directory='results',
-        random_seed=default_random_seed,
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        use_horovod=None,
-        logging_level=logging.INFO,
-        debug=False,
+        num_folds: int,
+        model_definition: Union[dict, str],
+        dataset: str = None,
+        data_format: str = None,
+        skip_save_training_description:bool = False,
+        skip_save_training_statistics: bool = False,
+        skip_save_model: bool = False,
+        skip_save_progress: bool = False,
+        skip_save_log: bool = False,
+        skip_save_processed_input: bool = False,
+        skip_save_predictions:bool = False,
+        skip_save_eval_stats: bool = False,
+        skip_collect_predictions: bool = False,
+        skip_collect_overall_stats: bool = False,
+        output_directory: str = 'results',
+        random_seed: int = default_random_seed,
+        gpus: Union[str, int, List[int]] = None,
+        gpu_memory_limit: int = None,
+        allow_parallel_threads: bool = True,
+        use_horovod: bool = None,
+        logging_level: int = logging.INFO,
+        debug: bool = False,
         **kwargs
-):
+) -> Tuple[dict, dict]:
     """Performs k-fold cross validation and returns result data structures.
 
     # Inputs
 
     :param num_folds: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: None) a dictionary containing
-           information needed to build a model. Refer to the
+    :param model_definition: (Union[dict, str]) model specification
+           required to build a model. Parameter may be a dictionary or string
+           specifying the file path to a yaml configuration file.  Refer to the
            [User Guide](http://ludwig.ai/user_guide/#model-definition)
            for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-           a YAML file containing the model definition. If available it will be
-           used instead of the model_definition dict.
-    :param data_csv: (dataframe, default: None)
-    :param data_csv: (string, default: None)
-    :param output_directory: (string, default: 'results')
-    :param random_seed: (int) Random seed used k-fold splits.
+    :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+        source containing the entire dataset to be used for k_fold processing.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+            `'fwf'`,
+            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+            `'stata'`, `'tsv'`.  Currenlty `hdf5` format is not supported for
+            k_fold cross validation.
+    :param skip_save_training_description: (bool, default: `False`) disables
+            saving the description JSON file.
+    :param skip_save_training_statistics: (bool, default: `False`) disables
+            saving training statistics JSON file.
+    :param skip_save_model: (bool, default: `False`) disables
+        saving model weights and hyperparameters each time the model
+        improves. By default Ludwig saves model weights after each epoch
+        the validation metric improves, but if the model is really big
+        that can be time consuming if you do not want to keep
+        the weights and just find out what performance can a model get
+        with a set of hyperparameters, use this parameter to skip it,
+        but the model will not be loadable later on and the returned model
+        will have the weights obtained at the end of training, instead of
+        the weights of the epoch with the best validation performance.
+    :param skip_save_progress: (bool, default: `False`) disables saving
+           progress each epoch. By default Ludwig saves weights and stats
+           after each epoch for enabling resuming of training, but if
+           the model is really big that can be time consuming and will uses
+           twice as much space, use this parameter to skip it, but training
+           cannot be resumed later on.
+    :param skip_save_log: (bool, default: `False`) disables saving TensorBoard
+           logs. By default Ludwig saves logs for the TensorBoard, but if it
+           is not needed turning it off can slightly increase the
+           overall speed.
+    :param skip_save_processed_input: (bool, default: `False`) if input
+        dataset is provided it is preprocessed and cached by saving an HDF5
+        and JSON files to avoid running the preprocessing again. If this
+        parameter is `False`, the HDF5 and JSON file are not saved.
+    :param skip_save_predictions: (bool, default: `False`) skips saving test
+            predictions CSV files.
+    :param skip_save_eval_stats: (bool, default: `False`) skips saving test
+            statistics JSON file.
+    :param skip_collect_predictions: (bool, default: `False`) skips collecting
+            post-processed predictions during eval.
+    :param skip_collect_overall_stats: (bool, default: `False`) skips collecting
+            overall stats during eval.
+    :param output_directory: (str, default: `'results'`) the directory that
+        will contain the training statistics, TensorBoard logs, the saved
+        model and the training progress files.
+    :param random_seed: (int, default: `42`) Random seed
+            used for weights initialization,
+           splits and any other random function.
+    :param gpus: (list, default: `None`) list of GPUs that are available
+            for training.
+    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
+            allocate per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to
+            use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :param use_horovod: (bool, default: `None`) flag for using horovod
+    :param debug: (bool, default: `False`) If `True` turns on tfdbg
+            with `inf_or_nan` checks.
+    :param logging_level: (int, default: INFO) log level to send to stderr.
+
 
     # Return
 
@@ -1032,6 +1445,12 @@ def kfold_cross_validate(
              training fold and test fold.
     """
     set_on_master(use_horovod)
+
+    # if model definition is a path, convert to dictionary
+    if isinstance(model_definition, str):  # assume path
+        with open(model_definition, 'r') as def_file:
+            model_definition = yaml.safe_load(def_file)
+
 
     # check for k_fold
     if num_folds is None:
@@ -1045,11 +1464,31 @@ def kfold_cross_validate(
     if not os.path.isdir(output_directory):
         os.mkdir(output_directory)
 
-    # read in data to split for the folds
-    data_df = pd.read_csv(data_csv)
+    # prepare data for k-fold processing
+    # use Ludwig's utility to facilitate creating a dataframe
+    # that is used as the basis for creating folds
 
-    # place each fold in a separate directory
-    data_dir = os.path.dirname(data_csv)
+    # determine data format of provided dataset
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(dataset)
+
+    # use appropriate reader to create dataframe
+    if data_format in DATAFRAME_FORMATS:
+        data_df = dataset
+        data_dir = os.getcwd()
+    elif data_format in DICT_FORMATS:
+        data_df = pd.DataFrame(dataset)
+        data_dir = os.getcwd()
+    elif data_format in CACHEABLE_FORMATS:
+        data_reader = get_from_registry(data_format,
+                                        external_data_reader_registry)
+        data_df = data_reader(dataset)
+        data_dir = os.path.dirname(dataset)
+    else:
+        ValueError(
+            "{} format is not supported for k_fold_cross_validate()"
+            .format(data_format)
+        )
 
     kfold_cv_stats = {}
     kfold_split_indices = {}
