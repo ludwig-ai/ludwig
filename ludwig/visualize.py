@@ -745,14 +745,14 @@ def learning_curves(
 
 
 def compare_performance(
-        test_stats_per_model,
-        output_feature_name, model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        output_feature_name: str,
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Produces model comparision barplot visualization for each overall metric
-
+) -> None:
+    """Produces model comparison barplot visualization for each overall metric
 
     For each model (in the aligned lists of test_statistics and model_names)
     it produces bars in a bar plot, one for each overall metric available
@@ -760,12 +760,16 @@ def compare_performance(
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+        performance statistics.
+    :param output_feature_name: (str) name of the output feature that is
+        predicted
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
