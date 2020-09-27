@@ -3059,19 +3059,21 @@ def confusion_matrix(
 
 
 def frequency_vs_f1(
-        test_stats_per_model,
-        metadata,
-        output_feature_name,
-        top_n_classes,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        metadata: dict,
+        output_feature_name: Union[str, None],
+        top_n_classes: List[int],
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
 ):
-    """Show prediction statistics for the specified output_feature_name for each model.
+    """Show prediction statistics for the specified `output_feature_name` for
+    each model.
 
-    For each model (in the aligned lists of test_statistics and model_names),
-    produces two plots statistics of predictions for the specified output_feature_name.
+    For each model (in the aligned lists of `test_stats_per_model` and
+    `model_names`), produces two plots statistics of predictions for the
+    specified `output_feature_name`.
 
     The first plot is a line plot with one x axis representing the different
     classes and two vertical axes colored in orange and blue respectively.
@@ -3079,20 +3081,27 @@ def frequency_vs_f1(
     to show the trend. The blue one is the F1 score for that class and a blue
     line is plotted to show the trend. The classes on the x axis are sorted by
     f1 score.
+
     The second plot has the same structure of the first one,
-     but the axes are flipped and the classes on the x axis are sorted by
-     frequency.
+    but the axes are flipped and the classes on the x axis are sorted by
+    frequency.
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param metadata: (dict) Model's input metadata
-    :param of_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) dictionary containing evaluation
+        performance statistics.
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param top_n_classes: (List[int]) number of top classes or list
+        containing the number of top classes to plot.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
