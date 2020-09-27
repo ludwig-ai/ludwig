@@ -927,34 +927,41 @@ def compare_classifiers_performance_from_prob(
 
 
 def compare_classifiers_performance_from_pred(
-        predictions_per_model,
-        ground_truth,
-        metadata,
-        output_feature_name,
-        labels_limit,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        predictions_per_model: List[list],
+        ground_truth: np.array,
+        metadata: dict,
+        output_feature_name: str,
+        labels_limit: int,
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Produces model comparision barplot visualization from predictions.
+) -> None:
+    """Produces model comparison barplot visualization from predictions.
 
     For each model it produces bars in a bar plot, one for each overall metric
-    computed on the fly from the predictions for the specified output_feature_name.
+    computed on the fly from the predictions for the specified
+    `output_feature_name`.
 
     # Inputs
 
-    :param predictions_per_model: (list) List containing the model predictions
-           for the specified output_feature_name
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param metadata: (dict) Model's input metadata
-    :param output_feature_name: output_feature_name containing ground truth
-    :param labels_limit: Maximum numbers of labels.
-             If labels in dataset are higher than this number, "rare" label
-    :param model_names: List of the names of the models to use as labels.
-    :param output_directory: Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: File format of output plots - pdf or png
+    :param predictions_per_model: (List[list]) list containing the model
+        predictions for the specified output_feature_name.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (str) name of the output feature that is
+        predicted and for which is provided ground truth
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
@@ -1141,12 +1148,12 @@ def compare_classifiers_performance_changing_k(
         file_format: str = 'pdf',
         **kwargs
 ) -> None:
-    """Produce lineplot that show Hits@K metric while k goes from 1 to top_k.
-
+    """Produce lineplot that show Hits@K metric while k goes from 1 to `top_k`.
 
     For each model it produces a line plot that shows the Hits@K metric
     (that counts a prediction as correct if the model produces it among the
-    first k) while changing k from 1 to top_k for the specified output_feature_name.
+    first k) while changing k from 1 to top_k for the specified
+    `output_feature_name`.
 
     # Inputs
 
@@ -1154,6 +1161,7 @@ def compare_classifiers_performance_changing_k(
         probabilities.
     :param ground_truth: (numpy.array) numpy.array containing ground truth data,
         which are the numeric encoded values the category.
+    :param top_k: (int) number of elements in the ranklist to consider.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
