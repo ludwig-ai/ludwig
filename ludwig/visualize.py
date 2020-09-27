@@ -1204,15 +1204,15 @@ def compare_classifiers_performance_changing_k(
 
 
 def compare_classifiers_multiclass_multimetric(
-        test_stats_per_model,
-        metadata,
-        output_feature_name,
-        top_n_classes,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        test_stats_per_model: List[dict],
+        metadata: dict,
+        output_feature_name: str,
+        top_n_classes: List[int],
+        model_names: List[str] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show the precision, recall and F1 of the model for the specified output_feature_name.
 
     For each model it produces four plots that show the precision,
@@ -1220,14 +1220,20 @@ def compare_classifiers_multiclass_multimetric(
 
     # Inputs
 
-    :param test_stats_per_model: (list) List containing train statistics per model
-    :param metadata: (dict) Model's input metadata
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param test_stats_per_model: (List[dict]) list containing dictionary of
+        evaluation performance statistics
+    :param metadata: (dict) intermediate preprocess structure created during
+        training containing the mappings of the input dataset.
+    :param output_feature_name: (str) name of the output feature that is
+        predicted and for which is provided ground truth
+    :param top_n_classes: (List[int]) list containing the number of classes
+        to plot.
+    :param model_names: (List[str], default: `None`) list of the names of the
+        models to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
     :return: (None)
