@@ -671,13 +671,13 @@ def frequency_vs_f1_cli(test_statistics, ground_truth_metadata, **kwargs):
 
 
 def learning_curves(
-        train_stats_per_model,
-        output_feature_name,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        train_stats_per_model: List[dict],
+        output_feature_name: Union[str, None],
+        model_names: Union[str, List[str]] = None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
+) -> None:
     """Show how model metrics change over training and validation data epochs.
 
     For each model and for each output feature and metric of the model,
@@ -686,13 +686,16 @@ def learning_curves(
 
     # Inputs
 
-    :param train_stats_per_model: (list) List containing train statistics per model
-    :param output_feature_name: (string) Name of the output feature that is predicted
-           and for which is provided ground truth
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param train_stats_per_model: (List[dict]) list containing dictionary of
+        training statistics per model.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
     :return: (None)
@@ -747,7 +750,7 @@ def learning_curves(
 def compare_performance(
         test_stats_per_model: List[dict],
         output_feature_name: str,
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -762,10 +765,10 @@ def compare_performance(
 
     :param test_stats_per_model: (List[dict]) dictionary containing evaluation
         performance statistics.
-    :param output_feature_name: (str) name of the output feature that is
-        predicted
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -850,7 +853,7 @@ def compare_classifiers_performance_from_prob(
         ground_truth: np.array,
         top_n_classes: List[int],
         labels_limit: int,
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -872,8 +875,8 @@ def compare_classifiers_performance_from_prob(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -942,7 +945,7 @@ def compare_classifiers_performance_from_pred(
         metadata: dict,
         output_feature_name: str,
         labels_limit: int,
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -961,13 +964,13 @@ def compare_classifiers_performance_from_pred(
         which are the numeric encoded values the category.
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
-    :param output_feature_name: (str) name of the output feature that is
-        predicted and for which is provided ground truth
+    :param output_feature_name: (str) name of the output feature to use
+        for the visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -1037,7 +1040,7 @@ def compare_classifiers_performance_subset(
         top_n_classes: List[int],
         labels_limit: (int),
         subset: str,
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format:str = 'pdf',
         **kwargs
@@ -1063,8 +1066,8 @@ def compare_classifiers_performance_subset(
         `label_limit` are considered to be "rare" labels.
     :param subset: (str) string specifying type of subset filtering.  Valid
         values are `ground_truth` or `predictions`.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -1161,7 +1164,7 @@ def compare_classifiers_performance_changing_k(
         ground_truth: np.array,
         top_k: int,
         labels_limit: int,
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -1183,8 +1186,8 @@ def compare_classifiers_performance_changing_k(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -1238,7 +1241,7 @@ def compare_classifiers_multiclass_multimetric(
         metadata: dict,
         output_feature_name: str,
         top_n_classes: List[int],
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -1254,12 +1257,12 @@ def compare_classifiers_multiclass_multimetric(
         evaluation performance statistics
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
-    :param output_feature_name: (str) name of the output feature that is
-        predicted and for which is provided ground truth
+    :param output_feature_name: (Union[str, `None`]) name of the output feature
+        to use for the visualization.  If `None`, use all output features.
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -1420,7 +1423,7 @@ def compare_classifiers_predictions(
         predictions_per_model: List[list],
         ground_truth: np.array,
         labels_limit: int,
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -1436,8 +1439,8 @@ def compare_classifiers_predictions(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
@@ -1559,7 +1562,7 @@ def compare_classifiers_predictions_distribution(
         predictions_per_model: List[list],
         ground_truth: np.array,
         labels_limit: int,
-        model_names: List[str] = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -1580,8 +1583,8 @@ def compare_classifiers_predictions_distribution(
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
-    :param model_names: (List[str], default: `None`) list of the names of the
-        models to use as labels.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
     :param output_directory: (str, default: `None`) directory where to save
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
