@@ -1813,48 +1813,56 @@ def confidence_thresholding_data_vs_acc(
 
 
 def confidence_thresholding_data_vs_acc_subset(
-        probabilities_per_model,
-        ground_truth,
-        top_n_classes,
-        labels_limit,
-        subset,
-        model_names=None,
-        output_directory=None,
-        file_format='pdf',
+        probabilities_per_model: List[np.array],
+        ground_truth: np.array,
+        top_n_classes: List[int],
+        labels_limit: int,
+        subset: str,
+        model_names: Union[str, List[str]]=None,
+        output_directory: str = None,
+        file_format: str = 'pdf',
         **kwargs
-):
-    """Show models comparision of confidence treshold data vs accuracy on a
+) -> None:
+    """Show models comparison of confidence threshold data vs accuracy on a
     subset of data.
 
     For each model it produces a line indicating the accuracy of the model
     and the data coverage while increasing a threshold on the probabilities
     of predictions for the specified output_feature_name, considering only a subset of the
-    full training set. The way the subset is obtained is using the top_n_classes
+    full training set. The way the subset is obtained is using the `top_n_classes`
     and subset parameters.
      The difference with confidence_thresholding is that it uses two axes
      instead of three, not visualizing the threshold and having coverage as
      x axis instead of the threshold.
 
-    If the values of subset is ground_truth, then only datapoints where the
+    If the values of subset is `ground_truth`, then only datapoints where the
     ground truth class is within the top n most frequent ones will be
     considered  as test set, and the percentage of datapoints that have been
     kept  from the original set will be displayed. If the values of subset is
-     predictions, then only datapoints where the the model predicts a class
+     `predictions`, then only datapoints where the the model predicts a class
      that is within the top n most frequent ones will be considered as test set,
      and the percentage of datapoints that have been kept from the original set
      will be displayed for each model.
 
     # Inputs
 
-    :param probabilities_per_model: (list) List of model probabilities
-    :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param top_n_classes: (list) List containing the number of classes to plot
-    :param labels_limit: (int) Maximum numbers of labels.
-    :param subset: (string) Type of the subset filtering
-    :param model_names: (list, default: None) List of the names of the models to use as labels.
-    :param output_directory: (string, default: None) Directory where to save plots.
-             If not specified, plots will be displayed in a window
-    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
+    :param probabilities_per_model: (List[numpy.array]) list of model
+        probabilities.
+    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
+        which are the numeric encoded values the category.
+    :param top_n_classes: (List[int]) list containing the number of classes
+        to plot.
+    :param labels_limit: (int) upper limit on the numeric encoded label value.
+        Encoded numeric label values in dataset that are higher than
+        `label_limit` are considered to be "rare" labels.
+    :param subset: (str) string specifying type of subset filtering.  Valid
+        values are `ground_truth` or `predictions`.
+    :param model_names: (Union[str, List[str]], default: `None`) model name or
+        list of the model names to use as labels.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
 
     # Return
 
