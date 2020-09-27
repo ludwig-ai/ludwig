@@ -198,7 +198,7 @@ class LudwigModel:
             being used.
         :param model_resume_path: (str, default: `None`) resumes training of
             the model from the path specified. The model definition is restored.
-            In addition to model definition, training statistics and loss for
+            In addition to model definition, training statistics, loss for each
             epoch and the state of the optimizer are restored such that
             training can be effectively continued from a previously interrupted
             training process.
