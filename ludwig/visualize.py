@@ -2958,7 +2958,7 @@ def confusion_matrix(
         training containing the mappings of the input dataset.
     :param output_feature_name: (Union[str, `None`]) name of the output feature
         to use for the visualization.  If `None`, use all output features.
-    :param top_n_classes: (Union[int, List[int]]) number of top classes or list
+    :param top_n_classes: (List[int]) number of top classes or list
         containing the number of top classes to plot.
     :param normalize: (bool) flag to normalize rows in confusion matrix.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
