@@ -2560,7 +2560,7 @@ def roc_curves(
     This visualization produces a line chart plotting the roc curves for the
     specified output feature name. If output feature name is a category feature,
     `positive_label` indicates which is the class to be considered positive
-    class and all the others will be considered negative. `positive_label is
+    class and all the others will be considered negative. `positive_label` is
     the encoded numeric value for category classes. The numeric value can be
     determined by association between classes and integers captured in the
     training metadata JSON file.
