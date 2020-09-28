@@ -19,6 +19,7 @@ import logging
 import sys
 
 from ludwig.api import LudwigModel
+from ludwig.constants import FULL, TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.horovod_utils import set_on_master, is_on_master
@@ -32,6 +33,7 @@ def predict_cli(
         model_path,
         dataset=None,
         data_format=None,
+        split=FULL,
         batch_size=128,
         skip_save_unprocessed_output=False,
         skip_save_predictions=False,
@@ -55,11 +57,12 @@ def predict_cli(
     model.predict(
         dataset=dataset,
         data_format=data_format,
+        split=split,
         batch_size=batch_size,
         skip_save_unprocessed_output=skip_save_unprocessed_output,
         skip_save_predictions=skip_save_predictions,
         output_directory=output_directory,
-        return_type=dict,
+        return_type='dict',
         debug=debug,
     )
 
@@ -87,6 +90,13 @@ def cli(sys_argv):
         choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
                  'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
                  'spss', 'stata', 'tsv']
+    )
+    parser.add_argument(
+        '-s',
+        '--split',
+        default=FULL,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
+        help='the split to test the model on'
     )
 
     # ----------------

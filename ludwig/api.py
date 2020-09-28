@@ -35,7 +35,7 @@ import ludwig.contrib
 
 ludwig.contrib.contrib_import()
 
-from ludwig.constants import PREPROCESSING, TRAINING, VALIDATION, TEST
+from ludwig.constants import PREPROCESSING, TRAINING, VALIDATION, TEST, FULL
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import preprocess_for_training, \
@@ -541,11 +541,12 @@ class LudwigModel:
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
             data_format: str = None,
+            split: str = FULL,
             batch_size: int = 128,
             skip_save_unprocessed_output: bool = True,
             skip_save_predictions: bool = True,
             output_directory: str = 'results',
-            return_type: Union[dict, pd.DataFrame] = pd.DataFrame,
+            return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
             debug=False,
             **kwargs
     ) -> Tuple[Union[dict, pd.DataFrame], str]:
@@ -562,6 +563,10 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
+        :param: split: (str, default= `'full'`): if the input dataset contains
+            a split column, this parameter indicates which split of the data
+            to use. Possible values are `'full'`, `'training'`, `
+            'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
@@ -575,9 +580,8 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param return_type: (Union[dict, pandas.DataFrame], default: pd.DataFrame)
-            indicates the format to
-            return predictions.
+        :param return_type: (Union[str, dict, pandas.DataFrame], default: pd.DataFrame)
+            indicates the format of the returned predictions.
         :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan checks`.
 
@@ -590,20 +594,15 @@ class LudwigModel:
         """
         self._check_initialization()
 
-        logger.debug('Preprocessing')
-        # Added [:] to next line, before I was just assigning,
-        # this way I'm copying the list. If you don't do it, you are actually
-        # modifying the input feature list when you add output features,
-        # which you definitely don't want to do
-        features_to_load = self.model_definition['input_features'][:]
-
         # preprocessing
+        logger.debug('Preprocessing')
         dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
             dataset=dataset,
-            data_format=data_format,
             training_set_metadata=self.training_set_metadata,
-            include_outputs=False,
+            data_format=data_format,
+            split=split,
+            include_outputs=False
         )
 
         logger.debug('Predicting')
@@ -652,6 +651,7 @@ class LudwigModel:
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
             data_format: str = None,
+            split: str = FULL,
             batch_size: int = 128,
             skip_save_unprocessed_output: bool = True,
             skip_save_predictions: bool = True,
@@ -677,6 +677,10 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
+        :param: split: (str, default= `'full'`): if the input dataset contains
+            a split column, this parameter indicates which split of the data
+            to use. Possible values are `'full'`, `'training'`, `
+            'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param skip_save_unprocessed_output: (bool, default: `True`) if this
@@ -696,9 +700,8 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param return_type: (Union[dict, pandas.DataFrame], default: pandas.DataFrame) indicates
-            the format to
-            return predictions.
+        :param return_type: (Union[str, dict, pandas.DataFrame], default: pandas.DataFrame) indicates
+            the format to of the returned predictions.
         :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan` checks.
 
@@ -713,15 +716,15 @@ class LudwigModel:
         """
         self._check_initialization()
 
-        logger.debug('Preprocessing')
-
         # preprocessing
+        logger.debug('Preprocessing')
         dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
             dataset=dataset,
-            data_format=data_format,
             training_set_metadata=self.training_set_metadata,
-            include_outputs=True,
+            data_format=data_format,
+            split=split,
+            include_outputs=True
         )
 
         logger.debug('Predicting')
@@ -1035,6 +1038,7 @@ class LudwigModel:
             layer_names: List[str],
             dataset: Union[str, Dict[str, list], pd.DataFrame],
             data_format: str = None,
+            split: str = FULL,
             batch_size: int = 128,
             debug: bool = False,
             **kwargs
@@ -1054,6 +1058,10 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
+        :param: split: (str, default= `'full'`): if the input dataset contains
+            a split column, this parameter indicates which split of the data
+            to use. Possible values are `'full'`, `'training'`, `
+            'validation'`, `'test'`.
         :param batch_size: (int, default: 128) size of batch to use when making
             predictions.
         :param debug: (bool, default: `False`) if `True` turns on `tfdbg`
@@ -1064,20 +1072,16 @@ class LudwigModel:
 
         """
         self._check_initialization()
-        logger.debug('Preprocessing')
-        # Added [:] to next line, before I was just assigning,
-        # this way I'm copying the list. If you don't do it, you are actually
-        # modifying the input feature list when you add output features,
-        # which you definitely don't want to do
-        features_to_load = self.model_definition['input_features'][:]
 
         # preprocessing
+        logger.debug('Preprocessing')
         dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
             dataset=dataset,
-            data_format=data_format,
             training_set_metadata=self.training_set_metadata,
-            include_outputs=False,
+            data_format=data_format,
+            split=split,
+            include_outputs=False
         )
 
         logger.debug('Predicting')

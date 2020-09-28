@@ -1455,18 +1455,17 @@ def preprocess_for_prediction(
         dataset,
         training_set_metadata=None,
         data_format=None,
-        include_outputs=True,
+        split=FULL,
+        include_outputs=True
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core
         :param model_path: The input data that is joined with the model
                hyperparameter file to create the model definition file
-        :type model_path: Str
-        :param split: Splits the data into the train and test sets
         :param data_csv: The CSV input data file
         :param data_hdf5: The hdf5 data file if there is no csv data file
         :param training_set_metadata: Train set metadata for the input features
-        :param evaluate_performance: If False does not load output features
+        :param split: the split of dataset to return
         :returns: Dataset, Train set metadata
         """
     # Sanity Check to make sure some data source is provided
@@ -1527,17 +1526,27 @@ def preprocess_for_prediction(
         data_format,
         data_format_preprocessor_registry
     )
-    processed = data_format_processor.preprocess_for_prediction(
-        dataset,
-        features,
-        preprocessing_params,
-        training_set_metadata
-    )
+    processed = data_format_processor.preprocess_for_prediction(dataset,
+                                                                features,
+                                                                preprocessing_params,
+                                                                training_set_metadata)
     dataset, training_set_metadata, new_hdf5_fp = processed
     if new_hdf5_fp:
         hdf5_fp = new_hdf5_fp
 
     replace_text_feature_level(features, [dataset])
+
+    if split != FULL:
+        training_set, test_set, validation_set = split_dataset_ttv(
+            dataset,
+            dataset[SPLIT]
+        )
+        if split == TRAINING:
+            dataset = training_set
+        elif split == VALIDATION:
+            dataset = validation_set
+        elif split == TEST:
+            dataset = test_set
 
     dataset = Dataset(
         dataset,
