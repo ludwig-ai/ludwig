@@ -173,7 +173,7 @@ def test_hyperopt_run_hyperopt(csv_filename):
         'output_feature': output_feature_name,
         'validation_metrics': 'loss',
         'executor': {'type': 'serial'},
-        'sampler': {'type': 'random', 'num_samples': 5}
+        'sampler': {'type': 'random', 'num_samples': 2}
     }
 
     # add hyperopt parameter space to the model definition

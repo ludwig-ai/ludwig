@@ -865,7 +865,7 @@ def test_hyperopt_report_vis_api(csv_filename):
         'output_feature': output_feature_name,
         'validation_metrics': 'loss',
         'executor': {'type': 'serial'},
-        'sampler': {'type': 'random', 'num_samples': 5}
+        'sampler': {'type': 'random', 'num_samples': 2}
     }
 
     # add hyperopt parameter space to the model definition
