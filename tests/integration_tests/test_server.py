@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 import logging
 import os
 import shutil
@@ -98,6 +99,18 @@ def convert_to_form(entry):
     return data, files
 
 
+def convert_to_batch_form(data_df):
+    data = data_df.to_dict(orient='split')
+    files = {
+        'dataset': (None, json.dumps(data), 'application/json'),
+    }
+    for row in data['data']:
+        for v in row:
+            if type(v) == str and os.path.exists(v) and v not in files:
+                files[v] = (v, open(v, 'rb'), 'application/octet-stream')
+    return files
+
+
 def test_server_integration(csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
@@ -136,6 +149,8 @@ def test_server_integration(csv_filename):
     assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
     data_df = read_csv(rel_path)
+
+    # One-off prediction
     first_entry = data_df.T.to_dict()[0]
     data, files = convert_to_form(first_entry)
     server_response = client.post('/predict', data=data, files=files)
@@ -150,5 +165,20 @@ def test_server_integration(csv_filename):
     model_output = model_output.to_dict('records')[0]
     assert model_output == server_response
 
+    # Batch prediction
+    assert len(data_df) > 1
+    files = convert_to_batch_form(data_df)
+    server_response = client.post('/batch_predict', files=files)
+    server_response = server_response.json()
+
+    server_response_keys = sorted(server_response['columns'])
+    assert server_response_keys == sorted(output_keys_for(output_features))
+    assert len(data_df) == len(server_response['data'])
+
+    model_output, _ = model.predict(dataset=data_df)
+    model_output = model_output.to_dict('split')
+    assert model_output == server_response
+
+    # Cleanup
     shutil.rmtree(output_dir, ignore_errors=True)
-    shutil.rmtree(image_dest_folder)
+    shutil.rmtree(image_dest_folder, ignore_errors=True)
