@@ -1077,7 +1077,7 @@ class Trainer:
                         logger.info(
                             'PLATEAU REACHED, reducing learning rate to {} '
                             'due to lack of improvement of {} {} {}'.format(
-                                progress_tracker.batch_size,
+                                progress_tracker.learning_rate,
                                 validation_output_feature_name,
                                 reduce_learning_rate_eval_split,
                                 validation_metric,
