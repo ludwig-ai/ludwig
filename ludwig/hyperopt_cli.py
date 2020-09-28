@@ -162,7 +162,9 @@ def cli(sys_argv):
         '--data_format',
         help='format of the input data',
         default='auto',
-        choices=['auto', 'csv', 'hdf5']
+        choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
+                 'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
+                 'spss', 'stata', 'tsv']
     )
 
     parser.add_argument(
