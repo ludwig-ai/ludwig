@@ -16,12 +16,16 @@
 import glob
 import os
 import shutil
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
 
+import pytest
+
 from ludwig import visualize
 from ludwig.api import LudwigModel
+from ludwig.hyperopt.run import hyperopt
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import category_feature, \
@@ -46,7 +50,10 @@ def run_api_experiment(input_features, output_features):
     model = LudwigModel(model_definition)
     return model
 
-
+# todo determine feasibility of putting Experiment() into a pytest.fixture
+# to reduce the number of times Ludwig.evaluate() has to be run to generate
+# result for the visualization tests, should help reduce run-time of these
+# tests.
 class Experiment:
     """Helper class to create model test data, setup and run experiment.
 
@@ -817,3 +824,38 @@ def test_frequency_vs_f1_vis_api(csv_filename):
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 2 == len(figure_cnt)
     shutil.rmtree(experiment.output_dir, ignore_errors=True)
+
+
+def test_hyperopt_report_vis_api(hyperopt_results):
+
+    with TemporaryDirectory() as tmpdir:
+        vis_dir = os.path.join(tmpdir, 'visualizations')
+
+        visualize.hyperopt_report(
+            os.path.join(hyperopt_results, 'hyperopt_statistics.json'),
+            output_directory=vis_dir
+        )
+
+        # test for creation of output directory
+        assert os.path.isdir(vis_dir)
+
+        figure_cnt = glob.glob(os.path.join(vis_dir, '*'))
+        assert 4 == len(figure_cnt)
+
+
+def test_hyperopt_hiplot_vis_api(hyperopt_results):
+
+    with TemporaryDirectory() as tmpdir:
+        vis_dir = os.path.join(tmpdir, 'visualizations')
+
+        visualize.hyperopt_hiplot(
+            os.path.join(hyperopt_results, 'hyperopt_statistics.json'),
+            output_directory=vis_dir
+        )
+
+        # test for creation of output directory
+        assert os.path.isdir(vis_dir)
+
+        # test for generatated html page
+        assert os.path.isfile(os.path.join(vis_dir, 'hyperopt_hiplot.html'))
+
