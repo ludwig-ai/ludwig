@@ -21,6 +21,8 @@ from tempfile import TemporaryDirectory
 import numpy as np
 import pandas as pd
 
+import pytest
+
 from ludwig import visualize
 from ludwig.api import LudwigModel
 from ludwig.hyperopt.run import hyperopt
@@ -820,69 +822,14 @@ def test_frequency_vs_f1_vis_api(csv_filename):
         assert 2 == len(figure_cnt)
     shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
-def test_hyperopt_report_vis_api(csv_filename):
-    input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum")]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
-
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    model_definition = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001}
-    }
-
-    output_feature_name = output_features[0]['name']
-
-    hyperopt_configs = {
-        "parameters": {
-            "training.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.01,
-                "space": "log",
-                "steps": 3,
-            },
-            output_feature_name + ".fc_size": {
-                "type": "int",
-                "low": 32,
-                "high": 256,
-                "steps": 5
-            },
-            output_feature_name + ".num_fc_layers": {
-                'type': 'int',
-                'low': 1,
-                'high': 5,
-                'space': 'linear',
-                'steps': 4
-            }
-        },
-        "goal": "minimize",
-        'output_feature': output_feature_name,
-        'validation_metrics': 'loss',
-        'executor': {'type': 'serial'},
-        'sampler': {'type': 'random', 'num_samples': 2}
-    }
-
-    # add hyperopt parameter space to the model definition
-    model_definition['hyperopt'] = hyperopt_configs
+def test_hyperopt_report_vis_api(hyperopt_results):
 
     with TemporaryDirectory() as tmpdir:
-        results_dir = os.path.join(tmpdir, 'results')
         vis_dir = os.path.join(tmpdir, 'visualizations')
 
-        hyperopt_results = hyperopt(
-            model_definition,
-            dataset=rel_path,
-            output_directory=results_dir
-        )
-
         visualize.hyperopt_report(
-            os.path.join(results_dir, 'hyperopt_statistics.json'),
+            os.path.join(hyperopt_results, 'hyperopt_statistics.json'),
             output_directory=vis_dir
         )
 
@@ -893,69 +840,13 @@ def test_hyperopt_report_vis_api(csv_filename):
         assert 4 == len(figure_cnt)
 
 
-def test_hyperopt_hiplot_vis_api(csv_filename):
-    input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum")]
-
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
-
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    model_definition = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001}
-    }
-
-    output_feature_name = output_features[0]['name']
-
-    hyperopt_configs = {
-        "parameters": {
-            "training.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.01,
-                "space": "log",
-                "steps": 3,
-            },
-            output_feature_name + ".fc_size": {
-                "type": "int",
-                "low": 32,
-                "high": 256,
-                "steps": 5
-            },
-            output_feature_name + ".num_fc_layers": {
-                'type': 'int',
-                'low': 1,
-                'high': 5,
-                'space': 'linear',
-                'steps': 4
-            }
-        },
-        "goal": "minimize",
-        'output_feature': output_feature_name,
-        'validation_metrics': 'loss',
-        'executor': {'type': 'serial'},
-        'sampler': {'type': 'random', 'num_samples': 2}
-    }
-
-    # add hyperopt parameter space to the model definition
-    model_definition['hyperopt'] = hyperopt_configs
+def test_hyperopt_hiplot_vis_api(hyperopt_results):
 
     with TemporaryDirectory() as tmpdir:
-        results_dir = os.path.join(tmpdir, 'results')
         vis_dir = os.path.join(tmpdir, 'visualizations')
 
-        hyperopt_results = hyperopt(
-            model_definition,
-            dataset=rel_path,
-            output_directory=results_dir
-        )
-
         visualize.hyperopt_hiplot(
-            os.path.join(results_dir, 'hyperopt_statistics.json'),
+            os.path.join(hyperopt_results, 'hyperopt_statistics.json'),
             output_directory=vis_dir
         )
 

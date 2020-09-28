@@ -20,6 +20,10 @@ import pytest
 
 from ludwig.utils.data_utils import replace_file_extension
 from ludwig.utils.tf_utils import initialize_tensorflow
+from tests.integration_tests.utils import category_feature, \
+    generate_data, text_feature
+from ludwig.hyperopt.run import hyperopt
+
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -85,3 +89,69 @@ def delete_temporary_data(csv_path):
     hdf5_path = replace_file_extension(csv_path, 'hdf5')
     if os.path.isfile(hdf5_path):
         os.remove(hdf5_path)
+
+
+@pytest.fixture(scope='module')
+def hyperopt_results():
+    """
+    This function generates hyperopt results
+    """
+    input_features = [
+        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
+        category_feature(vocab_size=2, reduce_input="sum")]
+
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+
+    csv_filename = uuid.uuid4().hex[:10].upper() + '.csv'
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    model_definition = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "num_fc_layers": 2},
+        "training": {"epochs": 2, "learning_rate": 0.001}
+    }
+
+    output_feature_name = output_features[0]['name']
+
+    hyperopt_configs = {
+        "parameters": {
+            "training.learning_rate": {
+                "type": "float",
+                "low": 0.0001,
+                "high": 0.01,
+                "space": "log",
+                "steps": 3,
+            },
+            output_feature_name + ".fc_size": {
+                "type": "int",
+                "low": 32,
+                "high": 256,
+                "steps": 5
+            },
+            output_feature_name + ".num_fc_layers": {
+                'type': 'int',
+                'low': 1,
+                'high': 5,
+                'space': 'linear',
+                'steps': 4
+            }
+        },
+        "goal": "minimize",
+        'output_feature': output_feature_name,
+        'validation_metrics': 'loss',
+        'executor': {'type': 'serial'},
+        'sampler': {'type': 'random', 'num_samples': 2}
+    }
+
+    # add hyperopt parameter space to the model definition
+    model_definition['hyperopt'] = hyperopt_configs
+
+
+    hyperopt_results = hyperopt(
+        model_definition,
+        dataset=rel_path,
+        output_directory='results'
+    )
+
+    return os.path.abspath('results')
