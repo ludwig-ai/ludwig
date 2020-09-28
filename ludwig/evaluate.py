@@ -19,6 +19,7 @@ import logging
 import sys
 
 from ludwig.api import LudwigModel
+from ludwig.constants import FULL, TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.horovod_utils import set_on_master, is_on_master
@@ -31,6 +32,7 @@ def evaluate_cli(
         model_path,
         dataset=None,
         data_format=None,
+        split=FULL,
         batch_size=128,
         skip_save_unprocessed_output=False,
         skip_save_predictions=False,
@@ -58,13 +60,14 @@ def evaluate_cli(
         dataset=dataset,
         data_format=data_format,
         batch_size=batch_size,
+        split=split,
         skip_save_unprocessed_output=skip_save_unprocessed_output,
         skip_save_predictions=skip_save_predictions,
         skip_save_eval_stats=skip_save_eval_stats,
         collect_predictions=not skip_collect_predictions,
         collect_overall_stats=not skip_collect_overall_stats,
         output_directory=output_directory,
-        return_type=dict,
+        return_type='dict',
         debug=debug
     )
 
@@ -91,6 +94,13 @@ def cli(sys_argv):
         help='format of the input data',
         default='auto',
         choices=['auto', 'csv', 'hdf5']
+    )
+    parser.add_argument(
+        '-s',
+        '--split',
+        default=FULL,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
+        help='the split to test the model on'
     )
 
     # ----------------

@@ -113,7 +113,7 @@ def test_savedmodel(csv_filename, should_load_model):
     dataset, training_set_metadata = preprocess_for_prediction(
         ludwig_model.model_definition,
         dataset=data_csv_path,
-        training_set_metadata=training_set_metadata_json_fp,
+        training_set_metadata=training_set_metadata_json_fp
     )
 
     restored_model = tf.saved_model.load(savedmodel_path)
