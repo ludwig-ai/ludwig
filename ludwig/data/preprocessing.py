@@ -1314,7 +1314,7 @@ def _preprocess_file_for_training(
         )
 
         if is_on_master() and not skip_save_processed_input:
-            logger.info('Writing prprocessed dataset cache')
+            logger.info('Writing preprocessed dataset cache')
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
             data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
@@ -1360,7 +1360,7 @@ def _preprocess_file_for_training(
         )
 
         if is_on_master() and not skip_save_processed_input:
-            logger.info('Writing prprocessed dataset cache')
+            logger.info('Writing preprocessed dataset cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(
                 data_train_hdf5_fp,
