@@ -115,9 +115,15 @@ class SerialExecutor(HyperoptExecutor):
                     copy.deepcopy(model_definition), parameters)
 
                 trial_id = trials + i
-                train_stats, eval_stats = train_and_eval_on_split(
-                    modified_model_definition,
-                    eval_split=self.split,
+
+                model = LudwigModel(
+                    model_definition=modified_model_definition,
+                    use_horovod=use_horovod,
+                    gpus=gpus,
+                    gpu_memory_limit=gpu_memory_limit,
+                    allow_parallel_threads=allow_parallel_threads,
+                )
+                eval_stats, train_stats, _, _ = model.experiment(
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
@@ -128,6 +134,7 @@ class SerialExecutor(HyperoptExecutor):
                     model_name=model_name,
                     # model_load_path=model_load_path,
                     # model_resume_path=model_resume_path,
+                    eval_split=self.split,
                     skip_save_training_description=skip_save_training_description,
                     skip_save_training_statistics=skip_save_training_statistics,
                     skip_save_model=skip_save_model,
@@ -138,10 +145,8 @@ class SerialExecutor(HyperoptExecutor):
                     skip_save_predictions=skip_save_predictions,
                     skip_save_eval_stats=skip_save_eval_stats,
                     output_directory=output_directory,
-                    gpus=gpus,
-                    gpu_memory_limit=gpu_memory_limit,
-                    allow_parallel_threads=allow_parallel_threads,
-                    use_horovod=use_horovod,
+                    skip_collect_predictions=True,
+                    skip_collect_overall_stats=False,
                     random_seed=random_seed,
                     debug=debug,
                 )
@@ -192,9 +197,9 @@ class ParallelExecutor(HyperoptExecutor):
     def init_worker():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    def _train_and_eval_model(self, hyperopt_dict):
+    def _run_experiment(self, hyperopt_dict):
         parameters = hyperopt_dict["parameters"]
-        train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
+        train_stats, eval_stats = run_experiment(**hyperopt_dict)
         metric_score = self.get_metric_score(eval_stats)
 
         return {
@@ -204,13 +209,13 @@ class ParallelExecutor(HyperoptExecutor):
             "eval_stats": eval_stats,
         }
 
-    def _train_and_eval_model_gpu(self, hyperopt_dict):
+    def _run_experiment_gpu(self, hyperopt_dict):
         gpu_id_meta = self.queue.get()
         try:
             parameters = hyperopt_dict['parameters']
             hyperopt_dict["gpus"] = gpu_id_meta["gpu_id"]
             hyperopt_dict["gpu_memory_limit"] = gpu_id_meta["gpu_memory_limit"]
-            train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
+            train_stats, eval_stats = run_experiment(**hyperopt_dict)
             metric_score = self.get_metric_score(eval_stats)
         finally:
             self.queue.put(gpu_id_meta)
@@ -415,10 +420,10 @@ class ParallelExecutor(HyperoptExecutor):
                 trials += len(sampled_parameters)
 
                 if gpus is not None:
-                    batch_results = pool.map(self._train_and_eval_model_gpu,
+                    batch_results = pool.map(self._run_experiment_gpu,
                                              hyperopt_parameters)
                 else:
-                    batch_results = pool.map(self._train_and_eval_model,
+                    batch_results = pool.map(self._run_experiment,
                                              hyperopt_parameters)
 
                 self.hyperopt_sampler.update_batch(
@@ -504,8 +509,7 @@ class FiberExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ):
-        train_kwargs = dict(
-            eval_split=self.split,
+        experiment_kwargs = dict(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -515,6 +519,7 @@ class FiberExecutor(HyperoptExecutor):
             model_name=model_name,
             # model_load_path=model_load_path,
             # model_resume_path=model_resume_path,
+            eval_split=self.split,
             skip_save_training_description=skip_save_training_description,
             skip_save_training_statistics=skip_save_training_statistics,
             skip_save_model=skip_save_model,
@@ -533,9 +538,10 @@ class FiberExecutor(HyperoptExecutor):
             debug=debug,
         )
 
-        train_fn = _train_and_eval_on_split_unary
+        experiemnt_fn = _run_experiment_unary
         if self.resource_limits:
-            train_fn = self.fiber_meta(**self.resource_limits)(train_fn)
+            experiemnt_fn = self.fiber_meta(**self.resource_limits)(
+                experiemnt_fn)
 
         hyperopt_results = []
         trials = 0
@@ -544,13 +550,13 @@ class FiberExecutor(HyperoptExecutor):
             metric_scores = []
 
             stats_batch = self.pool.map(
-                train_fn,
+                experiemnt_fn,
                 [
                     {
                         'model_definition': substitute_parameters(
                             copy.deepcopy(model_definition), parameters),
                         'experiment_name': f'{experiment_name}_{trials + i}',
-                        **train_kwargs
+                        **experiment_kwargs
                     }
                     for i, parameters in enumerate(sampled_parameters)
                 ],
@@ -629,9 +635,8 @@ def substitute_parameters(model_definition, parameters):
     return model_definition
 
 
-def train_and_eval_on_split(
+def run_experiment(
         model_definition,
-        eval_split=VALIDATION,
         dataset=None,
         training_set=None,
         validation_set=None,
@@ -642,6 +647,7 @@ def train_and_eval_on_split(
         model_name="run",
         # model_load_path=None,
         # model_resume_path=None,
+        eval_split=VALIDATION,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
         skip_save_model=False,
@@ -669,8 +675,7 @@ def train_and_eval_on_split(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
     )
-
-    train_stats, preprocessed_data, _ = model.train(
+    eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -679,46 +684,27 @@ def train_and_eval_on_split(
         data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
+        # model_load_path=model_load_path,
+        # model_resume_path=model_resume_path,
+        eval_split=eval_split,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
-        output_directory=output_directory,
-        random_seed=random_seed,
-        debug=debug,
-    )
-
-    if model_definition[TRAINING]["eval_batch_size"] > 0:
-        batch_size = model_definition[TRAINING]["eval_batch_size"]
-    else:
-        batch_size = model_definition[TRAINING]["batch_size"]
-
-    training_set, validation_set, test_set, train_set_metadata = preprocessed_data
-    eval_set = validation_set
-    if eval_split == TRAINING:
-        eval_set = training_set
-    elif eval_split == VALIDATION:
-        eval_set = validation_set
-    elif eval_split == TEST:
-        eval_set = test_set
-
-    test_results, postproc_predictions, _ = model.evaluate(
-        dataset=eval_set,
-        data_format=data_format,
-        batch_size=batch_size,
         skip_save_unprocessed_output=skip_save_unprocessed_output,
         skip_save_predictions=skip_save_predictions,
         skip_save_eval_stats=skip_save_eval_stats,
         output_directory=output_directory,
-        return_type=dict,
+        skip_collect_predictions=True,
+        skip_collect_overall_stats=False,
+        random_seed=random_seed,
         debug=debug,
     )
+    return train_stats, eval_stats
 
-    return train_stats, test_results
 
-
-def _train_and_eval_on_split_unary(kwargs):
+def _run_experiment_unary(kwargs):
     """Unary function is needed by Fiber to map a list of args."""
-    return train_and_eval_on_split(**kwargs)
+    return run_experiment(**kwargs)
