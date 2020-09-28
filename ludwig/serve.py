@@ -144,7 +144,7 @@ def convert_batch_input(form):
         if type(v) == UploadFile:
             file_index[v.filename] = _write_file(v, files)
 
-    data = json.loads(form['json'])
+    data = json.loads(form['dataset'])
     for row in data['data']:
         for i in range(len(row)):
             if row[i] in file_index:

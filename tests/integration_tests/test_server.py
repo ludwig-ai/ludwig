@@ -102,7 +102,7 @@ def convert_to_form(entry):
 def convert_to_batch_form(data_df):
     data = data_df.to_dict(orient='split')
     files = {
-        'json': (None, json.dumps(data), 'application/json'),
+        'dataset': (None, json.dumps(data), 'application/json'),
     }
     for row in data['data']:
         for v in row:
