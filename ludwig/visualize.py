@@ -3215,13 +3215,12 @@ def frequency_vs_f1(
                 filename=filename
             )
 
-
 def hyperopt_report_cli(
-        hyperopt_stats_path,
-        output_directory=None,
-        file_format='pdf',
-        **kwargs
-):
+    hyperopt_stats_path,
+    output_directory=None,
+    file_format='pdf',
+    **kwargs
+) -> None:
     """
     Produces a report about hyperparameter optimization
     creating one graph per hyperparameter to show the distribution of results.
@@ -3230,6 +3229,36 @@ def hyperopt_report_cli(
     :param output_directory: path where to save the output plots
     :param file_format: format of the output plot, pdf or png
     :return:
+    """
+
+    hyperopt_report(
+        hyperopt_stats_path,
+        output_directory=output_directory,
+        file_format=file_format
+    )
+
+
+def hyperopt_report(
+        hyperopt_stats_path: str,
+        output_directory: str = None,
+        file_format: str = 'pdf',
+        **kwargs
+) -> None:
+    """
+    Produces a report about hyperparameter optimization
+    creating one graph per hyperparameter to show the distribution of results.
+
+    # Inputs
+
+    :param hyperopt_stats_path: (str) path to the hyperopt results JSON file.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window.
+    :param file_format: (str, default: `'pdf'`) file format of output plots -
+        `'pdf'` or `'png'`.
+
+    # Return
+
+    :return: (None)
     """
     filename_template = 'hyperopt_{}.' + file_format
     filename_template_path = generate_filename_template_path(
