@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import List, Union, Dict, Tuple, Optional
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -3223,7 +3223,8 @@ def hyperopt_report_cli(
 ) -> None:
     """
     Produces a report about hyperparameter optimization
-    creating one graph per hyperparameter to show the distribution of results.
+    creating one graph per hyperparameter to show the distribution of results
+    and one additional graph of pairwise hyperparameters interactions.
 
     :param hyperopt_stats_path: path to the hyperopt results JSON file
     :param output_directory: path where to save the output plots
@@ -3246,7 +3247,8 @@ def hyperopt_report(
 ) -> None:
     """
     Produces a report about hyperparameter optimization
-    creating one graph per hyperparameter to show the distribution of results.
+    creating one graph per hyperparameter to show the distribution of results
+    and one additional graph of pairwise hyperparameters interactions.
 
     # Inputs
 
