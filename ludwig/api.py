@@ -473,7 +473,7 @@ class LudwigModel:
     ) -> None:
         """Performs one epoch of training of the model on `dataset`.
 
-        #Inputs
+        # Inputs
 
         :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
             source containing the entire dataset to be used in the experiment.
@@ -492,15 +492,15 @@ class LudwigModel:
             `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
             `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
             `'stata'`, `'tsv'`.
-        :param random_seed: (int, default`42`) a random seed that is going to be
+        :param random_seed: (int, default: `42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
         :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan` checks.
 
         # Return
-        :return: `None`
 
+        :return: (None) `None`
         """
         training_set_metadata = training_set_metadata or self.training_set_metadata
         training_dataset, _, _, training_set_metadata = preprocess_for_training(
@@ -1215,7 +1215,7 @@ class LudwigModel:
 
         # Return
 
-        :return: `None`
+        :return: (None) `None`
 
         # Example usage
 
