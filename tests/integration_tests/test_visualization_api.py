@@ -50,7 +50,10 @@ def run_api_experiment(input_features, output_features):
     model = LudwigModel(model_definition)
     return model
 
-
+# todo determine feasibility of putting Experiment() into a pytest.fixture
+# to reduce the number of times Ludwig.evaluate() has to be run to generate
+# result for the visualization tests, should help reduce run-time of these
+# tests.
 class Experiment:
     """Helper class to create model test data, setup and run experiment.
 
