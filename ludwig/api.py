@@ -248,8 +248,8 @@ class LudwigModel:
         # Return
 
         :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
-            `(train_statistics, preprocessed_data, output_directory)`.
-            `train_statistics` is a dictionary of training statistics for each
+            `(training_statistics, preprocessed_data, output_directory)`.
+            `training_statistics` is a dictionary of training statistics for each
             output feature containing loss and metrics values for each epoch.
             `preprocessed_data` is the tuple containing these three data sets
             `(training_set, validation_set, test_set)`.  `output_directory`
@@ -648,20 +648,6 @@ class LudwigModel:
 
         return postproc_predictions, output_directory
 
-    # def evaluate_pseudo(self, data, return_preds=False):
-    #     preproc_data = preprocess_data(data)
-    #     if return_preds:
-    #         eval_stats, preds = self.model.batch_evaluate(
-    #             preproc_data, return_preds=return_preds
-    #         )
-    #         postproc_preds = postprocess_data(preds)
-    #         return eval_stats, postproc_preds
-    #     else:
-    #         eval_stats = self.model.batch_evaluate(
-    #             preproc_data, return_preds=return_preds
-    #         )
-    #         return eval_stats
-
     def evaluate(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
@@ -742,7 +728,7 @@ class LudwigModel:
         predictor = Predictor(
             batch_size=batch_size, horovod=self._horovod, debug=debug
         )
-        stats, predictions = predictor.batch_evaluation(
+        eval_stats, predictions = predictor.batch_evaluation(
             self.model,
             dataset,
             collect_predictions=collect_predictions or collect_overall_stats,
@@ -756,10 +742,12 @@ class LudwigModel:
                 dataset,
                 training_set_metadata
             )
-            stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
-            # account for presence of 'combined' key
-            if of_name in overall_stats else {**stats[of_name]}
-                     for of_name in stats}
+            eval_stats = {
+                of_name: {**eval_stats[of_name], **overall_stats[of_name]}
+                # account for presence of 'combined' key
+                if of_name in overall_stats
+                else {**eval_stats[of_name]} for of_name in eval_stats
+            }
 
         if is_on_master():
             # if we are skipping all saving,
@@ -790,9 +778,9 @@ class LudwigModel:
                 save_prediction_outputs(postproc_predictions,
                                         output_directory)
 
-            print_evaluation_stats(stats)
+            print_evaluation_stats(eval_stats)
             if not skip_save_eval_stats:
-                save_evaluation_stats(stats, output_directory)
+                save_evaluation_stats(eval_stats, output_directory)
 
             if not skip_save_predictions or not skip_save_eval_stats:
                 logger.info('Saved to: {0}'.format(output_directory))
@@ -804,7 +792,7 @@ class LudwigModel:
                 self.training_set_metadata,
                 return_type=return_type)
 
-        return stats, postproc_predictions, output_directory
+        return eval_stats, postproc_predictions, output_directory
 
     def experiment(
             self,
@@ -822,19 +810,19 @@ class LudwigModel:
             skip_save_training_statistics: bool = False,
             skip_save_model: bool = False,
             skip_save_progress: bool = False,
-            skip_save_log:  bool = False,
+            skip_save_log: bool = False,
             skip_save_processed_input: bool = False,
             skip_save_unprocessed_output: bool = False,
-            skip_save_predictions:bool = False,
+            skip_save_predictions: bool = False,
             skip_save_eval_stats: bool = False,
             skip_collect_predictions: bool = False,
             skip_collect_overall_stats: bool = False,
             output_directory: str = 'results',
             gpus: Union[str, int, List[int]] = None,
-            gpu_memory_limit: int  = None,
+            gpu_memory_limit: int = None,
             allow_parallel_threads: bool = True,
             use_horovod: bool = None,
-            random_seed: int =default_random_seed,
+            random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
     ) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
@@ -992,7 +980,7 @@ class LudwigModel:
                 batch_size = self.model_definition[TRAINING]['batch_size']
 
             # predict
-            test_results, _, _ = self.evaluate(
+            eval_stats, _, _ = self.evaluate(
                 test_set,
                 data_format=data_format,
                 batch_size=batch_size,
@@ -1005,9 +993,9 @@ class LudwigModel:
                 debug=debug
             )
         else:
-            test_results = None
+            eval_stats = None
 
-        return test_results, train_stats, preprocessed_data, output_directory
+        return eval_stats, train_stats, preprocessed_data, output_directory
 
     def collect_weights(
             self,
@@ -1201,8 +1189,8 @@ class LudwigModel:
                                               root_rank=0)
 
     def save(
-        self,
-        save_path: str
+            self,
+            save_path: str
     ) -> None:
         """This function allows to save models on disk
 
@@ -1241,8 +1229,8 @@ class LudwigModel:
         save_json(training_set_metadata_path, self.training_set_metadata)
 
     def save_model_definition(
-        self,
-        save_path: str
+            self,
+            save_path: str
     ) -> None:
         """
         Save model definition to specoficed location.
@@ -1342,13 +1330,13 @@ def kfold_cross_validate(
         model_definition: Union[dict, str],
         dataset: str = None,
         data_format: str = None,
-        skip_save_training_description:bool = False,
+        skip_save_training_description: bool = False,
         skip_save_training_statistics: bool = False,
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
         skip_save_processed_input: bool = False,
-        skip_save_predictions:bool = False,
+        skip_save_predictions: bool = False,
         skip_save_eval_stats: bool = False,
         skip_collect_predictions: bool = False,
         skip_collect_overall_stats: bool = False,
@@ -1439,8 +1427,8 @@ def kfold_cross_validate(
 
     # Return
 
-    :return: (tuple(kfold_cv_stats, kfold_split_indices), dict) a tuple of
-            dictionaries `kfold_cv_stats`: contains metrics from cv run.
+    :return: (tuple(kfold_cv_statistics, kfold_split_indices), dict) a tuple of
+            dictionaries `kfold_cv_statistics`: contains metrics from cv run.
              `kfold_split_indices`: indices to split training data into
              training fold and test fold.
     """
@@ -1450,7 +1438,6 @@ def kfold_cross_validate(
     if isinstance(model_definition, str):  # assume path
         with open(model_definition, 'r') as def_file:
             model_definition = yaml.safe_load(def_file)
-
 
     # check for k_fold
     if num_folds is None:
@@ -1487,7 +1474,7 @@ def kfold_cross_validate(
     else:
         ValueError(
             "{} format is not supported for k_fold_cross_validate()"
-            .format(data_format)
+                .format(data_format)
         )
 
     kfold_cv_stats = {}
@@ -1516,7 +1503,7 @@ def kfold_cross_validate(
                 allow_parallel_threads=allow_parallel_threads,
             )
             (
-                test_results,
+                eval_stats,
                 train_stats,
                 preprocessed_data,
                 output_directory
@@ -1542,7 +1529,7 @@ def kfold_cross_validate(
 
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats['fold_test_results'] = test_results
+            train_stats['fold_eval_stats'] = eval_stats
 
             # collect training statistics for this fold
             kfold_cv_stats['fold_' + str(fold_num)] = train_stats
@@ -1550,13 +1537,13 @@ def kfold_cross_validate(
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
     for fold_name in kfold_cv_stats:
-        curr_fold_test_results = kfold_cv_stats[fold_name]['fold_test_results']
-        for of_name in curr_fold_test_results:
+        curr_fold_eval_stats = kfold_cv_stats[fold_name]['fold_eval_stats']
+        for of_name in curr_fold_eval_stats:
             if of_name not in raw_kfold_stats:
                 raw_kfold_stats[of_name] = {}
-            fold_test_results_of = curr_fold_test_results[of_name]
+            fold_eval_stats_of = curr_fold_eval_stats[of_name]
 
-            for metric in fold_test_results_of:
+            for metric in fold_eval_stats_of:
                 if metric not in {
                     'predictions',
                     'probabilities',
@@ -1569,7 +1556,7 @@ def kfold_cross_validate(
                     if metric not in raw_kfold_stats[of_name]:
                         raw_kfold_stats[of_name][metric] = []
                     raw_kfold_stats[of_name][metric].append(
-                        fold_test_results_of[metric]
+                        fold_eval_stats_of[metric]
                     )
 
     # calculate overall kfold statistics
