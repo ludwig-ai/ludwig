@@ -774,15 +774,19 @@ class LudwigModel:
             postproc_predictions = predictions  # = {}
 
         if is_on_master():
-            if postproc_predictions is not None and not skip_save_predictions:
-                save_prediction_outputs(postproc_predictions,
-                                        output_directory)
+            should_save_predictions = (
+                    collect_predictions
+                    and postproc_predictions is not None
+                    and not skip_save_predictions
+            )
+            if should_save_predictions:
+                save_prediction_outputs(postproc_predictions, output_directory)
 
             print_evaluation_stats(eval_stats)
             if not skip_save_eval_stats:
                 save_evaluation_stats(eval_stats, output_directory)
 
-            if not skip_save_predictions or not skip_save_eval_stats:
+            if should_save_predictions or not skip_save_eval_stats:
                 logger.info('Saved to: {0}'.format(output_directory))
 
         if collect_predictions:
