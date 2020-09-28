@@ -806,7 +806,7 @@ class LudwigModel:
             model_name: str = 'run',
             model_load_path: str = None,
             model_resume_path: str = None,
-            eval_split: str = VALIDATION,
+            eval_split: str = TEST,
             skip_save_training_description: bool = False,
             skip_save_training_statistics: bool = False,
             skip_save_model: bool = False,
@@ -865,7 +865,7 @@ class LudwigModel:
             epoch and the state of the optimizer are restored such that
             training can be effectively continued from a previously interrupted
             training process.
-        :param eval_split: (str, default: `validation`) split on which
+        :param eval_split: (str, default: `test`) split on which
             to perform evaluation. Valid values are `training`, `validation`
             and `test`.
         :param skip_save_training_description: (bool, default: `False`) disables
@@ -988,7 +988,7 @@ class LudwigModel:
 
             # predict
             eval_stats, _, _ = self.evaluate(
-                test_set,
+                eval_set,
                 data_format=data_format,
                 batch_size=batch_size,
                 output_directory=output_directory,
