@@ -48,7 +48,7 @@ def hyperopt(
         random_seed: int = default_random_seed,
         debug: bool = False,
         **kwargs,
-) -> dict:
+) -> List[dict]:
     """This method performs an hyperparameter optimization.
 
     # Inputs
@@ -140,7 +140,7 @@ def hyperopt(
 
     # Return
 
-    :return: (dict) The results fo the hyperparameter optimization
+    :return: (List[dict]) The results for the hyperparameter optimization
     """
     # check if model definition is a path or a dict
     if isinstance(model_definition, str):  # assume path
