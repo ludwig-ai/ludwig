@@ -774,15 +774,19 @@ class LudwigModel:
             postproc_predictions = predictions  # = {}
 
         if is_on_master():
-            if postproc_predictions is not None and not skip_save_predictions:
-                save_prediction_outputs(postproc_predictions,
-                                        output_directory)
+            should_save_predictions = (
+                    collect_predictions
+                    and postproc_predictions is not None
+                    and not skip_save_predictions
+            )
+            if should_save_predictions:
+                save_prediction_outputs(postproc_predictions, output_directory)
 
             print_evaluation_stats(eval_stats)
             if not skip_save_eval_stats:
                 save_evaluation_stats(eval_stats, output_directory)
 
-            if not skip_save_predictions or not skip_save_eval_stats:
+            if should_save_predictions or not skip_save_eval_stats:
                 logger.info('Saved to: {0}'.format(output_directory))
 
         if collect_predictions:
@@ -806,6 +810,7 @@ class LudwigModel:
             model_name: str = 'run',
             model_load_path: str = None,
             model_resume_path: str = None,
+            eval_split: str = TEST,
             skip_save_training_description: bool = False,
             skip_save_training_statistics: bool = False,
             skip_save_model: bool = False,
@@ -818,10 +823,6 @@ class LudwigModel:
             skip_collect_predictions: bool = False,
             skip_collect_overall_stats: bool = False,
             output_directory: str = 'results',
-            gpus: Union[str, int, List[int]] = None,
-            gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True,
-            use_horovod: bool = None,
             random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
@@ -868,6 +869,9 @@ class LudwigModel:
             epoch and the state of the optimizer are restored such that
             training can be effectively continued from a previously interrupted
             training process.
+        :param eval_split: (str, default: `test`) split on which
+            to perform evaluation. Valid values are `training`, `validation`
+            and `test`.
         :param skip_save_training_description: (bool, default: `False`) disables
             saving the description JSON file.
         :param skip_save_training_statistics: (bool, default: `False`) disables
@@ -960,20 +964,27 @@ class LudwigModel:
             skip_save_processed_input=skip_save_processed_input,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
-            gpus=gpus,
-            gpu_memory_limit=gpu_memory_limit,
-            allow_parallel_threads=allow_parallel_threads,
-            use_horovod=use_horovod,
             random_seed=random_seed,
             debug=debug,
         )
 
-        (_,  # training_set
-         _,  # validation_set
+        (training_set,
+         validation_set,
          test_set,
          training_set_metadata) = preprocessed_data
 
-        if test_set is not None:
+        eval_set = validation_set
+        if eval_split == TRAINING:
+            eval_set = training_set
+        elif eval_split == VALIDATION:
+            eval_set = validation_set
+        elif eval_split == TEST:
+            eval_set = test_set
+        else:
+            logger.warning(f"Eval split {eval_split} not supported. "
+                           f"Using validation set instead")
+
+        if eval_set is not None:
             if self.model_definition[TRAINING]['eval_batch_size'] > 0:
                 batch_size = self.model_definition[TRAINING]['eval_batch_size']
             else:
@@ -981,7 +992,7 @@ class LudwigModel:
 
             # predict
             eval_stats, _, _ = self.evaluate(
-                test_set,
+                eval_set,
                 data_format=data_format,
                 batch_size=batch_size,
                 output_directory=output_directory,
@@ -990,9 +1001,12 @@ class LudwigModel:
                 skip_save_eval_stats=skip_save_eval_stats,
                 collect_predictions=not skip_collect_predictions,
                 collect_overall_stats=not skip_collect_overall_stats,
+                return_type='dict',
                 debug=debug
             )
         else:
+            logger.warning(f"The evaluation set {eval_set} was not provided. "
+                           f"Skipping evaluation")
             eval_stats = None
 
         return eval_stats, train_stats, preprocessed_data, output_directory
