@@ -101,8 +101,8 @@ def server(model):
             try:
                 resp, _ = model.predict(dataset=data_df)
                 return JSONResponse(resp.to_dict('split'))
-            except Exception as e:
-                logger.error("Error: {}".format(str(e)))
+            except Exception:
+                logger.exception('failed to run batch prediction')
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
