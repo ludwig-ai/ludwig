@@ -3284,6 +3284,7 @@ def hyperopt_hiplot_cli(
         hyperopt_stats_path,
         output_directory=None,
         **kwargs
+
 ):
     """
     Produces a parallel coordinate plot about hyperparameter optimization
@@ -3292,6 +3293,31 @@ def hyperopt_hiplot_cli(
     :param hyperopt_stats_path: path to the hyperopt results JSON file
     :param output_directory: path where to save the output plots
     :return:
+    """
+
+    hyperopt_hiplot(
+        hyperopt_stats_path,
+        output_directory=output_directory
+    )
+
+def hyperopt_hiplot(
+        hyperopt_stats_path,
+        output_directory=None,
+        **kwargs
+):
+    """
+    Produces a parallel coordinate plot about hyperparameter optimization
+    creating one HTML file and optionally a CSV file to be read by hiplot
+
+    # Inputs
+
+    :param hyperopt_stats_path: (str) path to the hyperopt results JSON file.
+    :param output_directory: (str, default: `None`) directory where to save
+        plots. If not specified, plots will be displayed in a window.
+
+    # Return
+
+    :return: (None)
     """
     filename = 'hyperopt_hiplot.html'
     filename_path = generate_filename_template_path(
