@@ -25,8 +25,8 @@ import yaml
 import pandas as pd
 
 from ludwig.api import LudwigModel, kfold_cross_validate
+from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command, contrib_import
-from ludwig.utils.defaults import *
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
@@ -368,6 +368,14 @@ def cli(sys_argv):
         choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
                  'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
                  'spss', 'stata', 'tsv']
+    )
+
+    parser.add_argument(
+        '-es',
+        '--eval_split',
+        default=TEST,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
+        help='the split to evaluate the model on'
     )
 
     parser.add_argument(
