@@ -72,7 +72,7 @@ def train_cli(
     :param model_definition_file: (str, default: `None`) the filepath string
         that specifies the model definition.  It is a yaml file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-        source containing the entire dataset to be used in the experiment.
+        source containing the entire dataset to be used for training.
         If it has a split column, it will be used for splitting (0 for train,
         1 for validation, 2 for test), otherwise the dataset will be
         randomly split.
