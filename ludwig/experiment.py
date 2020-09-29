@@ -101,7 +101,7 @@ def experiment_cli(
         directory with the same name and a '.meta.json' extension.
     :param data_format: (str, default: `None`) format to interpret data
         sources. Will be inferred automatically if not specified.  Valid
-        formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
+        formats are `'auto'`, `'csv'`, `'excel'`, `'feather'`,
         `'fwf'`, `'hdf5'` (cache file produced during previous training),
         `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
         `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
