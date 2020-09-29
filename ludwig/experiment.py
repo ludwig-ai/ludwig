@@ -39,8 +39,8 @@ logger = logging.getLogger(__name__)
 
 
 def experiment_cli(
-        model_definition,
-        model_definition_file=None,
+        model_definition: dict,
+        model_definition_file: str = None,
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -79,12 +79,10 @@ def experiment_cli(
 
     # Inputs
 
-    :param model_definition: Model definition which defines the different
-           parameters of the model, features, preprocessing and training.
-    :type model_definition: Dictionary
-    :param model_definition_file: The file that specifies the model definition.
-           It is a yaml file.
-    :type model_definition_file: filepath (str)
+    :param model_definition: (dict) model definition which defines the different
+        parameters of the model, features, preprocessing and training.
+    :param model_definition_file: (str, default: `None`) the filepath string
+        that specifies the model definition.  It is a yaml file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used in the experiment.
         If it has a split column, it will be used for splitting (0 for train,
