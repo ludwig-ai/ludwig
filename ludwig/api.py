@@ -70,25 +70,34 @@ logger = logging.getLogger(__name__)
 
 class LudwigModel:
     def __init__(self,
-                 model_definition,
-                 logging_level=logging.ERROR,
-                 use_horovod=None,
-                 gpus=None,
-                 gpu_memory_limit=None,
-                 allow_parallel_threads=True):
+                 model_definition: Union[str, dict],
+                 logging_level: int = logging.ERROR,
+                 use_horovod: bool = None,
+                 gpus: Union[str, int, List[int]] = None,
+                 gpu_memory_limit: int = None,
+                 allow_parallel_threads: bool = True) -> None:
         """
-        :param model_definition: (dict, str) in-memory representation of model definition
-               or string path to the saved JSON model definition file.
-        :param logging_level: Log level that will be sent to stderr.
+        Constructor for the Ludwig Model class.
+
+        # Inputs
+
+        :param model_definition: (Union[str, dict]) in-memory representation of
+            model definition or string path to the saved JSON model definition
+            file.
+        :param logging_level: (int) Log level that will be sent to stderr.
         :param use_horovod: (bool) use Horovod for distributed training. Will be set
                automatically if `horovodrun` is used to launch the training script.
-        :param gpus: (str, default: `None`) list of GPUs to use (it uses the
-               same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
-              per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
-               multithreading parallelism to improve performance at the cost of
-               determinism.
+        :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
+            to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
+            allocate per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+            to use multithreading parallelism to improve performance at the
+            cost of determinism.
+
+        # Return
+
+        :return: (`None`) `None`
         """
         # check if model definition is a path or a dict
         if isinstance(model_definition, str):  # assume path
@@ -146,29 +155,6 @@ class LudwigModel:
 
         # Inputs
 
-        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing the entire dataset to be used in the experiment.
-            If it has a split column, it will be used for splitting (0 for train,
-            1 for validation, 2 for test), otherwise the dataset will be
-            randomly split.
-        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing training data.
-        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing validation data.
-        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing test data.
-        :param training_set_metadata: (Union[str, dict], default: `None`)
-            metadata JSON file or loaded metadata.  Intermediate preprocess
-            structure containing the mappings of the input
-            dataset created the first time an input file is used in the same
-            directory with the same name and a '.meta.json' extension.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`, `'feather'`,
-            `'fwf'`, `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
-            `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
-            `'stata'`, `'tsv'`.
         :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
             source containing the entire dataset to be used in the experiment.
             If it has a split column, it will be used for splitting (0 for train,
