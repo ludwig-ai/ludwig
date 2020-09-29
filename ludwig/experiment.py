@@ -22,6 +22,7 @@ import sys
 import yaml
 
 from ludwig.api import LudwigModel, kfold_cross_validate
+from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
@@ -47,6 +48,7 @@ def experiment_cli(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
+        eval_split=TEST,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
         skip_save_model=False,
@@ -206,6 +208,7 @@ def experiment_cli(
         experiment_name=experiment_name,
         model_name=model_name,
         model_resume_path=model_resume_path,
+        eval_split=eval_split,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
         skip_save_model=skip_save_model,
@@ -347,6 +350,14 @@ def cli(sys_argv):
         choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
                  'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
                  'spss', 'stata', 'tsv']
+    )
+
+    parser.add_argument(
+        '-es',
+        '--eval_split',
+        default=TEST,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
+        help='the split to evaluate the model on'
     )
 
     parser.add_argument(
