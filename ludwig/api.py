@@ -153,6 +153,11 @@ class LudwigModel:
         """This function is used to perform a full training of the model on the
            specified dataset.
 
+        During training the model and statistics will be saved in a directory
+        `[output_dir]/[experiment_name]_[model_name]_n` where all variables are
+        resolved to user spiecified ones and `n` is an increasing number
+        starting from 0 used to differentiate different runs.
+
         # Inputs
 
         :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
@@ -224,11 +229,6 @@ class LudwigModel:
                splitting, parameter initialization and training set shuffling
         :param debug: (bool, default: `False`)  if `True` turns on `tfdbg` with
             `inf_or_nan` checks.
-
-        During training the model and statistics will be saved in a directory
-        `[output_dir]/[experiment_name]_[model_name]_n` where all variables are
-        resolved to user spiecified ones and `n` is an increasing number
-        starting from 0 used to differentiate different runs.
 
 
         # Return
