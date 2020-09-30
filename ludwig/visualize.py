@@ -525,21 +525,29 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
 
 def confidence_thresholding_data_vs_acc_subset_per_class_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_metadata,
-        ground_truth_split,
-        output_feature_name,
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_metadata: str,
+        ground_truth_split: int,
+        output_feature_name: str,
         **kwargs
 ):
     """Load model data from files to be shown by compare_classifiers_multiclass
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file
+    :param ground_truth: (str) path to ground truth file
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     metadata = load_json(ground_truth_metadata)
