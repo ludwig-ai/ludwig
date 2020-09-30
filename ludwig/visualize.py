@@ -343,14 +343,19 @@ def compare_classifiers_performance_changing_k_cli(
 def compare_classifiers_multiclass_multimetric_cli(
         test_statistics: Union[str, List[str]],
         ground_truth_metadata: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass
+
+    # Inputs
 
     :param test_statistics: (Union[str, List[str]]) path to experiment test
         statistics file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
@@ -365,7 +370,7 @@ def compare_classifiers_predictions_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_predictions
 
@@ -395,7 +400,7 @@ def compare_classifiers_predictions_distribution_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
     compare_predictions_distribution
@@ -428,7 +433,7 @@ def confidence_thresholding_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by confidence_thresholding.
 
@@ -461,7 +466,7 @@ def confidence_thresholding_data_vs_acc_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_cli.
@@ -495,7 +500,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_subset.
@@ -530,7 +535,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         ground_truth_metadata: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass
 
@@ -565,7 +570,7 @@ def confidence_thresholding_2thresholds_2d_cli(
         ground_truth: str,
         ground_truth_split: int,
         threshold_output_feature_names: List[str],
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_2d_cli
@@ -610,7 +615,7 @@ def confidence_thresholding_2thresholds_3d_cli(
         ground_truth: str,
         ground_truth_split: int,
         threshold_output_feature_names: List[str],
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_3d_cli
@@ -655,7 +660,7 @@ def binary_threshold_vs_metric_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by binary_threshold_vs_metric_cli.
 
@@ -688,7 +693,7 @@ def roc_curves_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by roc_curves_cli.
 
@@ -715,14 +720,19 @@ def roc_curves_cli(
 
 
 def roc_curves_from_test_statistics_cli(
-        test_statistics,
-        **kwargs
+        test_statistics: Union[str, List[str]],
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
     roc_curves_from_test_statistics_cli.
 
-    :param test_statistics: Path to experiment test statistics file
-    :param kwargs: model configuration arguments
+    # Inputs
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
