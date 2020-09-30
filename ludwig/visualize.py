@@ -826,12 +826,22 @@ def confusion_matrix_cli(
     confusion_matrix(test_stats_per_model, metadata, **kwargs)
 
 
-def frequency_vs_f1_cli(test_statistics, ground_truth_metadata, **kwargs):
+def frequency_vs_f1_cli(
+        test_statistics: Union[str, List[str]],
+        ground_truth_metadata: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by frequency_vs_f1.
 
-    :param test_statistics: Path to experiment test statistics file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
