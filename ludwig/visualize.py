@@ -237,21 +237,28 @@ def compare_classifiers_performance_from_prob_cli(
 
 
 def compare_classifiers_performance_from_pred_cli(
-        predictions,
-        ground_truth,
-        ground_truth_metadata,
-        ground_truth_split,
-        output_feature_name,
+        predictions: List[str],
+        ground_truth: str,
+        ground_truth_metadata: str,
+        ground_truth_split: int,
+        output_feature_name: str,
         **kwargs
 ):
     """Load model data from files to be shown by compare_classifiers_from_pred
 
-    :param predictions: Path to experiment predictions file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param predictions: (List[str]) path to experiment predictions file.
+    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth_metadata: (str) ath to ground truth metadata file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
