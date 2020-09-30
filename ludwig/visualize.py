@@ -803,12 +803,22 @@ def calibration_multiclass_cli(
     calibration_multiclass(probabilities_per_model, gt, **kwargs)
 
 
-def confusion_matrix_cli(test_statistics, ground_truth_metadata, **kwargs):
+def confusion_matrix_cli(
+        test_statistics: Union[str, List[str]],
+        ground_truth_metadata: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by confusion_matrix.
 
-    :param test_statistics: Path to experiment test statistics file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
