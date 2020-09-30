@@ -153,7 +153,24 @@ def convert_batch_input(form):
     return files, data
 
 
-def run_server(model_path, host, port):
+def run_server(
+        model_path: str,
+        host: str,
+        port: int
+) -> None:
+    """
+    Loads a pre-trained model and serve it on an http server.
+
+    # Inputs
+
+    :param model_path: (str) filepath to pre-trained model.
+    :param host: (str, default: `0.0.0.0`) host ip address for the server to use.
+    :param port: (int, default: `8000`) port number for the server to use.
+
+    # Return
+
+    :return: (`None`)
+    """
     model = LudwigModel.load(model_path)
     app = server(model)
     uvicorn.run(app, host=host, port=port)
