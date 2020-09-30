@@ -429,7 +429,7 @@ def confidence_thresholding_cli(
         ground_truth_split: int,
         output_feature_name: str,
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by confidence_thresholding.
 
     # Inputs
@@ -462,7 +462,7 @@ def confidence_thresholding_data_vs_acc_cli(
         ground_truth_split: int,
         output_feature_name: str,
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_cli.
 
@@ -496,7 +496,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
         ground_truth_split: int,
         output_feature_name: str,
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_subset.
 
@@ -531,7 +531,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         ground_truth_split: int,
         output_feature_name: str,
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass
 
     # Inputs
@@ -566,7 +566,7 @@ def confidence_thresholding_2thresholds_2d_cli(
         ground_truth_split: int,
         threshold_output_feature_names: List[str],
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_2d_cli
 
@@ -611,7 +611,7 @@ def confidence_thresholding_2thresholds_3d_cli(
         ground_truth_split: int,
         threshold_output_feature_names: List[str],
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_3d_cli
 
@@ -656,7 +656,7 @@ def binary_threshold_vs_metric_cli(
         ground_truth_split: int,
         output_feature_name: str,
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by binary_threshold_vs_metric_cli.
 
     # Inputs
@@ -689,7 +689,7 @@ def roc_curves_cli(
         ground_truth_split: int,
         output_feature_name: str,
         **kwargs
-):
+) -> None:
     """Load model data from files to be shown by roc_curves_cli.
 
     # Inputs
@@ -714,7 +714,10 @@ def roc_curves_cli(
     roc_curves(probabilities_per_model, gt, **kwargs)
 
 
-def roc_curves_from_test_statistics_cli(test_statistics, **kwargs):
+def roc_curves_from_test_statistics_cli(
+        test_statistics,
+        **kwargs
+) -> None:
     """Load model data from files to be shown by
     roc_curves_from_test_statistics_cli.
 
