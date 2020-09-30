@@ -209,7 +209,7 @@ def compare_classifiers_performance_from_prob_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
+        **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_from_prob.
 
@@ -242,15 +242,15 @@ def compare_classifiers_performance_from_pred_cli(
         ground_truth_metadata: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
-):
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_from_pred
 
     # Inputs
 
     :param predictions: (List[str]) path to experiment predictions file.
     :param ground_truth: (str) path to grpound truth file.
-    :param ground_truth_metadata: (str) ath to ground truth metadata file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
@@ -279,8 +279,8 @@ def compare_classifiers_performance_subset_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
-):
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_subset.
 
     # Inputs
@@ -312,8 +312,8 @@ def compare_classifiers_performance_changing_k_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
-        **kwargs
-):
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_changing_k.
 
     # Inputs
@@ -341,14 +341,16 @@ def compare_classifiers_performance_changing_k_cli(
 
 
 def compare_classifiers_multiclass_multimetric_cli(
-        test_statistics,
-        ground_truth_metadata,
-        **kwargs):
+        test_statistics: Union[str, List[str]],
+        ground_truth_metadata: str,
+        **kwargs
+) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass
 
-    :param test_statistics: Path to experiment test statistics file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param kwargs: model configuration arguments
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param kwargs: (dict) parameters for the requested visualizations.
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
