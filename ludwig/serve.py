@@ -154,9 +154,9 @@ def convert_batch_input(form):
 
 
 def run_server(
-        model_path,
-        host,
-        port
+        model_path: str,
+        host: str,
+        port: int
 ) -> None:
     """
     Loads a pre-trained model and serve it on an http server.
