@@ -435,8 +435,8 @@ def confidence_thresholding_cli(
     # Inputs
 
     :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
-    :param ground_truth: (str) path to ground truth file
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
@@ -469,8 +469,8 @@ def confidence_thresholding_data_vs_acc_cli(
     # Inputs
 
     :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
-    :param ground_truth: (str) path to ground truth file
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
@@ -503,8 +503,8 @@ def confidence_thresholding_data_vs_acc_subset_cli(
     # Inputs
 
     :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
-    :param ground_truth: (str) path to ground truth file
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
@@ -537,8 +537,8 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
     # Inputs
 
     :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
-    :param ground_truth: (str) path to ground truth file
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -573,8 +573,8 @@ def confidence_thresholding_2thresholds_2d_cli(
     # Inputs
 
     :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
-    :param ground_truth: (str) path to ground truth file
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
@@ -606,20 +606,29 @@ def confidence_thresholding_2thresholds_2d_cli(
 
 
 def confidence_thresholding_2thresholds_3d_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        threshold_output_feature_names,
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        threshold_output_feature_names: List[str],
         **kwargs
 ):
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_3d_cli
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param threshold_output_feature_names: Names of the output features to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param threshold_output_feature_names: (List[str]) name of the output
+        feature to visualizes.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt1 = load_from_file(
