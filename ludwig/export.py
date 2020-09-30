@@ -31,17 +31,20 @@ logger = logging.getLogger(__name__)
 
 
 def export_savedmodel(
-        model_path,
-        output_path='savedmodel',
+        model_path: str,
+        output_path: str = 'savedmodel',
         **kwargs
-):
+) -> None:
     """Exports a model to SavedModel
 
-    :param model_path: Is the model from which the tensors will be collected
-    :param output_path: Output directory
-    :param debug: To step through the stack traces and find possible errors
-    :returns: None
+    # Inputs
 
+    :param model_path: (str) filepath to pre-trained model.
+    :param output_path: (str, default: `'savedmodel'`) directory to store the
+        savedmodel
+
+    # Return
+    :returns: (`None`)
     """
     logger.info('Model path: {}'.format(model_path))
     logger.info('Output path: {}'.format(output_path))
@@ -62,11 +65,17 @@ def export_neuropod(
 ):
     """Exports a model to Neuropod
 
-    :param model_path: Is the model from which the tensors will be collected
-    :param output_path: Output directory
-    :param debug: To step through the stack traces and find possible errors
-    :returns: None
+    # Inputs
 
+    :param model_path: (str) filepath to pre-trained model.
+    :param output_path: (str, default: `'neuropod'`)  directory to store the
+        neuropod model.
+    :param model_name: (str, default: `'neuropod'`) save neuropod under this
+        name.
+
+    # Return
+
+    :returns: (`None`)
     """
     logger.info('Model path: {}'.format(model_path))
     logger.info('Output path: {}'.format(output_path))
