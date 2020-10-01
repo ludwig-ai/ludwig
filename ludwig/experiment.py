@@ -308,7 +308,7 @@ def kfold_cross_validate_cli(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script trains and tests a model',
+        description='This script trains and evaluates a model',
         prog='ludwig experiment',
         usage='%(prog)s [options]'
     )
@@ -391,26 +391,6 @@ def cli(sys_argv):
         default=False
     )
 
-    # -----------------
-    # K-fold parameters
-    # -----------------
-    parser.add_argument(
-        '-kf',
-        '--k_fold',
-        type=int,
-        default=None,
-        help='number of folds for a k-fold cross validation run '
-    )
-    parser.add_argument(
-        '-skfsi',
-        '--skip_save_k_fold_split_indices',
-        action='store_true',
-        default=False,
-        help='disables saving indices generated to split training data set '
-             'for the k-fold cross validation run, but if it is not needed '
-             'turning it off can slightly increase the overall speed'
-    )
-
     # ----------------
     # Model parameters
     # ----------------
@@ -483,7 +463,7 @@ def cli(sys_argv):
         action='store_true',
         default=False,
         help='disables saving progress each epoch. By default Ludwig saves '
-             'weights and stats  after each epoch for enabling resuming '
+             'weights and stats after each epoch for enabling resuming '
              'of training, but if the model is really big that can be '
              'time consuming and will uses twice as much space, use '
              'this parameter to skip it, but training cannot be resumed '
