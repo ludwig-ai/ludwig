@@ -84,7 +84,7 @@ def server(model):
                 resp = SAFE_ENCODER.encode(resp)
                 return JSONResponse(resp)
             except Exception as e:
-                logger.error("Error: {}".format(str(e)))
+                logger.error("Failed to run predict: {}".format(str(e)))
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
@@ -108,8 +108,8 @@ def server(model):
                 resp = resp.to_dict('split')
                 resp = SAFE_ENCODER.encode(resp)
                 return JSONResponse(resp)
-            except Exception:
-                logger.exception('failed to run batch prediction')
+            except Exception as e:
+                logger.error("Failed to run batch_predict: {}".format(str(e)))
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
