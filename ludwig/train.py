@@ -134,7 +134,7 @@ def train_cli(
     :param skip_save_processed_input: (bool, default: `False`) if input
         dataset is provided it is preprocessed and cached by saving an HDF5
         and JSON files to avoid running the preprocessing again. If this
-        parameter is `False`, the HDF5 and JSON file are not saved.
+        parameter is `True`, the HDF5 and JSON file are not saved.
     :param output_directory: (str, default: `'results'`) the directory that
         will contain the training statistics, TensorBoard logs, the saved
         model and the training progress files.
@@ -333,7 +333,14 @@ def cli(sys_argv):
              'logs for the TensorBoard, but if it is not needed turning it off '
              'can slightly increase the overall speed'
     )
-
+    parser.add_argument(
+        '-sspi',
+        '--skip_save_processed_input',
+        action='store_true',
+        default=False,
+        help='disables saving the preprocessed intermediate HDF5 and '
+             'JSON files'
+    )
     # ------------------
     # Runtime parameters
     # ------------------
