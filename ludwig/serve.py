@@ -27,7 +27,6 @@ from ludwig.api import LudwigModel
 from ludwig.constants import NAME
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
@@ -53,7 +52,6 @@ ALL_FEATURES_PRESENT_ERROR = {"error": "entry must contain all input features"}
 COULD_NOT_RUN_INFERENCE_ERROR = {
     "error": "Unexpected Error: could not run inference on model"}
 
-SAFE_ENCODER = NumpyEncoder()
 
 
 def server(model):
@@ -81,7 +79,6 @@ def server(model):
                     dataset=[entry], data_format=dict
                 )
                 resp = resp.to_dict('records')[0]
-                resp = SAFE_ENCODER.encode(resp)
                 return JSONResponse(resp)
             except Exception as e:
                 logger.error("Failed to run predict: {}".format(str(e)))
@@ -106,7 +103,6 @@ def server(model):
             try:
                 resp, _ = model.predict(dataset=data_df)
                 resp = resp.to_dict('split')
-                resp = SAFE_ENCODER.encode(resp)
                 return JSONResponse(resp)
             except Exception as e:
                 logger.error("Failed to run batch_predict: {}".format(str(e)))

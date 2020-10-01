@@ -489,6 +489,19 @@ def override_in_memory_flag(input_features, override_value):
     return num_overrides
 
 
+def normalize_numpy(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return normalize_numpy(obj.tolist())
+    elif isinstance(obj, list):
+        return [normalize_numpy(v) for v in obj]
+    else:
+        return obj
+
+
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set):
