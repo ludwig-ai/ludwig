@@ -18,6 +18,7 @@ import argparse
 import logging
 import os
 import sys
+from typing import List
 
 import numpy as np
 
@@ -33,40 +34,55 @@ logger = logging.getLogger(__name__)
 
 
 def collect_activations(
-        model_path,
-        layers,
-        dataset,
-        data_format=None,
-        batch_size=128,
-        output_directory='results',
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        use_horovod=None,
-        debug=False,
+        model_path: str,
+        layers: List[str],
+        dataset: str,
+        data_format: str = None,
+        batch_size: int = 128,
+        output_directory: str = 'results',
+        gpus: List[str] = None,
+        gpu_memory_limit: int =None,
+        allow_parallel_threads: bool = True,
+        use_horovod: bool = None,
+        debug: bool = False,
         **kwargs
-):
-    """Uses the pretrained model to collect the tensors corresponding to a
+) -> List[str]:
+    """
+    Uses the pretrained model to collect the tensors corresponding to a
     datapoint in the dataset. Saves the tensors to the experiment directory
 
-    :param model_path: Is the model from which the tensors will be collected
-    :param layers: List of layer names we wish to collect the output from
-    :param data_csv: The CSV filepath which contains the datapoints from which
-           the tensors are collected
-    :param data_hdf5: The HDF5 file path if the CSV file path does not exist,
-           an alternative source of providing the data to the model
-    :param split: Split type
-    :param batch_size: Batch size
-    :param output_directory: Output directory
-    :param gpus: The total number of GPUs that the model intends to use
-    :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
-           per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
-           multithreading parallelism to improve performance at the cost of
-           determinism.
-    :param debug: To step through the stack traces and find possible errors
-    :returns: None
+    # Inputs
 
+    :param model_path: (str) filepath to pre-trained model.
+    :param layers: (List[str]) list of strings for layer names in the model
+        to collect activations.
+    :param dataset: (str) source
+        containing the data to make predictions.
+    :param data_format: (str, default: `None`) format to interpret data
+        sources. Will be inferred automatically if not specified.  Valid
+        formats are `'auto'`, `'csv'`, `'excel'`, `'feather'`,
+        `'fwf'`, `'hdf5'` (cache file produced during previous training),
+        `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+        `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+        `'stata'`, `'tsv'`.
+    :param batch_size: (int, default `128`) size of batches for processing.
+    :param output_directory: (str, default: `'results'`) the directory that
+        will contain the training statistics, TensorBoard logs, the saved
+        model and the training progress files.
+    :param gpus: (list, default: `None`) list of GPUs that are available
+        for training.
+    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
+        allocate per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+        to use multithreading parallelism to improve performance at
+        the cost of determinism.
+    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
+        `inf_or_nan` checks.
+
+    # Return
+
+    :return: (List[str]) list of filepath to `*.npy` files containing
+        the activations.
     """
     logger.info('Dataset path: {}'.format(dataset)
                 )
@@ -101,12 +117,29 @@ def collect_activations(
 
 
 def collect_weights(
-        model_path,
-        tensors,
-        output_directory='results',
-        debug=False,
+        model_path: str,
+        tensors: List[str],
+        output_directory: str = 'results',
+        debug: bool = False,
         **kwargs
-):
+) -> List[str]:
+    """
+    Loads a pretrained model and collects weights.
+
+    # Inputs
+    :param model_path: (str) filepath to pre-trained model.
+    :param tensors: (list, default: `None`) List of tensor names to collect
+        weights
+    :param output_directory: (str, default: `'results'`) the directory where
+        collected weights will be stored.
+    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
+        `inf_or_nan` checks.
+
+    # Return
+
+    :return: (List[str]) list of filepath to `*.npy` files containing
+        the weights.
+    """
     logger.info('Model path: {}'.format(model_path))
     logger.info('Output path: {}'.format(output_directory))
     logger.info('\n')
@@ -138,9 +171,18 @@ def save_tensors(collected_tensors, output_directory):
 
 
 def print_model_summary(
-        model_path,
+        model_path: str,
         **kwargs
-):
+) -> None:
+    """
+    Loads a pretrained model and prints names of weights and layers activations.
+
+    # Inputs
+    :param model_path: (str) filepath to pre-trained model.
+
+    # Return
+    :return: (`None`)
+    """
     model = LudwigModel.load(model_path)
     collected_tensors = model.collect_weights()
     names = [name for name, w in collected_tensors]

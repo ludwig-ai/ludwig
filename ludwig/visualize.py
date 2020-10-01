@@ -164,22 +164,40 @@ def generate_filename_template_path(output_dir, filename_template):
     return None
 
 
-def compare_performance_cli(test_statistics, **kwargs):
+def compare_performance_cli(
+        test_statistics: Union[str, List[str]],
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_performance.
 
-    :param test_statistics: Path to experiment test statistics file
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
     compare_performance(test_stats_per_model, **kwargs)
 
 
-def learning_curves_cli(training_statistics, **kwargs):
+def learning_curves_cli(
+        training_statistics: Union[str, List[str]],
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by learning_curves.
 
-    :param training_statistics: Path to experiment training statistics file
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param training_statistics: (Union[str, List[str]]) path to experiment
+        training statistics file
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     train_stats_per_model = load_data_for_viz('load_json', training_statistics)
@@ -187,19 +205,26 @@ def learning_curves_cli(training_statistics, **kwargs):
 
 
 def compare_classifiers_performance_from_prob_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_from_prob.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file
+    :param ground_truth: (str) path to ground truth file
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -212,21 +237,28 @@ def compare_classifiers_performance_from_prob_cli(
 
 
 def compare_classifiers_performance_from_pred_cli(
-        predictions,
-        ground_truth,
-        ground_truth_metadata,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        predictions: List[str],
+        ground_truth: str,
+        ground_truth_metadata: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_from_pred
 
-    :param predictions: Path to experiment predictions file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param predictions: (List[str]) path to experiment predictions file.
+    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -243,19 +275,27 @@ def compare_classifiers_performance_from_pred_cli(
 
 
 def compare_classifiers_performance_subset_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_subset.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file
+    :param ground_truth: (str) path to ground truth file
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -268,19 +308,27 @@ def compare_classifiers_performance_subset_cli(
 
 
 def compare_classifiers_performance_changing_k_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_changing_k.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file
+    :param ground_truth: (str) path to ground truth file
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -293,14 +341,21 @@ def compare_classifiers_performance_changing_k_cli(
 
 
 def compare_classifiers_multiclass_multimetric_cli(
-        test_statistics,
-        ground_truth_metadata,
-        **kwargs):
+        test_statistics: Union[str, List[str]],
+        ground_truth_metadata: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass
 
-    :param test_statistics: Path to experiment test statistics file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
@@ -311,19 +366,26 @@ def compare_classifiers_multiclass_multimetric_cli(
 
 
 def compare_classifiers_predictions_cli(
-        predictions,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        predictions: List[str],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_predictions
 
-    :param predictions: Path to experiment predictions file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param predictions: (List[str]) path to experiment predictions file.
+    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -334,20 +396,27 @@ def compare_classifiers_predictions_cli(
 
 
 def compare_classifiers_predictions_distribution_cli(
-        predictions,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        predictions: List[str],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by
     compare_predictions_distribution
 
-    :param predictions: Path to experiment predictions file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param predictions: (List[str]) path to experiment predictions file.
+    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -360,19 +429,27 @@ def compare_classifiers_predictions_distribution_cli(
 
 
 def confidence_thresholding_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by confidence_thresholding.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -385,20 +462,28 @@ def confidence_thresholding_cli(
 
 
 def confidence_thresholding_data_vs_acc_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_cli.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -411,20 +496,28 @@ def confidence_thresholding_data_vs_acc_cli(
 
 
 def confidence_thresholding_data_vs_acc_subset_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_subset.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -437,21 +530,29 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
 
 def confidence_thresholding_data_vs_acc_subset_per_class_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_metadata,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_metadata: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     metadata = load_json(ground_truth_metadata)
@@ -465,20 +566,29 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 
 
 def confidence_thresholding_2thresholds_2d_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        threshold_output_feature_names,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        threshold_output_feature_names: List[str],
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_2d_cli
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param threshold_output_feature_names: Name of the output feature to visualizes
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param threshold_output_feature_names: (List[str]) name of the output
+        feature to visualizes.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt1 = load_from_file(
@@ -501,20 +611,29 @@ def confidence_thresholding_2thresholds_2d_cli(
 
 
 def confidence_thresholding_2thresholds_3d_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        threshold_output_feature_names,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        threshold_output_feature_names: List[str],
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_3d_cli
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param threshold_output_feature_names: Names of the output features to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param threshold_output_feature_names: (List[str]) name of the output
+        feature to visualizes.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt1 = load_from_file(
@@ -537,19 +656,27 @@ def confidence_thresholding_2thresholds_3d_cli(
 
 
 def binary_threshold_vs_metric_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by binary_threshold_vs_metric_cli.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -562,19 +689,27 @@ def binary_threshold_vs_metric_cli(
 
 
 def roc_curves_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by roc_curves_cli.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file.
+    :param ground_truth: (str) path to ground truth file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -584,12 +719,20 @@ def roc_curves_cli(
     roc_curves(probabilities_per_model, gt, **kwargs)
 
 
-def roc_curves_from_test_statistics_cli(test_statistics, **kwargs):
+def roc_curves_from_test_statistics_cli(
+        test_statistics: Union[str, List[str]],
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by
     roc_curves_from_test_statistics_cli.
 
-    :param test_statistics: Path to experiment test statistics file
-    :param kwargs: model configuration arguments
+    # Inputs
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
@@ -599,19 +742,27 @@ def roc_curves_from_test_statistics_cli(test_statistics, **kwargs):
 
 
 def calibration_1_vs_all_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by calibration_1_vs_all_cli.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file
+    :param ground_truth: (str) path to ground truth file
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -622,19 +773,27 @@ def calibration_1_vs_all_cli(
 
 
 def calibration_multiclass_cli(
-        probabilities,
-        ground_truth,
-        ground_truth_split,
-        output_feature_name,
-        **kwargs
-):
+        probabilities: Union[str, List[str]],
+        ground_truth: str,
+        ground_truth_split: int,
+        output_feature_name: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by calibration_multiclass_cli.
 
-    :param probabilities: Path to experiment probabilities file
-    :param ground_truth: Path to ground truth file
-    :param ground_truth_split: Type of ground truth split - train, val, test
-    :param output_feature_name: Name of the output feature to visualize
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file
+    :param ground_truth: (str) path to ground truth file
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param output_feature_name: (str) name of the output feature to visualize.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
@@ -644,12 +803,22 @@ def calibration_multiclass_cli(
     calibration_multiclass(probabilities_per_model, gt, **kwargs)
 
 
-def confusion_matrix_cli(test_statistics, ground_truth_metadata, **kwargs):
+def confusion_matrix_cli(
+        test_statistics: Union[str, List[str]],
+        ground_truth_metadata: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by confusion_matrix.
 
-    :param test_statistics: Path to experiment test statistics file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
@@ -657,12 +826,22 @@ def confusion_matrix_cli(test_statistics, ground_truth_metadata, **kwargs):
     confusion_matrix(test_stats_per_model, metadata, **kwargs)
 
 
-def frequency_vs_f1_cli(test_statistics, ground_truth_metadata, **kwargs):
+def frequency_vs_f1_cli(
+        test_statistics: Union[str, List[str]],
+        ground_truth_metadata: str,
+        **kwargs: dict
+) -> None:
     """Load model data from files to be shown by frequency_vs_f1.
 
-    :param test_statistics: Path to experiment test statistics file
-    :param ground_truth_metadata: Path to ground truth metadata file
-    :param kwargs: model configuration arguments
+    # Inputs
+
+    :param test_statistics: (Union[str, List[str]]) path to experiment test
+        statistics file.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param kwargs: (dict) parameters for the requested visualizations.
+
+    # Return
+
     :return None:
     """
     test_stats_per_model = load_data_for_viz('load_json', test_statistics)
