@@ -391,6 +391,26 @@ def cli(sys_argv):
         default=False
     )
 
+    # -----------------
+    # K-fold parameters
+    # -----------------
+    parser.add_argument(
+        '-kf',
+        '--k_fold',
+        type=int,
+        default=None,
+        help='number of folds for a k-fold cross validation run '
+    )
+    parser.add_argument(
+        '-skfsi',
+        '--skip_save_k_fold_split_indices',
+        action='store_true',
+        default=False,
+        help='disables saving indices generated to split training data set '
+             'for the k-fold cross validation run, but if it is not needed '
+             'turning it off can slightly increase the overall speed'
+    )
+
     # ----------------
     # Model parameters
     # ----------------
