@@ -57,6 +57,8 @@ Available sub-commands:
    collect_activations   Collects tensors for each datapoint using a pretrained model
    export_savedmodel     Exports Ludwig models to SavedModel
    export_neuropod       Exports Ludwig models to Neuropod
+   preprocess            Preprocess data and saves it into HDF5 and JSON format
+   synthesize_dataset    Creates synthetic data for tesing purposes
 ''')
         parser.add_argument('command', help='Subcommand to run')
         # parse_args defaults to [1:] for args, but you need to
@@ -129,6 +131,15 @@ Available sub-commands:
         ludwig.contrib.contrib_command("export_neuropod", *sys.argv)
         export.cli_export_neuropod(sys.argv[2:])
 
+    def preprocess(self):
+        from ludwig import export
+        ludwig.contrib.contrib_command("preprocess", *sys.argv)
+        export.cli_export_neuropod(sys.argv[2:])
+
+    def synthesize_data(self):
+        from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
+        ludwig.contrib.contrib_command("syntesize_dataset", *sys.argv)
+        cli_synthesize_dataset(sys.argv[2:])
 
 def main():
     CLI()

@@ -21,6 +21,7 @@ import random
 import string
 import sys
 import uuid
+from typing import List
 
 import numpy as np
 import yaml
@@ -386,10 +387,29 @@ cyclers_registry = {
     'binary': cycle_binary
 }
 
+
+def cli_synthesize_dataset(
+        dataset_size: int,
+        features: List[dict],
+        output_path: str
+) -> None:
+    """Symthesizes a dataset for testing purposes
+
+    :param dataset_size: (int) size of the dataset
+    :param features: (List[dict]) list of features to generate in YAML format.
+        Provide a list contaning one dictionary for each feature,
+        each dictionary must include a name, a type
+        and can include some generation parameters depending on the type
+    :param output_path: (str) path where to save the output CSV file
+    """
+    dataset = build_synthetic_dataset(dataset_size, features)
+    save_csv(output_path, dataset)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='This script generates a synthetic dataset.')
-    parser.add_argument('csv_file_path', help='output csv file path')
+    parser.add_argument('output_path', help='output CSV file path')
     parser.add_argument(
         '-d',
         '--dataset_size',
@@ -418,9 +438,13 @@ if __name__ == '__main__':
           {name: timeseries_1, type: timeseries, max_len: 20}, \
           {name: timeseries_2, type: timeseries, max_len: 20}, \
           ]',
-        type=yaml.safe_load, help='dataset features'
+        type=yaml.safe_load,
+        help='list of features to generate in YAML format. '
+             'Provide a list contaning one dictionary for each feature, '
+             'each dictionary must include a name, a type '
+             'and can include some generation parameters depending on the type'
     )
     args = parser.parse_args()
 
-    dataset = build_synthetic_dataset(args.dataset_size, args.features)
-    save_csv(args.csv_file_path, dataset)
+    cli_synthesize_dataset(args.dataset_size, args.features,
+                           args.output_path)
