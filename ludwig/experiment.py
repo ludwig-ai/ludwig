@@ -308,7 +308,7 @@ def kfold_cross_validate_cli(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script trains and tests a model',
+        description='This script trains and evaluates a model',
         prog='ludwig experiment',
         usage='%(prog)s [options]'
     )
@@ -483,7 +483,7 @@ def cli(sys_argv):
         action='store_true',
         default=False,
         help='disables saving progress each epoch. By default Ludwig saves '
-             'weights and stats  after each epoch for enabling resuming '
+             'weights and stats after each epoch for enabling resuming '
              'of training, but if the model is really big that can be '
              'time consuming and will uses twice as much space, use '
              'this parameter to skip it, but training cannot be resumed '

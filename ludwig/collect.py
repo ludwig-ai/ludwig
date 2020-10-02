@@ -23,6 +23,7 @@ from typing import List
 import numpy as np
 
 from ludwig.api import LudwigModel
+from ludwig.constants import FULL, TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry
@@ -38,6 +39,7 @@ def collect_activations(
         layers: List[str],
         dataset: str,
         data_format: str = None,
+        split: str = FULL,
         batch_size: int = 128,
         output_directory: str = 'results',
         gpus: List[str] = None,
@@ -65,6 +67,9 @@ def collect_activations(
         `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
         `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
         `'stata'`, `'tsv'`.
+    :param split: (str, default: `full`) split on which
+        to perform predictions. Valid values are `'training'`, `'validation'`,
+        `'test'` and `'full'`.
     :param batch_size: (int, default `128`) size of batches for processing.
     :param output_directory: (str, default: `'results'`) the directory that
         will contain the training statistics, TensorBoard logs, the saved
@@ -104,6 +109,7 @@ def collect_activations(
         layers,
         dataset,
         data_format=data_format,
+        split=split,
         batch_size=batch_size,
         debug=debug
     )
@@ -241,6 +247,13 @@ def cli_collect_activations(sys_argv):
         choices=['auto', 'csv', 'excel', 'feather', 'fwf', 'hdf5',
                  'html' 'tables', 'json', 'jsonl', 'parquet', 'pickle', 'sas',
                  'spss', 'stata', 'tsv']
+    )
+    parser.add_argument(
+        '-s',
+        '--split',
+        default=FULL,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
+        help='the split to obtain the model activations from'
     )
 
     # ----------------
