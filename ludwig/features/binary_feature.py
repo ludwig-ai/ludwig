@@ -183,6 +183,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         )
 
     def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name='metric_accuracy')

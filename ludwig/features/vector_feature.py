@@ -204,6 +204,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             )
 
     def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ERROR] = ErrorScore(name='metric_error')
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(

@@ -223,6 +223,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self.eval_loss_function = SequenceLossMetric()
 
     def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
         self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
