@@ -23,8 +23,8 @@ from typing import List
 import numpy as np
 
 from ludwig.api import LudwigModel
-from ludwig.contrib import contrib_command
 from ludwig.constants import FULL, TRAINING, VALIDATION, TEST
+from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -253,7 +253,7 @@ def cli_collect_activations(sys_argv):
         '--split',
         default=FULL,
         choices=[TRAINING, VALIDATION, TEST, FULL],
-        help='the split to test the model on'
+        help='the split to obtain the model activations from'
     )
 
     # ----------------
