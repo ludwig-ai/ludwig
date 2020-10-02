@@ -14,14 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import argparse
 import logging
 from abc import ABC, abstractmethod
 
 import h5py
 import numpy as np
 import pandas as pd
-import yaml
 
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -1607,79 +1605,3 @@ def get_preprocessing_params(model_definition):
         )
 
     return merged_preprocessing_params
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='This script takes csv files as input and outputs a HDF5 '
-                    'and JSON file containing  a dataset and the train set '
-                    'metadata associated with it'
-    )
-
-    parser.add_argument(
-        '-id',
-        '--dataset_csv',
-        help='CSV containing contacts',
-        required=True
-    )
-    parser.add_argument(
-        '-ime',
-        '--training_set_metadata_json',
-        help='Input JSON containing metadata'
-    )
-    parser.add_argument(
-        '-od',
-        '--output_dataset_h5',
-        help='HDF5 containing output data',
-        required=True
-    )
-    parser.add_argument(
-        '-ome',
-        '--output_metadata_json',
-        help='JSON containing metadata',
-        required=True
-    )
-
-    parser.add_argument(
-        '-f',
-        '--features',
-        type=yaml.safe_load,
-        help='list of features in the CSV to map to hdf5 and JSON files'
-    )
-
-    parser.add_argument(
-        '-p',
-        '--preprocessing_parameters',
-        type=yaml.safe_load,
-        default='{}',
-        help='the parameters for preprocessing the different features'
-    )
-
-    parser.add_argument(
-        '-rs',
-        '--random_seed',
-        type=int,
-        default=42,
-        help='a random seed that is going to be used anywhere there is a call '
-             'to a random number generator: data splitting, parameter '
-             'initialization and training set shuffling'
-    )
-
-    args = parser.parse_args()
-
-    dataset_df = read_csv(args.dataset_csv)
-    dataset_df.src = args.dataset_csv
-    dataset, training_set_metadata = build_dataset(
-        dataset_df,
-        args.training_set_metadata_json,
-        args.features,
-        args.preprocessing_parameters,
-        args.random_seed
-    )
-
-    # write train set metadata, dataset
-    logger.info('Writing train set metadata with vocabulary')
-    data_utils.save_json(args.output_metadata_json, training_set_metadata)
-    logger.info('Writing dataset')
-    data_utils.save_hdf5(args.output_dataset_h5, dataset,
-                         training_set_metadata)

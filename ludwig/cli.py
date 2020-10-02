@@ -132,9 +132,9 @@ Available sub-commands:
         export.cli_export_neuropod(sys.argv[2:])
 
     def preprocess(self):
-        from ludwig import export
+        from ludwig import preprocess
         ludwig.contrib.contrib_command("preprocess", *sys.argv)
-        export.cli_export_neuropod(sys.argv[2:])
+        preprocess.cli(sys.argv[2:])
 
     def synthesize_data(self):
         from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
