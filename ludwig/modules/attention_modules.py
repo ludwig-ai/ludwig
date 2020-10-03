@@ -17,8 +17,7 @@ import logging
 
 import tensorflow as tf
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Layer, Dense, Dropout, \
-    LayerNormalization
+from tensorflow.keras.layers import Dense, Dropout, Layer, LayerNormalization
 
 logger = logging.getLogger(__name__)
 

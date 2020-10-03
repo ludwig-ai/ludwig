@@ -16,7 +16,7 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.python.keras.losses import MeanSquaredError, MeanAbsoluteError
+from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
 
 from ludwig.constants import *
 from ludwig.constants import LOGITS

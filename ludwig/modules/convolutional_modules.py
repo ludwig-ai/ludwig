@@ -16,21 +16,13 @@
 import logging
 
 import tensorflow as tf
-from tensorflow import math
-from tensorflow import squeeze
+from tensorflow import math, squeeze
 from tensorflow.keras.initializers import VarianceScaling
-from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import AveragePooling1D
-from tensorflow.keras.layers import AveragePooling2D
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import Conv1D
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Layer
-from tensorflow.keras.layers import LayerNormalization
-from tensorflow.keras.layers import MaxPool1D
-from tensorflow.keras.layers import MaxPool2D
-from tensorflow.keras.layers import ZeroPadding2D
+from tensorflow.keras.layers import (Activation, AveragePooling1D,
+                                     AveragePooling2D, BatchNormalization,
+                                     Conv1D, Conv2D, Dropout, Layer,
+                                     LayerNormalization, MaxPool1D, MaxPool2D,
+                                     ZeroPadding2D)
 
 logger = logging.getLogger(__name__)
 
