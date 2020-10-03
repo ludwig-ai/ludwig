@@ -17,7 +17,7 @@
 import argparse
 import logging
 import sys
-from typing import Union, List
+from typing import List, Union
 
 import yaml
 
@@ -25,7 +25,7 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
+from ludwig.utils.horovod_utils import is_on_master, set_on_master
 from ludwig.utils.misc_utils import check_which_model_definition
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
