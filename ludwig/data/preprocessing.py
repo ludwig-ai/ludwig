@@ -1039,11 +1039,6 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
 
     # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get('computed_fill_value')
-    if computed_fill_value is None:
-        # For legacy models, we need to recompute the fill value, as it will not
-        # have been stored
-        computed_fill_value = precompute_fill_value(
-            dataset_df, feature, preprocessing_parameters)
 
     if computed_fill_value is not None:
         dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
