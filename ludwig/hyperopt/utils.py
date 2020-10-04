@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
-    set_default_value(hyperopt_params, STRATEGY, {})
+    set_default_value(hyperopt_params, "sampler", {})
     set_default_value(hyperopt_params, EXECUTOR, {})
     set_default_value(hyperopt_params, "split", VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
     set_default_value(hyperopt_params, "metric", LOSS)
     set_default_value(hyperopt_params, "goal", MINIMIZE)
 
-    set_default_values(hyperopt_params[STRATEGY], {TYPE: "random"})
+    set_default_values(hyperopt_params["sampler"], {TYPE: "random"})
 
     strategy = get_from_registry(hyperopt_params[STRATEGY][TYPE],
                                  sampler_registry)
