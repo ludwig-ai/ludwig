@@ -225,7 +225,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -269,7 +269,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -313,7 +313,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -357,7 +357,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -401,7 +401,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -445,7 +445,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -489,7 +489,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -533,7 +533,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -577,7 +577,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -621,7 +621,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -665,7 +665,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -709,7 +709,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -753,7 +753,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -797,7 +797,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -907,7 +907,6 @@ def build_dataset(
         global_preprocessing_parameters,
         metadata=None,
         random_seed=default_random_seed,
-        **kwargs
 ):
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
@@ -1293,7 +1292,7 @@ def _preprocess_file_for_training(
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata,
+            metadata=training_set_metadata,
             random_seed=random_seed
         )
 
@@ -1510,6 +1509,7 @@ def preprocess_for_prediction(
         data_format,
         data_format_preprocessor_registry
     )
+
     processed = data_format_processor.preprocess_for_prediction(dataset,
                                                                 features,
                                                                 preprocessing_params,
@@ -1653,12 +1653,13 @@ if __name__ == '__main__':
 
     dataset_df = read_csv(args.dataset_csv)
     dataset_df.src = args.dataset_csv
+    training_set_metadata = load_metadata(args.training_set_metadata_json)
     dataset, training_set_metadata = build_dataset(
-        dataset_df,
-        args.training_set_metadata_json,
-        args.features,
-        args.preprocessing_parameters,
-        args.random_seed
+        dataset_df=dataset_df,
+        features=args.features,
+        global_preprocessing_parameters=args.preprocessing_parameters,
+        metadata=training_set_metadata,
+        random_seed=args.random_seed
     )
 
     # write train set metadata, dataset

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
 import tempfile
 
 import pandas as pd
@@ -37,9 +38,12 @@ def test_missing_value_prediction(csv_filename):
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
         model = LudwigModel(model_definition)
-        model.train(dataset=dataset, output_directory=tmpdir)
+        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
 
         # Set the input column to None, we should be able to replace the missing value with the mode
         # from the training set
         dataset[input_features[0]['name']] = None
+        model.predict(dataset=dataset)
+
+        model = LudwigModel.load(os.path.join(output_dir, 'model'))
         model.predict(dataset=dataset)
