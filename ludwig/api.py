@@ -28,10 +28,9 @@ import tempfile
 from pprint import pformat
 from typing import List, Union, Dict, Tuple, Optional
 
+import ludwig.contrib
 import numpy as np
 import pandas as pd
-
-import ludwig.contrib
 
 ludwig.contrib.contrib_import()
 
@@ -69,6 +68,75 @@ logger = logging.getLogger(__name__)
 
 
 class LudwigModel:
+    """Class that allows access to high level Ludwig functionalities.
+
+    # Inputs
+
+    :param model_definition: (Union[str, dict]) in-memory representation of
+            model definition or string path to a YAML model definition file.
+    :param logging_level: (int) Log level that will be sent to stderr.
+    :param use_horovod: (bool) use Horovod for distributed training.
+        Will be set automatically if `horovodrun` is used to launch
+        the training script.
+    :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
+        to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
+    :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
+        allocate per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+        to use multithreading parallelism to improve performance at the
+        cost of determinism.
+
+    # Example usage:
+
+    ```python
+    from ludwig.api import LudwigModel
+    ```
+
+    Train a model:
+
+    ```python
+    model_definition = {...}
+    ludwig_model = LudwigModel(model_definition)
+    train_stats, _, _  = ludwig_model.train(dataset=file_path)
+    ```
+
+    or
+
+    ```python
+    train_stats, _, _ = ludwig_model.train(dataset=dataframe)
+    ```
+
+    If you have already trained a model you can load it and use it to predict
+
+    ```python
+    ludwig_model = LudwigModel.load(model_dir)
+    ```
+
+    Predict:
+
+    ```python
+    predictions, _ = ludwig_model.predict(dataset=file_path)
+    ```
+
+    or
+
+    ```python
+    predictions, _ = ludwig_model.predict(dataset=dataframe)
+    ```
+
+    Evaluation:
+
+    ```python
+    eval_stats, _, _ = ludwig_model.evaluate(dataset=file_path)
+    ```
+
+    or
+
+    ```python
+    eval_stats, _, _ = ludwig_model.evaluate(dataset=dataframe)
+    ```
+    """
+
     def __init__(
             self,
             model_definition: Union[str, dict],
@@ -99,7 +167,7 @@ class LudwigModel:
 
         # Return
 
-        :return: (`None`) `None`
+        :return: (None) `None`
         """
         # check if model definition is a path or a dict
         if isinstance(model_definition, str):  # assume path
