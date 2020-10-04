@@ -23,12 +23,12 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
 
     set_default_values(hyperopt_params["sampler"], {TYPE: "random"})
 
-    strategy = get_from_registry(hyperopt_params[STRATEGY][TYPE],
+    sampler = get_from_registry(hyperopt_params["sampler"][TYPE],
                                  sampler_registry)
-    strategy_defaults = {k: v for k, v in strategy.__dict__.items() if
-                         k in get_class_attributes(strategy)}
+    sampler_defaults = {k: v for k, v in sampler.__dict__.items() if
+                         k in get_class_attributes(sampler)}
     set_default_values(
-        hyperopt_params[STRATEGY], strategy_defaults,
+        hyperopt_params["sampler"], sampler_defaults,
     )
 
     set_default_values(hyperopt_params[EXECUTOR], {TYPE: "serial"})
