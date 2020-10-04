@@ -83,12 +83,13 @@ def test_neuropod(csv_filename):
         dataset=data_csv_path,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
-        skip_save_model=True,
         skip_save_progress=True,
         skip_save_log=True,
         skip_save_processed_input=True,
     )
-    original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
+
+    data_df = pd.read_csv(data_csv_path)
+    original_predictions_df, _ = ludwig_model.predict(dataset=data_df)
 
     ###################
     # save Ludwig model
@@ -107,7 +108,6 @@ def test_neuropod(csv_filename):
     ########################
     # predict using neuropod
     ########################
-    data_df = pd.read_csv(data_csv_path)
     if_dict = {
         input_feature['name']: np.expand_dims(np.array(
             [str(x) for x in data_df[input_feature['name']].tolist()],
@@ -176,7 +176,7 @@ def test_neuropod(csv_filename):
                     itertools.zip_longest(*original_prob, fillvalue=0)
                 )).T
 
-            assert np.isclose(neuropod_prob, original_prob).all()
+            assert np.allclose(neuropod_prob, original_prob)
 
         if (output_feature_name + "_probabilities" in preds and
                 output_feature_name + "_probabilities" in original_predictions_df):
@@ -186,4 +186,4 @@ def test_neuropod(csv_filename):
             original_prob = original_predictions_df[
                 output_feature_name + "_probabilities"].tolist()
 
-            assert np.isclose(neuropod_prob, original_prob).all()
+            assert np.allclose(neuropod_prob, original_prob)
