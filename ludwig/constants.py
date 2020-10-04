@@ -95,6 +95,7 @@ STRATEGY = 'strategy'
 EXECUTOR = 'executor'
 MINIMIZE = 'minimize'
 MAXIMIZE = 'maximize'
+SAMPLER = 'sampler'
 
 NAME = 'name'
 TYPE = 'type'
