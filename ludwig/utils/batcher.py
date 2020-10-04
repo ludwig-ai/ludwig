@@ -17,7 +17,6 @@
 import math
 
 import numpy as np
-
 from ludwig.data.sampler import DistributedSampler
 
 

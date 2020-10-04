@@ -23,12 +23,11 @@ from typing import List
 import numpy as np
 
 from ludwig.api import LudwigModel
-from ludwig.constants import FULL, TRAINING, VALIDATION, TEST
+from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.print_utils import (logging_level_registry, print_boxed,
+                                      print_ludwig)
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)

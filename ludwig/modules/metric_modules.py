@@ -16,17 +16,16 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.metrics import \
-    MeanAbsoluteError as MeanAbsoluteErrorMetric, \
+    MeanAbsoluteError as MeanAbsoluteErrorMetric
+from tensorflow.python.keras.metrics import \
     MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
-from ludwig.modules.loss_modules import BWCEWLoss, \
-    SigmoidCrossEntropyLoss
-from ludwig.modules.loss_modules import SequenceLoss
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.utils.tf_utils import sequence_length_2D
-from ludwig.utils.tf_utils import to_sparse
+from ludwig.modules.loss_modules import (BWCEWLoss, SequenceLoss,
+                                         SigmoidCrossEntropyLoss,
+                                         SoftmaxCrossEntropyLoss)
+from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
