@@ -17,13 +17,12 @@
 import logging
 
 import tensorflow as tf
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Layer
-
 from ludwig.modules.convolutional_modules import Conv2DStack, \
     get_resnet_block_sizes
 from ludwig.modules.convolutional_modules import ResNet2
 from ludwig.modules.fully_connected_modules import FCStack
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Layer
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +50,7 @@ class Stacked2DCNN(Layer):
             conv_norm_params=None,
             conv_activation='relu',
             conv_dropout=0,
+            pool_function='max',
             pool_size=(2, 2),
             pool_strides=None,
             fc_layers=None,
@@ -85,7 +85,7 @@ class Stacked2DCNN(Layer):
             default_dilation_rate=dilation_rate,
             default_use_bias=conv_use_bias,
             default_weights_initializer=conv_weights_initializer,
-            defaultbias_initializer=conv_bias_initializer,
+            default_bias_initializer=conv_bias_initializer,
             default_weights_regularizer=conv_weights_regularizer,
             default_bias_regularizer=conv_bias_regularizer,
             default_activity_regularizer=conv_activity_regularizer,
@@ -95,6 +95,7 @@ class Stacked2DCNN(Layer):
             default_norm_params=conv_norm_params,
             default_activation=conv_activation,
             default_dropout=conv_dropout,
+            default_pool_function=pool_function,
             default_pool_size=pool_size,
             default_pool_strides=pool_strides,
         )

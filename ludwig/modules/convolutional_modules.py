@@ -618,7 +618,7 @@ class Conv2DStack(Layer):
             default_dilation_rate=(1, 1),
             default_use_bias=True,
             default_weights_initializer='glorot_uniform',
-            defaultbias_initializer='zeros',
+            default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
             default_activity_regularizer=None,
@@ -668,7 +668,7 @@ class Conv2DStack(Layer):
             if 'weights_initializer' not in layer:
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
-                layer['bias_initializer'] = defaultbias_initializer
+                layer['bias_initializer'] = default_bias_initializer
             if 'weights_regularizer' not in layer:
                 layer['weights_regularizer'] = default_weights_regularizer
             if 'bias_regularizer' not in layer:
