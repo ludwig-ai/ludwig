@@ -1,7 +1,7 @@
 import logging
 import os
 
-from ludwig.constants import STRATEGY, EXECUTOR, VALIDATION, COMBINED, LOSS, \
+from ludwig.constants import SAMPLER, EXECUTOR, VALIDATION, COMBINED, LOSS, \
     MINIMIZE, TYPE
 from ludwig.hyperopt.execution import executor_registry
 from ludwig.hyperopt.sampling import sampler_registry
@@ -14,21 +14,21 @@ logger = logging.getLogger(__name__)
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
-    set_default_value(hyperopt_params, "sampler", {})
+    set_default_value(hyperopt_params, SAMPLER, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
     set_default_value(hyperopt_params, "split", VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
     set_default_value(hyperopt_params, "metric", LOSS)
     set_default_value(hyperopt_params, "goal", MINIMIZE)
 
-    set_default_values(hyperopt_params["sampler"], {TYPE: "random"})
+    set_default_values(hyperopt_params[SAMPLER], {TYPE: "random"})
 
-    sampler = get_from_registry(hyperopt_params["sampler"][TYPE],
+    sampler = get_from_registry(hyperopt_params[SAMPLER][TYPE],
                                  sampler_registry)
     sampler_defaults = {k: v for k, v in sampler.__dict__.items() if
                          k in get_class_attributes(sampler)}
     set_default_values(
-        hyperopt_params["sampler"], sampler_defaults,
+        hyperopt_params[SAMPLER], sampler_defaults,
     )
 
     set_default_values(hyperopt_params[EXECUTOR], {TYPE: "serial"})
