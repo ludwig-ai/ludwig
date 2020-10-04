@@ -924,8 +924,7 @@ def build_dataset(
     dataset = build_data(
         dataset_df,
         features,
-        metadata,
-        global_preprocessing_parameters
+        metadata
     )
 
     dataset[SPLIT] = get_split(
@@ -969,12 +968,6 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                     resolve_pointers(encoder_fpp, feature, 'feature.')
                 )
 
-        handle_missing_values(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
-
         get_feature_meta = get_from_registry(
             feature[TYPE],
             base_type_registry
@@ -983,54 +976,32 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
             dataset_df[feature[NAME]].astype(str),
             preprocessing_parameters
         )
+
+        fill_value = precompute_fill_value(
+            dataset_df,
+            feature,
+            preprocessing_parameters
+        )
+
+        if fill_value is not None:
+            preprocessing_parameters = {
+                'computed_fill_value': fill_value,
+                **preprocessing_parameters
+            }
+        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+
     return metadata
 
 
-def build_data(
-        dataset_df,
-        features,
-        training_set_metadata,
-        global_preprocessing_parameters
-):
+def build_data(dataset_df, features, training_set_metadata):
     dataset = {}
     for feature in features:
-        if PREPROCESSING in feature:
-            preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]],
-                feature[PREPROCESSING]
-            )
-        else:
-            preprocessing_parameters = global_preprocessing_parameters[
-                feature[TYPE]
-            ]
-
-        # deal with encoders that have fixed preprocessing
-        if 'encoder' in feature:
-            encoders_registry = get_from_registry(
-                feature[TYPE],
-                input_type_registry
-            ).encoder_registry
-
-            encoder_class = encoders_registry[feature['encoder']]
-            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
-                encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
-                preprocessing_parameters = merge_dict(
-                    preprocessing_parameters,
-                    resolve_pointers(encoder_fpp, feature, 'feature.')
-                )
-
+        preprocessing_parameters = training_set_metadata[feature[NAME]][PREPROCESSING]
         handle_missing_values(
             dataset_df,
             feature,
             preprocessing_parameters
         )
-        if feature[NAME] not in training_set_metadata:
-            training_set_metadata[feature[NAME]] = {}
-        training_set_metadata[
-            feature[NAME]
-        ][PREPROCESSING] = preprocessing_parameters
-
         add_feature_data = get_from_registry(
             feature[TYPE],
             base_type_registry
@@ -1045,25 +1016,38 @@ def build_data(
     return dataset
 
 
-def handle_missing_values(dataset_df, feature, preprocessing_parameters):
+def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
-
     if missing_value_strategy == FILL_WITH_CONST:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
-            preprocessing_parameters['fill_value'],
-        )
+        return preprocessing_parameters['fill_value']
     elif missing_value_strategy == FILL_WITH_MODE:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
-            dataset_df[feature[NAME]].value_counts().index[0],
-        )
+        return dataset_df[feature[NAME]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
+        return dataset_df[feature[NAME]].mean()
+
+    # Otherwise, we cannot precompute the fill value for this dataset
+    return None
+
+
+def handle_missing_values(dataset_df, feature, preprocessing_parameters):
+    missing_value_strategy = preprocessing_parameters['missing_value_strategy']
+
+    # Check for the precomputed fill value in the metadata
+    computed_fill_value = preprocessing_parameters.get('computed_fill_value')
+    if computed_fill_value is None:
+        # For legacy models, we need to recompute the fill value, as it will not
+        # have been stored
+        computed_fill_value = precompute_fill_value(
+            dataset_df, feature, preprocessing_parameters)
+
+    if computed_fill_value is not None:
         dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
-            dataset_df[feature[NAME]].mean(),
+            computed_fill_value,
         )
     elif missing_value_strategy in ['backfill', 'bfill', 'pad', 'ffill']:
         dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
