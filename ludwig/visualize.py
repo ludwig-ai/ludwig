@@ -3592,7 +3592,6 @@ def cli(sys_argv):
         prog='ludwig visualize',
         usage='%(prog)s [options]')
 
-    parser.add_argument('-d', '--data_csv', help='raw data file')
     parser.add_argument('-g', '--ground_truth', help='ground truth file')
     parser.add_argument(
         '-gm',
