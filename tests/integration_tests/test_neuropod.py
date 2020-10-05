@@ -39,7 +39,7 @@ def test_neuropod(csv_filename):
     #######
     with tempfile.TemporaryDirectory() as tmpdir:
         dir_path = tmpdir
-        csv_file_path = os.path.join(tmpdir, csv_filename)
+        data_csv_path = os.path.join(tmpdir, csv_filename)
         image_dest_folder = os.path.join(tmpdir, 'generated_images')
         audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
 
@@ -71,7 +71,7 @@ def test_neuropod(csv_filename):
 
         # Generate test data
         data_csv_path = generate_data(input_features, output_features,
-                                      csv_file_path)
+                                      data_csv_path)
 
         #############
         # Train model
@@ -89,6 +89,7 @@ def test_neuropod(csv_filename):
             skip_save_progress=True,
             skip_save_log=True,
             skip_save_processed_input=True,
+            output_directory=dir_path
         )
 
         data_df = pd.read_csv(data_csv_path)
