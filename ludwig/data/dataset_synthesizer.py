@@ -211,9 +211,9 @@ def generate_binary(feature):
 
 
 def generate_sequence(feature):
-    length = feature['max_len']
+    length = feature.get('max_len', 10)
     if 'min_len' in feature:
-        length = random.randint(feature['min_len'], feature['max_len'])
+        length = random.randint(feature['min_len'], length)
 
     sequence = [random.choice(feature['idx2str']) for _ in range(length)]
 
