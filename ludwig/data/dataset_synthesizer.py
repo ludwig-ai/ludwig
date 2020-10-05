@@ -156,6 +156,12 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict]):
         {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20},
         {name: timeseries_1, type: timeseries, max_len: 20},
         {name: timeseries_2, type: timeseries, max_len: 20},
+        {name: date_1, type: date},
+        {name: date_2, type: date},
+        {name: h3_1, type: h3},
+        {name: h3_2, type: h3},
+        {name: vector_1, type: vector},
+        {name: vector_2, type: vector},
     ]
     """
     build_feature_parameters(features)
@@ -459,6 +465,12 @@ def cli_synthesize_dataset(
         {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20},
         {name: timeseries_1, type: timeseries, max_len: 20},
         {name: timeseries_2, type: timeseries, max_len: 20},
+        {name: date_1, type: date},
+        {name: date_2, type: date},
+        {name: h3_1, type: h3},
+        {name: h3_2, type: h3},
+        {name: vector_1, type: vector},
+        {name: vector_2, type: vector},
     ]
     """
     if dataset_size is None or features is None or output_path is None:
@@ -509,7 +521,13 @@ def cli(sys_argv):
           {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20}, \
           {name: timeseries_1, type: timeseries, max_len: 20}, \
           {name: timeseries_2, type: timeseries, max_len: 20}, \
-          ]',
+          {name: date_1, type: date}, \
+          {name: date_2, type: date}, \
+          {name: h3_1, type: h3}, \
+          {name: h3_2, type: h3}, \
+          {name: vector_1, type: vector}, \
+          {name: vector_2, type: vector}, \
+        ]',
         type=yaml.safe_load,
         help='list of features to generate in YAML format. '
              'Provide a list containing one dictionary for each feature, '
