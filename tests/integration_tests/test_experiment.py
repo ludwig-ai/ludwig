@@ -23,7 +23,7 @@ import pandas as pd
 import pytest
 import yaml
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
@@ -477,7 +477,7 @@ def test_experiment_image_dataset(
         train_dataset_to_use = create_data_set_to_use(train_format, train_data)
 
     # define Ludwig model
-    model = LudwigModel(
+    model = LudwigPipeline(
         config=config,
     )
     model.train(
@@ -562,7 +562,7 @@ def test_experiment_dataset_formats(data_format):
         dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
     # define Ludwig model
-    model = LudwigModel(
+    model = LudwigPipeline(
         config=config
     )
     model.train(

@@ -3,7 +3,7 @@ from collections import namedtuple
 
 import pytest
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.constants import *
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
@@ -89,7 +89,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
             }
         }
 
-        model = LudwigModel(config)
+        model = LudwigPipeline(config)
         model.train(
             dataset=training_data,
             skip_save_training_description=True,

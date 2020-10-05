@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 
 from ludwig import __file__ as ludwig_path
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.constants import (BINARY, CATEGORY, NAME, NUMERICAL, PREDICTIONS,
                               PROBABILITIES, PROBABILITY, SEQUENCE, SET, TEXT,
                               TYPE, VECTOR)
@@ -19,19 +19,19 @@ logger = logging.getLogger(__name__)
 
 class LudwigNeuropodModelWrapper:
     def __init__(self, data_root):
-        self.ludwig_model = LudwigModel.load(data_root)
+        self.ludwig_pipeline = LudwigPipeline.load(data_root)
 
     def __call__(self, **kwargs):
         data_dict = kwargs
         for key in data_dict:
             data_dict[key] = np.squeeze(data_dict[key], axis=1)
-        predicted, _ = self.ludwig_model.predict(
+        predicted, _ = self.ludwig_pipeline.predict(
             dataset=data_dict,
             return_type=dict
         )
         # print(predicted, file=sys.stderr)
         return postprocess_for_neuropod(
-            predicted, self.ludwig_model.config
+            predicted, self.ludwig_pipeline.config
         )
 
 
@@ -111,9 +111,9 @@ def postprocess_for_neuropod(predicted, config):
 
 
 def export_neuropod(
-        ludwig_model_path,
+        ludwig_pipeline_path,
         neuropod_path,
-        neuropod_model_name="ludwig_model",
+        neuropod_model_name="ludwig_pipeline",
 ):
     try:
         from neuropod.backends.python.packager import create_python_neuropod
@@ -125,29 +125,29 @@ def export_neuropod(
     data_paths = [
         {
             "path": os.path.join(
-                ludwig_model_path, MODEL_HYPERPARAMETERS_FILE_NAME
+                ludwig_pipeline_path, MODEL_HYPERPARAMETERS_FILE_NAME
             ),
             "packaged_name": MODEL_HYPERPARAMETERS_FILE_NAME
         },
         {
             "path": os.path.join(
-                ludwig_model_path, TRAIN_SET_METADATA_FILE_NAME
+                ludwig_pipeline_path, TRAIN_SET_METADATA_FILE_NAME
             ),
             "packaged_name": TRAIN_SET_METADATA_FILE_NAME
         },
         {
             "path": os.path.join(
-                ludwig_model_path, 'checkpoint'
+                ludwig_pipeline_path, 'checkpoint'
             ),
             "packaged_name": 'checkpoint'
         },
     ]
-    for filename in os.listdir(ludwig_model_path):
+    for filename in os.listdir(ludwig_pipeline_path):
         if MODEL_WEIGHTS_FILE_NAME in filename:
             data_paths.append(
                 {
                     "path": os.path.join(
-                        ludwig_model_path, filename
+                        ludwig_pipeline_path, filename
                     ),
                     "packaged_name": filename
                 }
@@ -157,13 +157,13 @@ def export_neuropod(
 
     ludwig_config = load_json(
         os.path.join(
-            ludwig_model_path,
+            ludwig_pipeline_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
     )
     training_set_metadata = load_json(
         os.path.join(
-            ludwig_model_path,
+            ludwig_pipeline_path,
             TRAIN_SET_METADATA_FILE_NAME
         )
     )

@@ -11,14 +11,14 @@ import logging
 import os
 import shutil
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 
 # clean out prior results
 shutil.rmtree('./results', ignore_errors=True)
 
 # Define Ludwig model object that drive model training
-model = LudwigModel(config='./model1_config.yaml',
-                    logging_level=logging.INFO)
+model = LudwigPipeline(config='./model1_config.yaml',
+                       logging_level=logging.INFO)
 
 # initiate model training
 (

@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.neuropod_utils import \
@@ -49,7 +49,7 @@ def export_savedmodel(
     logger.info('Output path: {}'.format(output_path))
     logger.info('\n')
 
-    model = LudwigModel.load(model_path)
+    model = LudwigPipeline.load(model_path)
     os.makedirs(output_path, exist_ok=True)
     model.save_savedmodel(output_path)
 

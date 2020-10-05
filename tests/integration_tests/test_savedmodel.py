@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from tests.integration_tests.utils import category_feature
@@ -58,8 +58,8 @@ def test_savedmodel(csv_filename, should_load_model):
         'output_features': output_features,
         'training': {'epochs': 2}
     }
-    ludwig_model = LudwigModel(config)
-    ludwig_model.train(
+    ludwig_pipeline = LudwigPipeline(config)
+    ludwig_pipeline.train(
         dataset=data_csv_path,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
@@ -72,54 +72,54 @@ def test_savedmodel(csv_filename, should_load_model):
     ###################
     # save Ludwig model
     ###################
-    ludwigmodel_path = os.path.join(dir_path, 'ludwigmodel')
-    shutil.rmtree(ludwigmodel_path, ignore_errors=True)
-    ludwig_model.save(ludwigmodel_path)
+    LudwigPipeline_path = os.path.join(dir_path, 'LudwigPipeline')
+    shutil.rmtree(LudwigPipeline_path, ignore_errors=True)
+    ludwig_pipeline.save(LudwigPipeline_path)
 
     ###################
     # load Ludwig model
     ###################
     if should_load_model:
-        ludwig_model = LudwigModel.load(ludwigmodel_path)
+        ludwig_pipeline = LudwigPipeline.load(LudwigPipeline_path)
 
     #################
     # save savedmodel
     #################
     savedmodel_path = os.path.join(dir_path, 'savedmodel')
     shutil.rmtree(savedmodel_path, ignore_errors=True)
-    ludwig_model.model.save_savedmodel(savedmodel_path)
+    ludwig_pipeline.model.save_savedmodel(savedmodel_path)
 
     ##############################
     # collect weight tensors names
     ##############################
-    original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
-    original_weights = deepcopy(ludwig_model.model.trainable_variables)
+    original_predictions_df, _ = ludwig_pipeline.predict(dataset=data_csv_path)
+    original_weights = deepcopy(ludwig_pipeline.model.trainable_variables)
 
     ###################################################
     # load Ludwig model, obtain predictions and weights
     ###################################################
-    ludwig_model = LudwigModel.load(ludwigmodel_path)
-    loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
-    loaded_weights = deepcopy(ludwig_model.model.trainable_variables)
+    ludwig_pipeline = LudwigPipeline.load(LudwigPipeline_path)
+    loaded_prediction_df, _ = ludwig_pipeline.predict(dataset=data_csv_path)
+    loaded_weights = deepcopy(ludwig_pipeline.model.trainable_variables)
 
     #################################################
     # restore savedmodel, obtain predictions and weights
     #################################################
     training_set_metadata_json_fp = os.path.join(
-        ludwigmodel_path,
+        LudwigPipeline_path,
         TRAIN_SET_METADATA_FILE_NAME
     )
 
     dataset, training_set_metadata = preprocess_for_prediction(
-        ludwig_model.config,
+        ludwig_pipeline.config,
         dataset=data_csv_path,
         training_set_metadata=training_set_metadata_json_fp
     )
 
     restored_model = tf.saved_model.load(savedmodel_path)
 
-    if_name = list(ludwig_model.model.input_features.keys())[0]
-    of_name = list(ludwig_model.model.output_features.keys())[0]
+    if_name = list(ludwig_pipeline.model.input_features.keys())[0]
+    of_name = list(ludwig_pipeline.model.output_features.keys())[0]
 
     data_to_predict = {
         if_name: tf.convert_to_tensor(dataset.dataset[if_name], dtype=tf.int32)
@@ -143,7 +143,7 @@ def test_savedmodel(csv_filename, should_load_model):
     #########
     # Cleanup
     #########
-    shutil.rmtree(ludwigmodel_path, ignore_errors=True)
+    shutil.rmtree(LudwigPipeline_path, ignore_errors=True)
     shutil.rmtree(savedmodel_path, ignore_errors=True)
 
     ###############################################

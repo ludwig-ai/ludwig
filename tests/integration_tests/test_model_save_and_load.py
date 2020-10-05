@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import split_dataset_ttv, read_csv
 from tests.integration_tests.utils import binary_feature, numerical_feature, \
@@ -75,19 +75,19 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    ludwig_model1 = LudwigModel(config)
-    _, _, output_dir = ludwig_model1.train(
+    ludwig_pipeline1 = LudwigPipeline(config)
+    _, _, output_dir = ludwig_pipeline1.train(
         training_set=training_set,
         validation_set=validation_set,
         test_set=test_set,
         output_directory='results'  # results_dir
     )
 
-    preds_1, _ = ludwig_model1.predict(dataset=validation_set)
+    preds_1, _ = ludwig_pipeline1.predict(dataset=validation_set)
 
-    def check_model_equal(ludwig_model2):
+    def check_model_equal(ludwig_pipeline2):
         # Compare model predictions
-        preds_2, _ = ludwig_model2.predict(dataset=validation_set)
+        preds_2, _ = ludwig_pipeline2.predict(dataset=validation_set)
         assert set(preds_1.keys()) == set(preds_2.keys())
         for key in preds_1:
             assert preds_1[key].dtype == preds_2[key].dtype, key
@@ -97,33 +97,33 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
         # Compare model weights
         # this has to be done after predicts because of TF2 lazy restoration
-        for if_name in ludwig_model1.model.input_features:
-            if1 = ludwig_model1.model.input_features[if_name]
-            if2 = ludwig_model2.model.input_features[if_name]
+        for if_name in ludwig_pipeline1.model.input_features:
+            if1 = ludwig_pipeline1.model.input_features[if_name]
+            if2 = ludwig_pipeline2.model.input_features[if_name]
             for if1_w, if2_w in zip(if1.encoder_obj.weights,
                                     if2.encoder_obj.weights):
                 assert np.allclose(if1_w.numpy(), if2_w.numpy())
 
-        c1 = ludwig_model1.model.combiner
-        c2 = ludwig_model2.model.combiner
+        c1 = ludwig_pipeline1.model.combiner
+        c2 = ludwig_pipeline2.model.combiner
         for c1_w, c2_w in zip(c1.weights, c2.weights):
             assert np.allclose(c1_w.numpy(), c2_w.numpy())
 
-        for of_name in ludwig_model1.model.output_features:
-            of1 = ludwig_model1.model.output_features[of_name]
-            of2 = ludwig_model2.model.output_features[of_name]
+        for of_name in ludwig_pipeline1.model.output_features:
+            of1 = ludwig_pipeline1.model.output_features[of_name]
+            of2 = ludwig_pipeline2.model.output_features[of_name]
             for of1_w, of2_w in zip(of1.decoder_obj.weights,
                                     of2.decoder_obj.weights):
                 assert np.allclose(of1_w.numpy(), of2_w.numpy())
 
     # Test saving and loading the model explicitly
     with tempfile.TemporaryDirectory() as tmpdir:
-        ludwig_model1.save(tmpdir)
-        ludwig_model_loaded = LudwigModel.load(tmpdir)
-        check_model_equal(ludwig_model_loaded)
+        ludwig_pipeline1.save(tmpdir)
+        ludwig_pipeline_loaded = LudwigPipeline.load(tmpdir)
+        check_model_equal(ludwig_pipeline_loaded)
 
     # Test loading the model from the experiment directory
-    ludwig_model_exp = LudwigModel.load(
+    ludwig_pipeline_exp = LudwigPipeline.load(
         os.path.join(output_dir, 'model')
     )
-    check_model_equal(ludwig_model_exp)
+    check_model_equal(ludwig_pipeline_exp)

@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig import visualize
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import category_feature, \
@@ -44,7 +44,7 @@ def run_api_experiment(input_features, output_features):
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(config)
+    model = LudwigPipeline(config)
     return model
 
 # todo determine feasibility of putting Experiment() into a pytest.fixture
@@ -111,7 +111,7 @@ class Experiment:
             'combiner': {'type': 'concat', 'fc_size': 14},
             'training': {'epochs': 2}
         }
-        return LudwigModel(config)
+        return LudwigPipeline(config)
 
 
 def obtain_df_splits(data_csv):

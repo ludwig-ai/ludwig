@@ -19,7 +19,7 @@ import tempfile
 
 import numpy as np
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import category_feature
@@ -42,7 +42,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(config)
+    model = LudwigPipeline(config)
     output_dir = None
 
     try:
@@ -56,7 +56,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         model.predict(dataset=data_csv)
 
         model_dir = os.path.join(output_dir, 'model')
-        loaded_model = LudwigModel.load(model_dir)
+        loaded_model = LudwigPipeline.load(model_dir)
 
         # Necessary before call to get_weights() to materialize the weights
         loaded_model.predict(dataset=data_csv)
@@ -102,7 +102,7 @@ def run_api_experiment_separated_datasets(
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(config)
+    model = LudwigPipeline(config)
 
     # Training with dataframe
     data_df = read_csv(data_csv)
@@ -233,7 +233,7 @@ def test_api_train_online(csv_filename):
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
     }
-    model = LudwigModel(config)
+    model = LudwigPipeline(config)
 
     for i in range(2):
         model.train_online(dataset=data_csv)
@@ -255,7 +255,7 @@ def test_api_training_set(csv_filename):
             'output_features': output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
-        model = LudwigModel(config)
+        model = LudwigPipeline(config)
         model.train(training_set=data_csv,
                     validation_set=val_csv,
                     test_set=test_csv)
@@ -291,13 +291,13 @@ def test_api_training_determinism(csv_filename):
         rand_x = 42
         rand_y = 24
 
-        model_1 = LudwigModel(config)
+        model_1 = LudwigPipeline(config)
         model_1.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
-        model_2 = LudwigModel(config)
+        model_2 = LudwigPipeline(config)
         model_2.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_y)
 
-        model_3 = LudwigModel(config)
+        model_3 = LudwigPipeline(config)
         model_3.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
         model_weights_1 = model_1.model.get_weights()

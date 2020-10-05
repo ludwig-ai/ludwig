@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath(PATH_ROOT))
 
 import ludwig.utils.horovod_utils
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--rel-path', required=True)
@@ -45,7 +45,7 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(config)
+    model = LudwigPipeline(config)
     output_dir = None
 
     try:
@@ -59,7 +59,7 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
 
         # Attempt loading saved model, should broadcast successfully
         model_dir = os.path.join(output_dir, 'model') if output_dir else None
-        loaded_model = LudwigModel.load(model_dir)
+        loaded_model = LudwigPipeline.load(model_dir)
 
         # Model loading should broadcast weights from master
         loaded_weights = loaded_model.model.get_weights()

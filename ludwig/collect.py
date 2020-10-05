@@ -22,7 +22,7 @@ from typing import List
 
 import numpy as np
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
@@ -94,7 +94,7 @@ def collect_activations(
     logger.info('Output path: {}'.format(output_directory))
     logger.info('\n')
 
-    model = LudwigModel.load(
+    model = LudwigPipeline.load(
         model_path,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
@@ -149,7 +149,7 @@ def collect_weights(
     logger.info('Output path: {}'.format(output_directory))
     logger.info('\n')
 
-    model = LudwigModel.load(model_path)
+    model = LudwigPipeline.load(model_path)
 
     # collect weights
     print_boxed('COLLECT WEIGHTS')
@@ -188,7 +188,7 @@ def print_model_summary(
     # Return
     :return: (`None`)
     """
-    model = LudwigModel.load(model_path)
+    model = LudwigPipeline.load(model_path)
     collected_tensors = model.collect_weights()
     names = [name for name, w in collected_tensors]
 

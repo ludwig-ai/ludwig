@@ -3,7 +3,7 @@ import multiprocessing
 import signal
 from abc import ABC, abstractmethod
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.constants import *
 from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
@@ -116,7 +116,7 @@ class SerialExecutor(HyperoptExecutor):
 
                 trial_id = trials + i
 
-                model = LudwigModel(
+                model = LudwigPipeline(
                     config=modified_config,
                     use_horovod=use_horovod,
                     gpus=gpus,
@@ -668,7 +668,7 @@ def run_experiment(
 ):
     # Collect training and validation losses and metrics
     # & append it to `results`
-    model = LudwigModel(
+    model = LudwigPipeline(
         config=config,
         use_horovod=use_horovod,
         gpus=gpus,

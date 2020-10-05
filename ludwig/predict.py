@@ -21,7 +21,7 @@ from typing import List, Union
 
 import pandas as pd
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
@@ -94,7 +94,7 @@ def predict_cli(
 
     :return: ('None')
     """
-    model = LudwigModel.load(
+    model = LudwigPipeline.load(
         model_path,
         logging_level=logging_level,
         use_horovod=use_horovod,

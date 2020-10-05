@@ -23,7 +23,7 @@ from typing import List, Union
 import pandas as pd
 import yaml
 
-from ludwig.api import LudwigModel, kfold_cross_validate
+from ludwig.api import LudwigPipeline, kfold_cross_validate
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
@@ -179,8 +179,8 @@ def experiment_cli(
     :param logging_level: (int) Log level that will be sent to stderr.
 
     # Return
-    :return: (Tuple[LudwigModel, dict, dict, tuple, str)) `(model, evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
-        `model` LudwigModel instance
+    :return: (Tuple[LudwigPipeline, dict, dict, tuple, str)) `(model, evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
+        `model` LudwigPipeline instance
         `evaluation_statistics` dictionary with evaluation performance
             statistics on the test_set,
         `training_statistics` is a dictionary of training statistics for
@@ -197,9 +197,9 @@ def experiment_cli(
                                 config_file)
 
     if model_load_path:
-        model = LudwigModel.load(model_load_path)
+        model = LudwigPipeline.load(model_load_path)
     else:
-        model = LudwigModel(
+        model = LudwigPipeline(
             config=config,
             logging_level=logging_level,
             use_horovod=use_horovod,

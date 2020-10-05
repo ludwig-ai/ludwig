@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 """
-    File name: LudwigModel.py
+    File name: LudwigPipeline.py
     Author: Piero Molino
     Date created: 5/21/2019
     Date last modified: 5/21/2019
@@ -71,7 +71,7 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 logger = logging.getLogger(__name__)
 
 
-class LudwigModel:
+class LudwigPipeline:
     """Class that allows access to high level Ludwig functionalities.
 
     # Inputs
@@ -93,51 +93,51 @@ class LudwigModel:
     # Example usage:
 
     ```python
-    from ludwig.api import LudwigModel
+    from ludwig.api import LudwigPipeline
     ```
 
     Train a model:
 
     ```python
     config = {...}
-    ludwig_model = LudwigModel(config)
-    train_stats, _, _  = ludwig_model.train(dataset=file_path)
+    ludwig_pipeline = LudwigPipeline(config)
+    train_stats, _, _  = ludwig_pipeline.train(dataset=file_path)
     ```
 
     or
 
     ```python
-    train_stats, _, _ = ludwig_model.train(dataset=dataframe)
+    train_stats, _, _ = ludwig_pipeline.train(dataset=dataframe)
     ```
 
     If you have already trained a model you can load it and use it to predict
 
     ```python
-    ludwig_model = LudwigModel.load(model_dir)
+    ludwig_pipeline = LudwigPipeline.load(model_dir)
     ```
 
     Predict:
 
     ```python
-    predictions, _ = ludwig_model.predict(dataset=file_path)
+    predictions, _ = ludwig_pipeline.predict(dataset=file_path)
     ```
 
     or
 
     ```python
-    predictions, _ = ludwig_model.predict(dataset=dataframe)
+    predictions, _ = ludwig_pipeline.predict(dataset=dataframe)
     ```
 
     Evaluation:
 
     ```python
-    eval_stats, _, _ = ludwig_model.evaluate(dataset=file_path)
+    eval_stats, _, _ = ludwig_pipeline.evaluate(dataset=file_path)
     ```
 
     or
 
     ```python
-    eval_stats, _, _ = ludwig_model.evaluate(dataset=dataframe)
+    eval_stats, _, _ = ludwig_pipeline.evaluate(dataset=dataframe)
     ```
     """
 
@@ -437,8 +437,8 @@ class LudwigModel:
                 self.config,
                 training_set_metadata
             )
-            self.model = LudwigModel.create_model(self.config,
-                                                  random_seed=random_seed)
+            self.model = LudwigPipeline.create_model(self.config,
+                                                     random_seed=random_seed)
 
         # init trainer
         trainer = Trainer(
@@ -585,8 +585,8 @@ class LudwigModel:
                 self.config,
                 training_set_metadata
             )
-            self.model = LudwigModel.create_model(self.config,
-                                                  random_seed=random_seed)
+            self.model = LudwigPipeline.create_model(self.config,
+                                                     random_seed=random_seed)
 
         if not self._online_trainer:
             self._online_trainer = Trainer(
@@ -1257,7 +1257,7 @@ class LudwigModel:
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
             allow_parallel_threads: bool = True
-    ) -> 'LudwigModel':  # return is an instance of ludwig.api.LudwigModel class
+    ) -> 'LudwigPipeline':  # return is an instance of ludwig.api.LudwigPipeline class
         """This function allows for loading pretrained models
 
         # Inputs
@@ -1281,13 +1281,13 @@ class LudwigModel:
 
         # Return
 
-        :return: (LudwigModel) a LudwigModel object
+        :return: (LudwigPipeline) a LudwigPipeline object
 
 
         # Example usage
 
         ```python
-        ludwig_model = LudwigModel.load(model_dir)
+        ludwig_pipeline = LudwigPipeline.load(model_dir)
         ```
 
         """
@@ -1298,7 +1298,7 @@ class LudwigModel:
         )), horovod)
 
         # initialize model
-        ludwig_model = LudwigModel(
+        ludwig_pipeline = LudwigPipeline(
             config,
             logging_level=logging_level,
             use_horovod=use_horovod,
@@ -1308,13 +1308,13 @@ class LudwigModel:
         )
 
         # generate model from config
-        ludwig_model.model = LudwigModel.create_model(config)
+        ludwig_pipeline.model = LudwigPipeline.create_model(config)
 
         # load model weights
-        ludwig_model.load_weights(model_dir)
+        ludwig_pipeline.load_weights(model_dir)
 
         # load train set metadata
-        ludwig_model.training_set_metadata = broadcast_return(
+        ludwig_pipeline.training_set_metadata = broadcast_return(
             lambda: load_metadata(
                 os.path.join(
                     model_dir,
@@ -1323,7 +1323,7 @@ class LudwigModel:
             ), horovod
         )
 
-        return ludwig_model
+        return ludwig_pipeline
 
     def load_weights(
             self,
@@ -1342,7 +1342,7 @@ class LudwigModel:
         # Example usage
 
         ```python
-        ludwig_model.load_weights(model_dir)
+        ludwig_pipeline.load_weights(model_dir)
         ```
 
         """
@@ -1379,7 +1379,7 @@ class LudwigModel:
         # Example usage
 
         ```python
-        ludwig_model.save(save_path)
+        ludwig_pipeline.save(save_path)
         ```
 
         """
@@ -1437,7 +1437,7 @@ class LudwigModel:
         # Example usage
 
         ```python
-        ludwig_model.save_for_serving(save_path)
+        ludwig_pipeline.save_for_serving(save_path)
         ```
 
         """
@@ -1665,7 +1665,7 @@ def kfold_cross_validate(
             # train and validate model on this fold
             logger.info("training on fold {:d}".format(fold_num))
 
-            model = LudwigModel(
+            model = LudwigPipeline(
                 config=config,
                 logging_level=logging_level,
                 use_horovod=use_horovod,

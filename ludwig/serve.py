@@ -23,7 +23,7 @@ import tempfile
 
 import pandas as pd
 
-from ludwig.api import LudwigModel
+from ludwig.api import LudwigPipeline
 from ludwig.constants import NAME
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
@@ -174,7 +174,7 @@ def run_server(
 
     :return: (`None`)
     """
-    model = LudwigModel.load(model_path)
+    model = LudwigPipeline.load(model_path)
     app = server(model)
     uvicorn.run(app, host=host, port=port)
 

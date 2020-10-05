@@ -223,7 +223,7 @@ def check_which_config(config, config_file):
     if config is None and config_file is None:
         raise ValueError(
             'Either config of config_file have to be'
-            'not None to initialize a LudwigModel'
+            'not None to initialize a LudwigPipeline'
         )
     if config is not None and config_file is not None:
         raise ValueError(
