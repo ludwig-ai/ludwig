@@ -30,15 +30,15 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import is_on_master, set_on_master
-from ludwig.utils.misc_utils import check_which_model_definition
+from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
 def experiment_cli(
-        model_definition: dict,
-        model_definition_file: str = None,
+        config: dict,
+        config_file: str = None,
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -77,10 +77,10 @@ def experiment_cli(
 
     # Inputs
 
-    :param model_definition: (dict) model definition which defines the different
+    :param config: (dict) config which defines the different
         parameters of the model, features, preprocessing and training.
-    :param model_definition_file: (str, default: `None`) the filepath string
-        that specifies the model definition.  It is a yaml file.
+    :param config_file: (str, default: `None`) the filepath string
+        that specifies the config.  It is a yaml file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used in the experiment.
         If it has a split column, it will be used for splitting (0 for train,
@@ -112,8 +112,8 @@ def experiment_cli(
         loaded model will be used as initialization
         (useful for transfer learning).
     :param model_resume_path: (str, default: `None`) resumes training of
-        the model from the path specified. The model definition is restored.
-        In addition to model definition, training statistics and loss for
+        the model from the path specified. The config is restored.
+        In addition to config, training statistics and loss for
         epoch and the state of the optimizer are restored such that
         training can be effectively continued from a previously interrupted
         training process.
@@ -193,14 +193,14 @@ def experiment_cli(
     """
     set_on_master(use_horovod)
 
-    model_definition = check_which_model_definition(model_definition,
-                                                    model_definition_file)
+    config = check_which_config(config,
+                                config_file)
 
     if model_load_path:
         model = LudwigModel.load(model_load_path)
     else:
         model = LudwigModel(
-            model_definition=model_definition,
+            config=config,
             logging_level=logging_level,
             use_horovod=use_horovod,
             gpus=gpus,
@@ -244,8 +244,8 @@ def experiment_cli(
 
 def kfold_cross_validate_cli(
         k_fold,
-        model_definition=None,
-        model_definition_file=None,
+        config=None,
+        config_file=None,
         dataset=None,
         data_format=None,
         output_directory='results',
@@ -257,12 +257,12 @@ def kfold_cross_validate_cli(
 
     # Inputs
     :param k_fold: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: None) a dictionary containing
+    :param config: (dict, default: None) a dictionary containing
             information needed to build a model. Refer to the [User Guide]
-           (http://ludwig.ai/user_guide/#model-definition) for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-           a YAML file containing the model definition. If available it will be
-           used instead of the model_definition dict.
+           (http://ludwig.ai/user_guide/#model-config) for details.
+    :param config_file: (string, optional, default: `None`) path to
+           a YAML file containing the config. If available it will be
+           used instead of the config dict.
     :param data_csv: (string, default: None)
     :param output_directory: (string, default: 'results')
     :param random_seed: (int) Random seed used k-fold splits.
@@ -272,22 +272,22 @@ def kfold_cross_validate_cli(
     :return: None
     """
 
-    if model_definition is None and model_definition_file is None:
+    if config is None and config_file is None:
         raise ValueError(
-            "No model definition is provided 'model_definition' or "
-            "'model_definition_file' must be provided."
+            "No config is provided 'config' or "
+            "'config_file' must be provided."
         )
-    elif model_definition is not None and model_definition_file is not None:
+    elif config is not None and config_file is not None:
         raise ValueError(
-            "Cannot specify both 'model_definition' and 'model_definition_file'"
+            "Cannot specify both 'config' and 'config_file'"
             ", proivde only one of the parameters."
         )
 
     (kfold_cv_stats,
      kfold_split_indices) = kfold_cross_validate(
         k_fold,
-        model_definition=model_definition if model_definition is not None else
-            model_definition_file,
+        config=config if config is not None else
+        config_file,
         dataset=dataset,
         data_format=data_format,
         output_directory=output_directory,
@@ -412,16 +412,16 @@ def cli(sys_argv):
     # ----------------
     # Model parameters
     # ----------------
-    model_definition = parser.add_mutually_exclusive_group(required=True)
-    model_definition.add_argument(
-        '-md',
-        '--model_definition',
+    config = parser.add_mutually_exclusive_group(required=True)
+    config.add_argument(
+        '-c',
+        '--config',
         type=yaml.safe_load,
-        help='model definition'
+        help='config'
     )
-    model_definition.add_argument(
-        '-mdf',
-        '--model_definition_file',
+    config.add_argument(
+        '-cf',
+        '--config_file',
         help='YAML file describing the model. Ignores --model_hyperparameters'
     )
 

@@ -4,7 +4,7 @@ Please provide the following:
 
 - a clear explanation of what your code does
 - if applicable, a reference to an issue
-- a reproducible test for your PR (code, model definition and data sample)
+- a reproducible test for your PR (code, config and data sample)
 
 # Documentation Pull Requests
 

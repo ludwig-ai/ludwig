@@ -1125,7 +1125,7 @@ def load_metadata(metadata_file_path):
 
 
 def preprocess_for_training(
-        model_definition,
+        config,
         dataset=None,
         training_set=None,
         validation_set=None,
@@ -1151,8 +1151,8 @@ def preprocess_for_training(
         training_set_metadata = load_metadata(training_set_metadata)
 
     # setup
-    features = (model_definition['input_features'] +
-                model_definition['output_features'])
+    features = (config['input_features'] +
+                config['output_features'])
 
     # in case data_format is one of the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
@@ -1170,7 +1170,7 @@ def preprocess_for_training(
                                                                   'meta.json')
                 training_set_metadata = data_utils.load_json(
                     training_set_metadata_fp)
-                model_definition['data_hdf5_fp'] = dataset
+                config['data_hdf5_fp'] = dataset
                 data_format = 'hdf5'
 
         elif training_set:
@@ -1189,7 +1189,7 @@ def preprocess_for_training(
                 )
                 validation_set = replace_file_extension(validation_set, 'hdf5')
                 test_set = replace_file_extension(test_set, 'hdf5')
-                model_definition['data_hdf5_fp'] = training_set
+                config['data_hdf5_fp'] = training_set
                 data_format = 'hdf5'
 
     data_format_processor = get_from_registry(
@@ -1216,8 +1216,8 @@ def preprocess_for_training(
 
     training_dataset = Dataset(
         training_set,
-        model_definition['input_features'],
-        model_definition['output_features'],
+        config['input_features'],
+        config['output_features'],
         training_set_metadata.get(DATA_TRAIN_HDF5_FP)
     )
 
@@ -1225,8 +1225,8 @@ def preprocess_for_training(
     if validation_set is not None:
         validation_dataset = Dataset(
             validation_set,
-            model_definition['input_features'],
-            model_definition['output_features'],
+            config['input_features'],
+            config['output_features'],
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
@@ -1234,8 +1234,8 @@ def preprocess_for_training(
     if test_set is not None:
         test_dataset = Dataset(
             test_set,
-            model_definition['input_features'],
-            model_definition['output_features'],
+            config['input_features'],
+            config['output_features'],
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
@@ -1430,7 +1430,7 @@ def _preprocess_df_for_training(
 
 
 def preprocess_for_prediction(
-        model_definition,
+        config,
         dataset,
         training_set_metadata=None,
         data_format=None,
@@ -1440,7 +1440,7 @@ def preprocess_for_prediction(
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core
         :param model_path: The input data that is joined with the model
-               hyperparameter file to create the model definition file
+               hyperparameter file to create the config file
         :param data_csv: The CSV input data file
         :param data_hdf5: The hdf5 data file if there is no csv data file
         :param training_set_metadata: Train set metadata for the input features
@@ -1461,7 +1461,7 @@ def preprocess_for_prediction(
     # manage the in_memory parameter
     if data_format not in HDF5_FORMATS:
         num_overrides = override_in_memory_flag(
-            model_definition['input_features'],
+            config['input_features'],
             True
         )
         if num_overrides > 0:
@@ -1472,7 +1472,7 @@ def preprocess_for_prediction(
 
     preprocessing_params = merge_dict(
         default_preprocessing_parameters,
-        model_definition[PREPROCESSING]
+        config[PREPROCESSING]
     )
 
     # if training_set_metadata is a string, assume it's a path to load the json
@@ -1484,8 +1484,8 @@ def preprocess_for_prediction(
     # setup
     output_features = []
     if include_outputs:
-        output_features += model_definition['output_features']
-    features = model_definition['input_features'] + output_features
+        output_features += config['output_features']
+    features = config['input_features'] + output_features
 
     # in case data_format is one fo the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
@@ -1498,7 +1498,7 @@ def preprocess_for_prediction(
                 'of the input file, using them instead'
             )
             dataset = replace_file_extension(dataset, 'hdf5')
-            model_definition['data_hdf5_fp'] = dataset
+            config['data_hdf5_fp'] = dataset
             data_format = 'hdf5'
 
     data_format_processor = get_from_registry(
@@ -1530,7 +1530,7 @@ def preprocess_for_prediction(
 
     dataset = Dataset(
         dataset,
-        model_definition['input_features'],
+        config['input_features'],
         output_features,
         hdf5_fp
     )
@@ -1557,13 +1557,13 @@ def replace_text_feature_level(features, datasets):
                             del dataset[name_level]
 
 
-def get_preprocessing_params(model_definition):
-    model_definition = merge_with_defaults(model_definition)
+def get_preprocessing_params(config):
+    config = merge_with_defaults(config)
 
-    global_preprocessing_parameters = model_definition[PREPROCESSING]
+    global_preprocessing_parameters = config[PREPROCESSING]
     features = (
-            model_definition['input_features'] +
-            model_definition['output_features']
+            config['input_features'] +
+            config['output_features']
     )
 
     global_preprocessing_parameters = merge_dict(

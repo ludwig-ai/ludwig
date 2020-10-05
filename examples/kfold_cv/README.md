@@ -13,7 +13,7 @@ To run this example execute this bash script:
 ```
 This bash script performs these steps:
 
-- Download and prepare data for training and create a Ludwig model definition file
+- Download and prepare data for training and create a Ludwig config file
 - Execute `ludwig experiment` to run the 5-fold cross validation
 - Display results from the 5-fold cross validation analysis
 
@@ -23,7 +23,7 @@ Cleaning out old results
 Downloading data set
 Preparing data for training
 Saving training and test data sets
-Preparing Ludwig model definition
+Preparing Ludwig config
 Completed data preparation
 Training: 100%|████████████████████████████████████████████████████████████████████████████████| 12/12 [00:00<00:00, 23.14it/s]
 Evaluation train: 100%|████████████████████████████████████████████████████████████████████████| 12/12 [00:00<00:00, 98.62it/s]
@@ -65,7 +65,7 @@ retrieving results from  results
 
 This illustrates using the Ludwig API to run the K-fold cross validation analysis.  To run the example, open the jupyter notebook `regression_example.ipynb`.  Following steps are performed:
 
-- Download and prepare data for training and create a Ludwig model definition data structure from a pandas dataframe structure
+- Download and prepare data for training and create a Ludwig config data structure from a pandas dataframe structure
 - Use `experiment.kfold_cross_validate()` function  to run the 5-fold cross validation
 - Display results from the 5-fold cross validation analysis
 

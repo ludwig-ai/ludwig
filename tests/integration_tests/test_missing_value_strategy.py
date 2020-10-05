@@ -34,12 +34,12 @@ def test_missing_value_prediction(csv_filename):
         dataset = pd.read_csv(
             generate_data(input_features, output_features, csv_filename))
 
-        model_definition = {
+        config = {
             'input_features': input_features,
             'output_features': output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
-        model = LudwigModel(model_definition)
+        model = LudwigModel(config)
         _, _, output_dir = model.train(dataset=dataset,
                                        output_directory=tmpdir)
 
