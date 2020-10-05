@@ -326,7 +326,7 @@ def test_synthesize_dataset_cli(csv_filename):
         # attempting to build the cli parameter structure
         _run_ludwig(
             'synthesize_dataset',
-            output_path=csv_filename,
+            output_path=os.path.join(tmpdir, csv_filename),
             features="'[ \
               {name: text_1, type: text, vocab_size: 20, max_len: 20}, \
               {name: text_2, type: text, vocab_size: 20, max_len: 20}, \
