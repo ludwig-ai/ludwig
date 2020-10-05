@@ -261,8 +261,6 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.preprocess')
 
-    set_on_master(args.use_horovod)
-
     if is_on_master():
         print_ludwig('Preprocess', LUDWIG_VERSION)
 
