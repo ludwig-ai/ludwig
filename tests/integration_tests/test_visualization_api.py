@@ -21,11 +21,8 @@ from tempfile import TemporaryDirectory
 import numpy as np
 import pandas as pd
 
-import pytest
-
 from ludwig import visualize
 from ludwig.api import LudwigModel
-from ludwig.hyperopt.run import hyperopt
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import category_feature, \
@@ -40,14 +37,14 @@ def run_api_experiment(input_features, output_features):
     :param output_features: output schema
     :return: None
     """
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
     return model
 
 # todo determine feasibility of putting Experiment() into a pytest.fixture
@@ -108,13 +105,13 @@ class Experiment:
 
     def _create_model(self):
         """Configure and setup test model"""
-        model_definition = {
+        config = {
             'input_features': self.input_features,
             'output_features': self.output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
             'training': {'epochs': 2}
         }
-        return LudwigModel(model_definition)
+        return LudwigModel(config)
 
 
 def obtain_df_splits(data_csv):

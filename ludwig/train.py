@@ -27,15 +27,15 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import is_on_master, set_on_master
-from ludwig.utils.misc_utils import check_which_model_definition
+from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
 def train_cli(
-        model_definition: dict = None,
-        model_definition_file: str = None,
+        config: dict = None,
+        config_file: str = None,
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -66,10 +66,10 @@ def train_cli(
     internals. Requires most of the parameters that are taken into the model.
     Builds a full ludwig model and performs the training.
 
-    :param model_definition: (dict) model definition which defines the different
+    :param config: (dict) config which defines the different
         parameters of the model, features, preprocessing and training.
-    :param model_definition_file: (str, default: `None`) the filepath string
-        that specifies the model definition.  It is a yaml file.
+    :param config_file: (str, default: `None`) the filepath string
+        that specifies the config.  It is a yaml file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used for training.
         If it has a split column, it will be used for splitting (0 for train,
@@ -101,8 +101,8 @@ def train_cli(
         loaded model will be used as initialization
         (useful for transfer learning).
     :param model_resume_path: (str, default: `None`) resumes training of
-        the model from the path specified. The model definition is restored.
-        In addition to model definition, training statistics, loss for each
+        the model from the path specified. The config is restored.
+        In addition to config, training statistics, loss for each
         epoch and the state of the optimizer are restored such that
         training can be effectively continued from a previously interrupted
         training process.
@@ -155,14 +155,14 @@ def train_cli(
 
     :return: (`None`)
     """
-    model_definition = check_which_model_definition(model_definition,
-                                                    model_definition_file)
+    config = check_which_config(config,
+                                config_file)
 
     if model_load_path:
         model = LudwigModel.load(model_load_path)
     else:
         model = LudwigModel(
-            model_definition=model_definition,
+            config=config,
             logging_level=logging_level,
             use_horovod=use_horovod,
             gpus=gpus,
@@ -264,17 +264,17 @@ def cli(sys_argv):
     # ----------------
     # Model parameters
     # ----------------
-    model_definition = parser.add_mutually_exclusive_group(required=True)
-    model_definition.add_argument(
+    config = parser.add_mutually_exclusive_group(required=True)
+    config.add_argument(
         '-md',
-        '--model_definition',
+        '--config',
         type=yaml.safe_load,
-        help='model definition'
+        help='config'
     )
-    model_definition.add_argument(
+    config.add_argument(
         '-mdf',
-        '--model_definition_file',
-        help='YAML file describing the model. Ignores --model_definition'
+        '--config_file',
+        help='YAML file describing the model. Ignores --config'
     )
 
     parser.add_argument(

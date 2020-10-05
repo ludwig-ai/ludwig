@@ -17,7 +17,7 @@ from ludwig.api import LudwigModel
 shutil.rmtree('./results', ignore_errors=True)
 
 # Define Ludwig model object that drive model training
-model = LudwigModel(model_definition='./model1_definition.yaml',
+model = LudwigModel(config='./model1_config.yaml',
                     logging_level=logging.INFO)
 
 # initiate model training

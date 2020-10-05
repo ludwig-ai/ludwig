@@ -26,8 +26,8 @@ from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
-from ludwig.utils.misc_utils import check_which_model_definition
+from ludwig.utils.horovod_utils import is_on_master
+from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 
 def preprocess_cli(
-        preprocessing_definition: dict = None,
-        preprocessing_definition_file: str = None,
+        preprocessing_config: dict = None,
+        preprocessing_config_file: str = None,
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -52,10 +52,10 @@ def preprocess_cli(
     internals. Requires most of the parameters that are taken into the model.
     Builds a full ludwig model and performs the training.
 
-    :param model_definition: (dict) model definition which defines the different
+    :param config: (dict) config which defines the different
         parameters of the model, features, preprocessing and training.
-    :param model_definition_file: (str, default: `None`) the filepath string
-        that specifies the model definition.  It is a yaml file.
+    :param config_file: (str, default: `None`) the filepath string
+        that specifies the config.  It is a yaml file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used for training.
         If it has a split column, it will be used for splitting (0 for train,
@@ -87,8 +87,8 @@ def preprocess_cli(
         loaded model will be used as initialization
         (useful for transfer learning).
     :param model_resume_path: (str, default: `None`) resumes training of
-        the model from the path specified. The model definition is restored.
-        In addition to model definition, training statistics, loss for each
+        the model from the path specified. The config is restored.
+        In addition to config, training statistics, loss for each
         epoch and the state of the optimizer are restored such that
         training can be effectively continued from a previously interrupted
         training process.
@@ -141,13 +141,13 @@ def preprocess_cli(
 
     :return: (`None`)
     """
-    preprocessing_definition = check_which_model_definition(
-        preprocessing_definition,
-        preprocessing_definition_file
+    preprocessing_config = check_which_config(
+        preprocessing_config,
+        preprocessing_config_file
     )
 
     model = LudwigModel(
-        model_definition=preprocessing_definition,
+        config=preprocessing_config,
         logging_level=logging_level,
     )
     model.preprocess(
@@ -209,19 +209,19 @@ def cli(sys_argv):
     preprocessing_def = parser.add_mutually_exclusive_group(required=True)
     preprocessing_def.add_argument(
         '-pd',
-        '--preprocessing_definition',
+        '--preprocessing_config',
         type=yaml.safe_load,
-        help='preproceesing definition. '
-             'Uses the same format of model_definition, '
+        help='preproceesing config. '
+             'Uses the same format of config, '
              'but ignores encoder specific parameters, '
              'decoder specific paramters, combiner and training parameters'
     )
     preprocessing_def.add_argument(
         '-mdf',
-        '--preprocessing_definition_file',
+        '--preprocessing_config_file',
         help='YAML file describing the preprocessing. '
-             'Ignores --preprocessing_definition.'
-             'Uses the same format of model_definition, '
+             'Ignores --preprocessing_config.'
+             'Uses the same format of config, '
              'but ignores encoder specific parameters, '
              'decoder specific paramters, combiner and training parameters'
     )

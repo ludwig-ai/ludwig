@@ -141,10 +141,10 @@ def test_encoder(test_case):
     raw_data = [x[0] for x in data_list[1:]]
     df = pd.DataFrame({data_list[0][0]: raw_data})
 
-    # minimal model definition sufficient to create the input feature
-    model_definition = {'input_features': features, 'output_features': []}
+    # minimal config sufficient to create the input feature
+    config = {'input_features': features, 'output_features': []}
     training_set, _, _, training_set_metadata = preprocess_for_training(
-        model_definition,
+        config,
         training_set=df,
         skip_save_processed_input=True,
         random_seed=RANDOM_SEED
@@ -283,10 +283,10 @@ def test_decoder(test_case):
         )
     }
 
-    # minimal model definition sufficient to create output feature
-    model_definition = {'input_features': [], 'output_features': features}
+    # minimal config sufficient to create output feature
+    config = {'input_features': [], 'output_features': features}
     training_set, _, _, training_set_metadata = preprocess_for_training(
-        model_definition,
+        config,
         training_set=df,
         skip_save_processed_input=True,
         random_seed=RANDOM_SEED

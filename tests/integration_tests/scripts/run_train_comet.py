@@ -51,14 +51,14 @@ def run(csv_filename):
     output_features = [category_feature()]
     data_csv = generate_data(input_features, output_features, csv_filename)
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
     output_dir = None
 
     # Wrap these methods so we can check that they were called

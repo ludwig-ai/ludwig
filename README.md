@@ -98,9 +98,9 @@ Basic Principles
 Ludwig provides three main functionalities: training models and using them to predict and evaluate them.
 It is based on datatype abstraction, so that the same data preprocessing and postprocessing will be performed on different datasets that share datatypes and the same encoding and decoding models developed can be re-used across several tasks.
 
-Training a model in Ludwig is pretty straightforward: you provide a dataset file and a model definition YAML file.
+Training a model in Ludwig is pretty straightforward: you provide a dataset file and a config YAML file.
 
-The model definition contains a list of input features and output features, all you have to do is specify names of the columns in the dataset that are inputs to your model alongside with their datatypes, and names of columns in the dataset that will be outputs, the target variables which the model will learn to predict.
+The config contains a list of input features and output features, all you have to do is specify names of the columns in the dataset that are inputs to your model alongside with their datatypes, and names of columns in the dataset that will be outputs, the target variables which the model will learn to predict.
 Ludwig will compose a deep learning model accordingly and train it for you.
 
 Currently, the available datatypes in Ludwig are:
@@ -132,7 +132,7 @@ By choosing different datatype for inputs and outputs, users can solve many diff
 
 take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several more tasks.
 
-The model definition can contain additional information, in particular how to preprocess each column in the data, which encoder and decoder to use for each one, architectural  and training parameters, hyperparameters to optimize.
+The config can contain additional information, in particular how to preprocess each column in the data, which encoder and decoder to use for each one, architectural  and training parameters, hyperparameters to optimize.
 This allows ease of use for novices and flexibility for experts.
 
 
@@ -149,7 +149,7 @@ For example, given a text classification dataset like the following:
 | ...                                   | ...      |
 
 you want to learn a model that uses the content of the `doc_text` column as input to predict the values in the `class` column.
-You can use the following model definition:
+You can use the following config:
 
 ```yaml
 {input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}
@@ -158,7 +158,7 @@ You can use the following model definition:
 and start the training typing the following command in your console:
 
 ```
-ludwig train --dataset path/to/file.csv --model_definition "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
+ludwig train --dataset path/to/file.csv --config "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
 ```
 
 where `path/to/file.csv` is the path to a UTF-8 encoded CSV file containing the dataset in the previous table (many other data formats are supported).
@@ -171,13 +171,13 @@ Ludwig will:
 
 Training progress will be displayed in the console, but the TensorBoard can also be used.
 
-If you prefer to use an RNN encoder and increase the number of epochs to train for, all you have to do is to change the model definition to:
+If you prefer to use an RNN encoder and increase the number of epochs to train for, all you have to do is to change the config to:
 
 ```yaml
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) to find out all the options available to you in the model definition and take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different tasks.
+Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) to find out all the options available to you in the config and take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different tasks.
 
 After training, Ludwig will create a `results` directory containing the trained model with its hyperparameters and summary statistics of the training process.
 You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
@@ -239,8 +239,8 @@ Ludwig also provides a simple programmatic API that allows you to train or load 
 from ludwig.api import LudwigModel
 
 # train a model
-model_definition = {...}
-model = LudwigModel(model_definition)
+config = {...}
+model = LudwigModel(config)
 train_stats = model.train(training_data)
 
 # or load a model
@@ -250,7 +250,7 @@ model = LudwigModel.load(model_path)
 predictions = model.predict(test_data)
 ```
 
-`model_definition` containing the same information of the YAML file provided to the command line interface.
+`config` containing the same information of the YAML file provided to the command line interface.
 More details are provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) and in the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
 
 

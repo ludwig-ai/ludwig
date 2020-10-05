@@ -155,7 +155,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return None,
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,
@@ -267,7 +267,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         return self.max_sequence_length,
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             output_feature,
             feature_metadata,
             *args,

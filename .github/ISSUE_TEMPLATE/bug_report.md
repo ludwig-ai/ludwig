@@ -17,7 +17,7 @@ Steps to reproduce the behavior:
 3. Scroll down to '....'
 4. See error
 
-Please provide code, yaml definition file and a sample of data in order to entirely reproduce the issue.
+Please provide code, yaml config file and a sample of data in order to entirely reproduce the issue.
 Issues that are not reproducible will be ignored.
 
 **Expected behavior**

@@ -109,7 +109,7 @@ class Comet():
         config = comet_ml.get_config()
         self._save_config(config, directory=experiment_directory)
 
-    def train_model(self, model, model_definition, model_definition_path,
+    def train_model(self, model, config, config_path,
                     *args, **kwargs):
         logger.info("comet.train_model() called......")
         if self.cometml_experiment:
@@ -119,16 +119,16 @@ class Comet():
             #     self.cometml_experiment.set_model_graph(
             #         str(model._graph.as_graph_def()))
 
-            if model_definition:
-                if model_definition_path:
-                    base_name = os.path.basename(model_definition_path)
+            if config:
+                if config_path:
+                    base_name = os.path.basename(config_path)
                 else:
-                    base_name = "model_definition.yaml"
+                    base_name = "config.yaml"
                 if "." in base_name:
                     base_name = base_name.rsplit(".", 1)[0] + ".json"
                 else:
                     base_name = base_name + ".json"
-                self.cometml_experiment.log_asset_data(model_definition,
+                self.cometml_experiment.log_asset_data(config,
                                                        base_name)
 
     def train_save(self, output_directory, *args, **kwargs):

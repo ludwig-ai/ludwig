@@ -76,12 +76,12 @@ def test_neuropod(csv_filename):
         #############
         # Train model
         #############
-        model_definition = {
+        config = {
             'input_features': input_features,
             'output_features': output_features,
             'training': {'epochs': 2}
         }
-        ludwig_model = LudwigModel(model_definition)
+        ludwig_model = LudwigModel(config)
         ludwig_model.train(
             dataset=data_csv_path,
             skip_save_training_description=True,

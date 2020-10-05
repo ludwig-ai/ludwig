@@ -3,7 +3,7 @@
 
 
 # Download and prepare training data set
-# Create Ludwig model definition file
+# Create Ludwig config file
 #
 # Based on the [UCI Wisconsin Breast Cancer data set](https://archive.ics.uci.edu/ml/datasets/breast+cancer+wisconsin+(original))
 #
@@ -25,8 +25,8 @@ RESULTS_DIR = 'results'
 print("Cleaning out old results")
 if os.path.isfile(DATA_SET):
     os.remove(DATA_SET)
-if os.path.isfile('model_definition.yaml'):
-    os.remove('model_definition.yaml')
+if os.path.isfile('config.yaml'):
+    os.remove('config.yaml')
 
 shutil.rmtree(RESULTS_DIR, ignore_errors=True)
 shutil.rmtree(DATA_DIR, ignore_errors=True)
@@ -56,7 +56,7 @@ os.mkdir(DATA_DIR)
 train_df.to_csv(os.path.join(DATA_DIR, 'train.csv'), index=False)
 test_df.to_csv(os.path.join(DATA_DIR, 'test.csv'), index=False)
 
-print("Preparing Ludwig model definition")
+print("Preparing Ludwig config")
 # Create ludwig input_features
 num_features = ['X' + str(i) for i in range(1, 31)]
 input_features = []
@@ -78,8 +78,8 @@ output_features = [
     }
 ]
 
-# setup ludwig model definition
-model_definition = {
+# setup ludwig config
+config = {
     'input_features': input_features,
     'output_features': output_features,
     'training': {
@@ -88,7 +88,7 @@ model_definition = {
     }
 }
 
-with open('model_definition.yaml', 'w') as f:
-    yaml.dump(model_definition, f)
+with open('config.yaml', 'w') as f:
+    yaml.dump(config, f)
 
 print("Completed data preparation")

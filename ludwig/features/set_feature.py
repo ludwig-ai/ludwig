@@ -127,7 +127,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return len(self.vocab),
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,
@@ -217,7 +217,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return self.num_classes,
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             output_feature,
             feature_metadata,
             *args,

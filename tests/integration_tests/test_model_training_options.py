@@ -21,7 +21,7 @@ GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
 
 
-def get_feature_definitions():
+def get_feature_configs():
     input_features = [
         {'name': 'x', 'type': 'numerical'},
     ]
@@ -37,7 +37,7 @@ def get_feature_definitions():
 @pytest.fixture(scope='module')
 def generated_data():
     # function generates simple training data that guarantee convergence
-    # within 30 epochs for suitable model definition
+    # within 30 epochs for suitable config
 
     # generate data
     np.random.seed(RANDOM_SEED)
@@ -57,7 +57,7 @@ def generated_data():
 @pytest.fixture(scope='module')
 def generated_data_for_optimizer():
     # function generates simple training data that guarantee convergence
-    # within 30 epochs for suitable model definition
+    # within 30 epochs for suitable config
 
     # generate data
     np.random.seed(RANDOM_SEED)
@@ -80,9 +80,9 @@ def generated_data_for_optimizer():
 
 @pytest.mark.parametrize('early_stop', [3, 5])
 def test_early_stopping(early_stop, generated_data, tmp_path):
-    input_features, output_features = get_feature_definitions()
+    input_features, output_features = get_feature_configs()
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {
@@ -105,7 +105,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
         output_directory=str(results_dir),
-        model_definition=model_definition,
+        config=config,
         skip_save_processed_input=True,
         skip_save_progress=True,
         skip_save_unprocessed_output=True,
@@ -126,7 +126,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
         metadata = json.load(f)
 
     # get early stopping value
-    early_stop_value = metadata['model_definition']['training']['early_stop']
+    early_stop_value = metadata['config']['training']['early_stop']
 
     # retrieve validation losses
     vald_losses = np.array(train_stats['validation']['combined']['loss'])
@@ -145,9 +145,9 @@ def test_model_progress_save(
         generated_data,
         tmp_path
 ):
-    input_features, output_features = get_feature_definitions()
+    input_features, output_features = get_feature_configs()
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat'},
@@ -164,7 +164,7 @@ def test_model_progress_save(
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
         output_directory=str(results_dir),
-        model_definition=model_definition,
+        config=config,
         skip_save_processed_input=True,
         skip_save_progress=skip_save_progress,
         skip_save_unprocessed_output=True,
@@ -199,8 +199,8 @@ def test_model_progress_save(
 
 @pytest.mark.parametrize('optimizer', ['sgd', 'adam'])
 def test_resume_training(optimizer, generated_data, tmp_path):
-    input_features, output_features = get_feature_definitions()
-    model_definition = {
+    input_features, output_features = get_feature_configs()
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat'},
@@ -217,16 +217,16 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     results_dir.mkdir()
 
     _, _, _, _, output_dir1 = experiment_cli(
-        model_definition,
+        config,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
     )
 
-    model_definition['training']['epochs'] = 4
+    config['training']['epochs'] = 4
 
     experiment_cli(
-        model_definition,
+        config,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
@@ -234,7 +234,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     )
 
     _, _, _, _, output_dir2 = experiment_cli(
-        model_definition,
+        config,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
@@ -258,9 +258,9 @@ def test_resume_training(optimizer, generated_data, tmp_path):
 
 @pytest.mark.parametrize('optimizer_type', optimizers_registry)
 def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
-    input_features, output_features = get_feature_definitions()
+    input_features, output_features = get_feature_configs()
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {
@@ -275,9 +275,9 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
 
     # special handling for adadelta, break out of local minima
     if optimizer_type == 'adadelta':
-        model_definition['training']['learning_rate'] = 0.1
+        config['training']['learning_rate'] = 0.1
 
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
 
     # create sub-directory to store results
     results_dir = tmp_path / 'results'
@@ -287,7 +287,7 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     train_stats, preprocessed_data, output_directory = model.train(
         training_set=generated_data_for_optimizer.train_df,
         output_directory=str(results_dir),
-        model_definition=model_definition,
+        config=config,
         skip_save_processed_input=True,
         skip_save_progress=True,
         skip_save_unprocessed_output=True,
@@ -304,9 +304,9 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
 
 
 def test_regularization(generated_data, tmp_path):
-    input_features, output_features = get_feature_definitions()
+    input_features, output_features = get_feature_configs()
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {
@@ -330,11 +330,11 @@ def test_regularization(generated_data, tmp_path):
         tf.random.set_seed(RANDOM_SEED)
 
         # setup regularization parameters
-        model_definition['output_features'][0][
+        config['output_features'][0][
             'weights_regularizer'] = regularizer
-        model_definition['output_features'][0][
+        config['output_features'][0][
             'bias_regularizer'] = regularizer
-        model_definition['output_features'][0][
+        config['output_features'][0][
             'activity_regularizer'] = regularizer
 
         # run experiment
@@ -343,7 +343,7 @@ def test_regularization(generated_data, tmp_path):
             validation_set=generated_data.validation_df,
             test_set=generated_data.test_df,
             output_directory=str(results_dir),
-            model_definition=model_definition,
+            config=config,
             experiment_name='regularization',
             model_name=str(regularizer),
             skip_save_processed_input=True,

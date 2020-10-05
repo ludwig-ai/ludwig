@@ -38,14 +38,14 @@ parser.add_argument('--ludwig-kwargs', required=True)
 
 
 def run_api_experiment(input_features, output_features, dataset, **kwargs):
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
     output_dir = None
 
     try:

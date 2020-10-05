@@ -79,37 +79,37 @@ output_type_registry = {
 }
 
 
-def update_model_definition_with_metadata(model_definition,
-                                          training_set_metadata):
+def update_config_with_metadata(config,
+                                training_set_metadata):
     # populate input features fields depending on data
-    # model_definition = merge_with_defaults(model_definition)
-    for input_feature in model_definition['input_features']:
+    # config = merge_with_defaults(config)
+    for input_feature in config['input_features']:
         feature = get_from_registry(
             input_feature[TYPE],
             input_type_registry
         )
         feature.populate_defaults(input_feature)
-        feature.update_model_definition_with_metadata(
+        feature.update_config_with_metadata(
             input_feature,
             training_set_metadata[input_feature[NAME]],
-            model_definition=model_definition
+            config=config
         )
 
     # populate output features fields depending on data
-    for output_feature in model_definition['output_features']:
+    for output_feature in config['output_features']:
         feature = get_from_registry(
             output_feature[TYPE],
             output_type_registry
         )
         feature.populate_defaults(output_feature)
-        feature.update_model_definition_with_metadata(
+        feature.update_config_with_metadata(
             output_feature,
             training_set_metadata[output_feature[NAME]]
         )
 
     for feature in (
-            model_definition['input_features'] +
-            model_definition['output_features']
+            config['input_features'] +
+            config['output_features']
     ):
         if 'preprocessing' in feature:
             feature['preprocessing'] = training_set_metadata[feature[NAME]][

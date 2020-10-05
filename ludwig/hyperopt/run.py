@@ -3,8 +3,8 @@ import os
 from pprint import pformat
 from typing import Union, List
 
-import yaml
 import pandas as pd
+import yaml
 
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def hyperopt(
-        model_definition: Union[str, dict],
+        config: Union[str, dict],
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -53,7 +53,7 @@ def hyperopt(
 
     # Inputs
 
-    :param model_definition: (Union[str, dict]) model definition which defines
+    :param config: (Union[str, dict]) config which defines
         the different parameters of the model, features, preprocessing and
         training.  If `str`, filepath to yaml configuration file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
@@ -142,22 +142,22 @@ def hyperopt(
 
     :return: (List[dict]) The results for the hyperparameter optimization
     """
-    # check if model definition is a path or a dict
-    if isinstance(model_definition, str):  # assume path
-        with open(model_definition, 'r') as def_file:
-            model_definition_dict = yaml.safe_load(def_file)
+    # check if config is a path or a dict
+    if isinstance(config, str):  # assume path
+        with open(config, 'r') as def_file:
+            config_dict = yaml.safe_load(def_file)
     else:
-        model_definition_dict = model_definition
+        config_dict = config
 
-    # merge model definition with defaults
-    model_definition = merge_with_defaults(model_definition_dict)
+    # merge config with defaults
+    config = merge_with_defaults(config_dict)
 
-    if HYPEROPT not in model_definition:
+    if HYPEROPT not in config:
         raise ValueError(
-            "Hyperopt Section not present in Model Definition"
+            "Hyperopt Section not present in config"
         )
 
-    hyperopt_config = model_definition["hyperopt"]
+    hyperopt_config = config["hyperopt"]
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # print hyperopt config
@@ -177,33 +177,33 @@ def hyperopt(
     ######################
     if split == TRAINING:
         if not training_set and (
-                model_definition['preprocessing']['split_probabilities'][0]
+                config['preprocessing']['split_probabilities'][0]
                 <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
                 'or the split amount specified in the preprocessing section '
-                'of the model definition is not greater than 0'.format(split)
+                'of the config is not greater than 0'.format(split)
             )
     elif split == VALIDATION:
         if not validation_set and (
-                model_definition['preprocessing']['split_probabilities'][1]
+                config['preprocessing']['split_probabilities'][1]
                 <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
                 'or the split amount specified in the preprocessing section '
-                'of the model definition is not greater than 0'.format(split)
+                'of the config is not greater than 0'.format(split)
             )
     elif split == TEST:
         if not test_set and (
-                model_definition['preprocessing']['split_probabilities'][2]
+                config['preprocessing']['split_probabilities'][2]
                 <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
                 'or the split amount specified in the preprocessing section '
-                'of the model definition is not greater than 0'.format(split)
+                'of the config is not greater than 0'.format(split)
             )
     else:
         raise ValueError(
@@ -219,19 +219,19 @@ def hyperopt(
             )
     else:
         output_feature_names = set(
-            of['name'] for of in model_definition['output_features']
+            of['name'] for of in config['output_features']
         )
         if output_feature not in output_feature_names:
             raise ValueError(
                 'The output feature specified for hyperopt "{}" '
-                'cannot be found in the model definition. '
+                'cannot be found in the config. '
                 'Available ones are: {} and "combined"'.format(
                     output_feature, output_feature_names
                 )
             )
 
         output_feature_type = None
-        for of in model_definition['output_features']:
+        for of in config['output_features']:
             if of['name'] == output_feature:
                 output_feature_type = of[TYPE]
         feature_class = get_from_registry(
@@ -261,7 +261,7 @@ def hyperopt(
     )(hyperopt_sampler, output_feature, metric, split, **executor)
 
     hyperopt_results = hyperopt_executor.execute(
-        model_definition,
+        config,
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
