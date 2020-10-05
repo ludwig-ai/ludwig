@@ -27,8 +27,8 @@ import numpy as np
 import yaml
 
 from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE,
-                              NAME, NUMERICAL, SEQUENCE, SET, TEXT, TIMESERIES,
-                              TYPE, VECTOR)
+                              NAME, NUMERICAL, PREPROCESSING, SEQUENCE, SET,
+                              TEXT, TIMESERIES, TYPE, VECTOR)
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_csv
@@ -189,15 +189,6 @@ def generate_category(feature):
     return random.choice(feature['idx2str'])
 
 
-def generate_text(feature):
-    text = []
-    for _ in range(random.randint(feature['max_len'] -
-                                  int(feature['max_len'] * 0.2),
-                                  feature['max_len'])):
-        text.append(random.choice(feature['idx2str']))
-    return ' '.join(text)
-
-
 def generate_numerical(feature):
     return random.uniform(
         feature['min'] if 'min' in feature else 0,
@@ -214,37 +205,38 @@ def generate_sequence(feature):
     length = feature.get('max_len', 10)
     if 'min_len' in feature:
         length = random.randint(feature['min_len'], length)
-
     sequence = [random.choice(feature['idx2str']) for _ in range(length)]
-
     return ' '.join(sequence)
 
 
 def generate_set(feature):
     elems = []
-    for _ in range(random.randint(0, feature['max_len'])):
+    for _ in range(random.randint(0, feature.get('max_len', 3))):
         elems.append(random.choice(feature['idx2str']))
     return ' '.join(list(set(elems)))
 
 
 def generate_bag(feature):
     elems = []
-    for _ in range(random.randint(0, feature['max_len'])):
+    for _ in range(random.randint(0, feature.get('max_len', 3))):
         elems.append(random.choice(feature['idx2str']))
     return ' '.join(elems)
 
 
+def generate_text(feature):
+    length = feature.get('max_len', 10)
+    text = []
+    for _ in range(random.randint(length - int(length * 0.2), length)):
+        text.append(random.choice(feature['idx2str']))
+    return ' '.join(text)
+
+
 def generate_timeseries(feature):
     series = []
-    for _ in range(feature['max_len']):
-        series.append(
-            str(
-                random.uniform(
-                    feature['min'] if 'min' in feature else 0,
-                    feature['max'] if 'max' in feature else 1
-                )
-            )
-        )
+    for _ in range(feature.get('max_len', 10)):
+        series.append(str(
+            random.uniform(feature.get('min', 0), feature.get('max', 1))
+        ))
     return ' '.join(series)
 
 
@@ -259,8 +251,13 @@ def generate_audio(feature):
         )
         sys.exit(-1)
 
-    audio_length = feature['preprocessing']['audio_file_length_limit_in_s']
-    audio_dest_folder = feature['audio_dest_folder']
+    audio_dest_folder = feature['destination_folder']
+    if PREPROCESSING in feature:
+        audio_length = feature[PREPROCESSING].get(
+            'audio_file_length_limit_in_s', 2
+        )
+    else:
+        audio_length = feature.get('audio_file_length_limit_in_s', 1)
     sampling_rate = 16000
     num_samples = int(audio_length * sampling_rate)
     audio = np.sin(np.arange(num_samples) / 100 * 2 * np.pi) * 2 * (
@@ -294,10 +291,15 @@ def generate_image(feature):
         sys.exit(-1)
 
     # Read num_channels, width, height
-    num_channels = feature['preprocessing']['num_channels']
-    width = feature['preprocessing']['width']
-    height = feature['preprocessing']['height']
     image_dest_folder = feature['destination_folder']
+    if PREPROCESSING in feature:
+        height = feature[PREPROCESSING].get('height', 28)
+        width = feature[PREPROCESSING].get('width', 28)
+        num_channels = feature[PREPROCESSING].get('num_channels', 1)
+    else:
+        height = feature.get('height', 28)
+        width = feature.get('width', 28)
+        num_channels = feature.get('num_channels', 1)
 
     if width <= 0 or height <= 0 or num_channels < 1:
         raise ValueError('Invalid arguments for generating images')
@@ -371,7 +373,8 @@ def generate_h3(feature):
 def generate_vector(feature):
     # Space delimited string with floating point numbers
     return ' '.join(
-        [str(100 * random.random()) for _ in range(feature['vector_size'])]
+        [str(100 * random.random())
+         for _ in range(feature.get('vector_size', 10))]
     )
 
 
@@ -528,8 +531,8 @@ def cli(sys_argv):
     if is_on_master():
         print_ludwig('Synthesize Dataset', LUDWIG_VERSION)
 
-
     cli_synthesize_dataset(**vars(args))
+
 
 if __name__ == '__main__':
     contrib_import()
