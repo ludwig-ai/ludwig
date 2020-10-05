@@ -257,7 +257,7 @@ def generate_audio(feature):
         )
         sys.exit(-1)
 
-    audio_dest_folder = feature['destination_folder']
+    destination_folder = feature.get('destination_folder', 'audio_files')
     if PREPROCESSING in feature:
         audio_length = feature[PREPROCESSING].get(
             'audio_file_length_limit_in_s', 2
@@ -271,10 +271,10 @@ def generate_audio(feature):
     audio_filename = uuid.uuid4().hex[:10].upper() + '.wav'
 
     try:
-        if not os.path.exists(audio_dest_folder):
-            os.makedirs(audio_dest_folder)
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
 
-        audio_dest_path = os.path.join(audio_dest_folder, audio_filename)
+        audio_dest_path = os.path.join(destination_folder, audio_filename)
         soundfile.write(audio_dest_path, audio, sampling_rate)
 
     except IOError as e:
@@ -297,7 +297,7 @@ def generate_image(feature):
         sys.exit(-1)
 
     # Read num_channels, width, height
-    image_dest_folder = feature['destination_folder']
+    destination_folder = feature.get('destination_folder', 'image_files')
     if PREPROCESSING in feature:
         height = feature[PREPROCESSING].get('height', 28)
         width = feature[PREPROCESSING].get('width', 28)
@@ -321,10 +321,10 @@ def generate_image(feature):
 
     # Save the image to disk either in a specified location/new folder
     try:
-        if not os.path.exists(image_dest_folder):
-            os.makedirs(image_dest_folder)
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
 
-        image_dest_path = os.path.join(image_dest_folder, image_filename)
+        image_dest_path = os.path.join(destination_folder, image_filename)
         imsave(image_dest_path, img.astype('uint8'))
 
     except IOError as e:
@@ -349,7 +349,7 @@ def generate_datetime(feature):
             feature['preprocessing']['datetime_format']
         ]
     else:
-        datetime_generation_format = DATETIME_FORMATS[0]
+        datetime_generation_format = next(iter(DATETIME_FORMATS))
 
     y = random.randint(1, 99)
     Y = random.randint(1, 9999)
