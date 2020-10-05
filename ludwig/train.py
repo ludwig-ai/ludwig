@@ -22,7 +22,7 @@ from typing import List, Union
 import pandas as pd
 import yaml
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
@@ -159,9 +159,9 @@ def train_cli(
                                 config_file)
 
     if model_load_path:
-        model = LudwigPipeline.load(model_load_path)
+        model = LudwigModel.load(model_load_path)
     else:
-        model = LudwigPipeline(
+        model = LudwigModel(
             config=config,
             logging_level=logging_level,
             use_horovod=use_horovod,

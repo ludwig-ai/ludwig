@@ -236,15 +236,15 @@ Programmatic API
 Ludwig also provides a simple programmatic API that allows you to train or load a model and use it to obtain predictions on new data:
 
 ```python
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 
 # train a model
 config = {...}
-model = LudwigPipeline(config)
+model = LudwigModel(config)
 train_stats = model.train(training_data)
 
 # or load a model
-model = LudwigPipeline.load(model_path)
+model = LudwigModel.load(model_path)
 
 # obtain predictions
 predictions = model.predict(test_data)

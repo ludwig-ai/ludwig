@@ -11,7 +11,7 @@ import os.path
 import pandas as pd
 from sklearn.metrics import accuracy_score
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 
 # create data set for predictions
 test_data = {'image_path': [], 'label': []}
@@ -28,7 +28,7 @@ test_df = pd.DataFrame(test_data)
 print(test_df.head())
 
 # retrieve a trained model
-model = LudwigPipeline.load('./results/multiple_experiment_Option3/model')
+model = LudwigModel.load('./results/multiple_experiment_Option3/model')
 
 # make predictions
 pred_df, _ = model.predict(dataset=test_df)

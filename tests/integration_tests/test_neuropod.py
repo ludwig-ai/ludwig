@@ -21,7 +21,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
 from ludwig.utils.neuropod_utils import export_neuropod
 from ludwig.utils.strings_utils import str2bool
@@ -81,8 +81,8 @@ def test_neuropod(csv_filename):
             'output_features': output_features,
             'training': {'epochs': 2}
         }
-        ludwig_pipeline = LudwigPipeline(config)
-        ludwig_pipeline.train(
+        ludwig_model = LudwigModel(config)
+        ludwig_model.train(
             dataset=data_csv_path,
             skip_save_training_description=True,
             skip_save_training_statistics=True,
@@ -93,21 +93,21 @@ def test_neuropod(csv_filename):
         )
 
         data_df = pd.read_csv(data_csv_path)
-        original_predictions_df, _ = ludwig_pipeline.predict(dataset=data_df)
+        original_predictions_df, _ = ludwig_model.predict(dataset=data_df)
 
         ###################
         # save Ludwig model
         ###################
-        LudwigPipeline_path = os.path.join(dir_path, 'LudwigPipeline')
-        shutil.rmtree(LudwigPipeline_path, ignore_errors=True)
-        ludwig_pipeline.save(LudwigPipeline_path)
+        ludwigmodel_path = os.path.join(dir_path, 'ludwigmodel')
+        shutil.rmtree(ludwigmodel_path, ignore_errors=True)
+        ludwig_model.save(ludwigmodel_path)
 
         ################
         # build neuropod
         ################
         neuropod_path = os.path.join(dir_path, 'neuropod')
         shutil.rmtree(neuropod_path, ignore_errors=True)
-        export_neuropod(LudwigPipeline_path, neuropod_path=neuropod_path)
+        export_neuropod(ludwigmodel_path, neuropod_path=neuropod_path)
 
         ########################
         # predict using neuropod
@@ -131,7 +131,7 @@ def test_neuropod(csv_filename):
         # cleanup
         #########
         # Delete the temporary data created
-        for path in [LudwigPipeline_path, neuropod_path,
+        for path in [ludwigmodel_path, neuropod_path,
                      image_dest_folder, audio_dest_folder]:
             if os.path.exists(path):
                 if os.path.isfile(path):

@@ -9,7 +9,7 @@ import logging
 import shutil
 
 # ## Import required libraries
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.visualize import learning_curves
 
 # clean out old results
@@ -26,8 +26,8 @@ for model_id in list_of_model_ids:
     print('>>>> training: ', model_id)
 
     # Define Ludwig model object that drive model training
-    model = LudwigPipeline(config='./' + model_id + '_config.yaml',
-                           logging_level=logging.WARN)
+    model = LudwigModel(config='./' + model_id + '_config.yaml',
+                        logging_level=logging.WARN)
 
     # initiate model training
     train_stats, _, _ = model.train(dataset='./data/train.csv',

@@ -9,7 +9,7 @@ import pytest
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json
@@ -277,7 +277,7 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     if optimizer_type == 'adadelta':
         config['training']['learning_rate'] = 0.1
 
-    model = LudwigPipeline(config)
+    model = LudwigModel(config)
 
     # create sub-directory to store results
     results_dir = tmp_path / 'results'

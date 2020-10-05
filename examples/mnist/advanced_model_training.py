@@ -14,7 +14,7 @@ from collections import namedtuple
 import yaml
 
 # ## Import required libraries
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.visualize import learning_curves
 
 # clean out old results
@@ -62,8 +62,8 @@ for model_option in list_of_fc_layers:
     config['training']['epochs'] = 5
 
     # Define Ludwig model object that drive model training
-    model = LudwigPipeline(config,
-                           logging_level=logging.INFO)
+    model = LudwigModel(config,
+                        logging_level=logging.INFO)
 
     # initiate model training
     train_stats, _, _ = model.train(

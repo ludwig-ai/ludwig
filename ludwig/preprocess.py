@@ -22,7 +22,7 @@ from typing import Union
 import pandas as pd
 import yaml
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
@@ -146,7 +146,7 @@ def preprocess_cli(
         preprocessing_config_file
     )
 
-    model = LudwigPipeline(
+    model = LudwigModel(
         config=preprocessing_config,
         logging_level=logging_level,
     )

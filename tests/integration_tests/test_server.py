@@ -19,7 +19,7 @@ import os
 import shutil
 import sys
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import category_feature
@@ -55,7 +55,7 @@ def train_model(input_features, output_features, data_csv):
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
-    model = LudwigPipeline(config)
+    model = LudwigModel(config)
     _, _, output_dir = model.train(
         dataset=data_csv,
         skip_save_processed_input=True,

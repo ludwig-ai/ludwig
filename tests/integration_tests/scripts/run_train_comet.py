@@ -20,7 +20,7 @@ import ludwig.contrib
 os.environ['COMET_API_KEY'] = 'key'
 ludwig.contrib.use_contrib('comet')
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from ludwig.contribs.comet import Comet
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -58,7 +58,7 @@ def run(csv_filename):
         'training': {'epochs': 2}
     }
 
-    model = LudwigPipeline(config)
+    model = LudwigModel(config)
     output_dir = None
 
     # Wrap these methods so we can check that they were called

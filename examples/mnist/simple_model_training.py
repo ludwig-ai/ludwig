@@ -12,7 +12,7 @@ import shutil
 
 import yaml
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 
 # clean out prior results
 shutil.rmtree('./results', ignore_errors=True)
@@ -23,8 +23,8 @@ with open('./config.yaml', 'r') as f:
     config = yaml.safe_load(f.read())
 
 # Define Ludwig model object that drive model training
-model = LudwigPipeline(config,
-                       logging_level=logging.INFO)
+model = LudwigModel(config,
+                    logging_level=logging.INFO)
 
 
 # initiate model training

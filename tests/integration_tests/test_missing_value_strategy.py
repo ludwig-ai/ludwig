@@ -18,7 +18,7 @@ import tempfile
 
 import pandas as pd
 
-from ludwig.api import LudwigPipeline
+from ludwig.api import LudwigModel
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -39,7 +39,7 @@ def test_missing_value_prediction(csv_filename):
             'output_features': output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
-        model = LudwigPipeline(config)
+        model = LudwigModel(config)
         _, _, output_dir = model.train(dataset=dataset,
                                        output_directory=tmpdir)
 
@@ -48,5 +48,5 @@ def test_missing_value_prediction(csv_filename):
         dataset[input_features[0]['name']] = None
         model.predict(dataset=dataset)
 
-        model = LudwigPipeline.load(os.path.join(output_dir, 'model'))
+        model = LudwigModel.load(os.path.join(output_dir, 'model'))
         model.predict(dataset=dataset)
