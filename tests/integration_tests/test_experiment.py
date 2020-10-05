@@ -119,25 +119,25 @@ def test_experiment_seq_seq(csv_filename):
 
 
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
-    # seq-to-seq test to use model definition file instead of dictionary
+    # seq-to-seq test to use config file instead of dictionary
     input_features = [text_feature(reduce_output=None, encoder='embed')]
     output_features = [
         text_feature(reduce_input=None, vocab_size=3, decoder='tagger')
     ]
 
-    # Save the model definition to a yaml file
-    model_definition = {
+    # Save the config to a yaml file
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
     with open(yaml_filename, 'w') as yaml_out:
-        yaml.safe_dump(model_definition, yaml_out)
+        yaml.safe_dump(config, yaml_out)
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(
-        None, None, dataset=rel_path, model_definition_file=yaml_filename
+        None, None, dataset=rel_path, config_file=yaml_filename
     )
 
 
@@ -444,7 +444,7 @@ def test_experiment_image_dataset(
         category_feature(vocab_size=2, reduce_input='sum'),
     ]
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {
@@ -462,14 +462,14 @@ def test_experiment_image_dataset(
     # setup training data format to test
     train_data = generate_data(input_features, output_features,
                                train_csv_filename)
-    model_definition['input_features'][0]['preprocessing']['in_memory'] \
+    config['input_features'][0]['preprocessing']['in_memory'] \
         = train_in_memory
     training_set_metadata = None
 
     if train_format == 'hdf5':
         # hdf5 format
         train_set, _, _, training_set_metadata = preprocess_for_training(
-            model_definition,
+            config,
             dataset=train_data
         )
         train_dataset_to_use = train_set.data_hdf5_fp
@@ -478,14 +478,14 @@ def test_experiment_image_dataset(
 
     # define Ludwig model
     model = LudwigModel(
-        model_definition=model_definition,
+        config=config,
     )
     model.train(
         dataset=train_dataset_to_use,
         training_set_metadata=training_set_metadata
     )
 
-    model.model_definition['input_features'][0]['preprocessing']['in_memory'] \
+    model.config['input_features'][0]['preprocessing']['in_memory'] \
         = test_in_memory
 
     # setup test data format to test
@@ -496,7 +496,7 @@ def test_experiment_image_dataset(
         # hdf5 format
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
-            model.model_definition,
+            model.config,
             dataset=test_data
         )
         test_dataset_to_use = test_set.data_hdf5_fp
@@ -531,7 +531,7 @@ def test_experiment_dataset_formats(data_format):
         numerical_feature()
     ]
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {
@@ -554,7 +554,7 @@ def test_experiment_dataset_formats(data_format):
     if data_format == 'hdf5':
         # hdf5 format
         training_set, _, _, training_set_metadata = preprocess_for_training(
-            model_definition,
+            config,
             dataset=raw_data
         )
         dataset_to_use = training_set.data_hdf5_fp
@@ -563,7 +563,7 @@ def test_experiment_dataset_formats(data_format):
 
     # define Ludwig model
     model = LudwigModel(
-        model_definition=model_definition
+        config=config
     )
     model.train(
         dataset=dataset_to_use,
@@ -738,7 +738,7 @@ def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
         category_feature(reduce_input='sum', vocab_size=5)
     ]
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'training': {
@@ -763,10 +763,10 @@ def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
         input_features[0]['encoder'] = encoder
         input_features[1]['encoder'] = encoder
 
-        model_definition['input_features'] = input_features
+        config['input_features'] = input_features
 
         exp_dir_name = experiment_cli(
-            model_definition,
+            config,
             skip_save_processed_input=False,
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
@@ -783,18 +783,18 @@ def test_experiment_model_resume(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
 
-    _, _, _, _, output_dir = experiment_cli(model_definition, dataset=rel_path)
+    _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path)
     logger.info('Experiment Directory: {0}'.format(output_dir))
 
     experiment_cli(
-        model_definition,
+        config,
         dataset=rel_path,
         model_resume_path=output_dir
     )
@@ -857,7 +857,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     This test creates two image datasets with 3 channels and 1 channel. The
     combination of this data is used to train a model. This checks the cases
     where the user may or may not specify a number of channels in the
-    model definition
+    config
     :param csv_filename:
     :return:
     """

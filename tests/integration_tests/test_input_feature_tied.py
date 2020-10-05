@@ -67,30 +67,30 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
     ]
 )
 def test_tied_micro_level(input_feature_options):
-    # build input feature definition
-    input_feature_definitions = []
+    # build input feature config
+    input_feature_configs = []
 
-    input_feature_definitions.append({
+    input_feature_configs.append({
         'name': 'input_feature_1',
         'type': input_feature_options.feature_type
     })
     if input_feature_options.feature_options is not None:
-        input_feature_definitions[0].update(
+        input_feature_configs[0].update(
             input_feature_options.feature_options)
 
-    input_feature_definitions.append({
+    input_feature_configs.append({
         'name': 'input_feature_2',
         'type': input_feature_options.feature_type
     })
     if input_feature_options.feature_options is not None:
-        input_feature_definitions[1].update(
+        input_feature_configs[1].update(
             input_feature_options.feature_options)
 
     # add tied option to the second feature
     if input_feature_options.tie_features:
-        input_feature_definitions[1]['tied'] = 'input_feature_1'
+        input_feature_configs[1]['tied'] = 'input_feature_1'
 
-    input_features = build_inputs(input_feature_definitions)
+    input_features = build_inputs(input_feature_configs)
 
     if input_feature_options.tie_features:
         # should be same encoder

@@ -39,14 +39,14 @@ def _prepare_data(csv_filename):
 
 
 def _train(input_features, output_features, data_csv, **kwargs):
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
     _, _, output_dir = model.train(
         dataset=data_csv,
         **kwargs

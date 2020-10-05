@@ -353,11 +353,11 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         if not self.embedding_size:
             raise ValueError(
                 'embedding_size has to be defined - '
-                'check "update_model_definition_with_metadata()"')
+                'check "update_config_with_metadata()"')
         if not self.max_sequence_length:
             raise ValueError(
                 'max_sequence_length has to be defined - '
-                'check "update_model_definition_with_metadata()"')
+                'check "update_config_with_metadata()"')
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -377,7 +377,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         return self.max_sequence_length, self.embedding_size
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,

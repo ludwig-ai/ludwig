@@ -153,7 +153,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return self.max_sequence_length,
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,
@@ -391,7 +391,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #
 #
 #     @staticmethod
-#     def update_model_definition_with_metadata(
+#     def update_config_with_metadata(
 #             output_feature,
 #             feature_metadata,
 #             *args,

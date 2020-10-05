@@ -1209,7 +1209,7 @@ def get_resnet_block_sizes(resnet_size):
         raise ValueError(err)
 
 # ################################################################################
-# # ResNet block definitions.
+# # ResNet block configs.
 # ################################################################################
 # def resnet_block(inputs, filters, is_training, projection_shortcut, strides,
 #                  regularizer=None, batch_norm_momentum=0.9,

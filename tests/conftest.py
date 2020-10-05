@@ -18,12 +18,11 @@ import uuid
 
 import pytest
 
+from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import replace_file_extension
 from ludwig.utils.tf_utils import initialize_tensorflow
 from tests.integration_tests.utils import category_feature, \
     generate_data, text_feature
-from ludwig.hyperopt.run import hyperopt
-
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -62,7 +61,7 @@ def csv_filename():
 def yaml_filename():
     """
     This methods returns a random filename for the tests to use for generating
-    a model definition file. After the test runs, this file will be deleted
+    a config file. After the test runs, this file will be deleted
     :return: None
     """
     yaml_filename = 'model_def_' + uuid.uuid4().hex[:10].upper() + '.yaml'
@@ -105,7 +104,7 @@ def hyperopt_results():
     csv_filename = uuid.uuid4().hex[:10].upper() + '.csv'
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    model_definition = {
+    config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
@@ -144,12 +143,11 @@ def hyperopt_results():
         'sampler': {'type': 'random', 'num_samples': 2}
     }
 
-    # add hyperopt parameter space to the model definition
-    model_definition['hyperopt'] = hyperopt_configs
-
+    # add hyperopt parameter space to the config
+    config['hyperopt'] = hyperopt_configs
 
     hyperopt_results = hyperopt(
-        model_definition,
+        config,
         dataset=rel_path,
         output_directory='results'
     )

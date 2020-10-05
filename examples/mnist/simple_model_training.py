@@ -7,12 +7,10 @@
 # (https://ludwig-ai.github.io/ludwig-docs/examples/#image-classification-mnist).
 
 # Import required libraries
-import os
 import logging
 import shutil
 
 import yaml
-import pandas as pd
 
 from ludwig.api import LudwigModel
 
@@ -21,11 +19,11 @@ shutil.rmtree('./results', ignore_errors=True)
 
 
 # set up Python dictionary to hold model training parameters
-with open('./model_definition.yaml','r') as f:
-    model_definition = yaml.safe_load(f.read())
+with open('./config.yaml', 'r') as f:
+    config = yaml.safe_load(f.read())
 
 # Define Ludwig model object that drive model training
-model = LudwigModel(model_definition,
+model = LudwigModel(config,
                     logging_level=logging.INFO)
 
 

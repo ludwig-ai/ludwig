@@ -55,7 +55,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     #############
     # Train model
     #############
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'training': {'epochs': 2}
@@ -75,7 +75,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    ludwig_model1 = LudwigModel(model_definition)
+    ludwig_model1 = LudwigModel(config)
     _, _, output_dir = ludwig_model1.train(
         training_set=training_set,
         validation_set=validation_set,

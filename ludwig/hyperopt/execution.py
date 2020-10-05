@@ -32,7 +32,7 @@ class HyperoptExecutor(ABC):
     @abstractmethod
     def execute(
             self,
-            model_definition,
+            config,
             dataset=None,
             training_set=None,
             validation_set=None,
@@ -75,7 +75,7 @@ class SerialExecutor(HyperoptExecutor):
 
     def execute(
             self,
-            model_definition,
+            config,
             dataset=None,
             training_set=None,
             validation_set=None,
@@ -111,13 +111,13 @@ class SerialExecutor(HyperoptExecutor):
             metric_scores = []
 
             for i, parameters in enumerate(sampled_parameters):
-                modified_model_definition = substitute_parameters(
-                    copy.deepcopy(model_definition), parameters)
+                modified_config = substitute_parameters(
+                    copy.deepcopy(config), parameters)
 
                 trial_id = trials + i
 
                 model = LudwigModel(
-                    model_definition=modified_model_definition,
+                    config=modified_config,
                     use_horovod=use_horovod,
                     gpus=gpus,
                     gpu_memory_limit=gpu_memory_limit,
@@ -228,7 +228,7 @@ class ParallelExecutor(HyperoptExecutor):
 
     def execute(
             self,
-            model_definition,
+            config,
             dataset=None,
             training_set=None,
             validation_set=None,
@@ -380,14 +380,14 @@ class ParallelExecutor(HyperoptExecutor):
 
                 hyperopt_parameters = []
                 for i, parameters in enumerate(sampled_parameters):
-                    modified_model_definition = substitute_parameters(
-                        copy.deepcopy(model_definition), parameters)
+                    modified_config = substitute_parameters(
+                        copy.deepcopy(config), parameters)
 
                     trial_id = trials + i
                     hyperopt_parameters.append(
                         dict(
                             parameters=parameters,
-                            model_definition=modified_model_definition,
+                            config=modified_config,
                             eval_split=self.split,
                             dataset=dataset,
                             training_set=training_set,
@@ -480,7 +480,7 @@ class FiberExecutor(HyperoptExecutor):
 
     def execute(
             self,
-            model_definition,
+            config,
             dataset=None,
             training_set=None,
             validation_set=None,
@@ -553,8 +553,8 @@ class FiberExecutor(HyperoptExecutor):
                 experiemnt_fn,
                 [
                     {
-                        'model_definition': substitute_parameters(
-                            copy.deepcopy(model_definition), parameters),
+                        'config': substitute_parameters(
+                            copy.deepcopy(config), parameters),
                         'experiment_name': f'{experiment_name}_{trials + i}',
                         **experiment_kwargs
                     }
@@ -622,21 +622,21 @@ def get_parameters_dict(parameters):
     return parameters_dict
 
 
-def substitute_parameters(model_definition, parameters):
+def substitute_parameters(config, parameters):
     parameters_dict = get_parameters_dict(parameters)
-    for input_feature in model_definition["input_features"]:
+    for input_feature in config["input_features"]:
         set_values(input_feature, input_feature[NAME], parameters_dict)
-    for output_feature in model_definition["output_features"]:
+    for output_feature in config["output_features"]:
         set_values(output_feature, output_feature[NAME], parameters_dict)
-    set_values(model_definition["combiner"], "combiner", parameters_dict)
-    set_values(model_definition["training"], "training", parameters_dict)
-    set_values(model_definition["preprocessing"], "preprocessing",
+    set_values(config["combiner"], "combiner", parameters_dict)
+    set_values(config["training"], "training", parameters_dict)
+    set_values(config["preprocessing"], "preprocessing",
                parameters_dict)
-    return model_definition
+    return config
 
 
 def run_experiment(
-        model_definition,
+        config,
         dataset=None,
         training_set=None,
         validation_set=None,
@@ -669,7 +669,7 @@ def run_experiment(
     # Collect training and validation losses and metrics
     # & append it to `results`
     model = LudwigModel(
-        model_definition=model_definition,
+        config=config,
         use_horovod=use_horovod,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,

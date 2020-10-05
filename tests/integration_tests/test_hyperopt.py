@@ -19,8 +19,8 @@ import os.path
 import pytest
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
-from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.run import hyperopt
+from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults, ACCURACY
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -86,14 +86,14 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    model_definition = {
+    config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
         "training": {"epochs": 2, "learning_rate": 0.001}
     }
 
-    model_definition = merge_with_defaults(model_definition)
+    config = merge_with_defaults(config)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
 
@@ -116,7 +116,7 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(model_definition,
+    hyperopt_executor.execute(config,
                               dataset=rel_path,
                               gpus=get_available_gpus_cuda_string())
 
@@ -137,7 +137,7 @@ def test_hyperopt_run_hyperopt(csv_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    model_definition = {
+    config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
@@ -176,11 +176,11 @@ def test_hyperopt_run_hyperopt(csv_filename):
         'sampler': {'type': 'random', 'num_samples': 2}
     }
 
-    # add hyperopt parameter space to the model definition
-    model_definition['hyperopt'] = hyperopt_configs
+    # add hyperopt parameter space to the config
+    config['hyperopt'] = hyperopt_configs
 
     hyperopt_results = hyperopt(
-        model_definition,
+        config,
         dataset=rel_path,
         output_directory='results_hyperopt'
     )

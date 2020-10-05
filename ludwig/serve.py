@@ -58,7 +58,7 @@ def server(model):
     app = FastAPI()
 
     input_features = {
-        f[NAME] for f in model.model_definition['input_features']
+        f[NAME] for f in model.config['input_features']
     }
 
     @app.get('/')

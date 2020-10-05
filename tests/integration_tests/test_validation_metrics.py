@@ -78,8 +78,8 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
 
     # loop through scenarios
     for validation_field, validation_metric in test_scenarios:
-        # setup model definition
-        model_definition = {
+        # setup config
+        config = {
             'input_features': input_features,
             'output_features': output_features,
             'training': {
@@ -89,7 +89,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
             }
         }
 
-        model = LudwigModel(model_definition)
+        model = LudwigModel(config)
         model.train(
             dataset=training_data,
             skip_save_training_description=True,

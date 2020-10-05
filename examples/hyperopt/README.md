@@ -15,7 +15,7 @@ hyperopt/
 ### Description
 Jupyter notebook `model_hyperopt_example.ipynb` demonstrates several hyperparameter optimization capabilities. Key features demonstrated in the notebook:
 * Training data is prepared for use
-* Programmatically create Ludwig model definition dictionary from the training data dataframe
+* Programmatically create Ludwig config dictionary from the training data dataframe
 * Setup parameter space for hyperparameter optimization
 * Perform two hyperparameter runs
   * Parallel workers using random search strategy
