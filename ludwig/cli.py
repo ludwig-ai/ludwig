@@ -136,10 +136,10 @@ Available sub-commands:
         ludwig.contrib.contrib_command("preprocess", *sys.argv)
         preprocess.cli(sys.argv[2:])
 
-    def synthesize_data(self):
-        from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
-        ludwig.contrib.contrib_command("syntesize_dataset", *sys.argv)
-        cli_synthesize_dataset(sys.argv[2:])
+    def synthesize_dataset(self):
+        from ludwig.data import dataset_synthesizer
+        ludwig.contrib.contrib_command("synthesize_dataset", *sys.argv)
+        dataset_synthesizer.cli(sys.argv[2:])
 
 def main():
     CLI()

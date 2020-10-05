@@ -27,9 +27,16 @@ import numpy as np
 import yaml
 
 from ludwig.constants import VECTOR, TYPE, NAME
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.print_utils import logging_level_registry
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.print_utils import print_ludwig
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -402,14 +409,27 @@ def cli_synthesize_dataset(
         and can include some generation parameters depending on the type
     :param output_path: (str) path where to save the output CSV file
     """
+    if dataset_size is None or features is None or output_path is None:
+        raise ValueError(
+            "Missing one or more required parameters: '--daset_size', "
+            "'--features' or '--output_path'"
+        )
     dataset = build_synthetic_dataset(dataset_size, features)
     save_csv(output_path, dataset)
 
 
-if __name__ == '__main__':
+def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script generates a synthetic dataset.')
-    parser.add_argument('output_path', help='output CSV file path')
+        description='This script generates a synthetic dataset.',
+        prog='ludwig synthesize_dataset',
+        usage='%(prog)s [options]'
+    )
+    parser.add_argument(
+        '-od',
+        '--output_path',
+        type=str,
+        help='output CSV file path'
+    )
     parser.add_argument(
         '-d',
         '--dataset_size',
@@ -440,11 +460,29 @@ if __name__ == '__main__':
           ]',
         type=yaml.safe_load,
         help='list of features to generate in YAML format. '
-             'Provide a list contaning one dictionary for each feature, '
+             'Provide a list containing one dictionary for each feature, '
              'each dictionary must include a name, a type '
              'and can include some generation parameters depending on the type'
     )
-    args = parser.parse_args()
+    args = parser.parse_args(sys_argv)
 
-    cli_synthesize_dataset(args.dataset_size, args.features,
-                           args.output_path)
+    # No log level parameter this is placeholder if we add at later date
+    # args.logging_level = logging_level_registry[args.logging_level]
+    # logging.getLogger('ludwig').setLevel(
+    #     args.logging_level
+    # )
+    # global logger
+    # logger = logging.getLogger('ludwig.data.dataset_synthesizer')
+
+    # set_on_master(args.use_horovod)
+
+    if is_on_master():
+        print_ludwig('Synthesize Dataset', LUDWIG_VERSION)
+
+
+    cli_synthesize_dataset(**vars(args))
+
+if __name__ == '__main__':
+    contrib_import()
+    contrib_command("synthesize_dataset", *sys.argv)
+    cli(sys.argv[1:])
