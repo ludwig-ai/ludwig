@@ -26,7 +26,9 @@ from typing import List
 import numpy as np
 import yaml
 
-from ludwig.constants import VECTOR, TYPE, NAME
+from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE,
+                              NAME, NUMERICAL, SEQUENCE, SET, TEXT, TIMESERIES,
+                              TYPE, VECTOR)
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_csv
@@ -94,7 +96,7 @@ def return_none(feature):
 
 
 def assign_vocab(feature):
-    feature['idx2str'] = build_vocab(feature['vocab_size'])
+    feature['idx2str'] = build_vocab(feature.get('vocab_size', 10))
 
 
 def build_feature_parameters(features):
@@ -209,9 +211,9 @@ def generate_binary(feature):
 
 
 def generate_sequence(feature):
-    length = feature['max_len']
+    length = feature.get('max_len', 10)
     if 'min_len' in feature:
-        length = random.randint(feature['min_len'], feature['max_len'])
+        length = random.randint(feature['min_len'], length)
 
     sequence = [random.choice(feature['idx2str']) for _ in range(length)]
 
@@ -374,18 +376,18 @@ def generate_vector(feature):
 
 
 generators_registry = {
-    'category': generate_category,
-    'text': generate_sequence,
-    'numerical': generate_numerical,
-    'binary': generate_binary,
-    'set': generate_set,
-    'bag': generate_bag,
-    'sequence': generate_sequence,
-    'timeseries': generate_timeseries,
-    'image': generate_image,
-    'audio': generate_audio,
-    'h3': generate_h3,
-    'date': generate_datetime,
+    BINARY: generate_binary,
+    NUMERICAL: generate_numerical,
+    CATEGORY: generate_category,
+    SET: generate_set,
+    BAG: generate_bag,
+    SEQUENCE: generate_sequence,
+    TEXT: generate_sequence,
+    TIMESERIES: generate_timeseries,
+    IMAGE: generate_image,
+    AUDIO: generate_audio,
+    H3: generate_h3,
+    DATE: generate_datetime,
     VECTOR: generate_vector
 
 }
