@@ -28,15 +28,12 @@ import yaml
 
 from ludwig.constants import VECTOR, TYPE, NAME
 from ludwig.contrib import contrib_command, contrib_import
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.print_utils import logging_level_registry
-from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +126,36 @@ parameters_builders_registry = {
 }
 
 
-def build_synthetic_dataset(dataset_size, features):
+def build_synthetic_dataset(dataset_size: int, features: List[dict]):
+    """Symthesizes a dataset for testing purposes
+
+    :param dataset_size: (int) size of the dataset
+    :param features: (List[dict]) list of features to generate in YAML format.
+        Provide a list contaning one dictionary for each feature,
+        each dictionary must include a name, a type
+        and can include some generation parameters depending on the type
+
+    Example content for features:
+
+    [
+        {name: text_1, type: text, vocab_size: 20, max_len: 20},
+        {name: text_2, type: text, vocab_size: 20, max_len: 20},
+        {name: category_1, type: category, vocab_size: 10},
+        {name: category_2, type: category, vocab_size: 15},
+        {name: numerical_1, type: numerical},
+        {name: numerical_2, type: numerical},
+        {name: binary_1, type: binary},
+        {name: binary_2, type: binary},
+        {name: set_1, type: set, vocab_size: 20, max_len: 20},
+        {name: set_2, type: set, vocab_size: 20, max_len: 20},
+        {name: bag_1, type: bag, vocab_size: 20, max_len: 10},
+        {name: bag_2, type: bag, vocab_size: 20, max_len: 10},
+        {name: sequence_1, type: sequence, vocab_size: 20, max_len: 20},
+        {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20},
+        {name: timeseries_1, type: timeseries, max_len: 20},
+        {name: timeseries_2, type: timeseries, max_len: 20},
+    ]
+    """
     build_feature_parameters(features)
     header = []
     for feature in features:
@@ -408,6 +434,27 @@ def cli_synthesize_dataset(
         each dictionary must include a name, a type
         and can include some generation parameters depending on the type
     :param output_path: (str) path where to save the output CSV file
+
+    Example content for features:
+
+    [
+        {name: text_1, type: text, vocab_size: 20, max_len: 20},
+        {name: text_2, type: text, vocab_size: 20, max_len: 20},
+        {name: category_1, type: category, vocab_size: 10},
+        {name: category_2, type: category, vocab_size: 15},
+        {name: numerical_1, type: numerical},
+        {name: numerical_2, type: numerical},
+        {name: binary_1, type: binary},
+        {name: binary_2, type: binary},
+        {name: set_1, type: set, vocab_size: 20, max_len: 20},
+        {name: set_2, type: set, vocab_size: 20, max_len: 20},
+        {name: bag_1, type: bag, vocab_size: 20, max_len: 10},
+        {name: bag_2, type: bag, vocab_size: 20, max_len: 10},
+        {name: sequence_1, type: sequence, vocab_size: 20, max_len: 20},
+        {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20},
+        {name: timeseries_1, type: timeseries, max_len: 20},
+        {name: timeseries_2, type: timeseries, max_len: 20},
+    ]
     """
     if dataset_size is None or features is None or output_path is None:
         raise ValueError(
