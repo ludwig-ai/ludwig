@@ -166,7 +166,7 @@ def preprocess_cli(
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script preprocess a dataset',
-        prog='ludwig train',
+        prog='ludwig preprocess',
         usage='%(prog)s [options]'
     )
 
