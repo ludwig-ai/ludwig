@@ -27,10 +27,12 @@ from tests.integration_tests.utils import generate_data
 def test_missing_value_prediction(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = [category_feature(vocab_size=2, reduce_input='sum',
-                                           preprocessing=dict(missing_value_strategy='fill_with_mode'))]
+                                           preprocessing=dict(
+                                               missing_value_strategy='fill_with_mode'))]
         output_features = [binary_feature()]
 
-        dataset = pd.read_csv(generate_data(input_features, output_features, csv_filename))
+        dataset = pd.read_csv(
+            generate_data(input_features, output_features, csv_filename))
 
         model_definition = {
             'input_features': input_features,
@@ -38,7 +40,8 @@ def test_missing_value_prediction(csv_filename):
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
         model = LudwigModel(model_definition)
-        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+        _, _, output_dir = model.train(dataset=dataset,
+                                       output_directory=tmpdir)
 
         # Set the input column to None, we should be able to replace the missing value with the mode
         # from the training set

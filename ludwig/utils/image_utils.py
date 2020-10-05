@@ -19,6 +19,7 @@ import sys
 from math import ceil, floor
 
 import numpy as np
+
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 
 logger = logging.getLogger(__name__)

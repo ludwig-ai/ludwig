@@ -3,6 +3,7 @@ import os
 import shutil
 
 import numpy as np
+
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
 from ludwig.constants import (BINARY, CATEGORY, NAME, NUMERICAL, PREDICTIONS,

@@ -17,12 +17,13 @@
 import logging
 
 import tensorflow as tf
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Layer
+
 from ludwig.modules.convolutional_modules import Conv2DStack, \
     get_resnet_block_sizes
 from ludwig.modules.convolutional_modules import ResNet2
 from ludwig.modules.fully_connected_modules import FCStack
-from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Layer
 
 logger = logging.getLogger(__name__)
 

@@ -29,15 +29,14 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
-import numpy as np
-import pandas as pd
 
 ludwig.contrib.contrib_import()
-
+import numpy as np
+import pandas as pd
 import yaml
-
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
+from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
                                        preprocess_for_prediction,
@@ -1160,6 +1159,95 @@ class LudwigModel:
         )
 
         return activations
+
+    def preprocess(
+            self,
+            dataset: Union[str, dict, pd.DataFrame] = None,
+            training_set: Union[str, dict, pd.DataFrame] = None,
+            validation_set: Union[str, dict, pd.DataFrame] = None,
+            test_set: Union[str, dict, pd.DataFrame] = None,
+            training_set_metadata: Union[str, dict] = None,
+            data_format: str = None,
+            skip_save_processed_input: bool = True,
+            random_seed: int = default_random_seed,
+            debug: bool = False,
+            **kwargs
+    ) -> Tuple[Dataset, Dataset, Dataset, dict]:
+        """This function is used to preprocess data.
+
+        # Inputs
+
+        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing the entire dataset to be used in the experiment.
+            If it has a split column, it will be used for splitting
+            (0 for train, 1 for validation, 2 for test),
+            otherwise the dataset will be randomly split.
+        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing training data.
+        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing validation data.
+        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+            source containing test data.
+        :param training_set_metadata: (Union[str, dict], default: `None`)
+            metadata JSON file or loaded metadata. Intermediate preprocess
+            structure containing the mappings of the input
+            dataset created the first time an input file is used in the same
+            directory with the same name and a '.meta.json' extension.
+        :param data_format: (str, default: `None`) format to interpret data
+            sources. Will be inferred automatically if not specified.  Valid
+            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
+            `'feather'`, `'fwf'`,
+            `'hdf5'` (cache file produced during previous training),
+            `'html'` (file containing a single HTML `<table>`),
+            `'json'`, `'jsonl'`, `'parquet'`,
+            `'pickle'` (pickled Pandas DataFrame),
+            `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
+        :param skip_save_processed_input: (bool, default: `False`) if input
+            dataset is provided it is preprocessed and cached by saving an HDF5
+            and JSON files to avoid running the preprocessing again. If this
+            parameter is `False`, the HDF5 and JSON file are not saved.
+        :param output_directory: (str, default: `'results'`) the directory that
+            will contain the training statistics, TensorBoard logs, the saved
+            model and the training progress files.
+        :param random_seed: (int, default: `42`) a random seed that will be
+               used anywhere there is a call to a random number generator: data
+               splitting, parameter initialization and training set shuffling
+        :param debug: (bool, default: `False`)  if `True` turns on `tfdbg` with
+            `inf_or_nan` checks.
+
+
+        # Return
+
+        :return: (Tuple[dict, Union[dict, pd.DataFrame], str]) tuple containing
+            `(training_statistics, preprocessed_data, output_directory)`.
+            `training_statistics` is a dictionary of training statistics
+            for each output feature containing loss and metrics values
+            for each epoch.
+            `preprocessed_data` is the tuple containing these three data sets
+            `(training_set, validation_set, test_set)`.
+            `output_directory` filepath to where training results are stored.
+        """
+        # preprocess
+        preprocessed_data = preprocess_for_training(
+            self.model_definition,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=self.model_definition[PREPROCESSING],
+            random_seed=random_seed
+        )
+
+        (proc_training_set,
+         proc_validation_set,
+         proc_test_set,
+         training_set_metadata) = preprocessed_data
+
+        return proc_training_set, proc_validation_set, proc_test_set, \
+               training_set_metadata
 
     @staticmethod
     def load(

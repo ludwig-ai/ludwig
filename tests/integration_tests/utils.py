@@ -234,7 +234,7 @@ def audio_feature(folder, **kwargs):
             }
         ],
         'fc_size': 256,
-        'audio_dest_folder': folder
+        'destination_folder': folder
     }
     feature.update(kwargs)
     return feature

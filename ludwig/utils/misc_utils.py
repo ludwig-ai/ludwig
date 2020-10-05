@@ -23,8 +23,9 @@ import sys
 from collections import OrderedDict
 from collections.abc import Mapping
 
-import ludwig.globals
 import numpy
+
+import ludwig.globals
 from ludwig.utils.data_utils import figure_data_format
 
 

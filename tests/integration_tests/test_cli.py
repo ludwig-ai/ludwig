@@ -316,3 +316,42 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                     tensors=' '.join(weights_list),
                     output_directory=tmpdir
                     )
+
+
+def test_synthesize_dataset_cli(csv_filename):
+    """Test synthesize_data cli."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # test depends on default setting of --dataset_size
+        # if this parameter is specified, _run_ludwig fails when
+        # attempting to build the cli parameter structure
+        _run_ludwig(
+            'synthesize_dataset',
+            output_path=os.path.join(tmpdir, csv_filename),
+            features="'[ \
+                  {name: text, type: text}, \
+                  {name: category, type: category}, \
+                  {name: numerical, type: numerical}, \
+                  {name: binary, type: binary}, \
+                  {name: set, type: set}, \
+                  {name: bag, type: bag}, \
+                  {name: sequence, type: sequence}, \
+                  {name: timeseries, type: timeseries}, \
+                  {name: date, type: date}, \
+                  {name: h3, type: h3}, \
+                  {name: vector, type: vector}, \
+                  {name: audio, type: audio}, \
+                  {name: image, type: image} \
+                ]'",
+        )
+
+
+def test_preprocess_cli(csv_filename):
+    """Test preprocess `ludwig preprocess."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model_definition_filename = os.path.join(tmpdir,
+                                                 'model_definition.yaml')
+        dataset_filename = _prepare_data(csv_filename,
+                                         model_definition_filename)
+        _run_ludwig('preprocess',
+                    dataset=dataset_filename,
+                    preprocessing_definition_file=model_definition_filename)

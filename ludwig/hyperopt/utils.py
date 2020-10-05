@@ -24,9 +24,9 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_values(hyperopt_params[SAMPLER], {TYPE: "random"})
 
     sampler = get_from_registry(hyperopt_params[SAMPLER][TYPE],
-                                 sampler_registry)
+                                sampler_registry)
     sampler_defaults = {k: v for k, v in sampler.__dict__.items() if
-                         k in get_class_attributes(sampler)}
+                        k in get_class_attributes(sampler)}
     set_default_values(
         hyperopt_params[SAMPLER], sampler_defaults,
     )

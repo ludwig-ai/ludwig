@@ -14,43 +14,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import argparse
 import logging
 from abc import ABC, abstractmethod
 
 import h5py
 import numpy as np
 import pandas as pd
-import yaml
 
 from ludwig.constants import *
 from ludwig.constants import TEXT
-from ludwig.data.concatenate_datasets import concatenate_csv
-from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
 from ludwig.data.dataset import Dataset
-from ludwig.features.feature_registries import base_type_registry, \
-    input_type_registry
+from ludwig.features.feature_registries import (base_type_registry,
+                                                input_type_registry)
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import figure_data_format, \
-    DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
-    HDF5_FORMATS, override_in_memory_flag, TSV_FORMATS, JSON_FORMATS, \
-    JSONL_FORMATS, read_tsv, read_jsonl, read_json, EXCEL_FORMATS, read_excel, \
-    CACHEABLE_FORMATS, PARQUET_FORMATS, PICKLE_FORMATS, FWF_FORMATS, \
-    FEATHER_FORMATS, HTML_FORMATS, ORC_FORMATS, SAS_FORMATS, SPSS_FORMATS, \
-    STATA_FORMATS, read_stata, read_spss, read_sas, read_orc, read_html, \
-    read_fwf, read_feather, read_parquet, read_pickle
-from ludwig.utils.data_utils import file_exists_with_diff_extension
-from ludwig.utils.data_utils import read_csv
-from ludwig.utils.data_utils import replace_file_extension
-from ludwig.utils.data_utils import split_dataset_ttv
-from ludwig.utils.data_utils import text_feature_data_field
-from ludwig.utils.defaults import default_preprocessing_parameters, \
-    merge_with_defaults
-from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
+                                     DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
+                                     DICT_FORMATS, EXCEL_FORMATS,
+                                     FEATHER_FORMATS, FWF_FORMATS,
+                                     HDF5_FORMATS, HTML_FORMATS, JSON_FORMATS,
+                                     JSONL_FORMATS, ORC_FORMATS,
+                                     PARQUET_FORMATS, PICKLE_FORMATS,
+                                     SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
+                                     TSV_FORMATS, figure_data_format,
+                                     file_exists_with_diff_extension,
+                                     override_in_memory_flag, read_csv,
+                                     read_excel, read_feather, read_fwf,
+                                     read_html, read_json, read_jsonl,
+                                     read_orc, read_parquet, read_pickle,
+                                     read_sas, read_spss, read_stata, read_tsv,
+                                     replace_file_extension, split_dataset_ttv,
+                                     text_feature_data_field)
+from ludwig.utils.defaults import (default_preprocessing_parameters,
+                                   default_random_seed, merge_with_defaults)
 from ludwig.utils.horovod_utils import is_on_master
-from ludwig.utils.misc_utils import get_from_registry, resolve_pointers
-from ludwig.utils.misc_utils import merge_dict
-from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
+                                     resolve_pointers, set_random_seed)
 
 logger = logging.getLogger(__name__)
 
@@ -996,7 +995,8 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 def build_data(dataset_df, features, training_set_metadata):
     dataset = {}
     for feature in features:
-        preprocessing_parameters = training_set_metadata[feature[NAME]][PREPROCESSING]
+        preprocessing_parameters = training_set_metadata[feature[NAME]][
+            PREPROCESSING]
         handle_missing_values(
             dataset_df,
             feature,
@@ -1587,80 +1587,3 @@ def get_preprocessing_params(model_definition):
         )
 
     return merged_preprocessing_params
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='This script takes csv files as input and outputs a HDF5 '
-                    'and JSON file containing  a dataset and the train set '
-                    'metadata associated with it'
-    )
-
-    parser.add_argument(
-        '-id',
-        '--dataset_csv',
-        help='CSV containing contacts',
-        required=True
-    )
-    parser.add_argument(
-        '-ime',
-        '--training_set_metadata_json',
-        help='Input JSON containing metadata'
-    )
-    parser.add_argument(
-        '-od',
-        '--output_dataset_h5',
-        help='HDF5 containing output data',
-        required=True
-    )
-    parser.add_argument(
-        '-ome',
-        '--output_metadata_json',
-        help='JSON containing metadata',
-        required=True
-    )
-
-    parser.add_argument(
-        '-f',
-        '--features',
-        type=yaml.safe_load,
-        help='list of features in the CSV to map to hdf5 and JSON files'
-    )
-
-    parser.add_argument(
-        '-p',
-        '--preprocessing_parameters',
-        type=yaml.safe_load,
-        default='{}',
-        help='the parameters for preprocessing the different features'
-    )
-
-    parser.add_argument(
-        '-rs',
-        '--random_seed',
-        type=int,
-        default=42,
-        help='a random seed that is going to be used anywhere there is a call '
-             'to a random number generator: data splitting, parameter '
-             'initialization and training set shuffling'
-    )
-
-    args = parser.parse_args()
-
-    dataset_df = read_csv(args.dataset_csv)
-    dataset_df.src = args.dataset_csv
-    training_set_metadata = load_metadata(args.training_set_metadata_json)
-    dataset, training_set_metadata = build_dataset(
-        dataset_df=dataset_df,
-        features=args.features,
-        global_preprocessing_parameters=args.preprocessing_parameters,
-        metadata=training_set_metadata,
-        random_seed=args.random_seed
-    )
-
-    # write train set metadata, dataset
-    logger.info('Writing train set metadata with vocabulary')
-    data_utils.save_json(args.output_metadata_json, training_set_metadata)
-    logger.info('Writing dataset')
-    data_utils.save_hdf5(args.output_dataset_h5, dataset,
-                         training_set_metadata)

@@ -20,9 +20,10 @@ import sys
 from collections import Counter
 from sys import platform
 
-import ludwig.contrib
 import numpy as np
 import pandas as pd
+
+import ludwig.contrib
 from ludwig.constants import TRAINING, TYPE, VALIDATION
 
 logger = logging.getLogger(__name__)
