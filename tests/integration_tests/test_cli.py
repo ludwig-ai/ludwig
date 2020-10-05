@@ -316,3 +316,33 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                     tensors=' '.join(weights_list),
                     output_directory=tmpdir
                     )
+
+def test_synthesize_dataset_cli(csv_filename):
+    """Test synthesize_data cli."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        # test depends on default setting of --dataset_size
+        # if this parameter is specified, _run_ludwig fails when
+        # attempting to build the cli parameter structure
+        _run_ludwig(
+            'synthesize_dataset',
+            output_path=csv_filename,
+            features="'[ \
+              {name: text_1, type: text, vocab_size: 20, max_len: 20}, \
+              {name: text_2, type: text, vocab_size: 20, max_len: 20}, \
+              {name: category_1, type: category, vocab_size: 10}, \
+              {name: category_2, type: category, vocab_size: 15}, \
+              {name: numerical_1, type: numerical}, \
+              {name: numerical_2, type: numerical}, \
+              {name: binary_1, type: binary}, \
+              {name: binary_2, type: binary}, \
+              {name: set_1, type: set, vocab_size: 20, max_len: 20}, \
+              {name: set_2, type: set, vocab_size: 20, max_len: 20}, \
+              {name: bag_1, type: bag, vocab_size: 20, max_len: 10}, \
+              {name: bag_2, type: bag, vocab_size: 20, max_len: 10}, \
+              {name: sequence_1, type: sequence, vocab_size: 20, max_len: 20}, \
+              {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20}, \
+              {name: timeseries_1, type: timeseries, max_len: 20}, \
+              {name: timeseries_2, type: timeseries, max_len: 20}, \
+             ]'"
+        )
