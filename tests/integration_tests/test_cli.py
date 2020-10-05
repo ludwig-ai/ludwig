@@ -326,7 +326,7 @@ def test_synthesize_dataset_cli(csv_filename):
         # attempting to build the cli parameter structure
         _run_ludwig(
             'synthesize_dataset',
-            output_path=csv_filename,
+            output_path=os.path.join(tmpdir, csv_filename),
             features="'[ \
               {name: text_1, type: text, vocab_size: 20, max_len: 20}, \
               {name: text_2, type: text, vocab_size: 20, max_len: 20}, \
@@ -346,3 +346,14 @@ def test_synthesize_dataset_cli(csv_filename):
               {name: timeseries_2, type: timeseries, max_len: 20}, \
              ]'"
         )
+
+def test_preprocess_cli(csv_filename):
+    """Test preprocess `ludwig preprocess."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model_definition_filename = os.path.join(tmpdir,
+                                                 'model_definition.yaml')
+        dataset_filename = _prepare_data(csv_filename,
+                                         model_definition_filename)
+        _run_ludwig('preprocess',
+                    dataset=dataset_filename,
+                    preprocessing_definition_file=model_definition_filename)
