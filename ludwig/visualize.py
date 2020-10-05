@@ -31,7 +31,7 @@ from sklearn.metrics import brier_score_loss
 from ludwig.constants import *
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
-from ludwig.utils.data_utils import load_json, load_from_file
+from ludwig.utils.data_utils import load_from_file, load_json
 from ludwig.utils.print_utils import logging_level_registry
 
 logger = logging.getLogger(__name__)
@@ -3592,7 +3592,6 @@ def cli(sys_argv):
         prog='ludwig visualize',
         usage='%(prog)s [options]')
 
-    parser.add_argument('-d', '--data_csv', help='raw data file')
     parser.add_argument('-g', '--ground_truth', help='ground truth file')
     parser.add_argument(
         '-gm',

@@ -18,8 +18,7 @@ import logging
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
-from ludwig.modules.attention_modules import \
-    FeedForwardAttentionReducer
+from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 

@@ -17,17 +17,16 @@
 import argparse
 import logging
 import sys
-from typing import Union, List
+from typing import List, Union
 
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.constants import FULL, TRAINING, VALIDATION, TEST
+from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
-from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.horovod_utils import is_on_master, set_on_master
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 

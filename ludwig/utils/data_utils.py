@@ -30,9 +30,10 @@ import pandas as pd
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
-from ludwig.constants import SPLIT, PREPROCESSING, NAME
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
-    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
+from ludwig.constants import NAME, PREPROCESSING, SPLIT
+from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
+                            MODEL_WEIGHTS_FILE_NAME,
+                            TRAIN_SET_METADATA_FILE_NAME)
 
 logger = logging.getLogger(__name__)
 

@@ -15,12 +15,8 @@
 # ==============================================================================
 import logging
 
-from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Layer
-from tensorflow.keras.layers import LayerNormalization
+from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
+                                     Dropout, Layer, LayerNormalization)
 
 logger = logging.getLogger(__name__)
 

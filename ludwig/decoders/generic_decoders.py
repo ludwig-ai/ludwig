@@ -119,9 +119,9 @@ class Classifier(Layer):
             self,
             num_classes,
             use_bias=True,
-            kernel_initializer='glorot_uniform',
+            weights_initializer='glorot_uniform',
             bias_initializer='zeros',
-            kernel_regularizer=None,
+            weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
             **kwargs
@@ -133,9 +133,9 @@ class Classifier(Layer):
         self.dense = Dense(
             num_classes,
             use_bias=use_bias,
-            kernel_initializer=kernel_initializer,
+            kernel_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            kernel_regularizer=kernel_regularizer,
+            kernel_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
