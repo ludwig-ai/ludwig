@@ -19,7 +19,8 @@ import shutil
 import pytest
 
 from ludwig.experiment import experiment_cli
-from tests.integration_tests.utils import binary_feature
+from tests.integration_tests.utils import binary_feature, sequence_feature, \
+    set_feature, text_feature, vector_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
@@ -39,11 +40,11 @@ def run_experiment(input_features, output_features, **kwargs):
     arguments
     :return: None
     """
-    model_definition = None
+    config = None
     if input_features is not None and output_features is not None:
         # This if is necessary so that the caller can call with
-        # model_definition_file (and not model_definition)
-        model_definition = {
+        # config_file (and not config)
+        config = {
             'input_features': input_features,
             'output_features': output_features,
             'combiner': {
@@ -55,7 +56,7 @@ def run_experiment(input_features, output_features, **kwargs):
         }
 
     args = {
-        'model_definition': model_definition,
+        'config': config,
         'skip_save_processed_input': True,
         'skip_save_progress': True,
         'skip_save_unprocessed_output': True,
@@ -152,3 +153,31 @@ def test_feature(input_test_feature, output_test_feature,
                              1001)
 
     run_experiment(input_features, output_features, dataset=rel_path)
+
+
+@pytest.mark.parametrize(
+    'input_test_feature, output_test_feature',
+    [
+        ([category_feature()],
+         [binary_feature(), binary_feature()]),
+        ([category_feature()],
+         [category_feature(vocab_size=5), category_feature(vocab_size=7)]),
+        ([category_feature()],
+         [numerical_feature(), numerical_feature()]),
+        ([category_feature()],
+         [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
+        ([category_feature()],
+         [set_feature(vocab_size=5), set_feature(vocab_size=7)]),
+        ([category_feature()],
+         [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
+        ([category_feature()],
+         [vector_feature(), vector_feature()]),
+    ]
+)
+def test_feature_multiple_outputs(input_test_feature, output_test_feature,
+                                  csv_filename):
+    # Generate test data
+    rel_path = generate_data(input_test_feature, output_test_feature,
+                             csv_filename, 1001)
+
+    run_experiment(input_test_feature, output_test_feature, dataset=rel_path)

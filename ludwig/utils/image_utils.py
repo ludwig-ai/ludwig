@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 import sys
-from math import floor, ceil
+from math import ceil, floor
 
 import numpy as np
 

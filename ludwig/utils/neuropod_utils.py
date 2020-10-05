@@ -1,5 +1,4 @@
 import logging
-import logging
 import os
 import shutil
 
@@ -7,10 +6,12 @@ import numpy as np
 
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
-from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET, \
-    VECTOR, PREDICTIONS, PROBABILITIES, PROBABILITY, NAME, TYPE
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
-    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
+from ludwig.constants import (BINARY, CATEGORY, NAME, NUMERICAL, PREDICTIONS,
+                              PROBABILITIES, PROBABILITY, SEQUENCE, SET, TEXT,
+                              TYPE, VECTOR)
+from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
+                            MODEL_WEIGHTS_FILE_NAME,
+                            TRAIN_SET_METADATA_FILE_NAME)
 from ludwig.utils.data_utils import load_json
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ class LudwigNeuropodModelWrapper:
         )
         # print(predicted, file=sys.stderr)
         return postprocess_for_neuropod(
-            predicted, self.ludwig_model.model_definition
+            predicted, self.ludwig_model.config
         )
 
 
@@ -38,9 +39,9 @@ def get_model(data_root):
     return LudwigNeuropodModelWrapper(data_root)
 
 
-def postprocess_for_neuropod(predicted, model_definition):
+def postprocess_for_neuropod(predicted, config):
     postprocessed = {}
-    for output_feature in model_definition['output_features']:
+    for output_feature in config['output_features']:
         feature_name = output_feature[NAME]
         feature_type = output_feature[TYPE]
         if feature_type == BINARY:
@@ -154,7 +155,7 @@ def export_neuropod(
 
     logger.debug('data_paths: {}'.format(data_paths))
 
-    ludwig_model_definition = load_json(
+    ludwig_config = load_json(
         os.path.join(
             ludwig_model_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -168,7 +169,7 @@ def export_neuropod(
     )
 
     input_spec = []
-    for feature in ludwig_model_definition['input_features']:
+    for feature in ludwig_config['input_features']:
         input_spec.append({
             NAME: feature[NAME],
             "dtype": "str",
@@ -177,7 +178,7 @@ def export_neuropod(
     logger.debug('input_spec: {}'.format(input_spec))
 
     output_spec = []
-    for feature in ludwig_model_definition['output_features']:
+    for feature in ludwig_config['output_features']:
         feature_type = feature[TYPE]
         feature_name = feature[NAME]
         if feature_type == BINARY:

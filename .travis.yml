@@ -19,7 +19,7 @@ install:
     if [ $TENSORFLOW == "nightly" ]; then
       cat requirements.txt | sed '/^tensorflow[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
       cat requirements_horovod.txt | sed 's/\[tensorflow\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
-      pip install tf-nightly
+      pip install tf-nightly==2.4.0.dev20201002
     else
       pip install tensorflow==$TENSORFLOW
     fi

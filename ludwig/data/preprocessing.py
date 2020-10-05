@@ -14,43 +14,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import argparse
 import logging
 from abc import ABC, abstractmethod
 
 import h5py
 import numpy as np
 import pandas as pd
-import yaml
 
 from ludwig.constants import *
 from ludwig.constants import TEXT
-from ludwig.data.concatenate_datasets import concatenate_csv
-from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
 from ludwig.data.dataset import Dataset
-from ludwig.features.feature_registries import base_type_registry, \
-    input_type_registry
+from ludwig.features.feature_registries import (base_type_registry,
+                                                input_type_registry)
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import figure_data_format, \
-    DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
-    HDF5_FORMATS, override_in_memory_flag, TSV_FORMATS, JSON_FORMATS, \
-    JSONL_FORMATS, read_tsv, read_jsonl, read_json, EXCEL_FORMATS, read_excel, \
-    CACHEABLE_FORMATS, PARQUET_FORMATS, PICKLE_FORMATS, FWF_FORMATS, \
-    FEATHER_FORMATS, HTML_FORMATS, ORC_FORMATS, SAS_FORMATS, SPSS_FORMATS, \
-    STATA_FORMATS, read_stata, read_spss, read_sas, read_orc, read_html, \
-    read_fwf, read_feather, read_parquet, read_pickle
-from ludwig.utils.data_utils import file_exists_with_diff_extension
-from ludwig.utils.data_utils import read_csv
-from ludwig.utils.data_utils import replace_file_extension
-from ludwig.utils.data_utils import split_dataset_ttv
-from ludwig.utils.data_utils import text_feature_data_field
-from ludwig.utils.defaults import default_preprocessing_parameters, \
-    merge_with_defaults
-from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
+                                     DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
+                                     DICT_FORMATS, EXCEL_FORMATS,
+                                     FEATHER_FORMATS, FWF_FORMATS,
+                                     HDF5_FORMATS, HTML_FORMATS, JSON_FORMATS,
+                                     JSONL_FORMATS, ORC_FORMATS,
+                                     PARQUET_FORMATS, PICKLE_FORMATS,
+                                     SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
+                                     TSV_FORMATS, figure_data_format,
+                                     file_exists_with_diff_extension,
+                                     override_in_memory_flag, read_csv,
+                                     read_excel, read_feather, read_fwf,
+                                     read_html, read_json, read_jsonl,
+                                     read_orc, read_parquet, read_pickle,
+                                     read_sas, read_spss, read_stata, read_tsv,
+                                     replace_file_extension, split_dataset_ttv,
+                                     text_feature_data_field)
+from ludwig.utils.defaults import (default_preprocessing_parameters,
+                                   default_random_seed, merge_with_defaults)
 from ludwig.utils.horovod_utils import is_on_master
-from ludwig.utils.misc_utils import get_from_registry, resolve_pointers
-from ludwig.utils.misc_utils import merge_dict
-from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
+                                     resolve_pointers, set_random_seed)
 
 logger = logging.getLogger(__name__)
 
@@ -225,7 +224,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -269,7 +268,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -313,7 +312,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -357,7 +356,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -401,7 +400,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -445,7 +444,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -489,7 +488,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -533,7 +532,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -577,7 +576,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -621,7 +620,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -665,7 +664,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -709,7 +708,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -753,7 +752,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -797,7 +796,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata
+            metadata=training_set_metadata
         )
         return dataset, training_set_metadata, None
 
@@ -907,7 +906,6 @@ def build_dataset(
         global_preprocessing_parameters,
         metadata=None,
         random_seed=default_random_seed,
-        **kwargs
 ):
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
@@ -924,8 +922,7 @@ def build_dataset(
     dataset = build_data(
         dataset_df,
         features,
-        metadata,
-        global_preprocessing_parameters
+        metadata
     )
 
     dataset[SPLIT] = get_split(
@@ -969,68 +966,42 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                     resolve_pointers(encoder_fpp, feature, 'feature.')
                 )
 
-        handle_missing_values(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
-
         get_feature_meta = get_from_registry(
             feature[TYPE],
             base_type_registry
         ).get_feature_meta
+
         metadata[feature[NAME]] = get_feature_meta(
             dataset_df[feature[NAME]].astype(str),
             preprocessing_parameters
         )
+
+        fill_value = precompute_fill_value(
+            dataset_df,
+            feature,
+            preprocessing_parameters
+        )
+
+        if fill_value is not None:
+            preprocessing_parameters = {
+                'computed_fill_value': fill_value,
+                **preprocessing_parameters
+            }
+        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+
     return metadata
 
 
-def build_data(
-        dataset_df,
-        features,
-        training_set_metadata,
-        global_preprocessing_parameters
-):
+def build_data(dataset_df, features, training_set_metadata):
     dataset = {}
     for feature in features:
-        if PREPROCESSING in feature:
-            preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]],
-                feature[PREPROCESSING]
-            )
-        else:
-            preprocessing_parameters = global_preprocessing_parameters[
-                feature[TYPE]
-            ]
-
-        # deal with encoders that have fixed preprocessing
-        if 'encoder' in feature:
-            encoders_registry = get_from_registry(
-                feature[TYPE],
-                input_type_registry
-            ).encoder_registry
-
-            encoder_class = encoders_registry[feature['encoder']]
-            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
-                encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
-                preprocessing_parameters = merge_dict(
-                    preprocessing_parameters,
-                    resolve_pointers(encoder_fpp, feature, 'feature.')
-                )
-
+        preprocessing_parameters = training_set_metadata[feature[NAME]][
+            PREPROCESSING]
         handle_missing_values(
             dataset_df,
             feature,
             preprocessing_parameters
         )
-        if feature[NAME] not in training_set_metadata:
-            training_set_metadata[feature[NAME]] = {}
-        training_set_metadata[
-            feature[NAME]
-        ][PREPROCESSING] = preprocessing_parameters
-
         add_feature_data = get_from_registry(
             feature[TYPE],
             base_type_registry
@@ -1045,25 +1016,33 @@ def build_data(
     return dataset
 
 
-def handle_missing_values(dataset_df, feature, preprocessing_parameters):
+def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
-
     if missing_value_strategy == FILL_WITH_CONST:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
-            preprocessing_parameters['fill_value'],
-        )
+        return preprocessing_parameters['fill_value']
     elif missing_value_strategy == FILL_WITH_MODE:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
-            dataset_df[feature[NAME]].value_counts().index[0],
-        )
+        return dataset_df[feature[NAME]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
+        return dataset_df[feature[NAME]].mean()
+
+    # Otherwise, we cannot precompute the fill value for this dataset
+    return None
+
+
+def handle_missing_values(dataset_df, feature, preprocessing_parameters):
+    missing_value_strategy = preprocessing_parameters['missing_value_strategy']
+
+    # Check for the precomputed fill value in the metadata
+    computed_fill_value = preprocessing_parameters.get('computed_fill_value')
+
+    if computed_fill_value is not None:
         dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
-            dataset_df[feature[NAME]].mean(),
+            computed_fill_value,
         )
     elif missing_value_strategy in ['backfill', 'bfill', 'pad', 'ffill']:
         dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
@@ -1146,7 +1125,7 @@ def load_metadata(metadata_file_path):
 
 
 def preprocess_for_training(
-        model_definition,
+        config,
         dataset=None,
         training_set=None,
         validation_set=None,
@@ -1172,8 +1151,8 @@ def preprocess_for_training(
         training_set_metadata = load_metadata(training_set_metadata)
 
     # setup
-    features = (model_definition['input_features'] +
-                model_definition['output_features'])
+    features = (config['input_features'] +
+                config['output_features'])
 
     # in case data_format is one of the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
@@ -1191,7 +1170,7 @@ def preprocess_for_training(
                                                                   'meta.json')
                 training_set_metadata = data_utils.load_json(
                     training_set_metadata_fp)
-                model_definition['data_hdf5_fp'] = dataset
+                config['data_hdf5_fp'] = dataset
                 data_format = 'hdf5'
 
         elif training_set:
@@ -1210,7 +1189,7 @@ def preprocess_for_training(
                 )
                 validation_set = replace_file_extension(validation_set, 'hdf5')
                 test_set = replace_file_extension(test_set, 'hdf5')
-                model_definition['data_hdf5_fp'] = training_set
+                config['data_hdf5_fp'] = training_set
                 data_format = 'hdf5'
 
     data_format_processor = get_from_registry(
@@ -1237,8 +1216,8 @@ def preprocess_for_training(
 
     training_dataset = Dataset(
         training_set,
-        model_definition['input_features'],
-        model_definition['output_features'],
+        config['input_features'],
+        config['output_features'],
         training_set_metadata.get(DATA_TRAIN_HDF5_FP)
     )
 
@@ -1246,8 +1225,8 @@ def preprocess_for_training(
     if validation_set is not None:
         validation_dataset = Dataset(
             validation_set,
-            model_definition['input_features'],
-            model_definition['output_features'],
+            config['input_features'],
+            config['output_features'],
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
@@ -1255,8 +1234,8 @@ def preprocess_for_training(
     if test_set is not None:
         test_dataset = Dataset(
             test_set,
-            model_definition['input_features'],
-            model_definition['output_features'],
+            config['input_features'],
+            config['output_features'],
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
@@ -1309,7 +1288,7 @@ def _preprocess_file_for_training(
             dataset_df,
             features,
             preprocessing_params,
-            training_set_metadata=training_set_metadata,
+            metadata=training_set_metadata,
             random_seed=random_seed
         )
 
@@ -1451,7 +1430,7 @@ def _preprocess_df_for_training(
 
 
 def preprocess_for_prediction(
-        model_definition,
+        config,
         dataset,
         training_set_metadata=None,
         data_format=None,
@@ -1461,7 +1440,7 @@ def preprocess_for_prediction(
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core
         :param model_path: The input data that is joined with the model
-               hyperparameter file to create the model definition file
+               hyperparameter file to create the config file
         :param data_csv: The CSV input data file
         :param data_hdf5: The hdf5 data file if there is no csv data file
         :param training_set_metadata: Train set metadata for the input features
@@ -1482,7 +1461,7 @@ def preprocess_for_prediction(
     # manage the in_memory parameter
     if data_format not in HDF5_FORMATS:
         num_overrides = override_in_memory_flag(
-            model_definition['input_features'],
+            config['input_features'],
             True
         )
         if num_overrides > 0:
@@ -1493,7 +1472,7 @@ def preprocess_for_prediction(
 
     preprocessing_params = merge_dict(
         default_preprocessing_parameters,
-        model_definition[PREPROCESSING]
+        config[PREPROCESSING]
     )
 
     # if training_set_metadata is a string, assume it's a path to load the json
@@ -1505,8 +1484,8 @@ def preprocess_for_prediction(
     # setup
     output_features = []
     if include_outputs:
-        output_features += model_definition['output_features']
-    features = model_definition['input_features'] + output_features
+        output_features += config['output_features']
+    features = config['input_features'] + output_features
 
     # in case data_format is one fo the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
@@ -1519,13 +1498,14 @@ def preprocess_for_prediction(
                 'of the input file, using them instead'
             )
             dataset = replace_file_extension(dataset, 'hdf5')
-            model_definition['data_hdf5_fp'] = dataset
+            config['data_hdf5_fp'] = dataset
             data_format = 'hdf5'
 
     data_format_processor = get_from_registry(
         data_format,
         data_format_preprocessor_registry
     )
+
     processed = data_format_processor.preprocess_for_prediction(dataset,
                                                                 features,
                                                                 preprocessing_params,
@@ -1550,7 +1530,7 @@ def preprocess_for_prediction(
 
     dataset = Dataset(
         dataset,
-        model_definition['input_features'],
+        config['input_features'],
         output_features,
         hdf5_fp
     )
@@ -1577,13 +1557,13 @@ def replace_text_feature_level(features, datasets):
                             del dataset[name_level]
 
 
-def get_preprocessing_params(model_definition):
-    model_definition = merge_with_defaults(model_definition)
+def get_preprocessing_params(config):
+    config = merge_with_defaults(config)
 
-    global_preprocessing_parameters = model_definition[PREPROCESSING]
+    global_preprocessing_parameters = config[PREPROCESSING]
     features = (
-            model_definition['input_features'] +
-            model_definition['output_features']
+            config['input_features'] +
+            config['output_features']
     )
 
     global_preprocessing_parameters = merge_dict(
@@ -1607,79 +1587,3 @@ def get_preprocessing_params(model_definition):
         )
 
     return merged_preprocessing_params
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='This script takes csv files as input and outputs a HDF5 '
-                    'and JSON file containing  a dataset and the train set '
-                    'metadata associated with it'
-    )
-
-    parser.add_argument(
-        '-id',
-        '--dataset_csv',
-        help='CSV containing contacts',
-        required=True
-    )
-    parser.add_argument(
-        '-ime',
-        '--training_set_metadata_json',
-        help='Input JSON containing metadata'
-    )
-    parser.add_argument(
-        '-od',
-        '--output_dataset_h5',
-        help='HDF5 containing output data',
-        required=True
-    )
-    parser.add_argument(
-        '-ome',
-        '--output_metadata_json',
-        help='JSON containing metadata',
-        required=True
-    )
-
-    parser.add_argument(
-        '-f',
-        '--features',
-        type=yaml.safe_load,
-        help='list of features in the CSV to map to hdf5 and JSON files'
-    )
-
-    parser.add_argument(
-        '-p',
-        '--preprocessing_parameters',
-        type=yaml.safe_load,
-        default='{}',
-        help='the parameters for preprocessing the different features'
-    )
-
-    parser.add_argument(
-        '-rs',
-        '--random_seed',
-        type=int,
-        default=42,
-        help='a random seed that is going to be used anywhere there is a call '
-             'to a random number generator: data splitting, parameter '
-             'initialization and training set shuffling'
-    )
-
-    args = parser.parse_args()
-
-    dataset_df = read_csv(args.dataset_csv)
-    dataset_df.src = args.dataset_csv
-    dataset, training_set_metadata = build_dataset(
-        dataset_df,
-        args.training_set_metadata_json,
-        args.features,
-        args.preprocessing_parameters,
-        args.random_seed
-    )
-
-    # write train set metadata, dataset
-    logger.info('Writing train set metadata with vocabulary')
-    data_utils.save_json(args.output_metadata_json, training_set_metadata)
-    logger.info('Writing dataset')
-    data_utils.save_hdf5(args.output_dataset_h5, dataset,
-                         training_set_metadata)

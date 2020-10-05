@@ -17,12 +17,11 @@
 import logging
 
 from ludwig.constants import *
-from ludwig.features.feature_registries import base_type_registry
-from ludwig.features.feature_registries import input_type_registry
-from ludwig.features.feature_registries import output_type_registry
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.misc_utils import merge_dict
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.features.feature_registries import (base_type_registry,
+                                                input_type_registry,
+                                                output_type_registry)
+from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
+                                     set_default_value)
 
 logger = logging.getLogger(__name__)
 
@@ -121,69 +120,69 @@ def get_default_optimizer_params(optimizer_type):
         raise ValueError('Incorrect optimizer type: ' + optimizer_type)
 
 
-def _perform_sanity_checks(model_definition):
-    assert 'input_features' in model_definition, (
-        'Model definition does not define any input features'
+def _perform_sanity_checks(config):
+    assert 'input_features' in config, (
+        'config does not define any input features'
     )
 
-    assert 'output_features' in model_definition, (
-        'Model definition does not define any output features'
+    assert 'output_features' in config, (
+        'config does not define any output features'
     )
 
-    assert isinstance(model_definition['input_features'], list), (
+    assert isinstance(config['input_features'], list), (
         'Ludwig expects input features in a list. Check your model '
-        'definition format'
+        'config format'
     )
 
-    assert isinstance(model_definition['output_features'], list), (
+    assert isinstance(config['output_features'], list), (
         'Ludwig expects output features in a list. Check your model '
-        'definition format'
+        'config format'
     )
 
-    assert len(model_definition['input_features']) > 0, (
-        'Model definition needs to have at least one input feature'
+    assert len(config['input_features']) > 0, (
+        'config needs to have at least one input feature'
     )
 
-    assert len(model_definition['output_features']) > 0, (
-        'Model definition needs to have at least one output feature'
+    assert len(config['output_features']) > 0, (
+        'config needs to have at least one output feature'
     )
 
-    if TRAINING in model_definition:
-        assert isinstance(model_definition[TRAINING], dict), (
+    if TRAINING in config:
+        assert isinstance(config[TRAINING], dict), (
             'There is an issue while reading the training section of the '
-            'model definition. The parameters are expected to be'
-            'read as a dictionary. Please check your model definition format.'
+            'config. The parameters are expected to be'
+            'read as a dictionary. Please check your config format.'
         )
 
-    if 'preprocessing' in model_definition:
-        assert isinstance(model_definition['preprocessing'], dict), (
+    if 'preprocessing' in config:
+        assert isinstance(config['preprocessing'], dict), (
             'There is an issue while reading the preprocessing section of the '
-            'model definition. The parameters are expected to be read'
-            'as a dictionary. Please check your model definition format.'
+            'config. The parameters are expected to be read'
+            'as a dictionary. Please check your config format.'
         )
 
-    if 'combiner' in model_definition:
-        assert isinstance(model_definition['combiner'], dict), (
+    if 'combiner' in config:
+        assert isinstance(config['combiner'], dict), (
             'There is an issue while reading the combiner section of the '
-            'model definition. The parameters are expected to be read'
-            'as a dictionary. Please check your model definition format.'
+            'config. The parameters are expected to be read'
+            'as a dictionary. Please check your config format.'
         )
 
 
-def merge_with_defaults(model_definition):
-    _perform_sanity_checks(model_definition)
+def merge_with_defaults(config):
+    _perform_sanity_checks(config)
 
     # ===== Preprocessing =====
-    model_definition['preprocessing'] = merge_dict(
+    config['preprocessing'] = merge_dict(
         default_preprocessing_parameters,
-        model_definition.get('preprocessing', {})
+        config.get('preprocessing', {})
     )
 
-    stratify = model_definition['preprocessing']['stratify']
+    stratify = config['preprocessing']['stratify']
     if stratify is not None:
         features = (
-                model_definition['input_features'] +
-                model_definition['output_features']
+                config['input_features'] +
+                config['output_features']
         )
         feature_names = set(f[NAME] for f in features)
         if stratify not in feature_names:
@@ -196,38 +195,38 @@ def merge_with_defaults(model_definition):
             raise ValueError('Stratify feature must be binary or category')
 
     # ===== Training =====
-    set_default_value(model_definition, TRAINING, default_training_params)
+    set_default_value(config, TRAINING, default_training_params)
 
     for param, value in default_training_params.items():
-        set_default_value(model_definition[TRAINING], param,
+        set_default_value(config[TRAINING], param,
                           value)
 
     set_default_value(
-        model_definition[TRAINING],
+        config[TRAINING],
         'validation_metric',
-        output_type_registry[model_definition['output_features'][0][
+        output_type_registry[config['output_features'][0][
             TYPE]].default_validation_metric
     )
 
     # ===== Training Optimizer =====
-    optimizer = model_definition[TRAINING]['optimizer']
+    optimizer = config[TRAINING]['optimizer']
     default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])
 
     # ===== Input Features =====
-    for input_feature in model_definition['input_features']:
+    for input_feature in config['input_features']:
         get_from_registry(input_feature[TYPE],
                           input_type_registry).populate_defaults(input_feature)
 
     # ===== Combiner =====
-    set_default_value(model_definition, 'combiner',
+    set_default_value(config, 'combiner',
                       {TYPE: default_combiner_type})
 
     # ===== Output features =====
-    for output_feature in model_definition['output_features']:
+    for output_feature in config['output_features']:
         get_from_registry(output_feature[TYPE],
                           output_type_registry).populate_defaults(
             output_feature)
 
-    return model_definition
+    return config

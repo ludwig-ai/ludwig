@@ -53,12 +53,12 @@ def test_savedmodel(csv_filename, should_load_model):
     #############
     # Train model
     #############
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'training': {'epochs': 2}
     }
-    ludwig_model = LudwigModel(model_definition)
+    ludwig_model = LudwigModel(config)
     ludwig_model.train(
         dataset=data_csv_path,
         skip_save_training_description=True,
@@ -111,7 +111,7 @@ def test_savedmodel(csv_filename, should_load_model):
     )
 
     dataset, training_set_metadata = preprocess_for_prediction(
-        ludwig_model.model_definition,
+        ludwig_model.config,
         dataset=data_csv_path,
         training_set_metadata=training_set_metadata_json_fp
     )

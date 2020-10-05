@@ -17,35 +17,83 @@
 import argparse
 import logging
 import sys
+from typing import List, Union
+
+import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.constants import FULL, TRAINING, VALIDATION, TEST
+from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
-from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.horovod_utils import is_on_master, set_on_master
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
 def predict_cli(
-        model_path,
-        dataset=None,
-        data_format=None,
-        split=FULL,
-        batch_size=128,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        output_directory='results',
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        use_horovod=None,
-        logging_level=logging.INFO,
-        debug=False,
+        model_path: str,
+        dataset: Union[str, dict, pd.DataFrame] = None,
+        data_format: str = None,
+        split: str = FULL,
+        batch_size: int = 128,
+        skip_save_unprocessed_output: bool = False,
+        skip_save_predictions: bool = False,
+        output_directory: str = 'results',
+        gpus: Union[str, int, List[int]] = None,
+        gpu_memory_limit: int = None,
+        allow_parallel_threads: bool = True,
+        use_horovod: bool = None,
+        logging_level: int =logging.INFO,
+        debug: bool = False,
         **kwargs
-):
+) -> None:
+    """
+    Loads pre-trained model to make predictions on the provided data set.
+
+    # Inputs
+
+    :param model_path: (str) filepath to pre-trained model.
+    :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+        source containing the entire dataset to be used in the prediction.
+    :param data_format: (str, default: `None`) format to interpret data
+        sources. Will be inferred automatically if not specified.  Valid
+        formats are `'auto'`, `'csv'`, `'excel'`, `'feather'`,
+        `'fwf'`, `'hdf5'` (cache file produced during previous training),
+        `'html'` (file containing a single HTML `<table>`), `'json'`, `'jsonl'`,
+        `'parquet'`, `'pickle'` (pickled Pandas DataFrame), `'sas'`, `'spss'`,
+        `'stata'`, `'tsv'`.
+    :param split: (str, default: `full`) split on which
+        to perform predictions. Valid values are `'training'`, `'validation'`,
+        `'test'` and `'full'`.
+    :param batch_size: (int, default `128`) size of batches for processing.
+    :param skip_save_unprocessed_output: (bool, default: `False`) by default
+        predictions and their probabilities are saved in both raw
+        unprocessed numpy files containing tensors and as postprocessed
+        CSV files (one for each output feature). If this parameter is True,
+        only the CSV ones are saved and the numpy ones are skipped.
+    :param skip_save_predictions: (bool, default: `False`) skips saving test
+        predictions CSV files
+    :param output_directory: (str, default: `'results'`) the directory that
+        will contain the training statistics, TensorBoard logs, the saved
+        model and the training progress files.
+    :param gpus: (list, default: `None`) list of GPUs that are available
+        for training.
+    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
+        allocate per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+        to use multithreading parallelism to improve performance at
+        the cost of determinism.
+    :param use_horovod: (bool, default: `None`) flag for using horovod.
+    :param logging_level: (int) Log level that will be sent to stderr.
+    :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
+        `inf_or_nan` checks.
+        **kwargs:
+
+    # Returns
+
+    :return: ('None')
+    """
     model = LudwigModel.load(
         model_path,
         logging_level=logging_level,

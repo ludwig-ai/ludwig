@@ -100,7 +100,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return ()
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,
@@ -183,6 +183,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         )
 
     def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name='metric_accuracy')
@@ -201,7 +202,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return ()
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,

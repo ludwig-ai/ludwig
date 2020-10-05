@@ -126,7 +126,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return self.vector_size,
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,
@@ -204,6 +204,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             )
 
     def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ERROR] = ErrorScore(name='metric_error')
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
@@ -221,7 +222,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return self.vector_size,
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             output_feature,
             feature_metadata,
             *args,

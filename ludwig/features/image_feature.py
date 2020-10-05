@@ -200,7 +200,7 @@ class ImageFeatureMixin(object):
             width = first_img_width
 
         if NUM_CHANNELS in preprocessing_parameters:
-            # User specified num_channels in the model/feature definition
+            # User specified num_channels in the model/feature config
             user_specified_num_channels = True
             num_channels = preprocessing_parameters[NUM_CHANNELS]
         else:
@@ -370,7 +370,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return self.height, self.width, self.num_channels
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,

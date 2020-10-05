@@ -35,14 +35,14 @@ def run_api_experiment(input_features, output_features, data_csv):
     :param data_csv: path to data
     :return: None
     """
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
     output_dir = None
 
     try:
@@ -95,14 +95,14 @@ def run_api_experiment_separated_datasets(
     :param data_csv: path to data
     :return: None
     """
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
 
     # Training with dataframe
     data_df = read_csv(data_csv)
@@ -228,12 +228,12 @@ def test_api_train_online(csv_filename):
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
     data_csv = generate_data(input_features, output_features, csv_filename)
 
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
     }
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
 
     for i in range(2):
         model.train_online(dataset=data_csv)
@@ -250,12 +250,12 @@ def test_api_training_set(csv_filename):
                                   os.path.join(tmpdir, 'validation.csv'))
         test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'test.csv'))
 
-        model_definition = {
+        config = {
             'input_features': input_features,
             'output_features': output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
-        model = LudwigModel(model_definition)
+        model = LudwigModel(config)
         model.train(training_set=data_csv,
                     validation_set=val_csv,
                     test_set=test_csv)
@@ -274,7 +274,7 @@ def test_api_training_determinism(csv_filename):
 
         data_csv = generate_data(input_features, output_features, csv_filename)
 
-        model_definition = {
+        config = {
             'input_features': input_features,
             'output_features': output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
@@ -291,13 +291,13 @@ def test_api_training_determinism(csv_filename):
         rand_x = 42
         rand_y = 24
 
-        model_1 = LudwigModel(model_definition)
+        model_1 = LudwigModel(config)
         model_1.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
-        model_2 = LudwigModel(model_definition)
+        model_2 = LudwigModel(config)
         model_2.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_y)
 
-        model_3 = LudwigModel(model_definition)
+        model_3 = LudwigModel(config)
         model_3.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
 
         model_weights_1 = model_1.model.get_weights()

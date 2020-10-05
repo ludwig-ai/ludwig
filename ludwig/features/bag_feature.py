@@ -117,7 +117,7 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
         return len(self.vocab),
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,

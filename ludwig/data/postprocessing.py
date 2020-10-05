@@ -17,7 +17,8 @@
 import pandas as pd
 
 from ludwig.features.feature_utils import SEQUENCE_TYPES
-from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS
+from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS, \
+    normalize_numpy
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -96,14 +97,14 @@ def convert_to_df(
                                 output_subgroup_name,
                                 class_name
                             )
-                        ] = value
+                        ] = normalize_numpy(value)
             else:
                 data_for_df[
                     '{}_{}'.format(
                         output_feature_name,
                         output_subgroup_name
                     )
-                ] = output_type_value
+                ] = normalize_numpy(output_type_value)
     output_df = pd.DataFrame(data_for_df)
     return output_df
 

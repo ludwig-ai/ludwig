@@ -49,13 +49,13 @@ def train_model(input_features, output_features, data_csv):
     :param data_csv: path to data
     :return: None
     """
-    model_definition = {
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
-    model = LudwigModel(model_definition)
+    model = LudwigModel(config)
     _, _, output_dir = model.train(
         dataset=data_csv,
         skip_save_processed_input=True,

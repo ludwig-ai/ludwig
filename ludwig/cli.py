@@ -45,18 +45,20 @@ class CLI(object):
             usage='''ludwig <command> [<args>]
 
 Available sub-commands:
-   experiment            Runs a full experiment training a model and evaluating it
    train                 Trains a model
    predict               Predicts using a pretrained model
    evaluate              Evaluate a pretrained model's performance
+   experiment            Runs a full experiment training a model and evaluating it
+   hyperopt              Perform hyperparameter optimization
    serve                 Serves a pretrained model
    visualize             Visualizes experimental results
-   hyperopt              Perform hyperparameter optimization
    collect_summary       Prints names of weights and layers activations to use with other collect commands
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
    export_savedmodel     Exports Ludwig models to SavedModel
    export_neuropod       Exports Ludwig models to Neuropod
+   preprocess            Preprocess data and saves it into HDF5 and JSON format
+   synthesize_dataset    Creates synthetic data for tesing purposes
 ''')
         parser.add_argument('command', help='Subcommand to run')
         # parse_args defaults to [1:] for args, but you need to
@@ -68,11 +70,6 @@ Available sub-commands:
             exit(1)
         # use dispatch pattern to invoke method with same name
         getattr(self, args.command)()
-
-    def experiment(self):
-        from ludwig import experiment
-        ludwig.contrib.contrib_command("experiment", *sys.argv)
-        experiment.cli(sys.argv[2:])
 
     def train(self):
         from ludwig import train
@@ -89,6 +86,16 @@ Available sub-commands:
         ludwig.contrib.contrib_command("evaluate", *sys.argv)
         evaluate.cli(sys.argv[2:])
 
+    def experiment(self):
+        from ludwig import experiment
+        ludwig.contrib.contrib_command("experiment", *sys.argv)
+        experiment.cli(sys.argv[2:])
+
+    def hyperopt(self):
+        from ludwig import hyperopt_cli
+        ludwig.contrib.contrib_command("hyperopt", *sys.argv)
+        hyperopt_cli.cli(sys.argv[2:])
+
     def serve(self):
         from ludwig import serve
         ludwig.contrib.contrib_command("serve", *sys.argv)
@@ -98,11 +105,6 @@ Available sub-commands:
         from ludwig import visualize
         ludwig.contrib.contrib_command("visualize", *sys.argv)
         visualize.cli(sys.argv[2:])
-
-    def hyperopt(self):
-        from ludwig import hyperopt_cli
-        ludwig.contrib.contrib_command("hyperopt", *sys.argv)
-        hyperopt_cli.cli(sys.argv[2:])
 
     def collect_summary(self):
         from ludwig import collect
@@ -128,6 +130,16 @@ Available sub-commands:
         from ludwig import export
         ludwig.contrib.contrib_command("export_neuropod", *sys.argv)
         export.cli_export_neuropod(sys.argv[2:])
+
+    def preprocess(self):
+        from ludwig import preprocess
+        ludwig.contrib.contrib_command("preprocess", *sys.argv)
+        preprocess.cli(sys.argv[2:])
+
+    def synthesize_dataset(self):
+        from ludwig.data import dataset_synthesizer
+        ludwig.contrib.contrib_command("synthesize_dataset", *sys.argv)
+        dataset_synthesizer.cli(sys.argv[2:])
 
 
 def main():

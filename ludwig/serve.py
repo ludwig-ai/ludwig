@@ -53,11 +53,12 @@ COULD_NOT_RUN_INFERENCE_ERROR = {
     "error": "Unexpected Error: could not run inference on model"}
 
 
+
 def server(model):
     app = FastAPI()
 
     input_features = {
-        f[NAME] for f in model.model_definition['input_features']
+        f[NAME] for f in model.config['input_features']
     }
 
     @app.get('/')
@@ -77,9 +78,10 @@ def server(model):
                 resp, _ = model.predict(
                     dataset=[entry], data_format=dict
                 )
-                return JSONResponse(resp.to_dict('records')[0])
+                resp = resp.to_dict('records')[0]
+                return JSONResponse(resp)
             except Exception as e:
-                logger.error("Error: {}".format(str(e)))
+                logger.error("Failed to run predict: {}".format(str(e)))
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
@@ -100,9 +102,10 @@ def server(model):
                                     status_code=400)
             try:
                 resp, _ = model.predict(dataset=data_df)
-                return JSONResponse(resp.to_dict('split'))
-            except Exception:
-                logger.exception('failed to run batch prediction')
+                resp = resp.to_dict('split')
+                return JSONResponse(resp)
+            except Exception as e:
+                logger.error("Failed to run batch_predict: {}".format(str(e)))
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
@@ -153,7 +156,24 @@ def convert_batch_input(form):
     return files, data
 
 
-def run_server(model_path, host, port):
+def run_server(
+        model_path: str,
+        host: str,
+        port: int
+) -> None:
+    """
+    Loads a pre-trained model and serve it on an http server.
+
+    # Inputs
+
+    :param model_path: (str) filepath to pre-trained model.
+    :param host: (str, default: `0.0.0.0`) host ip address for the server to use.
+    :param port: (int, default: `8000`) port number for the server to use.
+
+    # Return
+
+    :return: (`None`)
+    """
     model = LudwigModel.load(model_path)
     app = server(model)
     uvicorn.run(app, host=host, port=port)

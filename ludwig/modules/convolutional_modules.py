@@ -16,21 +16,13 @@
 import logging
 
 import tensorflow as tf
-from tensorflow import math
-from tensorflow import squeeze
+from tensorflow import math, squeeze
 from tensorflow.keras.initializers import VarianceScaling
-from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import AveragePooling1D
-from tensorflow.keras.layers import AveragePooling2D
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import Conv1D
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Layer
-from tensorflow.keras.layers import LayerNormalization
-from tensorflow.keras.layers import MaxPool1D
-from tensorflow.keras.layers import MaxPool2D
-from tensorflow.keras.layers import ZeroPadding2D
+from tensorflow.keras.layers import (Activation, AveragePooling1D,
+                                     AveragePooling2D, BatchNormalization,
+                                     Conv1D, Conv2D, Dropout, Layer,
+                                     LayerNormalization, MaxPool1D, MaxPool2D,
+                                     ZeroPadding2D)
 
 logger = logging.getLogger(__name__)
 
@@ -618,7 +610,7 @@ class Conv2DStack(Layer):
             default_dilation_rate=(1, 1),
             default_use_bias=True,
             default_weights_initializer='glorot_uniform',
-            defaultbias_initializer='zeros',
+            default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
             default_activity_regularizer=None,
@@ -668,7 +660,7 @@ class Conv2DStack(Layer):
             if 'weights_initializer' not in layer:
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
-                layer['bias_initializer'] = defaultbias_initializer
+                layer['bias_initializer'] = default_bias_initializer
             if 'weights_regularizer' not in layer:
                 layer['weights_regularizer'] = default_weights_regularizer
             if 'bias_regularizer' not in layer:
@@ -1217,7 +1209,7 @@ def get_resnet_block_sizes(resnet_size):
         raise ValueError(err)
 
 # ################################################################################
-# # ResNet block definitions.
+# # ResNet block configs.
 # ################################################################################
 # def resnet_block(inputs, filters, is_training, projection_shortcut, strides,
 #                  regularizer=None, batch_norm_momentum=0.9,

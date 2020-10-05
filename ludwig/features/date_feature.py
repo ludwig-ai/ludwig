@@ -58,7 +58,7 @@ class DateFeatureMixin(object):
                 'Error parsing date: {}. '
                 'Please provide a datetime format that parses it '
                 'in the preprocessing section of the date feature '
-                'in the model definition. '
+                'in the config. '
                 'The preprocessing fill in value will be used.'
                 'For more details: '
                 'https://ludwig.ai/user_guide/#date-features-preprocessing'
@@ -138,7 +138,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         return DATE_VECTOR_LENGTH,
 
     @staticmethod
-    def update_model_definition_with_metadata(
+    def update_config_with_metadata(
             input_feature,
             feature_metadata,
             *args,

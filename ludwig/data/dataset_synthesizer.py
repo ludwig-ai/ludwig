@@ -21,14 +21,21 @@ import random
 import string
 import sys
 import uuid
+from typing import List
 
 import numpy as np
 import yaml
 
-from ludwig.constants import VECTOR, TYPE, NAME
+from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE,
+                              NAME, NUMERICAL, PREPROCESSING, SEQUENCE, SET,
+                              TEXT, TIMESERIES, TYPE, VECTOR)
+from ludwig.contrib import contrib_command, contrib_import
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +96,7 @@ def return_none(feature):
 
 
 def assign_vocab(feature):
-    feature['idx2str'] = build_vocab(feature['vocab_size'])
+    feature['idx2str'] = build_vocab(feature.get('vocab_size', 10))
 
 
 def build_feature_parameters(features):
@@ -121,7 +128,42 @@ parameters_builders_registry = {
 }
 
 
-def build_synthetic_dataset(dataset_size, features):
+def build_synthetic_dataset(dataset_size: int, features: List[dict]):
+    """Symthesizes a dataset for testing purposes
+
+    :param dataset_size: (int) size of the dataset
+    :param features: (List[dict]) list of features to generate in YAML format.
+        Provide a list contaning one dictionary for each feature,
+        each dictionary must include a name, a type
+        and can include some generation parameters depending on the type
+
+    Example content for features:
+
+    [
+        {name: text_1, type: text, vocab_size: 20, max_len: 20},
+        {name: text_2, type: text, vocab_size: 20, max_len: 20},
+        {name: category_1, type: category, vocab_size: 10},
+        {name: category_2, type: category, vocab_size: 15},
+        {name: numerical_1, type: numerical},
+        {name: numerical_2, type: numerical},
+        {name: binary_1, type: binary},
+        {name: binary_2, type: binary},
+        {name: set_1, type: set, vocab_size: 20, max_len: 20},
+        {name: set_2, type: set, vocab_size: 20, max_len: 20},
+        {name: bag_1, type: bag, vocab_size: 20, max_len: 10},
+        {name: bag_2, type: bag, vocab_size: 20, max_len: 10},
+        {name: sequence_1, type: sequence, vocab_size: 20, max_len: 20},
+        {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20},
+        {name: timeseries_1, type: timeseries, max_len: 20},
+        {name: timeseries_2, type: timeseries, max_len: 20},
+        {name: date_1, type: date},
+        {name: date_2, type: date},
+        {name: h3_1, type: h3},
+        {name: h3_2, type: h3},
+        {name: vector_1, type: vector},
+        {name: vector_2, type: vector},
+    ]
+    """
     build_feature_parameters(features)
     header = []
     for feature in features:
@@ -153,15 +195,6 @@ def generate_category(feature):
     return random.choice(feature['idx2str'])
 
 
-def generate_text(feature):
-    text = []
-    for _ in range(random.randint(feature['max_len'] -
-                                  int(feature['max_len'] * 0.2),
-                                  feature['max_len'])):
-        text.append(random.choice(feature['idx2str']))
-    return ' '.join(text)
-
-
 def generate_numerical(feature):
     return random.uniform(
         feature['min'] if 'min' in feature else 0,
@@ -175,40 +208,41 @@ def generate_binary(feature):
 
 
 def generate_sequence(feature):
-    length = feature['max_len']
+    length = feature.get('max_len', 10)
     if 'min_len' in feature:
-        length = random.randint(feature['min_len'], feature['max_len'])
-
+        length = random.randint(feature['min_len'], length)
     sequence = [random.choice(feature['idx2str']) for _ in range(length)]
-
     return ' '.join(sequence)
 
 
 def generate_set(feature):
     elems = []
-    for _ in range(random.randint(0, feature['max_len'])):
+    for _ in range(random.randint(0, feature.get('max_len', 3))):
         elems.append(random.choice(feature['idx2str']))
     return ' '.join(list(set(elems)))
 
 
 def generate_bag(feature):
     elems = []
-    for _ in range(random.randint(0, feature['max_len'])):
+    for _ in range(random.randint(0, feature.get('max_len', 3))):
         elems.append(random.choice(feature['idx2str']))
     return ' '.join(elems)
 
 
+def generate_text(feature):
+    length = feature.get('max_len', 10)
+    text = []
+    for _ in range(random.randint(length - int(length * 0.2), length)):
+        text.append(random.choice(feature['idx2str']))
+    return ' '.join(text)
+
+
 def generate_timeseries(feature):
     series = []
-    for _ in range(feature['max_len']):
-        series.append(
-            str(
-                random.uniform(
-                    feature['min'] if 'min' in feature else 0,
-                    feature['max'] if 'max' in feature else 1
-                )
-            )
-        )
+    for _ in range(feature.get('max_len', 10)):
+        series.append(str(
+            random.uniform(feature.get('min', 0), feature.get('max', 1))
+        ))
     return ' '.join(series)
 
 
@@ -223,8 +257,13 @@ def generate_audio(feature):
         )
         sys.exit(-1)
 
-    audio_length = feature['preprocessing']['audio_file_length_limit_in_s']
-    audio_dest_folder = feature['audio_dest_folder']
+    destination_folder = feature.get('destination_folder', 'audio_files')
+    if PREPROCESSING in feature:
+        audio_length = feature[PREPROCESSING].get(
+            'audio_file_length_limit_in_s', 2
+        )
+    else:
+        audio_length = feature.get('audio_file_length_limit_in_s', 1)
     sampling_rate = 16000
     num_samples = int(audio_length * sampling_rate)
     audio = np.sin(np.arange(num_samples) / 100 * 2 * np.pi) * 2 * (
@@ -232,10 +271,10 @@ def generate_audio(feature):
     audio_filename = uuid.uuid4().hex[:10].upper() + '.wav'
 
     try:
-        if not os.path.exists(audio_dest_folder):
-            os.makedirs(audio_dest_folder)
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
 
-        audio_dest_path = os.path.join(audio_dest_folder, audio_filename)
+        audio_dest_path = os.path.join(destination_folder, audio_filename)
         soundfile.write(audio_dest_path, audio, sampling_rate)
 
     except IOError as e:
@@ -258,10 +297,15 @@ def generate_image(feature):
         sys.exit(-1)
 
     # Read num_channels, width, height
-    num_channels = feature['preprocessing']['num_channels']
-    width = feature['preprocessing']['width']
-    height = feature['preprocessing']['height']
-    image_dest_folder = feature['destination_folder']
+    destination_folder = feature.get('destination_folder', 'image_files')
+    if PREPROCESSING in feature:
+        height = feature[PREPROCESSING].get('height', 28)
+        width = feature[PREPROCESSING].get('width', 28)
+        num_channels = feature[PREPROCESSING].get('num_channels', 1)
+    else:
+        height = feature.get('height', 28)
+        width = feature.get('width', 28)
+        num_channels = feature.get('num_channels', 1)
 
     if width <= 0 or height <= 0 or num_channels < 1:
         raise ValueError('Invalid arguments for generating images')
@@ -277,10 +321,10 @@ def generate_image(feature):
 
     # Save the image to disk either in a specified location/new folder
     try:
-        if not os.path.exists(image_dest_folder):
-            os.makedirs(image_dest_folder)
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
 
-        image_dest_path = os.path.join(image_dest_folder, image_filename)
+        image_dest_path = os.path.join(destination_folder, image_filename)
         imsave(image_dest_path, img.astype('uint8'))
 
     except IOError as e:
@@ -305,7 +349,7 @@ def generate_datetime(feature):
             feature['preprocessing']['datetime_format']
         ]
     else:
-        datetime_generation_format = DATETIME_FORMATS[0]
+        datetime_generation_format = next(iter(DATETIME_FORMATS))
 
     y = random.randint(1, 99)
     Y = random.randint(1, 9999)
@@ -335,23 +379,24 @@ def generate_h3(feature):
 def generate_vector(feature):
     # Space delimited string with floating point numbers
     return ' '.join(
-        [str(100 * random.random()) for _ in range(feature['vector_size'])]
+        [str(100 * random.random())
+         for _ in range(feature.get('vector_size', 10))]
     )
 
 
 generators_registry = {
-    'category': generate_category,
-    'text': generate_sequence,
-    'numerical': generate_numerical,
-    'binary': generate_binary,
-    'set': generate_set,
-    'bag': generate_bag,
-    'sequence': generate_sequence,
-    'timeseries': generate_timeseries,
-    'image': generate_image,
-    'audio': generate_audio,
-    'h3': generate_h3,
-    'date': generate_datetime,
+    BINARY: generate_binary,
+    NUMERICAL: generate_numerical,
+    CATEGORY: generate_category,
+    SET: generate_set,
+    BAG: generate_bag,
+    SEQUENCE: generate_sequence,
+    TEXT: generate_sequence,
+    TIMESERIES: generate_timeseries,
+    IMAGE: generate_image,
+    AUDIO: generate_audio,
+    H3: generate_h3,
+    DATE: generate_datetime,
     VECTOR: generate_vector
 
 }
@@ -386,10 +431,69 @@ cyclers_registry = {
     'binary': cycle_binary
 }
 
-if __name__ == '__main__':
+
+def cli_synthesize_dataset(
+        dataset_size: int,
+        features: List[dict],
+        output_path: str
+) -> None:
+    """Symthesizes a dataset for testing purposes
+
+    :param dataset_size: (int) size of the dataset
+    :param features: (List[dict]) list of features to generate in YAML format.
+        Provide a list contaning one dictionary for each feature,
+        each dictionary must include a name, a type
+        and can include some generation parameters depending on the type
+    :param output_path: (str) path where to save the output CSV file
+
+    Example content for features:
+
+    [
+        {name: text_1, type: text, vocab_size: 20, max_len: 20},
+        {name: text_2, type: text, vocab_size: 20, max_len: 20},
+        {name: category_1, type: category, vocab_size: 10},
+        {name: category_2, type: category, vocab_size: 15},
+        {name: numerical_1, type: numerical},
+        {name: numerical_2, type: numerical},
+        {name: binary_1, type: binary},
+        {name: binary_2, type: binary},
+        {name: set_1, type: set, vocab_size: 20, max_len: 20},
+        {name: set_2, type: set, vocab_size: 20, max_len: 20},
+        {name: bag_1, type: bag, vocab_size: 20, max_len: 10},
+        {name: bag_2, type: bag, vocab_size: 20, max_len: 10},
+        {name: sequence_1, type: sequence, vocab_size: 20, max_len: 20},
+        {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20},
+        {name: timeseries_1, type: timeseries, max_len: 20},
+        {name: timeseries_2, type: timeseries, max_len: 20},
+        {name: date_1, type: date},
+        {name: date_2, type: date},
+        {name: h3_1, type: h3},
+        {name: h3_2, type: h3},
+        {name: vector_1, type: vector},
+        {name: vector_2, type: vector},
+    ]
+    """
+    if dataset_size is None or features is None or output_path is None:
+        raise ValueError(
+            "Missing one or more required parameters: '--daset_size', "
+            "'--features' or '--output_path'"
+        )
+    dataset = build_synthetic_dataset(dataset_size, features)
+    save_csv(output_path, dataset)
+
+
+def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script generates a synthetic dataset.')
-    parser.add_argument('csv_file_path', help='output csv file path')
+        description='This script generates a synthetic dataset.',
+        prog='ludwig synthesize_dataset',
+        usage='%(prog)s [options]'
+    )
+    parser.add_argument(
+        '-od',
+        '--output_path',
+        type=str,
+        help='output CSV file path'
+    )
     parser.add_argument(
         '-d',
         '--dataset_size',
@@ -417,10 +521,37 @@ if __name__ == '__main__':
           {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20}, \
           {name: timeseries_1, type: timeseries, max_len: 20}, \
           {name: timeseries_2, type: timeseries, max_len: 20}, \
-          ]',
-        type=yaml.safe_load, help='dataset features'
+          {name: date_1, type: date}, \
+          {name: date_2, type: date}, \
+          {name: h3_1, type: h3}, \
+          {name: h3_2, type: h3}, \
+          {name: vector_1, type: vector}, \
+          {name: vector_2, type: vector}, \
+        ]',
+        type=yaml.safe_load,
+        help='list of features to generate in YAML format. '
+             'Provide a list containing one dictionary for each feature, '
+             'each dictionary must include a name, a type '
+             'and can include some generation parameters depending on the type'
     )
-    args = parser.parse_args()
+    args = parser.parse_args(sys_argv)
 
-    dataset = build_synthetic_dataset(args.dataset_size, args.features)
-    save_csv(args.csv_file_path, dataset)
+    # No log level parameter this is placeholder if we add at later date
+    # args.logging_level = logging_level_registry[args.logging_level]
+    # logging.getLogger('ludwig').setLevel(
+    #     args.logging_level
+    # )
+    # global logger
+    # logger = logging.getLogger('ludwig.data.dataset_synthesizer')
+
+
+    if is_on_master():
+        print_ludwig('Synthesize Dataset', LUDWIG_VERSION)
+
+    cli_synthesize_dataset(**vars(args))
+
+
+if __name__ == '__main__':
+    contrib_import()
+    contrib_command("synthesize_dataset", *sys.argv)
+    cli(sys.argv[1:])

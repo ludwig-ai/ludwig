@@ -16,7 +16,7 @@
 import inspect
 import logging
 
-from tensorflow.keras.layers import SimpleRNN, GRU, LSTM, Bidirectional, Layer
+from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
 
 from ludwig.utils.misc_utils import get_from_registry
 

@@ -234,7 +234,7 @@ def audio_feature(folder, **kwargs):
             }
         ],
         'fc_size': 256,
-        'audio_dest_folder': folder
+        'destination_folder': folder
     }
     feature.update(kwargs)
     return feature
@@ -315,11 +315,11 @@ def run_experiment(input_features, output_features, **kwargs):
     arguments
     :return: None
     """
-    model_definition = None
+    config = None
     if input_features is not None and output_features is not None:
         # This if is necessary so that the caller can call with
-        # model_definition_file (and not model_definition)
-        model_definition = {
+        # config_file (and not config)
+        config = {
             'input_features': input_features,
             'output_features': output_features,
             'combiner': {
@@ -330,7 +330,7 @@ def run_experiment(input_features, output_features, **kwargs):
         }
 
     args = {
-        'model_definition': model_definition,
+        'config': config,
         'skip_save_processed_input': True,
         'skip_save_progress': True,
         'skip_save_unprocessed_output': True,

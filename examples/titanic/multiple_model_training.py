@@ -26,7 +26,7 @@ for model_id in list_of_model_ids:
     print('>>>> training: ', model_id)
 
     # Define Ludwig model object that drive model training
-    model = LudwigModel(model_definition='./' + model_id + '_definition.yaml',
+    model = LudwigModel(config='./' + model_id + '_config.yaml',
                         logging_level=logging.WARN)
 
     # initiate model training

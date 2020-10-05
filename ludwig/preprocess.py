@@ -17,7 +17,7 @@
 import argparse
 import logging
 import sys
-from typing import List, Union
+from typing import Union
 
 import pandas as pd
 import yaml
@@ -26,39 +26,25 @@ from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import is_on_master, set_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import check_which_config
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
-def train_cli(
-        config: dict = None,
-        config_file: str = None,
+def preprocess_cli(
+        preprocessing_config: dict = None,
+        preprocessing_config_file: str = None,
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
         test_set: Union[str, dict, pd.DataFrame] = None,
         training_set_metadata: Union[str, dict] = None,
         data_format: str = None,
-        experiment_name: str = 'api_experiment',
-        model_name: str = 'run',
-        model_load_path: str = None,
-        model_resume_path: str = None,
-        skip_save_training_description: bool = False,
-        skip_save_training_statistics: bool = False,
-        skip_save_model: bool = False,
-        skip_save_progress: bool = False,
-        skip_save_log: bool = False,
-        skip_save_processed_input: bool = False,
-        output_directory: str = 'results',
-        gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
-        allow_parallel_threads: bool = True,
-        use_horovod: bool = None,
         random_seed: int = default_random_seed,
-        logging_level: int =logging.INFO,
+        logging_level: int = logging.INFO,
         debug: bool = False,
         **kwargs
 ) -> None:
@@ -155,37 +141,23 @@ def train_cli(
 
     :return: (`None`)
     """
-    config = check_which_config(config,
-                                config_file)
+    preprocessing_config = check_which_config(
+        preprocessing_config,
+        preprocessing_config_file
+    )
 
-    if model_load_path:
-        model = LudwigModel.load(model_load_path)
-    else:
-        model = LudwigModel(
-            config=config,
-            logging_level=logging_level,
-            use_horovod=use_horovod,
-            gpus=gpus,
-            gpu_memory_limit=gpu_memory_limit,
-            allow_parallel_threads=allow_parallel_threads,
-        )
-    model.train(
+    model = LudwigModel(
+        config=preprocessing_config,
+        logging_level=logging_level,
+    )
+    model.preprocess(
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
         test_set=test_set,
         training_set_metadata=training_set_metadata,
         data_format=data_format,
-        experiment_name=experiment_name,
-        model_name=model_name,
-        model_resume_path=model_resume_path,
-        skip_save_training_description=skip_save_training_description,
-        skip_save_training_statistics=skip_save_training_statistics,
-        skip_save_model=skip_save_model,
-        skip_save_progress=skip_save_progress,
-        skip_save_log=skip_save_log,
-        skip_save_processed_input=skip_save_processed_input,
-        output_directory=output_directory,
+        skip_save_processed_input=False,
         random_seed=random_seed,
         debug=debug,
     )
@@ -193,31 +165,9 @@ def train_cli(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script trains a model',
-        prog='ludwig train',
+        description='This script preprocess a dataset',
+        prog='ludwig preprocess',
         usage='%(prog)s [options]'
-    )
-
-    # ----------------------------
-    # Experiment naming parameters
-    # ----------------------------
-    parser.add_argument(
-        '--output_directory',
-        type=str,
-        default='results',
-        help='directory that contains the results'
-    )
-    parser.add_argument(
-        '--experiment_name',
-        type=str,
-        default='experiment',
-        help='experiment name'
-    )
-    parser.add_argument(
-        '--model_name',
-        type=str,
-        default='run',
-        help='name for the model'
     )
 
     # ---------------
@@ -253,84 +203,27 @@ def cli(sys_argv):
                  'spss', 'stata', 'tsv']
     )
 
-    parser.add_argument(
-        '-sspi',
-        '--skip_save_processed_input',
-        help='skips saving intermediate HDF5 and JSON files',
-        action='store_true',
-        default=False
-    )
-
     # ----------------
     # Model parameters
     # ----------------
-    config = parser.add_mutually_exclusive_group(required=True)
-    config.add_argument(
-        '-c',
-        '--config',
+    preprocessing_def = parser.add_mutually_exclusive_group(required=True)
+    preprocessing_def.add_argument(
+        '-pd',
+        '--preprocessing_config',
         type=yaml.safe_load,
-        help='config'
+        help='preproceesing config. '
+             'Uses the same format of config, '
+             'but ignores encoder specific parameters, '
+             'decoder specific paramters, combiner and training parameters'
     )
-    config.add_argument(
-        '-cf',
-        '--config_file',
-        help='YAML file describing the model. Ignores --config'
-    )
-
-    parser.add_argument(
-        '-mlp',
-        '--model_load_path',
-        help='path of a pretrained model to load as initialization'
-    )
-    parser.add_argument(
-        '-mrp',
-        '--model_resume_path',
-        help='path of a the model directory to resume training of'
-    )
-    parser.add_argument(
-        '-sstd',
-        '--skip_save_training_description',
-        action='store_true',
-        default=False,
-        help='disables saving the description JSON file'
-    )
-    parser.add_argument(
-        '-ssts',
-        '--skip_save_training_statistics',
-        action='store_true',
-        default=False,
-        help='disables saving training statistics JSON file'
-    )
-    parser.add_argument(
-        '-ssm',
-        '--skip_save_model',
-        action='store_true',
-        default=False,
-        help='disables saving weights each time the model imrpoves. '
-             'By default Ludwig saves  weights after each epoch '
-             'the validation metric imrpvoes, but  if the model is really big '
-             'that can be time consuming if you do not want to keep '
-             'the weights and just find out what performance can a model get '
-             'with a set of hyperparameters, use this parameter to skip it'
-    )
-    parser.add_argument(
-        '-ssp',
-        '--skip_save_progress',
-        action='store_true',
-        default=False,
-        help='disables saving weights after each epoch. By default ludwig saves '
-             'weights after each epoch for enabling resuming of training, but '
-             'if the model is really big that can be time consuming and will '
-             'save twice as much space, use this parameter to skip it'
-    )
-    parser.add_argument(
-        '-ssl',
-        '--skip_save_log',
-        action='store_true',
-        default=False,
-        help='disables saving TensorBoard logs. By default Ludwig saves '
-             'logs for the TensorBoard, but if it is not needed turning it off '
-             'can slightly increase the overall speed'
+    preprocessing_def.add_argument(
+        '-pcf',
+        '--preprocessing_config_file',
+        help='YAML file describing the preprocessing. '
+             'Ignores --preprocessing_config.'
+             'Uses the same format of config, '
+             'but ignores encoder specific parameters, '
+             'decoder specific paramters, combiner and training parameters'
     )
 
     # ------------------
@@ -344,35 +237,6 @@ def cli(sys_argv):
         help='a random seed that is going to be used anywhere there is a call '
              'to a random number generator: data splitting, parameter '
              'initialization and training set shuffling'
-    )
-    parser.add_argument(
-        '-g',
-        '--gpus',
-        nargs='+',
-        type=int,
-        default=None,
-        help='list of gpus to use'
-    )
-    parser.add_argument(
-        '-gml',
-        '--gpu_memory_limit',
-        type=int,
-        default=None,
-        help='maximum memory in MB to allocate per GPU device'
-    )
-    parser.add_argument(
-        '-dpt',
-        '--disable_parallel_threads',
-        action='store_false',
-        dest='allow_parallel_threads',
-        help='disable TensorFlow from using multithreading for reproducibility'
-    )
-    parser.add_argument(
-        '-uh',
-        '--use_horovod',
-        action='store_true',
-        default=None,
-        help='uses horovod for distributed training'
     )
     parser.add_argument(
         '-dbg',
@@ -395,17 +259,15 @@ def cli(sys_argv):
         args.logging_level
     )
     global logger
-    logger = logging.getLogger('ludwig.train')
-
-    set_on_master(args.use_horovod)
+    logger = logging.getLogger('ludwig.preprocess')
 
     if is_on_master():
-        print_ludwig('Train', LUDWIG_VERSION)
+        print_ludwig('Preprocess', LUDWIG_VERSION)
 
-    train_cli(**vars(args))
+    preprocess_cli(**vars(args))
 
 
 if __name__ == '__main__':
     contrib_import()
-    contrib_command("train", *sys.argv)
+    contrib_command("preprocess", *sys.argv)
     cli(sys.argv[1:])
