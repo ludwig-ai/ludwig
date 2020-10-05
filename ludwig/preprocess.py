@@ -217,7 +217,7 @@ def cli(sys_argv):
              'decoder specific paramters, combiner and training parameters'
     )
     preprocessing_def.add_argument(
-        '-mdf',
+        '-pcf',
         '--preprocessing_config_file',
         help='YAML file describing the preprocessing. '
              'Ignores --preprocessing_config.'

@@ -266,13 +266,13 @@ def cli(sys_argv):
     # ----------------
     config = parser.add_mutually_exclusive_group(required=True)
     config.add_argument(
-        '-md',
+        '-c',
         '--config',
         type=yaml.safe_load,
         help='config'
     )
     config.add_argument(
-        '-mdf',
+        '-cf',
         '--config_file',
         help='YAML file describing the model. Ignores --config'
     )
