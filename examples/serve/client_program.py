@@ -32,6 +32,3 @@ else:
         '\nError during predictions, error code: ', r.status_code,
         'reason code: ', r.text
     )
-
-
-
