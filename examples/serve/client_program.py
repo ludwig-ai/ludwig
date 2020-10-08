@@ -11,16 +11,16 @@ prediction_request_json = test_df.to_json(orient='split')
 # execute REST API /batch_predict
 print('\ninvoking REST API /batch_predict...')
 # connect using the default host address and port number
-r = requests.post(
+response = requests.post(
     'http://0.0.0.0:8000/batch_predict',
     data={'dataset': prediction_request_json}
 )
 
 # check if REST API worked
-if r.status_code == 200:
+if response.status_code == 200:
     # REST API successful
     # convert JSON response to panda dataframe
-    pred_df = pd.read_json(r.text, orient='split')
+    pred_df = pd.read_json(response.text, orient='split')
 
     print('\nReceived {:d} predictions'.format(pred_df.shape[0]))
     print('Sample predictions:')
