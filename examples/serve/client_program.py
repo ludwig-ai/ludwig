@@ -24,7 +24,7 @@ prediction_request_dict_list = test_df.head(1).to_dict(orient='records')
 # extract dictionary for the single record only
 prediction_request_dict = prediction_request_dict_list[0]
 
-print('single record for prediciton:\n', prediction_request_dict)
+print('single record for prediction:\n', prediction_request_dict)
 
 # construct URL
 predict_url = ''.join(['http://', LUDWIG_HOST, ':', LUDWIG_PORT, '/predict'])
@@ -32,7 +32,7 @@ predict_url = ''.join(['http://', LUDWIG_HOST, ':', LUDWIG_PORT, '/predict'])
 print('\ninvoking REST API /predict for single record...')
 # connect using the default host address and port number
 try:
-    r = requests.post(
+    response = requests.post(
         predict_url,
         data=prediction_request_dict
     )
@@ -43,10 +43,10 @@ except requests.exceptions.ConnectionError as e:
 
 
 # check if REST API worked
-if r.status_code == 200:
+if response.status_code == 200:
     # REST API successful
     # convert JSON response to panda dataframe
-    pred_df = pd.read_json('[' + r.text + ']', orient='records')
+    pred_df = pd.read_json('[' + response.text + ']', orient='records')
 
     print('\nReceived {:d} predictions'.format(pred_df.shape[0]))
     print('Sample predictions:')
@@ -55,8 +55,8 @@ if r.status_code == 200:
 else:
     # Error encountered during REST API processing
     print(
-        '\nError during predictions, error code: ', r.status_code,
-        'reason code: ', r.text
+        '\nError during predictions, error code: ', response.status_code,
+        'reason code: ', response.text
     )
 
 #
@@ -74,11 +74,11 @@ batch_predict_url = ''.join(['http://', LUDWIG_HOST, ':', LUDWIG_PORT,
 
 # connect using the default host address and port number
 response = requests.post(
-    'http://0.0.0.0:8000/batch_predict',
+    batch_predict_url,
     data={'dataset': prediction_request_json}
 )
 try:
-    r = requests.post(
+    response = requests.post(
         batch_predict_url,
         data={'dataset': prediction_request_json}
     )
@@ -101,6 +101,6 @@ if response.status_code == 200:
 else:
     # Error encountered during REST API processing
     print(
-        '\nError during predictions, error code: ', r.status_code,
-        'reason code: ', r.text
+        '\nError during predictions, error code: ', response.status_code,
+        'reason code: ', response.text
     )

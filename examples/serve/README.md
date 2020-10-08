@@ -1,8 +1,13 @@
 # Ludwig Model Serve Example
 
-This example show Ludwig's http model serving capability.
-The example shows how to start Ludwig's model server with a pre-trained model.
-A simple client program illustrates how to invoke the REST API to retrieve predictions for the provided input features.
+This example shows Ludwig's http model serving capability, which is able to load a pre-trained Ludwig model and respond to REST APIs for predictions.
+A simple client program illustrates how to invoke the REST API to retrieve predictions for provided input features.  The two REST APIs covered by this example:
+
+|REST API|Description|
+|--------|-----------|
+|`/predict`|Single record prediction|
+|`/batch_predict`|Prediction for batch of records|
+
 
 ### Preparatory Steps
 
