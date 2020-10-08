@@ -1,6 +1,11 @@
 # Ludwig Model Serve Example
 
-This example show Ludwig's http model serving capability.  The example shows how to start Ludwig's model server with a pre-trained model.  A simple client program illustrates how to invoke the REST API to retrieve predictions for the provided input features.
+This example show Ludwig's http model serving capability.  The example shows how to start Ludwig's model server with a pre-trained model.  A simple client program illustrates how to invoke the REST API to retrieve predictions for the provided input features:
+
+|REST API|Description|
+|--------|-----------|
+|`/predict`|Single record prediction|
+|`/batch_predict`|Prediction for batch of records|
 
 ### Preparatory Steps
 
@@ -61,8 +66,17 @@ python client_program.py
 Output should look like this
 ``` 
 retrieved 418 records for predictions
+single record for prediciton:
+ {'PassengerId': 892, 'Pclass': 3, 'Name': 'Kelly, Mr. James', 'Sex': 'male', 'Age': 34.5, 'SibSp': 0, 'Parch': 0, 'Ticket': '330911', 'Fare': 7.8292, 'Cabin': nan, 'Embarked': 'Q'}
 
-invoking REST API /batch_predict...
+invoking REST API /predict for single record...
+
+Received 1 predictions
+Sample predictions:
+   Survived_predictions  Survived_probabilities
+0                 False                0.257691
+
+invoking REST API /batch_predict for entire dataframe...
 
 Received 418 predictions
 Sample predictions:
