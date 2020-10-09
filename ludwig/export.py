@@ -92,8 +92,8 @@ def export_tflite(
         f.write(tflite_model)
 
     # Remove temporary savedmodel
-    shutil.rmtree(os.path.join(output_path, 'assets'))
-    shutil.rmtree(os.path.join(output_path, 'variables'))
+    shutil.rmtree(os.path.join(output_path, 'assets'), ignore_errors=True)
+    shutil.rmtree(os.path.join(output_path, 'variables'), ignore_errors=True)
     os.remove(os.path.join(output_path, 'saved_model.pb'))
 
     logger.info('Saved to: {0}'.format(output_path))
