@@ -18,6 +18,7 @@ import argparse
 import logging
 import os
 import sys
+import tensorflow as tf
 
 from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command
@@ -52,6 +53,42 @@ def export_savedmodel(
     model = LudwigModel.load(model_path)
     os.makedirs(output_path, exist_ok=True)
     model.save_savedmodel(output_path)
+
+    logger.info('Saved to: {0}'.format(output_path))
+
+
+def export_tflite(
+        model_path: str,
+        output_path: str = 'tflite',
+        **kwargs
+) -> None:
+    """Exports a model to TFLite
+
+    # Inputs
+
+    :param model_path: (str) filepath to pre-trained model.
+    :param output_path: (str, default: `'tflite'`) directory to store the
+        TFLite
+
+    # Return
+    :returns: (`None`)
+    """
+    logger.info('Model path: {}'.format(model_path))
+    logger.info('Output path: {}'.format(output_path))
+    logger.info('\n')
+
+    # Temporarily export a savedmodel
+    model = LudwigModel.load(model_path)
+    os.makedirs(output_path, exist_ok=True)
+    model.save_savedmodel(output_path)
+
+    # Convert the model
+    converter = tf.lite.TFLiteConverter.from_saved_model(output_path)  # path to the SavedModel directory
+    tflite_model = converter.convert()
+
+    # Save the model.
+    with open(os.path.join(output_path, 'model.tflite'), 'wb') as f:
+        f.write(tflite_model)
 
     logger.info('Saved to: {0}'.format(output_path))
 
@@ -137,6 +174,60 @@ def cli_export_savedmodel(sys_argv):
     print_ludwig('Export SavedModel', LUDWIG_VERSION)
 
     export_savedmodel(**vars(args))
+
+
+def cli_export_tflite(sys_argv):
+    parser = argparse.ArgumentParser(
+        description='This script loads a pretrained model '
+                    'and saves it as a TFLite.',
+        prog='ludwig export_tflite',
+        usage='%(prog)s [options]'
+    )
+
+    # ----------------
+    # Model parameters
+    # ----------------
+    parser.add_argument(
+        '-m',
+        '--model_path',
+        help='model to load',
+        required=True
+    )
+
+    # -----------------
+    # Output parameters
+    # -----------------
+    parser.add_argument(
+        '-od',
+        '--output_path',
+        type=str,
+        help='path where to save the export model',
+        required=True
+    )
+
+    # ------------------
+    # Runtime parameters
+    # ------------------
+    parser.add_argument(
+        '-l',
+        '--logging_level',
+        default='info',
+        help='the level of logging to use',
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+    )
+
+    args = parser.parse_args(sys_argv)
+
+    args.logging_level = logging_level_registry[args.logging_level]
+    logging.getLogger('ludwig').setLevel(
+        args.logging_level
+    )
+    global logger
+    logger = logging.getLogger('ludwig.export')
+
+    print_ludwig('Export TFLite', LUDWIG_VERSION)
+
+    export_tflite(**vars(args))
 
 
 def cli_export_neuropod(sys_argv):
