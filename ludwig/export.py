@@ -18,7 +18,6 @@ import argparse
 import logging
 import os
 import sys
-import tensorflow as tf
 import shutil
 
 from ludwig.api import LudwigModel
@@ -27,6 +26,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.neuropod_utils import \
     export_neuropod as utils_export_neuropod
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from tensorflow import lite as tflite
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ def export_tflite(
     model.save_savedmodel(output_path)
 
     # Convert the model
-    converter = tf.lite.TFLiteConverter.from_saved_model(output_path)  # path to the SavedModel directory
+    converter = tflite.TFLiteConverter.from_saved_model(output_path)  # path to the SavedModel directory
     tflite_model = converter.convert()
 
     # Save the model.
