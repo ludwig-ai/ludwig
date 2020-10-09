@@ -2,21 +2,39 @@ import csv
 import pandas as pd
 from typing import Dict
 from ludwig.datasets.base_dataset import BaseDataset
+import shutil
+import os
 
 
 """A class to process the Reuters training data"""
+import yaml
 
 
 class Reuters(BaseDataset):
+
+    def __init__(self):
+        self.__initial_path = os.path.abspath(os.path.dirname(__file__))
+        self.__source_location =  os.path.join(self.__initial_path , "../text/reuters/reuters-allcats.csv")
+        self.__cache_location = os.path.join(self.__initial_path, "../../../.ludwig_cache/")
+        self.__config_file_path = os.path.join(self.__initial_path , "../text/versions.yaml")
+        with open(self.__config_file_path) as config_file:
+            self.__config_file_contents = yaml.load(config_file, Loader=yaml.FullLoader)
+        cur_version = self.__config_file_contents["text"]["reuters"]
+        self.__dest_location = self.__cache_location + "reuters_" + str(cur_version) + ".csv"
+        self.__result_dict={}
 
     """Download the raw data to the ludwig cache in the format ~/.ludwig_cache/id
     where is is represented by the name.version of the dataset
     args:
         self (BaseDataset): A pointer to the current class
         dataset_name: The name of the dataset we need to retrieve
+    return:
+        true or false depending on whether the file exists in the new location
     """
-    def download(self, dataset_name) -> None:
-        pass
+    def download(self, dataset_name) -> bool:
+        shutil.copy(self.__source_location, self.__dest_location)
+        return os.path.isfile(self.__dest_location)
+
 
     """Process the dataset to get it ready to be plugged into a dataframe
        in the manner needed by the ludwig training API
@@ -24,10 +42,22 @@ class Reuters(BaseDataset):
            self (BaseDataset): A handle to the current class
            dict_reader (csv.DictReader): a pointer to a dictionary that can be read
        :returns:
-           a pandas dataframe
+           a dictionary containing KV pairs in the format of the training data
     """
-    def process(self, dict_reader: csv.DictReader) -> Dict:
-        return {}
+    def process(self) -> Dict:
+        result = os.path.isfile(self.__dest_location)
+        if result != True:
+            self.download("ohsumed")
+        dict_reader = csv.DictReader(open(self.__dest_location))
+        value_to_store = None
+        for row in dict_reader:
+            for key, value in row.items():
+                if key == "class":
+                    value_to_store = value
+                else:
+                    key_to_store = value
+                    self.__result_dict[key_to_store] = value_to_store
+        return self.__result_dict
 
     """Now that the data is processed load and return it as a pandas dataframe
      Args:
@@ -36,5 +66,8 @@ class Reuters(BaseDataset):
           A pandas DataFrame
     """
     def load(self) -> pd.DataFrame:
-       return pd.DataFrame()
-
+       result = os.path.isfile(self.__dest_location)
+       if result != True:
+            self.download("reuters")
+       processed_result = self.process()
+       return pd.DataFrame(list(processed_result.items()), columns=['text', 'class'])

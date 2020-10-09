@@ -1,5 +1,5 @@
 import abc
-import csv
+from typing import Dict
 import pandas as pd
 
 
@@ -28,7 +28,7 @@ class BaseDataset(metaclass=abc.ABCMeta):
            a pandas dataframe
     """
     @abc.abstractmethod
-    def process(self, dict_reader: csv.DictReader) -> pd.DataFrame:
+    def process(self) -> Dict:
         raise NotImplementedError("You will need to implement the method to process the training data")
 
     """Now that the data is processed load and return it as a pandas dataframe

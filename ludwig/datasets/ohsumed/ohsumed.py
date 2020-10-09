@@ -9,6 +9,7 @@ import os
 """A class to process the ohsumed training data"""
 import yaml
 
+
 class OhsuMed(BaseDataset):
 
     def __init__(self):
@@ -18,6 +19,8 @@ class OhsuMed(BaseDataset):
         self.__config_file_path = os.path.join(self.__initial_path , "../text/versions.yaml")
         with open(self.__config_file_path) as config_file:
             self.__config_file_contents = yaml.load(config_file, Loader=yaml.FullLoader)
+        cur_version = self.__config_file_contents["text"]["ohsumed"]
+        self.__dest_location = self.__cache_location + "ohsumed_" + str(cur_version) + ".csv"
         self.__result_dict={}
 
     """Download the raw data to the ludwig cache in the format ~/.ludwig_cache/id
@@ -29,8 +32,6 @@ class OhsuMed(BaseDataset):
         true or false depending on whether the file exists in the new location
     """
     def download(self, dataset_name) -> bool:
-        cur_version = self.__config_file_contents["text"]["ohsumed"]
-        self.__dest_location = self.__cache_location+"ohsumed_"+str(cur_version)+".csv"
         shutil.copy(self.__source_location, self.__dest_location)
         return os.path.isfile(self.__dest_location)
 
@@ -43,10 +44,11 @@ class OhsuMed(BaseDataset):
        :returns:
            a dictionary containing KV pairs in the format of the training data
     """
-    def process(self, dict_reader: csv.DictReader) -> Dict:
+    def process(self) -> Dict:
+        result = os.path.isfile(self.__dest_location)
+        if result != True:
+            self.download("ohsumed")
         dict_reader = csv.DictReader(open(self.__dest_location))
-        if dict_reader is None:
-            raise FileNotFoundError("The file " + self.__dest_location + " was not found, please retry with a valid file")
         value_to_store = None
         for row in dict_reader:
             for key, value in row.items():
@@ -64,5 +66,9 @@ class OhsuMed(BaseDataset):
           A pandas DataFrame
     """
     def load(self) -> pd.DataFrame:
-       return pd.DataFrame(list(self.__result_dict.items()), columns=['text', 'class'])
+       result = os.path.isfile(self.__dest_location)
+       if result != True:
+            self.download("ohsumed")
+       processed_result = self.process()
+       return pd.DataFrame(list(processed_result.items()), columns=['text', 'class'])
 
