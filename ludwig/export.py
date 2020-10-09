@@ -19,6 +19,7 @@ import logging
 import os
 import sys
 import tensorflow as tf
+import shutil
 
 from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command
@@ -89,6 +90,11 @@ def export_tflite(
     # Save the model.
     with open(os.path.join(output_path, 'model.tflite'), 'wb') as f:
         f.write(tflite_model)
+
+    # Remove temporary savedmodel
+    shutil.rmtree(os.path.join(output_path, 'assets'))
+    shutil.rmtree(os.path.join(output_path, 'variables'))
+    os.remove(os.path.join(output_path, 'saved_model.pb'))
 
     logger.info('Saved to: {0}'.format(output_path))
 
