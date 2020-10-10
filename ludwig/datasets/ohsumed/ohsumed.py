@@ -12,9 +12,9 @@ from ludwig.datasets.base_dataset import BaseDataset
 class OhsuMed(BaseDataset):
 
     def __init__(self):
-        self.__initial_path = os.path.abspath(os.path.dirname(__file__))
-        self._config_file_location = os.path.join(self.__initial_path, "../text/versions.yaml")
-        self._source_location = os.path.join(self.__initial_path, "../text/ohsumed/ohsumed-allcats.csv")
+        self._initial_path = os.path.abspath(os.path.dirname(__file__))
+        self._config_file_location = os.path.join(self._initial_path, "../text/versions.yaml")
+        self._source_location = os.path.join(self._initial_path, "../text/ohsumed/ohsumed-allcats.csv")
         self._cache_dir = str(Path.home().joinpath('.ludwig_cache'))
         if not os.path.exists(self._cache_dir):
             os.makedirs(self._cache_dir)
