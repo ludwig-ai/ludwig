@@ -19,7 +19,8 @@ install:
     if [ $TENSORFLOW == "nightly" ]; then
       cat requirements.txt | sed '/^tensorflow[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
       cat requirements_horovod.txt | sed 's/\[tensorflow\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
-      pip install tf-nightly==2.4.0.dev20201002
+      pip install tf-nightly
+      HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
     else
       pip install tensorflow==$TENSORFLOW
     fi
