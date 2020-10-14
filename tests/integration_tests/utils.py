@@ -331,15 +331,21 @@ def run_experiment(input_features, output_features, **kwargs):
 
     args = {
         'config': config,
+        'skip_save_training_description': True,
+        'skip_save_training_statistics': True,
         'skip_save_processed_input': True,
         'skip_save_progress': True,
         'skip_save_unprocessed_output': True,
         'skip_save_model': True,
+        'skip_save_predictions': True,
+        'skip_save_eval_stats': True,
+        'skip_collect_predictions': True,
+        'skip_collect_overall_stats': True,
         'skip_save_log': True
     }
     args.update(kwargs)
 
-    exp_dir_name = experiment_cli(**args)
+    _, _, _, _, exp_dir_name = experiment_cli(**args)
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
