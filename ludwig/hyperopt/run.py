@@ -176,7 +176,7 @@ def hyperopt(
     # check validity of output_feature / metric/ split combination
     ######################
     if split == TRAINING:
-        if not training_set and (
+        if training_set is None and (
                 config['preprocessing']['split_probabilities'][0]
                 <= 0):
             raise ValueError(
@@ -186,7 +186,7 @@ def hyperopt(
                 'of the config is not greater than 0'.format(split)
             )
     elif split == VALIDATION:
-        if not validation_set and (
+        if validation_set is None and (
                 config['preprocessing']['split_probabilities'][1]
                 <= 0):
             raise ValueError(
@@ -196,7 +196,7 @@ def hyperopt(
                 'of the config is not greater than 0'.format(split)
             )
     elif split == TEST:
-        if not test_set and (
+        if test_set is None and (
                 config['preprocessing']['split_probabilities'][2]
                 <= 0):
             raise ValueError(
