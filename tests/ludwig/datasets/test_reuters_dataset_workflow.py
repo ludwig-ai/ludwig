@@ -19,7 +19,6 @@ import yaml
 import unittest
 from pathlib import Path
 from ludwig.datasets.reuters.reuters import Reuters
-from ludwig.datasets.reuters.reuters import load
 
 
 class TestReutersDatasetWorkflow(unittest.TestCase):
@@ -28,29 +27,28 @@ class TestReutersDatasetWorkflow(unittest.TestCase):
         self._reuters_handle = Reuters(None)
         self._initial_path = os.path.abspath(os.path.dirname(__file__))
         self._config_file_location = os.path.join(self._initial_path,
-                                                  "../../../ludwig/datasets/text/dataset_config.yaml")
+                                                  "../../../ludwig/datasets/config/dataset_config.yaml")
         with open(self._config_file_location) as config_file:
             self._config_file_contents = yaml.load(config_file, Loader=yaml.FullLoader)
-        self._cur_version = self._config_file_contents["reuters"]
+        self._dataset_version = self._config_file_contents["reuters"]["version"]
         self._processed_data_path = Path.home().joinpath('.ludwig_cache').joinpath("reuters_"
-                                                                                   + str(self._cur_version)).joinpath(
-            'processed.csv')
+                                                                                   + str(self._dataset_version)) \
+            .joinpath('processed.csv')
 
     def test_download_success(self):
-        self._reuters_handle.download("reuters")
+        self._reuters_handle.download()
         download_path = Path.home().joinpath('.ludwig_cache').joinpath("reuters_"
-                                                                       + str(self._cur_version)).joinpath('raw.csv')
+                                                                       + str(self._dataset_version)).joinpath('raw.csv')
         result = os.path.isfile(download_path)
         assert (result, True)
 
     def test_process_success(self):
         self._reuters_handle.process()
-
         result = os.path.isfile(self._processed_data_path)
         assert (result, True)
 
     def test_load_success(self):
-        transformed_data = load(self._processed_data_path)
+        transformed_data = self._reuters_handle.load()
         first_key = "2 NEW YORK BANK DISCOUNT WINDOW BORROWINGS 64 MLN DLRS IN FEB 25 WEEK Blah blah blah 3  "
         tmp = transformed_data['class'].where(transformed_data['text'] == first_key)
         assert (tmp[16] == 'Neg-')

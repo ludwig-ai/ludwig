@@ -15,72 +15,120 @@
 # limitations under the License.
 # ==============================================================================
 import abc
+import csv
 import os
-from pathlib import Path
 import yaml
+from io import BytesIO
+from pathlib import Path
+from urllib.request import urlopen
 import pandas as pd
+from zipfile import ZipFile
 
 
 """An abstract base class that defines a set of methods for download,
 preprocess and plug data into the ludwig training API"""
 
+# define a default location for the cache
+DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
+
 
 class BaseDataset(metaclass=abc.ABCMeta):
-    def __init__(self, dataset_name):
+
+    def __init__(self, dataset_name, cache_location):
+        self._dataset_name = dataset_name
         self._initial_path = os.path.abspath(os.path.dirname(__file__))
-        self._config_file_location = os.path.join(self._initial_path, "./text/dataset_config.yaml")
+        self._config_file_location = os.path.join(self._initial_path, "./config/dataset_config.yaml")
         with open(self._config_file_location) as config_file:
             self._config_file_contents = yaml.load(config_file, Loader=yaml.FullLoader)
-        self.default_cache_dir = self._config_file_contents["cache_location"]
-        if self.default_cache_dir is None:
-            self._cache_dir = str(Path.home().joinpath('.ludwig_cache'))
+        if cache_location is not None:
+            self._cache_location = cache_location
         else:
-            self._cache_dir = self.default_cache_dir
-        if not os.path.exists(self._cache_dir):
-            os.makedirs(self._cache_dir)
-        self._cur_version = self._config_file_contents[dataset_name]
-        self._download_path = str(Path.home().joinpath('.ludwig_cache').joinpath("ohsumed_" + str(self._cur_version)
-                                                                                     + "/raw.csv"))
-        self.processed_data_path = str(Path.home().joinpath('.ludwig_cache').joinpath("ohsumed_" + str(self._cur_version)
-                                                                                     + "/processed.csv"))
-        self.raw_data_path=""
+            self._cache_location = DEFAULT_CACHE_LOCATION
+        self._dataset_version = self._config_file_contents[dataset_name]["version"]
+        self._download_url = self._config_file_contents[dataset_name]["download_url"]
+        self._dataset_file_name = self._config_file_contents[dataset_name]["extracted_file_name"]
+        self._download_dir = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                         + str(self._dataset_version))
+        self._raw_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                    + str(self._dataset_version)). \
+            joinpath('raw.csv')
+        self._processed_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                         + str(self._dataset_version)). \
+            joinpath('processed.csv')
         self._result_dict = {}
 
-
-    """Download the raw data to the ludwig cache in the format ~/.ludwig_cache/id
-       where is is represented by the name.version of the dataset
-       :param dataset_name: (str) the name of the dataset we need to retrieve.
-       Returns:
-          None
-    """
+    """Download the file from config url that represents the raw unprocessed training data.
+       The workflow for this involves unzipping the file and renaming it to raw.csv, which means
+       keep trying to download the file till successful.
+    :arg:
+        None
+    :return
+        None"""
     @abc.abstractmethod
-    def download(self, dataset_name) -> None:
-        raise NotImplementedError("You will need to implement the download method to download the training data")
+    def download(self) -> None:
+        with urlopen(self._download_url) as zipresp:
+            with ZipFile(BytesIO(zipresp.read())) as zfile:
+                zfile.extractall(self._download_dir)
+        # we downloaded the file, now check that this file exists
+        downloaded_file = self._download_dir.joinpath(self._dataset_file_name)
+
+        # rename the file to raw.csv
+        if os.path.isfile(downloaded_file):
+            os.rename(downloaded_file, self._raw_file_name)
+
+        # check for file existence and recursively call ourself if we werent successful
+        if not os.path.isfile(self._raw_file_name):
+            self.download()
 
     """Process the dataset to get it ready to be plugged into a dataframe
-       in the manner needed by the ludwig training API
-       Returns:
-           None
-    """
+           in the manner needed by the ludwig training API, to do this we create
+           a new dictionary that contains the KV pairs in the format that we need.
+           If we fail we redownload the file
+           Returns:
+               None
+        """
     @abc.abstractmethod
     def process(self) -> None:
-        raise NotImplementedError("You will need to implement the method to process the training data")
+        if self.check_file_existence(self._raw_file_name):
+            dict_reader = csv.DictReader(open(self._raw_file_name))
+            value_to_store = None
+            for row in dict_reader:
+                for key, value in row.items():
+                    if key == "class":
+                        value_to_store = value
+                    else:
+                        key_to_store = value
+                        self._result_dict[key_to_store] = value_to_store
+        else:
+            self.download()
+            self.process()
+        try:
+            with open(self._processed_file_name, 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                for key, value in self._result_dict.items():
+                    writer.writerow([key, value])
+        except IOError:
+            print("I/O error")
 
-    """A pre-op check to see if the raw or processed data exists before
-    we perform the next operation , in the case of doing the transforms
-    we check the raw data and in the case of the load method we check for
-    the existence of the processed data.
-    Arguments:
-       cur_version (str): the version of the data that we should have already processed
-       data_name (str): the name of the dataset that we've read from config
-    Returns: True or false whether we can start the loading into a dataframe"""
-    def check_file_existence(self, cur_version, data_name, file_name) -> bool:
-        if file_name == "raw.csv":
-            self.raw_data_path = Path.home().joinpath('.ludwig_cache') \
-                .joinpath(data_name + "_" + str(cur_version)).joinpath(file_name)
-            final_data_path = self.raw_data_path
-        elif file_name == "processed.csv":
-            self.processed_data_path = Path.home().joinpath('.ludwig_cache') \
-                .joinpath(data_name + "_" + str(cur_version)).joinpath(file_name)
-            final_data_path = self.processed_data_path
-        return os.path.isfile(final_data_path)
+    """Now that the ohsumed data is processed load and return it as a pandas dataframe
+       if we cant load the dataframe redo the whole workflow
+           :return
+              A pandas DataFrame
+        """
+    def load(self) -> pd.DataFrame:
+        column_names = ["text", "class"]
+        if self.check_file_existence(self._processed_file_name):
+            return pd.read_csv(self._processed_file_name, names=column_names)
+        else:
+            self.download()
+            self.process()
+            self.load()
+
+    """A pre-op check to see if the raw or processed file exists as a step to performing
+    the next step in the workflow.
+    :arg
+       file_path (str): the full path to the file to search for
+    :return 
+        True or false whether we can start the loading into a dataframe"""
+    def check_file_existence(self, file_path) -> bool:
+        return os.path.isfile(file_path)
