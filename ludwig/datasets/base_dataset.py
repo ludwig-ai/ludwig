@@ -14,25 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import abc
-import csv
 import os
 import yaml
-from io import BytesIO
 from pathlib import Path
-from urllib.request import urlopen
 import pandas as pd
-from zipfile import ZipFile
 
 
-"""An abstract base class that defines a set of methods for download,
-preprocess and plug data into the ludwig training API"""
+"""A base class that defines the public interface for the ludwig dataset API.
+This includes the download, transform and converting the final transformed API
+into a resultant dataframe"""
 
 # define a default location for the cache
 DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
 
 
-class BaseDataset(metaclass=abc.ABCMeta):
+class BaseDataset:
 
     def __init__(self, dataset_name, cache_location):
         self._dataset_name = dataset_name
@@ -64,21 +60,16 @@ class BaseDataset(metaclass=abc.ABCMeta):
         None
     :return
         None"""
-    @abc.abstractmethod
     def download(self) -> None:
-        with urlopen(self._download_url) as zipresp:
-            with ZipFile(BytesIO(zipresp.read())) as zfile:
-                zfile.extractall(self._download_dir)
-        # we downloaded the file, now check that this file exists
-        downloaded_file = self._download_dir.joinpath(self._dataset_file_name)
+        self.downloaded_raw_dataset()
 
-        # rename the file to raw.csv
-        if os.path.isfile(downloaded_file):
-            os.rename(downloaded_file, self._raw_file_name)
-
-        # check for file existence and recursively call ourself if we werent successful
-        if not os.path.isfile(self._raw_file_name):
-            self.download()
+    """A helper method to verify the download
+    :arg
+        None
+    :return
+        True or false identifying whether the file has been downloaded"""
+    def _is_downloaded(self) -> bool:
+        return os.path.isfile(self._raw_file_name)
 
     """Process the dataset to get it ready to be plugged into a dataframe
            in the manner needed by the ludwig training API, to do this we create
@@ -87,28 +78,10 @@ class BaseDataset(metaclass=abc.ABCMeta):
            Returns:
                None
         """
-    @abc.abstractmethod
     def process(self) -> None:
-        if self.check_file_existence(self._raw_file_name):
-            dict_reader = csv.DictReader(open(self._raw_file_name))
-            value_to_store = None
-            for row in dict_reader:
-                for key, value in row.items():
-                    if key == "class":
-                        value_to_store = value
-                    else:
-                        key_to_store = value
-                        self._result_dict[key_to_store] = value_to_store
-        else:
+        if not self._is_downloaded():
             self.download()
-            self.process()
-        try:
-            with open(self._processed_file_name, 'w') as csv_file:
-                writer = csv.writer(csv_file)
-                for key, value in self._result_dict.items():
-                    writer.writerow([key, value])
-        except IOError:
-            print("I/O error")
+        self.transform_downloaded_dataset()
 
     """Now that the ohsumed data is processed load and return it as a pandas dataframe
        if we cant load the dataframe redo the whole workflow
@@ -116,19 +89,6 @@ class BaseDataset(metaclass=abc.ABCMeta):
               A pandas DataFrame
         """
     def load(self) -> pd.DataFrame:
-        column_names = ["text", "class"]
-        if self.check_file_existence(self._processed_file_name):
-            return pd.read_csv(self._processed_file_name, names=column_names)
-        else:
-            self.download()
-            self.process()
-            self.load()
+        return self.transform_processed_data_to_dataframe()
 
-    """A pre-op check to see if the raw or processed file exists as a step to performing
-    the next step in the workflow.
-    :arg
-       file_path (str): the full path to the file to search for
-    :return 
-        True or false whether we can start the loading into a dataframe"""
-    def check_file_existence(self, file_path) -> bool:
-        return os.path.isfile(file_path)
+
