@@ -22,25 +22,24 @@ is also a csv file, the dictionary should be ready to be absorbed into a destina
 dataframe."""
 
 
-class CsvWorkflowMixin:
+class ProcessMixin:
 
-    def __init__(self, dataset_name, cache_location):
-        super().__init__(dataset_name, cache_location)
-
-    def transform_downloaded_dataset(self):
-        if self.check_file_existence(self._raw_file_name):
-            dict_reader = csv.DictReader(open(self._raw_file_name))
-            value_to_store = None
-            for row in dict_reader:
-                for key, value in row.items():
-                    if key == "class":
-                        value_to_store = value
-                    else:
-                        key_to_store = value
-                        self._result_dict[key_to_store] = value_to_store
-        else:
-            self.download()
-            self.process()
+    """This method currently transforms the raw data into a dictionary which is
+    ready to be ingested into a destination dataframe
+    args:
+        None
+    ret:
+        None"""
+    def process_downloaded_dataset(self):
+        dict_reader = csv.DictReader(open(self._raw_file_name))
+        value_to_store = None
+        for row in dict_reader:
+            for key, value in row.items():
+                if key == "class":
+                    value_to_store = value
+                else:
+                    key_to_store = value
+                    self._result_dict[key_to_store] = value_to_store
         try:
             with open(self._processed_file_name, 'w') as csv_file:
                 writer = csv.writer(csv_file)
@@ -55,6 +54,5 @@ class CsvWorkflowMixin:
            file_path (str): the full path to the file to search for
         :return 
             True or false whether we can start the loading into a dataframe"""
-
     def check_file_existence(self, file_path) -> bool:
         return os.path.isfile(file_path)

@@ -15,16 +15,16 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset
-from ludwig.datasets.csv_workflow_mixin import CsvWorkflowMixin
-from ludwig.datasets.zip_download_workflow_mixin import ZipDownloadWorkflowMixin
-from ludwig.datasets.transform_to_dataframe_mixin import TransformToDataframeMixin
+from ludwig.datasets.process import ProcessMixin
+from ludwig.datasets.download import DownloadMixin
+from ludwig.datasets.load import LoadMixin
 
 """The ohsumed dataset which pulls in an array of mixins for different types of functionality
 which belongs in the workflow for ingesting and transforming training data into a destination
 dataframe that can fit into Ludwig's training API"""
 
 
-class OhsuMed(CsvWorkflowMixin, ZipDownloadWorkflowMixin, TransformToDataframeMixin, BaseDataset):
+class OhsuMed(ProcessMixin, DownloadMixin, LoadMixin, BaseDataset):
 
     def __init__(self, cache_location):
         super().__init__(dataset_name="ohsumed", cache_location=cache_location)

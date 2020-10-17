@@ -16,6 +16,7 @@
 # ==============================================================================
 import os
 import yaml
+import abc
 from pathlib import Path
 import pandas as pd
 
@@ -68,8 +69,17 @@ class BaseDataset:
         None
     :return
         True or false identifying whether the file has been downloaded"""
-    def _is_downloaded(self) -> bool:
+    def is_downloaded(self) -> bool:
         return os.path.isfile(self._raw_file_name)
+
+    """A helper method to verify that the processed file exists
+        :arg
+            None
+        :return
+            True or false identifying whether the processed file exists"""
+
+    def is_processed(self) -> bool:
+        return os.path.isfile(self._processed_file_name)
 
     """Process the dataset to get it ready to be plugged into a dataframe
            in the manner needed by the ludwig training API, to do this we create
@@ -79,9 +89,21 @@ class BaseDataset:
                None
         """
     def process(self) -> None:
-        if not self._is_downloaded():
+        if not self.is_downloaded():
             self.download()
-        self.transform_downloaded_dataset()
+        self.process_downloaded_dataset()
+
+    @abc.abstractmethod
+    def downloaded_raw_dataset(self):
+        raise NotImplementedError("This method needs to exist in the mixins")
+
+    @abc.abstractmethod
+    def process_downloaded_dataset(self):
+        raise NotImplementedError("This method needs to exist in the mixins")
+
+    @abc.abstractmethod
+    def load_processed_dataset(self):
+        raise NotImplementedError("This method needs to exist in the mixins")
 
     """Now that the ohsumed data is processed load and return it as a pandas dataframe
        if we cant load the dataframe redo the whole workflow
@@ -89,6 +111,8 @@ class BaseDataset:
               A pandas DataFrame
         """
     def load(self) -> pd.DataFrame:
-        return self.transform_processed_data_to_dataframe()
+        if not self.is_processed():
+            self.process()
+        return self.load_processed_dataset()
 
 

@@ -24,11 +24,14 @@ from zipfile import ZipFile
 and extracting the contents"""
 
 
-class ZipDownloadWorkflowMixin:
+class DownloadMixin:
 
-    def __init__(self, dataset_name, cache_location):
-        super().__init__(dataset_name, cache_location)
-
+    """Download the raw dataset and extract the contents
+    of the zip file and store that in the cache location.
+    args:
+        None
+    ret:
+        None"""
     def downloaded_raw_dataset(self):
         with urlopen(self._download_url) as zipresp:
             with ZipFile(BytesIO(zipresp.read())) as zfile:

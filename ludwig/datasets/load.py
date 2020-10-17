@@ -21,12 +21,13 @@ any type of destination dataframe"""
 import pandas as pd
 
 
-class TransformToDataframeMixin:
+class LoadMixin:
 
-    def __init__(self, dataset_name, cache_location):
-        super().__init__(dataset_name, cache_location)
-
-    def transform_processed_data_to_dataframe(self) -> pd.DataFrame:
+    """This method converts a transformed data into a dataframe
+    args:
+    ret:
+        The pandas dataframe"""
+    def load_processed_dataset(self) -> pd.DataFrame:
         column_names = ["text", "class"]
         if self.check_file_existence(self._processed_file_name):
             return pd.read_csv(self._processed_file_name, names=column_names)

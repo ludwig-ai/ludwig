@@ -44,7 +44,7 @@ class TestOhsumedDatasetWorkflow(unittest.TestCase):
     def test_process_success(self):
         self._ohsu_med_handle.process()
         result = os.path.isfile(self._processed_data_path)
-        assert(result, True)
+        assert result, True
 
     def test_load_success(self):
         self._ohsu_med_handle.process()

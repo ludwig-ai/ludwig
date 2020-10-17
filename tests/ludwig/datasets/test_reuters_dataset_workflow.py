@@ -44,7 +44,7 @@ class TestReutersDatasetWorkflow(unittest.TestCase):
     def test_process_success(self):
         self._reuters_handle.process()
         result = os.path.isfile(self._processed_data_path)
-        assert (result, True)
+        assert result, True
 
     def test_load_success(self):
         self._reuters_handle.process()
