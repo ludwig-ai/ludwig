@@ -47,6 +47,7 @@ class TestOhsumedDatasetWorkflow(unittest.TestCase):
         assert(result, True)
 
     def test_load_success(self):
+        self._ohsu_med_handle.process()
         transformed_data = self._ohsu_med_handle.load()
         # we test a random assortment of keys
         first_key = "Laparoscopic treatment of perforated peptic ulcer. Mouret P  Francois Y  Vignal J  Barth X  Lombard-Platet R."

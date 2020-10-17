@@ -47,6 +47,7 @@ class TestReutersDatasetWorkflow(unittest.TestCase):
         assert (result, True)
 
     def test_load_success(self):
+        self._reuters_handle.process()
         transformed_data = self._reuters_handle.load()
         first_key = "2 NEW YORK BANK DISCOUNT WINDOW BORROWINGS 64 MLN DLRS IN FEB 25 WEEK Blah blah blah 3  "
         tmp = transformed_data['class'].where(transformed_data['text'] == first_key)
