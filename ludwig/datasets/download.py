@@ -17,29 +17,28 @@
 import os
 from io import BytesIO
 from urllib.request import urlopen
+from pathlib import Path
 from zipfile import ZipFile
 
 
-"""A mixin to simulate downloading the zip file containing the training data
-and extracting the contents"""
-
-
 class ZipDownloadMixin:
+    """A mixin to simulate downloading the zip file containing the training data
+    and extracting the contents"""
 
     """Download the raw dataset and extract the contents
-    of the zip file and store that in the cache location.
-    args:
-        None
-    ret:
-        None"""
-    def downloaded_raw_dataset(self):
+    of the zip file and store that in the cache location."""
+    def download_raw_dataset(self):
+        _raw_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                             + str(self._dataset_version)). \
+            joinpath('raw.csv')
+        _download_dir = os.path.join(self._cache_location, f'{self._dataset_name}_{self._dataset_version}')
         with urlopen(self._download_url) as zipresp:
             with ZipFile(BytesIO(zipresp.read())) as zfile:
                 zfile.extractall(self._download_dir)
         # we downloaded the file, now check that this file exists
-        downloaded_file = self._download_dir.joinpath(self._dataset_file_name)
+        downloaded_file = _download_dir.joinpath(self._dataset_file_name)
 
         # rename the file to raw.csv
         if os.path.isfile(downloaded_file):
-            os.rename(downloaded_file, self._raw_file_name)
+            os.rename(downloaded_file, _raw_file_name)
 

@@ -19,12 +19,11 @@ from ludwig.datasets.process import CSVProcessMixin
 from ludwig.datasets.download import ZipDownloadMixin
 from ludwig.datasets.load import PandasLoadMixin
 
-"""The ohsumed dataset which pulls in an array of mixins for different types of functionality
-which belongs in the workflow for ingesting and transforming training data into a destination
-dataframe that can fit into Ludwig's training API"""
-
 
 class OhsuMed(CSVProcessMixin, ZipDownloadMixin, PandasLoadMixin, BaseDataset):
+    """The ohsumed dataset which pulls in an array of mixins for different types of functionality
+    which belongs in the workflow for ingesting and transforming training data into a destination
+    dataframe that can fit into Ludwig's training API"""
 
     def __init__(self, cache_location):
         super().__init__(dataset_name="ohsumed", cache_location=cache_location)

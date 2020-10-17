@@ -15,18 +15,19 @@
 # limitations under the License.
 # ==============================================================================
 
-"""A class whose responsibility it is to take in a csv file and convert it into
-any type of destination dataframe"""
-
 import pandas as pd
+from pathlib import Path
 
 
 class PandasLoadMixin:
+    """A class whose responsibility it is to take in a csv file and convert it into
+    any type of destination dataframe"""
 
     """This method converts a transformed data into a dataframe
-    args:
-    ret:
-        The pandas dataframe"""
+       :returns: A pandas dataframe"""
     def load_processed_dataset(self) -> pd.DataFrame:
         column_names = ["text", "class"]
-        return pd.read_csv(self._processed_file_name, names=column_names)
+        _processed_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                              + str(self._dataset_version)). \
+            joinpath('processed.csv')
+        return pd.read_csv(_processed_file_name, names=column_names)

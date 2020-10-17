@@ -44,11 +44,11 @@ class TestReutersDatasetWorkflow(unittest.TestCase):
     def test_process_success(self):
         self._reuters_handle.process()
         result = os.path.isfile(self._processed_data_path)
-        assert result, True
+        assert result
 
     def test_load_success(self):
         self._reuters_handle.process()
         transformed_data = self._reuters_handle.load()
         first_key = "2 NEW YORK BANK DISCOUNT WINDOW BORROWINGS 64 MLN DLRS IN FEB 25 WEEK Blah blah blah 3  "
         tmp = transformed_data['class'].where(transformed_data['text'] == first_key)
-        assert (tmp[16] == 'Neg-')
+        assert tmp[16] == 'Neg-'

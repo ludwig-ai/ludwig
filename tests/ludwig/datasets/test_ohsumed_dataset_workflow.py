@@ -44,7 +44,7 @@ class TestOhsumedDatasetWorkflow(unittest.TestCase):
     def test_process_success(self):
         self._ohsu_med_handle.process()
         result = os.path.isfile(self._processed_data_path)
-        assert result, True
+        assert result
 
     def test_load_success(self):
         self._ohsu_med_handle.process()
@@ -54,5 +54,5 @@ class TestOhsumedDatasetWorkflow(unittest.TestCase):
         second_key = "Cuff size and blood pressure  letter  comment  Gollin S."
         tmp = transformed_data['class'].where(transformed_data['text'] == first_key)
         tmp1 = transformed_data['class'].where(transformed_data['text'] == second_key)
-        assert(tmp[0] == 'Neg-')
-        assert(tmp1[16] == 'Neg-')
+        assert tmp[0] == 'Neg-'
+        assert tmp1[16] == 'Neg-'

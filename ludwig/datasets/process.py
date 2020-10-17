@@ -16,22 +16,25 @@
 # ==============================================================================
 import csv
 import os
-
-"""A mixin to convert a raw csv file into a processed dictionary which itself
-is also a csv file, the dictionary should be ready to be absorbed into a destination
-dataframe."""
+from pathlib import Path
 
 
 class CSVProcessMixin:
+    """A mixin to convert a raw csv file into a processed dictionary which itself
+    is also a csv file, the dictionary should be ready to be absorbed into a destination
+    dataframe."""
 
     """This method currently transforms the raw data into a dictionary which is
-    ready to be ingested into a destination dataframe
-    args:
-        None
-    ret:
-        None"""
+    ready to be ingested into a destination dataframe"""
     def process_downloaded_dataset(self):
-        dict_reader = csv.DictReader(open(self._raw_file_name))
+        _result_dict = {}
+        _raw_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                        + str(self._dataset_version)). \
+            joinpath('raw.csv')
+        _processed_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                                   + str(self._dataset_version)). \
+            joinpath('processed.csv')
+        dict_reader = csv.DictReader(open(_raw_file_name))
         value_to_store = None
         for row in dict_reader:
             for key, value in row.items():
@@ -39,20 +42,16 @@ class CSVProcessMixin:
                     value_to_store = value
                 else:
                     key_to_store = value
-                    self._result_dict[key_to_store] = value_to_store
-        try:
-            with open(self._processed_file_name, 'w') as csv_file:
-                writer = csv.writer(csv_file)
-                for key, value in self._result_dict.items():
-                    writer.writerow([key, value])
-        except IOError:
-            raise IOError("Unable to write the processed.csv")
+                    _result_dict[key_to_store] = value_to_store
+        with open(_processed_file_name, 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            for key, value in _result_dict.items():
+                writer.writerow([key, value])
 
     """A pre-op check to see if the raw or processed file exists as a step to performing
         the next step in the workflow.
-        :arg
+       :args:
            file_path (str): the full path to the file to search for
-        :return 
-            True or false whether we can start the loading into a dataframe"""
+       :returns: True or false whether we can start the loading into a dataframe"""
     def check_file_existence(self, file_path) -> bool:
         return os.path.isfile(file_path)

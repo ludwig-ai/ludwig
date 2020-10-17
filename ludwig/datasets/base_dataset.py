@@ -20,16 +20,14 @@ import abc
 from pathlib import Path
 import pandas as pd
 
-
-"""A base class that defines the public interface for the ludwig dataset API.
-This includes the download, transform and converting the final transformed API
-into a resultant dataframe"""
-
 # define a default location for the cache
 DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
 
 
 class BaseDataset:
+    """A base class that defines the public interface for the ludwig dataset API.
+    This includes the download, transform and converting the final transformed API
+    into a resultant dataframe"""
 
     def __init__(self, dataset_name, cache_location):
         self._dataset_name = dataset_name
@@ -44,57 +42,38 @@ class BaseDataset:
         self._dataset_version = self._config_file_contents[dataset_name]["version"]
         self._download_url = self._config_file_contents[dataset_name]["download_url"]
         self._dataset_file_name = self._config_file_contents[dataset_name]["extracted_file_name"]
-        self._download_dir = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
-                                                                         + str(self._dataset_version))
-        self._raw_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
-                                                                    + str(self._dataset_version)). \
-            joinpath('raw.csv')
-        self._processed_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
-                                                                         + str(self._dataset_version)). \
-            joinpath('processed.csv')
-        self._result_dict = {}
 
     """Download the file from config url that represents the raw unprocessed training data.
        The workflow for this involves unzipping the file and renaming it to raw.csv, which means
-       keep trying to download the file till successful.
-    :arg:
-        None
-    :return
-        None"""
+       keep trying to download the file till successful"""
     def download(self) -> None:
-        self.downloaded_raw_dataset()
+        self.download_raw_dataset()
 
     """A helper method to verify the download
-    :arg
-        None
-    :return
-        True or false identifying whether the file has been downloaded"""
+    :returns: True or false identifying whether the file has been downloaded"""
     def is_downloaded(self) -> bool:
-        return os.path.isfile(self._raw_file_name)
+        return os.path.isfile(Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                             + str(self._dataset_version)). \
+            joinpath('raw.csv'))
 
     """A helper method to verify that the processed file exists
-        :arg
-            None
-        :return
-            True or false identifying whether the processed file exists"""
-
+        :returns: True or false identifying whether the processed file exists"""
     def is_processed(self) -> bool:
-        return os.path.isfile(self._processed_file_name)
+        return os.path.isfile(Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
+                                                                             + str(self._dataset_version)). \
+            joinpath('processed.csv'))
 
     """Process the dataset to get it ready to be plugged into a dataframe
            in the manner needed by the ludwig training API, to do this we create
            a new dictionary that contains the KV pairs in the format that we need.
-           If we fail we redownload the file
-           Returns:
-               None
-        """
+           If we fail we redownload the file"""
     def process(self) -> None:
         if not self.is_downloaded():
             self.download()
         self.process_downloaded_dataset()
 
     @abc.abstractmethod
-    def downloaded_raw_dataset(self):
+    def download_raw_dataset(self):
         raise NotImplementedError("This method needs to exist in the mixins")
 
     @abc.abstractmethod
@@ -107,9 +86,8 @@ class BaseDataset:
 
     """Now that the ohsumed data is processed load and return it as a pandas dataframe
        if we cant load the dataframe redo the whole workflow
-           :return
-              A pandas DataFrame
-        """
+        :returns: A pandas DataFrame
+    """
     def load(self) -> pd.DataFrame:
         if not self.is_processed():
             self.process()
