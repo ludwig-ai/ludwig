@@ -18,6 +18,7 @@ import os
 import unittest
 import yaml
 from pathlib import Path
+from unittest.mock import Mock
 from ludwig.datasets.ohsumed.ohsumed import OhsuMed
 
 
@@ -25,6 +26,7 @@ class TestOhsumedDatasetWorkflow(unittest.TestCase):
 
     def setUp(self):
         self._ohsu_med_handle = OhsuMed(None)
+        self._ohsu_med_handle_mock = Mock(None)
         self._initial_path = os.path.abspath(os.path.dirname(__file__))
         self._config_file_location = os.path.join(self._initial_path,
                                                   "../../../ludwig/datasets/config/dataset_config.yaml")
@@ -35,11 +37,9 @@ class TestOhsumedDatasetWorkflow(unittest.TestCase):
                                                                                    + str(self._dataset_version))\
             .joinpath('processed.csv')
 
-    # TODO refactor this unit test to use mocks
-    # so that its actually mocking the call to the download method
-    # since we dont actually want to perform the download here
     def test_download_success(self):
-        assert True
+        self._ohsu_med_handle_mock.download()
+        self._ohsu_med_handle_mock.download.assert_called_once()
 
     def test_process_success(self):
         self._ohsu_med_handle.process()

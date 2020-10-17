@@ -17,6 +17,7 @@
 import os
 import yaml
 import unittest
+from unittest.mock import Mock
 from pathlib import Path
 from ludwig.datasets.reuters.reuters import Reuters
 
@@ -25,6 +26,7 @@ class TestReutersDatasetWorkflow(unittest.TestCase):
 
     def setUp(self):
         self._reuters_handle = Reuters(None)
+        self._reuters_handle_mock = Mock(None)
         self._initial_path = os.path.abspath(os.path.dirname(__file__))
         self._config_file_location = os.path.join(self._initial_path,
                                                   "../../../ludwig/datasets/config/dataset_config.yaml")
@@ -35,11 +37,9 @@ class TestReutersDatasetWorkflow(unittest.TestCase):
                                                                                    + str(self._dataset_version)) \
             .joinpath('processed.csv')
 
-    # TODO refactor this unit test to use mocks
-    # so that its actually mocking the call to the download method
-    # since we dont actually want to perform the download here
     def test_download_success(self):
-        assert True
+        self._reuters_handle_mock.download()
+        self._reuters_handle_mock.download.assert_called_once()
 
     def test_process_success(self):
         self._reuters_handle.process()
