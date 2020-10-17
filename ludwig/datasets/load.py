@@ -21,7 +21,7 @@ any type of destination dataframe"""
 import pandas as pd
 
 
-class LoadMixin:
+class PandasLoadMixin:
 
     """This method converts a transformed data into a dataframe
     args:
@@ -29,9 +29,4 @@ class LoadMixin:
         The pandas dataframe"""
     def load_processed_dataset(self) -> pd.DataFrame:
         column_names = ["text", "class"]
-        if self.check_file_existence(self._processed_file_name):
-            return pd.read_csv(self._processed_file_name, names=column_names)
-        else:
-            self.download()
-            self.process()
-            self.load()
+        return pd.read_csv(self._processed_file_name, names=column_names)

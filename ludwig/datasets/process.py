@@ -22,7 +22,7 @@ is also a csv file, the dictionary should be ready to be absorbed into a destina
 dataframe."""
 
 
-class ProcessMixin:
+class CSVProcessMixin:
 
     """This method currently transforms the raw data into a dictionary which is
     ready to be ingested into a destination dataframe
@@ -46,7 +46,7 @@ class ProcessMixin:
                 for key, value in self._result_dict.items():
                     writer.writerow([key, value])
         except IOError:
-            print("I/O error")
+            raise IOError("Unable to write the processed.csv")
 
     """A pre-op check to see if the raw or processed file exists as a step to performing
         the next step in the workflow.

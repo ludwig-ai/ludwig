@@ -24,7 +24,7 @@ from zipfile import ZipFile
 and extracting the contents"""
 
 
-class DownloadMixin:
+class ZipDownloadMixin:
 
     """Download the raw dataset and extract the contents
     of the zip file and store that in the cache location.
@@ -43,6 +43,3 @@ class DownloadMixin:
         if os.path.isfile(downloaded_file):
             os.rename(downloaded_file, self._raw_file_name)
 
-        # check for file existence and recursively and retry as needed
-        if not os.path.isfile(self._raw_file_name):
-            self.process_downloaded_dataset()
