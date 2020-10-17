@@ -97,5 +97,6 @@ MINIMIZE = 'minimize'
 MAXIMIZE = 'maximize'
 SAMPLER = 'sampler'
 
+ID = 'id'
 NAME = 'name'
 TYPE = 'type'

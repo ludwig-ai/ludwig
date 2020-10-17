@@ -46,7 +46,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      replace_file_extension, split_dataset_ttv,
                                      text_feature_data_field)
 from ludwig.utils.defaults import (default_preprocessing_parameters,
-                                   default_random_seed, merge_with_defaults)
+                                   default_random_seed)
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed)
@@ -940,7 +940,30 @@ def build_dataset(
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
     metadata = {}
+    already_processed_features_names = set()
+    already_processed_features_preproc_params = {}
+
     for feature in features:
+
+        # if a feature has the same name of a previously processed one
+        # we don't need to process it, unless it has different preprocessing
+        # parameters, in which case we want to keep both around and
+        # we should use the feature ID as a key rather than the feature NAME,
+        # otherwise the last feature with the same name
+        # will override all the others.
+        should_process = True
+        dataset_key = feature[NAME]
+        if feature[NAME] in already_processed_features_names:
+            if PREPROCESSING in feature:
+                if feature[PREPROCESSING] == \
+                        already_processed_features_preproc_params[
+                            feature[NAME]]:
+                    should_process = False
+            else:
+                if already_processed_features_preproc_params[
+                    feature[NAME]] == None:
+                    should_process = False
+
         if PREPROCESSING in feature:
             preprocessing_parameters = merge_dict(
                 global_preprocessing_parameters[feature[TYPE]],
@@ -1555,35 +1578,3 @@ def replace_text_feature_level(features, datasets):
                             level)
                         if name_level in dataset:
                             del dataset[name_level]
-
-
-def get_preprocessing_params(config):
-    config = merge_with_defaults(config)
-
-    global_preprocessing_parameters = config[PREPROCESSING]
-    features = (
-            config['input_features'] +
-            config['output_features']
-    )
-
-    global_preprocessing_parameters = merge_dict(
-        default_preprocessing_parameters,
-        global_preprocessing_parameters
-    )
-
-    merged_preprocessing_params = []
-    for feature in features:
-        if PREPROCESSING in feature:
-            local_preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]],
-                feature[PREPROCESSING]
-            )
-        else:
-            local_preprocessing_parameters = global_preprocessing_parameters[
-                feature[TYPE]
-            ]
-        merged_preprocessing_params.append(
-            (feature[NAME], feature[TYPE], local_preprocessing_parameters)
-        )
-
-    return merged_preprocessing_params

@@ -180,13 +180,13 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities = tf.nn.sigmoid(
             logits,
-            name='probabilities_{}'.format(self.feature_name)
+            name='probabilities_{}'.format(self.feature_id)
         )
 
         predictions = tf.greater_equal(
             probabilities,
             self.threshold,
-            name='predictions_{}'.format(self.feature_name)
+            name='predictions_{}'.format(self.feature_id)
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
@@ -243,7 +243,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = self.feature_id
 
         npy_filename = None
         if is_on_master():

@@ -169,8 +169,15 @@ def _perform_sanity_checks(config):
         )
 
 
+def _set_feature_ids(config):
+    for feature in config['input_features'] + config['output_features']:
+        if ID not in feature:
+            feature[ID] = feature[NAME]
+
+
 def merge_with_defaults(config):
     _perform_sanity_checks(config)
+    _set_feature_ids(config)
 
     # ===== Preprocessing =====
     config['preprocessing'] = merge_dict(

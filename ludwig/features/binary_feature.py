@@ -277,7 +277,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = self.feature_id
 
         npy_filename = None
         if is_on_master():

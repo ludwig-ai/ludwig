@@ -190,7 +190,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                 raise ValueError(
                     'The clip parameter of {} is {}. '
                     'It must be a list or a tuple of length 2.'.format(
-                        self.feature_name,
+                        self.feature_id,
                         self.clip
                     )
                 )
@@ -257,7 +257,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = self.feature_id
 
         npy_filename = None
         if is_on_master():

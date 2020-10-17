@@ -182,13 +182,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
         probabilities = tf.nn.softmax(
             logits,
-            name='probabilities_{}'.format(self.feature_name)
+            name='probabilities_{}'.format(self.feature_id)
         )
 
         predictions = tf.argmax(
             logits,
             -1,
-            name='predictions_{}'.format(self.feature_name)
+            name='predictions_{}'.format(self.feature_id)
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
@@ -395,7 +395,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = self.feature_id
 
         npy_filename = None
         if is_on_master():

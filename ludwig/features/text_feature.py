@@ -423,7 +423,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
         postprocessed = {}
-        name = self.feature_name
+        name = self.feature_id
         level_idx2str = '{}_{}'.format(self.level, 'idx2str')
 
         npy_filename = None

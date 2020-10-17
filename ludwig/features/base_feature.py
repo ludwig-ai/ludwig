@@ -44,6 +44,12 @@ class BaseFeature(object):
             raise ValueError('Missing feature name')
 
         self.feature_name = feature[NAME]
+
+        if ID not in feature:
+            self.feature_id = self.feature_name
+        else:
+            self.feature_id = feature[ID]
+
         self.type = None
 
     def overwrite_defaults(self, feature):
