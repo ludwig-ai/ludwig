@@ -43,10 +43,12 @@ class BaseDataset:
         self._download_url = self._config_file_contents[dataset_name]["download_url"]
         self._dataset_file_name = self._config_file_contents[dataset_name]["extracted_file_name"]
 
-    """Download the file from config url that represents the raw unprocessed training data.
-       The workflow for this involves unzipping the file and renaming it to raw.csv, which means
-       keep trying to download the file till successful"""
     def download(self) -> None:
+        """Download the file from config url that represents the raw unprocessed training data.
+
+        The workflow for this involves unzipping the file and renaming it to raw.csv, which means
+        keep trying to download the file till successful.
+        """
         self.download_raw_dataset()
 
     """A helper method to verify the download
