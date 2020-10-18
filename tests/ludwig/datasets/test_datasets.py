@@ -6,9 +6,9 @@ from unittest import mock
 import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset
-from ludwig.datasets.download import ZipDownloadMixin
-from ludwig.datasets.load import CSVLoadMixin
-from ludwig.datasets.process import IdentityProcessMixin
+from ludwig.datasets.mixins.download import ZipDownloadMixin
+from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
 class FakeCSVDataset(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
