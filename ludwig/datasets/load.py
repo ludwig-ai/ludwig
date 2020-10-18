@@ -18,16 +18,14 @@
 import pandas as pd
 
 
-class PandasLoadMixin:
-    """A class whose responsibility it is to take in a csv file and convert it into
-    any type of destination dataframe"""
+class CSVLoadMixin:
+    """Reads a CSV file into a Pandas DataFrame."""
 
     processed_dataset_path: str
 
     def load_processed_dataset(self) -> pd.DataFrame:
-        """Loads the processed data into a dataframe.
+        """Loads the processed CSV into a dataframe.
 
         :returns: A pandas dataframe
         """
-        column_names = ["text", "class"]
-        return pd.read_csv(self.processed_dataset_path, names=column_names)
+        return pd.read_csv(self.processed_dataset_path)

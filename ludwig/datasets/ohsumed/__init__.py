@@ -15,12 +15,12 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset
-from ludwig.datasets.process import CSVProcessMixin
+from ludwig.datasets.process import IdentityProcessMixin
 from ludwig.datasets.download import ZipDownloadMixin
-from ludwig.datasets.load import PandasLoadMixin
+from ludwig.datasets.load import CSVLoadMixin
 
 
-class OhsuMed(CSVProcessMixin, ZipDownloadMixin, PandasLoadMixin, BaseDataset):
+class OhsuMed(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
     """The OhsuMed dataset.
 
     This pulls in an array of mixins for different types of functionality
