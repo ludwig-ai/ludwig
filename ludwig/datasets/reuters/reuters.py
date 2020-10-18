@@ -21,9 +21,12 @@ from ludwig.datasets.load import PandasLoadMixin
 
 
 class Reuters(CSVProcessMixin, ZipDownloadMixin, PandasLoadMixin, BaseDataset):
-    """The reuters dataset which pulls in an array of mixins for different types of functionality
+    """The Reuters dataset.
+
+    This pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming training data into a destination
-    dataframe that can fit into Ludwig's training API"""
+    dataframe that can fit into Ludwig's training API.
+    """
 
     def __init__(self, cache_location):
         super().__init__(dataset_name="reuters", cache_location=cache_location)

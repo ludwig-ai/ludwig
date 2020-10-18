@@ -2,8 +2,11 @@ ohsumed:
   version: 1.0
   download_url: http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/ohsumed-allcats-6.zip
   extracted_file_name: ohsumed-allcats.csv
+  raw_path: raw.csv
+  processed_path: processed.csv
 reuters:
   version: 1.0
   download_url: http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip
   extracted_file_name: reuters-allcats.csv
-cache_location: ~/.ludwig_cache
+  raw_file_name: raw.csv
+  processed_file_name: processed.csv

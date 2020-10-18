@@ -16,18 +16,18 @@
 # ==============================================================================
 
 import pandas as pd
-from pathlib import Path
 
 
 class PandasLoadMixin:
     """A class whose responsibility it is to take in a csv file and convert it into
     any type of destination dataframe"""
 
-    """This method converts a transformed data into a dataframe
-       :returns: A pandas dataframe"""
+    processed_dataset_path: str
+
     def load_processed_dataset(self) -> pd.DataFrame:
+        """Loads the processed data into a dataframe.
+
+        :returns: A pandas dataframe
+        """
         column_names = ["text", "class"]
-        _processed_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
-                                                                              + str(self._dataset_version)). \
-            joinpath('processed.csv')
-        return pd.read_csv(_processed_file_name, names=column_names)
+        return pd.read_csv(self.processed_dataset_path, names=column_names)

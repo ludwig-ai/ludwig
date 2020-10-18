@@ -15,30 +15,44 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import tempfile
+
 from io import BytesIO
 from urllib.request import urlopen
-from pathlib import Path
 from zipfile import ZipFile
 
 
 class ZipDownloadMixin:
-    """A mixin to simulate downloading the zip file containing the training data
-    and extracting the contents"""
+    """Downloads the zip file containing the training data and extracts the contents."""
 
-    """Download the raw dataset and extract the contents
-    of the zip file and store that in the cache location."""
+    config: dict
+    raw_dataset_path: str
+    download_dir: str
+
     def download_raw_dataset(self):
-        _raw_file_name = Path.home().joinpath('.ludwig_cache').joinpath(self._dataset_name + "_"
-                                                                             + str(self._dataset_version)). \
-            joinpath('raw.csv')
-        _download_dir = os.path.join(self._cache_location, f'{self._dataset_name}_{self._dataset_version}')
-        with urlopen(self._download_url) as zipresp:
-            with ZipFile(BytesIO(zipresp.read())) as zfile:
-                zfile.extractall(self._download_dir)
-        # we downloaded the file, now check that this file exists
-        downloaded_file = _download_dir.joinpath(self._dataset_file_name)
+        """
+        Download the raw dataset and extract the contents of the zip file and
+        store that in the cache location.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with urlopen(self.download_url) as zipresp:
+                with ZipFile(BytesIO(zipresp.read())) as zfile:
+                    zfile.extractall(tmpdir)
 
-        # rename the file to raw.csv
-        if os.path.isfile(downloaded_file):
-            os.rename(downloaded_file, _raw_file_name)
+            local_filename = os.path.join(tmpdir, self.extracted_filename)
+            if not os.path.exists(local_filename):
+                raise RuntimeError(f'Expected extracted file {local_filename} does not exist')
 
+            os.makedirs(self.download_dir, exist_ok=True)
+            os.rename(local_filename, self.raw_dataset_path)
+
+    def is_downloaded(self) -> bool:
+        return os.path.exists(self.raw_dataset_path)
+
+    @property
+    def download_url(self):
+        return self.config["download_url"]
+
+    @property
+    def extracted_filename(self):
+        return self.config["extracted_file_name"]
