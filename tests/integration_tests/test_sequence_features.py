@@ -58,23 +58,13 @@ def generate_sequence_training_data():
 
     return df, input_features, output_features
 
-@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
-@pytest.mark.parametrize('enc_encoder', ENCODERS)
-def test_sequence_encoders(
-    enc_encoder,
-    enc_cell_type,
-    generate_sequence_training_data
+def setup_model_scaffolding(
+    raw_df,
+    input_features,
+    output_features
 ):
-    # retrieve pre-computed dataset and features
-    raw_df = generate_sequence_training_data[0]
-    input_features = generate_sequence_training_data[1]
-    output_features = generate_sequence_training_data[2]
-
-    input_feature_name = input_features[0]['name']
 
     # setup input feature for testing
-    input_features[0]['encoder'] = enc_encoder
-    input_features[0]['cell_type'] = enc_cell_type
     config = {'input_features': input_features,
               'output_features': output_features}
 
@@ -96,6 +86,32 @@ def test_sequence_encoders(
     batcher = initialize_batcher(
         training_set
     )
+
+    return model, batcher
+
+
+@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize('enc_encoder', ENCODERS)
+def test_sequence_encoders(
+    enc_encoder,
+    enc_cell_type,
+    generate_sequence_training_data
+):
+    # retrieve pre-computed dataset and features
+    raw_df = generate_sequence_training_data[0]
+    input_features = generate_sequence_training_data[1]
+    output_features = generate_sequence_training_data[2]
+    input_feature_name = input_features[0]['name']
+    input_features[0]['encoder'] = enc_encoder
+    input_features[0]['cell_type'] = enc_cell_type
+
+
+    model, batcher = setup_model_scaffolding(
+        raw_df,
+        input_features,
+        output_features
+    )
+
     while not batcher.last_batch():
         batch = batcher.next_batch()
         inputs = {
