@@ -20,6 +20,11 @@ from ludwig.datasets.download import ZipDownloadMixin
 from ludwig.datasets.load import CSVLoadMixin
 
 
+def load(cache_dir=None):
+    dataset = Reuters(cache_dir=cache_dir)
+    return dataset.load()
+
+
 class Reuters(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
     """The Reuters dataset.
 
