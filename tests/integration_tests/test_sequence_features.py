@@ -19,7 +19,7 @@ from tests.integration_tests.utils import run_experiment
 
 DEFAULT_HIDDEN_SIZE = 8
 
-
+# generates dataset that can be used for rest of test
 @pytest.fixture(scope='module')
 def generate_sequence_training_data():
     input_features = [
@@ -30,9 +30,7 @@ def generate_sequence_training_data():
             cell_type='lstm',
             reduce_output=None
         )
-        # {'name': 'in_sequence', 'type': 'sequence', 'min_len': 2,
-        #  'max_len': 10},
-    ]
+     ]
 
     output_features = [
         sequence_feature(
@@ -43,21 +41,21 @@ def generate_sequence_training_data():
             attention='bahdanau',
             reduce_input=None
         )
-
-        # {'name': 'out_sequence', 'type': 'sequence', 'min_len': 3,
-        #  'max_len': 10}
     ]
 
+    # generate synthetic data set testing
     dataset = build_synthetic_dataset(
         150,
         copy.deepcopy(input_features) + copy.deepcopy(output_features)
     )
-
     raw_data = '\n'.join([r[0] + ',' + r[1] for r in dataset])
     df = pd.read_csv(StringIO(raw_data))
 
     return df, input_features, output_features
 
+# setups up minimal number of data structures required to support initialized
+# input and output features.  The function returns initialized LudwigModel
+# and batcher for training dataset
 def setup_model_scaffolding(
     raw_df,
     input_features,
@@ -68,7 +66,7 @@ def setup_model_scaffolding(
     config = {'input_features': input_features,
               'output_features': output_features}
 
-    # setup model scaffolding to test feature
+    # setup model scaffolding to for testing
     model = LudwigModel(config)
     training_set, _, _, training_set_metadata = preprocess_for_training(
         config,
@@ -89,7 +87,10 @@ def setup_model_scaffolding(
 
     return model, batcher
 
-
+# test sequence input features
+# pytest parameters:
+#   enc_cell_type: encoder cell types
+#   enc_encoder: sequence input feature encoder
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_encoder', ENCODERS)
 def test_sequence_encoders(
@@ -118,10 +119,7 @@ def test_sequence_encoders(
             i_feat.feature_name: batch[i_feat.feature_name]
             for i_feat in model.model.input_features.values()
         }
-        # targets = {
-        #     o_feat.feature_name: batch[o_feat.feature_name]
-        #     for o_feat in model.model.output_features.values()
-        # }
+
         # retrieve encoder to test
         encoder = model.model.input_features[input_feature_name].encoder_obj
         encoder_out = encoder(tf.cast(inputs[input_feature_name], dtype=tf.int32))
@@ -169,34 +167,47 @@ def test_sequence_encoders(
             assert encoder_out['encoder_output'].shape.as_list() == \
                    [batch_size, 1, DEFAULT_HIDDEN_SIZE]
             assert 'encoder_output_state' in encoder_out
+
             if enc_cell_type == 'lstm':
                 assert isinstance(encoder_out['encoder_output_state'], list)
-                assert encoder_out['encoder_output_state'][0].shape.as_list() == \
-                       [batch_size, DEFAULT_HIDDEN_SIZE]
-                assert encoder_out['encoder_output_state'][1].shape.as_list() == \
-                       [batch_size, DEFAULT_HIDDEN_SIZE]
+                assert encoder_out['encoder_output_state'][0].shape.as_list() \
+                       == [batch_size, DEFAULT_HIDDEN_SIZE]
+                assert encoder_out['encoder_output_state'][1].shape.as_list() \
+                       == [batch_size, DEFAULT_HIDDEN_SIZE]
             else:
                 assert isinstance(encoder_out['encoder_output_state'], tf.Tensor)
-                assert encoder_out['encoder_output_state'].shape.as_list() == \
-                       [batch_size, DEFAULT_HIDDEN_SIZE]
+                assert encoder_out['encoder_output_state'].shape.as_list() \
+                       == [batch_size, DEFAULT_HIDDEN_SIZE]
 
         elif enc_encoder == 'stacked_cnn':
-            assert encoder_out['encoder_output'].shape.as_list() == \
-                   [batch_size, 1, DEFAULT_HIDDEN_SIZE]
+            assert encoder_out['encoder_output'].shape.as_list() \
+                   == [batch_size, 1, DEFAULT_HIDDEN_SIZE]
 
         elif enc_encoder == 'transformer':
-            assert encoder_out['encoder_output'].shape.as_list() == \
-                   [batch_size, seq_size, 256]
+            assert encoder_out['encoder_output'].shape.as_list() \
+                   == [batch_size, seq_size, 256]
 
         elif enc_encoder == 'embed':
-            assert encoder_out['encoder_output'].shape.as_list() == \
-                   [batch_size, seq_size, DEFAULT_HIDDEN_SIZE]
+            assert encoder_out['encoder_output'].shape.as_list() \
+                   == [batch_size, seq_size, DEFAULT_HIDDEN_SIZE]
 
         else:
             raise ValueError('{} is an invalid encoder specification'\
                              .format(enc_encoder))
 
-
+#
+# tests output feature sequence with `Generator` decoder
+# pytest parameters
+#   dec_cell_type: decoder cell type
+#   dec_attention: decoder's attention mechanism
+#   dec_beam_width: decoder's beam search width
+#   combiner_output_shapes: is a 2-tuple specifies the possible types of
+#     tensors that the combiner may generate for sequences.
+#     combiner_output_shapes[0]: specifies shape for hidden key
+#     combiner_output_shapes[1]: is either None or 1 or 2-tuple representing
+#       the encoder_output_state key. None: no encoder_output_state key,
+#       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
+#
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
@@ -225,7 +236,6 @@ def test_sequence_decoders(
     output_features[0]['cell_type'] = dec_cell_type
     output_features[0]['attention'] = dec_attention
     output_features[0]['beam_width'] = dec_beam_width
-
 
     model, _ = setup_model_scaffolding(
         raw_df,
@@ -259,20 +269,31 @@ def test_sequence_decoders(
     num_classes = model.config['output_features'][0]['num_classes']
 
     # confirm output is what is expected
+    assert len(decoder_out)  == 5
     logits, lengths, preds, last_preds, probs = decoder_out
 
-    # assert logits.shape.as_list() == [batch_size, seq_size, num_classes]
-    assert lengths.shape[0] == batch_size
+    # confirm shape and format of deocoder output
+    if dec_beam_width > 1:
+        assert logits is None
+    else:
+        assert isinstance(logits, tf.Tensor)
+        assert logits.shape.as_list() == [batch_size, seq_size, num_classes]
+
+    assert isinstance(lengths, tf.Tensor)
+    assert lengths.shape.as_list() == [batch_size]
+
+    assert isinstance(preds, tf.Tensor)
     assert preds.shape.as_list() == [batch_size, seq_size]
-    assert last_preds.shape[0] == batch_size
+
+    assert isinstance(last_preds, tf.Tensor)
+    assert last_preds.shape.as_list() == [batch_size]
+
+    assert isinstance(probs, tf.Tensor)
     assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
 
-
-
-
-    print('decoder_out', dec_cell_type, dec_attention, dec_beam_width ,len(decoder_out))
-
-
+#
+# final sanity test.  Checks a subset of sequence parameters
+#
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
