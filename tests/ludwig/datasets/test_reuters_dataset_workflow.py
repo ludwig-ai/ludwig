@@ -19,7 +19,7 @@ import yaml
 import unittest
 from unittest.mock import Mock
 from pathlib import Path
-from ludwig.datasets.reuters.reuters import Reuters
+from ludwig.datasets.reuters import Reuters
 
 
 class TestReutersDatasetWorkflow(unittest.TestCase):

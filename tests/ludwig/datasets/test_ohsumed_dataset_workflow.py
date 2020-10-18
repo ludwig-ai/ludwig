@@ -19,7 +19,7 @@ import unittest
 import yaml
 from pathlib import Path
 from unittest.mock import Mock
-from ludwig.datasets.ohsumed.ohsumed import OhsuMed
+from ludwig.datasets.ohsumed import OhsuMed
 
 
 class TestOhsumedDatasetWorkflow(unittest.TestCase):
