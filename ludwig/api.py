@@ -688,19 +688,14 @@ class LudwigModel:
                 os.makedirs(output_directory, exist_ok=True)
 
         logger.debug('Postprocessing')
-        postproc_predictions = convert_predictions(
-            postprocess(
+        postproc_predictions = postprocess(
                 predictions,
                 self.model.output_features,
                 self.training_set_metadata,
                 output_directory=output_directory,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
-            ),
-            self.model.output_features,
-            self.training_set_metadata,
-            return_type=return_type
-        )
+            )
 
         if is_on_master():
             if not skip_save_predictions:
