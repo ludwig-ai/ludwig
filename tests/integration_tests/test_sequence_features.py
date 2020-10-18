@@ -200,6 +200,82 @@ def test_sequence_encoders(
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize(
+    'combiner_output_shapes',
+    [
+        ((128, 10, 8), None),
+        ((128, 10, 32), None),
+        ((128, 10, 8), ((128, 8), (128, 8))),
+        ((128, 10, 8), ((128, 8), ))
+
+    ]
+)
+def test_sequence_decoders(
+    dec_cell_type,
+    dec_attention,
+    dec_beam_width,
+    combiner_output_shapes,
+    generate_sequence_training_data
+):
+    # retrieve pre-computed dataset and features
+    raw_df = generate_sequence_training_data[0]
+    input_features = generate_sequence_training_data[1]
+    output_features = generate_sequence_training_data[2]
+    output_feature_name = output_features[0]['name']
+    output_features[0]['cell_type'] = dec_cell_type
+    output_features[0]['attention'] = dec_attention
+    output_features[0]['beam_width'] = dec_beam_width
+
+
+    model, _ = setup_model_scaffolding(
+        raw_df,
+        input_features,
+        output_features
+    )
+
+    # generate synthetic encoder_output tensors and make it look like
+    # it came out of the combiner
+    encoder_output = tf.random.normal(combiner_output_shapes[0])
+    combiner_outputs = {'hidden': encoder_output}
+
+    if combiner_output_shapes[1] is not None:
+        if len(combiner_output_shapes[1]) > 1:
+            encoder_output_state = [
+                tf.random.normal(combiner_output_shapes[1][0]),
+                tf.random.normal(combiner_output_shapes[1][1])
+            ]
+        else:
+            encoder_output_state = \
+                tf.random.normal(combiner_output_shapes[1][0])
+
+        combiner_outputs['encoder_output_state'] = encoder_output_state
+
+    decoder = model.model.output_features[output_feature_name].decoder_obj
+    decoder_out = decoder(combiner_outputs)
+
+    # gather expected components of the shape
+    batch_size = combiner_outputs['hidden'].shape[0]
+    seq_size = output_features[0]['max_len']
+    num_classes = model.config['output_features'][0]['num_classes']
+
+    # confirm output is what is expected
+    logits, lengths, preds, last_preds, probs = decoder_out
+
+    # assert logits.shape.as_list() == [batch_size, seq_size, num_classes]
+    assert lengths.shape[0] == batch_size
+    assert preds.shape.as_list() == [batch_size, seq_size]
+    assert last_preds.shape[0] == batch_size
+    assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
+
+
+
+
+    print('decoder_out', dec_cell_type, dec_attention, dec_beam_width ,len(decoder_out))
+
+
+@pytest.mark.parametrize('dec_beam_width', [1, 3])
+@pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
+@pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_encoder', ['embed', 'rnn'])
 def test_sequence_generator(
