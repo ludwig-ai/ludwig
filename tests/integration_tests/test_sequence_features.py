@@ -16,10 +16,16 @@ from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import run_experiment
 
+#
+# this test is focused on testing input sequence features with all encoders
+# and output sequence feature with Generator decoder.  Except for specified
+# configuration parameters all other parameters assume default values.
+#
 
-DEFAULT_HIDDEN_SIZE = 8
+TEST_HIDDEN_SIZE = 8
 
 # generates dataset that can be used for rest of test
+# Note: sequence_feature function specifies hidden size to be 8
 @pytest.fixture(scope='module')
 def generate_sequence_training_data():
     input_features = [
@@ -149,39 +155,39 @@ def test_sequence_encoders(
 
         elif enc_encoder == 'rnn':
             assert encoder_out['encoder_output'].shape.as_list() == \
-                   [batch_size, seq_size, DEFAULT_HIDDEN_SIZE]
+                   [batch_size, seq_size, TEST_HIDDEN_SIZE]
 
             assert 'encoder_output_state' in encoder_out
             if enc_cell_type == 'lstm':
                 assert isinstance(encoder_out['encoder_output_state'], list)
                 assert encoder_out['encoder_output_state'][0].shape.as_list() == \
-                       [batch_size, DEFAULT_HIDDEN_SIZE]
+                       [batch_size, TEST_HIDDEN_SIZE]
                 assert encoder_out['encoder_output_state'][1].shape.as_list() == \
-                       [batch_size, DEFAULT_HIDDEN_SIZE]
+                       [batch_size, TEST_HIDDEN_SIZE]
             else:
                 assert isinstance(encoder_out['encoder_output_state'], tf.Tensor)
                 assert encoder_out['encoder_output_state'].shape.as_list() == \
-                       [batch_size, DEFAULT_HIDDEN_SIZE]
+                       [batch_size, TEST_HIDDEN_SIZE]
 
         elif enc_encoder == 'cnnrnn':
             assert encoder_out['encoder_output'].shape.as_list() == \
-                   [batch_size, 1, DEFAULT_HIDDEN_SIZE]
+                   [batch_size, 1, TEST_HIDDEN_SIZE]
             assert 'encoder_output_state' in encoder_out
 
             if enc_cell_type == 'lstm':
                 assert isinstance(encoder_out['encoder_output_state'], list)
                 assert encoder_out['encoder_output_state'][0].shape.as_list() \
-                       == [batch_size, DEFAULT_HIDDEN_SIZE]
+                       == [batch_size, TEST_HIDDEN_SIZE]
                 assert encoder_out['encoder_output_state'][1].shape.as_list() \
-                       == [batch_size, DEFAULT_HIDDEN_SIZE]
+                       == [batch_size, TEST_HIDDEN_SIZE]
             else:
                 assert isinstance(encoder_out['encoder_output_state'], tf.Tensor)
                 assert encoder_out['encoder_output_state'].shape.as_list() \
-                       == [batch_size, DEFAULT_HIDDEN_SIZE]
+                       == [batch_size, TEST_HIDDEN_SIZE]
 
         elif enc_encoder == 'stacked_cnn':
             assert encoder_out['encoder_output'].shape.as_list() \
-                   == [batch_size, 1, DEFAULT_HIDDEN_SIZE]
+                   == [batch_size, 1, TEST_HIDDEN_SIZE]
 
         elif enc_encoder == 'transformer':
             assert encoder_out['encoder_output'].shape.as_list() \
@@ -189,7 +195,7 @@ def test_sequence_encoders(
 
         elif enc_encoder == 'embed':
             assert encoder_out['encoder_output'].shape.as_list() \
-                   == [batch_size, seq_size, DEFAULT_HIDDEN_SIZE]
+                   == [batch_size, seq_size, TEST_HIDDEN_SIZE]
 
         else:
             raise ValueError('{} is an invalid encoder specification'\
