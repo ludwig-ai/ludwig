@@ -305,7 +305,12 @@ def vector_feature(**kwargs):
     return feature
 
 
-def run_experiment(input_features, output_features, **kwargs):
+def run_experiment(
+    input_features,
+    output_features,
+    skip_save_processed_input=True,
+    **kwargs
+):
     """
     Helper method to avoid code repetition in running an experiment. Deletes
     the data saved to disk after running the experiment
@@ -333,7 +338,7 @@ def run_experiment(input_features, output_features, **kwargs):
         'config': config,
         'skip_save_training_description': True,
         'skip_save_training_statistics': True,
-        'skip_save_processed_input': True,
+        'skip_save_processed_input': skip_save_processed_input,
         'skip_save_progress': True,
         'skip_save_unprocessed_output': True,
         'skip_save_model': True,
