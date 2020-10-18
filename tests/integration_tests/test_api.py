@@ -78,7 +78,7 @@ def run_api_experiment(input_features, output_features, data_csv):
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-        model.predict(dataset=data_df)
+        model.predict(dataset=data_df, skip_save_predictions=False)
     finally:
         shutil.rmtree(output_dir, ignore_errors=True)
 
