@@ -14,13 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.datasets.base_dataset import BaseDataset
+from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.process import IdentityProcessMixin
 from ludwig.datasets.download import ZipDownloadMixin
 from ludwig.datasets.load import CSVLoadMixin
 
 
-def load(cache_dir=None):
+def load(cache_dir=DEFAULT_CACHE_LOCATION):
     dataset = OhsuMed(cache_dir=cache_dir)
     return dataset.load()
 
@@ -33,5 +33,5 @@ class OhsuMed(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset)
     dataframe that can fit into Ludwig's training API.
     """
 
-    def __init__(self, cache_dir=None):
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="ohsumed", cache_dir=cache_dir)

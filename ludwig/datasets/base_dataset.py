@@ -20,9 +20,7 @@ import abc
 from pathlib import Path
 import pandas as pd
 
-# define a default location for the cache
 DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
-
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -41,7 +39,7 @@ class BaseDataset:
 
     def __init__(self, dataset_name, cache_dir):
         self.name = dataset_name
-        self.cache_dir = cache_dir or DEFAULT_CACHE_LOCATION
+        self.cache_dir = cache_dir
 
         config_full = read_config()
         self.config = config_full[dataset_name]
