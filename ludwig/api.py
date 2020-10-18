@@ -689,12 +689,12 @@ class LudwigModel:
 
         logger.debug('Postprocessing')
         postproc_predictions = postprocess(
-                predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                output_directory=output_directory,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
+            predictions,
+            self.model.output_features,
+            self.training_set_metadata,
+            output_directory=output_directory,
+            skip_save_unprocessed_output=skip_save_unprocessed_output
+                                        or not is_on_master(),
             )
 
         if is_on_master():
@@ -703,6 +703,13 @@ class LudwigModel:
                                         output_directory)
 
                 logger.info('Saved to: {0}'.format(output_directory))
+
+        postproc_predictions = convert_predictions(
+            postproc_predictions,
+            self.model.output_features,
+            self.training_set_metadata,
+            return_type=return_type
+        )
 
         return postproc_predictions, output_directory
 
