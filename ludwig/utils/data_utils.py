@@ -24,6 +24,7 @@ import pickle
 import random
 import re
 
+import dask.dataframe as dd
 import h5py
 import numpy as np
 import pandas as pd
@@ -39,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
 DICT_FORMATS = {'dict', 'dictionary', dict}
-DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame}
+DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame, dd.core.DataFrame}
 CSV_FORMATS = {'csv'}
 TSV_FORMATS = {'tsv'}
 JSON_FORMATS = {'json'}
@@ -98,12 +99,12 @@ def read_xsv(data_fp, separator=',', header=0, nrows=None, skiprows=None):
             pass
 
     try:
-        df = pd.read_csv(data_fp, sep=separator, header=header,
+        df = dd.read_csv(data_fp, sep=separator, header=header,
                          nrows=nrows, skiprows=skiprows)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = pd.read_csv(data_fp, sep=separator, header=header,
+        df = dd.read_csv(data_fp, sep=separator, header=header,
                          escapechar='\\',
                          nrows=nrows, skiprows=skiprows)
 
@@ -559,6 +560,8 @@ def clear_data_cache():
 def figure_data_format_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return pd.DataFrame
+    elif isinstance(dataset, dd.core.DataFrame):
+        return dd.core.DataFrame
     elif isinstance(dataset, dict):
         return dict
     elif isinstance(dataset, str):
