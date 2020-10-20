@@ -27,32 +27,20 @@ class ZipDownloadMixin:
 
     config: dict
     raw_dataset_path: str
-    download_dir: str
+    raw_temp_path: str
 
     def download_raw_dataset(self):
         """
         Download the raw dataset and extract the contents of the zip file and
         store that in the cache location.
         """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with urlopen(self.download_url) as zipresp:
-                with ZipFile(BytesIO(zipresp.read())) as zfile:
-                    zfile.extractall(tmpdir)
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+        with urlopen(self.download_url) as zipresp:
+            with ZipFile(BytesIO(zipresp.read())) as zfile:
+                zfile.extractall(self.raw_temp_path)
 
-            local_filename = os.path.join(tmpdir, self.extracted_filename)
-            if not os.path.exists(local_filename):
-                raise RuntimeError(f'Expected extracted file {local_filename} does not exist')
-
-            os.makedirs(self.download_dir, exist_ok=True)
-            os.rename(local_filename, self.raw_dataset_path)
-
-    def is_downloaded(self) -> bool:
-        return os.path.exists(self.raw_dataset_path)
+        os.rename(self.raw_temp_path, self.raw_dataset_path)
 
     @property
     def download_url(self):
         return self.config["download_url"]
-
-    @property
-    def extracted_filename(self):
-        return self.config["extracted_file_name"]

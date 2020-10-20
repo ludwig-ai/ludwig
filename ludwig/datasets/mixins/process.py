@@ -21,9 +21,7 @@ class IdentityProcessMixin:
     """A mixin that performs a no-op for already processed raw datasets."""
 
     raw_dataset_path: str
+    processed_dataset_path: str
 
     def process_downloaded_dataset(self):
-        pass
-
-    def is_processed(self) -> bool:
-        return os.path.isfile(self.raw_dataset_path)
+        os.rename(self.raw_dataset_path, self.processed_dataset_path)

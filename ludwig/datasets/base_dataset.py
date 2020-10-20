@@ -70,11 +70,19 @@ class BaseDataset:
 
     @property
     def raw_dataset_path(self):
-        return os.path.join(self.download_dir, self.config["raw_path"])
+        return os.path.join(self.download_dir, 'raw')
+
+    @property
+    def raw_temp_path(self):
+        return os.path.join(self.download_dir, '_raw')
 
     @property
     def processed_dataset_path(self):
-        return os.path.join(self.download_dir, self.config["processed_path"])
+        return os.path.join(self.download_dir, 'processed')
+
+    @property
+    def processed_temp_path(self):
+        return os.path.join(self.download_dir, '_processed')
 
     @property
     def download_dir(self):
@@ -98,7 +106,7 @@ class BaseDataset:
 
         :returns: True or false identifying whether the file has been downloaded
         """
-        raise NotImplementedError()
+        return self.is_processed() or os.path.exists(self.raw_dataset_path)
 
     @abc.abstractmethod
     def is_processed(self) -> bool:
@@ -106,4 +114,4 @@ class BaseDataset:
 
         :returns: True or false identifying whether the processed file exists
         """
-        raise NotImplementedError()
+        return os.path.exists(self.processed_dataset_path)

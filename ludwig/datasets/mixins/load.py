@@ -15,12 +15,15 @@
 # limitations under the License.
 # ==============================================================================
 
+import os
+
 import pandas as pd
 
 
 class CSVLoadMixin:
     """Reads a CSV file into a Pandas DataFrame."""
 
+    config: dict
     processed_dataset_path: str
 
     def load_processed_dataset(self) -> pd.DataFrame:
@@ -28,4 +31,9 @@ class CSVLoadMixin:
 
         :returns: A pandas dataframe
         """
-        return pd.read_csv(self.processed_dataset_path)
+        dataset_csv = os.path.join(self.processed_dataset_path, self.csv_filename)
+        return pd.read_csv(dataset_csv)
+
+    @property
+    def csv_filename(self):
+        return self.config["csv_filename"]
