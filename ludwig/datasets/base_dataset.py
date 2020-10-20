@@ -27,7 +27,7 @@ PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 def read_config(dataset_name):
     config_path = os.path.join(PATH_HERE, f"{dataset_name}/config.yaml")
     with open(config_path) as config_file:
-        return yaml.load(config_file, Loader=yaml.FullLoader)
+        return yaml.safe_load(config_file)
 
 
 class BaseDataset:
