@@ -34,13 +34,9 @@ def test_load_csv_dataset():
         input_df.to_csv(archive_filename, index=False, compression=compression_opts)
 
         config = dict(
-            fake=dict(
-                version=1.0,
-                download_url='file://' + archive_filename,
-                extracted_file_name=extracted_filename,
-                raw_path='dataset.csv',
-                processed_path='dataset.csv'
-            )
+            version=1.0,
+            download_url='file://' + archive_filename,
+            csv_filename=extracted_filename,
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
