@@ -24,8 +24,8 @@ DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 
 
-def read_config():
-    config_path = os.path.join(PATH_HERE, "config/dataset_config.yaml")
+def read_config(dataset_name):
+    config_path = os.path.join(PATH_HERE, f"{dataset_name}/config.yaml")
     with open(config_path) as config_file:
         return yaml.load(config_file, Loader=yaml.FullLoader)
 
@@ -41,8 +41,7 @@ class BaseDataset:
         self.name = dataset_name
         self.cache_dir = cache_dir
 
-        config_full = read_config()
-        self.config = config_full[dataset_name]
+        self.config = read_config(dataset_name)
         self.version = self.config["version"]
 
     def download(self) -> None:
