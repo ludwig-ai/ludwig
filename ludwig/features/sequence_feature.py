@@ -406,7 +406,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+            preds = result[PREDICTIONS].numpy()
             lengths = result[LENGTHS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
@@ -425,7 +425,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             del result[PREDICTIONS]
 
         if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS]
+            last_preds = result[LAST_PREDICTIONS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
                     metadata['idx2str'][last_pred]
