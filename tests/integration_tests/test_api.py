@@ -395,22 +395,20 @@ def run_api_commands(
     )
 
 
+@pytest.mark.parametrize('skip_save_training_description', [False, True])
 @pytest.mark.parametrize('skip_save_training_statistics', [False, True])
 @pytest.mark.parametrize('skip_save_model', [False, True])
 @pytest.mark.parametrize('skip_save_progress', [False, True])
+@pytest.mark.parametrize('skip_save_log', [False, True])
 @pytest.mark.parametrize('skip_save_processed_input', [False, True])
-@pytest.mark.parametrize('skip_save_unprocessed_output', [False, True])
-@pytest.mark.parametrize('skip_save_predictions', [False, True])
-@pytest.mark.parametrize('skip_save_eval_stats', [False, True])
-def test_api_skip_parameters(
+def test_api_skip_parameters_train(
         csv_filename,
+        skip_save_training_description,
         skip_save_training_statistics,
         skip_save_model,
         skip_save_progress,
+        skip_save_log,
         skip_save_processed_input,
-        skip_save_unprocessed_output,
-        skip_save_predictions,
-        skip_save_eval_stats
 ):
     # Single sequence input, single category output
     input_features = [category_feature(vocab_size=2)]
@@ -425,11 +423,69 @@ def test_api_skip_parameters(
             output_features,
             data_csv=rel_path,
             output_dir=output_dir,
+            skip_save_training_description=skip_save_training_description,
             skip_save_training_statistics=skip_save_training_statistics,
             skip_save_model=skip_save_model,
             skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
+        )
+
+
+@pytest.mark.parametrize('skip_save_unprocessed_output', [False, True])
+@pytest.mark.parametrize('skip_save_predictions', [False, True])
+def test_api_skip_parameters_predict(
+        csv_filename,
+        skip_save_unprocessed_output,
+        skip_save_predictions,
+):
+    # Single sequence input, single category output
+    input_features = [category_feature(vocab_size=2)]
+    output_features = [category_feature(vocab_size=2)]
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        # Generate test data
+        rel_path = generate_data(input_features, output_features,
+                                 os.path.join(output_dir, csv_filename))
+        run_api_commands(
+            input_features,
+            output_features,
+            data_csv=rel_path,
+            output_dir=output_dir,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_predictions=skip_save_predictions,
+        )
+
+
+@pytest.mark.parametrize('skip_save_unprocessed_output', [False, True])
+@pytest.mark.parametrize('skip_save_predictions', [False, True])
+@pytest.mark.parametrize('skip_save_eval_stats', [False, True])
+@pytest.mark.parametrize('skip_collect_predictions', [False, True])
+@pytest.mark.parametrize('skip_collect_overall_stats', [False, True])
+def test_api_skip_parameters_evaluate(
+        csv_filename,
+        skip_save_unprocessed_output,
+        skip_save_predictions,
+        skip_save_eval_stats,
+        skip_collect_predictions,
+        skip_collect_overall_stats,
+):
+    # Single sequence input, single category output
+    input_features = [category_feature(vocab_size=2)]
+    output_features = [category_feature(vocab_size=2)]
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        # Generate test data
+        rel_path = generate_data(input_features, output_features,
+                                 os.path.join(output_dir, csv_filename))
+        run_api_commands(
+            input_features,
+            output_features,
+            data_csv=rel_path,
+            output_dir=output_dir,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             skip_save_predictions=skip_save_predictions,
             skip_save_eval_stats=skip_save_eval_stats,
+            skip_collect_predictions=skip_collect_predictions,
+            skip_collect_overall_stats=skip_collect_overall_stats,
         )
