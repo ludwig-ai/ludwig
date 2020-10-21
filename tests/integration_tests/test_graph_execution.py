@@ -17,6 +17,7 @@ import contextlib
 
 import pytest
 import tensorflow as tf
+import tensorflow_addons as tfa
 
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -99,12 +100,7 @@ def test_sequence_generator(
         dec_beam_width,
         csv_filename
 ):
-    # check if gpu is present
-    gpu_devices = tf.config.list_physical_devices(device_type='GPU')
-    if not gpu_devices:
-        # gpu not present, ensure TFA Python Ops is loaded
-        import tensorflow_addons as tfa
-        tfa.options.TF_ADDONS_PY_OPS = True
+    tfa.options.TF_ADDONS_PY_OPS = True
 
     with graph_mode():
         # Define input and output features
