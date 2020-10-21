@@ -319,7 +319,7 @@ class Trainer:
 
         if not valid_validation_field:
             raise ValueError(
-                'The specificed validation_field {} is not valid.'
+                'The specified validation_field {} is not valid.'
                 'Available ones are: {}'.format(
                     self.validation_field,
                     list(output_features.keys()) + ['combined']
@@ -332,7 +332,7 @@ class Trainer:
         ]
         if not valid_validation_metric:
             raise ValueError(
-                'The specificed metric {} is not valid. '
+                'The specified metric {} is not valid. '
                 'Available metrics for {} output feature are: {}'.format(
                     self.validation_metric,
                     self.validation_field,
