@@ -939,6 +939,7 @@ def build_dataset(
 
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
+    print('DATASET', dataset_df)
     metadata = {}
     for feature in features:
         if PREPROCESSING in feature:

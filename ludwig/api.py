@@ -68,6 +68,9 @@ from ludwig.utils.misc_utils import (get_experiment_description,
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.tf_utils import initialize_tensorflow
 
+import ray
+from ray.util.dask import ray_dask_get
+
 logger = logging.getLogger(__name__)
 
 
@@ -319,88 +322,30 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        # setup directories and file names
-        if model_resume_path is not None:
-            if os.path.exists(model_resume_path):
-                output_directory = model_resume_path
-            else:
-                if is_on_master():
-                    logger.info(
-                        'Model resume path does not exists, '
-                        'starting training from scratch'
-                    )
-                model_resume_path = None
-
-        if model_resume_path is None:
-            if is_on_master():
-                output_directory = get_output_directory(
-                    output_directory,
-                    experiment_name,
-                    model_name
-                )
-            else:
-                output_directory = None
-
-        # if we are skipping all saving,
-        # there is no need to create a directory that will remain empty
-        should_create_output_directory = not (
-                skip_save_training_description and
-                skip_save_training_statistics and
-                skip_save_model and
-                skip_save_progress and
-                skip_save_log and
-                skip_save_processed_input
-        )
-
-        description_fn = training_stats_fn = model_dir = None
-        if is_on_master():
-            if should_create_output_directory:
-                if not os.path.exists(output_directory):
-                    os.makedirs(output_directory, exist_ok=True)
-            description_fn, training_stats_fn, model_dir = get_file_names(
-                output_directory)
-
-        # save description
-        if is_on_master():
-            description = get_experiment_description(
-                self.config,
-                dataset=dataset,
-                training_set=training_set,
-                validation_set=validation_set,
-                test_set=test_set,
-                training_set_metadata=training_set_metadata,
-                data_format=data_format,
-                random_seed=random_seed
-            )
-            if not skip_save_training_description:
-                save_json(description_fn, description)
-            # print description
-            logger.info('Experiment name: {}'.format(experiment_name))
-            logger.info('Model name: {}'.format(model_name))
-            logger.info('Output directory: {}'.format(output_directory))
-            logger.info('\n')
-            for key, value in description.items():
-                logger.info('{}: {}'.format(key, pformat(value, indent=4)))
-            logger.info('\n')
-
-        # preprocess
-        preprocessed_data = preprocess_for_training(
-            self.config,
+        (training_set,
+         validation_set,
+         test_set,
+         training_set_metadata) = self.preprocess(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
             test_set=test_set,
             training_set_metadata=training_set_metadata,
             data_format=data_format,
+            experiment_name=experiment_name,
+            model_name=model_name,
+            model_resume_path=model_resume_path,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=self.config[PREPROCESSING],
-            random_seed=random_seed
+            output_directory=output_directory,
+            random_seed=random_seed,
+            devbug=debug,
+            **kwargs,
         )
-
-        (training_set,
-         validation_set,
-         test_set,
-         training_set_metadata) = preprocessed_data
         self.training_set_metadata = training_set_metadata
 
         if is_on_master():
@@ -1227,6 +1172,8 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
+        ray.init()
+
         # preprocess
         preprocessed_data = preprocess_for_training(
             self.config,

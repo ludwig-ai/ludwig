@@ -22,6 +22,7 @@ from collections import Counter
 
 import numpy as np
 
+from ludwig.utils.data_utils import compute, persist
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
@@ -99,8 +100,6 @@ def create_vocabulary(
         pretrained_model_name_or_path=None
 ):
     vocab = None
-    max_line_length = 0
-    unit_counts = Counter()
 
     tokenizer = get_from_registry(
         tokenizer_type,
@@ -136,10 +135,26 @@ def create_vocabulary(
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    for line in data:
-        processed_line = tokenizer(line.lower() if lowercase else line)
-        unit_counts.update(processed_line)
-        max_line_length = max(max_line_length, len(processed_line))
+    def apply(s):
+        print('apply: ', s.shape)
+        applied = s.apply(lambda line: tokenizer(line.lower() if lowercase else line))
+        print('applied: ', applied.shape)
+        return applied
+        # return s.apply(lambda line: tokenizer(line.lower() if lowercase else line))
+
+    print('DATA: ', data)
+    # processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
+    processed_lines = data.repartition(10).map_partitions(lambda s: apply(s)).explode()
+    print('PROCESSED LINES: ', processed_lines)
+    # processed_lines = persist(processed_lines)
+    # print('PROCESSED LINES: ', processed_lines)
+    processed_counts = processed_lines.value_counts(sort=False)
+    print('PROCESSED COUNTS: ', processed_counts)
+    unit_counts = Counter(dict(compute(processed_counts)))
+    print('UNIT_COUNTS', len(unit_counts))
+    max_line_length = max([len(k) for k in unit_counts.keys()])
+    # max_line_length = compute(processed_lines.map(len).max())
+    print('MAX_LINE_LENGTH', max_line_length)
 
     if vocab is None:
         vocab = [unit for unit, count in

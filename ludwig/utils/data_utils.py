@@ -24,6 +24,8 @@ import pickle
 import random
 import re
 
+from ray.util.dask import ray_dask_get
+
 import dask.dataframe as dd
 import h5py
 import numpy as np
@@ -131,7 +133,7 @@ def read_excel(data_fp):
 
 
 def read_parquet(data_fp):
-    return pd.read_parquet(data_fp)
+    return dd.read_parquet(data_fp)
 
 
 def read_pickle(data_fp):
@@ -655,6 +657,14 @@ def is_model_dir(path: str) -> bool:
         if weights_files_count >= 2:
             is_model_dir = True
     return is_model_dir
+
+
+def persist(data):
+    return data.persist(scheduler=ray_dask_get)
+
+
+def compute(data):
+    return data.compute(scheduler=ray_dask_get)
 
 
 external_data_reader_registry = {
