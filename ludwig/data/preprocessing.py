@@ -1548,15 +1548,15 @@ def replace_text_feature_level(features, datasets):
         if feature[TYPE] == TEXT:
             for dataset in datasets:
                 if dataset is not None:
-                    dataset[feature[NAME]] = dataset[
+                    dataset[feature[HASH]] = dataset[
                         '{}_{}'.format(
-                            feature[NAME],
+                            feature[HASH],
                             feature['level']
                         )
                     ]
                     for level in ('word', 'char'):
                         name_level = '{}_{}'.format(
-                            feature[NAME],
+                            feature[HASH],
                             level)
                         if name_level in dataset:
                             del dataset[name_level]
