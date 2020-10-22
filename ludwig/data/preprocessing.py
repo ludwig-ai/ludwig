@@ -27,6 +27,7 @@ from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
@@ -942,6 +943,10 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
     metadata = {}
 
     for feature in features:
+
+        if HASH not in feature:
+            feature[HASH] = compute_feature_hash(feature)
+
         if feature[HASH] not in metadata:
 
             if PREPROCESSING in feature:
@@ -998,6 +1003,10 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 def build_data(dataset_df, features, training_set_metadata):
     dataset = {}
     for feature in features:
+
+        if HASH not in feature:
+            feature[HASH] = compute_feature_hash(feature)
+
         if feature[HASH] not in dataset:
             preprocessing_parameters = training_set_metadata[feature[HASH]][
                 PREPROCESSING]
