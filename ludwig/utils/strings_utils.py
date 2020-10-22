@@ -22,7 +22,7 @@ from collections import Counter
 
 import numpy as np
 
-from ludwig.utils.data_utils import compute, persist
+from ludwig.utils.data_utils import compute, parallelize
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
@@ -135,7 +135,7 @@ def create_vocabulary(
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    processed_lines = data.repartition(10).map(lambda line: tokenizer(line.lower() if lowercase else line)).explode()
+    processed_lines = parallelize(data).map(lambda line: tokenizer(line.lower() if lowercase else line)).explode()
     processed_counts = processed_lines.value_counts(sort=False)
     unit_counts = Counter(dict(compute(processed_counts)))
     max_line_length = max([len(k) for k in unit_counts.keys()])
@@ -227,10 +227,9 @@ def build_sequence_matrix(
 
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
-    max_length = 0
     unit_vectors = []
     print('SEQUENCES: ', sequences)
-    unit_indices_vectors = sequences.repartition(10).map(lambda sequence: _get_sequence_vector(
+    unit_indices_vectors = parallelize(sequences).map(lambda sequence: _get_sequence_vector(
         sequence,
         tokenizer,
         tokenizer_type,

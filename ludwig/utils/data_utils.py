@@ -666,6 +666,11 @@ def ray_init():
     dask.config.set(scheduler=ray_dask_get)
 
 
+def parallelize(data):
+    num_cpus = int(ray.cluster_resources().get('CPU', 1))
+    return data.repartition(num_cpus)
+
+
 def persist(data):
     return data.persist()
 
