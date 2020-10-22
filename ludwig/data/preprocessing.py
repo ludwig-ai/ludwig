@@ -49,8 +49,7 @@ from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
-                                     resolve_pointers, set_random_seed,
-                                     hash_dict)
+                                     resolve_pointers, set_random_seed)
 
 logger = logging.getLogger(__name__)
 
