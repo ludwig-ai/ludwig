@@ -252,7 +252,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+            preds = result[PREDICTIONS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
