@@ -24,6 +24,8 @@ import pickle
 import random
 import re
 
+import dask
+import ray
 from ray.util.dask import ray_dask_get
 
 import dask.dataframe as dd
@@ -659,12 +661,17 @@ def is_model_dir(path: str) -> bool:
     return is_model_dir
 
 
+def ray_init():
+    ray.init()
+    dask.config.set(scheduler=ray_dask_get)
+
+
 def persist(data):
-    return data.persist(scheduler=ray_dask_get)
+    return data.persist()
 
 
 def compute(data):
-    return data.compute(scheduler=ray_dask_get)
+    return data.compute()
 
 
 external_data_reader_registry = {

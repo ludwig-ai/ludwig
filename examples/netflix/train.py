@@ -20,7 +20,7 @@ model = LudwigModel(config='./model_config.yaml',
     test_set,
     training_set_metadata
 ) = model.preprocess(
-    dataset='./data/dataset.parquet',
+    dataset='./data/dataset.parquet/part.0.parquet',
     experiment_name='netflix_experiment',
     model_name='netflix_model'
 )

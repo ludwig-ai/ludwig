@@ -58,7 +58,8 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      DICT_FORMATS,
                                      external_data_reader_registry,
                                      figure_data_format, generate_kfold_splits,
-                                     load_json, save_json)
+                                     load_json, save_json,
+                                     ray_init)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.horovod_utils import (broadcast_return, configure_horovod,
                                         is_on_master, set_on_master)
@@ -1172,7 +1173,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        ray.init()
+        ray_init()
 
         # preprocess
         preprocessed_data = preprocess_for_training(

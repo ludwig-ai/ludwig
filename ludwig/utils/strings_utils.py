@@ -135,25 +135,10 @@ def create_vocabulary(
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    def apply(s):
-        print('apply: ', s.shape)
-        applied = s.apply(lambda line: tokenizer(line.lower() if lowercase else line))
-        print('applied: ', applied.shape)
-        return applied
-        # return s.apply(lambda line: tokenizer(line.lower() if lowercase else line))
-
-    print('DATA: ', data)
-    # processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
-    processed_lines = data.repartition(10).map_partitions(lambda s: apply(s)).explode()
-    print('PROCESSED LINES: ', processed_lines)
-    # processed_lines = persist(processed_lines)
-    # print('PROCESSED LINES: ', processed_lines)
+    processed_lines = data.repartition(10).map(lambda line: tokenizer(line.lower() if lowercase else line)).explode()
     processed_counts = processed_lines.value_counts(sort=False)
-    print('PROCESSED COUNTS: ', processed_counts)
     unit_counts = Counter(dict(compute(processed_counts)))
-    print('UNIT_COUNTS', len(unit_counts))
     max_line_length = max([len(k) for k in unit_counts.keys()])
-    # max_line_length = compute(processed_lines.map(len).max())
     print('MAX_LINE_LENGTH', max_line_length)
 
     if vocab is None:
@@ -244,6 +229,20 @@ def build_sequence_matrix(
 
     max_length = 0
     unit_vectors = []
+    print('SEQUENCES: ', sequences)
+    unit_indices_vectors = sequences.repartition(10).map(lambda sequence: _get_sequence_vector(
+        sequence,
+        tokenizer,
+        tokenizer_type,
+        format_dtype,
+        inverse_vocabulary,
+        lowercase=lowercase,
+        unknown_symbol=unknown_symbol
+    ))
+    max_length = compute(unit_indices_vectors.map(len).max())
+    print('MAX_LENGTH: ', max_length)
+    exit(0)
+
     for sequence in sequences:
         unit_indices_vector = _get_sequence_vector(
             sequence,
@@ -258,6 +257,7 @@ def build_sequence_matrix(
         if len(unit_indices_vector) > max_length:
             max_length = len(unit_indices_vector)
 
+    print('MAX_LENGTH: ', max_length)
     if max_length < length_limit:
         logging.debug('max length of {0}: {1} < limit: {2}'.format(
             format, max_length, length_limit
