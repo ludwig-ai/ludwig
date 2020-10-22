@@ -50,6 +50,11 @@ class BaseFeature(object):
         else:
             self.feature_id = feature[ID]
 
+        if HASH not in feature:
+            raise ValueError('Missing feature hash')
+
+        self.feature_hash = feature[HASH]
+
         self.type = None
 
     def overwrite_defaults(self, feature):

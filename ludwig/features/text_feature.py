@@ -209,10 +209,10 @@ class TextFeatureMixin(object):
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters
+            metadata[feature[HASH]], preprocessing_parameters
         )
-        dataset['{}_char'.format(feature[NAME])] = chars_data
-        dataset['{}_word'.format(feature[NAME])] = words_data
+        dataset['{}_char'.format(feature[HASH])] = chars_data
+        dataset['{}_word'.format(feature[HASH])] = words_data
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
@@ -471,6 +471,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             probs = result[PROBABILITIES]
             if probs is not None:
+                probs = probs.numpy()
 
                 if len(probs) > 0 and isinstance(probs[0], list):
                     prob = []

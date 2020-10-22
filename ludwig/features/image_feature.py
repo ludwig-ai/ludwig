@@ -49,7 +49,7 @@ class ImageFeatureMixin(object):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         return {
-            'preprocessing': preprocessing_parameters
+            PREPROCESSING: preprocessing_parameters
         }
 
     @staticmethod
@@ -229,12 +229,12 @@ class ImageFeatureMixin(object):
             preprocessing_parameters
     ):
         set_default_value(
-            feature['preprocessing'],
+            feature[PREPROCESSING],
             'in_memory',
             preprocessing_parameters['in_memory']
         )
         set_default_value(
-            feature['preprocessing'],
+            feature[PREPROCESSING],
             'num_processes',
             preprocessing_parameters['num_processes']
         )
@@ -264,9 +264,9 @@ class ImageFeatureMixin(object):
             preprocessing_parameters, first_path
         )
 
-        metadata[feature[NAME]]['preprocessing']['height'] = height
-        metadata[feature[NAME]]['preprocessing']['width'] = width
-        metadata[feature[NAME]]['preprocessing'][
+        metadata[feature[HASH]][PREPROCESSING]['height'] = height
+        metadata[feature[HASH]][PREPROCESSING]['width'] = width
+        metadata[feature[HASH]][PREPROCESSING][
             'num_channels'] = num_channels
 
         read_image_and_resize = partial(
@@ -281,13 +281,13 @@ class ImageFeatureMixin(object):
         all_file_paths = [get_abs_path(src_path, file_path)
                           for file_path in dataset_df[feature[NAME]]]
 
-        if feature['preprocessing']['in_memory']:
+        if feature[PREPROCESSING]['in_memory']:
             # Number of processes to run in parallel for preprocessing
-            num_processes = feature['preprocessing']['num_processes']
-            metadata[feature[NAME]]['preprocessing'][
+            num_processes = feature[PREPROCESSING]['num_processes']
+            metadata[feature[HASH]][PREPROCESSING][
                 'num_processes'] = num_processes
 
-            dataset[feature[NAME]] = np.empty(
+            dataset[feature[HASH]] = np.empty(
                 (num_images, height, width, num_channels),
                 dtype=np.uint8
             )
@@ -301,7 +301,7 @@ class ImageFeatureMixin(object):
                             num_processes
                         )
                     )
-                    dataset[feature[NAME]] = np.array(
+                    dataset[feature[HASH]] = np.array(
                         pool.map(read_image_and_resize, all_file_paths)
                     )
 
@@ -312,7 +312,7 @@ class ImageFeatureMixin(object):
                     'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])
-                dataset[feature[NAME]] = np.array([img])
+                dataset[feature[HASH]] = np.array([img])
         else:
             data_fp = os.path.splitext(dataset_df.src)[0] + '.hdf5'
             mode = 'w'
@@ -322,7 +322,7 @@ class ImageFeatureMixin(object):
             with h5py.File(data_fp, mode) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
-                    feature[NAME] + '_data',
+                    feature[HASH] + '_data',
                     (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
@@ -332,7 +332,7 @@ class ImageFeatureMixin(object):
                     )
                 h5_file.flush()
 
-            dataset[feature[NAME]] = np.arange(num_images)
+            dataset[feature[HASH]] = np.arange(num_images)
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
@@ -377,12 +377,12 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             **kwargs
     ):
         for key in ['height', 'width', 'num_channels', 'scaling']:
-            input_feature[key] = feature_metadata['preprocessing'][key]
+            input_feature[key] = feature_metadata[PREPROCESSING][key]
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-        set_default_value(input_feature, 'preprocessing', {})
+        set_default_value(input_feature, PREPROCESSING, {})
 
     encoder_registry = {
         'stacked_cnn': Stacked2DCNN,

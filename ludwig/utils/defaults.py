@@ -21,7 +21,7 @@ from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry,
                                                 output_type_registry)
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
-                                     set_default_value)
+                                     set_default_value, hash_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -169,15 +169,23 @@ def _perform_sanity_checks(config):
         )
 
 
-def _set_feature_ids(config):
+def _set_feature_ids(config: dict) -> None:
     for feature in config['input_features'] + config['output_features']:
         if ID not in feature:
             feature[ID] = feature[NAME]
 
 
+def _set_feature_hash(config: dict) -> None:
+    for feature in config['input_features'] + config['output_features']:
+        if HASH not in feature:
+            preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
+            feature[HASH] = feature[NAME] + "_" + preproc_hash.decode('ascii')
+
+
 def merge_with_defaults(config):
     _perform_sanity_checks(config)
     _set_feature_ids(config)
+    _set_feature_hash(config)
 
     # ===== Preprocessing =====
     config['preprocessing'] = merge_dict(

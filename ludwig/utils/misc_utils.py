@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import base64
 import copy
+import hashlib
+import json
 import os
 import random
 import subprocess
@@ -233,3 +236,12 @@ def check_which_config(config, config_file):
     if not config:
         config = config_file
     return config
+
+
+def hash_dict(d: dict, max_length: int = 6) -> bytes:
+    s = json.dumps(d, sort_keys=True, ensure_ascii=True)
+    h = hashlib.md5(s.encode())
+    d = h.digest()
+    b = base64.b64encode(d)
+    return b[:max_length]
+    # return hash(json.dumps(d, sort_keys=True))

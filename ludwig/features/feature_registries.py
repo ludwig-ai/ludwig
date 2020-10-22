@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.constants import BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMERICAL, \
-    SEQUENCE, SET, TEXT, TIMESERIES, VECTOR, AUDIO, TYPE, NAME
+    SEQUENCE, SET, TEXT, TIMESERIES, VECTOR, AUDIO, TYPE, HASH
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.features.bag_feature import BagFeatureMixin, BagInputFeature
 from ludwig.features.binary_feature import BinaryFeatureMixin, \
@@ -91,7 +91,7 @@ def update_config_with_metadata(config,
         feature.populate_defaults(input_feature)
         feature.update_config_with_metadata(
             input_feature,
-            training_set_metadata[input_feature[NAME]],
+            training_set_metadata[input_feature[HASH]],
             config=config
         )
 
@@ -104,7 +104,7 @@ def update_config_with_metadata(config,
         feature.populate_defaults(output_feature)
         feature.update_config_with_metadata(
             output_feature,
-            training_set_metadata[output_feature[NAME]]
+            training_set_metadata[output_feature[HASH]]
         )
 
     for feature in (
@@ -112,6 +112,6 @@ def update_config_with_metadata(config,
             config['output_features']
     ):
         if 'preprocessing' in feature:
-            feature['preprocessing'] = training_set_metadata[feature[NAME]][
+            feature['preprocessing'] = training_set_metadata[feature[HASH]][
                 'preprocessing'
             ]

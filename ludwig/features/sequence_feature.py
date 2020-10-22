@@ -117,8 +117,8 @@ class SequenceFeatureMixin(object):
     ):
         sequence_data = SequenceInputFeature.feature_data(
             dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters)
-        dataset[feature[NAME]] = sequence_data
+            metadata[feature[HASH]], preprocessing_parameters)
+        dataset[feature[HASH]] = sequence_data
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
@@ -407,7 +407,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS].numpy()
-            lengths = result[LENGTHS]
+            lengths = result[LENGTHS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token]

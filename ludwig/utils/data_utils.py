@@ -30,7 +30,7 @@ import pandas as pd
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
-from ludwig.constants import NAME, PREPROCESSING, SPLIT
+from ludwig.constants import PREPROCESSING, SPLIT, HASH
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME)
@@ -390,7 +390,7 @@ def class_counts(dataset, labels_field):
 
 
 def text_feature_data_field(text_feature):
-    return text_feature[NAME] + '_' + text_feature['level']
+    return text_feature[HASH] + '_' + text_feature['level']
 
 
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):

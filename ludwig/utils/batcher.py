@@ -51,9 +51,9 @@ class Batcher(object):
                 break
 
         sub_batch = {}
-        for features_name in self.dataset.features:
-            sub_batch[features_name] = self.dataset.get(
-                features_name,
+        for feature_hash in self.dataset.features:
+            sub_batch[feature_hash] = self.dataset.get(
+                feature_hash,
                 indices
             )
 

@@ -84,9 +84,9 @@ class BagFeatureMixin(object):
             metadata,
             preprocessing_parameters=None
     ):
-        dataset[feature[NAME]] = BagFeatureMixin.feature_data(
+        dataset[feature[HASH]] = BagFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]],
+            metadata[feature[HASH]],
             preprocessing_parameters
         )
 

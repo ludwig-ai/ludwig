@@ -89,9 +89,9 @@ class CategoryFeatureMixin(object):
             metadata,
             preprocessing_parameters=None
     ):
-        dataset[feature[NAME]] = CategoryFeatureMixin.feature_data(
+        dataset[feature[HASH]] = CategoryFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]]
+            metadata[feature[HASH]]
         )
 
 
@@ -404,7 +404,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            preds = predictions[PREDICTIONS]
+            preds = predictions[PREDICTIONS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     metadata['idx2str'][pred] for pred in preds
@@ -434,7 +434,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         if ('predictions_top_k' in predictions and
             len(predictions['predictions_top_k'])) > 0:
 
-            preds_top_k = predictions['predictions_top_k']
+            preds_top_k = predictions['predictions_top_k'].numpy()
             if 'idx2str' in metadata:
                 postprocessed['predictions_top_k'] = [
                     [metadata['idx2str'][pred] for pred in pred_top_k]

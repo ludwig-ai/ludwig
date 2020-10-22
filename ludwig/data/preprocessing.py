@@ -49,7 +49,8 @@ from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
-                                     resolve_pointers, set_random_seed)
+                                     resolve_pointers, set_random_seed,
+                                     hash_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -940,77 +941,57 @@ def build_dataset(
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
     metadata = {}
-    already_processed_features_names = set()
-    already_processed_features_preproc_params = {}
 
     for feature in features:
+        if feature[HASH] not in metadata:
 
-        # if a feature has the same name of a previously processed one
-        # we don't need to process it, unless it has different preprocessing
-        # parameters, in which case we want to keep both around and
-        # we should use the feature ID as a key rather than the feature NAME,
-        # otherwise the last feature with the same name
-        # will override all the others.
-        should_process = True
-        dataset_key = feature[NAME]
-        if feature[NAME] in already_processed_features_names:
             if PREPROCESSING in feature:
-                if feature[PREPROCESSING] == \
-                        already_processed_features_preproc_params[
-                            feature[NAME]]:
-                    should_process = False
-            else:
-                if already_processed_features_preproc_params[
-                    feature[NAME]] == None:
-                    should_process = False
-
-        if PREPROCESSING in feature:
-            preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]],
-                feature[PREPROCESSING]
-            )
-        else:
-            preprocessing_parameters = global_preprocessing_parameters[
-                feature[TYPE]
-            ]
-
-        # deal with encoders that have fixed preprocessing
-        if 'encoder' in feature:
-            encoders_registry = get_from_registry(
-                feature[TYPE],
-                input_type_registry
-            ).encoder_registry
-            encoder_class = encoders_registry[feature['encoder']]
-            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
-                encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
                 preprocessing_parameters = merge_dict(
-                    preprocessing_parameters,
-                    resolve_pointers(encoder_fpp, feature, 'feature.')
+                    global_preprocessing_parameters[feature[TYPE]],
+                    feature[PREPROCESSING]
                 )
+            else:
+                preprocessing_parameters = global_preprocessing_parameters[
+                    feature[TYPE]
+                ]
 
-        get_feature_meta = get_from_registry(
-            feature[TYPE],
-            base_type_registry
-        ).get_feature_meta
+            # deal with encoders that have fixed preprocessing
+            if 'encoder' in feature:
+                encoders_registry = get_from_registry(
+                    feature[TYPE],
+                    input_type_registry
+                ).encoder_registry
+                encoder_class = encoders_registry[feature['encoder']]
+                if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
+                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-        metadata[feature[NAME]] = get_feature_meta(
-            dataset_df[feature[NAME]].astype(str),
-            preprocessing_parameters
-        )
+                    preprocessing_parameters = merge_dict(
+                        preprocessing_parameters,
+                        resolve_pointers(encoder_fpp, feature, 'feature.')
+                    )
 
-        fill_value = precompute_fill_value(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
+            get_feature_meta = get_from_registry(
+                feature[TYPE],
+                base_type_registry
+            ).get_feature_meta
 
-        if fill_value is not None:
-            preprocessing_parameters = {
-                'computed_fill_value': fill_value,
-                **preprocessing_parameters
-            }
-        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+            metadata[feature[HASH]] = get_feature_meta(
+                dataset_df[feature[NAME]].astype(str),
+                preprocessing_parameters
+            )
+
+            fill_value = precompute_fill_value(
+                dataset_df,
+                feature,
+                preprocessing_parameters
+            )
+
+            if fill_value is not None:
+                preprocessing_parameters = {
+                    'computed_fill_value': fill_value,
+                    **preprocessing_parameters
+                }
+            metadata[feature[HASH]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
@@ -1018,24 +999,26 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 def build_data(dataset_df, features, training_set_metadata):
     dataset = {}
     for feature in features:
-        preprocessing_parameters = training_set_metadata[feature[NAME]][
-            PREPROCESSING]
-        handle_missing_values(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
-        add_feature_data = get_from_registry(
-            feature[TYPE],
-            base_type_registry
-        ).add_feature_data
-        add_feature_data(
-            feature,
-            dataset_df,
-            dataset,
-            training_set_metadata,
-            preprocessing_parameters
-        )
+        if feature[HASH] not in dataset:
+            preprocessing_parameters = training_set_metadata[feature[HASH]][
+                PREPROCESSING]
+            handle_missing_values(
+                dataset_df,
+                feature,
+                preprocessing_parameters
+            )
+            add_feature_data = get_from_registry(
+                feature[TYPE],
+                base_type_registry
+            ).add_feature_data
+            add_feature_data(
+                feature,
+                dataset_df,
+                dataset,
+                training_set_metadata,
+                preprocessing_parameters
+            )
+
     return dataset
 
 
@@ -1124,7 +1107,7 @@ def load_hdf5(
             text_data_field = text_feature_data_field(feature)
             dataset[text_data_field] = hdf5_data[text_data_field][()]
         else:
-            dataset[feature[NAME]] = hdf5_data[feature[NAME]][()]
+            dataset[feature[HASH]] = hdf5_data[feature[HASH]][()]
 
     if not split_data:
         hdf5_data.close()

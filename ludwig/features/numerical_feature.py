@@ -78,19 +78,19 @@ class NumericalFeatureMixin(object):
             metadata,
             preprocessing_parameters,
     ):
-        dataset[feature[NAME]] = dataset_df[feature[NAME]].astype(
+        dataset[feature[HASH]] = dataset_df[feature[NAME]].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
-                mean = metadata[feature[NAME]]['mean']
-                std = metadata[feature[NAME]]['std']
-                dataset[feature[NAME]] = (dataset[
-                                              feature[NAME]] - mean) / std
+                mean = metadata[feature[HASH]]['mean']
+                std = metadata[feature[HASH]]['std']
+                dataset[feature[HASH]] = (dataset[
+                                              feature[HASH]] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
-                min_ = metadata[feature[NAME]]['min']
-                max_ = metadata[feature[NAME]]['max']
-                values = dataset[feature[NAME]]
-                dataset[feature[NAME]] = (values - min_) / (max_ - min_)
+                min_ = metadata[feature[HASH]]['min']
+                max_ = metadata[feature[HASH]]['max']
+                values = dataset[feature[HASH]]
+                dataset[feature[HASH]] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -276,7 +276,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         if PROBABILITIES in predictions and len(
                 predictions[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = predictions[PROBABILITIES]
+            postprocessed[PROBABILITIES] = predictions[PROBABILITIES].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),

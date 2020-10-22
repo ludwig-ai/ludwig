@@ -497,11 +497,11 @@ class Trainer:
             while not batcher.last_batch():
                 batch = batcher.next_batch()
                 inputs = {
-                    i_feat.feature_id: batch[i_feat.feature_name]
+                    i_feat.feature_id: batch[i_feat.feature_hash]
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_id: batch[o_feat.feature_name]
+                    o_feat.feature_id: batch[o_feat.feature_hash]
                     for o_feat in model.output_features.values()
                 }
 
@@ -742,11 +742,11 @@ class Trainer:
         while not batcher.last_batch():
             batch = batcher.next_batch()
             inputs = {
-                i_feat.feature_id: batch[i_feat.feature_name]
+                i_feat.feature_id: batch[i_feat.feature_hash]
                 for i_feat in model.input_features.values()
             }
             targets = {
-                o_feat.feature_id: batch[o_feat.feature_name]
+                o_feat.feature_id: batch[o_feat.feature_hash]
                 for o_feat in model.output_features.values()
             }
 
