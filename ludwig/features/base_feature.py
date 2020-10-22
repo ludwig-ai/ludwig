@@ -20,6 +20,7 @@ from typing import Dict
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
@@ -51,7 +52,7 @@ class BaseFeature(object):
             self.feature_id = feature[ID]
 
         if HASH not in feature:
-            raise ValueError('Missing feature hash')
+            feature[HASH] = compute_feature_hash(feature)
 
         self.feature_hash = feature[HASH]
 

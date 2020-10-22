@@ -20,8 +20,9 @@ from ludwig.constants import *
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry,
                                                 output_type_registry)
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
-                                     set_default_value, hash_dict)
+                                     set_default_value)
 
 logger = logging.getLogger(__name__)
 
@@ -178,8 +179,7 @@ def _set_feature_ids(config: dict) -> None:
 def _set_feature_hash(config: dict) -> None:
     for feature in config['input_features'] + config['output_features']:
         if HASH not in feature:
-            preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
-            feature[HASH] = feature[NAME] + "_" + preproc_hash.decode('ascii')
+            feature[HASH] = compute_feature_hash(feature)
 
 
 def merge_with_defaults(config):
