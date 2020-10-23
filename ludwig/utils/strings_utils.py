@@ -135,7 +135,7 @@ def create_vocabulary(
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    processed_lines = parallelize(data).map(lambda line: tokenizer(line.lower() if lowercase else line)).explode()
+    processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line)).explode()
     processed_counts = processed_lines.value_counts(sort=False)
     unit_counts = Counter(dict(compute(processed_counts)))
     max_line_length = max([len(k) for k in unit_counts.keys()])
@@ -227,9 +227,8 @@ def build_sequence_matrix(
 
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
-    unit_vectors = []
     print('SEQUENCES: ', sequences)
-    unit_indices_vectors = parallelize(sequences).map(lambda sequence: _get_sequence_vector(
+    unit_vectors = sequences.map(lambda sequence: _get_sequence_vector(
         sequence,
         tokenizer,
         tokenizer_type,
@@ -238,41 +237,26 @@ def build_sequence_matrix(
         lowercase=lowercase,
         unknown_symbol=unknown_symbol
     ))
-    max_length = compute(unit_indices_vectors.map(len).max())
+    max_length = compute(unit_vectors.map(len).max())
     print('MAX_LENGTH: ', max_length)
-    exit(0)
 
-    for sequence in sequences:
-        unit_indices_vector = _get_sequence_vector(
-            sequence,
-            tokenizer,
-            tokenizer_type,
-            format_dtype,
-            inverse_vocabulary,
-            lowercase=lowercase,
-            unknown_symbol=unknown_symbol
-        )
-        unit_vectors.append(unit_indices_vector)
-        if len(unit_indices_vector) > max_length:
-            max_length = len(unit_indices_vector)
-
-    print('MAX_LENGTH: ', max_length)
     if max_length < length_limit:
         logging.debug('max length of {0}: {1} < limit: {2}'.format(
             format, max_length, length_limit
         ))
     max_length = length_limit
-    sequence_matrix = np.full((len(sequences), max_length),
-                              inverse_vocabulary[padding_symbol],
-                              dtype=format_dtype)
-    for i, vector in enumerate(unit_vectors):
+
+    def pad(vector):
+        sequence = np.full((max_length,), -1, dtype=np.int32)
         limit = min(vector.shape[0], max_length)
         if padding == 'right':
-            sequence_matrix[i, :limit] = vector[:limit]
+            sequence[:limit] = vector[:limit]
         else:  # if padding == 'left
-            sequence_matrix[i, max_length - limit:] = vector[:limit]
+            sequence[max_length - limit:] = vector[:limit]
+        return sequence
 
-    return sequence_matrix
+    padded = unit_vectors.map(pad, meta=('data', 'object'))
+    return padded
 
 
 class BaseTokenizer:

@@ -211,8 +211,10 @@ class TextFeatureMixin(object):
             dataset_df[feature[NAME]].astype(str),
             metadata[feature[NAME]], preprocessing_parameters
         )
+        dataset = dataset.drop(feature[NAME], axis=1)
         dataset['{}_char'.format(feature[NAME])] = chars_data
         dataset['{}_word'.format(feature[NAME])] = words_data
+        return dataset
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):

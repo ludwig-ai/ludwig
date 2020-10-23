@@ -22,7 +22,8 @@ model = LudwigModel(config='./model_config.yaml',
 ) = model.preprocess(
     dataset='./data/dataset.parquet/part.0.parquet',
     experiment_name='netflix_experiment',
-    model_name='netflix_model'
+    model_name='netflix_model',
+    skip_save_processed_input=True,
 )
 
 print(training_set)

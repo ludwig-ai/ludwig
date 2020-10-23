@@ -91,6 +91,7 @@ class NumericalFeatureMixin(object):
                 max_ = metadata[feature[NAME]]['max']
                 values = dataset[feature[NAME]]
                 dataset[feature[NAME]] = (values - min_) / (max_ - min_)
+        return dataset
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):

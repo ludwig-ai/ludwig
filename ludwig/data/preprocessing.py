@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+from copy import copy
 
 import h5py
 import numpy as np
@@ -25,6 +26,7 @@ from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
 from ludwig.data.dataset import Dataset
+from ludwig.data.engine import get_processing_engine
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.utils import data_utils
@@ -907,6 +909,9 @@ def build_dataset(
         metadata=None,
         random_seed=default_random_seed,
 ):
+    processing_engine = get_processing_engine(dataset_df)
+    dataset_df = processing_engine.parallelize(dataset_df)
+
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
         global_preprocessing_parameters
@@ -925,7 +930,7 @@ def build_dataset(
         metadata
     )
 
-    dataset[SPLIT] = get_split(
+    dataset[SPLIT] = processing_engine.parallelize(get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -933,7 +938,7 @@ def build_dataset(
         ],
         stratify=global_preprocessing_parameters['stratify'],
         random_seed=random_seed
-    )
+    ))
 
     return dataset, metadata
 
@@ -994,7 +999,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 
 
 def build_data(dataset_df, features, training_set_metadata):
-    dataset = {}
+    dataset = copy(dataset_df)
     for feature in features:
         preprocessing_parameters = training_set_metadata[feature[NAME]][
             PREPROCESSING]
@@ -1007,7 +1012,7 @@ def build_data(dataset_df, features, training_set_metadata):
             feature[TYPE],
             base_type_registry
         ).add_feature_data
-        add_feature_data(
+        dataset = add_feature_data(
             feature,
             dataset_df,
             dataset,
@@ -1066,19 +1071,22 @@ def get_split(
         split = dataset_df[SPLIT]
     else:
         set_random_seed(random_seed)
+
+        array_lib = get_processing_engine(dataset_df).array_lib
         if stratify is None or stratify not in dataset_df:
-            split = np.random.choice(
+            split = array_lib.random.choice(
                 3,
                 len(dataset_df),
                 p=split_probabilities,
             ).astype(np.int8)
         else:
-            split = np.zeros(len(dataset_df))
+            split = array_lib.zeros(len(dataset_df))
             for val in dataset_df[stratify].unique():
+                # TODO dask: find a way to better parallelize this operation
                 idx_list = (
                     dataset_df.index[dataset_df[stratify] == val].tolist()
                 )
-                val_list = np.random.choice(
+                val_list = array_lib.random.choice(
                     3,
                     len(idx_list),
                     p=split_probabilities,
@@ -1295,8 +1303,14 @@ def _preprocess_file_for_training(
 
         if is_on_master() and not skip_save_processed_input:
             logger.info('Writing preprocessed dataset cache')
-            data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-            data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
+            # data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
+            # data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
+
+            import os
+            data_hdf5_fp = replace_file_extension(dataset, '.processed.parquet')
+            os.makedirs(data_hdf5_fp, exist_ok=True)
+            data.to_parquet(data_hdf5_fp)
+
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
             logger.info('Writing train set metadata with vocabulary')
             training_set_metadata_fp = replace_file_extension(dataset,
