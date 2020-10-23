@@ -178,7 +178,8 @@ def sequence_feature(**kwargs):
         'embedding_size': 8,
         'fc_size': 8,
         'state_size': 8,
-        'num_filters': 8
+        'num_filters': 8,
+        'hidden_size': 8
     }
     seq_feature.update(kwargs)
     return seq_feature

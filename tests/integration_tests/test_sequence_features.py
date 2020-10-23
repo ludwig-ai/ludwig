@@ -191,7 +191,7 @@ def test_sequence_encoders(
 
         elif enc_encoder == 'transformer':
             assert encoder_out['encoder_output'].shape.as_list() \
-                   == [batch_size, seq_size, 256]
+                   == [batch_size, seq_size, TEST_HIDDEN_SIZE]
 
         elif enc_encoder == 'embed':
             assert encoder_out['encoder_output'].shape.as_list() \
