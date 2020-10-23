@@ -1320,8 +1320,11 @@ def _preprocess_file_for_training(
 
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
-            data[SPLIT]
+            SPLIT
         )
+        print('TRAINING: ', training_data)
+        print('TEST: ', test_data)
+        print('VAL: ', validation_data)
 
     elif training_set:
         # use data_train (including _validation and _test if they are present)
@@ -1350,7 +1353,7 @@ def _preprocess_file_for_training(
 
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
-            data[SPLIT]
+            SPLIT
         )
 
         if is_on_master() and not skip_save_processed_input:

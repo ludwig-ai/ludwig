@@ -367,11 +367,11 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
 
 
 def split_dataset_ttv(dataset, split):
-    if SPLIT in dataset:
-        del dataset[SPLIT]
-    training_set = split_dataset(dataset, split, value_to_split=0)
-    validation_set = split_dataset(dataset, split, value_to_split=1)
-    test_set = split_dataset(dataset, split, value_to_split=2)
+    # if SPLIT in dataset:
+    #     del dataset[SPLIT]
+    training_set = dataset[dataset[split] == 0]
+    validation_set = dataset[dataset[split] == 1]
+    test_set = dataset[dataset[split] == 2]
     return training_set, test_set, validation_set
 
 

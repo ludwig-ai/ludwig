@@ -26,7 +26,7 @@ model = LudwigModel(config='./model_config.yaml',
     skip_save_processed_input=True,
 )
 
-print(training_set)
+print('FINISHED: ', training_set)
 
 # # initiate model training
 # (
