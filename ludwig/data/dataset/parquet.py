@@ -25,9 +25,14 @@ class ParquetDataset(Dataset):
     def __init__(self, url, features):
         self.url = url
         self.features = features
+        with make_batch_reader(self.url) as reader:
+            self.size = reader.dataset.metadata.num_rows
 
     def get(self, feature_name, sample):
         return getattr(sample, feature_name)
+
+    def __len__(self):
+        return self.size
 
     def initialize_batcher(self,
                            batch_size=128,

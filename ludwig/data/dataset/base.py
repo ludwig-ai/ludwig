@@ -20,6 +20,10 @@ from abc import ABC, abstractmethod
 
 class Dataset(ABC):
     @abstractmethod
+    def __len__(self):
+        raise NotImplementedError()
+
+    @abstractmethod
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
                            seed=0,

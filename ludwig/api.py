@@ -36,7 +36,7 @@ import pandas as pd
 import yaml
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
-from ludwig.data.dataset import Dataset
+from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
                                        preprocess_for_prediction,
@@ -209,9 +209,9 @@ class LudwigModel:
     def train(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
-            training_set: Union[str, dict, pd.DataFrame] = None,
-            validation_set: Union[str, dict, pd.DataFrame] = None,
-            test_set: Union[str, dict, pd.DataFrame] = None,
+            training_set: Union[str, dict, pd.DataFrame, Dataset] = None,
+            validation_set: Union[str, dict, pd.DataFrame, Dataset] = None,
+            test_set: Union[str, dict, pd.DataFrame, Dataset] = None,
             training_set_metadata: Union[str, dict] = None,
             data_format: str = None,
             experiment_name: str = 'api_experiment',
@@ -387,39 +387,43 @@ class LudwigModel:
                 logger.info('{}: {}'.format(key, pformat(value, indent=4)))
             logger.info('\n')
 
-        preprocessed_data = self.preprocess(
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            data_format=data_format,
-            experiment_name=experiment_name,
-            model_name=model_name,
-            model_resume_path=model_resume_path,
-            skip_save_training_description=skip_save_training_description,
-            skip_save_training_statistics=skip_save_training_statistics,
-            skip_save_model=skip_save_model,
-            skip_save_progress=skip_save_progress,
-            skip_save_log=skip_save_log,
-            skip_save_processed_input=skip_save_processed_input,
-            output_directory=output_directory,
-            random_seed=random_seed,
-            devbug=debug,
-            **kwargs,
-        )
-        (training_set,
-         validation_set,
-         test_set,
-         training_set_metadata) = preprocessed_data
+        if isinstance(training_set, Dataset) and training_set_metadata is not None:
+            preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
+        else:
+            preprocessed_data = self.preprocess(
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                data_format=data_format,
+                experiment_name=experiment_name,
+                model_name=model_name,
+                model_resume_path=model_resume_path,
+                skip_save_training_description=skip_save_training_description,
+                skip_save_training_statistics=skip_save_training_statistics,
+                skip_save_model=skip_save_model,
+                skip_save_progress=skip_save_progress,
+                skip_save_log=skip_save_log,
+                skip_save_processed_input=skip_save_processed_input,
+                output_directory=output_directory,
+                random_seed=random_seed,
+                devbug=debug,
+                **kwargs,
+            )
+            (training_set,
+             validation_set,
+             test_set,
+             training_set_metadata) = preprocessed_data
+
         self.training_set_metadata = training_set_metadata
 
         if is_on_master():
-            logger.info('Training set: {0}'.format(training_set.size))
+            logger.info('Training set: {0}'.format(len(training_set)))
             if validation_set is not None:
-                logger.info('Validation set: {0}'.format(validation_set.size))
+                logger.info('Validation set: {0}'.format(len(validation_set)))
             if test_set is not None:
-                logger.info('Test set: {0}'.format(test_set.size))
+                logger.info('Test set: {0}'.format(len(test_set)))
 
         if is_on_master():
             if not skip_save_model:
