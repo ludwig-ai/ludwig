@@ -15,7 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import tempfile
 
 from io import BytesIO
 from urllib.request import urlopen

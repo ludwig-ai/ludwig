@@ -1,0 +1,6 @@
+version: 1.0
+download_url: http://yann.lecun.com/exdb/mnist
+training_image_root: train-images-idx3-ubyte.gz
+training_label_root: train-labels-idx1-ubyte
+test_image_root: t10k-images-idx3-ubyte
+test_label_root: t10k-labels-idx1-ubyte
