@@ -663,7 +663,7 @@ def is_model_dir(path: str) -> bool:
 
 def ray_init():
     ray.init()
-    dask.config.set(scheduler=ray_dask_get)
+    # dask.config.set(scheduler=ray_dask_get)
 
 
 def parallelize(data):

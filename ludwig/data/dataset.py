@@ -65,3 +65,7 @@ class Dataset:
 
     def __len__(self):
         return self.size
+
+
+class PetastormDataset:
+    pass

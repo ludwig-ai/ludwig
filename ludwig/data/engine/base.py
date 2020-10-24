@@ -31,6 +31,10 @@ class DataProcessingEngine(ABC):
     def compute(self, data):
         raise NotImplementedError()
 
+    @abstractmethod
+    def array_to_col(self, array):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def dtypes(self):

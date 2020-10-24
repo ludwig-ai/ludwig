@@ -930,7 +930,7 @@ def build_dataset(
         metadata
     )
 
-    dataset[SPLIT] = processing_engine.parallelize(get_split(
+    dataset[SPLIT] = processing_engine.array_to_col(get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -1080,7 +1080,7 @@ def get_split(
                 p=split_probabilities,
             ).astype(np.int8)
         else:
-            split = array_lib.zeros(len(dataset_df))
+            split = np.zeros(len(dataset_df))
             for val in dataset_df[stratify].unique():
                 # TODO dask: find a way to better parallelize this operation
                 idx_list = (
@@ -1293,6 +1293,7 @@ def _preprocess_file_for_training(
 
         dataset_df = read_fn(dataset)
         dataset_df.src = dataset
+
         data, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -1308,8 +1309,9 @@ def _preprocess_file_for_training(
 
             import os
             data_hdf5_fp = replace_file_extension(dataset, '.processed.parquet')
+            print('ofname: ', data_hdf5_fp)
             os.makedirs(data_hdf5_fp, exist_ok=True)
-            data.to_parquet(data_hdf5_fp)
+            data.reset_index(drop=True).to_parquet(data_hdf5_fp, schema="infer")
 
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
             logger.info('Writing train set metadata with vocabulary')

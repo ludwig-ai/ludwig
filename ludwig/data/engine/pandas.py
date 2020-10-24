@@ -31,6 +31,9 @@ class PandasEngine(DataProcessingEngine):
     def compute(self, data):
         return data
 
+    def array_to_col(self, array):
+        return array
+
     @property
     def dtypes(self):
         return [pd.DataFrame]

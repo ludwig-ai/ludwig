@@ -23,7 +23,7 @@ model = LudwigModel(config='./model_config.yaml',
     dataset='./data/dataset.parquet/part.0.parquet',
     experiment_name='netflix_experiment',
     model_name='netflix_model',
-    skip_save_processed_input=True,
+    skip_save_processed_input=False,
 )
 
 print('FINISHED: ', training_set)

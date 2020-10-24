@@ -36,17 +36,16 @@ def set_scheduler(scheduler):
 class DaskEngine(DataProcessingEngine):
     def parallelize(self, data):
         num_cpus = int(ray.cluster_resources().get('CPU', 1))
-        if isinstance(data, da.Array):
-            chunk_size = math.ceil(len(data) / num_cpus)
-            return data.rechunk(chunk_size)
-        else:
-            return data.repartition(num_cpus)
+        return data.repartition(num_cpus)
 
     def persist(self, data):
         return data.persist()
 
     def compute(self, data):
         return data.compute()
+
+    def array_to_col(self, array):
+        return self.parallelize(dd.from_dask_array(array))
 
     @property
     def dtypes(self):
