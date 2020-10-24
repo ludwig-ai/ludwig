@@ -364,32 +364,32 @@ class LudwigModel:
             description_fn, training_stats_fn, model_dir = get_file_names(
                 output_directory)
 
-        # save description
-        if is_on_master():
-            description = get_experiment_description(
-                self.config,
-                dataset=dataset,
-                training_set=training_set,
-                validation_set=validation_set,
-                test_set=test_set,
-                training_set_metadata=training_set_metadata,
-                data_format=data_format,
-                random_seed=random_seed
-            )
-            if not skip_save_training_description:
-                save_json(description_fn, description)
-            # print description
-            logger.info('Experiment name: {}'.format(experiment_name))
-            logger.info('Model name: {}'.format(model_name))
-            logger.info('Output directory: {}'.format(output_directory))
-            logger.info('\n')
-            for key, value in description.items():
-                logger.info('{}: {}'.format(key, pformat(value, indent=4)))
-            logger.info('\n')
-
         if isinstance(training_set, Dataset) and training_set_metadata is not None:
             preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
         else:
+            # save description
+            if is_on_master():
+                description = get_experiment_description(
+                    self.config,
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    random_seed=random_seed
+                )
+                if not skip_save_training_description:
+                    save_json(description_fn, description)
+                # print description
+                logger.info('Experiment name: {}'.format(experiment_name))
+                logger.info('Model name: {}'.format(model_name))
+                logger.info('Output directory: {}'.format(output_directory))
+                logger.info('\n')
+                for key, value in description.items():
+                    logger.info('{}: {}'.format(key, pformat(value, indent=4)))
+                logger.info('\n')
+
             preprocessed_data = self.preprocess(
                 dataset=dataset,
                 training_set=training_set,

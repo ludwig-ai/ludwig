@@ -25,12 +25,12 @@ import pandas as pd
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
-from ludwig.data.dataset import get_dataset
+from ludwig.data.dataset.base import Dataset
 from ludwig.data.engine import get_processing_engine
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
+from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_INPUT_FP,
                                      DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
                                      FEATHER_FORMATS, FWF_FORMATS,
@@ -1225,7 +1225,7 @@ def preprocess_for_training(
 
     processing_engine = get_processing_engine(training_set)
     training_dataset = processing_engine.create_dataset(
-        dataset,
+        training_set,
         TRAINING,
         config,
         training_set_metadata
@@ -1314,6 +1314,7 @@ def _preprocess_file_for_training(
             metadata=training_set_metadata,
             random_seed=random_seed
         )
+        training_set_metadata[DATA_INPUT_FP] = dataset
 
         processing_engine = get_processing_engine(dataset_df)
         if is_on_master() and not skip_save_processed_input and processing_engine.use_hdf5_cache:
@@ -1355,6 +1356,7 @@ def _preprocess_file_for_training(
             metadata=training_set_metadata,
             random_seed=random_seed
         )
+        training_set_metadata[DATA_INPUT_FP] = training_set
 
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
