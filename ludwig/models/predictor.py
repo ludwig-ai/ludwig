@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
-from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import sum_dicts
@@ -43,8 +42,8 @@ class Predictor:
             dataset,
             dataset_name=None
     ):
-        batcher = initialize_batcher(
-            dataset, self._batch_size,
+        batcher = dataset.initialize_batcher(
+            self._batch_size,
             should_shuffle=False,
             horovod=self._horovod
         )
@@ -102,8 +101,8 @@ class Predictor:
             collect_predictions=False,
             dataset_name=None
     ):
-        batcher = initialize_batcher(
-            dataset, self._batch_size,
+        batcher = dataset.initialize_batcher(
+            self._batch_size,
             should_shuffle=False,
             horovod=self._horovod
         )
@@ -189,8 +188,7 @@ class Predictor:
         activation_model = tf.keras.Model(inputs=keras_model_inputs,
                                           outputs=output_nodes)
 
-        batcher = initialize_batcher(
-            dataset,
+        batcher = dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False
         )
