@@ -233,3 +233,10 @@ def check_which_config(config, config_file):
     if not config:
         config = config_file
     return config
+
+
+def get_features(config):
+    return {
+        **{feature['name']: feature for feature in config['input_features']},
+        **{feature['name']: feature for feature in config['output_features']},
+    }

@@ -25,7 +25,7 @@ import pandas as pd
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
-from ludwig.data.dataset import Dataset
+from ludwig.data.dataset import get_dataset
 from ludwig.data.engine import get_processing_engine
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
@@ -1223,29 +1223,42 @@ def preprocess_for_training(
         [training_set, validation_set, test_set]
     )
 
-    training_dataset = Dataset(
-        training_set,
-        config['input_features'],
-        config['output_features'],
-        training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+    processing_engine = get_processing_engine(training_set)
+    training_dataset = processing_engine.create_dataset(
+        dataset,
+        TRAINING,
+        config,
+        training_set_metadata
     )
 
     validation_dataset = None
     if validation_set is not None:
-        validation_dataset = Dataset(
+        validation_dataset = processing_engine.create_dataset(
             validation_set,
-            config['input_features'],
-            config['output_features'],
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            VALIDATION,
+            config,
+            training_set_metadata
         )
 
     test_dataset = None
     if test_set is not None:
-        test_dataset = Dataset(
+        test_dataset = processing_engine.create_dataset(
             test_set,
-            config['input_features'],
-            config['output_features'],
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            TEST,
+            config,
+            training_set_metadata
+        )
+
+    if is_on_master() and not skip_save_processed_input:
+        logger.info('Writing train set metadata with vocabulary')
+        source_name = dataset if dataset is not None else training_set
+        training_set_metadata_fp = replace_file_extension(
+            source_name,
+            'meta.json'
+        )
+        data_utils.save_json(
+            training_set_metadata_fp,
+            training_set_metadata,
         )
 
     return (
@@ -1302,26 +1315,12 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        if is_on_master() and not skip_save_processed_input:
+        processing_engine = get_processing_engine(dataset_df)
+        if is_on_master() and not skip_save_processed_input and processing_engine.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
-            # data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-            # data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
-
-            import os
-            data_hdf5_fp = replace_file_extension(dataset, '.processed.parquet')
-            print('ofname: ', data_hdf5_fp)
-            os.makedirs(data_hdf5_fp, exist_ok=True)
-            data.to_parquet(data_hdf5_fp,
-                            engine='pyarrow',
-                            write_index=False,
-                            schema="infer")
-
+            data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
+            data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
-            logger.info('Writing train set metadata with vocabulary')
-            training_set_metadata_fp = replace_file_extension(dataset,
-                                                              'meta.json')
-            data_utils.save_json(training_set_metadata_fp,
-                                 training_set_metadata)
 
         # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
         training_data, test_data, validation_data = split_dataset_ttv(
@@ -1362,7 +1361,8 @@ def _preprocess_file_for_training(
             SPLIT
         )
 
-        if is_on_master() and not skip_save_processed_input:
+        processing_engine = get_processing_engine(training_set)
+        if is_on_master() and not skip_save_processed_input and processing_engine.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(
@@ -1393,16 +1393,6 @@ def _preprocess_file_for_training(
                     test_data,
                     training_set_metadata
                 )
-
-            logger.info('Writing train set metadata with vocabulary')
-            training_set_metadata_fp = replace_file_extension(
-                training_set,
-                'meta.json'
-            )
-            data_utils.save_json(
-                training_set_metadata_fp,
-                training_set_metadata,
-            )
 
     else:
         raise ValueError('either data or data_train have to be not None')

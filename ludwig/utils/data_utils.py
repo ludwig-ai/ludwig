@@ -42,6 +42,8 @@ from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
 
 logger = logging.getLogger(__name__)
 
+DATASET_SPLIT_URL = 'dataset_{}_fp'
+
 DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
 DICT_FORMATS = {'dict', 'dictionary', dict}
 DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame, dd.core.DataFrame}

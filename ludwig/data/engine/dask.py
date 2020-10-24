@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import math
+import os
 
 try:
     import dask
@@ -26,7 +26,10 @@ try:
 except:
     _LOADED = False
 
+from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.engine.base import DataProcessingEngine
+from ludwig.utils.data_utils import DATASET_SPLIT_URL, replace_file_extension
+from ludwig.utils.misc_utils import get_features
 
 
 def set_scheduler(scheduler):
@@ -47,6 +50,24 @@ class DaskEngine(DataProcessingEngine):
     def array_to_col(self, array):
         return self.parallelize(dd.from_dask_array(array))
 
+    def create_dataset(self, dataset, tag, config, training_set_metadata):
+        tag = tag.lower()
+        dataset_parquet_fp = replace_file_extension(dataset, f'.{tag}.parquet')
+
+        os.makedirs(dataset_parquet_fp, exist_ok=True)
+        dataset.to_parquet(dataset_parquet_fp,
+                           engine='pyarrow',
+                           write_index=False,
+                           schema="infer")
+
+        dataset_parquet_url = 'file://' + dataset_parquet_fp
+        training_set_metadata[DATASET_SPLIT_URL.format(tag)] = dataset_parquet_url
+
+        return ParquetDataset(
+            dataset_parquet_url,
+            get_features(config)
+        )
+
     @property
     def dtypes(self):
         if not _LOADED:
@@ -60,3 +81,7 @@ class DaskEngine(DataProcessingEngine):
     @property
     def df_lib(self):
         return dd
+
+    @property
+    def use_hdf5_cache(self):
+        return False

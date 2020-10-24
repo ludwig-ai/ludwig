@@ -35,6 +35,10 @@ class DataProcessingEngine(ABC):
     def array_to_col(self, array):
         raise NotImplementedError()
 
+    @abstractmethod
+    def create_dataset(self, dataset, tag, config, training_set_metadata):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def dtypes(self):
@@ -48,4 +52,9 @@ class DataProcessingEngine(ABC):
     @property
     @abstractmethod
     def df_lib(self):
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def use_hdf5_cache(self):
         raise NotImplementedError()

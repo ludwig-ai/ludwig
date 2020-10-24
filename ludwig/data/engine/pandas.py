@@ -18,7 +18,10 @@
 import numpy as np
 import pandas as pd
 
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.engine.base import DataProcessingEngine
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
+from ludwig.utils.misc_utils import get_features
 
 
 class PandasEngine(DataProcessingEngine):
@@ -34,6 +37,13 @@ class PandasEngine(DataProcessingEngine):
     def array_to_col(self, array):
         return array
 
+    def create_dataset(self, dataset, tag, config, training_set_metadata):
+        return PandasDataset(
+            dataset,
+            get_features(config),
+            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+        )
+
     @property
     def dtypes(self):
         return [pd.DataFrame]
@@ -45,3 +55,7 @@ class PandasEngine(DataProcessingEngine):
     @property
     def df_lib(self):
         return pd
+
+    @property
+    def use_hdf5_cache(self):
+        return True
