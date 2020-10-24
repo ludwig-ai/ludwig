@@ -1311,7 +1311,10 @@ def _preprocess_file_for_training(
             data_hdf5_fp = replace_file_extension(dataset, '.processed.parquet')
             print('ofname: ', data_hdf5_fp)
             os.makedirs(data_hdf5_fp, exist_ok=True)
-            data.reset_index(drop=True).to_parquet(data_hdf5_fp, schema="infer")
+            data.to_parquet(data_hdf5_fp,
+                            engine='pyarrow',
+                            write_index=False,
+                            schema="infer")
 
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
             logger.info('Writing train set metadata with vocabulary')
