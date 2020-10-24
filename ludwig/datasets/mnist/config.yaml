@@ -4,3 +4,4 @@ training_image_root: train-images-idx3-ubyte
 training_label_root: train-labels-idx1-ubyte
 test_image_root: t10k-images-idx3-ubyte
 test_label_root: t10k-labels-idx1-ubyte
+csv_filename: mnist_dataset_training.csv

@@ -81,9 +81,9 @@ class ImageProcessMixin(IdentityProcessMixin):
             path.join(output_dir, str(i))
             for i in range(10)
         ]
-        for dir in output_dirs:
-            if not path.exists(dir):
-                os.makedirs(dir)
+        for output_dir in output_dirs:
+            if not path.exists(output_dir):
+                os.makedirs(output_dir)
 
         # write out image data
         for (i, label) in enumerate(labels):
@@ -103,11 +103,11 @@ class ImageProcessMixin(IdentityProcessMixin):
         subdirectory_list = ["training",
                              "testing"]
         for name in subdirectory_list:
-            with open(self.raw_dataset_path + 'mnist_dataset_{}.csv'.format(name), 'w') as output_file:
+            with open(os.path.join(self.raw_dataset_path, 'mnist_dataset_{}.csv'.format(name)), 'w') as output_file:
                 print('=== creating {} dataset ==='.format(name))
                 output_file.write('image_path,label\n')
                 for i in range(10):
-                    csv_path = self.raw_dataset_path + '{}/{}'.format(name, i)
-                    for file in os.listdir(csv_path):
+                    img_path = os.path.join(self.raw_dataset_path , '{}/{}'.format(name, i))
+                    for file in os.listdir(img_path):
                         if file.endswith(".png"):
-                            output_file.write('{},{}\n'.format(os.path.join(path, file), str(i)))
+                            output_file.write('{},{}\n'.format(os.path.join(img_path, file), str(i)))
