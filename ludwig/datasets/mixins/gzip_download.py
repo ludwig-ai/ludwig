@@ -31,20 +31,22 @@ class GZipDownloadMixin:
         Download the raw dataset and contents of the gzip file
         onto the _raw directory.
         """
-        file_download_list = {os.join(self.download_url + self.config['training_image_root']):
-                                  (os.join(self.raw_temp_path + self.config['training_image_root'] + ".gz"),
-                                   os.join(self.download_url + self.config['training_image_root'])),
-                              os.join(self.download_url + self.config['training_label_root']):
-                                  (os.join(self.raw_temp_path + self.config['training_label_root'] + ".gz"),
-                                   os.join(self.download_url + self.config['training_label_root'])),
-                              os.join(self.download_url + self.config['test_image_root']):
-                                  (os.join(self.raw_temp_path + self.config['test_image_root'] + ".gz"),
-                                   os.join(self.download_url + self.config['test_image_root'])),
-                              os.join(self.download_url + self.config['test_label_root']):
-                                  (os.join(self.raw_temp_path + self.config['test_label_root'] + ".gz"),
-                                   os.join(self.download_url + self.config['test_label_root']))
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+        file_download_config_dict = {os.path.join(self.download_url, self.config['training_image_root'] + ".gz"):
+                                  (os.path.join(self.raw_temp_path, self.config['training_image_root'] + ".gz"),
+                                   os.path.join(self.raw_temp_path, self.config['training_image_root'])),
+                              os.path.join(self.download_url, self.config['training_label_root'] + ".gz"):
+                                  (os.path.join(self.raw_temp_path, self.config['training_label_root'] + ".gz"),
+                                   os.path.join(self.raw_temp_path, self.config['training_label_root'])),
+                              os.path.join(self.download_url, self.config['test_image_root'] + ".gz"):
+                                  (os.path.join(self.raw_temp_path, self.config['test_image_root'] + ".gz"),
+                                   os.path.join(self.raw_temp_path, self.config['test_image_root'])),
+                              os.path.join(self.download_url, self.config['test_label_root'] + ".gz"):
+                                  (os.path.join(self.raw_temp_path, self.config['test_label_root'] + ".gz"),
+                                   os.path.join(self.raw_temp_path, self.config['test_label_root']))
                               }
-        for file_download_url, download_file_tuple in file_download_list.items():
+
+        for file_download_url, download_file_tuple in file_download_config_dict.items():
             download_archive = download_file_tuple[0]
             download_archive_contents = download_file_tuple[1]
             response = requests.get(file_download_url, stream=True)
@@ -57,6 +59,7 @@ class GZipDownloadMixin:
 
             output = open(download_archive_contents, 'wb')
             output.write(s)
+            output.close()
 
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 

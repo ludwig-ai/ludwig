@@ -15,8 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.process import IdentityProcessMixin
-from ludwig.datasets.mixins.download import ZipDownloadMixin
+from ludwig.datasets.mixins.image_process import ImageProcessMixin
+from ludwig.datasets.mixins.gzip_download import GZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
@@ -25,7 +25,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION):
     return dataset.load()
 
 
-class Mnist(ZipDownloadMixin, ImageProcessMixin, CSVLoadMixin, BaseDataset):
+class Mnist(GZipDownloadMixin, ImageProcessMixin, CSVLoadMixin, BaseDataset):
     """The OhsuMed dataset.
 
     This pulls in an array of mixins for different types of functionality
