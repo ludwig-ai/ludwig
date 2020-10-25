@@ -14,21 +14,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
-from ludwig.data.engine.dask import DaskEngine
-from ludwig.data.engine.pandas import PandasEngine
-from ludwig.utils.misc_utils import get_from_registry
-
-
-ENGINES = [PandasEngine(), DaskEngine()]
-
-processing_engine_registry = {
-    dtype: engine for engine in ENGINES for dtype in engine.dtypes
-}
-
-
-def get_processing_engine(df):
-    return get_from_registry(
-        type(df),
-        processing_engine_registry
-    )

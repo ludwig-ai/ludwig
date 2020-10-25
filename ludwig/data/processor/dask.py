@@ -28,7 +28,7 @@ except:
     _LOADED = False
 
 from ludwig.data.dataset.parquet import ParquetDataset
-from ludwig.data.engine.base import DataProcessingEngine
+from ludwig.data.processor.base import DataProcessor
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, replace_file_extension
 from ludwig.utils.misc_utils import get_features
 
@@ -37,7 +37,7 @@ def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
 
-class DaskEngine(DataProcessingEngine):
+class DaskProcessor(DataProcessor):
     def parallelize(self, data):
         return data.repartition(self.parallelism)
 

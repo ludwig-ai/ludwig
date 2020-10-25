@@ -16,13 +16,13 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend
-from ludwig.data.engine.dask import DaskEngine
+from ludwig.data.processor.dask import DaskProcessor
 
 
 class RayBackend(Backend):
     def __init__(self):
         super().__init__()
-        self._processor = DaskEngine()
+        self._processor = DaskProcessor()
 
     @property
     def processor(self):

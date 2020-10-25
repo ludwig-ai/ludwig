@@ -22,13 +22,11 @@ import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
-from ludwig.backend.context import Context
-from ludwig.data.engine.pandas import PandasEngine
+from ludwig.data.processor.pandas import PandasProcessor
 
 
-class Backend(Context, ABC):
+class Backend(ABC):
     def __init__(self, cache_dir=None):
-        super().__init__(Backend)
         self._cache_dir = cache_dir
 
     @property
@@ -73,7 +71,7 @@ class CompositeBackend(Backend):
 class LocalBackend(Backend):
     def __init__(self):
         super().__init__()
-        self._processor = PandasEngine()
+        self._processor = PandasProcessor()
 
     @property
     def processor(self):

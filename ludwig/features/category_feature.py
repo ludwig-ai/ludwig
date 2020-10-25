@@ -21,7 +21,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.data.engine import get_processing_engine
 from ludwig.decoders.generic_decoders import Classifier
 from ludwig.encoders.category_encoders import CategoricalEmbedEncoder
 from ludwig.encoders.category_encoders import CategoricalSparseEncoder

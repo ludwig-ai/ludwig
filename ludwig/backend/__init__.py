@@ -31,10 +31,3 @@ backend_registry = {
 
 def create_backend(name):
     return backend_registry[name]()
-
-
-def current_backend():
-    try:
-        return Backend.get_context()
-    except IndexError:
-        LOCAL_BACKEND
