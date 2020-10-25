@@ -65,6 +65,7 @@ class BinaryFeatureMixin(object):
         if column.dtype == object:
             column = column.map(str2bool)
         dataset[feature[NAME]] = column.astype(np.bool_).values
+        return dataset
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):

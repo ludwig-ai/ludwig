@@ -97,6 +97,7 @@ class ECD(tf.keras.Model):
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
+            print('input values', input_values)
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values, training=training,
                                      mask=mask)

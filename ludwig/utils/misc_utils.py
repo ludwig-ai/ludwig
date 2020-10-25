@@ -236,7 +236,8 @@ def check_which_config(config, config_file):
 
 
 def get_features(config):
-    return {
-        **{feature['name']: feature for feature in config['input_features']},
-        **{feature['name']: feature for feature in config['output_features']},
-    }
+    return get_features_from_lists(config['input_features'], config['output_features'])
+
+
+def get_features_from_lists(*args):
+    return {feature['name']: feature for features in args for feature in features}

@@ -24,10 +24,6 @@ import pickle
 import random
 import re
 
-import dask
-import ray
-from ray.util.dask import ray_dask_get
-
 import dask.dataframe as dd
 import h5py
 import numpy as np
@@ -663,14 +659,9 @@ def is_model_dir(path: str) -> bool:
     return is_model_dir
 
 
-def ray_init():
-    ray.init()
-    # dask.config.set(scheduler=ray_dask_get)
-
-
 def parallelize(data):
-    num_cpus = int(ray.cluster_resources().get('CPU', 1))
-    return data.repartition(num_cpus)
+    # num_cpus = int(ray.cluster_resources().get('CPU', 1))
+    return data.repartition(12)
 
 
 def persist(data):

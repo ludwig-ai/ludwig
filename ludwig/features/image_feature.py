@@ -333,6 +333,7 @@ class ImageFeatureMixin(object):
                 h5_file.flush()
 
             dataset[feature[NAME]] = np.arange(num_images)
+        return dataset
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):

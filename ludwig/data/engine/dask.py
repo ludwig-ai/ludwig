@@ -15,13 +15,14 @@
 # limitations under the License.
 # ==============================================================================
 
+import multiprocessing
 import os
 
 try:
     import dask
     import dask.array as da
     import dask.dataframe as dd
-    import ray
+    # import ray
     _LOADED = True
 except:
     _LOADED = False
@@ -38,7 +39,8 @@ def set_scheduler(scheduler):
 
 class DaskEngine(DataProcessingEngine):
     def parallelize(self, data):
-        num_cpus = int(ray.cluster_resources().get('CPU', 1))
+        # num_cpus = int(ray.cluster_resources().get('CPU', 1))
+        num_cpus = multiprocessing.cpu_count()
         return data.repartition(num_cpus)
 
     def persist(self, data):

@@ -26,6 +26,7 @@ from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.engine import get_processing_engine
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
@@ -51,7 +52,8 @@ from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed, merge_with_defaults)
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
-                                     resolve_pointers, set_random_seed)
+                                     resolve_pointers, set_random_seed,
+                                     get_features_from_lists)
 
 logger = logging.getLogger(__name__)
 
@@ -930,7 +932,7 @@ def build_dataset(
         metadata
     )
 
-    dataset[SPLIT] = processing_engine.array_to_col(get_split(
+    dataset[SPLIT] = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -938,7 +940,7 @@ def build_dataset(
         ],
         stratify=global_preprocessing_parameters['stratify'],
         random_seed=random_seed
-    ))
+    )
 
     return dataset, metadata
 
@@ -1074,10 +1076,8 @@ def get_split(
 
         array_lib = get_processing_engine(dataset_df).array_lib
         if stratify is None or stratify not in dataset_df:
-            split = array_lib.random.choice(
-                3,
-                len(dataset_df),
-                p=split_probabilities,
+            split = dataset_df.index.to_series().map(
+                lambda x: np.random.choice(3, 1, p=split_probabilities)
             ).astype(np.int8)
         else:
             split = np.zeros(len(dataset_df))
@@ -1544,10 +1544,14 @@ def preprocess_for_prediction(
         elif split == TEST:
             dataset = test_set
 
-    dataset = Dataset(
-        dataset,
+    features = get_features_from_lists(
         config['input_features'],
-        output_features,
+        output_features
+    )
+
+    dataset = PandasDataset(
+        dataset,
+        features,
         hdf5_fp
     )
 

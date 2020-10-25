@@ -71,6 +71,7 @@ class H3FeatureMixin(object):
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
         dataset[feature[NAME]] = np.array(column.tolist(), dtype=np.uint8)
+        return dataset
 
 
 class H3InputFeature(H3FeatureMixin, InputFeature):

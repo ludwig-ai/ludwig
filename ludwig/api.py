@@ -58,8 +58,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      DICT_FORMATS,
                                      external_data_reader_registry,
                                      figure_data_format, generate_kfold_splits,
-                                     load_json, save_json,
-                                     ray_init)
+                                     load_json, save_json)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.horovod_utils import (broadcast_return, configure_horovod,
                                         is_on_master, set_on_master)
@@ -68,9 +67,6 @@ from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_output_directory)
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.tf_utils import initialize_tensorflow
-
-import ray
-from ray.util.dask import ray_dask_get
 
 logger = logging.getLogger(__name__)
 
@@ -1242,8 +1238,6 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        ray_init()
-
         # preprocess
         preprocessed_data = preprocess_for_training(
             self.config,

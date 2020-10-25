@@ -6,6 +6,10 @@ import logging
 import os
 import shutil
 
+import dask
+import ray
+from ray.util.dask import ray_dask_get
+
 from ludwig.api import LudwigModel
 
 from ludwig.data.dataset.parquet import ParquetDataset
@@ -16,6 +20,9 @@ import tensorflow as tf
 
 # clean out prior results
 shutil.rmtree('./results', ignore_errors=True)
+
+ray.init()
+# dask.config.set(scheduler=ray_dask_get)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./model_config.yaml',

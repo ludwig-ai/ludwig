@@ -89,6 +89,7 @@ class BagFeatureMixin(object):
             metadata[feature[NAME]],
             preprocessing_parameters
         )
+        return dataset
 
 
 class BagInputFeature(BagFeatureMixin, InputFeature):

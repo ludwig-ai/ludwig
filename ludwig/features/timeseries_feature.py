@@ -124,6 +124,7 @@ class TimeseriesFeatureMixin(object):
             metadata[feature[NAME]],
             preprocessing_parameters
         )
+        return dataset
 
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):

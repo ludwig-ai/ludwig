@@ -310,6 +310,7 @@ class AudioFeatureMixin(object):
                 audio_stats['min'], audio_stats['cropped'],
                 audio_stats['max_length_in_s'])
             logger.debug(print_statistics)
+        return dataset
 
     @staticmethod
     def _get_max_length_feature(

@@ -21,6 +21,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.data.engine import get_processing_engine
 from ludwig.decoders.generic_decoders import Classifier
 from ludwig.encoders.category_encoders import CategoricalEmbedEncoder
 from ludwig.encoders.category_encoders import CategoricalSparseEncoder
@@ -70,16 +71,13 @@ class CategoryFeatureMixin(object):
 
     @staticmethod
     def feature_data(column, metadata):
-        return np.array(
-            column.map(
-                lambda x: (
-                    metadata['str2idx'][x.strip()]
-                    if x.strip() in metadata['str2idx']
-                    else metadata['str2idx'][UNKNOWN_SYMBOL]
-                )
-            ),
-            dtype=int_type(metadata['vocab_size'])
-        )
+        return column.map(
+            lambda x: (
+                metadata['str2idx'][x.strip()]
+                if x.strip() in metadata['str2idx']
+                else metadata['str2idx'][UNKNOWN_SYMBOL]
+            )
+        ).astype(int_type(metadata['vocab_size']))
 
     @staticmethod
     def add_feature_data(
@@ -91,8 +89,9 @@ class CategoryFeatureMixin(object):
     ):
         dataset[feature[NAME]] = CategoryFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]]
+            metadata[feature[NAME]],
         )
+        return dataset
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):

@@ -108,6 +108,7 @@ class DateFeatureMixin(object):
             for row in dataset_df[feature[NAME]]
         ]
         dataset[feature[NAME]] = np.array(dates_to_lists, dtype=np.int16)
+        return dataset
 
 
 class DateInputFeature(DateFeatureMixin, InputFeature):

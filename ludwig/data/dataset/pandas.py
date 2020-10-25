@@ -27,7 +27,7 @@ class PandasDataset(Dataset):
         self.dataset = dataset
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
-        self.size = min(map(len, self.dataset.values()))
+        self.size = len(self.dataset)
 
     def get(self, feature_name, idx=None):
         if idx is None:
@@ -36,6 +36,8 @@ class PandasDataset(Dataset):
                 'preprocessing' not in self.features[feature_name] or
                 'in_memory' not in self.features[feature_name][
                     'preprocessing']):
+            print(feature_name.upper(), self.dataset[feature_name])
+            print('INDEX: ', idx)
             return self.dataset[feature_name][idx]
         if self.features[feature_name]['preprocessing']['in_memory']:
             return self.dataset[feature_name][idx]

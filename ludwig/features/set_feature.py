@@ -97,6 +97,7 @@ class SetFeatureMixin(object):
             metadata[feature[NAME]],
             preprocessing_parameters
         )
+        return dataset
 
 
 class SetInputFeature(SetFeatureMixin, InputFeature):
