@@ -1521,7 +1521,7 @@ def _preprocess_df_for_training(
     )
     training_set, test_set, validation_set = split_dataset_ttv(
         dataset,
-        dataset[SPLIT]
+        SPLIT
     )
     return training_set, test_set, validation_set, training_set_metadata
 
@@ -1618,7 +1618,7 @@ def preprocess_for_prediction(
     if split != FULL:
         training_set, test_set, validation_set = split_dataset_ttv(
             dataset,
-            dataset[SPLIT]
+            SPLIT
         )
         if split == TRAINING:
             dataset = training_set

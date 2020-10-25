@@ -146,7 +146,7 @@ class LudwigModel:
             self,
             config: Union[str, dict],
             logging_level: int = logging.ERROR,
-            backend: Backend = None,
+            backend: Union[Backend, str] = None,
             use_horovod: bool = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,

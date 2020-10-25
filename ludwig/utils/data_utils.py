@@ -65,6 +65,8 @@ CACHEABLE_FORMATS = set.union(*(CSV_FORMATS, TSV_FORMATS,
                                 ORC_FORMATS, SAS_FORMATS, SPSS_FORMATS,
                                 STATA_FORMATS))
 
+PANDAS_DF = pd
+
 
 def get_abs_path(data_csv_path, file_path):
     if data_csv_path is not None:
@@ -80,12 +82,12 @@ def load_csv(data_fp):
     return data
 
 
-def read_xsv(data_fp, processor, separator=',', header=0, nrows=None, skiprows=None):
+def read_xsv(data_fp, df_lib=PANDAS_DF, separator=',', header=0, nrows=None, skiprows=None):
     """
     Helper method to read a csv file. Wraps around pd.read_csv to handle some
     exceptions. Can extend to cover cases as necessary
     :param data_fp: path to the xsv file
-    :param processor: DataProcessor used to generate and process datasets
+    :param df_lib: DataFrame library used to read in the CSV
     :param separator: defaults separator to use for splitting
     :param header: header argument for pandas to read the csv
     :param nrows: number of rows to read from the csv, None means all
@@ -102,12 +104,12 @@ def read_xsv(data_fp, processor, separator=',', header=0, nrows=None, skiprows=N
             pass
 
     try:
-        df = processor.df_lib.read_csv(data_fp, sep=separator, header=header,
+        df = df_lib.df_lib.read_csv(data_fp, sep=separator, header=header,
                                        nrows=nrows, skiprows=skiprows)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = processor.df_lib.read_csv(data_fp, sep=separator, header=header,
+        df = df_lib.df_lib.read_csv(data_fp, sep=separator, header=header,
                                        escapechar='\\',
                                        nrows=nrows, skiprows=skiprows)
 

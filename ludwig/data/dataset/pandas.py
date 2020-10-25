@@ -40,9 +40,6 @@ class PandasDataset(Dataset):
                 'preprocessing' not in self.features[feature_name] or
                 'in_memory' not in self.features[feature_name][
                     'preprocessing']):
-            print(feature_name.upper(), self.dataset[feature_name])
-            print("LENGTHS", len(self.dataset), len(self.dataset[feature_name]))
-            print('INDEX: ', idx)
             return subselect(self.dataset[feature_name], idx)
         if self.features[feature_name]['preprocessing']['in_memory']:
             return subselect(self.dataset[feature_name], idx)
