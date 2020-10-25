@@ -26,7 +26,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION):
 
 
 class Mnist(GZipDownloadMixin, ImageProcessMixin, CSVLoadMixin, BaseDataset):
-    """The OhsuMed dataset.
+    """The Mnist dataset.
 
     This pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming training data into a destination
