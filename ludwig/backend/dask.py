@@ -19,7 +19,7 @@ from ludwig.backend.base import Backend
 from ludwig.data.processor.dask import DaskProcessor
 
 
-class RayBackend(Backend):
+class DaskBackend(Backend):
     def __init__(self):
         super().__init__()
         self._processor = DaskProcessor()

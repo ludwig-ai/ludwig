@@ -20,7 +20,7 @@ import tempfile
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.backend.ray import RayBackend
+from ludwig.backend.dask import DaskBackend
 from ludwig.utils.data_utils import read_parquet
 
 from tests.integration_tests.utils import create_data_set_to_use, run_api_experiment
@@ -38,7 +38,7 @@ def run_api_experiment(input_features, output_features, data_parquet):
         'training': {'epochs': 2}
     }
 
-    backend = RayBackend()
+    backend = DaskBackend()
     # backend = LocalBackend()
     model = LudwigModel(config, backend=backend)
     output_dir = None

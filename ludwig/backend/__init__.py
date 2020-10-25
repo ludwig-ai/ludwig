@@ -16,14 +16,14 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, CompositeBackend, LocalBackend
-from ludwig.backend.ray import RayBackend
+from ludwig.backend.dask import DaskBackend
 
 
 LOCAL_BACKEND = LocalBackend()
 
 
 backend_registry = {
-    'ray': RayBackend,
+    'dask': DaskBackend,
     'local': LocalBackend,
     None: LocalBackend,
 }
