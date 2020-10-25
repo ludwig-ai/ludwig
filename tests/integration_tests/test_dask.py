@@ -26,6 +26,7 @@ from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import create_data_set_to_use, run_api_experiment
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 
 
@@ -82,9 +83,12 @@ def run_api_experiment(input_features, output_features, data_parquet):
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
-def test_dask_csv():
+def test_dask_parquet():
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output='sum')]
+    input_features = [
+        sequence_feature(reduce_output='sum'),
+        numerical_feature(normalization='zscore')
+    ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
