@@ -91,7 +91,7 @@ class SequenceFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         sequence_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['str2idx'],
@@ -103,7 +103,8 @@ class SequenceFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
-            ]
+            ],
+            backend=backend
         )
         return sequence_data
 
@@ -118,7 +119,9 @@ class SequenceFeatureMixin(object):
     ):
         sequence_data = SequenceInputFeature.feature_data(
             dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters)
+            metadata[feature[NAME]], preprocessing_parameters,
+            backend
+        )
         dataset[feature[NAME]] = sequence_data
         return dataset
 

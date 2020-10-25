@@ -34,6 +34,9 @@ class PandasEngine(DataProcessingEngine):
     def compute(self, data):
         return data
 
+    def meta_kwargs(self, meta):
+        return {}
+
     def from_pandas(self, df):
         return df
 

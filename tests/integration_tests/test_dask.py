@@ -37,8 +37,8 @@ def run_api_experiment(input_features, output_features, data_parquet):
         'training': {'epochs': 2}
     }
 
-    # backend = RayBackend()
-    backend = LocalBackend()
+    backend = RayBackend()
+    # backend = LocalBackend()
     model = LudwigModel(config, backend=backend)
     output_dir = None
 

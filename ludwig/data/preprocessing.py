@@ -31,7 +31,7 @@ from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_INPUT_FP,
+from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_PROCESSED_CACHE_DIR,
                                      DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
                                      FEATHER_FORMATS, FWF_FORMATS,
@@ -1065,7 +1065,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
 
         if fill_value is not None:
             preprocessing_parameters = {
-                'computed_fill_value': backend.processor.compute(fill_value),
+                'computed_fill_value': fill_value,
                 **preprocessing_parameters
             }
         metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
@@ -1396,7 +1396,7 @@ def _preprocess_file_for_training(
             backend=backend,
             random_seed=random_seed
         )
-        training_set_metadata[DATA_INPUT_FP] = dataset
+        training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
@@ -1437,7 +1437,7 @@ def _preprocess_file_for_training(
             metadata=training_set_metadata,
             random_seed=random_seed
         )
-        training_set_metadata[DATA_INPUT_FP] = training_set
+        training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
@@ -1517,8 +1517,11 @@ def _preprocess_df_for_training(
         features,
         preprocessing_params,
         metadata=training_set_metadata,
-        random_seed=random_seed
+        random_seed=random_seed,
+        backend=backend
     )
+    training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+
     training_set, test_set, validation_set = split_dataset_ttv(
         dataset,
         SPLIT

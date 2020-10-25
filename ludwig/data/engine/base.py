@@ -32,6 +32,10 @@ class DataProcessingEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def meta_kwargs(self, meta):
+        raise NotImplementedError()
+
+    @abstractmethod
     def from_pandas(self, df):
         raise NotImplementedError()
 

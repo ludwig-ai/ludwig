@@ -15,20 +15,49 @@
 # limitations under the License.
 # ==============================================================================
 
+import os
+import tempfile
+import uuid
+
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 
 from ludwig.backend.context import Context
 from ludwig.data.engine.pandas import PandasEngine
 
 
 class Backend(Context, ABC):
-    def __init__(self):
+    def __init__(self, cache_dir=None):
         super().__init__(Backend)
+        self._cache_dir = cache_dir
 
     @property
     @abstractmethod
     def processor(self):
         raise NotImplementedError()
+
+    def create_cache_entry(self):
+        return os.path.join(self.cache_dir, str(uuid.uuid1()))
+
+    @property
+    def cache_dir(self):
+        if not self._cache_dir:
+            raise ValueError('Cache directory not available, try calling `with backend.create_cache_dir()`.')
+        return self._cache_dir
+
+    @contextmanager
+    def create_cache_dir(self):
+        prev_cache_dir = self._cache_dir
+        try:
+            if self._cache_dir:
+                os.makedirs(self._cache_dir, exist_ok=True)
+                yield self._cache_dir
+            else:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    self._cache_dir = tmpdir
+                    yield tmpdir
+        finally:
+            self._cache_dir = prev_cache_dir
 
 
 class CompositeBackend(Backend):

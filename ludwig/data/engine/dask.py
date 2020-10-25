@@ -29,7 +29,7 @@ except:
 
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.engine.base import DataProcessingEngine
-from ludwig.utils.data_utils import DATA_INPUT_FP, DATASET_SPLIT_URL, replace_file_extension
+from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, replace_file_extension
 from ludwig.utils.misc_utils import get_features
 
 
@@ -47,6 +47,9 @@ class DaskEngine(DataProcessingEngine):
     def compute(self, data):
         return data.compute()
 
+    def meta_kwargs(self, meta):
+        return dict(meta=meta)
+
     def from_pandas(self, df):
         return dd.from_pandas(df, npartitions=self.parallelism)
 
@@ -54,9 +57,9 @@ class DaskEngine(DataProcessingEngine):
         return self.parallelize(dd.from_dask_array(array))
 
     def create_dataset(self, dataset, tag, config, training_set_metadata):
-        input_fp = training_set_metadata.get(DATA_INPUT_FP)
+        cache_dir = training_set_metadata.get(DATA_PROCESSED_CACHE_DIR)
         tag = tag.lower()
-        dataset_parquet_fp = replace_file_extension(input_fp, f'.{tag}.parquet')
+        dataset_parquet_fp = os.path.join(cache_dir, f'{tag}.parquet')
 
         print(tag, dataset_parquet_fp)
         os.makedirs(dataset_parquet_fp, exist_ok=True)
