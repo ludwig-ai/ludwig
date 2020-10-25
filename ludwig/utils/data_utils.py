@@ -368,9 +368,9 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
 def split_dataset_ttv(dataset, split):
     # if SPLIT in dataset:
     #     del dataset[SPLIT]
-    training_set = dataset[dataset[split] == 0]
-    validation_set = dataset[dataset[split] == 1]
-    test_set = dataset[dataset[split] == 2]
+    training_set = dataset[dataset[split] == 0].reset_index()
+    validation_set = dataset[dataset[split] == 1].reset_index()
+    test_set = dataset[dataset[split] == 2].reset_index()
     return training_set, test_set, validation_set
 
 

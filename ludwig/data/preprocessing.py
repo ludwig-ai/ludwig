@@ -82,7 +82,8 @@ class DataFormatPreprocessor(ABC):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         pass
 
@@ -135,13 +136,15 @@ class DictPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset, training_set_metadata = build_dataset(
             pd.DataFrame(dataset),
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -184,13 +187,15 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset, training_set_metadata = build_dataset(
             dataset,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -228,7 +233,8 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset_df = read_csv(dataset)
         dataset_df.src = dataset
@@ -236,7 +242,8 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -274,7 +281,8 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset_df = read_tsv(dataset)
         dataset_df.src = dataset
@@ -282,7 +290,8 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -320,15 +329,17 @@ class JSONPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_json(dataset)
+        dataset_df = read_json(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -366,15 +377,17 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_jsonl(dataset)
+        dataset_df = read_jsonl(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -412,15 +425,17 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_excel(dataset)
+        dataset_df = read_excel(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -458,15 +473,17 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_parquet(dataset)
+        dataset_df = read_parquet(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -504,15 +521,17 @@ class PicklePreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_pickle(dataset)
+        dataset_df = read_pickle(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -550,15 +569,17 @@ class FatherPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_feather(dataset)
+        dataset_df = read_feather(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -596,15 +617,17 @@ class FWFPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_fwf(dataset)
+        dataset_df = read_fwf(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -642,15 +665,17 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_html(dataset)
+        dataset_df = read_html(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -688,15 +713,17 @@ class ORCPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_orc(dataset)
+        dataset_df = read_orc(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -734,15 +761,17 @@ class SASPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_sas(dataset)
+        dataset_df = read_sas(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -780,15 +809,17 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_spss(dataset)
+        dataset_df = read_spss(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -826,15 +857,17 @@ class StataPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_stata(dataset)
+        dataset_df = read_stata(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -906,7 +939,8 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         hdf5_fp = dataset
         dataset = load_hdf5(
@@ -1498,7 +1532,8 @@ def preprocess_for_prediction(
         training_set_metadata=None,
         data_format=None,
         split=FULL,
-        include_outputs=True
+        include_outputs=True,
+        backend=LOCAL_BACKEND
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core
@@ -1572,7 +1607,8 @@ def preprocess_for_prediction(
     processed = data_format_processor.preprocess_for_prediction(dataset,
                                                                 features,
                                                                 preprocessing_params,
-                                                                training_set_metadata)
+                                                                training_set_metadata,
+                                                                backend)
     dataset, training_set_metadata, new_hdf5_fp = processed
     if new_hdf5_fp:
         hdf5_fp = new_hdf5_fp

@@ -22,6 +22,10 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.data.sampler import DistributedSampler
 
 
+def subselect(column, idx):
+    return np.stack(column[idx].values)
+
+
 class PandasDataset(Dataset):
     def __init__(self, dataset, features, data_hdf5_fp):
         self.dataset = dataset
@@ -37,12 +41,13 @@ class PandasDataset(Dataset):
                 'in_memory' not in self.features[feature_name][
                     'preprocessing']):
             print(feature_name.upper(), self.dataset[feature_name])
+            print("LENGTHS", len(self.dataset), len(self.dataset[feature_name]))
             print('INDEX: ', idx)
-            return self.dataset[feature_name][idx]
+            return subselect(self.dataset[feature_name], idx)
         if self.features[feature_name]['preprocessing']['in_memory']:
-            return self.dataset[feature_name][idx]
+            return subselect(self.dataset[feature_name], idx)
 
-        sub_batch = self.dataset[feature_name][idx]
+        sub_batch = subselect(self.dataset[feature_name], idx)
 
         indices = np.empty((3, len(sub_batch)), dtype=np.int64)
         indices[0, :] = sub_batch

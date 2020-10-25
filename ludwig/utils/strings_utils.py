@@ -259,7 +259,8 @@ def build_sequence_matrix(
             sequence[max_length - limit:] = vector[:limit]
         return sequence
 
-    padded = unit_vectors.map(pad, meta=('data', 'object'))
+    # padded = unit_vectors.map(pad, meta=('data', 'object'))
+    padded = unit_vectors.map(pad)
     return padded
 
 
