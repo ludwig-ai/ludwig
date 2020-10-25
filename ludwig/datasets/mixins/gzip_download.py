@@ -33,18 +33,18 @@ class GZipDownloadMixin:
         """
         os.makedirs(self.raw_temp_path, exist_ok=True)
         file_download_config_dict = {os.path.join(self.download_url, self.config['training_image_root'] + ".gz"):
-                                  (os.path.join(self.raw_temp_path, self.config['training_image_root'] + ".gz"),
-                                   os.path.join(self.raw_temp_path, self.config['training_image_root'])),
-                              os.path.join(self.download_url, self.config['training_label_root'] + ".gz"):
-                                  (os.path.join(self.raw_temp_path, self.config['training_label_root'] + ".gz"),
-                                   os.path.join(self.raw_temp_path, self.config['training_label_root'])),
-                              os.path.join(self.download_url, self.config['test_image_root'] + ".gz"):
-                                  (os.path.join(self.raw_temp_path, self.config['test_image_root'] + ".gz"),
-                                   os.path.join(self.raw_temp_path, self.config['test_image_root'])),
-                              os.path.join(self.download_url, self.config['test_label_root'] + ".gz"):
-                                  (os.path.join(self.raw_temp_path, self.config['test_label_root'] + ".gz"),
-                                   os.path.join(self.raw_temp_path, self.config['test_label_root']))
-                              }
+                                     (os.path.join(self.raw_temp_path, self.config['training_image_root'] + ".gz"),
+                                      os.path.join(self.raw_temp_path, self.config['training_image_root'])),
+                                     os.path.join(self.download_url, self.config['training_label_root'] + ".gz"):
+                                     (os.path.join(self.raw_temp_path, self.config['training_label_root'] + ".gz"),
+                                     os.path.join(self.raw_temp_path, self.config['training_label_root'])),
+                                     os.path.join(self.download_url, self.config['test_image_root'] + ".gz"):
+                                     (os.path.join(self.raw_temp_path, self.config['test_image_root'] + ".gz"),
+                                      os.path.join(self.raw_temp_path, self.config['test_image_root'])),
+                                     os.path.join(self.download_url, self.config['test_label_root'] + ".gz"):
+                                     (os.path.join(self.raw_temp_path, self.config['test_label_root'] + ".gz"),
+                                      os.path.join(self.raw_temp_path, self.config['test_label_root']))
+                                     }
 
         for file_download_url, download_file_tuple in file_download_config_dict.items():
             download_archive = download_file_tuple[0]
