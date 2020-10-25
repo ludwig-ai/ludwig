@@ -75,6 +75,8 @@ def run_api_experiment(input_features, output_features, data_parquet):
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
+
+        data_df = backend.processor.compute(data_df)
         model.predict(dataset=data_df)
     finally:
         shutil.rmtree(output_dir, ignore_errors=True)
