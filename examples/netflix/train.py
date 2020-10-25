@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import json
 import logging
 import os
 import shutil
@@ -10,6 +11,9 @@ from ludwig.api import LudwigModel
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.utils.misc_utils import get_features
 
+import tensorflow as tf
+# tf.config.experimental_run_functions_eagerly(True)
+
 # clean out prior results
 shutil.rmtree('./results', ignore_errors=True)
 
@@ -17,32 +21,36 @@ shutil.rmtree('./results', ignore_errors=True)
 model = LudwigModel(config='./model_config.yaml',
                     logging_level=logging.INFO)
 
-(
-    training_set,
-    validation_set,
-    test_set,
-    training_set_metadata
-) = model.preprocess(
-    dataset='./data/dataset.parquet/part.0.parquet',
-    experiment_name='netflix_experiment',
-    model_name='netflix_model',
-    skip_save_processed_input=False,
-)
-
-print('PREPROCESSED: ', training_set_metadata)
-
-# features = get_features(model.config)
-# train_dataset = ParquetDataset('file://' + os.path.abspath('./data/dataset.train.parquet'), features)
-# val_dataset = ParquetDataset('file://' + os.path.abspath('./data/dataset.train.parquet'), features)
-# test_dataset = ParquetDataset('file://' + os.path.abspath('./data/dataset.train.parquet'), features)
-#
-# train_stats, preprocessed_data, output_directory= model.train(
-#     training_set=train_dataset,
-#     validation_set=val_dataset,
-#     test_set=test_dataset
+# (
+#     training_set,
+#     validation_set,
+#     test_set,
+#     training_set_metadata
+# ) = model.preprocess(
+#     dataset='./data/dataset.parquet/part.0.parquet',
+#     experiment_name='netflix_experiment',
+#     model_name='netflix_model',
+#     skip_save_processed_input=False,
 # )
 #
-# print('TRAINED: ', train_stats)
+# print('PREPROCESSED')
+
+features = get_features(model.config)
+train_dataset = ParquetDataset('file://' + os.path.abspath('./data/dataset.parquet/part.0.training.parquet'), features)
+val_dataset = ParquetDataset('file://' + os.path.abspath('./data/dataset.parquet/part.0.validation.parquet'), features)
+test_dataset = ParquetDataset('file://' + os.path.abspath('./data/dataset.parquet/part.0.test.parquet'), features)
+
+with open('./data/dataset.parquet/part.0.meta.json', 'r') as f:
+    training_set_metadata = json.load(f)
+
+train_stats, preprocessed_data, output_directory = model.train(
+    training_set=train_dataset,
+    validation_set=val_dataset,
+    test_set=test_dataset,
+    training_set_metadata=training_set_metadata,
+)
+
+print('TRAINED: ', train_stats)
 
 # # initiate model training
 # (

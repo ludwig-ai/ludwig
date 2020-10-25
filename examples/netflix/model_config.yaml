@@ -20,3 +20,7 @@ input_features:
 output_features:
     - name: Rating
       type: numerical
+
+training:
+    epochs: 1
+    batch_size: 512

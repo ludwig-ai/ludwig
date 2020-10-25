@@ -247,7 +247,9 @@ def build_sequence_matrix(
     max_length = length_limit
 
     def pad(vector):
-        sequence = np.full((max_length,), -1, dtype=np.int32)
+        sequence = np.full((max_length,),
+                           inverse_vocabulary[padding_symbol],
+                           dtype=format_dtype)
         limit = min(vector.shape[0], max_length)
         if padding == 'right':
             sequence[:limit] = vector[:limit]

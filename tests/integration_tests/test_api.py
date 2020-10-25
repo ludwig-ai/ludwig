@@ -21,66 +21,10 @@ import numpy as np
 
 from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import ENCODERS
+from tests.integration_tests.utils import ENCODERS, run_api_experiment
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
-
-
-def run_api_experiment(input_features, output_features, data_csv):
-    """
-    Helper method to avoid code repetition in running an experiment
-    :param input_features: input schema
-    :param output_features: output schema
-    :param data_csv: path to data
-    :return: None
-    """
-    config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 2}
-    }
-
-    model = LudwigModel(config)
-    output_dir = None
-
-    try:
-        # Training with csv
-        _, _, output_dir = model.train(
-            dataset=data_csv,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True
-        )
-        model.predict(dataset=data_csv)
-
-        model_dir = os.path.join(output_dir, 'model')
-        loaded_model = LudwigModel.load(model_dir)
-
-        # Necessary before call to get_weights() to materialize the weights
-        loaded_model.predict(dataset=data_csv)
-
-        model_weights = model.model.get_weights()
-        loaded_weights = loaded_model.model.get_weights()
-        for model_weight, loaded_weight in zip(model_weights, loaded_weights):
-            assert np.allclose(model_weight, loaded_weight)
-    finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
-
-    try:
-        # Training with dataframe
-        data_df = read_csv(data_csv)
-        _, _, output_dir = model.train(
-            dataset=data_df,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True
-        )
-        model.predict(dataset=data_df)
-    finally:
-        shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def run_api_experiment_separated_datasets(

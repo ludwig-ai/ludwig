@@ -9,8 +9,7 @@ import yaml
 from ludwig.api import kfold_cross_validate
 from ludwig.experiment import kfold_cross_validate_cli
 from ludwig.utils.data_utils import load_json
-from tests.integration_tests.test_experiment import create_data_set_to_use
-from tests.integration_tests.utils import binary_feature
+from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
