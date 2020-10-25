@@ -1549,9 +1549,8 @@ def preprocess_for_prediction(
         output_features
     )
 
-    # TODO dask: this is a hack for testing, remove it
     dataset = PandasDataset(
-        dataset.compute(),
+        dataset,
         features,
         hdf5_fp
     )

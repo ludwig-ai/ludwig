@@ -34,6 +34,7 @@ ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
+from ludwig.backend import Backend, LocalBackend, create_backend
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
@@ -145,6 +146,7 @@ class LudwigModel:
             self,
             config: Union[str, dict],
             logging_level: int = logging.ERROR,
+            backend: Backend = None,
             use_horovod: bool = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
@@ -184,6 +186,10 @@ class LudwigModel:
 
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
+
+        self.backend = backend or LocalBackend()
+        if isinstance(backend, str):
+            self.backend = create_backend(backend)
 
         # setup horovod
         self._horovod = configure_horovod(use_horovod)
