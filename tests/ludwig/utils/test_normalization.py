@@ -16,6 +16,7 @@
 import numpy as np
 import pandas as pd
 
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.features.numerical_feature import NumericalFeatureMixin
 
 
@@ -42,10 +43,10 @@ data = pd.DataFrame(pd.Series([
 
 def test_norm():
     feature_1_meta = NumericalFeatureMixin.get_feature_meta(
-        data_df['x'], {'normalization': 'zscore'}
+        data_df['x'], {'normalization': 'zscore'}, LOCAL_BACKEND
     )
     feature_2_meta = NumericalFeatureMixin.get_feature_meta(
-        data_df['x'], {'normalization': 'minmax'}
+        data_df['x'], {'normalization': 'minmax'}, LOCAL_BACKEND
     )
 
     assert feature_1_meta['mean'] == 6

@@ -48,7 +48,7 @@ class VectorFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {
             'preprocessing': preprocessing_parameters
         }

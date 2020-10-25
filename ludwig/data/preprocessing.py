@@ -28,7 +28,6 @@ from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.engine import get_processing_engine
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.utils import data_utils
@@ -945,10 +944,11 @@ def build_dataset(
         features,
         global_preprocessing_parameters,
         metadata=None,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
 ):
-    processing_engine = get_processing_engine(dataset_df)
-    dataset_df = processing_engine.parallelize(dataset_df)
+    processor = backend.processor
+    dataset_df = processor.parallelize(dataset_df)
 
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
@@ -959,7 +959,8 @@ def build_dataset(
         metadata = build_metadata(
             dataset_df,
             features,
-            global_preprocessing_parameters
+            global_preprocessing_parameters,
+            backend
         )
 
     dataset = build_data(
@@ -975,13 +976,14 @@ def build_dataset(
             'split_probabilities'
         ],
         stratify=global_preprocessing_parameters['stratify'],
+        backend=backend,
         random_seed=random_seed
     )
 
     return dataset, metadata
 
 
-def build_metadata(dataset_df, features, global_preprocessing_parameters):
+def build_metadata(dataset_df, features, global_preprocessing_parameters, backend):
     print('DATASET', dataset_df)
     metadata = {}
     for feature in features:
@@ -1017,7 +1019,8 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 
         metadata[feature[NAME]] = get_feature_meta(
             dataset_df[feature[NAME]].astype(str),
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
 
         fill_value = precompute_fill_value(
@@ -1103,6 +1106,7 @@ def get_split(
         force_split=False,
         split_probabilities=(0.7, 0.1, 0.2),
         stratify=None,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
 ):
     if SPLIT in dataset_df and not force_split:
@@ -1110,7 +1114,6 @@ def get_split(
     else:
         set_random_seed(random_seed)
 
-        array_lib = get_processing_engine(dataset_df).array_lib
         if stratify is None or stratify not in dataset_df:
             split = dataset_df.index.to_series().map(
                 lambda x: np.random.choice(3, 1, p=split_probabilities)
@@ -1122,6 +1125,7 @@ def get_split(
                 idx_list = (
                     dataset_df.index[dataset_df[stratify] == val].tolist()
                 )
+                array_lib = backend.processor.array_lib
                 val_list = array_lib.random.choice(
                     3,
                     len(idx_list),
@@ -1262,8 +1266,8 @@ def preprocess_for_training(
         [training_set, validation_set, test_set]
     )
 
-    processing_engine = get_processing_engine(training_set)
-    training_dataset = processing_engine.create_dataset(
+    processor = backend.processor
+    training_dataset = processor.create_dataset(
         training_set,
         TRAINING,
         config,
@@ -1272,7 +1276,7 @@ def preprocess_for_training(
 
     validation_dataset = None
     if validation_set is not None:
-        validation_dataset = processing_engine.create_dataset(
+        validation_dataset = processor.create_dataset(
             validation_set,
             VALIDATION,
             config,
@@ -1281,7 +1285,7 @@ def preprocess_for_training(
 
     test_dataset = None
     if test_set is not None:
-        test_dataset = processing_engine.create_dataset(
+        test_dataset = processor.create_dataset(
             test_set,
             TEST,
             config,
@@ -1352,12 +1356,12 @@ def _preprocess_file_for_training(
             features,
             preprocessing_params,
             metadata=training_set_metadata,
+            backend=backend,
             random_seed=random_seed
         )
         training_set_metadata[DATA_INPUT_FP] = dataset
 
-        processing_engine = get_processing_engine(dataset_df)
-        if is_on_master() and not skip_save_processed_input and processing_engine.use_hdf5_cache:
+        if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
             data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
@@ -1403,8 +1407,7 @@ def _preprocess_file_for_training(
             SPLIT
         )
 
-        processing_engine = get_processing_engine(training_set)
-        if is_on_master() and not skip_save_processed_input and processing_engine.use_hdf5_cache:
+        if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(

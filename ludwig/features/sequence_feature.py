@@ -68,7 +68,7 @@ class SequenceFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
         idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
@@ -76,7 +76,7 @@ class SequenceFeatureMixin(object):
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-
+            backend=backend
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],

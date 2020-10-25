@@ -41,7 +41,7 @@ class H3FeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {}
 
     @staticmethod

@@ -22,7 +22,7 @@ from collections import Counter
 
 import numpy as np
 
-from ludwig.utils.data_utils import compute, parallelize
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
@@ -97,7 +97,8 @@ def create_vocabulary(
         vocab_file=None,
         unknown_symbol=UNKNOWN_SYMBOL,
         padding_symbol=PADDING_SYMBOL,
-        pretrained_model_name_or_path=None
+        pretrained_model_name_or_path=None,
+        backend=LOCAL_BACKEND,
 ):
     vocab = None
 
@@ -137,7 +138,8 @@ def create_vocabulary(
 
     processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line)).explode()
     processed_counts = processed_lines.value_counts(sort=False)
-    unit_counts = Counter(dict(compute(processed_counts)))
+    processed_counts = backend.processor.compute(processed_counts)
+    unit_counts = Counter(dict(processed_counts))
     max_line_length = max([len(k) for k in unit_counts.keys()])
     print('MAX_LINE_LENGTH', max_line_length)
 
@@ -217,8 +219,8 @@ def build_sequence_matrix(
         unknown_symbol=UNKNOWN_SYMBOL,
         lowercase=True,
         tokenizer_vocab_file=None,
-        pretrained_model_name_or_path=None
-
+        pretrained_model_name_or_path=None,
+        backend=LOCAL_BACKEND,
 ):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file,
@@ -237,7 +239,7 @@ def build_sequence_matrix(
         lowercase=lowercase,
         unknown_symbol=unknown_symbol
     ))
-    max_length = compute(unit_vectors.map(len).max())
+    max_length = backend.processor.compute(unit_vectors.map(len).max())
     print('MAX_LENGTH: ', max_length)
 
     if max_length < length_limit:

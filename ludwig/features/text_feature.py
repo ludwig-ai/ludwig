@@ -58,7 +58,7 @@ class TextFeatureMixin(object):
     }
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters):
+    def feature_meta(column, preprocessing_parameters, backend):
         (
             char_idx2str,
             char_str2idx,
@@ -75,7 +75,8 @@ class TextFeatureMixin(object):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path']
+                'pretrained_model_name_or_path'],
+            backend=backend
         )
         (
             word_idx2str,
@@ -94,7 +95,8 @@ class TextFeatureMixin(object):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path']
+                'pretrained_model_name_or_path'],
+            backend=backend
         )
         return (
             char_idx2str,
@@ -114,9 +116,9 @@ class TextFeatureMixin(object):
         )
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
         tf_meta = TextFeatureMixin.feature_meta(
-            column, preprocessing_parameters
+            column, preprocessing_parameters, backend
         )
         (
             char_idx2str,
@@ -162,7 +164,7 @@ class TextFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         char_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['char_str2idx'],
@@ -177,8 +179,8 @@ class TextFeatureMixin(object):
             ],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
-
+            ],
+            backend=backend
         )
         word_data = build_sequence_matrix(
             sequences=column,
@@ -194,7 +196,8 @@ class TextFeatureMixin(object):
             ],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
+            ],
+            backend=backend
         )
 
         return char_data, word_data
@@ -205,11 +208,14 @@ class TextFeatureMixin(object):
             dataset_df,
             dataset,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters
+            metadata[feature[NAME]],
+            preprocessing_parameters,
+            backend
         )
         dataset = dataset.drop(feature[NAME], axis=1)
         dataset['{}_char'.format(feature[NAME])] = chars_data

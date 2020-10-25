@@ -55,12 +55,13 @@ class CategoryFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
         idx2str, str2idx, str2freq, _, _, _, _ = create_vocabulary(
             column, 'stripped',
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            add_padding=False
+            add_padding=False,
+            backend=backend
         )
         return {
             'idx2str': idx2str,

@@ -48,17 +48,18 @@ class NumericalFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        compute = backend.processor.compute
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 return {
-                    'mean': column.astype(np.float32).mean(),
-                    'std': column.astype(np.float32).std()
+                    'mean': compute(column.astype(np.float32).mean()),
+                    'std': compute(column.astype(np.float32).std())
                 }
             elif preprocessing_parameters['normalization'] == 'minmax':
                 return {
-                    'min': column.astype(np.float32).min(),
-                    'max': column.astype(np.float32).max()
+                    'min': compute(column.astype(np.float32).min()),
+                    'max': compute(column.astype(np.float32).max())
                 }
             else:
                 logger.info(
