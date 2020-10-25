@@ -13,18 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
+import tempfile
+
 from tests.integration_tests.utils import create_data_set_to_use, run_api_experiment
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def test_dask_csv(csv_filename):
+def test_dask_csv():
     # Single sequence input, single category output
     input_features = [sequence_feature(reduce_output='sum')]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
-    dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=1000)
-    dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
-    run_api_experiment(input_features, output_features, data_csv=dataset_parquet)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, 'dataset.csv')
+        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=1000)
+        dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
+        run_api_experiment(input_features, output_features, data_csv=dataset_parquet)
