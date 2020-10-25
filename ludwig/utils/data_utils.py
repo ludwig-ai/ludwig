@@ -104,14 +104,14 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=',', header=0, nrows=None, ski
             pass
 
     try:
-        df = df_lib.df_lib.read_csv(data_fp, sep=separator, header=header,
-                                       nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, sep=separator, header=header,
+                             nrows=nrows, skiprows=skiprows)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = df_lib.df_lib.read_csv(data_fp, sep=separator, header=header,
-                                       escapechar='\\',
-                                       nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, sep=separator, header=header,
+                             escapechar='\\',
+                             nrows=nrows, skiprows=skiprows)
 
     return df
 
