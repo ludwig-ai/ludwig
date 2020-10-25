@@ -32,6 +32,10 @@ class DataProcessingEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def from_pandas(self, df):
+        raise NotImplementedError()
+
+    @abstractmethod
     def array_to_col(self, array):
         raise NotImplementedError()
 

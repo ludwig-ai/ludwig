@@ -1255,6 +1255,7 @@ class LudwigModel:
             data_format=data_format,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=self.config[PREPROCESSING],
+            backend=self.backend,
             random_seed=random_seed
         )
 

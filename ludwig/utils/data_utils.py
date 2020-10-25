@@ -80,11 +80,12 @@ def load_csv(data_fp):
     return data
 
 
-def read_xsv(data_fp, separator=',', header=0, nrows=None, skiprows=None):
+def read_xsv(data_fp, processor, separator=',', header=0, nrows=None, skiprows=None):
     """
     Helper method to read a csv file. Wraps around pd.read_csv to handle some
     exceptions. Can extend to cover cases as necessary
     :param data_fp: path to the xsv file
+    :param processor: DataProcessor used to generate and process datasets
     :param separator: defaults separator to use for splitting
     :param header: header argument for pandas to read the csv
     :param nrows: number of rows to read from the csv, None means all
@@ -101,14 +102,14 @@ def read_xsv(data_fp, separator=',', header=0, nrows=None, skiprows=None):
             pass
 
     try:
-        df = dd.read_csv(data_fp, sep=separator, header=header,
-                         nrows=nrows, skiprows=skiprows)
+        df = processor.df_lib.read_csv(data_fp, sep=separator, header=header,
+                                       nrows=nrows, skiprows=skiprows)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = dd.read_csv(data_fp, sep=separator, header=header,
-                         escapechar='\\',
-                         nrows=nrows, skiprows=skiprows)
+        df = processor.df_lib.read_csv(data_fp, sep=separator, header=header,
+                                       escapechar='\\',
+                                       nrows=nrows, skiprows=skiprows)
 
     return df
 
@@ -117,55 +118,55 @@ read_csv = functools.partial(read_xsv, separator=',')
 read_tsv = functools.partial(read_xsv, separator='\t')
 
 
-def read_json(data_fp, normalize=False):
+def read_json(data_fp, df_lib, normalize=False):
     if normalize:
-        return pd.json_normalize(load_json(data_fp))
+        return df_lib.json_normalize(load_json(data_fp))
     else:
-        return pd.read_json(data_fp)
+        return df_lib.read_json(data_fp)
 
 
-def read_jsonl(data_fp):
-    return pd.read_json(data_fp, lines=True)
+def read_jsonl(data_fp, df_lib):
+    return df_lib.read_json(data_fp, lines=True)
 
 
-def read_excel(data_fp):
-    return pd.read_excel(data_fp)
+def read_excel(data_fp, df_lib):
+    return df_lib.read_excel(data_fp)
 
 
-def read_parquet(data_fp):
-    return dd.read_parquet(data_fp)
+def read_parquet(data_fp, df_lib):
+    return df_lib.read_parquet(data_fp)
 
 
-def read_pickle(data_fp):
-    return pd.read_pickle(data_fp)
+def read_pickle(data_fp, df_lib):
+    return df_lib.read_pickle(data_fp)
 
 
-def read_fwf(data_fp):
-    return pd.read_fwf(data_fp)
+def read_fwf(data_fp, df_lib):
+    return df_lib.read_fwf(data_fp)
 
 
-def read_feather(data_fp):
-    return pd.read_feather(data_fp)
+def read_feather(data_fp, df_lib):
+    return df_lib.read_feather(data_fp)
 
 
-def read_html(data_fp):
-    return pd.read_html(data_fp)[0]
+def read_html(data_fp, df_lib):
+    return df_lib.read_html(data_fp)[0]
 
 
-def read_orc(data_fp):
-    return pd.read_orc(data_fp)
+def read_orc(data_fp, df_lib):
+    return df_lib.read_orc(data_fp)
 
 
-def read_sas(data_fp):
-    return pd.read_sas(data_fp)
+def read_sas(data_fp, df_lib):
+    return df_lib.read_sas(data_fp)
 
 
-def read_spss(data_fp):
-    return pd.read_spss(data_fp)
+def read_spss(data_fp, df_lib):
+    return df_lib.read_spss(data_fp)
 
 
-def read_stata(data_fp):
-    return pd.read_stata(data_fp)
+def read_stata(data_fp, df_lib):
+    return df_lib.read_stata(data_fp)
 
 
 def save_csv(data_fp, data):

@@ -22,6 +22,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
@@ -71,6 +72,7 @@ class DataFormatPreprocessor(ABC):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         pass
@@ -97,6 +99,7 @@ class DictPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         num_overrides = override_in_memory_flag(features, True)
@@ -106,14 +109,15 @@ class DictPreprocessor(DataFormatPreprocessor):
                 'with {} data format.'.format('dict')
             )
 
+        processor = backend.processor
         if dataset is not None:
-            dataset = pd.DataFrame(dataset)
+            dataset = processor.from_pandas(pd.DataFrame(dataset))
         if training_set_metadata is not None:
-            training_set = pd.DataFrame(training_set)
+            training_set = processor.from_pandas(pd.DataFrame(training_set))
         if validation_set is not None:
-            validation_set = pd.DataFrame(validation_set)
+            validation_set = processor.from_pandas(pd.DataFrame(validation_set))
         if test_set is not None:
-            test_set = pd.DataFrame(test_set)
+            test_set = processor.from_pandas(pd.DataFrame(test_set))
 
         return _preprocess_df_for_training(
             features,
@@ -123,6 +127,7 @@ class DictPreprocessor(DataFormatPreprocessor):
             test_set,
             training_set_metadata=training_set_metadata,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -153,6 +158,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         num_overrides = override_in_memory_flag(features, True)
@@ -170,6 +176,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             test_set,
             training_set_metadata=training_set_metadata,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -200,6 +207,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -212,6 +220,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -244,6 +253,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -256,6 +266,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -288,6 +299,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -300,6 +312,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -332,6 +345,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -344,6 +358,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -376,6 +391,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -388,6 +404,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -420,6 +437,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -432,6 +450,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -464,6 +483,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -476,6 +496,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -508,6 +529,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -520,6 +542,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -552,6 +575,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -564,6 +588,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -596,6 +621,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -608,6 +634,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -640,6 +667,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -652,6 +680,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -684,6 +713,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -696,6 +726,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -728,6 +759,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -740,6 +772,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -772,6 +805,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -784,6 +818,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -816,6 +851,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         if not training_set_metadata:
@@ -1101,6 +1137,7 @@ def load_hdf5(
         split_data=True,
         shuffle_training=False
 ):
+    # TODO dask: this needs to work with DataFrames
     logger.info('Loading data from: {0}'.format(hdf5_file_path))
     # Load data from file
     hdf5_data = h5py.File(hdf5_file_path, 'r')
@@ -1143,6 +1180,7 @@ def preprocess_for_training(
         data_format=None,
         skip_save_processed_input=False,
         preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed
 ):
     # sanity check to make sure some data source is provided
@@ -1214,6 +1252,7 @@ def preprocess_for_training(
         training_set_metadata=training_set_metadata,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=preprocessing_params,
+        backend=backend,
         random_seed=random_seed
     )
     training_set, test_set, validation_set, training_set_metadata = processed
@@ -1279,6 +1318,7 @@ def _preprocess_file_for_training(
         read_fn=read_csv,
         skip_save_processed_input=False,
         preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed
 ):
     """
@@ -1304,7 +1344,7 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        dataset_df = read_fn(dataset)
+        dataset_df = read_fn(dataset, backend.processor.df_lib)
         dataset_df.src = dataset
 
         data, training_set_metadata = build_dataset(
@@ -1410,6 +1450,7 @@ def _preprocess_df_for_training(
         test_set=None,
         training_set_metadata=None,
         preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed
 ):
     """ Method to pre-process dataframes. This doesn't have the option to save the

@@ -19,6 +19,9 @@ from ludwig.backend.base import Backend, CompositeBackend, LocalBackend
 from ludwig.backend.ray import RayBackend
 
 
+LOCAL_BACKEND = LocalBackend()
+
+
 backend_registry = {
     'ray': RayBackend,
     'local': LocalBackend,
@@ -27,11 +30,11 @@ backend_registry = {
 
 
 def create_backend(name):
-    return backend_registry[name]
+    return backend_registry[name]()
 
 
 def current_backend():
     try:
         return Backend.get_context()
     except IndexError:
-        LocalBackend()
+        LOCAL_BACKEND

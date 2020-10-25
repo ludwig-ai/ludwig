@@ -39,15 +39,16 @@ def set_scheduler(scheduler):
 
 class DaskEngine(DataProcessingEngine):
     def parallelize(self, data):
-        # num_cpus = int(ray.cluster_resources().get('CPU', 1))
-        num_cpus = multiprocessing.cpu_count()
-        return data.repartition(num_cpus)
+        return data.repartition(self.parallelism)
 
     def persist(self, data):
         return data.persist()
 
     def compute(self, data):
         return data.compute()
+
+    def from_pandas(self, df):
+        return dd.from_pandas(df, npartitions=self.parallelism)
 
     def array_to_col(self, array):
         return self.parallelize(dd.from_dask_array(array))
@@ -89,3 +90,8 @@ class DaskEngine(DataProcessingEngine):
     @property
     def use_hdf5_cache(self):
         return False
+
+    @property
+    def parallelism(self):
+        # return int(ray.cluster_resources().get('CPU', 1))
+        return multiprocessing.cpu_count()
