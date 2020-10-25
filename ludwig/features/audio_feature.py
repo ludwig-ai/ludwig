@@ -224,7 +224,8 @@ class AudioFeatureMixin(object):
             dataset_df,
             dataset,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
     ):
         set_default_value(
             feature['preprocessing'],

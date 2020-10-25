@@ -60,6 +60,7 @@ class VectorFeatureMixin(object):
             dataset,
             metadata,
             preprocessing_parameters,
+            backend
     ):
         """
                 Expects all the vectors to be of the same size. The vectors need to be

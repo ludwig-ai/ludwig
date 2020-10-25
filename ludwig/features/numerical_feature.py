@@ -78,6 +78,7 @@ class NumericalFeatureMixin(object):
             dataset,
             metadata,
             preprocessing_parameters,
+            backend
     ):
         dataset[feature[NAME]] = dataset_df[feature[NAME]].astype(
             np.float32).values

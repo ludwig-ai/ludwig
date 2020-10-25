@@ -59,7 +59,8 @@ class BinaryFeatureMixin(object):
             dataset_df,
             dataset,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters,
+            backend
     ):
         column = dataset_df[feature[NAME]]
         if column.dtype == object:

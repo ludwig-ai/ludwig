@@ -113,7 +113,8 @@ class SequenceFeatureMixin(object):
             dataset_df,
             dataset,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
     ):
         sequence_data = SequenceInputFeature.feature_data(
             dataset_df[feature[NAME]].astype(str),

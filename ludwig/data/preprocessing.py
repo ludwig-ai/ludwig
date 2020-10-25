@@ -966,7 +966,8 @@ def build_dataset(
     dataset = build_data(
         dataset_df,
         features,
-        metadata
+        metadata,
+        backend
     )
 
     dataset[SPLIT] = get_split(
@@ -984,7 +985,6 @@ def build_dataset(
 
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters, backend):
-    print('DATASET', dataset_df)
     metadata = {}
     for feature in features:
         if PREPROCESSING in feature:
@@ -1031,7 +1031,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
 
         if fill_value is not None:
             preprocessing_parameters = {
-                'computed_fill_value': fill_value,
+                'computed_fill_value': backend.processor.compute(fill_value),
                 **preprocessing_parameters
             }
         metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
@@ -1039,13 +1039,13 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
     return metadata
 
 
-def build_data(dataset_df, features, training_set_metadata):
-    dataset = copy(dataset_df)
+def build_data(input_df, features, training_set_metadata, backend):
+    dataset = copy(input_df)
     for feature in features:
         preprocessing_parameters = training_set_metadata[feature[NAME]][
             PREPROCESSING]
-        handle_missing_values(
-            dataset_df,
+        dataset = handle_missing_values(
+            dataset,
             feature,
             preprocessing_parameters
         )
@@ -1055,10 +1055,11 @@ def build_data(dataset_df, features, training_set_metadata):
         ).add_feature_data
         dataset = add_feature_data(
             feature,
-            dataset_df,
+            input_df,
             dataset,
             training_set_metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
     return dataset
 
@@ -1096,9 +1097,11 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
             method=missing_value_strategy,
         )
     elif missing_value_strategy == DROP_ROW:
-        dataset_df.dropna(subset=[feature[NAME]], inplace=True)
+        dataset_df = dataset_df.dropna(subset=[feature[NAME]])
     else:
         raise ValueError('Invalid missing value strategy')
+
+    return dataset_df
 
 
 def get_split(

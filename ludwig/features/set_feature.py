@@ -92,6 +92,7 @@ class SetFeatureMixin(object):
             dataset,
             metadata,
             preprocessing_parameters,
+            backend
     ):
         dataset[feature[NAME]] = SetFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
