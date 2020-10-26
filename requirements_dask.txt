@@ -1,0 +1,2 @@
+dask
+pyarrow>=2.0.0
