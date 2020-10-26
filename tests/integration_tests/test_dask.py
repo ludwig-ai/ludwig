@@ -32,6 +32,7 @@ from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
+from tests.integration_tests.utils import vector_feature
 
 
 def run_api_experiment(input_features, output_features, data_parquet):
@@ -87,7 +88,7 @@ def run_api_experiment(input_features, output_features, data_parquet):
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
-def test_dask_parquet():
+def test_dask_tabular():
     # Single sequence input, single category output
     input_features = [
         sequence_feature(reduce_output='sum'),
@@ -95,7 +96,8 @@ def test_dask_parquet():
         set_feature(),
         text_feature(),
         binary_feature(),
-        bag_feature()
+        bag_feature(),
+        vector_feature()
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 

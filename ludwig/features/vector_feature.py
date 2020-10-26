@@ -71,9 +71,10 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            dataset[feature[NAME]] = np.array(
-                [x.split() for x in dataset_df[feature[NAME]]],
-                dtype=np.float32
+            meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
+            dataset[feature[NAME]] = dataset[feature[NAME]].map(
+                lambda x: np.array(x.split(), dtype=np.float32),
+                **meta_kwargs
             )
         except ValueError:
             logger.error(
@@ -83,7 +84,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = len(dataset[feature[NAME]][0])
+        vector_size = backend.processor.compute(dataset[feature[NAME]].map(len).max())
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
