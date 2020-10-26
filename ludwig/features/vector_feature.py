@@ -121,7 +121,8 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):
@@ -217,7 +218,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.float32
 
     def get_output_shape(self):

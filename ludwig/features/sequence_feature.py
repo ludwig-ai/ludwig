@@ -153,7 +153,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -265,7 +266,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         # Generator Decoder
         return self.decoder_obj._predictions_eval(inputs, training=training)
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int32
 
     def get_output_shape(self):

@@ -148,7 +148,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):
@@ -385,7 +386,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #         })
 #     ])
 #
-#     def get_output_dtype(self):
+#     @classmethod
+#     def get_output_dtype(cls):
 #         return tf.float32
 #
 #     def get_output_shape(self):

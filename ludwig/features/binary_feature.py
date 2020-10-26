@@ -95,7 +95,8 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         return encoder_outputs
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.bool
 
     def get_input_shape(self):
@@ -197,7 +198,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     #         else:
     #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.bool
 
     def get_output_shape(self):

@@ -254,7 +254,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -336,7 +337,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int32
 
     def get_output_shape(self):

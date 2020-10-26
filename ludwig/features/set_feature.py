@@ -64,26 +64,40 @@ class SetFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
-        feature_vector = np.array(
-            column.map(
-                lambda x: set_str_to_idx(
-                    x,
-                    metadata['str2idx'],
-                    preprocessing_parameters['tokenizer']
-                )
+    def feature_data(column, metadata, preprocessing_parameters, backend):
+        def to_dense(x):
+            feature_vector = set_str_to_idx(
+                x,
+                metadata['str2idx'],
+                preprocessing_parameters['tokenizer']
             )
-        )
 
-        set_matrix = np.zeros(
-            (len(column),
-             len(metadata['str2idx'])),
-        )
+            set_vector = np.zeros((len(metadata['str2idx']),))
+            set_vector[feature_vector] = 1
+            return set_vector.astype(np.bool)
 
-        for i in range(len(column)):
-            set_matrix[i, feature_vector[i]] = 1
-
-        return set_matrix.astype(np.bool)
+        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
+        return column.map(to_dense, **meta_kwargs)
+        #
+        # feature_vector = np.array(
+        #     column.map(
+        #         lambda x: set_str_to_idx(
+        #             x,
+        #             metadata['str2idx'],
+        #             preprocessing_parameters['tokenizer']
+        #         )
+        #     )
+        # )
+        #
+        # set_matrix = np.zeros(
+        #     (len(column),
+        #      len(metadata['str2idx'])),
+        # )
+        #
+        # for i in range(len(column)):
+        #     set_matrix[i, feature_vector[i]] = 1
+        #
+        # return set_matrix.astype(np.bool)
 
     @staticmethod
     def add_feature_data(
@@ -97,7 +111,8 @@ class SetFeatureMixin(object):
         dataset[feature[NAME]] = SetFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
             metadata[feature[NAME]],
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
         return dataset
 
@@ -123,7 +138,8 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.bool
 
     def get_input_shape(self):
@@ -213,7 +229,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[JACCARD] = MeanIoU(num_classes=self.num_classes)
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.bool
 
     def get_output_shape(self):

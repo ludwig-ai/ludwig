@@ -120,7 +120,8 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -198,7 +199,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             LOGITS: logits
         }
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int64
 
     def get_output_shape(self):

@@ -365,7 +365,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.uint8
 
     def get_input_shape(self):

@@ -29,7 +29,7 @@ except:
 
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.processor.base import DataProcessor
-from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, replace_file_extension
+from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
 from ludwig.utils.misc_utils import get_features
 
 
@@ -66,7 +66,7 @@ class DaskProcessor(DataProcessor):
         dataset.to_parquet(dataset_parquet_fp,
                            engine='pyarrow',
                            write_index=False,
-                           schema="infer")
+                           schema='infer')
 
         dataset_parquet_url = 'file://' + os.path.abspath(dataset_parquet_fp)
         training_set_metadata[DATASET_SPLIT_URL.format(tag)] = dataset_parquet_url

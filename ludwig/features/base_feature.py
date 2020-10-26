@@ -71,8 +71,9 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
                               dtype=self.get_input_dtype(),
                               name=self.name + '_input')
 
+    @classmethod
     @abstractmethod
-    def get_input_dtype(self):
+    def get_input_dtype(cls):
         """Returns the Tensor data type this input accepts."""
         pass
 
@@ -174,8 +175,9 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                               dtype=self.get_output_dtype(),
                               name=self.name + '_input')
 
+    @classmethod
     @abstractmethod
-    def get_output_dtype(self):
+    def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
         pass
 
