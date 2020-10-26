@@ -65,20 +65,21 @@ class TimeseriesFeatureMixin(object):
             tokenizer_name,
             length_limit,
             padding_value,
-            padding='right'
+            padding,
+            backend
     ):
         tokenizer = get_from_registry(
             tokenizer_name,
             tokenizer_registry
         )()
-        max_length = 0
-        ts_vectors = []
-        for ts in timeseries:
-            ts_vector = np.array(tokenizer(ts)).astype(np.float32)
-            ts_vectors.append(ts_vector)
-            if len(ts_vector) > max_length:
-                max_length = len(ts_vector)
 
+        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
+        ts_vectors = timeseries.map(
+            lambda ts: np.array(tokenizer(ts)).astype(np.float32),
+            **meta_kwargs
+        )
+
+        max_length = backend.processor.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
             logger.debug(
                 'max length of {0}: {1} < limit: {2}'.format(
@@ -88,27 +89,32 @@ class TimeseriesFeatureMixin(object):
                 )
             )
         max_length = length_limit
-        timeseries_matrix = np.full(
-            (len(timeseries), max_length),
-            padding_value,
-            dtype=np.float32
-        )
-        for i, vector in enumerate(ts_vectors):
+
+        def pad(vector):
+            padded = np.full(
+                (max_length,),
+                padding_value,
+                dtype=np.float32
+            )
             limit = min(vector.shape[0], max_length)
             if padding == 'right':
-                timeseries_matrix[i, :limit] = vector[:limit]
+                padded[:limit] = vector[:limit]
             else:  # if padding == 'left
-                timeseries_matrix[i, max_length - limit:] = vector[:limit]
-        return timeseries_matrix
+                padded[max_length - limit:] = vector[:limit]
+            return padded
+
+        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
+        return ts_vectors.map(pad, **meta_kwargs)
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         timeseries_data = TimeseriesFeatureMixin.build_matrix(
             column,
             preprocessing_parameters['tokenizer'],
             metadata['max_timeseries_length'],
             preprocessing_parameters['padding_value'],
-            preprocessing_parameters['padding'])
+            preprocessing_parameters['padding'],
+            backend)
         return timeseries_data
 
     @staticmethod
@@ -123,7 +129,8 @@ class TimeseriesFeatureMixin(object):
         dataset[feature[NAME]] = TimeseriesFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
             metadata[feature[NAME]],
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
         return dataset
 

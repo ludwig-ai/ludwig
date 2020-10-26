@@ -30,10 +30,12 @@ from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import h3_feature
+from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
+from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
 
 
@@ -90,6 +92,14 @@ def run_api_experiment(input_features, output_features, data_parquet):
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
+def run_test_parquet(input_features, output_features):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, 'dataset.csv')
+        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=1000)
+        dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
+        run_api_experiment(input_features, output_features, data_parquet=dataset_parquet)
+
+
 def test_dask_tabular():
     # Single sequence input, single category output
     input_features = [
@@ -104,10 +114,33 @@ def test_dask_tabular():
         date_feature(),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    run_test_parquet(input_features, output_features)
 
-    # Generate test data
-    with tempfile.TemporaryDirectory() as tmpdir:
-        csv_filename = os.path.join(tmpdir, 'dataset.csv')
-        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=1000)
-        dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
-        run_api_experiment(input_features, output_features, data_parquet=dataset_parquet)
+
+def test_dask_timeseries():
+    # Single sequence input, single category output
+    input_features = [timeseries_feature()]
+    output_features = [numerical_feature()]
+    run_test_parquet(input_features, output_features)
+
+
+# def test_dask_image():
+#     with tempfile.TemporaryDirectory() as tmpdir:
+#         image_dest_folder = os.path.join(tmpdir, 'generated_images')
+#         input_features = [
+#             image_feature(
+#                 folder=image_dest_folder,
+#                 encoder='resnet',
+#                 preprocessing={
+#                     'in_memory': True,
+#                     'height': 12,
+#                     'width': 12,
+#                     'num_channels': 3,
+#                     'num_processes': 5
+#                 },
+#                 fc_size=16,
+#                 num_filters=8
+#             ),
+#         ]
+#         output_features = [binary_feature()]
+#         run_test_parquet(input_features, output_features)
