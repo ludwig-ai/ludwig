@@ -78,26 +78,6 @@ class SetFeatureMixin(object):
 
         meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
         return column.map(to_dense, **meta_kwargs)
-        #
-        # feature_vector = np.array(
-        #     column.map(
-        #         lambda x: set_str_to_idx(
-        #             x,
-        #             metadata['str2idx'],
-        #             preprocessing_parameters['tokenizer']
-        #         )
-        #     )
-        # )
-        #
-        # set_matrix = np.zeros(
-        #     (len(column),
-        #      len(metadata['str2idx'])),
-        # )
-        #
-        # for i in range(len(column)):
-        #     set_matrix[i, feature_vector[i]] = 1
-        #
-        # return set_matrix.astype(np.bool)
 
     @staticmethod
     def add_feature_data(

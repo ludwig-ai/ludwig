@@ -59,23 +59,20 @@ class BagFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
-        bag_matrix = np.zeros(
-            (len(column),
-             len(metadata['str2idx'])),
-            dtype=np.float32
-        )
-
-        for i, set_str in enumerate(column):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
+        def to_vector(set_str):
+            bag_vector = np.zeros((len(metadata['str2idx']),), dtype=np.float32)
             col_counter = Counter(set_str_to_idx(
                 set_str,
                 metadata['str2idx'],
                 preprocessing_parameters['tokenizer'])
             )
-            bag_matrix[i, list(col_counter.keys())] = list(
-                col_counter.values())
 
-        return bag_matrix
+            bag_vector[list(col_counter.keys())] = list(col_counter.values())
+            return bag_vector
+
+        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
+        return column.map(to_vector, **meta_kwargs)
 
     @staticmethod
     def add_feature_data(
@@ -89,7 +86,8 @@ class BagFeatureMixin(object):
         dataset[feature[NAME]] = BagFeatureMixin.feature_data(
             dataset_df[feature[NAME]].astype(str),
             metadata[feature[NAME]],
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
         return dataset
 

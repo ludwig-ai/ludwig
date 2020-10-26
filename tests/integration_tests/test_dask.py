@@ -24,6 +24,8 @@ from ludwig.backend.dask import DaskBackend
 from ludwig.utils.data_utils import read_parquet
 
 from tests.integration_tests.utils import create_data_set_to_use, run_api_experiment
+from tests.integration_tests.utils import bag_feature
+from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
@@ -92,6 +94,8 @@ def test_dask_parquet():
         numerical_feature(normalization='zscore'),
         set_feature(),
         text_feature(),
+        binary_feature(),
+        bag_feature()
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
