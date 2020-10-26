@@ -1,2 +1,3 @@
 dask
+petastorm>=0.9.6
 pyarrow>=2.0.0

@@ -71,7 +71,12 @@ class H3FeatureMixin(object):
         if column.dtype == object:
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
-        dataset[feature[NAME]] = np.array(column.tolist(), dtype=np.uint8)
+
+        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
+        dataset[feature[NAME]] = column.map(
+            lambda x: np.array(x, dtype=np.uint8),
+            **meta_kwargs
+        )
         return dataset
 
 
