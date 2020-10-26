@@ -27,6 +27,7 @@ from tests.integration_tests.utils import create_data_set_to_use, run_api_experi
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import h3_feature
 from tests.integration_tests.utils import numerical_feature
@@ -100,6 +101,7 @@ def test_dask_tabular():
         bag_feature(),
         vector_feature(),
         h3_feature(),
+        date_feature(),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
