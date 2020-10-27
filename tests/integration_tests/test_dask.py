@@ -121,7 +121,7 @@ def test_dask_audio():
         audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
         input_features = [audio_feature(folder=audio_dest_folder)]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features, num_examples=50)
+        run_test_parquet(input_features, output_features, num_examples=25)
 
 
 def test_dask_lazy_load_audio_error():

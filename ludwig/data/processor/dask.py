@@ -66,7 +66,6 @@ class DaskProcessor(DataProcessor):
         for name, feature in features.items():
             reshape = training_set_metadata[name].get('reshape')
             if reshape is not None:
-                print('RESHAPE ', name, reshape)
                 dataset[name] = self.map_objects(dataset[name], lambda x: x.reshape(-1))
 
         os.makedirs(dataset_parquet_fp, exist_ok=True)
