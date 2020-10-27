@@ -70,17 +70,17 @@ def train_model(input_features, output_features, data_csv):
 def output_keys_for(output_features):
     keys = []
     for feature in output_features:
-        name = feature['name']
+        id = feature['id']
         if feature['type'] == 'category':
-            keys.append("{}_predictions".format(name))
-            keys.append("{}_probability".format(name))
-            keys.append("{}_probabilities_<UNK>".format(name))
+            keys.append("{}_predictions".format(id))
+            keys.append("{}_probability".format(id))
+            keys.append("{}_probabilities_<UNK>".format(id))
             for category in feature['idx2str']:
                 keys.append(
-                    "{}_probabilities_{}".format(name, category))
+                    "{}_probabilities_{}".format(id, category))
 
         elif feature['type'] == 'numerical':
-            keys.append("{}_predictions".format(name))
+            keys.append("{}_predictions".format(id))
         else:
             raise NotImplementedError
     return keys

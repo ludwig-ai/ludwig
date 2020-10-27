@@ -82,13 +82,13 @@ class NumericalFeatureMixin(object):
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
-                mean = metadata[feature[ID]]['mean']
-                std = metadata[feature[ID]]['std']
+                mean = metadata[feature[HASH]]['mean']
+                std = metadata[feature[HASH]]['std']
                 dataset[feature[HASH]] = (dataset[
                                               feature[HASH]] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
-                min_ = metadata[feature[ID]]['min']
-                max_ = metadata[feature[ID]]['max']
+                min_ = metadata[feature[HASH]]['min']
+                max_ = metadata[feature[HASH]]['max']
                 values = dataset[feature[HASH]]
                 dataset[feature[HASH]] = (values - min_) / (max_ - min_)
 
