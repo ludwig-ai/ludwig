@@ -301,7 +301,6 @@ class ImageFeatureMixin(object):
                         )
                     )
                     dataset[feature[NAME]] = pool.map(read_image_and_resize, all_file_paths)
-
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map

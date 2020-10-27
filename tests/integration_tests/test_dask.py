@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import numpy as np
 import os
 import shutil
 import tempfile
 
 import dask.dataframe as dd
+import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.backend import LocalBackend
 from ludwig.backend.dask import DaskBackend
 from ludwig.utils.data_utils import read_parquet
 
@@ -126,6 +125,23 @@ def test_dask_audio():
         run_test_parquet(input_features, output_features, num_examples=50)
 
 
+def test_dask_lazy_load_audio_error():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
+        input_features = [
+            audio_feature(
+                folder=audio_dest_folder,
+                preprocessing={
+                    'in_memory': False,
+                }
+            )
+        ]
+        output_features = [binary_feature()]
+
+        with pytest.raises(ValueError):
+            run_test_parquet(input_features, output_features)
+
+
 def test_dask_image():
     with tempfile.TemporaryDirectory() as tmpdir:
         image_dest_folder = os.path.join(tmpdir, 'generated_images')
@@ -145,4 +161,28 @@ def test_dask_image():
             ),
         ]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features)
+        run_test_parquet(input_features, output_features, num_examples=50)
+
+
+def test_dask_lazy_load_image_error():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image_dest_folder = os.path.join(tmpdir, 'generated_images')
+        input_features = [
+            image_feature(
+                folder=image_dest_folder,
+                encoder='resnet',
+                preprocessing={
+                    'in_memory': False,
+                    'height': 12,
+                    'width': 12,
+                    'num_channels': 3,
+                    'num_processes': 5
+                },
+                fc_size=16,
+                num_filters=8
+            ),
+        ]
+        output_features = [binary_feature()]
+
+        with pytest.raises(ValueError):
+            run_test_parquet(input_features, output_features)
