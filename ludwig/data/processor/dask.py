@@ -47,14 +47,8 @@ class DaskProcessor(DataProcessor):
     def compute(self, data):
         return data.compute()
 
-    def meta_kwargs(self, meta):
-        return dict(meta=meta)
-
     def from_pandas(self, df):
         return dd.from_pandas(df, npartitions=self.parallelism)
-
-    def array_to_col(self, array):
-        return self.parallelize(dd.from_dask_array(array))
 
     def map_objects(self, series, map_fn):
         return series.map(map_fn, meta=('data', 'object'))

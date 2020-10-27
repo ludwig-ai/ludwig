@@ -34,14 +34,8 @@ class PandasProcessor(DataProcessor):
     def compute(self, data):
         return data
 
-    def meta_kwargs(self, meta):
-        return {}
-
     def from_pandas(self, df):
         return df
-
-    def array_to_col(self, array):
-        return array
 
     def map_objects(self, series, map_fn):
         return series.map(map_fn)

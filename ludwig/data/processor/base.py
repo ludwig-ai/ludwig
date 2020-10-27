@@ -32,15 +32,7 @@ class DataProcessor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def meta_kwargs(self, meta):
-        raise NotImplementedError()
-
-    @abstractmethod
     def from_pandas(self, df):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def array_to_col(self, array):
         raise NotImplementedError()
 
     @abstractmethod

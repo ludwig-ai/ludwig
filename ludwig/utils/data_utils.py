@@ -662,19 +662,6 @@ def is_model_dir(path: str) -> bool:
     return is_model_dir
 
 
-def parallelize(data):
-    # num_cpus = int(ray.cluster_resources().get('CPU', 1))
-    return data.repartition(12)
-
-
-def persist(data):
-    return data.persist()
-
-
-def compute(data):
-    return data.compute()
-
-
 external_data_reader_registry = {
     **{fmt: read_csv for fmt in CSV_FORMATS},
     **{fmt: read_tsv for fmt in TSV_FORMATS},
