@@ -213,7 +213,7 @@ def export_neuropod(
                 NAME: feature_name + '_probabilities',
                 "dtype": "float64",
                 "shape": (
-                    None, training_set_metadata[feature_name]['vocab_size']
+                    None, training_set_metadata[feature[HASH]]['vocab_size']
                 )
             })
         elif feature_type == SEQUENCE:
