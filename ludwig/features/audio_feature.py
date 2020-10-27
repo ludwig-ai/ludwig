@@ -355,6 +355,9 @@ class AudioFeatureMixin(object):
                 audio_stats['min'], audio_stats['cropped'],
                 audio_file_length_limit_in_s)
             logger.debug(print_statistics)
+        else:
+            backend.check_lazy_load_supported(feature)
+
         return dataset
 
     @staticmethod

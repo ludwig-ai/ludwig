@@ -34,6 +34,15 @@ class Backend(ABC):
     def processor(self):
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def supports_multiprocessing(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def check_lazy_load_supported(self, feature):
+        raise NotImplementedError()
+
     def create_cache_entry(self):
         return os.path.join(self.cache_dir, str(uuid.uuid1()))
 
@@ -58,16 +67,6 @@ class Backend(ABC):
             self._cache_dir = prev_cache_dir
 
 
-class CompositeBackend(Backend):
-    def __init__(self, processor):
-        super().__init__()
-        self._processor = processor
-
-    @property
-    def processor(self):
-        return self._processor
-
-
 class LocalBackend(Backend):
     def __init__(self):
         super().__init__()
@@ -76,3 +75,10 @@ class LocalBackend(Backend):
     @property
     def processor(self):
         return self._processor
+
+    @property
+    def supports_multiprocessing(self):
+        return True
+
+    def check_lazy_load_supported(self, feature):
+        pass

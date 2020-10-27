@@ -126,23 +126,23 @@ def test_dask_audio():
         run_test_parquet(input_features, output_features, num_examples=50)
 
 
-# def test_dask_image():
-#     with tempfile.TemporaryDirectory() as tmpdir:
-#         image_dest_folder = os.path.join(tmpdir, 'generated_images')
-#         input_features = [
-#             image_feature(
-#                 folder=image_dest_folder,
-#                 encoder='resnet',
-#                 preprocessing={
-#                     'in_memory': True,
-#                     'height': 12,
-#                     'width': 12,
-#                     'num_channels': 3,
-#                     'num_processes': 5
-#                 },
-#                 fc_size=16,
-#                 num_filters=8
-#             ),
-#         ]
-#         output_features = [binary_feature()]
-#         run_test_parquet(input_features, output_features)
+def test_dask_image():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image_dest_folder = os.path.join(tmpdir, 'generated_images')
+        input_features = [
+            image_feature(
+                folder=image_dest_folder,
+                encoder='resnet',
+                preprocessing={
+                    'in_memory': True,
+                    'height': 12,
+                    'width': 12,
+                    'num_channels': 3,
+                    'num_processes': 5
+                },
+                fc_size=16,
+                num_filters=8
+            ),
+        ]
+        output_features = [binary_feature()]
+        run_test_parquet(input_features, output_features)

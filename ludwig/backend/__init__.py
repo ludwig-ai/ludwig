@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from ludwig.backend.base import Backend, CompositeBackend, LocalBackend
+from ludwig.backend.base import Backend, LocalBackend
 
 
 LOCAL_BACKEND = LocalBackend()

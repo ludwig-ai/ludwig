@@ -16,6 +16,7 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend
+from ludwig.constants import NAME
 from ludwig.data.processor.dask import DaskProcessor
 
 
@@ -27,3 +28,11 @@ class DaskBackend(Backend):
     @property
     def processor(self):
         return self._processor
+
+    @property
+    def supports_multiprocessing(self):
+        return False
+
+    def check_lazy_load_supported(self, feature):
+        raise ValueError(f'DaskBackend does not support lazy loading of data files at train time. '
+                         f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
