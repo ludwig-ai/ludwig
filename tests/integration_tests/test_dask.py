@@ -24,6 +24,7 @@ from ludwig.backend.dask import DaskBackend
 from ludwig.utils.data_utils import read_parquet
 
 from tests.integration_tests.utils import create_data_set_to_use, run_api_experiment
+from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
@@ -118,10 +119,17 @@ def test_dask_tabular():
 
 
 def test_dask_timeseries():
-    # Single sequence input, single category output
     input_features = [timeseries_feature()]
     output_features = [numerical_feature()]
     run_test_parquet(input_features, output_features)
+
+
+def test_dask_audio():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
+        input_features = [audio_feature(folder=audio_dest_folder)]
+        output_features = [binary_feature()]
+        run_test_parquet(input_features, output_features)
 
 
 # def test_dask_image():

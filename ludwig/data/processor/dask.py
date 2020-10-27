@@ -56,6 +56,12 @@ class DaskProcessor(DataProcessor):
     def array_to_col(self, array):
         return self.parallelize(dd.from_dask_array(array))
 
+    def map_objects(self, series, map_fn):
+        return series.map(map_fn, meta=('data', 'object'))
+
+    def reduce_objects(self, series, reduce_fn):
+        return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
+
     def create_dataset(self, dataset, tag, config, training_set_metadata):
         cache_dir = training_set_metadata.get(DATA_PROCESSED_CACHE_DIR)
         tag = tag.lower()

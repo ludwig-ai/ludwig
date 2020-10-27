@@ -43,6 +43,12 @@ class PandasProcessor(DataProcessor):
     def array_to_col(self, array):
         return array
 
+    def map_objects(self, series, map_fn):
+        return series.map(map_fn)
+
+    def reduce_objects(self, series, reduce_fn):
+        return reduce_fn(series)
+
     def create_dataset(self, dataset, tag, config, training_set_metadata):
         return PandasDataset(
             dataset,

@@ -44,6 +44,14 @@ class DataProcessor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def map_objects(self, series, map_fn):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def reduce_objects(self, series, reduce_fn):
+        raise NotImplementedError()
+
+    @abstractmethod
     def create_dataset(self, dataset, tag, config, training_set_metadata):
         raise NotImplementedError()
 
