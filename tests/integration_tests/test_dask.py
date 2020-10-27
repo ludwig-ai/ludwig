@@ -18,6 +18,8 @@ import os
 import shutil
 import tempfile
 
+import dask.dataframe as dd
+
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
 from ludwig.backend.dask import DaskBackend
@@ -40,6 +42,29 @@ from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
 
 
+def train_with_backend(backend, dataset, config):
+    model = LudwigModel(config, backend=backend)
+    output_dir = None
+
+    try:
+        _, _, output_dir = model.train(
+            dataset=dataset,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
+
+        if isinstance(dataset, dd.DataFrame):
+            # For now, prediction must be done on Pandas DataFrame
+            dataset = dataset.compute()
+
+        model.predict(dataset=dataset)
+        return model.model.get_weights()
+    finally:
+        # Remove results/intermediate data saved to disk
+        shutil.rmtree(output_dir, ignore_errors=True)
+
+
 def run_api_experiment(input_features, output_features, data_parquet):
     config = {
         'input_features': input_features,
@@ -48,52 +73,21 @@ def run_api_experiment(input_features, output_features, data_parquet):
         'training': {'epochs': 2}
     }
 
-    backend = DaskBackend()
-    # backend = LocalBackend()
-    model = LudwigModel(config, backend=backend)
-    output_dir = None
+    dask_backend = DaskBackend()
+    train_with_backend(dask_backend, data_parquet, config)
 
-    try:
-        # Training with csv
-        _, _, output_dir = model.train(
-            dataset=data_parquet,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True
-        )
-        model.predict(dataset=data_parquet)
+    # TODO: find guarantees on model parity
+    # local_backend = LocalBackend()
+    # dask_weights = train_with_backend(dask_backend, data_parquet, config)
+    # local_weights = train_with_backend(local_backend, data_parquet, config)
+    # for local_weight, dask_weight in zip(local_weights, dask_weights):
+    #     np.testing.assert_allclose(local_weight, dask_weight, atol=1.e-2)
 
-        model_dir = os.path.join(output_dir, 'model')
-        loaded_model = LudwigModel.load(model_dir)
-
-        # Necessary before call to get_weights() to materialize the weights
-        loaded_model.predict(dataset=data_parquet)
-
-        model_weights = model.model.get_weights()
-        loaded_weights = loaded_model.model.get_weights()
-        for model_weight, loaded_weight in zip(model_weights, loaded_weights):
-            assert np.allclose(model_weight, loaded_weight)
-    finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
-
-    try:
-        # Training with dataframe
-        data_df = read_parquet(data_parquet, df_lib=backend.processor.df_lib)
-        _, _, output_dir = model.train(
-            dataset=data_df,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True
-        )
-
-        data_df = backend.processor.compute(data_df)
-        model.predict(dataset=data_df)
-    finally:
-        shutil.rmtree(output_dir, ignore_errors=True)
+    data_df = read_parquet(data_parquet, df_lib=dask_backend.processor.df_lib)
+    train_with_backend(dask_backend, data_df, config)
 
 
-def run_test_parquet(input_features, output_features, num_examples=1000):
+def run_test_parquet(input_features, output_features, num_examples=100):
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, 'dataset.csv')
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
@@ -129,7 +123,7 @@ def test_dask_audio():
         audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
         input_features = [audio_feature(folder=audio_dest_folder)]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features, num_examples=100)
+        run_test_parquet(input_features, output_features, num_examples=50)
 
 
 # def test_dask_image():

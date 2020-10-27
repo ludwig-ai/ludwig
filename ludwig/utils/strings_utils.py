@@ -242,6 +242,7 @@ def build_sequence_matrix(
         unknown_symbol=unknown_symbol
     ))
     print('UNIT VECTORS', unit_vectors)
+    print('BACKEND: ', backend, backend.processor)
     max_length = backend.processor.compute(unit_vectors.map(len).max())
     print('MAX_LENGTH: ', max_length)
 
