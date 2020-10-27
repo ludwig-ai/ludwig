@@ -57,7 +57,7 @@ def test_norm():
         feature=num_feature,
         dataset_df=data_df,
         dataset=data,
-        metadata={'x': feature_1_meta},
+        metadata={num_feature[HASH]: feature_1_meta},
         preprocessing_parameters={'normalization': 'zscore'}
     )
     assert np.allclose(np.array(data[num_feature[HASH]]),
@@ -69,7 +69,7 @@ def test_norm():
         feature=num_feature,
         dataset_df=data_df,
         dataset=data,
-        metadata={'x': feature_2_meta},
+        metadata={num_feature[HASH]: feature_2_meta},
         preprocessing_parameters={'normalization': 'minmax'}
     )
     assert np.allclose(np.array(data[num_feature[HASH]]),
