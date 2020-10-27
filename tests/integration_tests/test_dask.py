@@ -95,7 +95,6 @@ def run_test_parquet(input_features, output_features, num_examples=100):
 
 
 def test_dask_tabular():
-    # Single sequence input, single category output
     input_features = [
         sequence_feature(reduce_output='sum'),
         numerical_feature(normalization='zscore'),

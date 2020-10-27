@@ -335,9 +335,6 @@ class AudioFeatureMixin(object):
             )
             dataset[feature[NAME]] = audio_features
 
-            print(audio_stats)
-            print(audio_file_length_limit_in_s)
-
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))
             print_statistics = (

@@ -69,7 +69,6 @@ class DaskProcessor(DataProcessor):
                 print('RESHAPE ', name, reshape)
                 dataset[name] = self.map_objects(dataset[name], lambda x: x.reshape(-1))
 
-        print(tag, dataset_parquet_fp)
         os.makedirs(dataset_parquet_fp, exist_ok=True)
         dataset.to_parquet(dataset_parquet_fp,
                            engine='pyarrow',

@@ -1409,9 +1409,6 @@ def _preprocess_file_for_training(
             data,
             SPLIT
         )
-        print('TRAINING: ', training_data)
-        print('TEST: ', test_data)
-        print('VAL: ', validation_data)
 
     elif training_set:
         # use data_train (including _validation and _test if they are present)
