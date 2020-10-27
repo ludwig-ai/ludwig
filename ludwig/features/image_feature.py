@@ -287,6 +287,7 @@ class ImageFeatureMixin(object):
             num_processes = feature['preprocessing']['num_processes']
             metadata[feature[NAME]]['preprocessing'][
                 'num_processes'] = num_processes
+            metadata[feature[NAME]]['reshape'] = (height, width, num_channels)
 
             dataset[feature[NAME]] = np.empty(
                 (num_images, height, width, num_channels),

@@ -67,6 +67,14 @@ class DaskProcessor(DataProcessor):
         tag = tag.lower()
         dataset_parquet_fp = os.path.join(cache_dir, f'{tag}.parquet')
 
+        # Workaround: https://issues.apache.org/jira/browse/ARROW-1614
+        features = get_features(config)
+        for name, feature in features.items():
+            reshape = training_set_metadata[name].get('reshape')
+            if reshape is not None:
+                print('RESHAPE ', name, reshape)
+                dataset[name] = self.map_objects(dataset[name], lambda x: x.reshape(-1))
+
         print(tag, dataset_parquet_fp)
         os.makedirs(dataset_parquet_fp, exist_ok=True)
         dataset.to_parquet(dataset_parquet_fp,
@@ -79,7 +87,8 @@ class DaskProcessor(DataProcessor):
 
         return ParquetDataset(
             dataset_parquet_url,
-            get_features(config)
+            features,
+            training_set_metadata
         )
 
     @property

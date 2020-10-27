@@ -93,10 +93,10 @@ def run_api_experiment(input_features, output_features, data_parquet):
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
-def run_test_parquet(input_features, output_features):
+def run_test_parquet(input_features, output_features, num_examples=1000):
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, 'dataset.csv')
-        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=1000)
+        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
         dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
         run_api_experiment(input_features, output_features, data_parquet=dataset_parquet)
 
@@ -129,7 +129,7 @@ def test_dask_audio():
         audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
         input_features = [audio_feature(folder=audio_dest_folder)]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features)
+        run_test_parquet(input_features, output_features, num_examples=100)
 
 
 # def test_dask_image():

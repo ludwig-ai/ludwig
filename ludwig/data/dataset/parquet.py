@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import tensorflow as tf
+
 from petastorm import make_batch_reader
 from petastorm.tf_utils import make_petastorm_dataset
 
@@ -22,14 +24,26 @@ from ludwig.data.dataset.base import Dataset
 
 
 class ParquetDataset(Dataset):
-    def __init__(self, url, features):
+    def __init__(self, url, features, training_set_metadata):
         self.url = url
         self.features = features
+        self.training_set_metadata = training_set_metadata
+
         with make_batch_reader(self.url) as reader:
             self.size = reader.dataset.metadata.num_rows
 
+        self.reshape_features = {
+            name: list((-1, *training_set_metadata[name]['reshape']))
+            for name, feature in features.items()
+            if 'reshape' in training_set_metadata[name]
+        }
+
     def get(self, feature_name, sample):
-        return getattr(sample, feature_name)
+        t = getattr(sample, feature_name)
+        reshape_dim = self.reshape_features.get(feature_name)
+        if reshape_dim is not None:
+            t = tf.reshape(t, reshape_dim)
+        return t
 
     def __len__(self):
         return self.size
