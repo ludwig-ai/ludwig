@@ -16,6 +16,8 @@
 import numpy as np
 import pandas as pd
 
+from ludwig.constants import HASH, NAME, ID
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.features.numerical_feature import NumericalFeatureMixin
 
 
@@ -31,13 +33,7 @@ data_df = pd.DataFrame(pd.Series([
     10
 ]), columns=['x'])
 
-data = pd.DataFrame(pd.Series([
-    2,
-    4,
-    6,
-    8,
-    10
-]), columns=['x'])
+data = pd.DataFrame(columns=['x'])
 
 
 def test_norm():
@@ -53,25 +49,29 @@ def test_norm():
     assert feature_2_meta['max'] == 10
 
     # value checks after normalization
+    num_feature = numerical_feature()
+    num_feature[ID] = num_feature[NAME]
+    num_feature[HASH] = compute_feature_hash(num_feature)
+
     NumericalFeatureMixin.add_feature_data(
-        feature=numerical_feature(),
+        feature=num_feature,
         dataset_df=data_df,
         dataset=data,
         metadata={'x': feature_1_meta},
         preprocessing_parameters={'normalization': 'zscore'}
     )
-    assert np.allclose(np.array(data['x']),
+    assert np.allclose(np.array(data[num_feature[HASH]]),
                        np.array([-1.26491106, -0.63245553, 0, 0.63245553,
                                  1.26491106])
                        )
 
     NumericalFeatureMixin.add_feature_data(
-        feature=numerical_feature(),
+        feature=num_feature,
         dataset_df=data_df,
         dataset=data,
         metadata={'x': feature_2_meta},
         preprocessing_parameters={'normalization': 'minmax'}
     )
-    assert np.allclose(np.array(data['x']),
+    assert np.allclose(np.array(data[num_feature[HASH]]),
                        np.array([0, 0.25, 0.5, 0.75, 1])
                        )
