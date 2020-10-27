@@ -102,15 +102,12 @@ class DateFeatureMixin(object):
             backend
     ):
         datetime_format = preprocessing_parameters['datetime_format']
-
-        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
-        dataset[feature[NAME]] = dataset[feature[NAME]].map(
+        dataset[feature[NAME]] = backend.processor.map_objects(
+            dataset[feature[NAME]],
             lambda x: np.array(DateFeatureMixin.date_to_list(
                 x, datetime_format, preprocessing_parameters
-            ), dtype=np.int16),
-            **meta_kwargs
+            ), dtype=np.int16)
         )
-
         return dataset
 
 

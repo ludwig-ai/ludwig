@@ -71,10 +71,9 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
-            dataset[feature[NAME]] = dataset[feature[NAME]].map(
-                lambda x: np.array(x.split(), dtype=np.float32),
-                **meta_kwargs
+            dataset[feature[NAME]] = backend.processor.map_objects(
+                dataset[feature[NAME]],
+                lambda x: np.array(x.split(), dtype=np.float32)
             )
         except ValueError:
             logger.error(

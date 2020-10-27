@@ -73,10 +73,9 @@ class TimeseriesFeatureMixin(object):
             tokenizer_registry
         )()
 
-        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
-        ts_vectors = timeseries.map(
-            lambda ts: np.array(tokenizer(ts)).astype(np.float32),
-            **meta_kwargs
+        ts_vectors = backend.processor.map_objects(
+            timeseries,
+            lambda ts: np.array(tokenizer(ts)).astype(np.float32)
         )
 
         max_length = backend.processor.compute(ts_vectors.map(len).max())
@@ -103,8 +102,7 @@ class TimeseriesFeatureMixin(object):
                 padded[max_length - limit:] = vector[:limit]
             return padded
 
-        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
-        return ts_vectors.map(pad, **meta_kwargs)
+        return backend.processor.map_objects(ts_vectors, pad)
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):

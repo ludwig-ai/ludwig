@@ -76,8 +76,7 @@ class SetFeatureMixin(object):
             set_vector[feature_vector] = 1
             return set_vector.astype(np.bool)
 
-        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
-        return column.map(to_dense, **meta_kwargs)
+        return backend.processor.map_objects(column, to_dense)
 
     @staticmethod
     def add_feature_data(

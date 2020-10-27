@@ -256,8 +256,7 @@ def build_sequence_matrix(
             sequence[max_length - limit:] = vector[:limit]
         return sequence
 
-    meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
-    padded = unit_vectors.map(pad, **meta_kwargs)
+    padded = backend.processor.map_objects(unit_vectors, pad)
     return padded
 
 

@@ -71,8 +71,7 @@ class BagFeatureMixin(object):
             bag_vector[list(col_counter.keys())] = list(col_counter.values())
             return bag_vector
 
-        meta_kwargs = backend.processor.meta_kwargs(('data', 'object'))
-        return column.map(to_vector, **meta_kwargs)
+        return backend.processor.map_objects(column, to_vector)
 
     @staticmethod
     def add_feature_data(
