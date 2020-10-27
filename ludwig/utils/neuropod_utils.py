@@ -8,7 +8,7 @@ from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
 from ludwig.constants import (BINARY, CATEGORY, NAME, NUMERICAL, PREDICTIONS,
                               PROBABILITIES, PROBABILITY, SEQUENCE, SET, TEXT,
-                              TYPE, VECTOR)
+                              TYPE, VECTOR, HASH)
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME)
@@ -183,34 +183,34 @@ def export_neuropod(
         feature_name = feature[NAME]
         if feature_type == BINARY:
             output_spec.append({
-                NAME: feature[NAME] + '_predictions',
+                NAME: feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature[NAME] + '_probabilities',
+                NAME: feature_name + '_probabilities',
                 "dtype": "float64",
                 "shape": (None, 1)
             })
         elif feature_type == NUMERICAL:
             output_spec.append({
-                NAME: feature[NAME] + '_predictions',
+                NAME: feature_name + '_predictions',
                 "dtype": "float64",
                 "shape": (None, 1)
             })
         elif feature_type == CATEGORY:
             output_spec.append({
-                NAME: feature[NAME] + '_predictions',
+                NAME: feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature[NAME] + '_probability',
+                NAME: feature_name + '_probability',
                 "dtype": "float64",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature[NAME] + '_probabilities',
+                NAME: feature_name + '_probabilities',
                 "dtype": "float64",
                 "shape": (
                     None, training_set_metadata[feature_name]['vocab_size']
@@ -218,32 +218,32 @@ def export_neuropod(
             })
         elif feature_type == SEQUENCE:
             output_spec.append({
-                NAME: feature[NAME] + '_predictions',
+                NAME: feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
         elif feature_type == TEXT:
             output_spec.append({
-                NAME: feature[NAME] + '_predictions',
+                NAME: feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
         elif feature_type == SET:
             output_spec.append({
-                NAME: feature[NAME] + '_predictions',
+                NAME: feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature[NAME] + '_probability',
+                NAME: feature_name + '_probability',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature[NAME] + '_probabilities',
+                NAME: feature_name + '_probabilities',
                 "dtype": "float64",
                 "shape": (
-                    None, training_set_metadata[feature_name]['vocab_size']
+                    None, training_set_metadata[feature[HASH]]['vocab_size']
                 )
             })
         elif feature_type == VECTOR:
@@ -251,7 +251,7 @@ def export_neuropod(
                 NAME: feature['name'] + '_predictions',
                 "dtype": "float64",
                 "shape": (
-                    None, training_set_metadata[feature_name]['vector_size']
+                    None, training_set_metadata[feature[HASH]]['vector_size']
                 )
             })
         else:

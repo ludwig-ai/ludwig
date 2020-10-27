@@ -291,7 +291,7 @@ def build_inputs(
 def build_single_input(input_feature_def, other_input_features, **kwargs):
     logger.debug('Input {} feature {}'.format(
         input_feature_def[TYPE],
-        input_feature_def[ID]
+        input_feature_def.get(ID, input_feature_def[NAME])
     ))
 
     encoder_obj = None
@@ -345,7 +345,7 @@ def build_single_output(
 ):
     logger.debug('Output {} feature {}'.format(
         output_feature_def[TYPE],
-        output_feature_def[ID]
+        output_feature_def.get(ID, output_feature_def[NAME])
     ))
 
     output_feature_class = get_from_registry(
