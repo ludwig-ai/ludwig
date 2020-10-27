@@ -280,7 +280,8 @@ def build_inputs(
     input_features_def = topological_sort_feature_dependencies(
         input_features_def)
     for input_feature_def in input_features_def:
-        input_features[input_feature_def[ID]] = build_single_input(
+        if_id_or_name = input_feature_def.get(ID, input_feature_def[NAME])
+        input_features[if_id_or_name] = build_single_input(
             input_feature_def,
             input_features,
             **kwargs
@@ -332,7 +333,8 @@ def build_outputs(
             output_features,
             **kwargs
         )
-        output_features[output_feature_def[ID]] = output_feature
+        of_id_or_name = output_feature_def.get(ID, output_feature_def[NAME])
+        output_features[of_id_or_name] = output_feature
 
     return output_features
 
