@@ -138,12 +138,9 @@ def create_vocabulary(
 
     processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line)).explode()
     processed_counts = processed_lines.value_counts(sort=False)
-    print('BEFORE', processed_counts)
     processed_counts = backend.processor.compute(processed_counts)
-    print('AFTER', processed_counts)
     unit_counts = Counter(dict(processed_counts))
     max_line_length = max([len(k) for k in unit_counts.keys()])
-    print('MAX_LINE_LENGTH', max_line_length)
 
     if vocab is None:
         vocab = [unit for unit, count in
@@ -231,7 +228,6 @@ def build_sequence_matrix(
 
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
-    print('SEQUENCES: ', sequences)
     unit_vectors = sequences.map(lambda sequence: _get_sequence_vector(
         sequence,
         tokenizer,
@@ -241,11 +237,8 @@ def build_sequence_matrix(
         lowercase=lowercase,
         unknown_symbol=unknown_symbol
     ))
-    print('UNIT VECTORS', unit_vectors)
-    print('BACKEND: ', backend, backend.processor)
-    max_length = backend.processor.compute(unit_vectors.map(len).max())
-    print('MAX_LENGTH: ', max_length)
 
+    max_length = backend.processor.compute(unit_vectors.map(len).max())
     if max_length < length_limit:
         logging.debug('max length of {0}: {1} < limit: {2}'.format(
             format, max_length, length_limit
