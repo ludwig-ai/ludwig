@@ -33,6 +33,7 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_from_file, load_json
 from ludwig.utils.print_utils import logging_level_registry
+from ludwig.features.feature_utils import retrieve_feature_hash
 
 logger = logging.getLogger(__name__)
 
@@ -209,6 +210,7 @@ def compare_classifiers_performance_from_prob_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_from_prob.
@@ -227,12 +229,18 @@ def compare_classifiers_performance_from_prob_cli(
     # Return
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    output_feature_hash = retrieve_feature_hash(
+        output_directory,
+        'output_features',
+        output_feature_name
+    )
+    gt = load_from_file(ground_truth, output_feature_hash, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_from_prob(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model, gt, output_directory=output_directory,
+        **kwargs
     )
 
 
