@@ -28,6 +28,7 @@ from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import category_feature, \
     numerical_feature, set_feature, generate_data, sequence_feature, \
     text_feature, binary_feature, bag_feature
+from ludwig.constants import *
 
 
 def run_api_experiment(input_features, output_features):
@@ -92,14 +93,15 @@ class Experiment:
         self.probability = predictions.iloc[:, 1:(num_probs + 2)].values
         self.ground_truth_metadata = self.model.training_set_metadata
         target_predictions = test_df[self.output_feature_name]
+        output_feature_hash = self.output_features[0][HASH]
         self.ground_truth = np.asarray([
-            self.ground_truth_metadata[self.output_feature_name]['str2idx'][
+            self.ground_truth_metadata[output_feature_hash]['str2idx'][
                 test_row]
             for test_row in target_predictions
         ])
         self.prediction_raw = predictions.iloc[:, 0].tolist()
         self.prediction = np.asarray([
-            self.ground_truth_metadata[self.output_feature_name]['str2idx'][
+            self.ground_truth_metadata[output_feature_hash]['str2idx'][
                 pred_row]
             for pred_row in self.prediction_raw])
 
