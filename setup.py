@@ -35,6 +35,9 @@ with open(path.join(here, 'requirements_viz.txt'), encoding='utf-8') as f:
 with open(path.join(here, 'requirements_horovod.txt'), encoding='utf-8') as f:
     extra_requirements['horovod'] = [line.strip() for line in f if line]
 
+with open(path.join(here, 'requirements_dask.txt'), encoding='utf-8') as f:
+    extra_requirements['dask'] = [line.strip() for line in f if line]
+
 with open(path.join(here, 'requirements_hyperopt.txt'), encoding='utf-8') as f:
     extra_requirements['hyperopt'] = [line.strip() for line in f if line]
 

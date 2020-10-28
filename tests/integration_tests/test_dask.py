@@ -72,16 +72,11 @@ def run_api_experiment(input_features, output_features, data_parquet):
         'training': {'epochs': 2}
     }
 
+    # Train on Parquet
     dask_backend = DaskBackend()
     train_with_backend(dask_backend, data_parquet, config)
 
-    # TODO: find guarantees on model parity
-    # local_backend = LocalBackend()
-    # dask_weights = train_with_backend(dask_backend, data_parquet, config)
-    # local_weights = train_with_backend(local_backend, data_parquet, config)
-    # for local_weight, dask_weight in zip(local_weights, dask_weights):
-    #     np.testing.assert_allclose(local_weight, dask_weight, atol=1.e-2)
-
+    # Train on DataFrame directly
     data_df = read_parquet(data_parquet, df_lib=dask_backend.processor.df_lib)
     train_with_backend(dask_backend, data_df, config)
 
