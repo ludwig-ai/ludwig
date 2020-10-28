@@ -24,7 +24,7 @@ import tensorflow as tf
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from tests.integration_tests.utils import category_feature, set_feature
+from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -39,7 +39,7 @@ def test_savedmodel(csv_filename, should_load_model):
     # Single sequence input, single category output
     sf = sequence_feature()
     sf['encoder'] = 'parallel_cnn'
-    input_features = [sf, set_feature()]
+    input_features = [sf]
 
     output_features = [category_feature(vocab_size=2)]
 
