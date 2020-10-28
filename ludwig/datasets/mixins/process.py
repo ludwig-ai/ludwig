@@ -39,9 +39,7 @@ class MultifileJoinProcessMixin:
         if filetype == 'jsonl':
             file_df = pd.read_json(os.path.join(self.raw_dataset_path, filename), lines=True)
         if filetype == 'tsv':
-            print("tsv")
             file_df = pd.read_table(os.path.join(self.raw_dataset_path, filename))
-            print(file_df)
         return file_df
 
     def process_downloaded_dataset(self):
