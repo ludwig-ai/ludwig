@@ -39,28 +39,30 @@ class MultifileJoinProcessMixin:
         if filetype == 'jsonl':
             file_df = pd.read_json(os.path.join(self.raw_dataset_path, filename), lines=True)
         if filetype == 'tsv':
+            print("tsv")
             file_df = pd.read_table(os.path.join(self.raw_dataset_path, filename))
+            print(file_df)
         return file_df
 
     def process_downloaded_dataset(self):
-        download_files = self.download_filenames
+        downloaded_files = self.download_filenames
         filetype = self.download_file_type
         all_files = []
-        for split_name, filename in download_files.items():
+        for split_name, filename in downloaded_files.items():
             file_df = self.read_file(filetype, filename)
             if split_name == 'train_file': file_df['split'] = 0
             if split_name == 'val_file': file_df['split'] = 1
             if split_name == 'test_file': file_df['split'] = 2
             all_files.append(file_df)
 
-        concat_df = pd.concat(all_files)
+        concat_df = pd.concat(all_files, ignore_index=True)
         os.makedirs(self.processed_dataset_path)
-        concat_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename))
+        concat_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
 
 
     @property
     def download_filenames(self):
-        return self.config['download_filenames']
+        return self.config['split_filenames']
 
     @property
     def download_file_type(self):

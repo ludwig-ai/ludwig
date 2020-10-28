@@ -15,8 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import wget
 import tempfile
+import urllib.request
 
 from io import BytesIO
 from urllib.request import urlopen
@@ -59,7 +59,8 @@ class UncompressedFileDownloadMixin:
         """
         os.makedirs(self.raw_temp_path, exist_ok=True)
         for url in self.download_url:
-            wget.download(url, out=self.raw_temp_path)
+            filename = url.split('/')[-1]
+            urllib.request.urlretrieve(url, os.path.join(self.raw_temp_path,filename))
 
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
