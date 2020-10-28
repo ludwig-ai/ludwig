@@ -23,15 +23,18 @@ from ludwig.data.sampler import DistributedSampler
 
 
 def subselect(column, idx):
-    return np.stack(column[idx].values)
+    return column[idx]
 
 
 class PandasDataset(Dataset):
     def __init__(self, dataset, features, data_hdf5_fp):
-        self.dataset = dataset
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
-        self.size = len(self.dataset)
+        self.size = len(dataset)
+
+        self.dataset = {}
+        for col in dataset.columns:
+            self.dataset[col] = np.stack(dataset[col].to_numpy())
 
     def get(self, feature_name, idx=None):
         if idx is None:
