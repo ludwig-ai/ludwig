@@ -109,15 +109,15 @@ def run_split_api_experiment(config, data_parquet):
                        training_set=train_fname)
 
     # Train + Validation
-    # train_with_backend(backend, config,
-    #                    training_set=train_fname,
-    #                    validation_set=val_fname)
-    #
-    # # Train + Validation + Test
-    # train_with_backend(backend, config,
-    #                    training_set=train_fname,
-    #                    validation_set=val_fname,
-    #                    test_set=test_fname)
+    train_with_backend(backend, config,
+                       training_set=train_fname,
+                       validation_set=val_fname)
+
+    # Train + Validation + Test
+    train_with_backend(backend, config,
+                       training_set=train_fname,
+                       validation_set=val_fname,
+                       test_set=test_fname)
 
 
 def run_test_parquet(input_features, output_features, num_examples=100, run_fn=run_api_experiment):
