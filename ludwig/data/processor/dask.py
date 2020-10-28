@@ -18,14 +18,9 @@
 import multiprocessing
 import os
 
-try:
-    import dask
-    import dask.array as da
-    import dask.dataframe as dd
-    # import ray
-    _LOADED = True
-except:
-    _LOADED = False
+import dask
+import dask.array as da
+import dask.dataframe as dd
 
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.processor.base import DataProcessor
@@ -38,6 +33,9 @@ def set_scheduler(scheduler):
 
 
 class DaskProcessor(DataProcessor):
+    def __init__(self, parallelism=None):
+        self._parallelism = parallelism or multiprocessing.cpu_count()
+
     def parallelize(self, data):
         return data.repartition(self.parallelism)
 
@@ -84,12 +82,6 @@ class DaskProcessor(DataProcessor):
         )
 
     @property
-    def dtypes(self):
-        if not _LOADED:
-            return []
-        return [dd.DataFrame]
-
-    @property
     def array_lib(self):
         return da
 
@@ -103,5 +95,4 @@ class DaskProcessor(DataProcessor):
 
     @property
     def parallelism(self):
-        # return int(ray.cluster_resources().get('CPU', 1))
-        return multiprocessing.cpu_count()
+        return self._parallelism

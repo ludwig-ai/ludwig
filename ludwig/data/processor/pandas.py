@@ -51,10 +51,6 @@ class PandasProcessor(DataProcessor):
         )
 
     @property
-    def dtypes(self):
-        return [pd.DataFrame]
-
-    @property
     def array_lib(self):
         return np
 

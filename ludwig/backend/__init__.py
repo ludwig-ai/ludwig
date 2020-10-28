@@ -21,6 +21,10 @@ from ludwig.backend.base import Backend, LocalBackend
 LOCAL_BACKEND = LocalBackend()
 
 
+def get_local_backend():
+    return LOCAL_BACKEND
+
+
 def create_dask_backend():
     from ludwig.backend.dask import DaskBackend
     return DaskBackend()
@@ -28,8 +32,8 @@ def create_dask_backend():
 
 backend_registry = {
     'dask': create_dask_backend,
-    'local': LocalBackend,
-    None: LocalBackend,
+    'local': get_local_backend,
+    None: get_local_backend,
 }
 
 

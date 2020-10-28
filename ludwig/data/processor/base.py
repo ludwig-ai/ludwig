@@ -49,11 +49,6 @@ class DataProcessor(ABC):
 
     @property
     @abstractmethod
-    def dtypes(self):
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
     def array_lib(self):
         raise NotImplementedError()
 
