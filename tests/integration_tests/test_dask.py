@@ -21,10 +21,11 @@ import dask.dataframe as dd
 import pytest
 
 from ludwig.api import LudwigModel
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.dask import DaskBackend
 from ludwig.utils.data_utils import read_parquet
 
-from tests.integration_tests.utils import create_data_set_to_use, run_api_experiment
+from tests.integration_tests.utils import create_data_set_to_use
 from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
@@ -41,13 +42,33 @@ from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
 
 
-def train_with_backend(backend, dataset, config):
+def split(data_parquet):
+    data_df = read_parquet(data_parquet, LOCAL_BACKEND.processor.df_lib)
+    train_df = data_df.sample(frac=0.8)
+    test_df = data_df.drop(train_df.index).sample(frac=0.5)
+    validation_df = data_df.drop(train_df.index).drop(test_df.index)
+
+    basename, ext = os.path.splitext(data_parquet)
+    train_fname = basename + '.train' + ext
+    val_fname = basename + '.validation' + ext
+    test_fname = basename + '.test' + ext
+
+    train_df.to_parquet(train_fname)
+    validation_df.to_parquet(val_fname)
+    test_df.to_parquet(test_fname)
+    return train_fname, val_fname, test_fname
+
+
+def train_with_backend(backend, config, dataset=None, training_set=None, validation_set=None, test_set=None):
     model = LudwigModel(config, backend=backend)
     output_dir = None
 
     try:
         _, _, output_dir = model.train(
             dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
             skip_save_processed_input=True,
             skip_save_progress=True,
             skip_save_unprocessed_output=True
@@ -64,7 +85,39 @@ def train_with_backend(backend, dataset, config):
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
-def run_api_experiment(input_features, output_features, data_parquet):
+def run_api_experiment(config, data_parquet):
+    # Train on Parquet
+    dask_backend = DaskBackend()
+    train_with_backend(dask_backend, config, dataset=data_parquet)
+
+    # Train on DataFrame directly
+    data_df = read_parquet(data_parquet, df_lib=dask_backend.processor.df_lib)
+    train_with_backend(dask_backend, config, dataset=data_df)
+
+
+def run_split_api_experiment(config, data_parquet):
+    backend = DaskBackend()
+    model = LudwigModel(config, backend=backend)
+
+    train_fname, val_fname, test_fname = split(data_parquet)
+
+    # Train
+    train_with_backend(backend, config,
+                       training_set=train_fname)
+
+    # Train + Validation
+    train_with_backend(backend, config,
+                       training_set=train_fname,
+                       validation_set=val_fname)
+
+    # Train + Validation + Test
+    train_with_backend(backend, config,
+                       training_set=train_fname,
+                       validation_set=val_fname,
+                       test_set=test_fname)
+
+
+def run_test_parquet(input_features, output_features, num_examples=100, run_fn=run_api_experiment):
     config = {
         'input_features': input_features,
         'output_features': output_features,
@@ -72,21 +125,11 @@ def run_api_experiment(input_features, output_features, data_parquet):
         'training': {'epochs': 2}
     }
 
-    # Train on Parquet
-    dask_backend = DaskBackend()
-    train_with_backend(dask_backend, data_parquet, config)
-
-    # Train on DataFrame directly
-    data_df = read_parquet(data_parquet, df_lib=dask_backend.processor.df_lib)
-    train_with_backend(dask_backend, data_df, config)
-
-
-def run_test_parquet(input_features, output_features, num_examples=100):
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_filename = os.path.join(tmpdir, 'dataset.csv')
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
         dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
-        run_api_experiment(input_features, output_features, data_parquet=dataset_parquet)
+        run_fn(config, data_parquet=dataset_parquet)
 
 
 def test_dask_tabular():
@@ -103,6 +146,16 @@ def test_dask_tabular():
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
     run_test_parquet(input_features, output_features)
+
+
+def test_dask_split():
+    input_features = [
+        numerical_feature(normalization='zscore'),
+        set_feature(),
+        binary_feature(),
+    ]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    run_test_parquet(input_features, output_features, run_fn=run_split_api_experiment)
 
 
 def test_dask_timeseries():

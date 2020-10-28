@@ -25,7 +25,7 @@ import pandas as pd
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
-from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
+from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.features.feature_registries import (base_type_registry,
@@ -1420,10 +1420,12 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        concatenated_df = concatenate_csv(
+        concatenated_df = concatenate_files(
             training_set,
             validation_set,
-            test_set
+            test_set,
+            read_fn,
+            backend
         )
         concatenated_df.src = training_set
 
@@ -1432,6 +1434,7 @@ def _preprocess_file_for_training(
             features,
             preprocessing_params,
             metadata=training_set_metadata,
+            backend=backend,
             random_seed=random_seed
         )
         training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
