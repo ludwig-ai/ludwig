@@ -607,7 +607,7 @@ class Trainer:
                 learning_rate=current_learning_rate,
             )
 
-            if validation_set is not None and validation_set.size > 0:
+            if validation_set is not None and len(validation_set) > 0:
                 # eval metrics on validation set
                 self.evaluation(
                     model,
@@ -624,7 +624,7 @@ class Trainer:
                     step=progress_tracker.epoch,
                 )
 
-            if test_set is not None and test_set.size > 0:
+            if test_set is not None and len(test_set) > 0:
                 # eval metrics on test set
                 self.evaluation(
                     model,

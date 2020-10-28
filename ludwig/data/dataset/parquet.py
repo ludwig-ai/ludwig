@@ -31,6 +31,7 @@ class ParquetDataset(Dataset):
 
         with make_batch_reader(self.url) as reader:
             self.size = reader.dataset.metadata.num_rows
+        print('PARQUET DATASET ', url, self.size)
 
         self.reshape_features = {
             name: list((-1, *training_set_metadata[name]['reshape']))

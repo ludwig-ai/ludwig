@@ -61,7 +61,6 @@ def concatenate_files(train_fname, vali_fname, test_fname, read_fn, backend):
 def concatenate_df(train_df, vali_df, test_df, backend):
     train_size = len(train_df)
     vali_size = len(vali_df) if vali_df is not None else 0
-    test_size = len(test_df) if test_df is not None else 0
 
     concatenated_df = backend.processor.df_lib.concat(
         [df for df in [train_df, vali_df, test_df] if df is not None],

@@ -1509,7 +1509,8 @@ def _preprocess_df_for_training(
         dataset = concatenate_df(
             training_set,
             validation_set,
-            test_set
+            test_set,
+            backend
         )
 
     dataset, training_set_metadata = build_dataset(

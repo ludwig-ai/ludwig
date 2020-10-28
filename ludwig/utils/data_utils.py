@@ -373,21 +373,17 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
 
 
 def split_dataset_ttv(dataset, split):
-    # if SPLIT in dataset:
-    #     del dataset[SPLIT]
-    training_set = dataset[dataset[split] == 0].reset_index()
-    validation_set = dataset[dataset[split] == 1].reset_index()
-    test_set = dataset[dataset[split] == 2].reset_index()
+    training_set = split_dataset(dataset, split, 0)
+    validation_set = split_dataset(dataset, split, 1)
+    test_set = split_dataset(dataset, split, 2)
     return training_set, test_set, validation_set
 
 
 def split_dataset(dataset, split, value_to_split=0):
-    splitted_dataset = {}
-    for key in dataset:
-        splitted_dataset[key] = dataset[key][split == value_to_split]
-        if len(splitted_dataset[key]) == 0:
-            return None
-    return splitted_dataset
+    split_df = dataset[dataset[split] == value_to_split]
+    if len(split_df) == 0:
+        return None
+    return split_df.reset_index()
 
 
 def collapse_rare_labels(labels, labels_limit):

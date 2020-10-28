@@ -507,8 +507,6 @@ class LudwigModel:
             best_function = get_best_function(validation_metric)
             # results of the model with highest validation test performance
             if is_on_master() and validation_set is not None:
-                print(validation_field_result)
-                print(validation_metric)
                 epoch_best_vali_metric, best_vali_metric = best_function(
                     enumerate(validation_field_result[validation_metric]),
                     key=lambda pair: pair[1]
