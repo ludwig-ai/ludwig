@@ -224,6 +224,8 @@ def compare_classifiers_performance_from_prob_cli(
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+        results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -250,6 +252,7 @@ def compare_classifiers_performance_from_pred_cli(
         ground_truth_metadata: str,
         ground_truth_split: int,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_from_pred
@@ -263,13 +266,20 @@ def compare_classifiers_performance_from_pred_cli(
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+        results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    output_feature_hash = retrieve_feature_hash(
+        output_directory,
+        'output_features',
+        output_feature_name
+    )
+    gt = load_from_file(ground_truth, output_feature_hash, ground_truth_split)
     metadata = load_json(ground_truth_metadata)
     predictions_per_model_raw = load_data_for_viz(
         'load_from_file', predictions, dtype=str
@@ -278,7 +288,9 @@ def compare_classifiers_performance_from_pred_cli(
         np.ndarray.flatten(pred) for pred in predictions_per_model_raw
     ]
     compare_classifiers_performance_from_pred(
-        predictions_per_model, gt, metadata, output_feature_name, **kwargs
+        predictions_per_model, gt, metadata, output_feature_hash,
+        output_directory=output_directory,
+        **kwargs
     )
 
 
@@ -287,6 +299,7 @@ def compare_classifiers_performance_subset_cli(
         ground_truth: str,
         ground_truth_split: int,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_subset.
@@ -300,18 +313,27 @@ def compare_classifiers_performance_subset_cli(
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    output_feature_hash = retrieve_feature_hash(
+        output_directory,
+        'output_features',
+        output_feature_name
+    )
+    gt = load_from_file(ground_truth, output_feature_hash, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_subset(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model, gt,
+        output_directory=output_directory,
+        **kwargs
     )
 
 
@@ -1130,7 +1152,7 @@ def compare_classifiers_performance_from_pred(
         predictions_per_model: List[list],
         ground_truth: np.array,
         metadata: dict,
-        output_feature_name: str,
+        output_feature_hash: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
@@ -1151,7 +1173,7 @@ def compare_classifiers_performance_from_pred(
         which are the numeric encoded values the category.
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
-    :param output_feature_name: (str) name of the output feature to use
+    :param output_feature_hash: (str) hash of the output feature to use
         for the visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
@@ -1176,7 +1198,7 @@ def compare_classifiers_performance_from_pred(
     try:
         for pred in preds:
             mapped_preds.append(
-                [metadata[output_feature_name]['str2idx'][val] for val in
+                [metadata[output_feature_hash]['str2idx'][val] for val in
                  pred])
         preds = mapped_preds
     # If predictions are coming from npy file there is no need to convert to
