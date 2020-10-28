@@ -53,7 +53,6 @@ def test_load_csv_dataset():
                 assert not dataset.is_processed()
 
                 output_df = dataset.load()
-                print(output_df)
                 pd.testing.assert_frame_equal(input_df, output_df)
 
                 assert dataset.is_downloaded()
@@ -81,9 +80,7 @@ def test_multifile_join_dataset(f_type):
         })
     else:
         train_df = pd.DataFrame([{'name': 'joe'}, {'mask':'green'}, {'weapon':'stick'}])
-
         test_df = pd.DataFrame([{'name': 'janice'}, {'mask':'black'}, {'weapon':'gun'}])
-
         val_df = pd.DataFrame([{'name': 'sara'}, {'mask':'pink'}, {'weapon':'gun'}])
 
     #filetypes = ['json', 'tsv', 'jsonl']
