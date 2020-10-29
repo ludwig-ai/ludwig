@@ -1,6 +1,7 @@
 import os
 import unittest
 from unittest import mock
+from unittest.mock import mock_open
 import shutil
 from ludwig.datasets.mnist import Mnist
 
@@ -34,13 +35,24 @@ class TestMNistWorkflow(unittest.TestCase):
         self.cleanup(self.processed_dataset_path)"""
         assert True
 
-    def test_mnist_download(self):
-        """self.dataset.download()
-        assert os.path.isfile(os.path.join(self.raw_dataset_path, "train-images-idx3-ubyte"))
-        assert os.path.exists(os.path.join(self.raw_dataset_path , "train-labels-idx1-ubyte"))
-        assert os.path.exists(os.path.join(self.raw_dataset_path, "t10k-images-idx3-ubyte"))
-        assert os.path.exists(os.path.join(self.raw_dataset_path, "t10k-labels-idx1-ubyte"))"""
-        assert True
+    @mock.patch("builtins.open", create=True)
+    @mock.patch("gzip.GzipFile.read")
+    @mock.patch("gzip.GzipFile")
+    @mock.patch("requests.get")
+    def test_mnist_download(self,
+                            requests_get_mock,
+                            gzip_file_mock,
+                            gzip_read_mock,
+                            mock_open_file):
+        requests_get_mock.status_code = 200
+        response_mock = mock.patch("requests.get")
+        self.dataset.download()
+        response_mock.status_code = 200
+        requests_get_mock.assert_called_with('http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz', stream=True)
+        gzip_file_mock.assert_called()
+        mock_open_file.side_effect = [
+            mock.mock_open(read_data=None).return_value
+        ]
 
     def test_mnist_process(self):
         """self.dataset.download()

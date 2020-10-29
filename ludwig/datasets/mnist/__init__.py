@@ -169,4 +169,6 @@ class Mnist(CSVLoadMixin, BaseDataset):
                         if file.endswith(".png"):
                             output_file.write('{},{}\n'.format(os.path.join(img_path, file), str(i)))
 
-
+    @property
+    def download_url(self):
+        return self.config["download_url"]
