@@ -1167,7 +1167,7 @@ class HFTokenizer(BaseTokenizer):
         )
 
     def __call__(self, text):
-        return self.tokenizer.encode(text)
+        return self.tokenizer.encode(text, truncation=True)
 
 
 tokenizer_registry = {

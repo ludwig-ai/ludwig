@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 import pytest
 
-from ludwig.modules.metric_modules import R2Score, ErrorScore
+from ludwig.modules.metric_modules import R2Score, ErrorScore, JaccardMetric
 
 RANDOM_SEED = 42
 NUMBER_OBSERVATIONS = 500
@@ -100,3 +100,34 @@ def test_ErrorScore(generated_data):
 
     # magnitude of bad predictions should be greater than good predictions
     assert np.abs(bad_prediction_score) > np.abs(good_two_batch)
+
+
+def test_JaccardMetric():
+
+    # set up synthentic data for testing
+    targets = np.array([
+        [True, True, False], [True, False, True], [False, True, False],
+        [True, True, True], [False, False, True]
+    ])
+    preds = np.array([
+        [1, 0, 0], [0, 1, 1], [0, 1, 0],
+        [1, 1, 1], [0, 0, 1]
+    ])
+
+    # create instance of jaccard metric object
+    jm = JaccardMetric()
+
+    # first test all the data at once
+    jm.update_state(targets, preds)
+    jaccard_big_batch = jm.result().numpy()
+
+    # reset object and test multiple matches
+    jm.reset_states()
+
+    # Do two mini-batches
+    jm.update_state(targets[:3], preds[:3])
+    jm.update_state(targets[3:], preds[3:])
+    jaccard_multiple_batches = jm.result().numpy()
+
+    # check to make sure answers same for both big batch and multiple batches
+    assert np.isclose(jaccard_big_batch, jaccard_multiple_batches)
