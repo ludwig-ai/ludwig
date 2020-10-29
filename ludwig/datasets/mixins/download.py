@@ -16,6 +16,7 @@
 # ==============================================================================
 import os
 import tempfile
+import urllib.request
 
 from io import BytesIO
 from urllib.request import urlopen
@@ -35,12 +36,36 @@ class ZipDownloadMixin:
         store that in the cache location.
         """
         os.makedirs(self.raw_temp_path, exist_ok=True)
-        with urlopen(self.download_url) as zipresp:
-            with ZipFile(BytesIO(zipresp.read())) as zfile:
-                zfile.extractall(self.raw_temp_path)
+        for url in self.download_urls:
+            with urlopen(url) as zipresp:
+                with ZipFile(BytesIO(zipresp.read())) as zfile:
+                    zfile.extractall(self.raw_temp_path)
+        os.rename(self.raw_temp_path, self.raw_dataset_path)
+
+    @property
+    def download_urls(self):
+        return self.config["download_urls"]
+
+class UncompressedFileDownloadMixin:
+    """Downloads the json file containing the training data and extracts the contents."""
+
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
+
+    def download_raw_dataset(self):
+        """
+        Download the raw dataset files and store in the cache location.
+        """
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+        for url in self.download_url:
+            filename = url.split('/')[-1]
+            urllib.request.urlretrieve(url, os.path.join(self.raw_temp_path,filename))
 
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
     @property
     def download_url(self):
-        return self.config["download_url"]
+        return self.config["download_urls"]
+
+
