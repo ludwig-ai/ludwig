@@ -19,6 +19,7 @@ import tempfile
 
 import dask.dataframe as dd
 import pytest
+import tensorflow as tf
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
@@ -37,6 +38,7 @@ from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
+from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
@@ -100,7 +102,6 @@ def run_api_experiment(config, data_parquet):
 
 def run_split_api_experiment(config, data_parquet):
     backend = DaskBackend()
-    model = LudwigModel(config, backend=backend)
 
     train_fname, val_fname, test_fname = split(data_parquet)
 
@@ -120,7 +121,16 @@ def run_split_api_experiment(config, data_parquet):
                        test_set=test_fname)
 
 
-def run_test_parquet(input_features, output_features, num_examples=100, run_fn=run_api_experiment):
+@spawn
+def run_test_parquet(
+    input_features,
+    output_features,
+    num_examples=100,
+    run_fn=run_api_experiment,
+    expect_error=False
+):
+    tf.config.experimental_run_functions_eagerly(True)
+
     config = {
         'input_features': input_features,
         'output_features': output_features,
@@ -132,7 +142,12 @@ def run_test_parquet(input_features, output_features, num_examples=100, run_fn=r
         csv_filename = os.path.join(tmpdir, 'dataset.csv')
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
         dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
-        run_fn(config, data_parquet=dataset_parquet)
+
+        if expect_error:
+            with pytest.raises(ValueError):
+                run_fn(config, data_parquet=dataset_parquet)
+        else:
+            run_fn(config, data_parquet=dataset_parquet)
 
 
 def test_dask_tabular():
@@ -187,9 +202,7 @@ def test_dask_lazy_load_audio_error():
             )
         ]
         output_features = [binary_feature()]
-
-        with pytest.raises(ValueError):
-            run_test_parquet(input_features, output_features)
+        run_test_parquet(input_features, output_features, expect_error=True)
 
 
 def test_dask_image():
@@ -233,6 +246,4 @@ def test_dask_lazy_load_image_error():
             ),
         ]
         output_features = [binary_feature()]
-
-        with pytest.raises(ValueError):
-            run_test_parquet(input_features, output_features)
+        run_test_parquet(input_features, output_features, expect_error=True)
