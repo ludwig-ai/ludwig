@@ -232,14 +232,13 @@ def compare_classifiers_performance_from_prob_cli(
     # Return
     :return None:
     """
-    # output_feature_hash = retrieve_feature_hash(
-    #     output_directory,
-    #     'output_features',
-    #     output_feature_name
-    # )
-    # gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve ground truth from source data set
     gt_df = read_csv(ground_truth)
-    gt = gt_df[output_feature_name].to_numpy()
+
+    # retrieve test split from the source data
+    gt = gt_df[output_feature_name][
+        gt_df['split'] == ground_truth_split].to_numpy()
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
