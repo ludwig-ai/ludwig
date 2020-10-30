@@ -294,7 +294,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    result[PREDICTIONS]
+                    postprocessed[PREDICTIONS]
                 )
             del result[PREDICTIONS]
 
@@ -303,7 +303,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
-                    result[PROBABILITIES]
+                    postprocessed[PROBABILITIES]
                 )
             del result[PROBABILITIES]
 

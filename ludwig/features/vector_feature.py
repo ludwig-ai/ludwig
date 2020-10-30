@@ -264,7 +264,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    result[PREDICTIONS]
+                    postprocessed[PREDICTIONS]
                 )
             del result[PREDICTIONS]
 

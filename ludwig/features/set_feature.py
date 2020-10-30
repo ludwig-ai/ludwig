@@ -29,6 +29,7 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
+from ludwig.modules.metric_modules import JaccardMetric
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
@@ -206,7 +207,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[JACCARD] = MeanIoU(num_classes=self.num_classes)
+        self.metric_functions[JACCARD] = JaccardMetric()
 
     @classmethod
     def get_output_dtype(cls):
@@ -251,7 +252,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+            preds = result[PREDICTIONS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][i] for i, pred in enumerate(pred_set)

@@ -443,7 +443,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+            preds = result[PREDICTIONS].numpy()
             if level_idx2str in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata[level_idx2str][token]
@@ -461,7 +461,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             del result[PREDICTIONS]
 
         if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS]
+            last_preds = result[LAST_PREDICTIONS].numpy()
             if level_idx2str in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
                     metadata[level_idx2str][last_pred]

@@ -45,8 +45,15 @@ def convert_size(size_bytes):
     return '{} {}'.format(s, size_name[i])
 
 
-def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step):
-    return initial_learning_rate * decay_rate ** (float(step) / decay_steps)
+def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step,
+                      staircase=False):
+    decay_rate = float(decay_rate)
+    decay_steps = float(decay_steps)
+    step = float(step)
+    exponent = step / decay_steps
+    if staircase:
+        exponent = math.ceil(exponent)
+    return initial_learning_rate * math.pow(decay_rate, exponent)
 
 
 def learning_rate_warmup_distributed(
@@ -78,7 +85,7 @@ def learning_rate_warmup_distributed(
                                   size
             lr'(epoch = warmup) = lr
     """
-    if epoch > warmup_epochs:
+    if epoch >= warmup_epochs:
         return learning_rate
     else:
         epoch_adjusted = float(epoch) + (curr_step / steps_per_epoch)
@@ -93,19 +100,22 @@ def learning_rate_warmup(
         curr_step,
         steps_per_epoch
 ):
-    global_curr_step = 1 + curr_step + epoch * steps_per_epoch
-    warmup_steps = warmup_epochs * steps_per_epoch
+    if epoch >= warmup_epochs:
+        return learning_rate
+    else:
+        global_curr_step = 1 + curr_step + epoch * steps_per_epoch
+        warmup_steps = warmup_epochs * steps_per_epoch
 
-    warmup_percent_done = global_curr_step / warmup_steps
-    warmup_learning_rate = learning_rate * warmup_percent_done
+        warmup_percent_done = global_curr_step / warmup_steps
+        warmup_learning_rate = learning_rate * warmup_percent_done
 
-    is_warmup = int(global_curr_step < warmup_steps)
-    interpolated_learning_rate = (
-            (1.0 - is_warmup) * learning_rate +
-            is_warmup * warmup_learning_rate
-    )
+        is_warmup = int(global_curr_step < warmup_steps)
+        interpolated_learning_rate = (
+                (1.0 - is_warmup) * learning_rate +
+                is_warmup * warmup_learning_rate
+        )
 
-    return interpolated_learning_rate
+        return interpolated_learning_rate
 
 
 def round2precision(val, precision: int = 0, which: str = ''):

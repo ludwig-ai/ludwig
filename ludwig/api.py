@@ -706,15 +706,16 @@ class LudwigModel:
                 os.makedirs(output_directory, exist_ok=True)
 
         logger.debug('Postprocessing')
-        postproc_predictions = convert_predictions(
-            postprocess(
-                predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                output_directory=output_directory,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            ),
+        postproc_predictions = postprocess(
+            predictions,
+            self.model.output_features,
+            self.training_set_metadata,
+            output_directory=output_directory,
+            skip_save_unprocessed_output=skip_save_unprocessed_output
+                                         or not is_on_master(),
+        )
+        converted_postproc_predictions = convert_predictions(
+            postproc_predictions,
             self.model.output_features,
             self.training_set_metadata,
             return_type=return_type
@@ -727,7 +728,7 @@ class LudwigModel:
 
                 logger.info('Saved to: {0}'.format(output_directory))
 
-        return postproc_predictions, output_directory
+        return converted_postproc_predictions, output_directory
 
     def evaluate(
             self,
