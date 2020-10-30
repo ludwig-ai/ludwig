@@ -18,7 +18,6 @@ import logging
 from abc import ABC, abstractmethod
 from copy import copy
 
-import h5py
 import numpy as np
 import pandas as pd
 
@@ -32,7 +31,7 @@ from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_PROCESSED_CACHE_DIR,
-                                     DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
+                                     DATA_TRAIN_HDF5_FP, HDF5_DATASET_KEY, DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
                                      FEATHER_FORMATS, FWF_FORMATS,
                                      HDF5_FORMATS, HTML_FORMATS, JSON_FORMATS,
@@ -1184,7 +1183,7 @@ def load_hdf5(
     def shuffle(df):
         return df.sample(frac=1).reset_index(drop=True)
 
-    dataset = pd.read_hdf(hdf5_file_path, key='data')
+    dataset = pd.read_hdf(hdf5_file_path, key=HDF5_DATASET_KEY)
     if not split_data:
         if shuffle_training:
             dataset = shuffle(dataset)

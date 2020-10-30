@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 DATASET_SPLIT_URL = 'dataset_{}_fp'
 DATA_PROCESSED_CACHE_DIR = 'data_processed_cache_dir'
 DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
+HDF5_DATASET_KEY = 'dataset'
 DICT_FORMATS = {'dict', 'dictionary', dict}
 DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame} | DASK_DF_FORMATS
 CSV_FORMATS = {'csv'}
@@ -206,7 +207,7 @@ def save_hdf5(data_fp, data, metadata=None):
     mode = 'w'
     if os.path.isfile(data_fp):
         mode = 'r+'
-    data.to_hdf(data_fp, key='dataset', mode=mode)
+    data.to_hdf(data_fp, key=HDF5_DATASET_KEY, mode=mode)
 
 
 def load_object(object_fp):
