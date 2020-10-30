@@ -33,7 +33,7 @@ def postprocess(
     for of_name, output_feature in output_features.items():
         postprocessed[of_name] = output_feature.postprocess_predictions(
             predictions[of_name],
-            training_set_metadata.get(output_feature.proc_column, {}),
+            training_set_metadata[of_name],
             output_directory=output_directory,
             skip_save_unprocessed_output=skip_save_unprocessed_output
         )
