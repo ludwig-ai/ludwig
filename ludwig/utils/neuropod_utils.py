@@ -6,9 +6,9 @@ import numpy as np
 
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
-from ludwig.constants import (BINARY, CATEGORY, NAME, NUMERICAL, PREDICTIONS,
+from ludwig.constants import (BINARY, CATEGORY, NUMERICAL, PREDICTIONS,
                               PROBABILITIES, PROBABILITY, SEQUENCE, SET, TEXT,
-                              TYPE, VECTOR, HASH)
+                              TYPE, VECTOR, PROC_COLUMN, NAME)
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME)
@@ -27,7 +27,7 @@ class LudwigNeuropodModelWrapper:
             data_dict[key] = np.squeeze(data_dict[key], axis=1)
         predicted, _ = self.ludwig_model.predict(
             dataset=data_dict,
-            return_type=dict
+            return_type='dict'
         )
         # print(predicted, file=sys.stderr)
         return postprocess_for_neuropod(
@@ -183,80 +183,83 @@ def export_neuropod(
         feature_name = feature[NAME]
         if feature_type == BINARY:
             output_spec.append({
-                NAME: feature_name + '_predictions',
+                "name": feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature_name + '_probabilities',
+                "name": feature_name + '_probabilities',
                 "dtype": "float64",
                 "shape": (None, 1)
             })
         elif feature_type == NUMERICAL:
             output_spec.append({
-                NAME: feature_name + '_predictions',
+                "name": feature_name + '_predictions',
                 "dtype": "float64",
                 "shape": (None, 1)
             })
         elif feature_type == CATEGORY:
             output_spec.append({
-                NAME: feature_name + '_predictions',
+                "name": feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature_name + '_probability',
+                "name": feature_name + '_probability',
                 "dtype": "float64",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature_name + '_probabilities',
+                "name": feature_name + '_probabilities',
                 "dtype": "float64",
                 "shape": (
-                    None, training_set_metadata[feature[HASH]]['vocab_size']
+                    None,
+                    training_set_metadata[feature[PROC_COLUMN]]['vocab_size']
                 )
             })
         elif feature_type == SEQUENCE:
             output_spec.append({
-                NAME: feature_name + '_predictions',
+                "name": feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
         elif feature_type == TEXT:
             output_spec.append({
-                NAME: feature_name + '_predictions',
+                "name": feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
         elif feature_type == SET:
             output_spec.append({
-                NAME: feature_name + '_predictions',
+                "name": feature_name + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature_name + '_probability',
+                "name": feature_name + '_probability',
                 "dtype": "str",
                 "shape": (None, 1)
             })
             output_spec.append({
-                NAME: feature_name + '_probabilities',
+                "name": feature_name + '_probabilities',
                 "dtype": "float64",
                 "shape": (
-                    None, training_set_metadata[feature[HASH]]['vocab_size']
+                    None,
+                    training_set_metadata[feature[PROC_COLUMN]]['vocab_size']
                 )
             })
         elif feature_type == VECTOR:
             output_spec.append({
-                NAME: feature['name'] + '_predictions',
+                "name": feature['name'] + '_predictions',
                 "dtype": "float64",
                 "shape": (
-                    None, training_set_metadata[feature[HASH]]['vector_size']
+                    None,
+                    training_set_metadata[feature[PROC_COLUMN]]['vector_size']
                 )
             })
         else:
             output_spec.append({
-                NAME: feature['name'] + '_predictions',
+                "name": feature['name'] + '_predictions',
                 "dtype": "str",
                 "shape": (None, 1)
             })

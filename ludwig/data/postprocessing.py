@@ -33,7 +33,7 @@ def postprocess(
     for of_name, output_feature in output_features.items():
         postprocessed[of_name] = output_feature.postprocess_predictions(
             predictions[of_name],
-            training_set_metadata.get(output_feature.feature_hash, {}),
+            training_set_metadata.get(output_feature.proc_column, {}),
             output_directory=output_directory,
             skip_save_unprocessed_output=skip_save_unprocessed_output
         )
@@ -81,13 +81,13 @@ def convert_to_df(
                         )
                     ] = output_type_value.tolist()
                 else:
-                    output_feature_hash = output_feature.feature_hash
+                    output_proc_column = output_feature.proc_column
                     for i, value in enumerate(output_type_value.T):
-                        if (output_feature_hash in training_set_metadata and
+                        if (output_proc_column in training_set_metadata and
                                 'idx2str' in training_set_metadata[
-                                    output_feature_hash]):
+                                    output_proc_column]):
                             class_name = \
-                                training_set_metadata[output_feature_hash][
+                                training_set_metadata[output_proc_column][
                                     'idx2str'][i]
                         else:
                             class_name = str(i)

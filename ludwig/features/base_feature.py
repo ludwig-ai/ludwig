@@ -43,18 +43,15 @@ class BaseFeature(object):
 
         if NAME not in feature:
             raise ValueError('Missing feature name')
-
         self.feature_name = feature[NAME]
 
-        if ID not in feature:
-            self.feature_id = self.feature_name
-        else:
-            self.feature_id = feature[ID]
+        if COLUMN not in feature:
+            feature[COLUMN] = self.feature_name
+        self.column = feature[COLUMN]
 
-        if HASH not in feature:
-            feature[HASH] = compute_feature_hash(feature)
-
-        self.feature_hash = feature[HASH]
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
+        self.proc_column = feature[PROC_COLUMN]
 
         self.type = None
 
@@ -397,7 +394,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                     'bucketing_field to None / null, as activating it will '
                     'reduce the length of the field the bucketing is performed '
                     'on.'.format(
-                        self.feature_name,
+                        self.column,
                         self.dependencies,
                         hidden,
                         dependencies_hidden

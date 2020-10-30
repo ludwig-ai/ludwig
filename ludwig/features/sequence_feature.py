@@ -116,9 +116,9 @@ class SequenceFeatureMixin(object):
             preprocessing_parameters
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            dataset_df[feature[NAME]].astype(str),
-            metadata[feature[HASH]], preprocessing_parameters)
-        dataset[feature[HASH]] = sequence_data
+            dataset_df[feature[COLUMN]].astype(str),
+            metadata[feature[PROC_COLUMN]], preprocessing_parameters)
+        dataset[feature[PROC_COLUMN]] = sequence_data
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
@@ -288,7 +288,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     'for the <UNK> and <PAD> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
                         output_feature['num_classes'],
-                        output_feature[NAME]
+                        output_feature[COLUMN]
                     )
                 )
 
@@ -315,7 +315,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                                 'the first row {}. All rows must have '
                                 'the same length.'.format(
                                     curr_row,
-                                    output_feature[NAME],
+                                    output_feature[COLUMN],
                                     curr_row_length,
                                     first_row_length
                                 )
@@ -329,7 +329,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'The class_similarities matrix of {} has '
                         '{} rows and {} columns, '
                         'their number must be identical.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             len(similarities),
                             all_rows_length
                         )
@@ -342,7 +342,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'Check the metadata JSON file to see the classes '
                         'and their order and '
                         'consider <UNK> and <PAD> class too.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             all_rows_length,
                             output_feature['num_classes']
                         )
@@ -359,7 +359,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0, '
                     'but no class_similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -397,7 +397,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_id
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():

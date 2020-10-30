@@ -24,7 +24,7 @@ import tempfile
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME
+from ludwig.constants import COLUMN
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
@@ -58,7 +58,7 @@ def server(model):
     app = FastAPI()
 
     input_features = {
-        f[NAME] for f in model.config['input_features']
+        f[COLUMN] for f in model.config['input_features']
     }
 
     @app.get('/')

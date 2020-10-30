@@ -280,7 +280,7 @@ def build_inputs(
     input_features_def = topological_sort_feature_dependencies(
         input_features_def)
     for input_feature_def in input_features_def:
-        if_id_or_name = input_feature_def.get(ID, input_feature_def[NAME])
+        if_id_or_name = input_feature_def.get(NAME, input_feature_def[COLUMN])
         input_features[if_id_or_name] = build_single_input(
             input_feature_def,
             input_features,
@@ -292,7 +292,7 @@ def build_inputs(
 def build_single_input(input_feature_def, other_input_features, **kwargs):
     logger.debug('Input {} feature {}'.format(
         input_feature_def[TYPE],
-        input_feature_def.get(ID, input_feature_def[NAME])
+        input_feature_def.get(NAME, input_feature_def[COLUMN])
     ))
 
     encoder_obj = None
@@ -333,7 +333,8 @@ def build_outputs(
             output_features,
             **kwargs
         )
-        of_id_or_name = output_feature_def.get(ID, output_feature_def[NAME])
+        of_id_or_name = output_feature_def.get(NAME,
+                                               output_feature_def[COLUMN])
         output_features[of_id_or_name] = output_feature
 
     return output_features
@@ -347,7 +348,7 @@ def build_single_output(
 ):
     logger.debug('Output {} feature {}'.format(
         output_feature_def[TYPE],
-        output_feature_def.get(ID, output_feature_def[NAME])
+        output_feature_def.get(NAME, output_feature_def[COLUMN])
     ))
 
     output_feature_class = get_from_registry(

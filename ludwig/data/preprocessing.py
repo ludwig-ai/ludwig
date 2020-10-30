@@ -944,10 +944,10 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 
     for feature in features:
 
-        if HASH not in feature:
-            feature[HASH] = compute_feature_hash(feature)
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
 
-        if feature[HASH] not in metadata:
+        if feature[PROC_COLUMN] not in metadata:
 
             if PREPROCESSING in feature:
                 preprocessing_parameters = merge_dict(
@@ -979,8 +979,8 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                 base_type_registry
             ).get_feature_meta
 
-            metadata[feature[HASH]] = get_feature_meta(
-                dataset_df[feature[NAME]].astype(str),
+            metadata[feature[PROC_COLUMN]] = get_feature_meta(
+                dataset_df[feature[COLUMN]].astype(str),
                 preprocessing_parameters
             )
 
@@ -995,7 +995,8 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                     'computed_fill_value': fill_value,
                     **preprocessing_parameters
                 }
-            metadata[feature[HASH]][PREPROCESSING] = preprocessing_parameters
+            metadata[feature[PROC_COLUMN]][
+                PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
@@ -1004,11 +1005,12 @@ def build_data(dataset_df, features, training_set_metadata):
     dataset = {}
     for feature in features:
 
-        if HASH not in feature:
-            feature[HASH] = compute_feature_hash(feature)
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
 
-        if feature[HASH] not in dataset:
-            preprocessing_parameters = training_set_metadata[feature[HASH]][
+        if feature[PROC_COLUMN] not in dataset:
+            preprocessing_parameters = \
+            training_set_metadata[feature[PROC_COLUMN]][
                 PREPROCESSING]
             handle_missing_values(
                 dataset_df,
@@ -1035,14 +1037,14 @@ def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
     elif missing_value_strategy == FILL_WITH_MODE:
-        return dataset_df[feature[NAME]].value_counts().index[0]
+        return dataset_df[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
-        return dataset_df[feature[NAME]].mean()
+        return dataset_df[feature[COLUMN]].mean()
 
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
@@ -1055,15 +1057,15 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
     computed_fill_value = preprocessing_parameters.get('computed_fill_value')
 
     if computed_fill_value is not None:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
+        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             computed_fill_value,
         )
     elif missing_value_strategy in ['backfill', 'bfill', 'pad', 'ffill']:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
+        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
     elif missing_value_strategy == DROP_ROW:
-        dataset_df.dropna(subset=[feature[NAME]], inplace=True)
+        dataset_df.dropna(subset=[feature[COLUMN]], inplace=True)
     else:
         raise ValueError('Invalid missing value strategy')
 
@@ -1115,7 +1117,7 @@ def load_hdf5(
             text_data_field = text_feature_data_field(feature)
             dataset[text_data_field] = hdf5_data[text_data_field][()]
         else:
-            dataset[feature[HASH]] = hdf5_data[feature[HASH]][()]
+            dataset[feature[PROC_COLUMN]] = hdf5_data[feature[PROC_COLUMN]][()]
 
     if not split_data:
         hdf5_data.close()
@@ -1557,15 +1559,15 @@ def replace_text_feature_level(features, datasets):
         if feature[TYPE] == TEXT:
             for dataset in datasets:
                 if dataset is not None:
-                    dataset[feature[HASH]] = dataset[
+                    dataset[feature[PROC_COLUMN]] = dataset[
                         '{}_{}'.format(
-                            feature[HASH],
+                            feature[PROC_COLUMN],
                             feature['level']
                         )
                     ]
                     for level in ('word', 'char'):
                         name_level = '{}_{}'.format(
-                            feature[HASH],
+                            feature[PROC_COLUMN],
                             level)
                         if name_level in dataset:
                             del dataset[name_level]

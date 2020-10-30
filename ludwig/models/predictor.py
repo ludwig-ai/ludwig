@@ -64,7 +64,7 @@ class Predictor:
             batch = batcher.next_batch()
 
             inputs = {
-                i_feat.feature_id: batch[i_feat.feature_hash]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
 
@@ -123,11 +123,11 @@ class Predictor:
             batch = batcher.next_batch()
 
             inputs = {
-                i_feat.feature_id: batch[i_feat.feature_hash]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
             targets = {
-                o_feat.feature_id: batch[o_feat.feature_hash]
+                o_feat.feature_name: batch[o_feat.proc_column]
                 for o_feat in model.output_features.values()
             }
 
@@ -207,7 +207,7 @@ class Predictor:
             batch = batcher.next_batch()
 
             inputs = {
-                i_feat.feature_id: batch[i_feat.feature_hash]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
             outputs = activation_model(inputs)
@@ -261,11 +261,11 @@ def calculate_overall_stats(
     for of_name, output_feature in output_features.items():
         feature_metadata = output_feature.overall_statistics_metadata()
         feature_metadata.update(
-            training_set_metadata[output_feature.feature_hash])
+            training_set_metadata[output_feature.proc_column])
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             predictions[of_name],  # predictions
-            dataset.get(output_feature.feature_hash),  # target
+            dataset.get(output_feature.proc_column),  # target
             feature_metadata,  # output feature metadata
         )
     return overall_stats

@@ -246,7 +246,7 @@ class ImageFeatureMixin(object):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_path = next(iter(dataset_df[feature[NAME]]))
+        first_path = next(iter(dataset_df[feature[COLUMN]]))
 
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
@@ -264,9 +264,9 @@ class ImageFeatureMixin(object):
             preprocessing_parameters, first_path
         )
 
-        metadata[feature[HASH]][PREPROCESSING]['height'] = height
-        metadata[feature[HASH]][PREPROCESSING]['width'] = width
-        metadata[feature[HASH]][PREPROCESSING][
+        metadata[feature[PROC_COLUMN]][PREPROCESSING]['height'] = height
+        metadata[feature[PROC_COLUMN]][PREPROCESSING]['width'] = width
+        metadata[feature[PROC_COLUMN]][PREPROCESSING][
             'num_channels'] = num_channels
 
         read_image_and_resize = partial(
@@ -279,15 +279,15 @@ class ImageFeatureMixin(object):
             user_specified_num_channels=user_specified_num_channels
         )
         all_file_paths = [get_abs_path(src_path, file_path)
-                          for file_path in dataset_df[feature[NAME]]]
+                          for file_path in dataset_df[feature[COLUMN]]]
 
         if feature[PREPROCESSING]['in_memory']:
             # Number of processes to run in parallel for preprocessing
             num_processes = feature[PREPROCESSING]['num_processes']
-            metadata[feature[HASH]][PREPROCESSING][
+            metadata[feature[PROC_COLUMN]][PREPROCESSING][
                 'num_processes'] = num_processes
 
-            dataset[feature[HASH]] = np.empty(
+            dataset[feature[PROC_COLUMN]] = np.empty(
                 (num_images, height, width, num_channels),
                 dtype=np.uint8
             )
@@ -301,7 +301,7 @@ class ImageFeatureMixin(object):
                             num_processes
                         )
                     )
-                    dataset[feature[HASH]] = np.array(
+                    dataset[feature[PROC_COLUMN]] = np.array(
                         pool.map(read_image_and_resize, all_file_paths)
                     )
 
@@ -312,7 +312,7 @@ class ImageFeatureMixin(object):
                     'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])
-                dataset[feature[HASH]] = np.array([img])
+                dataset[feature[PROC_COLUMN]] = np.array([img])
         else:
             data_fp = os.path.splitext(dataset_df.src)[0] + '.hdf5'
             mode = 'w'
@@ -322,7 +322,7 @@ class ImageFeatureMixin(object):
             with h5py.File(data_fp, mode) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
-                    feature[HASH] + '_data',
+                    feature[PROC_COLUMN] + '_data',
                     (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
@@ -332,7 +332,7 @@ class ImageFeatureMixin(object):
                     )
                 h5_file.flush()
 
-            dataset[feature[HASH]] = np.arange(num_images)
+            dataset[feature[PROC_COLUMN]] = np.arange(num_images)
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
