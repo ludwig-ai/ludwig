@@ -261,7 +261,7 @@ def calculate_overall_stats(
     for of_name, output_feature in output_features.items():
         feature_metadata = output_feature.overall_statistics_metadata()
         feature_metadata.update(
-            training_set_metadata[output_feature.proc_column])
+            training_set_metadata[output_feature.feature_name])
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             predictions[of_name],  # predictions
