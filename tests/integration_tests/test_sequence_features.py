@@ -9,7 +9,6 @@ import tensorflow as tf
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
-from ludwig.utils.batcher import initialize_batcher
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import ENCODERS
@@ -87,9 +86,7 @@ def setup_model_scaffolding(
     model.model = model.create_model(model.config)
 
     # setup batcher to go through synthetic data
-    batcher = initialize_batcher(
-        training_set
-    )
+    batcher = training_set.initialize_batcher()
 
     return model, batcher
 
