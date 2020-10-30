@@ -941,13 +941,14 @@ def build_dataset(
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
     metadata = {}
+    proc_feature_to_metadata = {}
 
     for feature in features:
 
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
-        if feature[PROC_COLUMN] not in metadata:
+        if feature[PROC_COLUMN] not in proc_feature_to_metadata:
 
             if PREPROCESSING in feature:
                 preprocessing_parameters = merge_dict(
@@ -979,7 +980,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                 base_type_registry
             ).get_feature_meta
 
-            metadata[feature[PROC_COLUMN]] = get_feature_meta(
+            proc_feature_to_metadata[feature[PROC_COLUMN]] = get_feature_meta(
                 dataset_df[feature[COLUMN]].astype(str),
                 preprocessing_parameters
             )
@@ -995,8 +996,11 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                     'computed_fill_value': fill_value,
                     **preprocessing_parameters
                 }
-            metadata[feature[PROC_COLUMN]][
+            proc_feature_to_metadata[feature[PROC_COLUMN]][
                 PREPROCESSING] = preprocessing_parameters
+
+        metadata[feature[NAME]] = proc_feature_to_metadata[
+            feature[PROC_COLUMN]]
 
     return metadata
 
@@ -1010,8 +1014,8 @@ def build_data(dataset_df, features, training_set_metadata):
 
         if feature[PROC_COLUMN] not in dataset:
             preprocessing_parameters = \
-            training_set_metadata[feature[PROC_COLUMN]][
-                PREPROCESSING]
+                training_set_metadata[feature[NAME]][
+                    PREPROCESSING]
             handle_missing_values(
                 dataset_df,
                 feature,

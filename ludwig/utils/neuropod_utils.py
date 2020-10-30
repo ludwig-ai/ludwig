@@ -8,7 +8,7 @@ from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
 from ludwig.constants import (BINARY, CATEGORY, NUMERICAL, PREDICTIONS,
                               PROBABILITIES, PROBABILITY, SEQUENCE, SET, TEXT,
-                              TYPE, VECTOR, PROC_COLUMN, NAME)
+                              TYPE, VECTOR, NAME)
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME)
@@ -214,7 +214,7 @@ def export_neuropod(
                 "dtype": "float64",
                 "shape": (
                     None,
-                    training_set_metadata[feature[PROC_COLUMN]]['vocab_size']
+                    training_set_metadata[feature[NAME]]['vocab_size']
                 )
             })
         elif feature_type == SEQUENCE:
@@ -245,7 +245,7 @@ def export_neuropod(
                 "dtype": "float64",
                 "shape": (
                     None,
-                    training_set_metadata[feature[PROC_COLUMN]]['vocab_size']
+                    training_set_metadata[feature[NAME]]['vocab_size']
                 )
             })
         elif feature_type == VECTOR:
@@ -254,7 +254,7 @@ def export_neuropod(
                 "dtype": "float64",
                 "shape": (
                     None,
-                    training_set_metadata[feature[PROC_COLUMN]]['vector_size']
+                    training_set_metadata[feature[NAME]]['vector_size']
                 )
             })
         else:

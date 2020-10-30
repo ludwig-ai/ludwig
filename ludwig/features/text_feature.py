@@ -209,7 +209,7 @@ class TextFeatureMixin(object):
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
             dataset_df[feature[COLUMN]].astype(str),
-            metadata[feature[PROC_COLUMN]], preprocessing_parameters
+            metadata[feature[NAME]], preprocessing_parameters
         )
         dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
         dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data

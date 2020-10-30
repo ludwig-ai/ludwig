@@ -264,9 +264,9 @@ class ImageFeatureMixin(object):
             preprocessing_parameters, first_path
         )
 
-        metadata[feature[PROC_COLUMN]][PREPROCESSING]['height'] = height
-        metadata[feature[PROC_COLUMN]][PREPROCESSING]['width'] = width
-        metadata[feature[PROC_COLUMN]][PREPROCESSING][
+        metadata[feature[NAME]][PREPROCESSING]['height'] = height
+        metadata[feature[NAME]][PREPROCESSING]['width'] = width
+        metadata[feature[NAME]][PREPROCESSING][
             'num_channels'] = num_channels
 
         read_image_and_resize = partial(
@@ -284,7 +284,7 @@ class ImageFeatureMixin(object):
         if feature[PREPROCESSING]['in_memory']:
             # Number of processes to run in parallel for preprocessing
             num_processes = feature[PREPROCESSING]['num_processes']
-            metadata[feature[PROC_COLUMN]][PREPROCESSING][
+            metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
 
             dataset[feature[PROC_COLUMN]] = np.empty(

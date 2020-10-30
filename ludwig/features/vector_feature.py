@@ -94,7 +94,7 @@ class VectorFeatureMixin(object):
         else:
             logger.debug('Observed vector size: {}'.format(vector_size))
 
-        metadata[feature[PROC_COLUMN]]['vector_size'] = vector_size
+        metadata[feature[NAME]]['vector_size'] = vector_size
 
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
