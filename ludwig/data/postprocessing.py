@@ -67,33 +67,27 @@ def convert_to_df(
         training_set_metadata,
 ):
     data_for_df = {}
-    for output_feature_name, output_feature in output_features.items():
-        output_feature_dict = predictions[output_feature_name]
+    for of_name, output_feature in output_features.items():
+        output_feature_dict = predictions[of_name]
         for key_val in output_feature_dict.items():
             output_subgroup_name, output_type_value = key_val
             if (hasattr(output_type_value, 'shape') and
                 len(output_type_value.shape)) > 1:
                 if output_feature.type in SEQUENCE_TYPES:
                     data_for_df[
-                        '{}_{}'.format(
-                            output_feature_name,
-                            output_subgroup_name
-                        )
+                        '{}_{}'.format(of_name, output_subgroup_name)
                     ] = output_type_value.tolist()
                 else:
-                    output_proc_column = output_feature.proc_column
                     for i, value in enumerate(output_type_value.T):
-                        if (output_proc_column in training_set_metadata and
-                                'idx2str' in training_set_metadata[
-                                    output_proc_column]):
-                            class_name = \
-                                training_set_metadata[output_proc_column][
-                                    'idx2str'][i]
+                        if (of_name in training_set_metadata and
+                                'idx2str' in training_set_metadata[of_name]):
+                            class_name = training_set_metadata[of_name][
+                                'idx2str'][i]
                         else:
                             class_name = str(i)
                         data_for_df[
                             '{}_{}_{}'.format(
-                                output_feature_name,
+                                of_name,
                                 output_subgroup_name,
                                 class_name
                             )
@@ -101,7 +95,7 @@ def convert_to_df(
             else:
                 data_for_df[
                     '{}_{}'.format(
-                        output_feature_name,
+                        of_name,
                         output_subgroup_name
                     )
                 ] = normalize_numpy(output_type_value)

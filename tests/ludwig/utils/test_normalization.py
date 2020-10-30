@@ -22,7 +22,9 @@ from ludwig.features.numerical_feature import NumericalFeatureMixin
 
 
 def numerical_feature():
-    return {'name': 'x', 'type': 'numerical'}
+    feature = {NAME: 'x', COLUMN: 'x', 'type': 'numerical'}
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
 
 
 data_df = pd.DataFrame(pd.Series([
@@ -50,14 +52,12 @@ def test_norm():
 
     # value checks after normalization
     num_feature = numerical_feature()
-    num_feature[NAME] = num_feature[COLUMN]
-    num_feature[PROC_COLUMN] = compute_feature_hash(num_feature)
 
     NumericalFeatureMixin.add_feature_data(
         feature=num_feature,
         dataset_df=data_df,
         dataset=data,
-        metadata={num_feature[PROC_COLUMN]: feature_1_meta},
+        metadata={num_feature[NAME]: feature_1_meta},
         preprocessing_parameters={'normalization': 'zscore'}
     )
     assert np.allclose(np.array(data[num_feature[PROC_COLUMN]]),
@@ -69,7 +69,7 @@ def test_norm():
         feature=num_feature,
         dataset_df=data_df,
         dataset=data,
-        metadata={num_feature[PROC_COLUMN]: feature_2_meta},
+        metadata={num_feature[NAME]: feature_2_meta},
         preprocessing_parameters={'normalization': 'minmax'}
     )
     assert np.allclose(np.array(data[num_feature[PROC_COLUMN]]),

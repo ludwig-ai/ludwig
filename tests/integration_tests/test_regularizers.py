@@ -136,6 +136,7 @@ def test_encoder(test_case):
             **test_case.syn_data.feature_generator_kwargs
         )
     ]
+    name = features[0][NAME]
     proc_column = compute_feature_hash(features[0])
     features[0][PROC_COLUMN] = proc_column
 
