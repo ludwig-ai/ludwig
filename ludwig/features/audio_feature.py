@@ -22,7 +22,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE, COLUMN, PROC_COLUMN, \
-    PREPROCESSING
+    PREPROCESSING, NAME
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -242,6 +242,7 @@ class AudioFeatureMixin(object):
                 'type has to be present in audio_feature dictionary '
                 'for audio.')
 
+        name = feature[NAME]
         column = feature[COLUMN]
         proc_column = feature[PROC_COLUMN]
 
@@ -259,8 +260,8 @@ class AudioFeatureMixin(object):
         padding_value = preprocessing_parameters['padding_value']
         normalization_type = preprocessing_parameters['norm']
 
-        feature_dim = metadata[proc_column]['feature_dim']
-        max_length = metadata[proc_column]['max_length']
+        feature_dim = metadata[name]['feature_dim']
+        max_length = metadata[name]['max_length']
         audio_feature_dict = preprocessing_parameters['audio_feature']
         audio_file_length_limit_in_s = preprocessing_parameters[
             'audio_file_length_limit_in_s']

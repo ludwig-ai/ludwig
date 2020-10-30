@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 import tensorflow as tf
 
-from ludwig.constants import PROC_COLUMN
+from ludwig.constants import PROC_COLUMN, NAME
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_utils import SEQUENCE_TYPES, compute_feature_hash
@@ -173,7 +173,7 @@ def test_encoder(test_case):
 
         # shim code to support sequence/sequence like features
         if features[0]['type'] in SEQUENCE_TYPES.union({'category', 'set'}):
-            features[0]['vocab'] = training_set_metadata[proc_column][
+            features[0]['vocab'] = training_set_metadata[name][
                 'idx2str']
             training_set.dataset[proc_column] = \
                 training_set.dataset[proc_column].astype(np.int32)
@@ -257,6 +257,7 @@ def test_decoder(test_case):
             **test_case.syn_data.feature_generator_kwargs
         )
     ]
+    feature_name = features[0][NAME]
     proc_column = compute_feature_hash(features[0])
     features[0][PROC_COLUMN] = proc_column
 
@@ -316,7 +317,7 @@ def test_decoder(test_case):
 
         features[0].update(x_coder_kwargs)
         if features[0]['type'] in SEQUENCE_TYPES:
-            features[0]['num_classes'] = training_set_metadata[proc_column][
+            features[0]['num_classes'] = training_set_metadata[feature_name][
                                              'vocab_size'] + 1
             training_set.dataset[proc_column] = \
                 training_set.dataset[proc_column].astype(np.int32)
