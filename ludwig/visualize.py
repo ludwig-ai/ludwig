@@ -24,6 +24,7 @@ from typing import List, Union
 import numpy as np
 import pandas as pd
 import sklearn
+import h5py
 from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
@@ -235,9 +236,17 @@ def compare_classifiers_performance_from_prob_cli(
     # retrieve ground truth from source data set
     gt_df = read_csv(ground_truth)
 
-    # retrieve test split from the source data
-    gt = gt_df[output_feature_name][
-        gt_df['split'] == ground_truth_split].to_numpy()
+    if SPLIT in gt_df:
+        # get split value from source data set
+        split = gt_df[SPLIT]
+    else:
+        # retrieve split from hdf5 cache
+        file_name = os.path.splitext(ground_truth)[0] + '.hdf5'
+        hdf5_data = h5py.File(file_name, 'r')
+        split = hdf5_data[SPLIT][()]
+        hdf5_data.close()
+
+    gt = gt_df[output_feature_name][split == ground_truth_split].to_numpy()
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
