@@ -43,6 +43,10 @@ class Backend(ABC):
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
 
+    @property
+    def cache_enabled(self):
+        return self._cache_dir is not None
+
     def create_cache_entry(self):
         return os.path.join(self.cache_dir, str(uuid.uuid1()))
 

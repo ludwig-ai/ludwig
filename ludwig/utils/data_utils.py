@@ -202,36 +202,11 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
                   indent=indent)
 
 
-# to be tested
-# also, when loading an hdf5 file
-# most of the times you don't want
-# to put everything in memory
-# like this function does
-# it's jsut for convenience for relatively small datasets
-def load_hdf5(data_fp):
-    data = {}
-    with h5py.File(data_fp, 'r') as h5_file:
-        for key in h5_file.keys():
-            data[key] = h5_file[key][()]
-    return data
-
-
-# def save_hdf5(data_fp: str, data: Dict[str, object]):
 def save_hdf5(data_fp, data, metadata=None):
-    if metadata is None:
-        metadata = {}
     mode = 'w'
     if os.path.isfile(data_fp):
         mode = 'r+'
-    with h5py.File(data_fp, mode) as h5_file:
-        for key, value in data.items():
-            dataset = h5_file.create_dataset(key, data=value)
-            if key in metadata:
-                if 'in_memory' in metadata[key]['preprocessing']:
-                    if metadata[key]['preprocessing']['in_memory']:
-                        dataset.attrs['in_memory'] = True
-                    else:
-                        dataset.attrs['in_memory'] = False
+    data.to_hdf(data_fp, key='dataset', mode=mode)
 
 
 def load_object(object_fp):

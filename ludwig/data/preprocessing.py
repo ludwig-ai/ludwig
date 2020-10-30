@@ -1180,28 +1180,20 @@ def load_hdf5(
 ):
     # TODO dask: this needs to work with DataFrames
     logger.info('Loading data from: {0}'.format(hdf5_file_path))
-    # Load data from file
-    hdf5_data = h5py.File(hdf5_file_path, 'r')
-    dataset = {}
-    for feature in features:
-        if feature[TYPE] == TEXT:
-            text_data_field = text_feature_data_field(feature)
-            dataset[text_data_field] = hdf5_data[text_data_field][()]
-        else:
-            dataset[feature[NAME]] = hdf5_data[feature[NAME]][()]
 
+    def shuffle(df):
+        return df.sample(frac=1).reset_index(drop=True)
+
+    dataset = pd.read_hdf(hdf5_file_path, key='data')
     if not split_data:
-        hdf5_data.close()
         if shuffle_training:
-            dataset = data_utils.shuffle_dict_unison_inplace(dataset)
+            dataset = shuffle(dataset)
         return dataset
 
-    split = hdf5_data[SPLIT][()]
-    hdf5_data.close()
-    training_set, test_set, validation_set = split_dataset_ttv(dataset, split)
+    training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
 
     if shuffle_training:
-        training_set = data_utils.shuffle_dict_unison_inplace(training_set)
+        training_set = shuffle(training_set)
 
     return training_set, test_set, validation_set
 
@@ -1329,18 +1321,6 @@ def preprocess_for_training(
             training_set_metadata
         )
 
-    if is_on_master() and not skip_save_processed_input:
-        logger.info('Writing train set metadata with vocabulary')
-        source_name = dataset if dataset is not None else training_set
-        training_set_metadata_fp = replace_file_extension(
-            source_name,
-            'meta.json'
-        )
-        data_utils.save_json(
-            training_set_metadata_fp,
-            training_set_metadata,
-        )
-
     return (
         training_dataset,
         validation_dataset,
@@ -1396,13 +1376,20 @@ def _preprocess_file_for_training(
             backend=backend,
             random_seed=random_seed
         )
-        training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+
+        if backend.cache_enabled:
+            training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
             data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
+            logger.info('Writing train set metadata with vocabulary')
+            training_set_metadata_fp = replace_file_extension(dataset,
+                                                              'meta.json')
+            data_utils.save_json(training_set_metadata_fp,
+                                 training_set_metadata)
 
         # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
         training_data, test_data, validation_data = split_dataset_ttv(
@@ -1437,7 +1424,9 @@ def _preprocess_file_for_training(
             backend=backend,
             random_seed=random_seed
         )
-        training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+
+        if backend.cache_enabled:
+            training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
@@ -1475,6 +1464,16 @@ def _preprocess_file_for_training(
                     test_data,
                     training_set_metadata
                 )
+
+            logger.info('Writing train set metadata with vocabulary')
+            training_set_metadata_fp = replace_file_extension(
+                training_set,
+                'meta.json'
+            )
+            data_utils.save_json(
+                training_set_metadata_fp,
+                training_set_metadata,
+            )
 
     else:
         raise ValueError('either data or data_train have to be not None')
@@ -1521,7 +1520,9 @@ def _preprocess_df_for_training(
         random_seed=random_seed,
         backend=backend
     )
-    training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+
+    if backend.cache_enabled:
+        training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
     training_set, test_set, validation_set = split_dataset_ttv(
         dataset,
