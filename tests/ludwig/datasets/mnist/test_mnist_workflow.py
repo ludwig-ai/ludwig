@@ -1,6 +1,7 @@
 import os
 import pytest
 import shutil
+import struct
 import tempfile
 import pandas as pd
 import gzip
@@ -73,3 +74,4 @@ def test_download_mnist_dataset():
                 dataset.download()
 
                 assert dataset.is_downloaded()
+

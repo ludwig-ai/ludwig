@@ -65,10 +65,13 @@ class GZipDownloadMixin:
                 """
         os.makedirs(self.raw_temp_path, exist_ok=True)
         for file_download_url in self.download_urls:
-            with urlopen(file_download_url) as gzipresp:
-                with gzip.open(gzipresp) as gzfile:
-                    file_content = gzfile.read()
-            output = open(file_content, 'wb')
+            filename = file_download_url.split('/')[-1]
+            urllib.request.urlretrieve(file_download_url, os.path.join(self.raw_temp_path, filename))
+            size_of_original_file = len(filename)
+            gzip_content_file = filename[:size_of_original_file - 3]
+            with gzip.open(os.path.join(self.raw_temp_path, filename)) as gzfile:
+                file_content = gzfile.read()
+            output = open(os.path.join(self.raw_temp_path, gzip_content_file), 'wb')
             output.write(file_content)
             output.close()
         os.rename(self.raw_temp_path, self.raw_dataset_path)
