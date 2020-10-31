@@ -295,6 +295,8 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
                     output_feature_name,
                     '--split_file',
                     split_file,
+                    '--ground_truth_metadata',
+                    exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
                     probability,
                     probability,
