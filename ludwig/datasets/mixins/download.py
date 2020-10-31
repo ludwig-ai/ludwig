@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import gzip
 import os
+import requests
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
@@ -43,6 +45,47 @@ class ZipDownloadMixin:
     @property
     def download_urls(self):
         return self.config["download_urls"]
+
+
+class GZipDownloadMixin:
+    """Downloads the gzip archive file containing the training data and extracts the contents."""
+
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
+
+    def download_raw_dataset(self):
+        """
+        Download the raw dataset and extract the contents of the zip file and
+        store that in the cache location.
+        """
+        """
+                Download the raw dataset and contents of the gzip file
+                onto the _raw directory.
+                """
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+
+        for file_download_url in self.download_urls:
+            filename = file_download_url.split('/')[-1]
+            response = requests.get(file_download_url, stream=True)
+            size = len(filename)
+            filename_root = filename[:size - 3]
+            if response.status_code == 200:
+                with open(filename, 'wb') as f:
+                    f.write(response.raw.read())
+            input_gzip_file = gzip.GzipFile(filename, 'rb')
+            s = input_gzip_file.read()
+            input_gzip_file.close()
+
+            output = open(filename_root, 'wb')
+            output.write(s)
+            output.close()
+        os.rename(self.raw_temp_path, self.raw_dataset_path)
+
+    @property
+    def download_urls(self):
+        return self.config["download_urls"]
+
 
 
 class UncompressedFileDownloadMixin:

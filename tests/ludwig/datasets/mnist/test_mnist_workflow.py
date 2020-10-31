@@ -1,72 +1,60 @@
 import os
-import unittest
+import pytest
+import tempfile
+import pandas as pd
+
 from unittest import mock
-from unittest.mock import mock_open
-import shutil
-from ludwig.datasets.mnist import Mnist
-
-"""TODO: This serves as a placeholder integration test, will be changed into a true unit test soon
-with mocking and patching, commented out for now"""
 
 
-class TestMNistWorkflow(unittest.TestCase):
+from ludwig.datasets.base_dataset import BaseDataset
+from ludwig.datasets.mixins.download import GZipDownloadMixin
+from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin
 
-    def setUp(self):
-        self._cache_dir = "/home/saikatkanjilal/.ludwig_cache"
-        self.dataset = Mnist(cache_dir=self._cache_dir)
-        self.raw_dataset_path = os.path.join(self._cache_dir, "mnist_1.0", "raw")
-        self.raw_tmp_path = os.path.join(self._cache_dir, "mnist_1.0", "raw")
-        self.processed_dataset_path = os.path.join(self._cache_dir, "mnist_1.0", "processed")
-        self.cleanup(self.raw_tmp_path)
-        self.cleanup(self.raw_dataset_path)
-        self.cleanup(self.processed_dataset_path)
 
-    def cleanup(self, delete_path):
-        for root, dirs, files in os.walk(delete_path):
-            for name in files:
-                # make sure what you want to keep isn't in the full filename
-                os.remove(os.path.join(delete_path , name))
-            for name in dirs:
-                shutil.rmtree(os.path.join(delete_path, name))
+class FakeMnistDataset(GZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
+    def __init__(self, cache_dir=None):
+        super().__init__(dataset_name="mnist", cache_dir=cache_dir)
 
-    def tearDown(self):
-        """self.cleanup(self.raw_tmp_path)
-        self.cleanup(self.raw_dataset_path)
-        self.cleanup(self.processed_dataset_path)"""
-        assert True
 
-    @mock.patch("builtins.open", create=True)
-    @mock.patch("gzip.GzipFile.read")
-    @mock.patch("gzip.GzipFile")
-    @mock.patch("requests.get")
-    def test_mnist_download(self,
-                            requests_get_mock,
-                            gzip_file_mock,
-                            gzip_read_mock,
-                            mock_open_file):
-        requests_get_mock.status_code = 200
-        response_mock = mock.patch("requests.get")
-        self.dataset.download()
-        response_mock.status_code = 200
-        requests_get_mock.assert_called_with('http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz', stream=True)
-        gzip_file_mock.assert_called()
-        mock_open_file.side_effect = [
-            mock.mock_open(read_data=None).return_value
-        ]
+def test_load_mnist_dataset():
+    input_df = pd.DataFrame({
+        'image_path': ['training/0/1234.png', 'training/0/2345.png'],
+        'label': [0, 0]
+    })
 
-    def test_mnist_process(self):
-        """self.dataset.download()
-        self.dataset.process()
-        assert os.path.isfile(os.path.join(self.processed_dataset_path, "mnist_dataset_testing.csv"))
-        assert os.path.exists(os.path.join(self.processed_dataset_path , "mnist_dataset_training.csv"))"""
-        assert True
+    extracted_filenames = ['train-images-idx3-ubyte',
+                           'train-labels-idx1-ubyte',
+                           't10k-images-idx3-ubyte',
+                           't10k-labels-idx1-ubyte']
+    compression_opts = dict(
+        method='gzip'
+    )
 
-    def test_mnist_load(self):
-        """self.dataset.download()
-        self.dataset.process()
-        output_df = self.dataset.load()
-        key = os.path.join(self.raw_dataset_path, "training", "0", "17603.png")
-        values = output_df.image_path.values
-        assert key in values"""
-        assert True
+    with tempfile.TemporaryDirectory() as source_dir:
+        archive_filename = os.path.join(source_dir, 'archive.zip')
+        input_df.to_csv(archive_filename, index=False, compression=compression_opts)
+        download_urls= [
+        'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
+        'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
+        'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
+        'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz']
 
+        config = dict(
+            version=1.0,
+            download_urls=download_urls,
+            csv_filename=extracted_filenames,
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with mock.patch('ludwig.datasets.base_dataset.read_config', return_value=config):
+                dataset = FakeMnistDataset(tmpdir)
+
+                assert not dataset.is_downloaded()
+                assert not dataset.is_processed()
+
+                output_df = dataset.load()
+                pd.testing.assert_frame_equal(input_df, output_df)
+
+                assert dataset.is_downloaded()
+                assert dataset.is_processed()
