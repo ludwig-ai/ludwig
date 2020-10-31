@@ -180,11 +180,27 @@ def _validate_output_feature_name_from_test_stats(
     except TypeError:
         return output_feature_names_set
 
+def _encode_categorical_feature(
+        raw: np.array,
+        str2idx: dict
+) -> np.array:
+    """encodes raw categorical string value to encoded numeric value
+
+    Args:
+    :param raw: (np.array) string categorical representation
+    :param str2idx: (dict) dictionary that maps string representation to
+        encoded value.
+
+    Returns:
+        np.array
+    """
+    return str2idx[raw]
 
 def _extract_ground_truth_values(
         ground_truth: str,
         output_feature_name: str,
         ground_truth_split: int,
+        ground_truth_metadata: str,
         split_file: Union[str, None]) -> np.ndarray:
     """Helper function to extract ground truth values
 
@@ -194,6 +210,8 @@ def _extract_ground_truth_values(
         truth values.
     :param ground_truth_split: (int) dataset split to use for ground truth,
         defaults to 2.
+    :param ground_truth_metadata: (str) file path to metadta created during
+        training.
     :param split_file: (Union[str, None]) optional file path to split values.
 
     # Return
@@ -220,14 +238,36 @@ def _extract_ground_truth_values(
     if SPLIT in gt_df:
         # get split value from source data set
         split = gt_df[SPLIT]
-        gt = gt_df[output_feature_name][split == ground_truth_split].to_numpy()
+        gt_raw = gt_df[output_feature_name][
+            split == ground_truth_split].to_numpy()
     elif split_file is not None:
         # retrieve from split file
         split = load_array(split_file)
-        gt = gt_df[output_feature_name][split == ground_truth_split].to_numpy()
+        gt_raw = gt_df[output_feature_name][
+            split == ground_truth_split].to_numpy()
     else:
         # use all the data in ground_truth
-        gt = gt_df[output_feature_name].to_numpy()
+        gt_raw = gt_df[output_feature_name].to_numpy()
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve description.json to obtain feature hash from feature name
+    # this depends on directory Ludwig experiment/run directory structure
+    description_fp = os.path.split(ground_truth_metadata)[
+                         0] + '/../description.json'
+    output_feature_hash = retrieve_feature_hash(
+        description_fp,
+        'output_features',
+        output_feature_name
+    )
+
+    # retrieve the output feature's metadata definintion
+    feature_metadata = metadata[output_feature_hash]
+
+    # translate string to encoded numeric value
+    vfunc = np.vectorize(_encode_categorical_feature)
+    gt = vfunc(gt_raw, feature_metadata['str2idx'])
 
     return gt
 
@@ -293,6 +333,7 @@ def compare_classifiers_performance_from_prob_cli(
         ground_truth: str,
         ground_truth_split: int,
         split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         output_directory: str,
         **kwargs: dict
@@ -308,6 +349,8 @@ def compare_classifiers_performance_from_prob_cli(
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
         results.
@@ -321,6 +364,7 @@ def compare_classifiers_performance_from_prob_cli(
         ground_truth,
         output_feature_name,
         ground_truth_split,
+        ground_truth_metadata,
         split_file
     )
 

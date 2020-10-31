@@ -25,6 +25,7 @@ from ludwig.constants import TIMESERIES
 from ludwig.utils.misc_utils import hash_dict
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import tokenizer_registry
+from ludwig.utils.data_utils import load_json
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 
@@ -68,15 +69,14 @@ def locate_feature_in_list(feature_list: list, feature_name: str) -> Union[dict,
     return None
 
 def retrieve_feature_hash(
-    output_directory: str,
-    feature_type: str, # 'input_features' or 'output_features'
-    feature_name: str
+        description_json_fp: str,
+        feature_type: str,  # 'input_features' or 'output_features'
+        feature_name: str
 ) -> str:
     # retrieves feature hash for either input or output features from
     # the description.json file
 
-    with open(os.path.join(output_directory, 'description.json'), 'r') as f:
-        description_dict = json.load(f)
+    description_dict = load_json(description_json_fp)
     feature_list = description_dict['config'][feature_type]
 
     feature = locate_feature_in_list(feature_list, feature_name)
