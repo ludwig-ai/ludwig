@@ -64,29 +64,18 @@ class GZipDownloadMixin:
                 onto the _raw directory.
                 """
         os.makedirs(self.raw_temp_path, exist_ok=True)
-
         for file_download_url in self.download_urls:
-            filename = file_download_url.split('/')[-1]
-            response = requests.get(file_download_url, stream=True)
-            size = len(filename)
-            filename_root = filename[:size - 3]
-            if response.status_code == 200:
-                with open(filename, 'wb') as f:
-                    f.write(response.raw.read())
-            input_gzip_file = gzip.GzipFile(filename, 'rb')
-            s = input_gzip_file.read()
-            input_gzip_file.close()
-            foo = os.path.join(self.raw_temp_path,filename_root)
-
-            output = open(foo, 'wb')
-            output.write(s)
+            with urlopen(file_download_url) as gzipresp:
+                with gzip.open(gzipresp) as gzfile:
+                    file_content = gzfile.read()
+            output = open(file_content, 'wb')
+            output.write(file_content)
             output.close()
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
     @property
     def download_urls(self):
         return self.config["download_urls"]
-
 
 
 class UncompressedFileDownloadMixin:
