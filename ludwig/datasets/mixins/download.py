@@ -69,7 +69,7 @@ class GZipDownloadMixin:
             filename = file_download_url.split('/')[-1]
             urllib.request.urlretrieve(file_download_url, os.path.join(self.raw_temp_path, filename))
             size_of_original_file = len(filename)
-            gzip_content_file = filename[:size_of_original_file - 3]
+            gzip_content_file = '.'.join(filename.split('.')[:-1])
             with gzip.open(os.path.join(self.raw_temp_path, filename)) as gzfile:
                 with open(os.path.join(self.raw_temp_path, gzip_content_file), 'wb') as output:
                     shutil.copyfileobj(gzfile, output)
