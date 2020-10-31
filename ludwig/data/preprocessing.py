@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 import h5py
 import numpy as np
 import pandas as pd
+import os
 
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -46,6 +47,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      read_sas, read_spss, read_stata, read_tsv,
                                      replace_file_extension, split_dataset_ttv,
                                      text_feature_data_field)
+from ludwig.utils.data_utils import save_array
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
 from ludwig.utils.horovod_utils import is_on_master
@@ -1305,6 +1307,10 @@ def _preprocess_file_for_training(
             metadata=training_set_metadata,
             random_seed=random_seed
         )
+
+        # save split values for use by visualization routines
+        split_fp = os.path.splitext(dataset)[0] + '_split.txt'
+        save_array(split_fp, data[SPLIT])
 
         if is_on_master() and not skip_save_processed_input:
             logger.info('Writing preprocessed dataset cache')

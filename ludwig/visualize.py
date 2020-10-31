@@ -32,7 +32,7 @@ from sklearn.metrics import brier_score_loss
 from ludwig.constants import *
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
-from ludwig.utils.data_utils import load_from_file, load_json
+from ludwig.utils.data_utils import load_from_file, load_json, load_array
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.features.feature_utils import retrieve_feature_hash
 from ludwig.utils.data_utils import read_csv
@@ -151,6 +151,44 @@ def _validate_output_feature_name_from_test_stats(
         return output_feature_names_set
 
 
+def _extract_ground_truth_values(
+        ground_truth: str,
+        output_feature_name: str,
+        ground_truth_split: int,
+        split_file: Union[str, None]) -> np.ndarray:
+    """Helper function to extract ground truth values
+
+    Args:
+    :param ground_truth: (str) path to source data containing ground truth.
+    :param output_feature_name: (str) output feature name for ground
+        truth values.
+    :param ground_truth_split: (int) dataset split to use for ground truth,
+        defaults to 2.
+    :param split_file: (Union[str, None]) optional file path to split values.
+
+    # Return
+
+    :return np.ndarray:
+
+    """
+    # retrieve ground truth from source data set
+    gt_df = read_csv(ground_truth)
+
+    if SPLIT in gt_df:
+        # get split value from source data set
+        split = gt_df[SPLIT]
+        gt = gt_df[output_feature_name][split == ground_truth_split].to_numpy()
+    elif split_file is not None:
+        # retrieve from split file
+        split = load_array(split_file)
+        gt = gt_df[output_feature_name][split == ground_truth_split].to_numpy()
+    else:
+        # use all the data in ground_truth
+        gt = gt_df[output_feature_name].to_numpy()
+
+    return gt
+
+
 def generate_filename_template_path(output_dir, filename_template):
     """Ensure path to template file can be constructed given an output dir.
 
@@ -211,6 +249,7 @@ def compare_classifiers_performance_from_prob_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
         output_feature_name: str,
         output_directory: str,
         **kwargs: dict
@@ -225,6 +264,7 @@ def compare_classifiers_performance_from_prob_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
     :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
         results.
@@ -234,19 +274,12 @@ def compare_classifiers_performance_from_prob_cli(
     :return None:
     """
     # retrieve ground truth from source data set
-    gt_df = read_csv(ground_truth)
-
-    if SPLIT in gt_df:
-        # get split value from source data set
-        split = gt_df[SPLIT]
-    else:
-        # retrieve split from hdf5 cache
-        file_name = os.path.splitext(ground_truth)[0] + '.hdf5'
-        hdf5_data = h5py.File(file_name, 'r')
-        split = hdf5_data[SPLIT][()]
-        hdf5_data.close()
-
-    gt = gt_df[output_feature_name][split == ground_truth_split].to_numpy()
+    gt = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
@@ -3638,6 +3671,13 @@ def cli(sys_argv):
         '-gm',
         '--ground_truth_metadata',
         help='input metadata JSON file'
+    )
+    parser.add_argument(
+        '-sf',
+        '--split_file',
+        default=None,
+        help='file containing split values used in conjunction with '
+             'ground truth file.'
     )
 
     parser.add_argument(
