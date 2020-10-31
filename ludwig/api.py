@@ -189,6 +189,7 @@ class LudwigModel:
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
 
+        self.backend = backend
         if isinstance(backend, str):
             self.backend = create_backend(backend)
 
