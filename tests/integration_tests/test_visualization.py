@@ -282,7 +282,8 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
     probability = os.path.join(exp_dir_name, '{}_probabilities.csv').format(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.txt'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -292,6 +293,8 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
                     ground_truth,
                     '--output_feature_name',
                     output_feature_name,
+                    '--split_file',
+                    split_file,
                     '--probabilities',
                     probability,
                     probability,
