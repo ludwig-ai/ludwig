@@ -390,11 +390,9 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     :return: Experiment data as array
     """
     if file_name.endswith('.hdf5') and field is not None:
-        hdf5_data = h5py.File(file_name, 'r')
-        split = hdf5_data[SPLIT][()]
-        column = hdf5_data[field][()]
-        hdf5_data.close()
-        array = column[split == ground_truth_split]  # ground truth
+        dataset = pd.read_hdf(file_name, key=HDF5_DATASET_KEY)
+        column = dataset[field]
+        array = column[dataset[SPLIT] == ground_truth_split].values  # ground truth
     elif file_name.endswith('.npy'):
         array = np.load(file_name)
     elif file_name.endswith('.csv'):
