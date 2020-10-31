@@ -140,7 +140,7 @@ def create_vocabulary(
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = backend.processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
-    max_line_length = processed_lines.map(len).max()
+    max_line_length = backend.processor.compute(processed_lines.map(len).max())
 
     if vocab is None:
         vocab = [unit for unit, count in
