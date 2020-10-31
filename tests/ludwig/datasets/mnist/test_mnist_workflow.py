@@ -7,10 +7,10 @@ import pandas as pd
 import gzip
 from unittest import mock
 from ludwig.datasets.mnist import Mnist
-from ludwig.datasets.mixins.download import GZipDownloadMixin
 
 
-class FakeMnistDataset(GZipDownloadMixin, Mnist):
+
+class FakeMnistDataset(Mnist):
     def __init__(self, cache_dir=None):
         super().__init__(cache_dir=cache_dir)
 

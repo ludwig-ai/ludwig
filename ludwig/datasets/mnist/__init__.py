@@ -23,6 +23,7 @@ from os import path
 from array import array
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.download import GZipDownloadMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION):
@@ -30,7 +31,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION):
     return dataset.load()
 
 
-class Mnist(CSVLoadMixin, BaseDataset):
+class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
     """The Mnist dataset.
 
     This pulls in an array of mixins for different types of functionality
