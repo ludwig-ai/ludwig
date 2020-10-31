@@ -14,10 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import gzip
 import os
 import png
-import requests
 import struct
 from os import path
 from array import array
