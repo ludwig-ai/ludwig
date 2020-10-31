@@ -54,7 +54,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         for dataset in ["training", "testing"]:
             labels, data, rows, cols = self.read_source_dataset(dataset, self.raw_dataset_path)
             self.write_output_dataset(labels, data, rows, cols, path.join(self.raw_dataset_path, dataset))
-        self.output_training_and_test_data()
+        self.output_training_and_test_data(len(labels))
         os.rename(self.raw_dataset_path, self.processed_dataset_path)
 
     def read_source_dataset(self, dataset="training", path="."):
@@ -98,7 +98,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         # create child image output directories
         output_dirs = [
             path.join(output_dir, str(i))
-            for i in range(10)
+            for i in range(len(labels))
         ]
         for output_dir in output_dirs:
             if not path.exists(output_dir):
@@ -107,7 +107,6 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         # write out image data
         for (i, label) in enumerate(labels):
             output_filename = path.join(output_dirs[label], str(i) + ".png")
-            # print("writing " + output_filename)
             with open(output_filename, "wb") as h:
                 w = png.Writer(cols, rows, greyscale=True)
                 data_i = [
@@ -116,16 +115,18 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
                 ]
                 w.write(h, data_i)
 
-    def output_training_and_test_data(self):
+    def output_training_and_test_data(self, length_labels):
         """The final method where we create a training and test file by iterating through
-        all the images and labels previously created."""
+        all the images and labels previously created.
+        Args:
+            length_labels (int): The number of labels for the images that we're processing"""
         subdirectory_list = ["training",
                              "testing"]
         for name in subdirectory_list:
             with open(os.path.join(self.raw_dataset_path, 'mnist_dataset_{}.csv'.format(name)), 'w') as output_file:
                 print('=== creating {} dataset ==='.format(name))
                 output_file.write('image_path,label\n')
-                for i in range(10):
+                for i in range(length_labels):
                     img_path = os.path.join(self.raw_dataset_path, '{}/{}'.format(name, i))
                     for file in os.listdir(img_path):
                         if file.endswith(".png"):
