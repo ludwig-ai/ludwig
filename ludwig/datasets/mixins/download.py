@@ -17,6 +17,7 @@
 import gzip
 import os
 import requests
+import shutil
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
@@ -70,10 +71,8 @@ class GZipDownloadMixin:
             size_of_original_file = len(filename)
             gzip_content_file = filename[:size_of_original_file - 3]
             with gzip.open(os.path.join(self.raw_temp_path, filename)) as gzfile:
-                file_content = gzfile.read()
-            output = open(os.path.join(self.raw_temp_path, gzip_content_file), 'wb')
-            output.write(file_content)
-            output.close()
+                with open(os.path.join(self.raw_temp_path, gzip_content_file), 'wb') as output:
+                    shutil.copyfileobj(gzfile, output)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
     @property
