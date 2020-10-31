@@ -23,6 +23,7 @@ import pytest
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
@@ -742,7 +743,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     )
     df2 = read_csv(rel_path)
 
-    df = concatenate_df(df1, df2, None)
+    df = concatenate_df(df1, df2, None, LOCAL_BACKEND)
     df.to_csv(rel_path, index=False)
 
     # Here the user sepcifiies number of channels. Exception shouldn't be thrown
