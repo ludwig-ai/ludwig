@@ -37,3 +37,4 @@ class CSVLoadMixin:
     @property
     def csv_filename(self):
         return self.config["csv_filename"]
+

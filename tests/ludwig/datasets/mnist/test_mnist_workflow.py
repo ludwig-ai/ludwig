@@ -2,19 +2,14 @@ import os
 import pytest
 import tempfile
 import pandas as pd
-
 from unittest import mock
-
-
-from ludwig.datasets.base_dataset import BaseDataset
+from ludwig.datasets.mnist import Mnist
 from ludwig.datasets.mixins.download import GZipDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
-class FakeMnistDataset(GZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
+class FakeMnistDataset(GZipDownloadMixin, Mnist):
     def __init__(self, cache_dir=None):
-        super().__init__(dataset_name="mnist", cache_dir=cache_dir)
+        super().__init__(cache_dir=cache_dir)
 
 
 def test_load_mnist_dataset():
@@ -23,27 +18,22 @@ def test_load_mnist_dataset():
         'label': [0, 0]
     })
 
-    extracted_filenames = ['train-images-idx3-ubyte',
-                           'train-labels-idx1-ubyte',
-                           't10k-images-idx3-ubyte',
-                           't10k-labels-idx1-ubyte']
+    download_urls = ['http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
+    'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
+    'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
+    'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz']
+    output_filename = 'mnist_dataset_testing.csv'
     compression_opts = dict(
         method='gzip'
     )
 
     with tempfile.TemporaryDirectory() as source_dir:
-        archive_filename = os.path.join(source_dir, 'archive.zip')
+        archive_filename = os.path.join(source_dir, 'train-images-idx3-ubyte.gz')
         input_df.to_csv(archive_filename, index=False, compression=compression_opts)
-        download_urls= [
-        'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-        'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
-        'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
-        'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz']
-
         config = dict(
             version=1.0,
             download_urls=download_urls,
-            csv_filename=extracted_filenames,
+            csv_filename=output_filename,
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:

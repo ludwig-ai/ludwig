@@ -39,51 +39,12 @@ class Mnist(CSVLoadMixin, BaseDataset):
     """
 
     config: dict
-    raw_dataset_path: str
     raw_temp_path: str
+    raw_dataset_path: str
+    processed_dataset_path: str
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="mnist", cache_dir=cache_dir)
-
-    def download_raw_dataset(self):
-        """
-        Download the raw dataset and contents of the gzip file
-        onto the _raw directory.
-        """
-        os.makedirs(self.raw_temp_path, exist_ok=True)
-        file_download_config_dict = {os.path.join(self.download_url, self.config['training_image_root'] + ".gz"):
-                                         (os.path.join(self.raw_temp_path, self.config['training_image_root'] + ".gz"),
-                                          os.path.join(self.raw_temp_path, self.config['training_image_root'])),
-                                     os.path.join(self.download_url, self.config['training_label_root'] + ".gz"):
-                                         (os.path.join(self.raw_temp_path, self.config['training_label_root'] + ".gz"),
-                                          os.path.join(self.raw_temp_path, self.config['training_label_root'])),
-                                     os.path.join(self.download_url, self.config['test_image_root'] + ".gz"):
-                                         (os.path.join(self.raw_temp_path, self.config['test_image_root'] + ".gz"),
-                                          os.path.join(self.raw_temp_path, self.config['test_image_root'])),
-                                     os.path.join(self.download_url, self.config['test_label_root'] + ".gz"):
-                                         (os.path.join(self.raw_temp_path, self.config['test_label_root'] + ".gz"),
-                                          os.path.join(self.raw_temp_path, self.config['test_label_root']))
-                                     }
-
-        for file_download_url, download_file_tuple in file_download_config_dict.items():
-            download_archive = download_file_tuple[0]
-            download_archive_contents = download_file_tuple[1]
-            response = requests.get(file_download_url, stream=True)
-            if response.status_code == 200:
-                with open(download_archive, 'wb') as f:
-                    f.write(response.raw.read())
-            input_gzip_file = gzip.GzipFile(download_archive, 'rb')
-            s = input_gzip_file.read()
-            input_gzip_file.close()
-
-            output = open(download_archive_contents, 'wb')
-            output.write(s)
-            output.close()
-
-        os.rename(self.raw_temp_path, self.raw_dataset_path)
-
-    raw_dataset_path: str
-    processed_dataset_path: str
 
     def process_downloaded_dataset(self):
         """Read the training and test directories and write out

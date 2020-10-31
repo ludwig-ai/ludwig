@@ -76,8 +76,9 @@ class GZipDownloadMixin:
             input_gzip_file = gzip.GzipFile(filename, 'rb')
             s = input_gzip_file.read()
             input_gzip_file.close()
+            foo = os.path.join(self.raw_temp_path,filename_root)
 
-            output = open(filename_root, 'wb')
+            output = open(foo, 'wb')
             output.write(s)
             output.close()
         os.rename(self.raw_temp_path, self.raw_dataset_path)
