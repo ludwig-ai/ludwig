@@ -59,7 +59,8 @@ def test_norm():
         dataset_df=data_df,
         dataset=data,
         metadata={'x': feature_1_meta},
-        preprocessing_parameters={'normalization': 'zscore'}
+        preprocessing_parameters={'normalization': 'zscore'},
+        backend=LOCAL_BACKEND
     )
     assert np.allclose(np.array(data['x']),
                        np.array([-1.26491106, -0.63245553, 0, 0.63245553,
@@ -71,7 +72,8 @@ def test_norm():
         dataset_df=data_df,
         dataset=data,
         metadata={'x': feature_2_meta},
-        preprocessing_parameters={'normalization': 'minmax'}
+        preprocessing_parameters={'normalization': 'minmax'},
+        backend=LOCAL_BACKEND
     )
     assert np.allclose(np.array(data['x']),
                        np.array([0, 0.25, 0.5, 0.75, 1])
