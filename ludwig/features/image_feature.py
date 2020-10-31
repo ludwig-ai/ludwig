@@ -315,6 +315,9 @@ class ImageFeatureMixin(object):
         else:
             backend.check_lazy_load_supported(feature)
 
+            all_file_paths = [get_abs_path(src_path, file_path)
+                              for file_path in dataset_df[feature[NAME]]]
+
             data_fp = os.path.splitext(dataset_df.src)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
