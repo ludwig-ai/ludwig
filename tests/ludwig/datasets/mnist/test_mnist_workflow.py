@@ -1,13 +1,9 @@
 import os
-import pytest
 import shutil
-import struct
 import tempfile
-import pandas as pd
 import gzip
 from unittest import mock
 from ludwig.datasets.mnist import Mnist
-
 
 
 class FakeMnistDataset(Mnist):
