@@ -34,7 +34,7 @@ ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
-from ludwig.backend import Backend, LocalBackend, create_backend
+from ludwig.backend import LOCAL_BACKEND, Backend, create_backend
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
@@ -146,7 +146,7 @@ class LudwigModel:
             self,
             config: Union[str, dict],
             logging_level: int = logging.ERROR,
-            backend: Union[Backend, str] = None,
+            backend: Union[Backend, str] = LOCAL_BACKEND,
             use_horovod: bool = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
@@ -160,6 +160,8 @@ class LudwigModel:
         :param config: (Union[str, dict]) in-memory representation of
             config or string path to a YAML config file.
         :param logging_level: (int) Log level that will be sent to stderr.
+        :param backend: (Union[Backend, str]) `Backend` or string name
+            of backend to use to execute preprocessing / training steps.
         :param use_horovod: (bool) use Horovod for distributed training.
             Will be set automatically if `horovodrun` is used to launch
             the training script.
@@ -187,7 +189,6 @@ class LudwigModel:
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
 
-        self.backend = backend or LocalBackend()
         if isinstance(backend, str):
             self.backend = create_backend(backend)
 
@@ -1536,6 +1537,7 @@ def kfold_cross_validate(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
+        backend: Union[Backend, str] = LOCAL_BACKEND,
         use_horovod: bool = None,
         logging_level: int = logging.INFO,
         debug: bool = False,
@@ -1610,6 +1612,8 @@ def kfold_cross_validate(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to
             use multithreading parallelism
            to improve performance at the cost of determinism.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+            of backend to use to execute preprocessing / training steps.
     :param use_horovod: (bool, default: `None`) flag for using horovod
     :param debug: (bool, default: `False`) If `True` turns on tfdbg
             with `inf_or_nan` checks.
@@ -1660,7 +1664,7 @@ def kfold_cross_validate(
     elif data_format in CACHEABLE_FORMATS:
         data_reader = get_from_registry(data_format,
                                         external_data_reader_registry)
-        data_df = data_reader(dataset)
+        data_df = data_reader(dataset, backend.processor.df_lib)
         data_dir = os.path.dirname(dataset)
     else:
         ValueError(
@@ -1688,6 +1692,7 @@ def kfold_cross_validate(
             model = LudwigModel(
                 config=config,
                 logging_level=logging_level,
+                backend=backend,
                 use_horovod=use_horovod,
                 gpus=gpus,
                 gpu_memory_limit=gpu_memory_limit,
