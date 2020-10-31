@@ -253,9 +253,9 @@ def _extract_ground_truth_values(
     metadata = load_json(ground_truth_metadata)
 
     # retrieve description.json to obtain feature hash from feature name
-    # this depends on directory Ludwig experiment/run directory structure
-    description_fp = os.path.split(ground_truth_metadata)[
-                         0] + '/../description.json'
+    # this depends on Ludwig experiment/run directory structure
+    description_fp = os.path.split(ground_truth_metadata)[0] \
+                     + '/../description.json'
     output_feature_hash = retrieve_feature_hash(
         description_fp,
         'output_features',
