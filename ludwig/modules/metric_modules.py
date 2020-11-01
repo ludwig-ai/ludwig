@@ -334,6 +334,46 @@ class MSEMetric(MeanSquaredErrorMetric):
         )
 
 
+class JaccardMetric(tf.keras.metrics.Metric):
+    def __init__(self, name=None):
+        super(JaccardMetric, self).__init__(name=name)
+        self.jaccard_total = self.add_weight(
+            'jaccard_numerator', initializer='zeros', dtype=tf.float32
+        )
+        self.N = self.add_weight(
+            'jaccard_denomerator', initializer='zeros', dtype=tf.float32
+        )
+
+    def update_state(self, y_true, y_pred):
+        # notation: b is batch size and nc is number of unique elements
+        #           in the set
+        # y_true: shape [b, nc] bit-mapped set representation
+        # y_pred: shape [b, nc] bit-mapped set representation
+
+        batch_size = tf.cast(tf.shape(y_true)[0], tf.float32)
+
+        y_true_bool = tf.cast(y_true, tf.bool)
+        y_pred_bool = tf.cast(y_pred, tf.bool)
+
+        intersection = tf.reduce_sum(
+            tf.cast(tf.logical_and(y_true_bool, y_pred_bool), tf.float32),
+            axis=1
+        )
+        union = tf.reduce_sum(
+            tf.cast(tf.logical_or(y_true_bool, y_pred_bool), tf.float32),
+            axis=1
+        )
+
+        jaccard_index = intersection / union  #shape [b]
+
+        # update metric state tensors
+        self.jaccard_total.assign_add(tf.reduce_sum(jaccard_index))
+        self.N.assign_add(batch_size)
+
+    def result(self):
+        return self.jaccard_total / self.N
+
+
 def get_improved_fun(metric):
     if metric in min_metrics:
         return lambda x, y: x < y
