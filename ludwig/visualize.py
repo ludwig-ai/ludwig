@@ -319,11 +319,8 @@ def compare_classifiers_performance_from_prob_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
-    )
     compare_classifiers_performance_from_prob(
-        probabilities_per_model,
+        probabilities,
         gt,
         ground_truth_metadata,
         output_feature_name,
@@ -1154,7 +1151,7 @@ def compare_performance(
 
 
 def compare_classifiers_performance_from_prob(
-        probabilities_per_model: List[np.array],
+        probabilities: Union[str, List[str]],
         ground_truth: pd.Series,
         ground_truth_metadata: str,
         output_feature_name: str,
@@ -1173,8 +1170,8 @@ def compare_classifiers_performance_from_prob(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
+    :param probabilities: (Union[str, List[str]]) path to experiment
+        probabilities file
     :param ground_truth: (pd.Series) pandas Series containing ground truth data.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param output_feature_name: (str) name of the output feature to visualize.
@@ -1208,6 +1205,10 @@ def compare_classifiers_performance_from_prob(
     model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
         gt[gt > labels_limit] = labels_limit
+
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
 
     probs = probabilities_per_model
     accuracies = []
