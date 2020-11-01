@@ -19,7 +19,7 @@ import json
 import numpy as np
 from typing import Union
 
-from ludwig.constants import SEQUENCE, PREPROCESSING, NAME, HASH
+from ludwig.constants import SEQUENCE, PREPROCESSING, NAME
 from ludwig.constants import TEXT
 from ludwig.constants import TIMESERIES
 from ludwig.utils.misc_utils import hash_dict
@@ -55,32 +55,3 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
 def compute_feature_hash(feature: dict) -> str:
     preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
     return feature[NAME] + "_" + preproc_hash.decode('ascii')
-
-
-def locate_feature_in_list(feature_list: list, feature_name: str) -> Union[dict, None]:
-    # searchs a list of features for the feature with the specified name
-    # returns either the requested feature dictionary or None
-    for f in feature_list:
-        if f[NAME] == feature_name:
-            # return the requested feature dictionary
-            return f
-
-    # requested feature not found in the list
-    return None
-
-def retrieve_feature_hash(
-        description_json_fp: str,
-        feature_type: str,  # 'input_features' or 'output_features'
-        feature_name: str
-) -> str:
-    # retrieves feature hash for either input or output features from
-    # the description.json file
-
-    description_dict = load_json(description_json_fp)
-    feature_list = description_dict['config'][feature_type]
-
-    feature = locate_feature_in_list(feature_list, feature_name)
-
-    feature_hash = feature[HASH]
-
-    return feature_hash

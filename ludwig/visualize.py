@@ -34,7 +34,6 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_from_file, load_json, load_array
 from ludwig.utils.print_utils import logging_level_registry
-from ludwig.features.feature_utils import retrieve_feature_hash
 from ludwig.utils.data_utils import (CSV_FORMATS, TSV_FORMATS, JSON_FORMATS,
                                      JSONL_FORMATS, EXCEL_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
@@ -251,19 +250,7 @@ def _extract_ground_truth_values(
 
     # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
-
-    # retrieve description.json to obtain feature hash from feature name
-    # this depends on Ludwig experiment/run directory structure
-    description_fp = os.path.split(ground_truth_metadata)[0] \
-                     + '/../description.json'
-    output_feature_hash = retrieve_feature_hash(
-        description_fp,
-        'output_features',
-        output_feature_name
-    )
-
-    # retrieve the output feature's metadata definintion
-    feature_metadata = metadata[output_feature_hash]
+    feature_metadata = metadata[output_feature_name]
 
     # translate string to encoded numeric value
     vfunc = np.vectorize(_encode_categorical_feature)
@@ -382,6 +369,7 @@ def compare_classifiers_performance_from_pred_cli(
         ground_truth: str,
         ground_truth_metadata: str,
         ground_truth_split: int,
+        split_file: str,
         output_feature_name: str,
         output_directory: str,
         **kwargs: dict
@@ -396,6 +384,9 @@ def compare_classifiers_performance_from_pred_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
         results.
@@ -405,12 +396,15 @@ def compare_classifiers_performance_from_pred_cli(
 
     :return None:
     """
-    output_feature_hash = retrieve_feature_hash(
-        output_directory,
-        'output_features',
-        output_feature_name
+    # retrieve ground truth from source data set
+    gt = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        ground_truth_metadata,
+        split_file
     )
-    gt = load_from_file(ground_truth, output_feature_hash, ground_truth_split)
+
     metadata = load_json(ground_truth_metadata)
     predictions_per_model_raw = load_data_for_viz(
         'load_from_file', predictions, dtype=str
@@ -419,7 +413,7 @@ def compare_classifiers_performance_from_pred_cli(
         np.ndarray.flatten(pred) for pred in predictions_per_model_raw
     ]
     compare_classifiers_performance_from_pred(
-        predictions_per_model, gt, metadata, output_feature_hash,
+        predictions_per_model, gt, metadata, output_feature_name,
         output_directory=output_directory,
         **kwargs
     )
@@ -452,12 +446,7 @@ def compare_classifiers_performance_subset_cli(
 
     :return None:
     """
-    output_feature_hash = retrieve_feature_hash(
-        output_directory,
-        'output_features',
-        output_feature_name
-    )
-    gt = load_from_file(ground_truth, output_feature_hash, ground_truth_split)
+    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )

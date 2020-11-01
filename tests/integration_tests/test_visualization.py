@@ -492,7 +492,7 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(
     prediction = os.path.join(exp_dir_name, '{}_predictions.csv').format(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
     ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
