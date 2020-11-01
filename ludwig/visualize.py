@@ -34,39 +34,11 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_from_file, load_json, load_array
 from ludwig.utils.print_utils import logging_level_registry
-from ludwig.utils.data_utils import (CSV_FORMATS, TSV_FORMATS, JSON_FORMATS,
-                                     JSONL_FORMATS, EXCEL_FORMATS,
-                                     PARQUET_FORMATS, PICKLE_FORMATS,
-                                     FWF_FORMATS,
-                                     FEATHER_FORMATS, HTML_FORMATS, ORC_FORMATS,
-                                     SAS_FORMATS, SPSS_FORMATS,
-                                     STATA_FORMATS, CACHEABLE_FORMATS,
-                                     read_csv, read_tsv, read_json, read_jsonl,
-                                     read_excel, read_parquet,
-                                     read_pickle, read_fwf, read_feather,
-                                     read_html, read_orc, read_sas,
-                                     read_spss, read_stata,
-                                     figure_data_format_dataset)
+from ludwig.utils.data_utils import CACHEABLE_FORMATS, \
+    figure_data_format_dataset, external_data_reader_registry
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
-
-cacheable_data_format_reader_registry = {
-    **{fmt: read_csv for fmt in CSV_FORMATS},
-    **{fmt: read_tsv for fmt in TSV_FORMATS},
-    **{fmt: read_json for fmt in JSON_FORMATS},
-    **{fmt: read_jsonl for fmt in JSONL_FORMATS},
-    **{fmt: read_excel for fmt in EXCEL_FORMATS},
-    **{fmt: read_parquet for fmt in PARQUET_FORMATS},
-    **{fmt: read_pickle for fmt in PICKLE_FORMATS},
-    **{fmt: read_fwf for fmt in FWF_FORMATS},
-    **{fmt: read_feather for fmt in FEATHER_FORMATS},
-    **{fmt: read_html for fmt in HTML_FORMATS},
-    **{fmt: read_orc for fmt in ORC_FORMATS},
-    **{fmt: read_sas for fmt in SAS_FORMATS},
-    **{fmt: read_spss for fmt in SPSS_FORMATS},
-    **{fmt: read_stata for fmt in STATA_FORMATS}
-}
 
 
 def validate_conf_treshholds_and_probabilities_2d_3d(
@@ -227,7 +199,7 @@ def _extract_ground_truth_values(
         )
     reader = get_from_registry(
         data_format,
-        cacheable_data_format_reader_registry
+        external_data_reader_registry
     )
 
     # retrieve ground truth from source data set
