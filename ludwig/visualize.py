@@ -172,7 +172,7 @@ def _extract_ground_truth_values(
         output_feature_name: str,
         ground_truth_split: int,
         ground_truth_metadata: str,
-        split_file: Union[str, None]) -> np.ndarray:
+        split_file: Union[str, None]) -> pd.Series:
     """Helper function to extract ground truth values
 
     Args:
@@ -187,7 +187,7 @@ def _extract_ground_truth_values(
 
     # Return
 
-    :return np.ndarray:
+    :return pd.Series: ground truth values from source data set
 
     """
     # determine ground truth data format and get appropriate reader
@@ -209,24 +209,16 @@ def _extract_ground_truth_values(
     if SPLIT in gt_df:
         # get split value from source data set
         split = gt_df[SPLIT]
-        gt_raw = gt_df[output_feature_name][
-            split == ground_truth_split].to_numpy()
+        gt = gt_df[output_feature_name][
+            split == ground_truth_split]
     elif split_file is not None:
         # retrieve from split file
         split = load_array(split_file)
-        gt_raw = gt_df[output_feature_name][
-            split == ground_truth_split].to_numpy()
+        gt = gt_df[output_feature_name][
+            split == ground_truth_split]
     else:
         # use all the data in ground_truth
-        gt_raw = gt_df[output_feature_name].to_numpy()
-
-    # retrieve feature metadata to convert raw predictions to encoded value
-    metadata = load_json(ground_truth_metadata)
-    feature_metadata = metadata[output_feature_name]
-
-    # translate string to encoded numeric value
-    vfunc = np.vectorize(_encode_categorical_feature)
-    gt = vfunc(gt_raw, feature_metadata['str2idx'])
+        gt = gt_df[output_feature_name]
 
     return gt
 
@@ -331,7 +323,11 @@ def compare_classifiers_performance_from_prob_cli(
         'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_from_prob(
-        probabilities_per_model, gt, output_directory=output_directory,
+        probabilities_per_model,
+        gt,
+        ground_truth_metadata,
+        output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -376,6 +372,14 @@ def compare_classifiers_performance_from_pred_cli(
         ground_truth_metadata,
         split_file
     )
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+    feature_metadata = metadata[output_feature_name]
+
+    # translate string to encoded numeric value
+    vfunc = np.vectorize(_encode_categorical_feature)
+    gt = vfunc(gt, feature_metadata['str2idx'])
 
     metadata = load_json(ground_truth_metadata)
     predictions_per_model_raw = load_data_for_viz(
@@ -1151,7 +1155,9 @@ def compare_performance(
 
 def compare_classifiers_performance_from_prob(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: pd.Series,
+        ground_truth_metadata: str,
+        output_feature_name: str,
         top_n_classes: List[int],
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
@@ -1169,8 +1175,9 @@ def compare_classifiers_performance_from_prob(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (pd.Series) pandas Series containing ground truth data.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param output_feature_name: (str) name of the output feature to visualize.
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -1187,11 +1194,20 @@ def compare_classifiers_performance_from_prob(
 
     :return: (None)
     """
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+    feature_metadata = metadata[output_feature_name]
+
+    # translate string to encoded numeric value
+    vfunc = np.vectorize(_encode_categorical_feature)
+    gt = vfunc(ground_truth, feature_metadata['str2idx'])
+
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
     model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
-        ground_truth[ground_truth > labels_limit] = labels_limit
+        gt[gt > labels_limit] = labels_limit
 
     probs = probabilities_per_model
     accuracies = []
@@ -1212,17 +1228,17 @@ def compare_classifiers_performance_from_prob(
         accuracies.append((ground_truth == top1).sum() / len(ground_truth))
 
         hits_at_k = 0
-        for j in range(len(ground_truth)):
-            hits_at_k += np.in1d(ground_truth[j], topk[i, :])
-        hits_at_ks.append(np.asscalar(hits_at_k) / len(ground_truth))
+        for j in range(len(gt)):
+            hits_at_k += np.in1d(gt[j], topk[i, :])
+        hits_at_ks.append(np.asscalar(hits_at_k) / len(gt))
 
         mrr = 0
         for j in range(len(ground_truth)):
-            gt_pos_in_probs = prob[i, :] == ground_truth[j]
+            gt_pos_in_probs = prob[i, :] == gt[j]
             if np.any(gt_pos_in_probs):
                 mrr += (1 / -(np.asscalar(np.argwhere(gt_pos_in_probs)) -
                               prob.shape[1]))
-        mrrs.append(mrr / len(ground_truth))
+        mrrs.append(mrr / len(gt))
 
     filename = None
     if output_directory:

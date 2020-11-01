@@ -283,7 +283,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.txt'
+    split_file = experiment_source_data_name + '_split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -493,6 +493,7 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
     ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
@@ -505,6 +506,8 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(
                     ground_truth,
                     '--output_feature_name',
                     output_feature_name,
+                    '--split_file',
+                    split_file,
                     '--predictions',
                     prediction,
                     prediction,
