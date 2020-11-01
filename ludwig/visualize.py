@@ -1225,7 +1225,7 @@ def compare_classifiers_performance_from_prob(
         top1 = prob[:, -1]
         topk = prob[:, -k:]
 
-        accuracies.append((ground_truth == top1).sum() / len(ground_truth))
+        accuracies.append((gt == top1).sum() / len(gt))
 
         hits_at_k = 0
         for j in range(len(gt)):
