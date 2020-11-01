@@ -89,9 +89,9 @@ class CategoryFeatureMixin(object):
             metadata,
             preprocessing_parameters=None
     ):
-        dataset[feature[HASH]] = CategoryFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
-            metadata[feature[HASH]]
+        dataset[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
+            dataset_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]]
         )
 
 
@@ -182,13 +182,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
         probabilities = tf.nn.softmax(
             logits,
-            name='probabilities_{}'.format(self.feature_id)
+            name='probabilities_{}'.format(self.feature_name)
         )
 
         predictions = tf.argmax(
             logits,
             -1,
-            name='predictions_{}'.format(self.feature_id)
+            name='predictions_{}'.format(self.feature_name)
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
@@ -266,7 +266,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     'for the <UNK> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
                         output_feature['num_classes'],
-                        output_feature[NAME]
+                        output_feature[COLUMN]
                     )
                 )
 
@@ -283,7 +283,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     'for the <UNK> class too.'.format(
                         output_feature[LOSS]['class_weights'].keys(),
                         feature_metadata['str2idx'].keys(),
-                        output_feature[NAME]
+                        output_feature[COLUMN]
                     )
                 )
             else:
@@ -315,7 +315,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                                 'the first row {}. All rows must have '
                                 'the same length.'.format(
                                     curr_row,
-                                    output_feature[NAME],
+                                    output_feature[COLUMN],
                                     curr_row_length,
                                     first_row_length
                                 )
@@ -329,7 +329,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         'The class_similarities matrix of {} has '
                         '{} rows and {} columns, '
                         'their number must be identical.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             len(similarities),
                             all_rows_length
                         )
@@ -342,7 +342,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         'Check the metadata JSON file to see the classes '
                         'and their order and '
                         'consider <UNK> class too.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             all_rows_length,
                             output_feature['num_classes']
                         )
@@ -360,7 +360,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0, '
                     'but no class_similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -395,7 +395,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_id
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():

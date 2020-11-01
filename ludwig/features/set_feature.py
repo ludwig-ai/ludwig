@@ -92,9 +92,9 @@ class SetFeatureMixin(object):
             metadata,
             preprocessing_parameters,
     ):
-        dataset[feature[HASH]] = SetFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
-            metadata[feature[HASH]],
+        dataset[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
+            dataset_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]],
             preprocessing_parameters
         )
 
@@ -180,13 +180,13 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities = tf.nn.sigmoid(
             logits,
-            name='probabilities_{}'.format(self.feature_id)
+            name='probabilities_{}'.format(self.feature_name)
         )
 
         predictions = tf.greater_equal(
             probabilities,
             self.threshold,
-            name='predictions_{}'.format(self.feature_id)
+            name='predictions_{}'.format(self.feature_name)
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
@@ -243,7 +243,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_id
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():

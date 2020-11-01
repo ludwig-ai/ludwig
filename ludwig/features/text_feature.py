@@ -208,11 +208,11 @@ class TextFeatureMixin(object):
             preprocessing_parameters
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
-            metadata[feature[HASH]], preprocessing_parameters
+            dataset_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]], preprocessing_parameters
         )
-        dataset['{}_char'.format(feature[HASH])] = chars_data
-        dataset['{}_word'.format(feature[HASH])] = words_data
+        dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
@@ -380,7 +380,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0,'
                     'but no class similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -423,7 +423,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
         postprocessed = {}
-        name = self.feature_id
+        name = self.feature_name
         level_idx2str = '{}_{}'.format(self.level, 'idx2str')
 
         npy_filename = None

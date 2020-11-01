@@ -172,20 +172,20 @@ def _perform_sanity_checks(config):
 
 def _set_feature_ids(config: dict) -> None:
     for feature in config['input_features'] + config['output_features']:
-        if ID not in feature:
-            feature[ID] = feature[NAME]
+        if COLUMN not in feature:
+            feature[COLUMN] = feature[NAME]
 
 
-def _set_feature_hash(config: dict) -> None:
+def _set_proc_column(config: dict) -> None:
     for feature in config['input_features'] + config['output_features']:
-        if HASH not in feature:
-            feature[HASH] = compute_feature_hash(feature)
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
 
 
 def merge_with_defaults(config):
     _perform_sanity_checks(config)
     _set_feature_ids(config)
-    _set_feature_hash(config)
+    _set_proc_column(config)
 
     # ===== Preprocessing =====
     config['preprocessing'] = merge_dict(
@@ -199,13 +199,13 @@ def merge_with_defaults(config):
                 config['input_features'] +
                 config['output_features']
         )
-        feature_names = set(f[NAME] for f in features)
+        feature_names = set(f[COLUMN] for f in features)
         if stratify not in feature_names:
             logger.warning(
                 'Stratify is not among the features. '
                 'Cannot establish if it is a binary or category'
             )
-        elif ([f for f in features if f[NAME] == stratify][0][TYPE]
+        elif ([f for f in features if f[COLUMN] == stratify][0][TYPE]
               not in {BINARY, CATEGORY}):
             raise ValueError('Stratify feature must be binary or category')
 

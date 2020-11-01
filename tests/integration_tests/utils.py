@@ -26,7 +26,7 @@ from distutils.util import strtobool
 import cloudpickle
 import pandas as pd
 
-from ludwig.constants import VECTOR, NAME, ID, HASH
+from ludwig.constants import VECTOR, COLUMN, NAME, PROC_COLUMN
 from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.experiment import experiment_cli
@@ -128,9 +128,9 @@ def numerical_feature(normalization=None, **kwargs):
             'normalization': normalization
         }
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -141,9 +141,9 @@ def category_feature(**kwargs):
         'vocab_size': 10,
         'embedding_size': 5
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -158,9 +158,9 @@ def text_feature(**kwargs):
         'embedding_size': 8,
         'state_size': 8
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -172,9 +172,9 @@ def set_feature(**kwargs):
         'max_len': 5,
         'embedding_size': 5
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -190,9 +190,9 @@ def sequence_feature(**kwargs):
         'state_size': 8,
         'num_filters': 8
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -212,9 +212,9 @@ def image_feature(folder, **kwargs):
         'fc_size': 8,
         'num_filters': 8
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -250,9 +250,9 @@ def audio_feature(folder, **kwargs):
         'fc_size': 256,
         'destination_folder': folder
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -262,9 +262,9 @@ def timeseries_feature(**kwargs):
         'type': 'timeseries',
         'max_len': 7
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -273,9 +273,9 @@ def binary_feature(**kwargs):
         'name': 'binary_' + random_string(),
         'type': 'binary'
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -287,9 +287,9 @@ def bag_feature(**kwargs):
         'vocab_size': 10,
         'embedding_size': 5
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -301,9 +301,9 @@ def date_feature(**kwargs):
             'datetime_format': random.choice(list(DATETIME_FORMATS.keys()))
         }
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -312,9 +312,9 @@ def h3_feature(**kwargs):
         'name': 'h3_' + random_string(),
         'type': 'h3'
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -324,9 +324,9 @@ def vector_feature(**kwargs):
         'vector_size': 5,
         'name': 'vector_' + random_string()
     }
-    feature[ID] = feature[NAME]
-    feature[HASH] = compute_feature_hash(feature)
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 

@@ -50,7 +50,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
     test_scenarios = []
     for output_feature in test_case.output_features:
         # single output feature capture feature specific metrics
-        of_name = output_feature[NAME]
+        of_name = output_feature[COLUMN]
         for metric in test_case.validation_metrics:
             test_scenarios.append((of_name, metric))
             if len(test_case.output_features) == 1:

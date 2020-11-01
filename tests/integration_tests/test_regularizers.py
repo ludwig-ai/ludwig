@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 import tensorflow as tf
 
-from ludwig.constants import HASH
+from ludwig.constants import PROC_COLUMN, NAME
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_utils import SEQUENCE_TYPES, compute_feature_hash
@@ -136,8 +136,9 @@ def test_encoder(test_case):
             **test_case.syn_data.feature_generator_kwargs
         )
     ]
-    feature_hash = compute_feature_hash(features[0])
-    features[0][HASH] = feature_hash
+    name = features[0][NAME]
+    proc_column = compute_feature_hash(features[0])
+    features[0][PROC_COLUMN] = proc_column
 
     data_generator = build_synthetic_dataset(BATCH_SIZE, features)
     data_list = list(data_generator)
@@ -173,14 +174,14 @@ def test_encoder(test_case):
 
         # shim code to support sequence/sequence like features
         if features[0]['type'] in SEQUENCE_TYPES.union({'category', 'set'}):
-            features[0]['vocab'] = training_set_metadata[feature_hash][
+            features[0]['vocab'] = training_set_metadata[name][
                 'idx2str']
-            training_set.dataset[feature_hash] = \
-                training_set.dataset[feature_hash].astype(np.int32)
+            training_set.dataset[proc_column] = \
+                training_set.dataset[proc_column].astype(np.int32)
 
         input_def_obj = build_single_input(features[0], None)
 
-        inputs = training_set.dataset[feature_hash]
+        inputs = training_set.dataset[proc_column]
         # make sure we are at least rank 2 tensor
         if len(inputs.shape) == 1:
             inputs = inputs.reshape(-1, 1)
@@ -257,8 +258,9 @@ def test_decoder(test_case):
             **test_case.syn_data.feature_generator_kwargs
         )
     ]
-    feature_hash = compute_feature_hash(features[0])
-    features[0][HASH] = feature_hash
+    feature_name = features[0][NAME]
+    proc_column = compute_feature_hash(features[0])
+    features[0][PROC_COLUMN] = proc_column
 
     data_generator = build_synthetic_dataset(BATCH_SIZE, features)
     data_list = list(data_generator)
@@ -316,17 +318,17 @@ def test_decoder(test_case):
 
         features[0].update(x_coder_kwargs)
         if features[0]['type'] in SEQUENCE_TYPES:
-            features[0]['num_classes'] = training_set_metadata[feature_hash][
+            features[0]['num_classes'] = training_set_metadata[feature_name][
                                              'vocab_size'] + 1
-            training_set.dataset[feature_hash] = \
-                training_set.dataset[feature_hash].astype(np.int32)
+            training_set.dataset[proc_column] = \
+                training_set.dataset[proc_column].astype(np.int32)
             combiner_outputs = combiner_outputs_rank3
         else:
             combiner_outputs = combiner_outputs_rank2
 
         output_def_obj = build_single_output(features[0], None, None)
 
-        targets = training_set.dataset[feature_hash]
+        targets = training_set.dataset[proc_column]
         if len(targets.shape) == 1:
             targets = targets.reshape(-1, 1)
 

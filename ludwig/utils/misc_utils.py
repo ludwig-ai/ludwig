@@ -244,4 +244,3 @@ def hash_dict(d: dict, max_length: int = 6) -> bytes:
     d = h.digest()
     b = base64.b64encode(d)
     return b[:max_length]
-    # return hash(json.dumps(d, sort_keys=True))

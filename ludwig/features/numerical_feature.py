@@ -78,19 +78,20 @@ class NumericalFeatureMixin(object):
             metadata,
             preprocessing_parameters,
     ):
-        dataset[feature[HASH]] = dataset_df[feature[NAME]].astype(
+        dataset[feature[PROC_COLUMN]] = dataset_df[feature[COLUMN]].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
-                mean = metadata[feature[HASH]]['mean']
-                std = metadata[feature[HASH]]['std']
-                dataset[feature[HASH]] = (dataset[
-                                              feature[HASH]] - mean) / std
+                mean = metadata[feature[NAME]]['mean']
+                std = metadata[feature[NAME]]['std']
+                dataset[feature[PROC_COLUMN]] = (dataset[
+                                                     feature[
+                                                         PROC_COLUMN]] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
-                min_ = metadata[feature[HASH]]['min']
-                max_ = metadata[feature[HASH]]['max']
-                values = dataset[feature[HASH]]
-                dataset[feature[HASH]] = (values - min_) / (max_ - min_)
+                min_ = metadata[feature[NAME]]['min']
+                max_ = metadata[feature[NAME]]['max']
+                values = dataset[feature[PROC_COLUMN]]
+                dataset[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -190,7 +191,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                 raise ValueError(
                     'The clip parameter of {} is {}. '
                     'It must be a list or a tuple of length 2.'.format(
-                        self.feature_id,
+                        self.feature_name,
                         self.clip
                     )
                 )
@@ -257,7 +258,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False
     ):
         postprocessed = {}
-        name = self.feature_id
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():

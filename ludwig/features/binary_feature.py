@@ -61,10 +61,10 @@ class BinaryFeatureMixin(object):
             metadata,
             preprocessing_parameters=None
     ):
-        column = dataset_df[feature[NAME]]
+        column = dataset_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(str2bool)
-        dataset[feature[HASH]] = column.astype(np.bool_).values
+        dataset[feature[PROC_COLUMN]] = column.astype(np.bool_).values
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
@@ -277,7 +277,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_id
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
