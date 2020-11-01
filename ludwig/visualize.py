@@ -310,18 +310,12 @@ def compare_classifiers_performance_from_prob_cli(
     # Return
     :return None:
     """
-    # retrieve ground truth from source data set
-    gt = _extract_ground_truth_values(
-        ground_truth,
-        output_feature_name,
-        ground_truth_split,
-        ground_truth_metadata,
-        split_file
-    )
 
     compare_classifiers_performance_from_prob(
         probabilities,
-        gt,
+        ground_truth,
+        ground_truth_split,
+        split_file,
         ground_truth_metadata,
         output_feature_name,
         output_directory=output_directory,
@@ -1152,7 +1146,9 @@ def compare_performance(
 
 def compare_classifiers_performance_from_prob(
         probabilities: Union[str, List[str]],
-        ground_truth: pd.Series,
+        ground_truth: str,
+        ground_truth_split: int,
+        split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
         top_n_classes: List[int],
@@ -1172,7 +1168,11 @@ def compare_classifiers_performance_from_prob(
 
     :param probabilities: (Union[str, List[str]]) path to experiment
         probabilities file
-    :param ground_truth: (pd.Series) pandas Series containing ground truth data.
+    :param ground_truth: (str) path to ground truth file
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param top_n_classes: (List[int]) list containing the number of classes
@@ -1197,6 +1197,14 @@ def compare_classifiers_performance_from_prob(
     feature_metadata = metadata[output_feature_name]
 
     # translate string to encoded numeric value
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        ground_truth_metadata,
+        split_file
+    )
     vfunc = np.vectorize(_encode_categorical_feature)
     gt = vfunc(ground_truth, feature_metadata['str2idx'])
 
