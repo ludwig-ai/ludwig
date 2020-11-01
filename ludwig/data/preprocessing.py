@@ -1315,7 +1315,7 @@ def _preprocess_file_for_training(
         )
 
         # save split values for use by visualization routines
-        split_fp = os.path.splitext(dataset)[0] + '_split.txt'
+        split_fp = os.path.splitext(dataset)[0] + '_split.csv'
         save_array(split_fp, data[SPLIT])
 
         if is_on_master() and not skip_save_processed_input:
