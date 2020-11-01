@@ -1229,12 +1229,12 @@ def compare_classifiers_performance_from_prob(
 
         hits_at_k = 0
         for j in range(len(gt)):
-            hits_at_k += np.in1d(gt[j], topk[i, :])
+            hits_at_k += np.in1d(gt[j], topk[j])
         hits_at_ks.append(np.asscalar(hits_at_k) / len(gt))
 
         mrr = 0
-        for j in range(len(ground_truth)):
-            gt_pos_in_probs = prob[i, :] == gt[j]
+        for j in range(len(gt)):
+            gt_pos_in_probs = prob[j] == gt[j]
             if np.any(gt_pos_in_probs):
                 mrr += (1 / -(np.asscalar(np.argwhere(gt_pos_in_probs)) -
                               prob.shape[1]))
