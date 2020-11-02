@@ -355,32 +355,13 @@ def compare_classifiers_performance_from_pred_cli(
 
     :return None:
     """
-    # retrieve ground truth from source data set
-    gt = _extract_ground_truth_values(
-        ground_truth,
-        output_feature_name,
-        ground_truth_split,
-        ground_truth_metadata,
-        split_file
-    )
-
-    # retrieve feature metadata to convert raw predictions to encoded value
-    metadata = load_json(ground_truth_metadata)
-    feature_metadata = metadata[output_feature_name]
-
-    # translate string to encoded numeric value
-    vfunc = np.vectorize(_encode_categorical_feature)
-    gt = vfunc(gt, feature_metadata['str2idx'])
-
-    metadata = load_json(ground_truth_metadata)
-    predictions_per_model_raw = load_data_for_viz(
-        'load_from_file', predictions, dtype=str
-    )
-    predictions_per_model = [
-        np.ndarray.flatten(pred) for pred in predictions_per_model_raw
-    ]
     compare_classifiers_performance_from_pred(
-        predictions_per_model, gt, metadata, output_feature_name,
+        predictions,
+        ground_truth,
+        ground_truth_metadata,
+        ground_truth_split,
+        split_file,
+        output_feature_name,
         output_directory=output_directory,
         **kwargs
     )
@@ -1266,10 +1247,12 @@ def compare_classifiers_performance_from_prob(
 
 
 def compare_classifiers_performance_from_pred(
-        predictions_per_model: List[list],
-        ground_truth: np.array,
-        metadata: dict,
-        output_feature_hash: str,
+        predictions: List[list],
+        ground_truth: str,
+        ground_truth_metadata: str,
+        ground_truth_split: int,
+        split_file: str,
+        output_feature_name: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
@@ -1284,14 +1267,15 @@ def compare_classifiers_performance_from_pred(
 
     # Inputs
 
-    :param predictions_per_model: (List[list]) list containing the model
-        predictions for the specified output_feature_name.
+    :param predictions: (List[str]) path to experiment predictions file.
     :param ground_truth: (numpy.array) numpy.array containing ground truth data,
         which are the numeric encoded values the category.
-    :param metadata: (dict) intermediate preprocess structure created during
-        training containing the mappings of the input dataset.
-    :param output_feature_hash: (str) hash of the output feature to use
-        for the visualization.
+    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param ground_truth_split: (str) type of ground truth split -
+        `0` for training split, `1` for validation split or
+        2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param output_feature_name: (str) name of the output feature to visualize.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -1306,8 +1290,33 @@ def compare_classifiers_performance_from_pred(
 
     :return: (None)
     """
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        ground_truth_metadata,
+        split_file
+    )
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+    feature_metadata = metadata[output_feature_name]
+
+    # translate string to encoded numeric value
+    vfunc = np.vectorize(_encode_categorical_feature)
+    gt = vfunc(ground_truth, feature_metadata['str2idx'])
+
+    # metadata = load_json(ground_truth_metadata)
+    predictions_per_model_raw = load_data_for_viz(
+        'load_from_file', predictions, dtype=str
+    )
+    predictions_per_model = [
+        np.ndarray.flatten(pred) for pred in predictions_per_model_raw
+    ]
+
     if labels_limit > 0:
-        ground_truth[ground_truth > labels_limit] = labels_limit
+        gt[gt > labels_limit] = labels_limit
 
     preds = predictions_per_model
     model_names_list = convert_to_list(model_names)
@@ -1315,7 +1324,7 @@ def compare_classifiers_performance_from_pred(
     try:
         for pred in preds:
             mapped_preds.append(
-                [metadata[output_feature_hash]['str2idx'][val] for val in
+                [metadata[output_feature_name]['str2idx'][val] for val in
                  pred])
         preds = mapped_preds
     # If predictions are coming from npy file there is no need to convert to
@@ -1328,18 +1337,18 @@ def compare_classifiers_performance_from_pred(
     f1s = []
 
     for i, pred in enumerate(preds):
-        accuracies.append(sklearn.metrics.accuracy_score(ground_truth, pred))
+        accuracies.append(sklearn.metrics.accuracy_score(gt, pred))
         precisions.append(
-            sklearn.metrics.precision_score(ground_truth, pred,
+            sklearn.metrics.precision_score(gt, pred,
                                             average='macro')
         )
         recalls.append(sklearn.metrics.recall_score(
-            ground_truth,
+            gt,
             pred,
             average='macro')
         )
         f1s.append(sklearn.metrics.f1_score(
-            ground_truth,
+            gt,
             pred,
             average='macro')
         )
