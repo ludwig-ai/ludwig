@@ -311,12 +311,27 @@ def compare_classifiers_performance_from_prob_cli(
     :return None:
     """
 
-    compare_classifiers_performance_from_prob(
-        probabilities,
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # translate string to encoded numeric value
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
         ground_truth,
+        output_feature_name,
         ground_truth_split,
-        split_file,
         ground_truth_metadata,
+        split_file
+    )
+
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+
+    compare_classifiers_performance_from_prob(
+        probabilities_per_model,
+        ground_truth,
+        metadata,
         output_feature_name,
         output_directory=output_directory,
         **kwargs
@@ -365,6 +380,7 @@ def compare_classifiers_performance_from_pred_cli(
         output_directory=output_directory,
         **kwargs
     )
+
 
 
 def compare_classifiers_performance_subset_cli(
@@ -1126,11 +1142,9 @@ def compare_performance(
 
 
 def compare_classifiers_performance_from_prob(
-        probabilities: Union[str, List[str]],
-        ground_truth: str,
-        ground_truth_split: int,
-        split_file: str,
-        ground_truth_metadata: str,
+        probabilities_per_model: List[np.ndarray],
+        ground_truth: pd.Series,
+        metadata: dict,
         output_feature_name: str,
         top_n_classes: List[int],
         labels_limit: int,
@@ -1147,14 +1161,10 @@ def compare_classifiers_performance_from_prob(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
+    :param probabilities_per_model: (List[np.ndarray]) path to experiment
         probabilities file
     :param ground_truth: (str) path to ground truth file
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
-    :param ground_truth_metadata: (str) path to ground truth metadata file.
+    :param metadata: (dict) feature metadata dictionary.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
@@ -1173,19 +1183,8 @@ def compare_classifiers_performance_from_prob(
     :return: (None)
     """
 
-    # retrieve feature metadata to convert raw predictions to encoded value
-    metadata = load_json(ground_truth_metadata)
     feature_metadata = metadata[output_feature_name]
 
-    # translate string to encoded numeric value
-    # retrieve ground truth from source data set
-    ground_truth = _extract_ground_truth_values(
-        ground_truth,
-        output_feature_name,
-        ground_truth_split,
-        ground_truth_metadata,
-        split_file
-    )
     vfunc = np.vectorize(_encode_categorical_feature)
     gt = vfunc(ground_truth, feature_metadata['str2idx'])
 
@@ -1194,10 +1193,6 @@ def compare_classifiers_performance_from_prob(
     model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
         gt[gt > labels_limit] = labels_limit
-
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
-    )
 
     probs = probabilities_per_model
     accuracies = []
