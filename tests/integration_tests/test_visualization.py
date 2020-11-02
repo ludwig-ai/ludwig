@@ -1646,7 +1646,8 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1658,6 +1659,10 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
                     ground_truth,
                     '--output_feature_name',
                     output_feature_name,
+                    '--split_file',
+                    split_file,
+                    '--ground_truth_metadata',
+                    exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
                     probability,
                     probability,
