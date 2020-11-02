@@ -1034,6 +1034,8 @@ def roc_curves_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -1047,6 +1049,9 @@ def roc_curves_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -1054,11 +1059,25 @@ def roc_curves_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+    feature_metadata = metadata[output_feature_name]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
-    roc_curves(probabilities_per_model, gt, **kwargs)
+    roc_curves(probabilities_per_model, ground_truth, **kwargs)
 
 
 def roc_curves_from_test_statistics_cli(

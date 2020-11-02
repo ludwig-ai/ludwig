@@ -1517,8 +1517,8 @@ def test_visualization_roc_curves_output_saved(csv_filename):
     probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.meta.json'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1530,10 +1530,12 @@ def test_visualization_roc_curves_output_saved(csv_filename):
                     'accuracy',
                     '--ground_truth',
                     ground_truth,
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--output_feature_name',
                     output_feature_name,
+                    '--split_file',
+                    split_file,
+                    '--ground_truth_metadata',
+                    exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
                     probability,
                     probability,
