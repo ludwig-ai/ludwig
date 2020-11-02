@@ -24,6 +24,7 @@ import signal
 import sys
 import threading
 import time
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 
 import tensorflow as tf
@@ -52,7 +53,50 @@ from ludwig.utils.misc_utils import set_random_seed
 logger = logging.getLogger(__name__)
 
 
-class Trainer:
+class BaseTrainer(ABC):
+    @abstractmethod
+    def train(
+            self,
+            model,
+            training_set,
+            validation_set=None,
+            test_set=None,
+            save_path='model',
+            **kwargs
+    ):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def train_online(
+            self,
+            model,
+            dataset,
+    ):
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def validation_field(self):
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def validation_metric(self):
+        raise NotImplementedError()
+
+    # Remote implementations may override this
+    def shutdown(self):
+        pass
+
+    # Functions needed to treat Trainer as a context manager
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.shutdown()
+
+
+class Trainer(BaseTrainer):
     """
     Trainer is a class that train a model
     """
@@ -191,8 +235,8 @@ class Trainer:
         self.batch_size = batch_size
         self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
         self.bucketing_field = bucketing_field
-        self.validation_field = validation_field
-        self.validation_metric = validation_metric
+        self._validation_field = validation_field
+        self._validation_metric = validation_metric
         self.early_stop = early_stop
         self.reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
@@ -306,7 +350,7 @@ class Trainer:
                     output_features) == 1:
                 only_of = next(iter(output_features))
                 if self.validation_metric in metrics_names[only_of]:
-                    self.validation_field = only_of
+                    self._validation_field = only_of
                     logger.warning(
                         "Replacing 'combined' validation field "
                         "with '{}' as the specified validation "
@@ -766,6 +810,14 @@ class Trainer:
             progress_bar.update(1)
 
         progress_bar.close()
+
+    @property
+    def validation_field(self):
+        return self._validation_field
+
+    @property
+    def validation_metric(self):
+        return self._validation_metric
 
     def append_metrics(self, model, dataset_name, results, metrics_log,
                        tables):

@@ -24,6 +24,7 @@ from horovod.ray import RayExecutor
 from ludwig.backend.base import Backend
 from ludwig.constants import NAME
 from ludwig.data.processor.dask import DaskProcessor
+from ludwig.models.trainer import BaseTrainer, Trainer
 
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,32 @@ def get_horovod_kwargs():
     )
 
 
+class RayTrainer(BaseTrainer):
+    def __init__(self, horovod_kwargs, trainer_kwargs):
+        setting = RayExecutor.create_settings(timeout_s=30)
+        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
+        self.executor.start(executable_cls=Trainer, executable_kwargs=trainer_kwargs)
+
+    def train(self, *args, **kwargs):
+        results = self.executor.execute(lambda trainer: trainer.train(*args, **kwargs))
+        return results[0]
+
+    def train_online(self, *args, **kwargs):
+        results = self.executor.execute(lambda trainer: trainer.train_online(*args, **kwargs))
+        return results[0]
+
+    @property
+    def validation_field(self):
+        return self.executor.execute_single(lambda trainer: trainer.validation_field)
+
+    @property
+    def validation_metric(self):
+        return self.executor.execute_single(lambda trainer: trainer.validation_metric)
+
+    def shutdown(self):
+        self.executor.shutdown()
+
+
 class RayBackend(Backend):
     def __init__(self, horovod_kwargs=None):
         super().__init__()
@@ -70,16 +97,8 @@ class RayBackend(Backend):
             logger.info('Initializing new Ray cluster...')
             ray.init()
 
-    def train(self, trainer, *args, **kwargs):
-        setting = RayExecutor.create_settings(timeout_s=30)
-        executor = RayExecutor(setting, **{**get_horovod_kwargs(), **self._horovod_kwargs})
-        executor.start()
-        try:
-            results = executor.run(trainer.train, args=args, kwargs=kwargs)
-            return results[0]
-        except:
-            executor.shutdown()
-            raise
+    def create_trainer(self, **kwargs):
+        return RayTrainer(self._horovod_kwargs, kwargs)
 
     @property
     def processor(self):
@@ -90,5 +109,5 @@ class RayBackend(Backend):
         return False
 
     def check_lazy_load_supported(self, feature):
-        raise ValueError(f'DaskBackend does not support lazy loading of data files at train time. '
+        raise ValueError(f'RayBackend does not support lazy loading of data files at train time. '
                          f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')

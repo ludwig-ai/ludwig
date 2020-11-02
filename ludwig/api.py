@@ -193,8 +193,7 @@ class LudwigModel:
         if isinstance(backend, str):
             self.backend = create_backend(backend)
 
-        # setup horovod
-        self._horovod = configure_horovod(use_horovod)
+        self.backend.initialize()
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -461,92 +460,90 @@ class LudwigModel:
                                                       random_seed=random_seed)
 
             # init trainer
-            trainer = Trainer(
+            with self.backend.create_trainer(
                 **self.config[TRAINING],
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
                 random_seed=random_seed,
-                horoovd=self._horovod,
                 debug=debug
-            )
+            ) as trainer:
+                contrib_command("train_model", self.model, self.config,
+                                self.config_fp)
 
-            contrib_command("train_model", self.model, self.config,
-                            self.config_fp)
+                # train model
+                if is_on_master():
+                    print_boxed('TRAINING')
+                    if not skip_save_model:
+                        self.save_config(model_dir)
 
-            # train model
-            if is_on_master():
-                print_boxed('TRAINING')
-                if not skip_save_model:
-                    self.save_config(model_dir)
-
-            train_stats = self.backend.train(
-                trainer,
-                self.model,
-                training_set,
-                validation_set=validation_set,
-                test_set=test_set,
-                save_path=model_dir,
-            )
-
-            train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
-            train_stats = {
-                TRAINING: train_trainset_stats,
-                VALIDATION: train_valiset_stats,
-                TEST: train_testset_stats
-            }
-
-            # save training statistics
-            if is_on_master():
-                if not skip_save_training_statistics:
-                    save_json(training_stats_fn, train_stats)
-
-            # grab the results of the model with highest validation test performance
-            validation_field = trainer.validation_field
-            validation_metric = trainer.validation_metric
-            validation_field_result = train_valiset_stats[validation_field]
-
-            best_function = get_best_function(validation_metric)
-            # results of the model with highest validation test performance
-            if is_on_master() and validation_set is not None:
-                epoch_best_vali_metric, best_vali_metric = best_function(
-                    enumerate(validation_field_result[validation_metric]),
-                    key=lambda pair: pair[1]
+                train_stats = self.backend.train(
+                    trainer,
+                    self.model,
+                    training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    save_path=model_dir,
                 )
-                logger.info(
-                    'Best validation model epoch: {0}'.format(
-                        epoch_best_vali_metric + 1)
-                )
-                logger.info(
-                    'Best validation model {0} on validation set {1}: {2}'.format(
-                        validation_metric, validation_field, best_vali_metric
-                    ))
-                if test_set is not None:
-                    best_vali_metric_epoch_test_metric = train_testset_stats[
-                        validation_field][validation_metric][
-                        epoch_best_vali_metric]
 
-                    logger.info(
-                        'Best validation model {0} on test set {1}: {2}'.format(
-                            validation_metric,
-                            validation_field,
-                            best_vali_metric_epoch_test_metric
-                        )
+                train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+                train_stats = {
+                    TRAINING: train_trainset_stats,
+                    VALIDATION: train_valiset_stats,
+                    TEST: train_testset_stats
+                }
+
+                # save training statistics
+                if is_on_master():
+                    if not skip_save_training_statistics:
+                        save_json(training_stats_fn, train_stats)
+
+                # grab the results of the model with highest validation test performance
+                validation_field = trainer.validation_field
+                validation_metric = trainer.validation_metric
+                validation_field_result = train_valiset_stats[validation_field]
+
+                best_function = get_best_function(validation_metric)
+                # results of the model with highest validation test performance
+                if is_on_master() and validation_set is not None:
+                    epoch_best_vali_metric, best_vali_metric = best_function(
+                        enumerate(validation_field_result[validation_metric]),
+                        key=lambda pair: pair[1]
                     )
-                logger.info(
-                    '\nFinished: {0}_{1}'.format(experiment_name, model_name))
-                logger.info('Saved to: {0}'.format(output_directory))
+                    logger.info(
+                        'Best validation model epoch: {0}'.format(
+                            epoch_best_vali_metric + 1)
+                    )
+                    logger.info(
+                        'Best validation model {0} on validation set {1}: {2}'.format(
+                            validation_metric, validation_field, best_vali_metric
+                        ))
+                    if test_set is not None:
+                        best_vali_metric_epoch_test_metric = train_testset_stats[
+                            validation_field][validation_metric][
+                            epoch_best_vali_metric]
 
-            contrib_command("train_save", output_directory)
+                        logger.info(
+                            'Best validation model {0} on test set {1}: {2}'.format(
+                                validation_metric,
+                                validation_field,
+                                best_vali_metric_epoch_test_metric
+                            )
+                        )
+                    logger.info(
+                        '\nFinished: {0}_{1}'.format(experiment_name, model_name))
+                    logger.info('Saved to: {0}'.format(output_directory))
 
-            self.training_set_metadata = training_set_metadata
+                contrib_command("train_save", output_directory)
 
-            if not skip_save_model:
-                # Load the best weights from saved checkpoint
-                self.load_weights(model_dir)
+                self.training_set_metadata = training_set_metadata
 
-            return train_stats, preprocessed_data, output_directory
+                if not skip_save_model:
+                    # Load the best weights from saved checkpoint
+                    self.load_weights(model_dir)
+
+                return train_stats, preprocessed_data, output_directory
 
     def train_online(
             self,
@@ -595,7 +592,8 @@ class LudwigModel:
             data_format=data_format,
             skip_save_processed_input=True,
             preprocessing_params=self.config[PREPROCESSING],
-            random_seed=random_seed
+            backend=self.backend,
+            random_seed=random_seed,
         )
 
         if not self.training_set_metadata:
@@ -610,10 +608,9 @@ class LudwigModel:
                                                   random_seed=random_seed)
 
         if not self._online_trainer:
-            self._online_trainer = Trainer(
+            self._online_trainer = self.backend.create_trainer(
                 **self.config[TRAINING],
                 random_seed=random_seed,
-                horoovd=self._horovod,
                 debug=debug
             )
 

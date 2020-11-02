@@ -15,22 +15,23 @@
 # limitations under the License.
 # ==============================================================================
 
-from ludwig.backend.base import Backend
-from ludwig.constants import NAME
-from ludwig.data.processor.dask import DaskProcessor
+from ludwig.backend import Backend
+from ludwig.data.processor.pandas import PandasProcessor
 from ludwig.models.trainer import Trainer
+from ludwig.utils.horovod_utils import configure_horovod
 
 
-class DaskBackend(Backend):
+class HorovodBackend(Backend):
     def __init__(self):
         super().__init__()
-        self._processor = DaskProcessor()
+        self._processor = PandasProcessor()
+        self._horovod = None
 
     def initialize(self):
-        pass
+        self._horovod = configure_horovod(use_horovod=True)
 
     def create_trainer(self, **kwargs):
-        return Trainer(**kwargs)
+        return Trainer(horovod=self._horovod, **kwargs)
 
     @property
     def processor(self):
@@ -38,8 +39,7 @@ class DaskBackend(Backend):
 
     @property
     def supports_multiprocessing(self):
-        return False
+        return True
 
     def check_lazy_load_supported(self, feature):
-        raise ValueError(f'DaskBackend does not support lazy loading of data files at train time. '
-                         f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
+        pass

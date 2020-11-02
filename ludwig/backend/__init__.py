@@ -16,9 +16,15 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, LocalBackend
+from ludwig.utils.horovod_utils import has_horovodrun
 
 
 LOCAL_BACKEND = LocalBackend()
+
+LOCAL = 'local'
+DASK = 'dask'
+HOROVOD = 'horovod'
+RAY = 'ray'
 
 
 def get_local_backend():
@@ -30,12 +36,26 @@ def create_dask_backend():
     return DaskBackend()
 
 
+def create_horovod_backend():
+    from ludwig.backend.horovod import HorovodBackend
+    return HorovodBackend()
+
+
+def create_ray_backend():
+    from ludwig.backend.ray import RayBackend
+    return RayBackend()
+
+
 backend_registry = {
-    'dask': create_dask_backend,
-    'local': get_local_backend,
+    LOCAL: get_local_backend,
+    DASK: create_dask_backend,
+    HOROVOD: create_horovod_backend,
+    RAY: create_ray_backend,
     None: get_local_backend,
 }
 
 
 def create_backend(name):
+    if name is None and has_horovodrun():
+        name = HOROVOD
     return backend_registry[name]()

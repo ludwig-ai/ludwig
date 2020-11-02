@@ -23,6 +23,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
 from ludwig.data.processor.pandas import PandasProcessor
+from ludwig.models.trainer import Trainer
 
 
 class Backend(ABC):
@@ -33,8 +34,9 @@ class Backend(ABC):
     def initialize(self):
         raise NotImplementedError()
 
+    @contextmanager
     @abstractmethod
-    def train(self, trainer, *args, **kwargs):
+    def create_trainer(self, **kwargs):
         raise NotImplementedError()
 
     @property
@@ -87,8 +89,8 @@ class LocalBackend(Backend):
     def initialize(self):
         pass
 
-    def train(self, trainer, *args, **kwargs):
-        return trainer.train(*args, **kwargs)
+    def create_trainer(self, **kwargs):
+        return Trainer(**kwargs)
 
     @property
     def processor(self):
