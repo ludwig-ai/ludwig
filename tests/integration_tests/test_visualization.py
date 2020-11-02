@@ -1288,7 +1288,8 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
         treshhold_output_feature_name2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1296,6 +1297,10 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
                     'confidence_thresholding_2thresholds_2d',
                     '--ground_truth',
                     ground_truth,
+                    '--split_file',
+                    split_file,
+                    '--ground_truth_metadata',
+                    exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
                     probability1,
                     probability2,
@@ -1365,7 +1370,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
         treshhold_output_feature_name2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1373,6 +1379,10 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
                     'confidence_thresholding_2thresholds_3d',
                     '--ground_truth',
                     ground_truth,
+                    '--split_file',
+                    split_file,
+                    '--ground_truth_metadata',
+                    exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
                     probability1,
                     probability2,

@@ -852,6 +852,8 @@ def confidence_thresholding_2thresholds_2d_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
         **kwargs: dict
 ) -> None:
@@ -866,6 +868,9 @@ def confidence_thresholding_2thresholds_2d_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -874,21 +879,36 @@ def confidence_thresholding_2thresholds_2d_cli(
 
     :return None:
     """
-    gt1 = load_from_file(
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth0 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[0],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
-    gt2 = load_from_file(
+    feature_metadata = metadata[threshold_output_feature_names[0]]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth0 = vfunc(ground_truth0, feature_metadata['str2idx'])
+
+    ground_truth1 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[1],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
+    feature_metadata = metadata[threshold_output_feature_names[1]]
+    ground_truth1 = vfunc(ground_truth1, feature_metadata['str2idx'])
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_2d(
-        probabilities_per_model, [gt1, gt2], threshold_output_feature_names,
+        probabilities_per_model,
+        [ground_truth0, ground_truth1],
+        threshold_output_feature_names,
         **kwargs
     )
 
@@ -897,6 +917,8 @@ def confidence_thresholding_2thresholds_3d_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
         **kwargs: dict
 ) -> None:
@@ -911,6 +933,9 @@ def confidence_thresholding_2thresholds_3d_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -919,21 +944,36 @@ def confidence_thresholding_2thresholds_3d_cli(
 
     :return None:
     """
-    gt1 = load_from_file(
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth0 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[0],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
-    gt2 = load_from_file(
+    feature_metadata = metadata[threshold_output_feature_names[0]]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth0 = vfunc(ground_truth0, feature_metadata['str2idx'])
+
+    ground_truth1 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[1],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
+    feature_metadata = metadata[threshold_output_feature_names[1]]
+    ground_truth1 = vfunc(ground_truth1, feature_metadata['str2idx'])
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_3d(
-        probabilities_per_model, [gt1, gt2], threshold_output_feature_names,
+        probabilities_per_model,
+        [ground_truth0, ground_truth1],
+        threshold_output_feature_names,
         **kwargs
     )
 
