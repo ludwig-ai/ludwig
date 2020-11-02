@@ -353,7 +353,7 @@ def compare_classifiers_performance_from_pred_cli(
     # Inputs
 
     :param predictions: (List[str]) path to experiment predictions file.
-    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -370,17 +370,31 @@ def compare_classifiers_performance_from_pred_cli(
 
     :return None:
     """
-    compare_classifiers_performance_from_pred(
-        predictions,
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
         ground_truth,
-        ground_truth_metadata,
+        output_feature_name,
         ground_truth_split,
-        split_file,
+        ground_truth_metadata,
+        split_file
+    )
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    predictions_per_model = load_data_for_viz(
+        'load_from_file', predictions, dtype=str
+    )
+
+    compare_classifiers_performance_from_pred(
+        predictions_per_model,
+        ground_truth,
+        metadata,
         output_feature_name,
         output_directory=output_directory,
         **kwargs
     )
-
 
 
 def compare_classifiers_performance_subset_cli(
@@ -1242,11 +1256,9 @@ def compare_classifiers_performance_from_prob(
 
 
 def compare_classifiers_performance_from_pred(
-        predictions: List[list],
-        ground_truth: str,
-        ground_truth_metadata: str,
-        ground_truth_split: int,
-        split_file: str,
+        predictions_per_model: List[np.ndarray],
+        ground_truth: pd.Series,
+        metadata: dict,
         output_feature_name: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
@@ -1265,11 +1277,7 @@ def compare_classifiers_performance_from_pred(
     :param predictions: (List[str]) path to experiment predictions file.
     :param ground_truth: (numpy.array) numpy.array containing ground truth data,
         which are the numeric encoded values the category.
-    :param ground_truth_metadata: (str) path to ground truth metadata file.
-    :param ground_truth_split: (str) type of ground truth split -
-        `0` for training split, `1` for validation split or
-        2 for `'test'` split.
-    :param split_file: (str, None) file path to csv file containing split values
+    :param metadata: (dict) feature metadata dictionary.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
@@ -1285,17 +1293,6 @@ def compare_classifiers_performance_from_pred(
 
     :return: (None)
     """
-    # retrieve ground truth from source data set
-    ground_truth = _extract_ground_truth_values(
-        ground_truth,
-        output_feature_name,
-        ground_truth_split,
-        ground_truth_metadata,
-        split_file
-    )
-
-    # retrieve feature metadata to convert raw predictions to encoded value
-    metadata = load_json(ground_truth_metadata)
     feature_metadata = metadata[output_feature_name]
 
     # translate string to encoded numeric value
@@ -1303,11 +1300,8 @@ def compare_classifiers_performance_from_pred(
     gt = vfunc(ground_truth, feature_metadata['str2idx'])
 
     # metadata = load_json(ground_truth_metadata)
-    predictions_per_model_raw = load_data_for_viz(
-        'load_from_file', predictions, dtype=str
-    )
     predictions_per_model = [
-        np.ndarray.flatten(pred) for pred in predictions_per_model_raw
+        np.ndarray.flatten(pred) for pred in predictions_per_model
     ]
 
     if labels_limit > 0:
