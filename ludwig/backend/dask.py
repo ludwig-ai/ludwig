@@ -25,6 +25,12 @@ class DaskBackend(Backend):
         super().__init__()
         self._processor = DaskProcessor()
 
+    def initialize(self):
+        pass
+
+    def train(self, trainer, *args, **kwargs):
+        return trainer.train(*args, **kwargs)
+
     @property
     def processor(self):
         return self._processor

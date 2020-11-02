@@ -29,6 +29,14 @@ class Backend(ABC):
     def __init__(self, cache_dir=None):
         self._cache_dir = cache_dir
 
+    @abstractmethod
+    def initialize(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def train(self, trainer, *args, **kwargs):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def processor(self):
@@ -75,6 +83,12 @@ class LocalBackend(Backend):
     def __init__(self):
         super().__init__()
         self._processor = PandasProcessor()
+
+    def initialize(self):
+        pass
+
+    def train(self, trainer, *args, **kwargs):
+        return trainer.train(*args, **kwargs)
 
     @property
     def processor(self):

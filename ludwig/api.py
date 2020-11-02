@@ -481,7 +481,8 @@ class LudwigModel:
                 if not skip_save_model:
                     self.save_config(model_dir)
 
-            train_stats = trainer.train(
+            train_stats = self.backend.train(
+                trainer,
                 self.model,
                 training_set,
                 validation_set=validation_set,
