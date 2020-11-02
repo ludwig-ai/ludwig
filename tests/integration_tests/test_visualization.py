@@ -1202,8 +1202,8 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.meta.json'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1211,10 +1211,12 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
                     'confidence_thresholding_data_vs_acc_subset_per_class',
                     '--ground_truth',
                     ground_truth,
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--output_feature_name',
                     output_feature_name,
+                    '--split_file',
+                    split_file,
+                    '--ground_truth_metadata',
+                    exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
                     probability,
                     probability,
