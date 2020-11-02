@@ -32,7 +32,7 @@ The core design principles baked into the toolbox are:
 - Generality: a new datatype-based approach to deep learning model design makes the tool usable across many different use cases.
 - Flexibility: experienced users have extensive control over model building and training, while newcomers will find it easy to use.
 - Extensibility: easy to add new model architecture and new feature datatypes.
-- Understandability: deep learning model internals are often considered black boxes, but udwig provides standard visualizations to understand their performance and compare their predictions.
+- Understandability: deep learning model internals are often considered black boxes, but ludwig provides standard visualizations to understand their performance and compare their predictions.
 - Open Source: Apache License 2.0
 
 
