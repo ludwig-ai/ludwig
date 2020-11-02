@@ -171,7 +171,6 @@ def _extract_ground_truth_values(
         ground_truth: str,
         output_feature_name: str,
         ground_truth_split: int,
-        ground_truth_metadata: str,
         split_file: Union[str, None]) -> pd.Series:
     """Helper function to extract ground truth values
 
@@ -181,8 +180,6 @@ def _extract_ground_truth_values(
         truth values.
     :param ground_truth_split: (int) dataset split to use for ground truth,
         defaults to 2.
-    :param ground_truth_metadata: (str) file path to metadta created during
-        training.
     :param split_file: (Union[str, None]) optional file path to split values.
 
     # Return
@@ -320,7 +317,6 @@ def compare_classifiers_performance_from_prob_cli(
         ground_truth,
         output_feature_name,
         ground_truth_split,
-        ground_truth_metadata,
         split_file
     )
 
@@ -376,7 +372,6 @@ def compare_classifiers_performance_from_pred_cli(
         ground_truth,
         output_feature_name,
         ground_truth_split,
-        ground_truth_metadata,
         split_file
     )
 
@@ -401,6 +396,8 @@ def compare_classifiers_performance_subset_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         output_directory: str,
         **kwargs: dict
@@ -415,6 +412,9 @@ def compare_classifiers_performance_subset_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
          results.
@@ -424,12 +424,27 @@ def compare_classifiers_performance_subset_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+    feature_metadata = metadata[output_feature_name]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
+
     compare_classifiers_performance_subset(
-        probabilities_per_model, gt,
+        probabilities_per_model,
+        ground_truth,
         output_directory=output_directory,
         **kwargs
     )
@@ -439,6 +454,8 @@ def compare_classifiers_performance_changing_k_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -452,6 +469,10 @@ def compare_classifiers_performance_changing_k_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -459,12 +480,27 @@ def compare_classifiers_performance_changing_k_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+    feature_metadata = metadata[output_feature_name]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_changing_k(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        **kwargs
     )
 
 
@@ -1359,13 +1395,13 @@ def compare_classifiers_performance_from_pred(
 
 def compare_classifiers_performance_subset(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: np.ndarray,
         top_n_classes: List[int],
         labels_limit: (int),
         subset: str,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
-        file_format:str = 'pdf',
+        file_format: str = 'pdf',
         **kwargs
 ) -> None:
     """Produces model comparison barplot visualization from train subset.
@@ -1400,6 +1436,7 @@ def compare_classifiers_performance_subset(
 
     :return: (None)
     """
+
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
     model_names_list = convert_to_list(model_names)

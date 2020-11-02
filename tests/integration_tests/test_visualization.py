@@ -570,7 +570,8 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -578,6 +579,10 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
                     'compare_classifiers_performance_subset',
                     '--output_feature_name',
                     output_feature_name,
+                    '--split_file',
+                    split_file,
+                    '--ground_truth_metadata',
+                    exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
                     probability,
                     probability,
@@ -634,7 +639,9 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
     probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
+    ground_truth_metadata = exp_dir_name + '/model/training_set_metadata.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -642,6 +649,10 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
                     'compare_classifiers_performance_changing_k',
                     '--output_feature_name',
                     output_feature_name,
+                    '--split_file',
+                    split_file,
+                    '--ground_truth_metadata',
+                    ground_truth_metadata,
                     '--probabilities',
                     probability,
                     probability,
