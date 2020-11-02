@@ -27,8 +27,18 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION):
 
 class SST2(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
     """The SST2 dataset.
+    
+    This dataset is constructed using the Stanford Sentiment Treebank Dataset.
+    This dataset contains binary labels (positive or negative) for each sample.
 
-    This pulls in an array of mixins for different types of functionality
+    The original dataset specified 5 labels: very negative, negative, neutral, positive, very positive with 
+    the following cutoffs: [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
+
+    In the construction of this dataset, we remove all neutral phrases and assign a negative label if 
+    the original rating falls into the following range: [0, 0.4] and a positive label if the original rating
+    is between (0.6, 1.0].
+    
+    This class pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming training data into a destination
     dataframe that can fit into Ludwig's training API.
     """
