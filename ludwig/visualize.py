@@ -1299,7 +1299,6 @@ def compare_classifiers_performance_from_pred(
     vfunc = np.vectorize(_encode_categorical_feature)
     gt = vfunc(ground_truth, feature_metadata['str2idx'])
 
-    # metadata = load_json(ground_truth_metadata)
     predictions_per_model = [
         np.ndarray.flatten(pred) for pred in predictions_per_model
     ]
