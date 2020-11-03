@@ -1,6 +1,6 @@
 Cython>=0.25
-h5py>=2.6
-numpy>=1.15,<=1.19.3
+h5py>=2.6,<2.11.0
+numpy>=1.15,<1.19.0
 pandas>=0.19
 scipy>=0.18
 tabulate>=0.7
