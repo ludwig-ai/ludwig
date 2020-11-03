@@ -29,6 +29,7 @@ import numpy as np
 
 from ludwig.experiment import experiment_cli
 from ludwig.utils.data_utils import load_from_file, load_json
+from ludwig.visualize import _extract_ground_truth_values
 from tests.integration_tests.test_visualization_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature, category_feature, \
@@ -1847,35 +1848,37 @@ def test_load_ground_truth_split_from_file(csv_filename):
     )
     output_feature_name = get_output_feature_name(exp_dir_name)
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth = experiment_source_data_name + '.csv'
+    split_file = experiment_source_data_name + '_split.csv'
 
-    ground_truth_train_split = load_from_file(ground_truth,
-                                              output_feature_name,
-                                              ground_truth_split=0)
-    ground_truth_val_split = load_from_file(ground_truth, output_feature_name,
-                                            ground_truth_split=1)
-    ground_truth_test_split = load_from_file(ground_truth, output_feature_name)
+    # retrieve ground truth from source data set
+    ground_truth_train_split = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        0,
+        split_file
+    )
+    ground_truth_val_split = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        1,
+        split_file
+    )
+    ground_truth_test_split = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        2,
+        split_file
+    )
 
     test_df, train_df, val_df = obtain_df_splits(csv_filename)
     target_predictions_from_train = train_df[output_feature_name]
     target_predictions_from_val = val_df[output_feature_name]
     target_predictions_from_test = test_df[output_feature_name]
-    gtm_name = experiment_source_data_name + '.meta.json'
-    ground_truth_metadata = load_json(gtm_name)
-    ground_truth_loaded_train_split = np.asarray([
-        ground_truth_metadata[output_feature_name]['str2idx'][train_row]
-        for train_row in target_predictions_from_train
-    ])
-    ground_truth_loaded_val_split = np.asarray([
-        ground_truth_metadata[output_feature_name]['str2idx'][val_row]
-        for val_row in target_predictions_from_val
-    ])
-    ground_truth_loaded_test_split = np.asarray([
-        ground_truth_metadata[output_feature_name]['str2idx'][test_row]
-        for test_row in target_predictions_from_test
-    ])
 
-    assert str(ground_truth_train_split) == str(
-        ground_truth_loaded_train_split)
-    assert str(ground_truth_val_split) == str(ground_truth_loaded_val_split)
-    assert str(ground_truth_test_split) == str(ground_truth_loaded_test_split)
+    assert str(ground_truth_train_split.values) == \
+           str(target_predictions_from_train.values)
+    assert str(ground_truth_val_split.values) == \
+           str(target_predictions_from_val.values)
+    assert str(ground_truth_test_split.values) == \
+           str(target_predictions_from_test.values)
