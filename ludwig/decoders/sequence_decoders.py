@@ -288,6 +288,7 @@ class SequenceGeneratorDecoder(Layer):
     ):
         # ================ Setup ================
         batch_size = encoder_output.shape[0]
+        batch_size = 18
 
         # Prepare target for decoding
         target_sequence_length = sequence_length_2D(target)

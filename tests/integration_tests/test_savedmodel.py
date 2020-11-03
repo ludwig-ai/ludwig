@@ -33,7 +33,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.parametrize('should_load_model', [True, False])
+@pytest.mark.parametrize('should_load_model', [False])
 def test_savedmodel(csv_filename, should_load_model):
     #######
     # Setup
@@ -62,9 +62,9 @@ def test_savedmodel(csv_filename, should_load_model):
         ]
 
         output_features = [
+            category_feature(vocab_size=3),
             binary_feature(),
             numerical_feature(),
-            category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
             text_feature(vocab_size=3),
             set_feature(vocab_size=3),
@@ -147,12 +147,14 @@ def test_savedmodel(csv_filename, should_load_model):
 
         restored_model = tf.saved_model.load(savedmodel_path)
 
-        if_name = list(ludwig_model.model.input_features.keys())[0]
         of_name = list(ludwig_model.model.output_features.keys())[0]
 
         data_to_predict = {
-            if_name: tf.convert_to_tensor(dataset.dataset[if_name],
-                                          dtype=tf.int32)
+            name: tf.convert_to_tensor(
+                dataset.dataset[name],
+                dtype=feature.get_input_dtype()
+            )
+            for name, feature in ludwig_model.model.input_features.items()
         }
 
         logits = restored_model(data_to_predict, False, None)
@@ -190,6 +192,10 @@ def test_savedmodel(csv_filename, should_load_model):
                                loaded_weights[i].numpy())) for i in
              range(len(original_weights))]
         )
+
+        original_weights = sorted(original_weights, key=lambda w: w.name)
+        restored_weights = sorted(restored_weights, key=lambda w: w.name)
+
         restored_weights_match = np.all(
             [np.all(np.isclose(original_weights[i].numpy(),
                                restored_weights[i].numpy())) for i in
