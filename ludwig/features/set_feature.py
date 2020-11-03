@@ -101,6 +101,7 @@ class SetFeatureMixin(object):
 
 class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = 'embed'
+    vocab = []
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)

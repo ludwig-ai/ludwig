@@ -291,6 +291,7 @@ class SequenceGeneratorDecoder(Layer):
 
         # Prepare target for decoding
         target_sequence_length = sequence_length_2D(target)
+        print('GO', self.GO_SYMBOL, batch_size)
         start_tokens = tf.tile([self.GO_SYMBOL], [batch_size])
         end_tokens = tf.tile([self.END_SYMBOL], [batch_size])
         if self.is_timeseries:

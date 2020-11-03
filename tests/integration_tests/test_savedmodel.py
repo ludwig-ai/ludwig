@@ -15,6 +15,7 @@
 # ==============================================================================
 import os
 import shutil
+import tempfile
 from copy import deepcopy
 
 import numpy as np
