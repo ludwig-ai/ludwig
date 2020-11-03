@@ -33,7 +33,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.parametrize('should_load_model', [False])
+@pytest.mark.parametrize('should_load_model', [True, False])
 def test_savedmodel(csv_filename, should_load_model):
     #######
     # Setup
@@ -110,19 +110,19 @@ def test_savedmodel(csv_filename, should_load_model):
         if should_load_model:
             ludwig_model = LudwigModel.load(ludwigmodel_path)
 
-        #################
-        # save savedmodel
-        #################
-        savedmodel_path = os.path.join(dir_path, 'savedmodel')
-        shutil.rmtree(savedmodel_path, ignore_errors=True)
-        ludwig_model.model.save_savedmodel(savedmodel_path)
-
         ##############################
         # collect weight tensors names
         ##############################
         original_predictions_df, _ = ludwig_model.predict(
             dataset=data_csv_path)
         original_weights = deepcopy(ludwig_model.model.trainable_variables)
+
+        #################
+        # save savedmodel
+        #################
+        savedmodel_path = os.path.join(dir_path, 'savedmodel')
+        shutil.rmtree(savedmodel_path, ignore_errors=True)
+        ludwig_model.model.save_savedmodel(savedmodel_path)
 
         ###################################################
         # load Ludwig model, obtain predictions and weights
@@ -147,6 +147,8 @@ def test_savedmodel(csv_filename, should_load_model):
 
         restored_model = tf.saved_model.load(savedmodel_path)
 
+        # Check the outputs for one of the features for correctness
+        # Here we choose the first output feature (categorical)
         of_name = list(ludwig_model.model.output_features.keys())[0]
 
         data_to_predict = {
