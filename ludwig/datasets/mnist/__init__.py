@@ -19,6 +19,7 @@ import png
 import struct
 from os import path
 from array import array
+import pandas as pd
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.download import GZipDownloadMixin
@@ -54,6 +55,20 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
             self.write_output_dataset(labels, data, rows, cols, path.join(self.raw_dataset_path, dataset))
         self.output_training_and_test_data(len(labels))
         os.rename(self.raw_dataset_path, self.processed_dataset_path)
+
+    def prepare_final_dataset(self):
+        """Given a training and test csv we want to create a single final
+        dataframe that contains a split column with different values of each
+        of these (0 for training) and (2 for test) and then return a single
+        merged dataframe containing that column
+        Returns:
+            A final merged dataframe containing the split column"""
+        training_df = pd.read_csv(os.path.join(self.processed_dataset_path, "mnist_dataset_training.csv"))
+        training_df["split"] = 0
+        test_df = pd.read_csv(os.path.join(self.processed_dataset_path, "mnist_dataset_testing.csv"))
+        test_df["split"] = 2
+        frames = [training_df, test_df]
+        return pd.concat(frames)
 
     def read_source_dataset(self, dataset="training", path="."):
         """Create a directory for training and test and extract all the images
