@@ -1565,7 +1565,7 @@ def compare_classifiers_performance_from_pred(
     """
 
     predictions_per_model = [
-        np.ndarray.flatten(pred) for pred in predictions_per_model
+        np.ndarray.flatten(np.array(pred)) for pred in predictions_per_model
     ]
 
     if labels_limit > 0:
