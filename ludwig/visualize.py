@@ -320,6 +320,10 @@ def compare_classifiers_performance_from_prob_cli(
         split_file
     )
 
+    feature_metadata = metadata[output_feature_name]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
@@ -327,8 +331,6 @@ def compare_classifiers_performance_from_prob_cli(
     compare_classifiers_performance_from_prob(
         probabilities_per_model,
         ground_truth,
-        metadata,
-        output_feature_name,
         output_directory=output_directory,
         **kwargs
     )
@@ -366,6 +368,8 @@ def compare_classifiers_performance_from_pred_cli(
 
     :return None:
     """
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
 
     # retrieve ground truth from source data set
     ground_truth = _extract_ground_truth_values(
@@ -375,8 +379,11 @@ def compare_classifiers_performance_from_pred_cli(
         split_file
     )
 
-    # retrieve feature metadata to convert raw predictions to encoded value
-    metadata = load_json(ground_truth_metadata)
+    feature_metadata = metadata[output_feature_name]
+
+    # translate string to encoded numeric value
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     predictions_per_model = load_data_for_viz(
         'load_from_file', predictions, dtype=str
@@ -1428,11 +1435,9 @@ def compare_performance(
 
 def compare_classifiers_performance_from_prob(
         probabilities_per_model: List[np.ndarray],
-        ground_truth: pd.Series,
-        metadata: dict,
-        output_feature_name: str,
-        top_n_classes: List[int],
-        labels_limit: int,
+        ground_truth: np.ndarray,
+        labels_limit: int = 0,
+        top_n_classes: Union[List[int], int] = 3,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -1449,8 +1454,6 @@ def compare_classifiers_performance_from_prob(
     :param probabilities_per_model: (List[np.ndarray]) path to experiment
         probabilities file
     :param ground_truth: (str) path to ground truth file
-    :param metadata: (dict) feature metadata dictionary.
-    :param output_feature_name: (str) name of the output feature to visualize.
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -1468,16 +1471,11 @@ def compare_classifiers_performance_from_prob(
     :return: (None)
     """
 
-    feature_metadata = metadata[output_feature_name]
-
-    vfunc = np.vectorize(_encode_categorical_feature)
-    gt = vfunc(ground_truth, feature_metadata['str2idx'])
-
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
     model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        ground_truth[ground_truth > labels_limit] = labels_limit
 
     probs = probabilities_per_model
     accuracies = []
@@ -1495,20 +1493,21 @@ def compare_classifiers_performance_from_prob(
         top1 = prob[:, -1]
         topk = prob[:, -k:]
 
-        accuracies.append((gt == top1).sum() / len(gt))
+        accuracies.append((ground_truth == top1).sum() / len(ground_truth))
 
         hits_at_k = 0
-        for j in range(len(gt)):
-            hits_at_k += np.in1d(gt[j], topk[j])
-        hits_at_ks.append(np.asscalar(hits_at_k) / len(gt))
+        for j in range(len(ground_truth)):
+            hits_at_k += np.in1d(ground_truth[j], topk[j])
+        hits_at_ks.append(np.asscalar(hits_at_k) / len(ground_truth))
 
         mrr = 0
-        for j in range(len(gt)):
-            gt_pos_in_probs = prob[j] == gt[j]
-            if np.any(gt_pos_in_probs):
-                mrr += (1 / -(np.asscalar(np.argwhere(gt_pos_in_probs)) -
+        for j in range(len(ground_truth)):
+            ground_truth_pos_in_probs = prob[j] == ground_truth[j]
+            if np.any(ground_truth_pos_in_probs):
+                mrr += (1 / -(np.asscalar(
+                    np.argwhere(ground_truth_pos_in_probs)) -
                               prob.shape[1]))
-        mrrs.append(mrr / len(gt))
+        mrrs.append(mrr / len(ground_truth))
 
     filename = None
     if output_directory:
@@ -1528,7 +1527,7 @@ def compare_classifiers_performance_from_prob(
 
 def compare_classifiers_performance_from_pred(
         predictions_per_model: List[np.ndarray],
-        ground_truth: pd.Series,
+        ground_truth: np.ndarray,
         metadata: dict,
         output_feature_name: str,
         labels_limit: int,
@@ -1545,7 +1544,7 @@ def compare_classifiers_performance_from_pred(
 
     # Inputs
 
-    :param predictions: (List[str]) path to experiment predictions file.
+    :param predictions_per_model: (List[str]) path to experiment predictions file.
     :param ground_truth: (numpy.array) numpy.array containing ground truth data,
         which are the numeric encoded values the category.
     :param metadata: (dict) feature metadata dictionary.
@@ -1564,18 +1563,13 @@ def compare_classifiers_performance_from_pred(
 
     :return: (None)
     """
-    feature_metadata = metadata[output_feature_name]
-
-    # translate string to encoded numeric value
-    vfunc = np.vectorize(_encode_categorical_feature)
-    gt = vfunc(ground_truth, feature_metadata['str2idx'])
 
     predictions_per_model = [
         np.ndarray.flatten(pred) for pred in predictions_per_model
     ]
 
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        ground_truth[ground_truth > labels_limit] = labels_limit
 
     preds = predictions_per_model
     model_names_list = convert_to_list(model_names)
@@ -1596,18 +1590,18 @@ def compare_classifiers_performance_from_pred(
     f1s = []
 
     for i, pred in enumerate(preds):
-        accuracies.append(sklearn.metrics.accuracy_score(gt, pred))
+        accuracies.append(sklearn.metrics.accuracy_score(ground_truth, pred))
         precisions.append(
-            sklearn.metrics.precision_score(gt, pred,
+            sklearn.metrics.precision_score(ground_truth, pred,
                                             average='macro')
         )
         recalls.append(sklearn.metrics.recall_score(
-            gt,
+            ground_truth,
             pred,
             average='macro')
         )
         f1s.append(sklearn.metrics.f1_score(
-            gt,
+            ground_truth,
             pred,
             average='macro')
         )
