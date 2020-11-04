@@ -57,11 +57,12 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         """
         os.makedirs(self.processed_temp_path, exist_ok=True)
         for dataset in ["training", "testing"]:
-            print(f'=== processing {dataset} ===')
+            print(f'>>> create ludwig formatted {dataset} data')
             labels, data, rows, cols = self.read_source_dataset(dataset, self.raw_dataset_path)
             self.write_output_dataset(labels, data, rows, cols, os.path.join(self.processed_temp_path, dataset))
         self.output_training_and_test_data()
         os.rename(self.processed_temp_path, self.processed_dataset_path)
+        print('>>> completed data preparation')
 
     def read_source_dataset(self, dataset="training", path="."):
         """Create a directory for training and test and extract all the images
