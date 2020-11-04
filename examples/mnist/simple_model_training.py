@@ -8,15 +8,8 @@
 import logging
 import shutil
 import yaml
-from ludwig.constants import SPLIT
-from ludwig.datasets import mnist
 from ludwig.api import LudwigModel
-
-
-# load and split MNIST dataset
-dataset_df = mnist.load()
-training_set = dataset_df[dataset_df[SPLIT] == "0"]
-test_set = dataset_df[dataset_df[SPLIT] == "2"]
+from ludwig.datasets import mnist
 
 
 # clean out prior results
@@ -30,6 +23,9 @@ with open('./config.yaml', 'r') as f:
 # Define Ludwig model object that drive model training
 model = LudwigModel(config,
                     logging_level=logging.INFO)
+
+# load and split MNIST dataset
+training_set, test_set, _ = mnist.load(split=True)
 
 # initiate model training
 (

@@ -16,8 +16,11 @@
 # ==============================================================================
 
 import os
+from typing import Tuple, Union
 
 import pandas as pd
+
+from ludwig.constants import SPLIT
 
 
 class CSVLoadMixin:
@@ -26,13 +29,23 @@ class CSVLoadMixin:
     config: dict
     processed_dataset_path: str
 
-    def load_processed_dataset(self) -> pd.DataFrame:
+    def load_processed_dataset(self, split) -> Union[pd.DataFrame,
+                                                     Tuple[pd.DataFrame,
+                                                           pd.DataFrame,
+                                                           pd.DataFrame]]:
         """Loads the processed CSV into a dataframe.
 
+        :param split: Splits along 'split' column if present
         :returns: A pandas dataframe
         """
         dataset_csv = os.path.join(self.processed_dataset_path, self.csv_filename)
-        return pd.read_csv(dataset_csv)
+        data_df = pd.read_csv(dataset_csv)
+        if split:
+            training_set = data_df[data_df[SPLIT] == "0"]
+            val_set = data_df[data_df[SPLIT] == "1"]
+            test_set = data_df[data_df[SPLIT] == "2"]
+            return training_set, test_set, val_set
+        return data_df
 
     @property
     def csv_filename(self):

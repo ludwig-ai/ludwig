@@ -29,9 +29,9 @@ from ludwig.datasets.mixins.download import GZipDownloadMixin
 NUM_LABELS = 10
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Mnist(cache_dir=cache_dir)
-    return dataset.load()
+    return dataset.load(split=split)
 
 
 class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):

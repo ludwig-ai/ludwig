@@ -62,11 +62,14 @@ class BaseDataset:
             self.download()
         self.process_downloaded_dataset()
 
-    def load(self) -> pd.DataFrame:
-        """Loads the processed data into a Pandas DataFrame."""
+    def load(self, split=False) -> pd.DataFrame:
+        """Loads the processed data into a Pandas DataFrame.
+
+        :param split: Splits dataset along 'split' column if present.
+        """
         if not self.is_processed():
             self.process()
-        return self.load_processed_dataset()
+        return self.load_processed_dataset(split)
 
     @property
     def raw_dataset_path(self):
@@ -97,7 +100,7 @@ class BaseDataset:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def load_processed_dataset(self):
+    def load_processed_dataset(self, split):
         raise NotImplementedError()
 
     @abc.abstractmethod
