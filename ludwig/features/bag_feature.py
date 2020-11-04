@@ -93,6 +93,7 @@ class BagFeatureMixin(object):
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
     encoder = 'embed'
+    vocab = []
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
