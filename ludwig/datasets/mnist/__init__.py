@@ -56,20 +56,6 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         self.output_training_and_test_data(len(labels))
         os.rename(self.raw_dataset_path, self.processed_dataset_path)
 
-    def prepare_final_dataset(self):
-        """Given a training and test csv we want to create a single final
-        dataframe that contains a split column with different values of each
-        of these (0 for training) and (2 for test) and then return a single
-        merged dataframe containing that column
-        Returns:
-            A final merged dataframe containing the split column"""
-        training_df = pd.read_csv(os.path.join(self.processed_dataset_path, "mnist_dataset_training.csv"))
-        training_df["split"] = 0
-        test_df = pd.read_csv(os.path.join(self.processed_dataset_path, "mnist_dataset_testing.csv"))
-        test_df["split"] = 2
-        frames = [training_df, test_df]
-        return pd.concat(frames)
-
     def read_source_dataset(self, dataset="training", path="."):
         """Create a directory for training and test and extract all the images
         and labels to this destination.
@@ -78,10 +64,10 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
             path (str): the raw dataset path
         :returns:
             A tuple of the label for the image, the file array, the size and rows and columns for the image"""
-        if dataset is "training":
+        if dataset == "training":
             fname_img = os.path.join(path, 'train-images-idx3-ubyte')
             fname_lbl = os.path.join(path, 'train-labels-idx1-ubyte')
-        elif dataset is "testing":
+        elif dataset == "testing":
             fname_img = os.path.join(path, 't10k-images-idx3-ubyte')
             fname_lbl = os.path.join(path, 't10k-labels-idx1-ubyte')
         else:
@@ -135,15 +121,23 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
             length_labels (int): The number of labels for the images that we're processing"""
         subdirectory_list = ["training",
                              "testing"]
-        for name in subdirectory_list:
-            with open(os.path.join(self.raw_dataset_path, 'mnist_dataset_{}.csv'.format(name)), 'w') as output_file:
-                print('=== creating {} dataset ==='.format(name))
-                output_file.write('image_path,label\n')
+        training_split_val = "0"
+        testing_split_val = "2"
+        with open(os.path.join(self.raw_dataset_path, 'mnist_dataset.csv'), 'w') as output_file:
+            for name in subdirectory_list:
+                print('=== creating {} dataset ===')
+                output_file.write('image_path,label,split\n')
                 for i in range(length_labels):
                     img_path = os.path.join(self.raw_dataset_path, '{}/{}'.format(name, i))
                     for file in os.listdir(img_path):
                         if file.endswith(".png"):
-                            output_file.write('{},{}\n'.format(os.path.join(img_path, file), str(i)))
+                            if name == "training":
+                                output_file.write('{},{},{}\n'.format(os.path.join(img_path, file), str(i),
+                                                                   training_split_val))
+                            elif name == "testing":
+                                output_file.write('{},{},{}\n'.format(os.path.join(img_path, file), str(i),
+                                                                   testing_split_val))
+        output_file.close()
 
     @property
     def download_url(self):

@@ -6,13 +6,14 @@
 # This example is the API example for this Ludwig command line example
 # (https://ludwig-ai.github.io/ludwig-docs/examples/#image-classification-mnist).
 
-# Import required libraries
+
 import logging
 import shutil
-
+import tempfile
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.datasets.mnist import Mnist
 
 # clean out prior results
 shutil.rmtree('./results', ignore_errors=True)
@@ -27,18 +28,24 @@ model = LudwigModel(config,
                     logging_level=logging.INFO)
 
 
-# initiate model training
-(
-    train_stats,  #training statistics
-    _,
-    output_directory  # location for training results saved to disk
-) = model.train(
-    training_set='./data/mnist_dataset_training.csv',
-    test_set='./data/mnist_dataset_testing.csv',
-    experiment_name='simple_image_experiment',
-    model_name='single_model',
-    skip_save_processed_input=True
-)
+class MnistDataset(Mnist):
+    def __init__(self, cache_dir=None):
+        super().__init__(cache_dir=cache_dir)
+
+
+def main():
+    SPLIT = "split"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mnist = MnistDataset(tmpdir)
+        dataset_df = mnist.load()
+        training_set = dataset_df[dataset_df[SPLIT] == "0"]
+        test_set = dataset_df[dataset_df[SPLIT] == "2"]
+        model.train(training_set=training_set, test_set=test_set)
+
+
+if __name__ == "__main__":
+    main()
+
 
 
 
