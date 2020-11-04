@@ -16,6 +16,7 @@
 # ==============================================================================
 import os
 import struct
+from multiprocessing.pool import ThreadPool
 
 import png
 from array import array
@@ -23,6 +24,9 @@ from array import array
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.download import GZipDownloadMixin
+
+
+NUM_LABELS = 10
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION):
@@ -53,9 +57,10 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         """
         os.makedirs(self.processed_temp_path, exist_ok=True)
         for dataset in ["training", "testing"]:
+            print(f'=== processing {dataset} ===')
             labels, data, rows, cols = self.read_source_dataset(dataset, self.raw_dataset_path)
             self.write_output_dataset(labels, data, rows, cols, os.path.join(self.processed_temp_path, dataset))
-        self.output_training_and_test_data(len(labels))
+        self.output_training_and_test_data()
         os.rename(self.processed_temp_path, self.processed_dataset_path)
 
     def read_source_dataset(self, dataset="training", path="."):
@@ -99,14 +104,14 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         # create child image output directories
         output_dirs = [
             os.path.join(output_dir, str(i))
-            for i in range(len(labels))
+            for i in range(NUM_LABELS)
         ]
-        for output_dir in output_dirs:
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
 
-        # write out image data
-        for i, label in enumerate(labels):
+        for output_dir in output_dirs:
+            os.makedirs(output_dir, exist_ok=True)
+
+        def write_processed_image(t):
+            i, label = t
             output_filename = os.path.join(output_dirs[label], str(i) + ".png")
             with open(output_filename, "wb") as h:
                 w = png.Writer(cols, rows, greyscale=True)
@@ -116,18 +121,22 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
                 ]
                 w.write(h, data_i)
 
-    def output_training_and_test_data(self, length_labels):
+        # write out image data
+        tasks = list(enumerate(labels))
+        pool = ThreadPool(NUM_LABELS)
+        pool.map(write_processed_image, tasks)
+        pool.close()
+        pool.join()
+
+    def output_training_and_test_data(self):
         """The final method where we create a training and test file by iterating through
         all the images and labels previously created.
-        Args:
-            length_labels (int): The number of labels for the images that we're processing"""
+        """
         with open(os.path.join(self.processed_temp_path, self.csv_filename), 'w') as output_file:
             for name in ["training", "testing"]:
                 split = 0 if name == 'training' else 2
-
-                print('=== creating {} dataset ===')
                 output_file.write('image_path,label,split\n')
-                for i in range(length_labels):
+                for i in range(NUM_LABELS):
                     img_path = os.path.join(self.processed_temp_path, '{}/{}'.format(name, i))
                     final_img_path = os.path.join(self.processed_dataset_path, '{}/{}'.format(name, i))
                     for file in os.listdir(img_path):
