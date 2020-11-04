@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import gzip
 import os
-import tempfile
+import shutil
 import urllib.request
-
 from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
@@ -45,6 +45,38 @@ class ZipDownloadMixin:
     @property
     def download_urls(self):
         return self.config["download_urls"]
+
+
+class GZipDownloadMixin:
+    """Downloads the gzip archive file containing the training data and extracts the contents."""
+
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
+
+    def download_raw_dataset(self):
+        """
+        Download the raw dataset and extract the contents of the zip file and
+        store that in the cache location.
+        """
+        """
+                Download the raw dataset and contents of the gzip file
+                onto the _raw directory.
+                """
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+        for file_download_url in self.download_urls:
+            filename = file_download_url.split('/')[-1]
+            urllib.request.urlretrieve(file_download_url, os.path.join(self.raw_temp_path, filename))
+            gzip_content_file = '.'.join(filename.split('.')[:-1])
+            with gzip.open(os.path.join(self.raw_temp_path, filename)) as gzfile:
+                with open(os.path.join(self.raw_temp_path, gzip_content_file), 'wb') as output:
+                    shutil.copyfileobj(gzfile, output)
+        os.rename(self.raw_temp_path, self.raw_dataset_path)
+
+    @property
+    def download_urls(self):
+        return self.config["download_urls"]
+
 
 class UncompressedFileDownloadMixin:
     """Downloads the json file containing the training data and extracts the contents."""

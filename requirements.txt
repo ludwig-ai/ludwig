@@ -10,6 +10,8 @@ tensorflow>=2.2
 tfa-nightly==0.12.0.dev20200820045606
 PyYAML>=3.12
 absl-py
+requests
+
 
 # new data format support
 xlwt            # excel

@@ -16,6 +16,8 @@ import yaml
 # ## Import required libraries
 from ludwig.api import LudwigModel
 from ludwig.visualize import learning_curves
+from ludwig.constants import SPLIT
+from ludwig.datasets import mnist
 
 # clean out old results
 shutil.rmtree('./results', ignore_errors=True)
@@ -64,10 +66,15 @@ for model_option in list_of_fc_layers:
     # Define Ludwig model object that drive model training
     model = LudwigModel(config,
                         logging_level=logging.INFO)
+    # load and split MNIST dataset
+    dataset_df = mnist.load()
+    training_set = dataset_df[dataset_df[SPLIT] == "0"]
+    test_set = dataset_df[dataset_df[SPLIT] == "2"]
 
     # initiate model training
     train_stats, _, _ = model.train(
-        dataset='./data/mnist_dataset_training.csv',
+        training_set=training_set,
+        test_set=test_set,
         experiment_name='multiple_experiment',
         model_name=model_option.name)
 
