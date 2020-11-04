@@ -15,19 +15,23 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import png
 import struct
-from os import path
+from multiprocessing.pool import ThreadPool
+
+import png
 from array import array
-import pandas as pd
+
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.download import GZipDownloadMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION):
+NUM_LABELS = 10
+
+
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Mnist(cache_dir=cache_dir)
-    return dataset.load()
+    return dataset.load(split=split)
 
 
 class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
@@ -41,6 +45,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
     config: dict
     raw_temp_path: str
     raw_dataset_path: str
+    processed_temp_path: str
     processed_dataset_path: str
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
@@ -50,11 +55,14 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         """Read the training and test directories and write out
         a csv containing the training path and the label.
         """
+        os.makedirs(self.processed_temp_path, exist_ok=True)
         for dataset in ["training", "testing"]:
+            print(f'>>> create ludwig formatted {dataset} data')
             labels, data, rows, cols = self.read_source_dataset(dataset, self.raw_dataset_path)
-            self.write_output_dataset(labels, data, rows, cols, path.join(self.raw_dataset_path, dataset))
-        self.output_training_and_test_data(len(labels))
-        os.rename(self.raw_dataset_path, self.processed_dataset_path)
+            self.write_output_dataset(labels, data, rows, cols, os.path.join(self.processed_temp_path, dataset))
+        self.output_training_and_test_data()
+        os.rename(self.processed_temp_path, self.processed_dataset_path)
+        print('>>> completed data preparation')
 
     def read_source_dataset(self, dataset="training", path="."):
         """Create a directory for training and test and extract all the images
@@ -72,15 +80,15 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
             fname_lbl = os.path.join(path, 't10k-labels-idx1-ubyte')
         else:
             raise ValueError("dataset must be 'testing' or 'training'")
-        flbl = open(fname_lbl, 'rb')
-        struct.unpack(">II", flbl.read(8))
-        lbl = array("b", flbl.read())
-        flbl.close()
 
-        fimg = open(fname_img, 'rb')
-        magic_nr, size, rows, cols = struct.unpack(">IIII", fimg.read(16))
-        img = array("B", fimg.read())
-        fimg.close()
+        with open(fname_lbl, 'rb') as flbl:
+            struct.unpack(">II", flbl.read(8))
+            lbl = array("b", flbl.read())
+
+        with open(fname_img, 'rb') as fimg:
+            magic_nr, size, rows, cols = struct.unpack(">IIII", fimg.read(16))
+            img = array("B", fimg.read())
+
         return lbl, img, rows, cols
 
     def write_output_dataset(self, labels, data, rows, cols, output_dir):
@@ -96,16 +104,16 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
             A tuple of the label for the image, the file array, the size and rows and columns for the image"""
         # create child image output directories
         output_dirs = [
-            path.join(output_dir, str(i))
-            for i in range(len(labels))
+            os.path.join(output_dir, str(i))
+            for i in range(NUM_LABELS)
         ]
-        for output_dir in output_dirs:
-            if not path.exists(output_dir):
-                os.makedirs(output_dir)
 
-        # write out image data
-        for (i, label) in enumerate(labels):
-            output_filename = path.join(output_dirs[label], str(i) + ".png")
+        for output_dir in output_dirs:
+            os.makedirs(output_dir, exist_ok=True)
+
+        def write_processed_image(t):
+            i, label = t
+            output_filename = os.path.join(output_dirs[label], str(i) + ".png")
             with open(output_filename, "wb") as h:
                 w = png.Writer(cols, rows, greyscale=True)
                 data_i = [
@@ -114,30 +122,31 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
                 ]
                 w.write(h, data_i)
 
-    def output_training_and_test_data(self, length_labels):
+        # write out image data
+        tasks = list(enumerate(labels))
+        pool = ThreadPool(NUM_LABELS)
+        pool.map(write_processed_image, tasks)
+        pool.close()
+        pool.join()
+
+    def output_training_and_test_data(self):
         """The final method where we create a training and test file by iterating through
         all the images and labels previously created.
-        Args:
-            length_labels (int): The number of labels for the images that we're processing"""
-        subdirectory_list = ["training",
-                             "testing"]
-        training_split_val = "0"
-        testing_split_val = "2"
-        with open(os.path.join(self.raw_dataset_path, 'mnist_dataset.csv'), 'w') as output_file:
-            for name in subdirectory_list:
-                print('=== creating {} dataset ===')
+        """
+        with open(os.path.join(self.processed_temp_path, self.csv_filename), 'w') as output_file:
+            for name in ["training", "testing"]:
+                split = 0 if name == 'training' else 2
                 output_file.write('image_path,label,split\n')
-                for i in range(length_labels):
-                    img_path = os.path.join(self.raw_dataset_path, '{}/{}'.format(name, i))
+                for i in range(NUM_LABELS):
+                    img_path = os.path.join(self.processed_temp_path, '{}/{}'.format(name, i))
+                    final_img_path = os.path.join(self.processed_dataset_path, '{}/{}'.format(name, i))
                     for file in os.listdir(img_path):
                         if file.endswith(".png"):
-                            if name == "training":
-                                output_file.write('{},{},{}\n'.format(os.path.join(img_path, file), str(i),
-                                                                   training_split_val))
-                            elif name == "testing":
-                                output_file.write('{},{},{}\n'.format(os.path.join(img_path, file), str(i),
-                                                                   testing_split_val))
-        output_file.close()
+                            output_file.write('{},{},{}\n'.format(
+                                os.path.join(final_img_path, file),
+                                str(i),
+                                split
+                            ))
 
     @property
     def download_url(self):
