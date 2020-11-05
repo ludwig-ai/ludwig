@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+from os import path
 import pandas as pd
 
 class IdentityProcessMixin:
@@ -56,7 +57,8 @@ class MultifileJoinProcessMixin:
             all_files.append(file_df)
 
         concat_df = pd.concat(all_files, ignore_index=True)
-        os.makedirs(self.processed_dataset_path)
+        if not os.path.exists(self.processed_dataset_path):
+            os.makedirs(self.processed_dataset_path)
         concat_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
 
 
