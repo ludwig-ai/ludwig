@@ -214,11 +214,13 @@ def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,
         tf.constant(class_weights, dtype=tf.float32), 0)
     sample_weights = tf.reduce_sum(
         tf.multiply(one_hot_labels, class_weights_const), 1)
-    return tf.losses.softmax_cross_entropy(onehot_labels=one_hot_labels,
-                                           logits=logits,
-                                           label_smoothing=labels_smoothing,
-                                           weights=sample_weights,
-                                           reduction=tf.losses.Reduction.NONE)
+    return tf.compat.v1.losses.softmax_cross_entropy(
+        onehot_labels=one_hot_labels,
+        logits=logits,
+        label_smoothing=labels_smoothing,
+        weights=sample_weights,
+        reduction=tf.losses.Reduction.NONE
+    )
 
 
 def sigmoid_cross_entropy_with_class_weighting(logits, multi_class_labels,
@@ -228,21 +230,24 @@ def sigmoid_cross_entropy_with_class_weighting(logits, multi_class_labels,
         tf.constant(class_weights, dtype=tf.float32), 0)
     sample_weights = tf.reduce_sum(
         tf.multiply(multi_class_labels, class_weights_const), 1)
-    return tf.losses.sigmoid_cross_entropy(
+    return tf.compat.v1.losses.sigmoid_cross_entropy(
         multi_class_labels=multi_class_labels,
         logits=logits,
         label_smoothing=labels_smoothing,
         weights=sample_weights,
-        reduction=tf.losses.Reduction.NONE)
+        reduction=tf.losses.Reduction.NONE
+    )
 
 
 def mean_confidence_penalty(probabilities, num_classes):
     max_entropy = tf.constant(np.log(num_classes), dtype=tf.float32)
     # clipping needed for avoiding log(0) = -inf
-    entropy_per_class = tf.maximum(- probabilities *
-                                   tf.log(
-                                       tf.clip_by_value(probabilities, 1e-10,
-                                                        1)), 0)
+    entropy_per_class = tf.maximum(
+        - probabilities * tf.math.log(
+            tf.clip_by_value(probabilities, 1e-10, 1)
+        ),
+        0
+    )
     entropy = tf.reduce_sum(entropy_per_class, -1)
     penalty = (max_entropy - entropy) / max_entropy
     return tf.reduce_mean(penalty)
