@@ -20,9 +20,9 @@ from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = GoEmotions(cache_dir=cache_dir)
-    return dataset.load()
+    return dataset.load(split=split)
 
 
 class GoEmotions(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
