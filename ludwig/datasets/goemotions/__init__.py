@@ -45,6 +45,5 @@ class GoEmotions(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLo
         # format emotion ids to be a set of emotion ids vs. string
         processed_df = pd.read_csv(os.path.join(self.processed_dataset_path, self.csv_filename))
         processed_df.columns = ['text', 'emotion_ids', 'comment_id', 'split']
-        #processed_df['emotion_ids'] = processed_df['emotion_ids'].str.split(",")
         processed_df['emotion_ids'] = processed_df['emotion_ids'].apply(lambda e_id: " ".join(e_id.split(",")))
         processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
