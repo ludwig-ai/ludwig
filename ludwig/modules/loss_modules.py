@@ -228,13 +228,9 @@ def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,
 def sigmoid_cross_entropy_with_class_weighting(logits, multi_class_labels,
                                                class_weights,
                                                labels_smoothing=0.0):
-    print(class_weights)
-    print(multi_class_labels)
-
     class_weights_const = tf.expand_dims(
         tf.constant(class_weights, dtype=tf.float32), 0)
-    sample_weights = tf.reduce_sum(
-        tf.multiply(multi_class_labels, class_weights_const), 1)
+    sample_weights = tf.multiply(multi_class_labels, class_weights_const)
     return tf.compat.v1.losses.sigmoid_cross_entropy(
         multi_class_labels=multi_class_labels,
         logits=logits,
@@ -381,7 +377,6 @@ def weighted_softmax_cross_entropy(
             label_smoothing=labels_smoothing
         )
     return loss
-
 
 def weighted_sigmoid_cross_entropy(
         logits,
