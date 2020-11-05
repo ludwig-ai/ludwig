@@ -18,8 +18,9 @@ import os
 import struct
 from multiprocessing.pool import ThreadPool
 
-import png
+import numpy as np
 from array import array
+from skimage.io import imsave
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.load import CSVLoadMixin
@@ -114,13 +115,11 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         def write_processed_image(t):
             i, label = t
             output_filename = os.path.join(output_dirs[label], str(i) + ".png")
-            with open(output_filename, "wb") as h:
-                w = png.Writer(cols, rows, greyscale=True)
-                data_i = [
-                    data[(i * rows * cols + j * cols): (i * rows * cols + (j + 1) * cols)]
-                    for j in range(rows)
-                ]
-                w.write(h, data_i)
+            data_i = np.stack([
+                data[(i * rows * cols + j * cols): (i * rows * cols + (j + 1) * cols)]
+                for j in range(rows)
+            ])
+            imsave(output_filename, data_i)
 
         # write out image data
         tasks = list(enumerate(labels))
