@@ -15,18 +15,18 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.process import IdentityProcessMixin
-from ludwig.datasets.mixins.download import ZipDownloadMixin
+from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = Reuters(cache_dir=cache_dir)
+    dataset = GoEmotions(cache_dir=cache_dir)
     return dataset.load(split=split)
 
 
-class Reuters(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
-    """The Reuters dataset.
+class GoEmotions(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
+    """The GoEmotions dataset.
 
     This pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming training data into a destination
@@ -34,4 +34,4 @@ class Reuters(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset)
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="reuters", cache_dir=cache_dir)
+        super().__init__(dataset_name="goemotions", cache_dir=cache_dir)
