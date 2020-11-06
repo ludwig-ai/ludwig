@@ -60,7 +60,7 @@ class CategoryFeatureMixin(object):
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
             add_padding=False,
-            backend=backend
+            processor=backend.processor
         )
         return {
             'idx2str': idx2str,

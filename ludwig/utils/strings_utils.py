@@ -22,7 +22,7 @@ from collections import Counter
 
 import numpy as np
 
-from ludwig.backend import LOCAL_BACKEND
+from ludwig.data.processor.pandas import PANDAS
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
@@ -98,7 +98,7 @@ def create_vocabulary(
         unknown_symbol=UNKNOWN_SYMBOL,
         padding_symbol=PADDING_SYMBOL,
         pretrained_model_name_or_path=None,
-        backend=LOCAL_BACKEND,
+        processor=PANDAS,
 ):
     vocab = None
 
@@ -138,9 +138,9 @@ def create_vocabulary(
 
     processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
     processed_counts = processed_lines.explode().value_counts(sort=False)
-    processed_counts = backend.processor.compute(processed_counts)
+    processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
-    max_line_length = backend.processor.compute(processed_lines.map(len).max())
+    max_line_length = processor.compute(processed_lines.map(len).max())
 
     if vocab is None:
         vocab = [unit for unit, count in
@@ -219,7 +219,7 @@ def build_sequence_matrix(
         lowercase=True,
         tokenizer_vocab_file=None,
         pretrained_model_name_or_path=None,
-        backend=LOCAL_BACKEND,
+        processor=PANDAS,
 ):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file,
@@ -238,7 +238,7 @@ def build_sequence_matrix(
         unknown_symbol=unknown_symbol
     ))
 
-    max_length = backend.processor.compute(unit_vectors.map(len).max())
+    max_length = processor.compute(unit_vectors.map(len).max())
     if max_length < length_limit:
         logging.debug('max length of {0}: {1} < limit: {2}'.format(
             format, max_length, length_limit
@@ -256,7 +256,7 @@ def build_sequence_matrix(
             sequence[max_length - limit:] = vector[:limit]
         return sequence
 
-    padded = backend.processor.map_objects(unit_vectors, pad)
+    padded = processor.map_objects(unit_vectors, pad)
     return padded
 
 

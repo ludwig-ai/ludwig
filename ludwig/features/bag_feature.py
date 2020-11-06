@@ -48,7 +48,7 @@ class BagFeatureMixin(object):
             preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            backend=backend,
+            processor=backend.processor,
         )
         return {
             'idx2str': idx2str,

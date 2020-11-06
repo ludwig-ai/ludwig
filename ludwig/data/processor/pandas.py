@@ -61,3 +61,6 @@ class PandasProcessor(DataProcessor):
     @property
     def use_hdf5_cache(self):
         return True
+
+
+PANDAS = PandasProcessor()

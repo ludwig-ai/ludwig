@@ -76,7 +76,7 @@ class TextFeatureMixin(object):
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'],
-            backend=backend
+            processor=backend.processor
         )
         (
             word_idx2str,
@@ -96,7 +96,7 @@ class TextFeatureMixin(object):
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'],
-            backend=backend
+            processor=backend.processor
         )
         return (
             char_idx2str,
@@ -180,7 +180,7 @@ class TextFeatureMixin(object):
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
             ],
-            backend=backend
+            processor=backend.processor
         )
         word_data = build_sequence_matrix(
             sequences=column,
@@ -197,7 +197,7 @@ class TextFeatureMixin(object):
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
             ],
-            backend=backend
+            processor=backend.processor
         )
 
         return char_data, word_data
