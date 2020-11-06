@@ -25,6 +25,7 @@ from ludwig.backend.base import Backend
 from ludwig.constants import NAME
 from ludwig.data.processor.dask import DaskProcessor
 from ludwig.models.trainer import BaseTrainer, Trainer
+from ludwig.utils.tf_utils import initialize_tensorflow
 
 
 logger = logging.getLogger(__name__)
@@ -53,7 +54,7 @@ def get_horovod_kwargs():
     best_slots, best_resources = max(buckets.items(), key=get_total_resources)
     return dict(
         num_slots=best_slots,
-        num_workers=len(best_resources),
+        num_hosts=len(best_resources),
         use_gpu=use_gpu
     )
 
@@ -96,6 +97,10 @@ class RayBackend(Backend):
         except ConnectionError:
             logger.info('Initializing new Ray cluster...')
             ray.init()
+
+    def initialize_tensorflow(self, *args, **kwargs):
+        # Make sure we don't claim any GPU resources on the head node
+        initialize_tensorflow(gpus=-1)
 
     def create_trainer(self, **kwargs):
         return RayTrainer(self._horovod_kwargs, kwargs)
