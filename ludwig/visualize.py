@@ -1453,9 +1453,9 @@ def compare_classifiers_performance_from_prob(
 
     :param probabilities_per_model: (List[np.ndarray]) path to experiment
         probabilities file
-    :param ground_truth: (str) path to ground truth file
-    :metadata: (dict) feature metadata dictionary
-    :output_feature_name: (str) output feature name
+    :param ground_truth: (pd.Series) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
