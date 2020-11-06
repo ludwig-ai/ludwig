@@ -1,6 +1,7 @@
 Cython>=0.25
 h5py>=2.6,<2.11.0
-numpy>=1.15,<1.19.0
+numpy>=1.15 ; sys_platform != "Windows"
+numpy>=1.15,<1.19.0 ; sys_platform == "Windows"
 pandas>=0.19
 scipy>=0.18
 tabulate>=0.7
