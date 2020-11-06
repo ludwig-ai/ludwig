@@ -171,7 +171,7 @@ def _extract_ground_truth_values(
         ground_truth: str,
         output_feature_name: str,
         ground_truth_split: int,
-        split_file: Union[str, None]) -> pd.Series:
+        split_file: Union[str, None] = None) -> pd.Series:
     """Helper function to extract ground truth values
 
     Args:
@@ -317,12 +317,8 @@ def compare_classifiers_performance_from_prob_cli(
         ground_truth,
         output_feature_name,
         ground_truth_split,
-        split_file
+        split_file=split_file
     )
-
-    feature_metadata = metadata[output_feature_name]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
@@ -331,6 +327,8 @@ def compare_classifiers_performance_from_prob_cli(
     compare_classifiers_performance_from_prob(
         probabilities_per_model,
         ground_truth,
+        metadata,
+        output_feature_name,
         output_directory=output_directory,
         **kwargs
     )
@@ -1435,7 +1433,9 @@ def compare_performance(
 
 def compare_classifiers_performance_from_prob(
         probabilities_per_model: List[np.ndarray],
-        ground_truth: np.ndarray,
+        ground_truth: pd.Series,
+        metadata: dict,
+        output_feature_name: str,
         labels_limit: int = 0,
         top_n_classes: Union[List[int], int] = 3,
         model_names: Union[str, List[str]] = None,
@@ -1454,6 +1454,8 @@ def compare_classifiers_performance_from_prob(
     :param probabilities_per_model: (List[np.ndarray]) path to experiment
         probabilities file
     :param ground_truth: (str) path to ground truth file
+    :metadata: (dict) feature metadata dictionary
+    :output_feature_name: (str) output feature name
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -1470,6 +1472,10 @@ def compare_classifiers_performance_from_prob(
 
     :return: (None)
     """
+
+    feature_metadata = metadata[output_feature_name]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]

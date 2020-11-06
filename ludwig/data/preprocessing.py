@@ -47,7 +47,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      read_sas, read_spss, read_stata, read_tsv,
                                      replace_file_extension, split_dataset_ttv,
                                      text_feature_data_field)
-from ludwig.utils.data_utils import save_array
+from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
 from ludwig.utils.horovod_utils import is_on_master
@@ -1315,7 +1315,7 @@ def _preprocess_file_for_training(
         )
 
         # save split values for use by visualization routines
-        split_fp = os.path.splitext(dataset)[0] + '_split.csv'
+        split_fp = get_split_path(dataset)
         save_array(split_fp, data[SPLIT])
 
         if is_on_master() and not skip_save_processed_input:

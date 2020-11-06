@@ -28,7 +28,7 @@ import subprocess
 import numpy as np
 
 from ludwig.experiment import experiment_cli
-from ludwig.utils.data_utils import load_from_file, load_json
+from ludwig.utils.data_utils import get_split_path
 from ludwig.visualize import _extract_ground_truth_values
 from tests.integration_tests.test_visualization_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
@@ -284,7 +284,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = get_split_path(csv_filename)
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
