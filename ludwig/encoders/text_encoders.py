@@ -39,7 +39,7 @@ class BERTEncoder(Layer):
             self,
             pretrained_model_name_or_path='bert-base-uncased',
             reduce_output='cls_pooled',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -95,7 +95,7 @@ class GPTEncoder(Layer):
             self,
             reduce_output='sum',
             pretrained_model_name_or_path='openai-gpt',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -146,7 +146,7 @@ class GPT2Encoder(Layer):
             self,
             pretrained_model_name_or_path='gpt2',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -197,7 +197,7 @@ class TransformerXLEncoder(Layer):
             self,
             pretrained_model_name_or_path='transfo-xl-wt103',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             **kwargs
     ):
         super(TransformerXLEncoder, self).__init__()
@@ -243,7 +243,7 @@ class XLNetEncoder(Layer):
             self,
             pretrained_model_name_or_path='xlnet-base-cased',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -294,7 +294,7 @@ class XLMEncoder(Layer):
             self,
             pretrained_model_name_or_path='xlm-mlm-en-2048',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -345,7 +345,7 @@ class RoBERTaEncoder(Layer):
             self,
             pretrained_model_name_or_path='roberta-base',
             reduce_output='cls_pooled',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -400,7 +400,7 @@ class DistilBERTEncoder(Layer):
             self,
             pretrained_model_name_or_path='distilbert-base-uncased',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -450,7 +450,7 @@ class CTRLEncoder(Layer):
             self,
             pretrained_model_name_or_path='ctrl',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -501,7 +501,7 @@ class CamemBERTEncoder(Layer):
             self,
             pretrained_model_name_or_path='jplu/tf-camembert-base',
             reduce_output='cls_pooled',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -556,7 +556,7 @@ class ALBERTEncoder(Layer):
             self,
             pretrained_model_name_or_path='albert-base-v2',
             reduce_output='cls_pooled',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -611,7 +611,7 @@ class T5Encoder(Layer):
             self,
             pretrained_model_name_or_path='t5-small',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -663,7 +663,7 @@ class XLMRoBERTaEncoder(Layer):
             self,
             pretrained_model_name_or_path='jplu/tf-xlm-roberta-base',
             reduce_output='cls_pooled',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -718,7 +718,7 @@ class FlauBERTEncoder(Layer):
             self,
             pretrained_model_name_or_path='jplu/tf-flaubert-base-uncased',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -769,7 +769,7 @@ class ELECTRAEncoder(Layer):
             self,
             pretrained_model_name_or_path='google/electra-small-discriminator',
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -820,7 +820,7 @@ class LongformerEncoder(Layer):
             self,
             pretrained_model_name_or_path='allenai/longformer-base-4096',
             reduce_output='cls_pooled',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
@@ -871,7 +871,7 @@ class AutoTransformerEncoder(Layer):
             self,
             pretrained_model_name_or_path,
             reduce_output='sum',
-            trainable=False,
+            trainable=True,
             num_tokens=None,
             **kwargs
     ):
