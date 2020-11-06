@@ -53,6 +53,9 @@ list_of_fc_layers = [
 #
 list_of_train_stats = []
 
+# load and split MNIST dataset
+training_set, test_set, _ = mnist.load(split=True)
+
 # ## Train models
 for model_option in list_of_fc_layers:
     print('>>>> training: ', model_option.name)
@@ -65,9 +68,6 @@ for model_option in list_of_fc_layers:
     # Define Ludwig model object that drive model training
     model = LudwigModel(config,
                         logging_level=logging.INFO)
-
-    # load and split MNIST dataset
-    training_set, test_set, _ = mnist.load(split=True)
 
     # initiate model training
     train_stats, _, _ = model.train(
