@@ -2,4 +2,4 @@ uvicorn
 fastapi
 pydantic
 python-multipart
-neuropod
+neuropod ; sys_platform != "Windows"
