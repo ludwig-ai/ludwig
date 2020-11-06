@@ -11,7 +11,7 @@ from ludwig.datasets.mixins.download import ZipDownloadMixin, UncompressedFileDo
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import IdentityProcessMixin, MultifileJoinProcessMixin
 
-SUPPORTED_UNCOMPRESSED_FILETYPES = ['json', 'jsonl', 'tsv']
+SUPPORTED_UNCOMPRESSED_FILETYPES = ['json', 'jsonl', 'tsv', 'csv']
 
 class FakeCSVDataset(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
     def __init__(self, cache_dir=None):
@@ -100,10 +100,14 @@ def test_multifile_join_dataset(f_type):
             train_df.to_json(train_filepath, orient='records', lines=True)
             test_df.to_json(test_filepath, orient='records', lines=True)
             val_df.to_json(val_filepath, orient='records', lines=True)
-        else:
+        elif f_type == 'tsv':
             train_df.to_csv(train_filepath, sep='\t')
             test_df.to_csv(test_filepath, sep='\t')
             val_df.to_csv(val_filepath, sep='\t')
+        else:
+            train_df.to_csv(train_filepath)
+            test_df.to_csv(test_filepath)
+            val_df.to_csv(val_filepath)
 
         config = {
             'version': 1.0,

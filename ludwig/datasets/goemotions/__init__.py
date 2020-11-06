@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.mixins.process import *
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
@@ -35,3 +35,15 @@ class GoEmotions(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLo
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="goemotions", cache_dir=cache_dir)
+
+    def read_file(self, filetype, filename):
+        file_df = pd.read_table(os.path.join(self.raw_dataset_path, filename), header=None)
+        return file_df
+
+    def process_downloaded_dataset(self):
+        super(GoEmotions, self).process_downloaded_dataset()
+        # format emotion ids to be a set of emotion ids vs. string
+        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path, self.csv_filename))
+        processed_df.columns = ['text', 'emotion_ids', 'comment_id', 'split']
+        processed_df['emotion_ids'] = processed_df['emotion_ids'].apply(lambda e_id: " ".join(e_id.split(",")))
+        processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
