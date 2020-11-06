@@ -766,6 +766,7 @@ class Trainer(BaseTrainer):
             test_summary_writer.close()
 
         return (
+            model,
             progress_tracker.train_metrics,
             progress_tracker.vali_metrics,
             progress_tracker.test_metrics
@@ -810,6 +811,7 @@ class Trainer(BaseTrainer):
             progress_bar.update(1)
 
         progress_bar.close()
+        return model
 
     @property
     def validation_field(self):

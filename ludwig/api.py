@@ -486,7 +486,7 @@ class LudwigModel:
                     save_path=model_dir,
                 )
 
-                train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+                self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
                 train_stats = {
                     TRAINING: train_trainset_stats,
                     VALIDATION: train_valiset_stats,
@@ -613,7 +613,7 @@ class LudwigModel:
                 debug=debug
             )
 
-        self._online_trainer.train_online(
+        self.model = self._online_trainer.train_online(
             self.model,
             training_dataset,
         )

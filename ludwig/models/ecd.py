@@ -23,8 +23,12 @@ class ECD(tf.keras.Model):
             combiner_def,
             output_features_def,
             random_seed=None,
-            **kwargs
     ):
+        self._input_features_df = input_features_def
+        self._combiner_def = combiner_def
+        self._output_features_df = output_features_def
+        self._random_seed = random_seed
+
         if random_seed is not None:
             tf.random.set_seed(random_seed)
 
@@ -41,7 +45,6 @@ class ECD(tf.keras.Model):
         self.combiner = combiner_class(
             input_features=self.input_features,
             **combiner_def,
-            **kwargs
         )
 
         # ================ Outputs ================
@@ -270,6 +273,14 @@ class ECD(tf.keras.Model):
             weights = [(name, w) for name, w in weights if name in tensor_set]
 
         return weights
+
+    def __setstate__(self, newstate):
+        self.set_weights(newstate['weights'])
+
+    def __reduce__(self):
+        args = (self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed)
+        state = {'weights': self.get_weights()}
+        return ECD, args, state
 
 
 def build_inputs(

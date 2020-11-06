@@ -22,6 +22,7 @@ import zipfile
 
 
 def read_directory_buffer(dir_name):
+    """Reads the contents of a directory into an in-memory buffer for RPC."""
     with tempfile.TemporaryDirectory() as tmpdir:
         archive_name = os.path.join(tmpdir, 'archive')
         ext = 'zip'
@@ -31,6 +32,7 @@ def read_directory_buffer(dir_name):
 
 
 def write_directory_buffer(directory_buffer, out_dir_name):
+    """Writes the in-memory buffer as contents of the output directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
         archive_name = os.path.join(tmpdir, 'archive')
         with open(archive_name, 'wb') as f:
