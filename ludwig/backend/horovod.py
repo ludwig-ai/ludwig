@@ -15,31 +15,22 @@
 # limitations under the License.
 # ==============================================================================
 
-from ludwig.backend import Backend
-from ludwig.data.processor.pandas import PandasProcessor
+from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.models.trainer import Trainer
 from ludwig.utils.horovod_utils import configure_horovod
+from ludwig.utils.tf_utils import initialize_tensorflow
 
 
-class HorovodBackend(Backend):
+class HorovodBackend(LocalPreprocessingMixin, Backend):
     def __init__(self):
         super().__init__()
-        self._processor = PandasProcessor()
         self._horovod = None
 
     def initialize(self):
         self._horovod = configure_horovod(use_horovod=True)
 
+    def initialize_tensorflow(self, *args, **kwargs):
+        initialize_tensorflow(*args, horovod=self._horovod, **kwargs)
+
     def create_trainer(self, **kwargs):
         return Trainer(horovod=self._horovod, **kwargs)
-
-    @property
-    def processor(self):
-        return self._processor
-
-    @property
-    def supports_multiprocessing(self):
-        return True
-
-    def check_lazy_load_supported(self, feature):
-        pass

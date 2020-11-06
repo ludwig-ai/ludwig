@@ -53,7 +53,6 @@ from ludwig.models.predictor import (Predictor, calculate_overall_stats,
                                      print_evaluation_stats,
                                      save_evaluation_stats,
                                      save_prediction_outputs)
-from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      DICT_FORMATS,
@@ -67,7 +66,6 @@ from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
                                      get_output_directory)
 from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
@@ -189,18 +187,20 @@ class LudwigModel:
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
 
+        # setup logging
+        self.set_logging_level(logging_level)
+
+        # setup Backend
         self.backend = backend
         if isinstance(backend, str):
             self.backend = create_backend(backend)
 
         self.backend.initialize()
 
-        # setup logging
-        self.set_logging_level(logging_level)
-
         # setup TensorFlow
-        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads,
-                              self._horovod)
+        self.backend.initialize_tensorflow(gpus=gpus,
+                                           gpu_memory_limit=gpu_memory_limit,
+                                           allow_parallel_threads=allow_parallel_threads)
 
         # setup model
         self.model = None

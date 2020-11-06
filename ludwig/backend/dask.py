@@ -15,22 +15,18 @@
 # limitations under the License.
 # ==============================================================================
 
-from ludwig.backend.base import Backend
+from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME
 from ludwig.data.processor.dask import DaskProcessor
-from ludwig.models.trainer import Trainer
 
 
-class DaskBackend(Backend):
+class DaskBackend(LocalTrainingMixin, Backend):
     def __init__(self):
         super().__init__()
         self._processor = DaskProcessor()
 
     def initialize(self):
         pass
-
-    def create_trainer(self, **kwargs):
-        return Trainer(**kwargs)
 
     @property
     def processor(self):
