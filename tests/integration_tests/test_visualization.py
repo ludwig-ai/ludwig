@@ -21,15 +21,19 @@
 # ==============================================================================
 import glob
 import json
+import logging
 import os
 import shutil
 import subprocess
 
 import numpy as np
 
+from ludwig.constants import *
+from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
 from ludwig.utils.data_utils import get_split_path
-from ludwig.visualize import _extract_ground_truth_values
+from ludwig.visualize import _extract_ground_truth_values, load_data_for_viz, \
+    compare_classifiers_performance_from_prob
 from tests.integration_tests.test_visualization_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature, category_feature, \
@@ -315,6 +319,94 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    Probabilities are loaded from csv file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        category_feature(vocab_size=10)
+    ]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    input_features[0]['encoder'] = 'parallel_cnn'
+
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {
+            'type': 'concat',
+            'fc_size': 14
+        },
+        'training': {'epochs': 2}
+    }
+
+    model = LudwigModel(
+        config,
+        logging_level=logging.WARN
+    )
+
+    (
+        _,
+        preprocessed_data,
+        exp_dir_name
+    ) = model.train(dataset=rel_path)
+
+    _, _, test_set, metadata = preprocessed_data
+
+    model.predict(
+        dataset=test_set,
+        skip_save_predictions=False,
+        output_directory=exp_dir_name
+    )
+
+    output_feature_name = config['output_features'][0][NAME]
+    probability = os.path.join(exp_dir_name, '{}_probabilities.csv').format(
+        output_feature_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    split_file = get_split_path(csv_filename)
+
+    ground_truth = _extract_ground_truth_values(
+        rel_path,
+        output_feature_name,
+        ground_truth_split=2,
+        split_file=split_file
+    )
+
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', [probability, probability], dtype=float
+    )
+
+    for file_format in ['png', 'pdf']:
+        compare_classifiers_performance_from_prob(
+            probabilities_per_model,
+            ground_truth,
+            metadata,
+            output_feature_name,
+            top_n_classes=3,
+            output_directory=exp_dir_name,
+            model_names=['Model1', 'Model2'],
+            file_format=file_format
+        )
+        figure_cnt = glob.glob(os.path.join(exp_dir_name, '*.' + file_format))
         assert 1 == len(figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
