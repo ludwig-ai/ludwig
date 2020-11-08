@@ -135,7 +135,7 @@ class RayBackend(Backend):
         return RayTrainer(self._horovod_kwargs, kwargs)
 
     def create_predictor(self, **kwargs):
-        return RayPredictor(self._horovod_kwargs, **kwargs)
+        return RayPredictor(self._horovod_kwargs, kwargs)
 
     def sync_model(self, model):
         pass

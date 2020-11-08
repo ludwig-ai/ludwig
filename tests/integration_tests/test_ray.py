@@ -89,10 +89,6 @@ def run_api_experiment(config, data_parquet):
         dask_backend = RayBackend()
         train_with_backend(dask_backend, config, dataset=data_parquet)
 
-        # Train on DataFrame directly
-        data_df = read_parquet(data_parquet, df_lib=dask_backend.processor.df_lib)
-        train_with_backend(dask_backend, config, dataset=data_df)
-
 
 @spawn
 def run_test_parquet(
