@@ -24,8 +24,8 @@ from horovod.ray import RayExecutor
 from ludwig.backend.base import Backend
 from ludwig.constants import NAME
 from ludwig.data.processor.dask import DaskProcessor
-from ludwig.models.predictor import BasePredictor, Predictor
-from ludwig.models.trainer import BaseTrainer, Trainer
+from ludwig.models.predictor import BasePredictor, RemotePredictor
+from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 
@@ -64,7 +64,7 @@ class RayTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, trainer_kwargs):
         setting = RayExecutor.create_settings(timeout_s=30)
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=Trainer, executable_kwargs=trainer_kwargs)
+        self.executor.start(executable_cls=RemoteTrainer, executable_kwargs=trainer_kwargs)
 
     def train(self, *args, **kwargs):
         results = self.executor.execute(lambda trainer: trainer.train(*args, **kwargs))
@@ -91,7 +91,7 @@ class RayPredictor(BasePredictor):
         # TODO ray: investigate using Dask for prediction instead of Horovod
         setting = RayExecutor.create_settings(timeout_s=30)
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=Predictor, executable_kwargs=predictor_kwargs)
+        self.executor.start(executable_cls=RemotePredictor, executable_kwargs=predictor_kwargs)
 
     def batch_predict(self, *args, **kwargs):
         results = self.executor.execute(
@@ -119,6 +119,7 @@ class RayBackend(Backend):
         super().__init__()
         self._processor = DaskProcessor()
         self._horovod_kwargs = horovod_kwargs or {}
+        self._tensorflow_kwargs = {}
 
     def initialize(self):
         try:
@@ -127,15 +128,18 @@ class RayBackend(Backend):
             logger.info('Initializing new Ray cluster...')
             ray.init()
 
-    def initialize_tensorflow(self, *args, **kwargs):
+    def initialize_tensorflow(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
         initialize_tensorflow(gpus=-1)
+        self._tensorflow_kwargs = kwargs
 
     def create_trainer(self, **kwargs):
-        return RayTrainer(self._horovod_kwargs, kwargs)
+        executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
+        return RayTrainer(self._horovod_kwargs, executable_kwargs)
 
     def create_predictor(self, **kwargs):
-        return RayPredictor(self._horovod_kwargs, kwargs)
+        executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
+        return RayPredictor(self._horovod_kwargs, executable_kwargs)
 
     def sync_model(self, model):
         pass
