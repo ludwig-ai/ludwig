@@ -2,18 +2,21 @@ import copy
 import multiprocessing
 import signal
 from abc import ABC, abstractmethod
+from typing import Union
+
+import ray
+from ray import tune
 
 from ludwig.api import LudwigModel
 from ludwig.constants import *
-from ludwig.hyperopt.sampling import HyperoptSampler, \
-    logger
+from ludwig.hyperopt.sampling import HyperoptSampler, logger
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 
 class HyperoptExecutor(ABC):
-    def __init__(self, hyperopt_sampler: HyperoptSampler,
+    def __init__(self, hyperopt_sampler: Union[dict, HyperoptSampler],
                  output_feature: str, metric: str, split: str) -> None:
         self.hyperopt_sampler = hyperopt_sampler
         self.output_feature = output_feature
@@ -585,6 +588,103 @@ class FiberExecutor(HyperoptExecutor):
         return hyperopt_results
 
 
+class RayTuneExecutor(HyperoptExecutor):
+    def __init__(self, hyperopt_sampler, output_feature, metric, split, goal, **kwargs):
+        ray.init(ignore_reinit_error=True)
+        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
+                                  metric, split)
+        self.search_space = hyperopt_sampler
+        self.output_feature = output_feature
+        self.metric = metric
+        self.split = split
+        self.goal = goal
+        self.trial_id = 0
+        self.experiment_kwargs = {}
+
+    def _run_experiment(self, config):
+
+        self.trial_id += 1
+        hyperopt_dict = copy.deepcopy(self.experiment_kwargs)
+        modified_config = substitute_parameters(
+            copy.deepcopy(hyperopt_dict["config"]), config)
+        hyperopt_dict["config"] = modified_config
+        hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{self.trial_id}'
+
+        train_stats, eval_stats = run_experiment(**hyperopt_dict)
+        metric_score = self.get_metric_score(eval_stats)
+
+        tune.report(parameters=str(config), metric_score=metric_score,
+                    training_stats=str(train_stats), eval_stats=str(eval_stats))
+
+    def execute(self,
+                config,
+                dataset=None,
+                training_set=None,
+                validation_set=None,
+                test_set=None,
+                training_set_metadata=None,
+                data_format=None,
+                experiment_name="hyperopt",
+                model_name="run",
+                # model_load_path=None,
+                # model_resume_path=None,
+                skip_save_training_description=False,
+                skip_save_training_statistics=False,
+                skip_save_model=False,
+                skip_save_progress=False,
+                skip_save_log=False,
+                skip_save_processed_input=False,
+                skip_save_unprocessed_output=False,
+                skip_save_predictions=False,
+                skip_save_eval_stats=False,
+                output_directory="results",
+                gpus=None,
+                gpu_memory_limit=None,
+                allow_parallel_threads=True,
+                use_horovod=None,
+                random_seed=default_random_seed,
+                debug=False,
+                **kwargs):
+
+        self.experiment_kwargs = dict(
+            config=config,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            experiment_name=experiment_name,
+            model_name=model_name,
+            # model_load_path=model_load_path,
+            # model_resume_path=model_resume_path,
+            eval_split=self.split,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_predictions=skip_save_predictions,
+            skip_save_eval_stats=skip_save_eval_stats,
+            output_directory=output_directory,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            use_horovod=use_horovod,
+            random_seed=random_seed,
+            debug=debug,
+        )
+
+        analysis = tune.run(self._run_experiment, config=self.search_space)
+
+        hyperopt_results = analysis.results_df.sort_values(
+            "metric_score", ascending=self.goal != MAXIMIZE)
+
+        return hyperopt_results.to_dict(orient="records")
+
+
 def get_build_hyperopt_executor(executor_type):
     return get_from_registry(executor_type, executor_registry)
 
@@ -593,6 +693,7 @@ executor_registry = {
     "serial": SerialExecutor,
     "parallel": ParallelExecutor,
     "fiber": FiberExecutor,
+    "ray": RayTuneExecutor
 }
 
 

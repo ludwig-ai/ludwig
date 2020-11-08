@@ -15,17 +15,19 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import inspect
 import itertools
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
+from ray import tune
+
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
-
-from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, TYPE, \
-    SPACE, FLOAT
+from ludwig.constants import (CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE,
+                              TYPE)
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import str2bool
 
@@ -287,6 +289,27 @@ class PySOTSampler(HyperoptSampler):
 
     def finished(self) -> bool:
         return self.sampled_so_far >= self.num_samples
+
+
+def get_tune_search_space(parameters):
+    config = {}
+    for param, values in parameters.items():
+        space = values["space"].lower()
+        if hasattr(tune, space):
+            space_function = getattr(tune, space)
+        else:
+            raise ValueError(
+                "'{}' method is not supported in the Ray Tune module".format(space))
+        space_input_args = {}
+        space_required_args = inspect.getfullargspec(space_function).args
+        for arg in space_required_args:
+            if arg in values:
+                space_input_args[arg] = values[arg]
+            else:
+                raise ValueError(
+                    "Parameter '{}' not defined for {}".format(arg, param))
+        config[param] = space_function(**space_input_args)
+    return config
 
 
 def get_build_hyperopt_sampler(strategy_type):
