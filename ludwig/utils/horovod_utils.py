@@ -56,6 +56,17 @@ def broadcast_return(fn, horovod):
     return result
 
 
+def return_on_master(fn):
+    """Wraps function so results are only returned by the master rank.
+
+    The purpose of this function is to reduce network overhead.
+    """
+    def wrapped(*args, **kwargs):
+        res = fn(*args, **kwargs)
+        return res if is_on_master() else None
+    return wrapped
+
+
 def set_on_master(use_horovod):
     global ON_MASTER
     if should_use_horovod(use_horovod):
