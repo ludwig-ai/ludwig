@@ -687,47 +687,48 @@ class LudwigModel:
         )
 
         logger.debug('Predicting')
-        predictor = Predictor(
-            batch_size=batch_size, horovod=self._horovod, debug=debug
-        )
-        predictions = predictor.batch_predict(
-            self.model,
-            dataset,
-        )
-
-        if is_on_master():
-            # if we are skipping all saving,
-            # there is no need to create a directory that will remain empty
-            should_create_exp_dir = not (
-                    skip_save_unprocessed_output and skip_save_predictions
+        with self.backend.create_predictor(
+            batch_size=batch_size,
+            debug=debug
+        ) as predictor:
+            predictions = predictor.batch_predict(
+                self.model,
+                dataset,
             )
-            if should_create_exp_dir:
-                os.makedirs(output_directory, exist_ok=True)
 
-        logger.debug('Postprocessing')
-        postproc_predictions = postprocess(
-            predictions,
-            self.model.output_features,
-            self.training_set_metadata,
-            output_directory=output_directory,
-            skip_save_unprocessed_output=skip_save_unprocessed_output
-                                         or not is_on_master(),
-        )
-        converted_postproc_predictions = convert_predictions(
-            postproc_predictions,
-            self.model.output_features,
-            self.training_set_metadata,
-            return_type=return_type
-        )
+            if is_on_master():
+                # if we are skipping all saving,
+                # there is no need to create a directory that will remain empty
+                should_create_exp_dir = not (
+                        skip_save_unprocessed_output and skip_save_predictions
+                )
+                if should_create_exp_dir:
+                    os.makedirs(output_directory, exist_ok=True)
 
-        if is_on_master():
-            if not skip_save_predictions:
-                save_prediction_outputs(postproc_predictions,
-                                        output_directory)
+            logger.debug('Postprocessing')
+            postproc_predictions = postprocess(
+                predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                output_directory=output_directory,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+            converted_postproc_predictions = convert_predictions(
+                postproc_predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                return_type=return_type
+            )
 
-                logger.info('Saved to: {0}'.format(output_directory))
+            if is_on_master():
+                if not skip_save_predictions:
+                    save_prediction_outputs(postproc_predictions,
+                                            output_directory)
 
-        return converted_postproc_predictions, output_directory
+                    logger.info('Saved to: {0}'.format(output_directory))
+
+            return converted_postproc_predictions, output_directory
 
     def evaluate(
             self,
@@ -810,78 +811,79 @@ class LudwigModel:
         )
 
         logger.debug('Predicting')
-        predictor = Predictor(
-            batch_size=batch_size, horovod=self._horovod, debug=debug
-        )
-        eval_stats, predictions = predictor.batch_evaluation(
-            self.model,
-            dataset,
-            collect_predictions=collect_predictions or collect_overall_stats,
-        )
-
-        # calculate the overall metrics
-        if collect_overall_stats:
-            overall_stats = calculate_overall_stats(
-                self.model.output_features,
-                predictions,
+        with self.backend.create_predictor(
+            batch_size=batch_size,
+            debug=debug
+        ) as predictor:
+            eval_stats, predictions = predictor.batch_evaluation(
+                self.model,
                 dataset,
-                training_set_metadata
+                collect_predictions=collect_predictions or collect_overall_stats,
             )
-            eval_stats = {
-                of_name: {**eval_stats[of_name], **overall_stats[of_name]}
-                # account for presence of 'combined' key
-                if of_name in overall_stats
-                else {**eval_stats[of_name]} for of_name in eval_stats
-            }
 
-        if is_on_master():
-            # if we are skipping all saving,
-            # there is no need to create a directory that will remain empty
-            should_create_exp_dir = not (
-                    skip_save_unprocessed_output and
-                    skip_save_predictions and
-                    skip_save_eval_stats
-            )
-            if should_create_exp_dir:
-                os.makedirs(output_directory, exist_ok=True)
+            # calculate the overall metrics
+            if collect_overall_stats:
+                overall_stats = calculate_overall_stats(
+                    self.model.output_features,
+                    predictions,
+                    dataset,
+                    training_set_metadata
+                )
+                eval_stats = {
+                    of_name: {**eval_stats[of_name], **overall_stats[of_name]}
+                    # account for presence of 'combined' key
+                    if of_name in overall_stats
+                    else {**eval_stats[of_name]} for of_name in eval_stats
+                }
 
-        if collect_predictions:
-            logger.debug('Postprocessing')
-            postproc_predictions = postprocess(
-                predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                output_directory=output_directory,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            )
-        else:
-            postproc_predictions = predictions  # = {}
+            if is_on_master():
+                # if we are skipping all saving,
+                # there is no need to create a directory that will remain empty
+                should_create_exp_dir = not (
+                        skip_save_unprocessed_output and
+                        skip_save_predictions and
+                        skip_save_eval_stats
+                )
+                if should_create_exp_dir:
+                    os.makedirs(output_directory, exist_ok=True)
 
-        if is_on_master():
-            should_save_predictions = (
-                    collect_predictions
-                    and postproc_predictions is not None
-                    and not skip_save_predictions
-            )
-            if should_save_predictions:
-                save_prediction_outputs(postproc_predictions, output_directory)
+            if collect_predictions:
+                logger.debug('Postprocessing')
+                postproc_predictions = postprocess(
+                    predictions,
+                    self.model.output_features,
+                    self.training_set_metadata,
+                    output_directory=output_directory,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output
+                                                 or not is_on_master(),
+                )
+            else:
+                postproc_predictions = predictions  # = {}
 
-            print_evaluation_stats(eval_stats)
-            if not skip_save_eval_stats:
-                save_evaluation_stats(eval_stats, output_directory)
+            if is_on_master():
+                should_save_predictions = (
+                        collect_predictions
+                        and postproc_predictions is not None
+                        and not skip_save_predictions
+                )
+                if should_save_predictions:
+                    save_prediction_outputs(postproc_predictions, output_directory)
 
-            if should_save_predictions or not skip_save_eval_stats:
-                logger.info('Saved to: {0}'.format(output_directory))
+                print_evaluation_stats(eval_stats)
+                if not skip_save_eval_stats:
+                    save_evaluation_stats(eval_stats, output_directory)
 
-        if collect_predictions:
-            postproc_predictions = convert_predictions(
-                postproc_predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                return_type=return_type)
+                if should_save_predictions or not skip_save_eval_stats:
+                    logger.info('Saved to: {0}'.format(output_directory))
 
-        return eval_stats, postproc_predictions, output_directory
+            if collect_predictions:
+                postproc_predictions = convert_predictions(
+                    postproc_predictions,
+                    self.model.output_features,
+                    self.training_set_metadata,
+                    return_type=return_type)
+
+            return eval_stats, postproc_predictions, output_directory
 
     def experiment(
             self,
@@ -1167,16 +1169,17 @@ class LudwigModel:
         )
 
         logger.debug('Predicting')
-        predictor = Predictor(
-            batch_size=batch_size, horovod=self._horovod, debug=debug
-        )
-        activations = predictor.batch_collect_activations(
-            self.model,
-            layer_names,
-            dataset,
-        )
+        with self.backend.create_predictor(
+            batch_size=batch_size,
+            debug=debug
+        ) as predictor:
+            activations = predictor.batch_collect_activations(
+                self.model,
+                layer_names,
+                dataset,
+            )
 
-        return activations
+            return activations
 
     def preprocess(
             self,

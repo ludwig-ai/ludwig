@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pprint import pformat
 
@@ -20,7 +21,49 @@ SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
 logger = logging.getLogger(__name__)
 
 
-class Predictor:
+class BasePredictor(ABC):
+    @abstractmethod
+    def batch_predict(
+            self,
+            model,
+            dataset,
+            dataset_name=None
+    ):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def batch_evaluation(
+            self,
+            model,
+            dataset,
+            collect_predictions=False,
+            dataset_name=None
+    ):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def batch_collect_activations(
+            self,
+            model,
+            layer_names,
+            dataset,
+            bucketing_field=None
+    ):
+        raise NotImplementedError()
+
+    # Remote implementations may override this
+    def shutdown(self):
+        pass
+
+    # Functions needed to treat Trainer as a context manager
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.shutdown()
+
+
+class Predictor(BasePredictor):
     """
     Predictor is a class that uses a model to predict and evaluate
     """

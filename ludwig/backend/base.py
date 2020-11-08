@@ -23,6 +23,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
 from ludwig.data.processor.pandas import PANDAS
+from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.tf_utils import initialize_tensorflow
 
@@ -113,6 +114,9 @@ class LocalTrainingMixin:
 
     def create_trainer(self, **kwargs):
         return Trainer(**kwargs)
+
+    def create_predictor(self, **kwargs):
+        return Predictor(**kwargs)
 
     def sync_model(self, model):
         pass

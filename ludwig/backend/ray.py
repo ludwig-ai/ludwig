@@ -24,6 +24,7 @@ from horovod.ray import RayExecutor
 from ludwig.backend.base import Backend
 from ludwig.constants import NAME
 from ludwig.data.processor.dask import DaskProcessor
+from ludwig.models.predictor import BasePredictor, Predictor
 from ludwig.models.trainer import BaseTrainer, Trainer
 from ludwig.utils.tf_utils import initialize_tensorflow
 
@@ -85,6 +86,34 @@ class RayTrainer(BaseTrainer):
         self.executor.shutdown()
 
 
+class RayPredictor(BasePredictor):
+    def __init__(self, horovod_kwargs, predictor_kwargs):
+        # TODO ray: investigate using Dask for prediction instead of Horovod
+        setting = RayExecutor.create_settings(timeout_s=30)
+        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
+        self.executor.start(executable_cls=Predictor, executable_kwargs=predictor_kwargs)
+
+    def batch_predict(self, *args, **kwargs):
+        results = self.executor.execute(
+            lambda predictor: predictor.batch_predict(*args, **kwargs)
+        )
+        return results[0]
+
+    def batch_evaluation(self, *args, **kwargs):
+        results = self.executor.execute(
+            lambda predictor: predictor.batch_evaluation(*args, **kwargs)
+        )
+        return results[0]
+
+    def batch_collect_activations(self, *args, **kwargs):
+        return self.executor.execute_single(
+            lambda predictor: predictor.batch_collect_activations(*args, **kwargs)
+        )
+
+    def shutdown(self):
+        self.executor.shutdown()
+
+
 class RayBackend(Backend):
     def __init__(self, horovod_kwargs=None):
         super().__init__()
@@ -104,6 +133,9 @@ class RayBackend(Backend):
 
     def create_trainer(self, **kwargs):
         return RayTrainer(self._horovod_kwargs, kwargs)
+
+    def create_predictor(self, **kwargs):
+        return RayPredictor(self._horovod_kwargs, **kwargs)
 
     def sync_model(self, model):
         pass

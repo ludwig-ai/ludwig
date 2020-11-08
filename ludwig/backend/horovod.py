@@ -16,6 +16,7 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
+from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.horovod_utils import configure_horovod
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -34,6 +35,9 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     def create_trainer(self, **kwargs):
         return Trainer(horovod=self._horovod, **kwargs)
+
+    def create_predictor(self, **kwargs):
+        return Predictor(horovod=self._horovod, **kwargs)
 
     def sync_model(self, model):
         # Model weights are only saved on master, so broadcast
