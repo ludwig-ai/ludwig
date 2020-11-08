@@ -75,6 +75,10 @@ class Backend(CacheMixin, ABC):
     def create_trainer(self, **kwargs):
         raise NotImplementedError()
 
+    @abstractmethod
+    def sync_model(self, model):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def processor(self):
@@ -104,11 +108,14 @@ class LocalPreprocessingMixin:
 
 
 class LocalTrainingMixin:
+    def initialize_tensorflow(self, *args, **kwargs):
+        initialize_tensorflow(*args, **kwargs)
+
     def create_trainer(self, **kwargs):
         return Trainer(**kwargs)
 
-    def initialize_tensorflow(self, *args, **kwargs):
-        initialize_tensorflow(*args, **kwargs)
+    def sync_model(self, model):
+        pass
 
 
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):

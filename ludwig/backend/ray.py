@@ -105,6 +105,9 @@ class RayBackend(Backend):
     def create_trainer(self, **kwargs):
         return RayTrainer(self._horovod_kwargs, kwargs)
 
+    def sync_model(self, model):
+        pass
+
     @property
     def processor(self):
         return self._processor

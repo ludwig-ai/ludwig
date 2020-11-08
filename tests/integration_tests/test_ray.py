@@ -16,9 +16,11 @@
 import os
 import shutil
 import tempfile
+from contextlib import contextmanager
 
 import dask.dataframe as dd
 import pytest
+import ray
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
@@ -41,6 +43,15 @@ from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
+
+
+@contextmanager
+def ray_init():
+    res = ray.init(num_cpus=4)
+    try:
+        yield res
+    finally:
+        ray.shutdown()
 
 
 def train_with_backend(backend, config, dataset=None, training_set=None, validation_set=None, test_set=None):
@@ -73,13 +84,14 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
 
 
 def run_api_experiment(config, data_parquet):
-    # Train on Parquet
-    dask_backend = RayBackend()
-    train_with_backend(dask_backend, config, dataset=data_parquet)
+    with ray_init():
+        # Train on Parquet
+        dask_backend = RayBackend()
+        train_with_backend(dask_backend, config, dataset=data_parquet)
 
-    # Train on DataFrame directly
-    data_df = read_parquet(data_parquet, df_lib=dask_backend.processor.df_lib)
-    train_with_backend(dask_backend, config, dataset=data_df)
+        # Train on DataFrame directly
+        data_df = read_parquet(data_parquet, df_lib=dask_backend.processor.df_lib)
+        train_with_backend(dask_backend, config, dataset=data_df)
 
 
 @spawn

@@ -34,3 +34,9 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     def create_trainer(self, **kwargs):
         return Trainer(horovod=self._horovod, **kwargs)
+
+    def sync_model(self, model):
+        # Model weights are only saved on master, so broadcast
+        # to all other ranks
+        self._horovod.broadcast_variables(model.variables,
+                                          root_rank=0)

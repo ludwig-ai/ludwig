@@ -1346,7 +1346,7 @@ class LudwigModel:
 
     def load_weights(
             self,
-            model_dir: str
+            model_dir: str,
     ) -> None:
         """
         Loads weights from a pre-trained model
@@ -1372,11 +1372,7 @@ class LudwigModel:
             )
             self.model.load_weights(weights_save_path)
 
-        if self._horovod:
-            # Model weights are only saved on master, so broadcast
-            # to all other ranks
-            self._horovod.broadcast_variables(self.model.variables,
-                                              root_rank=0)
+        self.backend.sync_model(self.model)
 
     def save(
             self,
