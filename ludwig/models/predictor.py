@@ -11,7 +11,7 @@ from tqdm import tqdm
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
 from ludwig.utils.data_utils import save_csv, save_json
-from ludwig.utils.horovod_utils import configure_horovod, is_on_master, return_on_master
+from ludwig.utils.horovod_utils import configure_horovod, is_on_master, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -310,8 +310,8 @@ class RemotePredictor(Predictor):
         super().__init__(horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
-        self.batch_predict = return_on_master(self.batch_predict)
-        self.batch_evaluation = return_on_master(self.batch_evaluation)
+        self.batch_predict = return_first(self.batch_predict)
+        self.batch_evaluation = return_first(self.batch_evaluation)
 
 
 def calculate_overall_stats(

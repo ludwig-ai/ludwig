@@ -56,8 +56,8 @@ def broadcast_return(fn, horovod):
     return result
 
 
-def return_on_master(fn):
-    """Wraps function so results are only returned by the master rank.
+def return_first(fn):
+    """Wraps function so results are only returned by the first (master) rank.
 
     The purpose of this function is to reduce network overhead.
     """
