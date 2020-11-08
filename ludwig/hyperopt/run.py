@@ -7,10 +7,11 @@ import pandas as pd
 import yaml
 
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
-    LOSS, TYPE
+    LOSS, TYPE, RAY
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
+from ludwig.hyperopt.ray import get_tune_search_space, RayTuneExecutor, update_tune_hyperopt_params_with_defaults
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, \
     print_hyperopt_results, save_hyperopt_stats
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -158,13 +159,17 @@ def hyperopt(
         )
 
     hyperopt_config = config["hyperopt"]
-    update_hyperopt_params_with_defaults(hyperopt_config)
+
+    if hyperopt_config["executor"].get(TYPE, None) == RAY:
+        update_tune_hyperopt_params_with_defaults(hyperopt_config)
+    else:
+        update_hyperopt_params_with_defaults(hyperopt_config)
+        sampler = hyperopt_config["sampler"]
 
     # print hyperopt config
     logger.info(pformat(hyperopt_config, indent=4))
     logger.info('\n')
 
-    sampler = hyperopt_config["sampler"]
     executor = hyperopt_config["executor"]
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
@@ -253,43 +258,82 @@ def hyperopt(
                 )
             )
 
-    hyperopt_sampler = get_build_hyperopt_sampler(
-        sampler[TYPE]
-    )(goal, parameters, **sampler)
-    hyperopt_executor = get_build_hyperopt_executor(
-        executor[TYPE]
-    )(hyperopt_sampler, output_feature, metric, split, **executor)
+    if executor[TYPE] == RAY:
+        if isinstance(dataset, str) and not os.path.isabs(dataset):
+            dataset = os.path.abspath(dataset)
 
-    hyperopt_results = hyperopt_executor.execute(
-        config,
-        dataset=dataset,
-        training_set=training_set,
-        validation_set=validation_set,
-        test_set=test_set,
-        training_set_metadata=training_set_metadata,
-        data_format=data_format,
-        experiment_name=experiment_name,
-        model_name=model_name,
-        # model_load_path=None,
-        # model_resume_path=None,
-        skip_save_training_description=skip_save_training_description,
-        skip_save_training_statistics=skip_save_training_statistics,
-        skip_save_model=skip_save_model,
-        skip_save_progress=skip_save_progress,
-        skip_save_log=skip_save_log,
-        skip_save_processed_input=skip_save_processed_input,
-        skip_save_unprocessed_output=skip_save_unprocessed_output,
-        skip_save_predictions=skip_save_predictions,
-        skip_save_eval_stats=skip_save_eval_stats,
-        output_directory=output_directory,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
-        random_seed=random_seed,
-        debug=debug,
-        **kwargs
-    )
+        search_space = get_tune_search_space(parameters)
+        hyperopt_tune_executor = RayTuneExecutor(
+            search_space, output_feature, metric, split, goal, **executor)
+
+        hyperopt_results = hyperopt_tune_executor.execute(
+            config,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            experiment_name=experiment_name,
+            model_name=model_name,
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_predictions=skip_save_predictions,
+            skip_save_eval_stats=skip_save_eval_stats,
+            output_directory=output_directory,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            use_horovod=use_horovod,
+            random_seed=random_seed,
+            debug=debug,
+            **kwargs
+        )
+    else:
+        hyperopt_sampler = get_build_hyperopt_sampler(
+            sampler[TYPE]
+        )(goal, parameters, **sampler)
+        hyperopt_executor = get_build_hyperopt_executor(
+            executor[TYPE]
+        )(hyperopt_sampler, output_feature, metric, split, **executor)
+
+        hyperopt_results = hyperopt_executor.execute(
+            config,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            experiment_name=experiment_name,
+            model_name=model_name,
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_predictions=skip_save_predictions,
+            skip_save_eval_stats=skip_save_eval_stats,
+            output_directory=output_directory,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            use_horovod=use_horovod,
+            random_seed=random_seed,
+            debug=debug,
+            **kwargs
+        )
 
     if is_on_master():
         print_hyperopt_results(hyperopt_results)

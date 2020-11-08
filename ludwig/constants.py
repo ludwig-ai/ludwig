@@ -99,3 +99,5 @@ SAMPLER = 'sampler'
 
 NAME = 'name'
 TYPE = 'type'
+
+RAY = 'ray'
