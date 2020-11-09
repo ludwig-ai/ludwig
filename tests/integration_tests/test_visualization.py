@@ -338,71 +338,67 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [
-        category_feature(vocab_size=2)
-    ]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, csv_filename)
+        input_features = [
+            category_feature(vocab_size=2)
+        ]
+        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
+        # Generate test data
+        rel_path = generate_data(input_features, output_features, csv_filename)
 
-    config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'training': {'epochs': 2}
-    }
+        config = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'training': {'epochs': 2}
+        }
 
-    model = LudwigModel(
-        config,
-        logging_level=logging.WARN
-    )
-
-    (
-        _,
-        preprocessed_data,
-        output_directory
-    ) = model.train(dataset=rel_path)
-
-    _, _, test_set, metadata = preprocessed_data
-
-    predictions, _ = model.predict(
-        dataset=test_set
-    )
-
-    # get output feature identifiers
-    output_feature_proc_column = config['output_features'][0][PROC_COLUMN]
-    output_feature_name = config['output_features'][0][NAME]
-
-    # retrieve probability array
-    probability = predictions.iloc[:, 1:predictions.shape[1] - 1].values
-    probabilities_per_model = [probability, probability]
-
-    # retrieve ground truth values from test_set
-    ground_truth = test_set.dataset[output_feature_proc_column]
-
-    for file_format in ['png', 'pdf']:
-        compare_classifiers_performance_from_prob(
-            probabilities_per_model,
-            ground_truth,
-            metadata,
-            output_feature_name,
-            top_n_classes=3,
-            output_directory=output_directory,
-            model_names=['Model1', 'Model2'],
-            file_format=file_format
+        model = LudwigModel(
+            config,
+            logging_level=logging.WARN
         )
-        figure_cnt = glob.glob(
-            os.path.join(output_directory, '*.' + file_format))
-        assert 1 == len(figure_cnt)
 
-    shutil.rmtree(output_directory, ignore_errors=True)
-    shutil.rmtree('results', ignore_errors=True)
-    experiment_source_data_name = csv_filename.split('.')[0]
-    for file in glob.glob(experiment_source_data_name + '.*'):
-        try:
-            os.remove(file)
-        except OSError as e:  # if failed, report it back to the user
-            print("Error: %s - %s." % (e.filename, e.strerror))
+        (
+            _,
+            preprocessed_data,
+            output_directory
+        ) = model.train(
+            dataset=rel_path,
+            output_directory=os.path.join(tmpdir, 'results')
+        )
+
+        _, _, test_set, metadata = preprocessed_data
+
+        predictions, _ = model.predict(
+            dataset=test_set
+        )
+
+        # get output feature identifiers
+        output_feature_proc_column = config['output_features'][0][PROC_COLUMN]
+        output_feature_name = config['output_features'][0][NAME]
+
+        # retrieve probability array
+        probability = predictions.iloc[:, 1:predictions.shape[1] - 1].values
+        probabilities_per_model = [probability, probability]
+
+        # retrieve ground truth values from test_set
+        ground_truth = test_set.dataset[output_feature_proc_column]
+
+        for file_format in ['png', 'pdf']:
+            compare_classifiers_performance_from_prob(
+                probabilities_per_model,
+                ground_truth,
+                metadata,
+                output_feature_name,
+                top_n_classes=3,
+                output_directory=output_directory,
+                model_names=['Model1', 'Model2'],
+                file_format=file_format
+            )
+            figure_cnt = glob.glob(
+                os.path.join(output_directory, '*.' + file_format))
+            assert 1 == len(figure_cnt)
 
 
 def test_visualization_compare_classifiers_from_prob_npy_output_saved(
