@@ -371,7 +371,8 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
         _, _, test_set, metadata = preprocessed_data
 
         predictions, _ = model.predict(
-            dataset=test_set
+            dataset=test_set,
+            return_type='dict'
         )
 
         # get output feature identifiers
@@ -379,7 +380,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
         output_feature_name = config['output_features'][0][NAME]
 
         # retrieve probability array
-        probability = predictions.iloc[:, 1:predictions.shape[1] - 1].values
+        probability = predictions[output_feature_name][PROBABILITIES]
         probabilities_per_model = [probability, probability]
 
         # retrieve ground truth values from test_set
