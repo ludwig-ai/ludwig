@@ -1433,7 +1433,7 @@ def compare_performance(
 
 def compare_classifiers_performance_from_prob(
         probabilities_per_model: List[np.ndarray],
-        ground_truth: pd.Series,
+        ground_truth: Union[pd.Series, np.ndarray],
         metadata: dict,
         output_feature_name: str,
         labels_limit: int = 0,
@@ -1473,9 +1473,11 @@ def compare_classifiers_performance_from_prob(
     :return: (None)
     """
 
-    feature_metadata = metadata[output_feature_name]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]

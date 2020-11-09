@@ -25,14 +25,13 @@ import logging
 import os
 import shutil
 import subprocess
-
-import numpy as np
+import tempfile
 
 from ludwig.constants import *
 from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
 from ludwig.utils.data_utils import get_split_path
-from ludwig.visualize import _extract_ground_truth_values, load_data_for_viz, \
+from ludwig.visualize import _extract_ground_truth_values, \
     compare_classifiers_performance_from_prob
 from tests.integration_tests.test_visualization_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
@@ -340,22 +339,16 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        category_feature(vocab_size=10)
+        category_feature(vocab_size=2)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
 
     config = {
         'input_features': input_features,
         'output_features': output_features,
-        'combiner': {
-            'type': 'concat',
-            'fc_size': 14
-        },
         'training': {'epochs': 2}
     }
 
@@ -367,33 +360,25 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
     (
         _,
         preprocessed_data,
-        exp_dir_name
+        output_directory
     ) = model.train(dataset=rel_path)
 
     _, _, test_set, metadata = preprocessed_data
 
-    model.predict(
-        dataset=test_set,
-        skip_save_predictions=False,
-        output_directory=exp_dir_name
+    predictions, _ = model.predict(
+        dataset=test_set
     )
 
+    # get output feature identifiers
+    output_feature_proc_column = config['output_features'][0][PROC_COLUMN]
     output_feature_name = config['output_features'][0][NAME]
-    probability = os.path.join(exp_dir_name, '{}_probabilities.csv').format(
-        output_feature_name)
-    experiment_source_data_name = csv_filename.split('.')[0]
-    split_file = get_split_path(csv_filename)
 
-    ground_truth = _extract_ground_truth_values(
-        rel_path,
-        output_feature_name,
-        ground_truth_split=2,
-        split_file=split_file
-    )
+    # retrieve probability array
+    probability = predictions.iloc[:, 1:predictions.shape[1] - 1].values
+    probabilities_per_model = [probability, probability]
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', [probability, probability], dtype=float
-    )
+    # retrieve ground truth values from test_set
+    ground_truth = test_set.dataset[output_feature_proc_column]
 
     for file_format in ['png', 'pdf']:
         compare_classifiers_performance_from_prob(
@@ -402,15 +387,17 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
             metadata,
             output_feature_name,
             top_n_classes=3,
-            output_directory=exp_dir_name,
+            output_directory=output_directory,
             model_names=['Model1', 'Model2'],
             file_format=file_format
         )
-        figure_cnt = glob.glob(os.path.join(exp_dir_name, '*.' + file_format))
+        figure_cnt = glob.glob(
+            os.path.join(output_directory, '*.' + file_format))
         assert 1 == len(figure_cnt)
 
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree(output_directory, ignore_errors=True)
     shutil.rmtree('results', ignore_errors=True)
+    experiment_source_data_name = csv_filename.split('.')[0]
     for file in glob.glob(experiment_source_data_name + '.*'):
         try:
             os.remove(file)
