@@ -145,7 +145,6 @@ class LudwigModel:
             config: Union[str, dict],
             logging_level: int = logging.ERROR,
             backend: Union[Backend, str] = LOCAL_BACKEND,
-            use_horovod: bool = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
             allow_parallel_threads: bool = True
@@ -160,9 +159,6 @@ class LudwigModel:
         :param logging_level: (int) Log level that will be sent to stderr.
         :param backend: (Union[Backend, str]) `Backend` or string name
             of backend to use to execute preprocessing / training steps.
-        :param use_horovod: (bool) use Horovod for distributed training.
-            Will be set automatically if `horovodrun` is used to launch
-            the training script.
         :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
@@ -191,10 +187,7 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = backend
-        if isinstance(backend, str):
-            self.backend = create_backend(backend)
-
+        self.backend = create_backend(backend)
         self.backend.initialize()
 
         # setup TensorFlow
@@ -1275,7 +1268,7 @@ class LudwigModel:
     def load(
             model_dir: str,
             logging_level: int = logging.ERROR,
-            use_horovod: bool = None,
+            backend: Union[Backend, str] = LOCAL_BACKEND,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
             allow_parallel_threads: bool = True
@@ -1289,9 +1282,8 @@ class LudwigModel:
                the model is in `results_dir/experiment_dir/model`.
         :param logging_level: (int, default: 40) log level that will be sent to
             stderr.
-        :param use_horovod: (bool, default: `None`) use Horovod for distributed
-            training. Will be set
-            automatically if `horovodrun` is used to launch the training script.
+        :param backend: (Union[Backend, str]) `Backend` or string name
+            of backend to use to execute preprocessing / training steps.
         :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
@@ -1313,17 +1305,21 @@ class LudwigModel:
         ```
 
         """
-        horovod = configure_horovod(use_horovod)
-        config = broadcast_return(lambda: load_json(os.path.join(
-            model_dir,
-            MODEL_HYPERPARAMETERS_FILE_NAME
-        )), horovod)
+        backend = create_backend(backend)
+        backend.initialize()
+
+        config = backend.broadcast_return(
+            lambda: load_json(os.path.join(
+                model_dir,
+                MODEL_HYPERPARAMETERS_FILE_NAME
+            )
+        ))
 
         # initialize model
         ludwig_model = LudwigModel(
             config,
             logging_level=logging_level,
-            use_horovod=use_horovod,
+            backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
@@ -1336,13 +1332,13 @@ class LudwigModel:
         ludwig_model.load_weights(model_dir)
 
         # load train set metadata
-        ludwig_model.training_set_metadata = broadcast_return(
+        ludwig_model.training_set_metadata = backend.broadcast_return(
             lambda: load_metadata(
                 os.path.join(
                     model_dir,
                     TRAIN_SET_METADATA_FILE_NAME
                 )
-            ), horovod
+            )
         )
 
         return ludwig_model

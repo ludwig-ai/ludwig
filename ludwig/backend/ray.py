@@ -144,6 +144,9 @@ class RayBackend(Backend):
     def sync_model(self, model):
         pass
 
+    def broadcast_return(self, fn):
+        return fn()
+
     @property
     def processor(self):
         return self._processor

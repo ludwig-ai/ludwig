@@ -15,10 +15,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import time
+
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
-from ludwig.utils.horovod_utils import configure_horovod
+from ludwig.utils.horovod_utils import configure_horovod, is_on_master
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 
@@ -44,3 +46,15 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         # to all other ranks
         self._horovod.broadcast_variables(model.variables,
                                           root_rank=0)
+
+    def broadcast_return(self, fn):
+        """Returns the result of calling `fn` on master, broadcasted to all other ranks.
+
+            Specifically, `fn` is only executed on master, but its result is returned by every
+            rank by broadcasting the return value from master.
+            """
+        result = fn() if is_on_master() else None
+        if self._horovod:
+            name = f'broadcast_return_{int(time.time())}'
+            result = self._horovod.broadcast_object(result, name=name)
+        return result

@@ -55,7 +55,11 @@ backend_registry = {
 }
 
 
-def create_backend(name):
-    if name is None and has_horovodrun():
-        name = HOROVOD
-    return backend_registry[name]()
+def create_backend(backend):
+    if isinstance(backend, Backend):
+        return backend
+
+    if backend is None and has_horovodrun():
+        backend = HOROVOD
+
+    return backend_registry[backend]()

@@ -80,6 +80,10 @@ class Backend(CacheMixin, ABC):
     def sync_model(self, model):
         raise NotImplementedError()
 
+    @abstractmethod
+    def broadcast_return(self, fn):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def processor(self):
@@ -120,6 +124,9 @@ class LocalTrainingMixin:
 
     def sync_model(self, model):
         pass
+
+    def broadcast_return(self, fn):
+        return fn()
 
 
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
