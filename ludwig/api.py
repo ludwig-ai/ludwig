@@ -700,6 +700,7 @@ class LudwigModel:
                 self.model.output_features,
                 self.training_set_metadata,
                 output_directory=output_directory,
+                backend=self.backend,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not self.backend.is_coordinator(),
             )
@@ -843,6 +844,7 @@ class LudwigModel:
                     self.model.output_features,
                     self.training_set_metadata,
                     output_directory=output_directory,
+                    backend=self.backend,
                     skip_save_unprocessed_output=skip_save_unprocessed_output
                                                  or not self.backend.is_coordinator(),
                 )
