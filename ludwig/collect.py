@@ -18,12 +18,12 @@ import argparse
 import logging
 import os
 import sys
-from typing import List
+from typing import List, Union
 
 import numpy as np
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS, LOCAL, LOCAL_BACKEND, Backend
+from ludwig.backend import ALL_BACKENDS, LOCAL, Backend
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
@@ -45,7 +45,7 @@ def collect_activations(
         gpus: List[str] = None,
         gpu_memory_limit: int =None,
         allow_parallel_threads: bool = True,
-        backend: Union[Backend, str] = LOCAL_BACKEND,
+        backend: Union[Backend, str] = None,
         debug: bool = False,
         **kwargs
 ) -> List[str]:

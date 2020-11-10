@@ -84,6 +84,10 @@ class Backend(CacheMixin, ABC):
     def broadcast_return(self, fn):
         raise NotImplementedError()
 
+    @abstractmethod
+    def is_coordinator(self):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def processor(self):
@@ -97,10 +101,6 @@ class Backend(CacheMixin, ABC):
     @abstractmethod
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
-
-    @abstractmethod
-    def is_coordinator(self):
-        return True
 
 
 class LocalPreprocessingMixin:
@@ -131,6 +131,20 @@ class LocalTrainingMixin:
 
     def broadcast_return(self, fn):
         return fn()
+
+    def is_coordinator(self):
+        return True
+
+
+class RemoteTrainingMixin:
+    def sync_model(self, model):
+        pass
+
+    def broadcast_return(self, fn):
+        return fn()
+
+    def is_coordinator(self):
+        return True
 
 
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):

@@ -21,7 +21,7 @@ from typing import List, Union
 
 import yaml
 
-from ludwig.backend import ALL_BACKENDS, LOCAL, LOCAL_BACKEND, Backend, initialize_backend
+from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
@@ -59,7 +59,7 @@ def hyperopt_cli(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
-        backend: Union[Backend, str] = LOCAL_BACKEND,
+        backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         debug: bool = False,
         **kwargs,

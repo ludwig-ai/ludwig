@@ -34,7 +34,7 @@ ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
-from ludwig.backend import LOCAL_BACKEND, Backend, initialize_backend
+from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
@@ -141,7 +141,7 @@ class LudwigModel:
             self,
             config: Union[str, dict],
             logging_level: int = logging.ERROR,
-            backend: Union[Backend, str] = LOCAL_BACKEND,
+            backend: Union[Backend, str] = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
             allow_parallel_threads: bool = True
@@ -1258,7 +1258,7 @@ class LudwigModel:
     def load(
             model_dir: str,
             logging_level: int = logging.ERROR,
-            backend: Union[Backend, str] = LOCAL_BACKEND,
+            backend: Union[Backend, str] = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
             allow_parallel_threads: bool = True
@@ -1519,7 +1519,7 @@ def kfold_cross_validate(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
-        backend: Union[Backend, str] = LOCAL_BACKEND,
+        backend: Union[Backend, str] = None,
         logging_level: int = logging.INFO,
         debug: bool = False,
         **kwargs

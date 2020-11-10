@@ -6,7 +6,7 @@ from typing import Union, List
 import pandas as pd
 import yaml
 
-from ludwig.backend import LOCAL_BACKEND, Backend
+from ludwig.backend import Backend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE
 from ludwig.features.feature_registries import output_type_registry
@@ -44,7 +44,7 @@ def hyperopt(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
-        backend: Union[Backend, str] = LOCAL_BACKEND,
+        backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         debug: bool = False,
         **kwargs,

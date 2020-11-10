@@ -23,7 +23,7 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS, LOCAL, LOCAL_BACKEND, Backend, initialize_backend
+from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
@@ -45,7 +45,7 @@ def preprocess_cli(
         data_format: str = None,
         random_seed: int = default_random_seed,
         logging_level: int = logging.INFO,
-        backend: Union[Backend, str] = LOCAL_BACKEND,
+        backend: Union[Backend, str] = None,
         debug: bool = False,
         **kwargs
 ) -> None:
