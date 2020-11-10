@@ -36,13 +36,6 @@ def initialize_horovod():
     return _HVD
 
 
-def should_use_horovod(use_horovod):
-    """Returns True if user did not specify explicitly and running with `horovodrun`."""
-    if use_horovod is None:
-        return has_horovodrun()
-    return use_horovod
-
-
 def has_horovodrun():
     """Returns True if running with `horovodrun` using Gloo or OpenMPI."""
     return 'OMPI_COMM_WORLD_RANK' in os.environ or 'HOROVOD_RANK' in os.environ

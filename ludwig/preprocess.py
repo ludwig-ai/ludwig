@@ -130,7 +130,6 @@ def preprocess_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
-    :param use_horovod: (bool, default: `None`) flag for using horovod.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with

@@ -78,9 +78,8 @@ class LudwigModel:
     :param config: (Union[str, dict]) in-memory representation of
             config or string path to a YAML config file.
     :param logging_level: (int) Log level that will be sent to stderr.
-    :param use_horovod: (bool) use Horovod for distributed training.
-        Will be set automatically if `horovodrun` is used to launch
-        the training script.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+        of backend to use to execute preprocessing / training steps.
     :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
         to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
     :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
@@ -995,14 +994,6 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param gpus: (list, default: `None`) list of GPUs that are available
-            for training.
-        :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-            allocate per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
-            to use multithreading parallelism to improve performance at
-            the cost of determinism.
-        :param use_horovod: (bool, default: `None`) flag for using horovod.
         :param random_seed: (int: default: 42) random seed used for weights
             initialization, splits and any other random function.
         :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -1529,7 +1520,6 @@ def kfold_cross_validate(
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
         backend: Union[Backend, str] = LOCAL_BACKEND,
-        use_horovod: bool = None,
         logging_level: int = logging.INFO,
         debug: bool = False,
         **kwargs
@@ -1605,7 +1595,6 @@ def kfold_cross_validate(
            to improve performance at the cost of determinism.
     :param backend: (Union[Backend, str]) `Backend` or string name
             of backend to use to execute preprocessing / training steps.
-    :param use_horovod: (bool, default: `None`) flag for using horovod
     :param debug: (bool, default: `False`) If `True` turns on tfdbg
             with `inf_or_nan` checks.
     :param logging_level: (int, default: INFO) log level to send to stderr.
@@ -1618,7 +1607,7 @@ def kfold_cross_validate(
              `kfold_split_indices`: indices to split training data into
              training fold and test fold.
     """
-    set_on_master(use_horovod)
+    backend = initialize_backend(backend)
 
     # if config is a path, convert to dictionary
     if isinstance(config, str):  # assume path
@@ -1684,7 +1673,6 @@ def kfold_cross_validate(
                 config=config,
                 logging_level=logging_level,
                 backend=backend,
-                use_horovod=use_horovod,
                 gpus=gpus,
                 gpu_memory_limit=gpu_memory_limit,
                 allow_parallel_threads=allow_parallel_threads,

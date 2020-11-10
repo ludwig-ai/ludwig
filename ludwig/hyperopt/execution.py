@@ -56,7 +56,7 @@ class HyperoptExecutor(ABC):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -99,7 +99,7 @@ class SerialExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -118,7 +118,7 @@ class SerialExecutor(HyperoptExecutor):
 
                 model = LudwigModel(
                     config=modified_config,
-                    use_horovod=use_horovod,
+                    backend=backend,
                     gpus=gpus,
                     gpu_memory_limit=gpu_memory_limit,
                     allow_parallel_threads=allow_parallel_threads,
@@ -252,7 +252,7 @@ class ParallelExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -412,7 +412,7 @@ class ParallelExecutor(HyperoptExecutor):
                             gpus=gpus,
                             gpu_memory_limit=gpu_memory_limit,
                             allow_parallel_threads=allow_parallel_threads,
-                            use_horovod=use_horovod,
+                            backend=backend,
                             random_seed=random_seed,
                             debug=debug,
                         )
@@ -504,7 +504,7 @@ class FiberExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -533,7 +533,7 @@ class FiberExecutor(HyperoptExecutor):
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
-            use_horovod=use_horovod,
+            backend=backend,
             random_seed=random_seed,
             debug=debug,
         )
@@ -661,7 +661,7 @@ def run_experiment(
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
-        use_horovod=None,
+        backend=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -670,7 +670,7 @@ def run_experiment(
     # & append it to `results`
     model = LudwigModel(
         config=config,
-        use_horovod=use_horovod,
+        backend=backend,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
