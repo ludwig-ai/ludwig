@@ -26,11 +26,13 @@ import os
 import shutil
 import subprocess
 import tempfile
+import numpy as np
+import pandas as pd
 
 from ludwig.constants import *
 from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
-from ludwig.utils.data_utils import get_split_path
+from ludwig.utils.data_utils import get_split_path, split_dataset_ttv
 from ludwig.visualize import _extract_ground_truth_values, \
     compare_classifiers_performance_from_prob
 from tests.integration_tests.test_visualization_api import obtain_df_splits
@@ -347,6 +349,10 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
 
         # Generate test data
         rel_path = generate_data(input_features, output_features, csv_filename)
+        df = pd.read_csv(rel_path)
+        df[SPLIT] = np.random.choice([0, 1, 2], size=df.shape[0],
+                                     p=[0.7, 0.1, 0.2])
+        train_ds, test_ds, validation_ds = split_dataset_ttv(df, df[SPLIT])
 
         config = {
             'input_features': input_features,
@@ -364,19 +370,20 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
             preprocessed_data,
             output_directory
         ) = model.train(
-            dataset=rel_path,
+            training_set=pd.DataFrame(train_ds),
+            validation_set=pd.DataFrame(validation_ds),
             output_directory=os.path.join(tmpdir, 'results')
         )
 
-        _, _, test_set, metadata = preprocessed_data
+        metadata = preprocessed_data[3]
 
         predictions, _ = model.predict(
-            dataset=test_set,
+            dataset=test_ds,
             return_type='dict'
         )
 
         # get output feature identifiers
-        output_feature_proc_column = config['output_features'][0][PROC_COLUMN]
+        #        output_feature_proc_column = config['output_features'][0][PROC_COLUMN]
         output_feature_name = config['output_features'][0][NAME]
 
         # retrieve probability array
@@ -384,7 +391,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved_api(
         probabilities_per_model = [probability, probability]
 
         # retrieve ground truth values from test_set
-        ground_truth = test_set.dataset[output_feature_proc_column]
+        ground_truth = test_ds[output_feature_name]
 
         for file_format in ['png', 'pdf']:
             compare_classifiers_performance_from_prob(
