@@ -1149,7 +1149,13 @@ def calibration_1_vs_all_cli(
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
-    calibration_1_vs_all(probabilities_per_model, ground_truth, **kwargs)
+    calibration_1_vs_all(
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
+    )
 
 
 def calibration_multiclass_cli(
@@ -3277,7 +3283,9 @@ def roc_curves_from_test_statistics(
 
 def calibration_1_vs_all(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         top_n_classes: List[int],
         labels_limit: int,
         model_names: List[str] = None,
@@ -3305,8 +3313,9 @@ def calibration_1_vs_all(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_n_classes: (list) List containing the number of classes to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
@@ -3322,6 +3331,12 @@ def calibration_1_vs_all(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
     filename_template = 'calibration_1_vs_all_{}.' + file_format
