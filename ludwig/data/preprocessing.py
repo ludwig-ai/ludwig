@@ -49,7 +49,6 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_PROCES
                                      text_feature_data_field)
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed, merge_with_defaults)
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      get_features_from_lists)
@@ -1379,7 +1378,7 @@ def _preprocess_file_for_training(
         if backend.cache_enabled:
             training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
-        if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
+        if backend.is_coordinator() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
             data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
@@ -1432,7 +1431,7 @@ def _preprocess_file_for_training(
             SPLIT
         )
 
-        if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
+        if backend.is_coordinator() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
             logger.info('Writing preprocessed dataset cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(

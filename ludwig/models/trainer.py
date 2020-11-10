@@ -45,7 +45,7 @@ from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import initialize_horovod, is_on_master, return_first
+from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed, exponential_decay
 from ludwig.utils.misc_utils import set_random_seed
@@ -391,7 +391,7 @@ class Trainer(BaseTrainer):
         model_weights_path = model_hyperparameters_path = None
         training_checkpoints_path = training_checkpoints_prefix_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
-        if is_on_master():
+        if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
             model_weights_path = os.path.join(save_path,
                                               MODEL_WEIGHTS_FILE_NAME)
@@ -413,7 +413,7 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
-        if is_on_master():
+        if self.is_coordinator():
             checkpoint = tf.train.Checkpoint(
                 optimizer=self.optimizer,
                 model=model
@@ -425,7 +425,7 @@ class Trainer(BaseTrainer):
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
-        if is_on_master() and not self.skip_save_log and tensorboard_log_dir:
+        if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
             train_summary_writer = tf.summary.create_file_writer(
                 os.path.join(
                     tensorboard_log_dir, TRAINING
@@ -444,7 +444,7 @@ class Trainer(BaseTrainer):
                     )
                 )
 
-        if self.debug and is_on_master():
+        if self.debug and self.is_coordinator():
             # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
             debug_path = os.path.join(
                 save_path, 'debug'
@@ -461,7 +461,7 @@ class Trainer(BaseTrainer):
             progress_tracker = self.resume_training_progress_tracker(
                 training_progress_tracker_path
             )
-            if is_on_master():
+            if self.is_coordinator():
                 self.resume_weights_and_optimzier(
                     training_checkpoints_path, checkpoint
                 )
@@ -515,7 +515,7 @@ class Trainer(BaseTrainer):
 
             # epoch init
             start_time = time.time()
-            if is_on_master():
+            if self.is_coordinator():
                 logger.info(
                     '\nEpoch {epoch:{digits}d}'.format(
                         epoch=progress_tracker.epoch + 1,
@@ -531,7 +531,7 @@ class Trainer(BaseTrainer):
 
             # ================ Train ================
             progress_bar = None
-            if is_on_master():
+            if self.is_coordinator():
                 progress_bar = tqdm(
                     desc='Training',
                     total=batcher.steps_per_epoch,
@@ -585,7 +585,7 @@ class Trainer(BaseTrainer):
                 }
 
                 # Reintroduce for tensorboard graph
-                # if first_batch and is_on_master() and not skip_save_log:
+                # if first_batch and self.is_coordinator() and not skip_save_log:
                 #    tf.summary.trace_on(graph=True, profiler=True)
 
                 loss, all_losses = model.train_step(
@@ -596,7 +596,7 @@ class Trainer(BaseTrainer):
                 )
 
                 # Reintroduce for tensorboard graph
-                # if first_batch and is_on_master() and not skip_save_log:
+                # if first_batch and self.is_coordinator() and not skip_save_log:
                 #     with train_summary_writer.as_default():
                 #         tf.summary.trace_export(
                 #             name="Model",
@@ -604,7 +604,7 @@ class Trainer(BaseTrainer):
                 #             profiler_outdir=tensorboard_log_dir
                 #         )
 
-                if is_on_master() and not self.skip_save_log:
+                if self.is_coordinator() and not self.skip_save_log:
                     self.write_step_summary(
                         train_summary_writer=train_summary_writer,
                         combined_loss=loss,
@@ -626,12 +626,12 @@ class Trainer(BaseTrainer):
                         self.optimizer.variables(), root_rank=0)
 
                 progress_tracker.steps += 1
-                if is_on_master():
+                if self.is_coordinator():
                     progress_bar.update(1)
                 first_batch = False
 
             # ================ Post Training Epoch ================
-            if is_on_master():
+            if self.is_coordinator():
                 progress_bar.close()
 
             progress_tracker.epoch += 1
@@ -697,12 +697,12 @@ class Trainer(BaseTrainer):
 
             elapsed_time = (time.time() - start_time) * 1000.0
 
-            if is_on_master():
+            if self.is_coordinator():
                 logger.info('Took {time}'.format(
                     time=time_utils.strdelta(elapsed_time)))
 
             # metric prints
-            if is_on_master():
+            if self.is_coordinator():
                 for output_feature, table in tables.items():
                     logger.info(
                         tabulate(
@@ -740,12 +740,12 @@ class Trainer(BaseTrainer):
                     break
             else:
                 # there's no validation, so we save the model at each iteration
-                if is_on_master():
+                if self.is_coordinator():
                     if not self.skip_save_model:
                         model.save_weights(model_weights_path)
 
             # ========== Save training progress ==========
-            if is_on_master():
+            if self.is_coordinator():
                 if not self.skip_save_progress:
                     checkpoint_manager.save()
                     progress_tracker.save(
@@ -755,7 +755,7 @@ class Trainer(BaseTrainer):
                         )
                     )
 
-            if is_on_master():
+            if self.is_coordinator():
                 contrib_command("train_epoch_end", progress_tracker)
                 logger.info('')
 
@@ -901,7 +901,7 @@ class Trainer(BaseTrainer):
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
-            if is_on_master():
+            if self.is_coordinator():
                 if not skip_save_model:
                     model.save_weights(model_weights_path)
                     logger.info(
@@ -915,7 +915,7 @@ class Trainer(BaseTrainer):
                 progress_tracker.epoch - progress_tracker.last_improvement_epoch
         )
         if progress_tracker.last_improvement != 0:
-            if is_on_master():
+            if self.is_coordinator():
                 logger.info(
                     'Last improvement of {} validation {} '
                     'happened {} epoch{} ago'.format(
@@ -1007,7 +1007,7 @@ class Trainer(BaseTrainer):
         # ========== Early Stop logic ==========
         if early_stop > 0:
             if progress_tracker.last_improvement >= early_stop:
-                if is_on_master():
+                if self.is_coordinator():
                     logger.info(
                         "\nEARLY STOPPING due to lack of "
                         "validation improvement, "
@@ -1040,7 +1040,7 @@ class Trainer(BaseTrainer):
         sys.exit(1)
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
-        if is_on_master():
+        if self.is_coordinator():
             logger.info('Resuming training of model: {0}'.format(
                 training_progress_tracker_path
             ))
@@ -1134,7 +1134,7 @@ class Trainer(BaseTrainer):
                         reduce_learning_rate_on_plateau_rate
                     )
 
-                    if is_on_master():
+                    if self.is_coordinator():
                         logger.info(
                             'PLATEAU REACHED, reducing learning rate to {} '
                             'due to lack of improvement of {} {} {}'.format(
@@ -1151,7 +1151,7 @@ class Trainer(BaseTrainer):
 
                     if (progress_tracker.num_reductions_learning_rate >=
                             reduce_learning_rate_on_plateau):
-                        if is_on_master():
+                        if self.is_coordinator():
                             logger.info(
                                 'Learning rate was already reduced '
                                 '{} times, not reducing it anymore'.format(
@@ -1212,7 +1212,7 @@ class Trainer(BaseTrainer):
                         increase_batch_size_on_plateau_max
                     )
 
-                    if is_on_master():
+                    if self.is_coordinator():
                         logger.info(
                             'PLATEAU REACHED, increasing batch size to {} '
                             'due to lack of improvement of {} {} {}'.format(
@@ -1229,7 +1229,7 @@ class Trainer(BaseTrainer):
 
                     if (progress_tracker.num_increases_batch_size >=
                             increase_batch_size_on_plateau):
-                        if is_on_master():
+                        if self.is_coordinator():
                             logger.info(
                                 'Batch size was already increased '
                                 '{} times, not increasing it anymore'.format(
@@ -1238,7 +1238,7 @@ class Trainer(BaseTrainer):
                             )
                     elif (progress_tracker.batch_size >=
                           increase_batch_size_on_plateau_max):
-                        if is_on_master():
+                        if self.is_coordinator():
                             logger.info(
                                 'Batch size was already increased '
                                 '{} times, currently it is {}, '
@@ -1247,6 +1247,11 @@ class Trainer(BaseTrainer):
                                     progress_tracker.batch_size
                                 )
                             )
+
+    def is_coordinator(self):
+        if not self.horovod:
+            return True
+        return self.horovod.rank() == 0
 
 
 class RemoteTrainer(Trainer):

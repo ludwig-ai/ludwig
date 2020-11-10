@@ -11,7 +11,7 @@ from tqdm import tqdm
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
 from ludwig.utils.data_utils import save_csv, save_json
-from ludwig.utils.horovod_utils import initialize_horovod, is_on_master, return_first
+from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -94,7 +94,7 @@ class Predictor(BasePredictor):
         )
 
         progress_bar = None
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar = tqdm(
                 desc='Prediction' if dataset_name is None
                 else 'Prediction {0: <5.5}'.format(dataset_name),
@@ -125,10 +125,10 @@ class Predictor(BasePredictor):
                         else:
                             predictions[of_name][pred_name].append(pred_values)
 
-            if is_on_master():
+            if self.is_coordinator():
                 progress_bar.update(1)
 
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
@@ -153,7 +153,7 @@ class Predictor(BasePredictor):
         )
 
         progress_bar = None
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar = tqdm(
                 desc='Evaluation' if dataset_name is None
                 else 'Evaluation {0: <5.5}'.format(dataset_name),
@@ -190,10 +190,10 @@ class Predictor(BasePredictor):
                                 predictions[of_name][pred_name].append(
                                     pred_values)
 
-            if is_on_master():
+            if self.is_coordinator():
                 progress_bar.update(1)
 
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
@@ -292,6 +292,11 @@ class Predictor(BasePredictor):
         )
 
         return merged_output_metrics
+
+    def is_coordinator(self):
+        if not self._horovod:
+            return True
+        return self._horovod.rank() == 0
 
 
 class RemotePredictor(Predictor):
