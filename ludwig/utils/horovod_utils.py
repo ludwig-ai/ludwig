@@ -23,8 +23,6 @@ try:
 except (ModuleNotFoundError, ImportError):
     _HVD = None
 
-ON_MASTER = True
-
 
 def initialize_horovod():
     if not _HVD:
@@ -42,7 +40,7 @@ def has_horovodrun():
 
 
 def return_first(fn):
-    """Wraps function so results are only returned by the first (master) rank.
+    """Wraps function so results are only returned by the first (coordinator) rank.
 
     The purpose of this function is to reduce network overhead.
     """

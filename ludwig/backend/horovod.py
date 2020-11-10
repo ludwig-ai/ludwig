@@ -42,17 +42,17 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         return Predictor(horovod=self._horovod, **kwargs)
 
     def sync_model(self, model):
-        # Model weights are only saved on master, so broadcast
+        # Model weights are only saved on the coordinator, so broadcast
         # to all other ranks
         self._horovod.broadcast_variables(model.variables,
                                           root_rank=0)
 
     def broadcast_return(self, fn):
-        """Returns the result of calling `fn` on master, broadcasted to all other ranks.
+        """Returns the result of calling `fn` on coordinator, broadcast to all other ranks.
 
-            Specifically, `fn` is only executed on master, but its result is returned by every
-            rank by broadcasting the return value from master.
-            """
+        Specifically, `fn` is only executed on coordinator, but its result is returned by every
+        rank by broadcasting the return value from coordinator.
+        """
         result = fn() if self.is_coordinator() else None
         if self._horovod:
             name = f'broadcast_return_{int(time.time())}'
