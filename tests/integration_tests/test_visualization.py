@@ -565,14 +565,12 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
