@@ -65,3 +65,9 @@ def create_backend(backend):
         backend = HOROVOD
 
     return backend_registry[backend]()
+
+
+def initialize_backend(backend):
+    backend = create_backend(backend)
+    backend.initialize()
+    return backend

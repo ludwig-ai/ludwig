@@ -34,7 +34,7 @@ ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
-from ludwig.backend import LOCAL_BACKEND, Backend, create_backend
+from ludwig.backend import LOCAL_BACKEND, Backend, initialize_backend
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
@@ -60,7 +60,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      figure_data_format, generate_kfold_splits,
                                      load_json, save_json)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.horovod_utils import (broadcast_return, configure_horovod,
+from ludwig.utils.horovod_utils import (broadcast_return, initialize_horovod,
                                         is_on_master, set_on_master)
 from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
@@ -187,8 +187,7 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = create_backend(backend)
-        self.backend.initialize()
+        self.backend = initialize_backend(backend)
 
         # setup TensorFlow
         self.backend.initialize_tensorflow(gpus=gpus,
@@ -1305,8 +1304,7 @@ class LudwigModel:
         ```
 
         """
-        backend = create_backend(backend)
-        backend.initialize()
+        backend = initialize_backend(backend)
 
         config = backend.broadcast_return(
             lambda: load_json(os.path.join(

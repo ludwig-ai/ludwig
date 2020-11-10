@@ -98,6 +98,10 @@ class Backend(CacheMixin, ABC):
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
 
+    @abstractmethod
+    def is_coordinator(self):
+        return True
+
 
 class LocalPreprocessingMixin:
     @property

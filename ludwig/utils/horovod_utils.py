@@ -26,9 +26,14 @@ except (ModuleNotFoundError, ImportError):
 ON_MASTER = True
 
 
-def configure_horovod(use_horovod):
-    set_on_master(use_horovod)
-    return _HVD if should_use_horovod(use_horovod) else None
+def initialize_horovod():
+    if not _HVD:
+        raise ValueError("Horovod backend specified, "
+                         "but cannot import `horovod.tensorflow`. "
+                         "Install Horovod following the instructions at: "
+                         "https://github.com/horovod/horovod")
+    _HVD.init()
+    return _HVD
 
 
 def should_use_horovod(use_horovod):
@@ -50,23 +55,5 @@ def return_first(fn):
     """
     def wrapped(*args, **kwargs):
         res = fn(*args, **kwargs)
-        return res if is_on_master() else None
+        return res if _HVD.rank() == 0 else None
     return wrapped
-
-
-def set_on_master(use_horovod):
-    global ON_MASTER
-    if should_use_horovod(use_horovod):
-        if not _HVD:
-            raise ValueError("use_horovod parameter specified, "
-                             "but cannot import horovod.tensorflow. "
-                             "Install horovod following the instructions at: "
-                             " https://github.com/horovod/horovod")
-        _HVD.init()
-        ON_MASTER = _HVD.rank() == 0
-    else:
-        ON_MASTER = True
-
-
-def is_on_master():
-    return ON_MASTER

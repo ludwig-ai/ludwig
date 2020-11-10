@@ -45,7 +45,7 @@ from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import configure_horovod, is_on_master, return_first
+from ludwig.utils.horovod_utils import initialize_horovod, is_on_master, return_first
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed, exponential_decay
 from ludwig.utils.misc_utils import set_random_seed
@@ -1257,7 +1257,7 @@ class RemoteTrainer(Trainer):
         allow_parallel_threads=True,
         **kwargs
     ):
-        horovod = configure_horovod(True)
+        horovod = initialize_horovod()
         initialize_tensorflow(gpus=gpus,
                               gpu_memory_limit=gpu_memory_limit,
                               allow_parallel_threads=allow_parallel_threads,

@@ -20,7 +20,7 @@ import time
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
-from ludwig.utils.horovod_utils import configure_horovod, is_on_master
+from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 
@@ -30,7 +30,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         self._horovod = None
 
     def initialize(self):
-        self._horovod = configure_horovod(use_horovod=True)
+        self._horovod = initialize_horovod()
 
     def initialize_tensorflow(self, *args, **kwargs):
         initialize_tensorflow(*args, horovod=self._horovod, **kwargs)
@@ -53,8 +53,11 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
             Specifically, `fn` is only executed on master, but its result is returned by every
             rank by broadcasting the return value from master.
             """
-        result = fn() if is_on_master() else None
+        result = fn() if self.is_coordinator() else None
         if self._horovod:
             name = f'broadcast_return_{int(time.time())}'
             result = self._horovod.broadcast_object(result, name=name)
         return result
+
+    def is_coordinator(self):
+        return self._horovod.rank() == 0

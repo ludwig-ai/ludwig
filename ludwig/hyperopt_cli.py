@@ -21,12 +21,11 @@ from typing import List, Union
 
 import yaml
 
-from ludwig.backend import ALL_BACKENDS, LOCAL, LOCAL_BACKEND, Backend
+from ludwig.backend import ALL_BACKENDS, LOCAL, LOCAL_BACKEND, Backend, initialize_backend
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import is_on_master, set_on_master
 from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -397,9 +396,8 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.hyperopt')
 
-    set_on_master(args.use_horovod)
-
-    if is_on_master():
+    args.backend = initialize_backend(args.backend)
+    if args.backend.is_coordinator():
         print_ludwig("Hyperopt", LUDWIG_VERSION)
 
     hyperopt_cli(**vars(args))
