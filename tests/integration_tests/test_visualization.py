@@ -585,7 +585,7 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',

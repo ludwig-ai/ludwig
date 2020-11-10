@@ -377,12 +377,6 @@ def compare_classifiers_performance_from_pred_cli(
         split_file
     )
 
-    feature_metadata = metadata[output_feature_name]
-
-    # translate string to encoded numeric value
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
-
     predictions_per_model = load_data_for_viz(
         'load_from_file', predictions, dtype=str
     )
@@ -1535,7 +1529,7 @@ def compare_classifiers_performance_from_prob(
 
 def compare_classifiers_performance_from_pred(
         predictions_per_model: List[np.ndarray],
-        ground_truth: np.ndarray,
+        ground_truth: Union[pd.Series, np.ndarray],
         metadata: dict,
         output_feature_name: str,
         labels_limit: int,
@@ -1553,8 +1547,7 @@ def compare_classifiers_performance_from_pred(
     # Inputs
 
     :param predictions_per_model: (List[str]) path to experiment predictions file.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (pd.Series) ground truth values
     :param metadata: (dict) feature metadata dictionary.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -1571,6 +1564,12 @@ def compare_classifiers_performance_from_pred(
 
     :return: (None)
     """
+
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     predictions_per_model = [
         np.ndarray.flatten(np.array(pred)) for pred in predictions_per_model
