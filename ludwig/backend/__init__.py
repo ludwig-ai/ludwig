@@ -26,6 +26,8 @@ DASK = 'dask'
 HOROVOD = 'horovod'
 RAY = 'ray'
 
+ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
+
 
 def get_local_backend():
     return LOCAL_BACKEND

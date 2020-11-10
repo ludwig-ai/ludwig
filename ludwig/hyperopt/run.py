@@ -6,6 +6,7 @@ from typing import Union, List
 import pandas as pd
 import yaml
 
+from ludwig.backend import LOCAL_BACKEND, Backend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE
 from ludwig.features.feature_registries import output_type_registry
@@ -44,7 +45,7 @@ def hyperopt(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
-        use_horovod: bool = None,
+        backend: Union[Backend, str] = LOCAL_BACKEND,
         random_seed: int = default_random_seed,
         debug: bool = False,
         **kwargs,
@@ -132,7 +133,8 @@ def hyperopt(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
-    :param use_horovod: (bool, default: `None`) flag for using horovod.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+        of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -285,7 +287,7 @@ def hyperopt(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
+        backend=backend,
         random_seed=random_seed,
         debug=debug,
         **kwargs
