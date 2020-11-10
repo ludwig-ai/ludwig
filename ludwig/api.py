@@ -60,8 +60,6 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      figure_data_format, generate_kfold_splits,
                                      load_json, save_json)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.horovod_utils import (broadcast_return, initialize_horovod,
-                                        is_on_master, set_on_master)
 from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
                                      get_output_directory)
@@ -322,7 +320,7 @@ class LudwigModel:
             if os.path.exists(model_resume_path):
                 output_directory = model_resume_path
             else:
-                if is_on_master():
+                if self.backend.is_coordinator():
                     logger.info(
                         'Model resume path does not exists, '
                         'starting training from scratch'
@@ -330,7 +328,7 @@ class LudwigModel:
                 model_resume_path = None
 
         if model_resume_path is None:
-            if is_on_master():
+            if self.backend.is_coordinator():
                 output_directory = get_output_directory(
                     output_directory,
                     experiment_name,
@@ -351,7 +349,7 @@ class LudwigModel:
         )
 
         description_fn = training_stats_fn = model_dir = None
-        if is_on_master():
+        if self.backend.is_coordinator():
             if should_create_output_directory:
                 if not os.path.exists(output_directory):
                     os.makedirs(output_directory, exist_ok=True)
@@ -363,7 +361,7 @@ class LudwigModel:
                 preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
             else:
                 # save description
-                if is_on_master():
+                if self.backend.is_coordinator():
                     description = get_experiment_description(
                         self.config,
                         dataset=dataset,
@@ -413,14 +411,14 @@ class LudwigModel:
 
             self.training_set_metadata = training_set_metadata
 
-            if is_on_master():
+            if self.backend.is_coordinator():
                 logger.info('Training set: {0}'.format(len(training_set)))
                 if validation_set is not None:
                     logger.info('Validation set: {0}'.format(len(validation_set)))
                 if test_set is not None:
                     logger.info('Test set: {0}'.format(len(test_set)))
 
-            if is_on_master():
+            if self.backend.is_coordinator():
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
@@ -440,7 +438,7 @@ class LudwigModel:
             # Build model if not provided
             # if it was provided it means it was already loaded
             if not self.model:
-                if is_on_master():
+                if self.backend.is_coordinator():
                     print_boxed('MODEL', print_fun=logger.debug)
                 # update config with metadata properties
                 update_config_with_metadata(
@@ -464,7 +462,7 @@ class LudwigModel:
                                 self.config_fp)
 
                 # train model
-                if is_on_master():
+                if self.backend.is_coordinator():
                     print_boxed('TRAINING')
                     if not skip_save_model:
                         self.save_config(model_dir)
@@ -485,7 +483,7 @@ class LudwigModel:
                 }
 
                 # save training statistics
-                if is_on_master():
+                if self.backend.is_coordinator():
                     if not skip_save_training_statistics:
                         save_json(training_stats_fn, train_stats)
 
@@ -496,7 +494,7 @@ class LudwigModel:
 
                 best_function = get_best_function(validation_metric)
                 # results of the model with highest validation test performance
-                if is_on_master() and validation_set is not None:
+                if self.backend.is_coordinator() and validation_set is not None:
                     epoch_best_vali_metric, best_vali_metric = best_function(
                         enumerate(validation_field_result[validation_metric]),
                         key=lambda pair: pair[1]
@@ -687,7 +685,7 @@ class LudwigModel:
                 dataset,
             )
 
-            if is_on_master():
+            if self.backend.is_coordinator():
                 # if we are skipping all saving,
                 # there is no need to create a directory that will remain empty
                 should_create_exp_dir = not (
@@ -703,7 +701,7 @@ class LudwigModel:
                 self.training_set_metadata,
                 output_directory=output_directory,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
+                                             or not self.backend.is_coordinator(),
             )
             converted_postproc_predictions = convert_predictions(
                 postproc_predictions,
@@ -712,7 +710,7 @@ class LudwigModel:
                 return_type=return_type
             )
 
-            if is_on_master():
+            if self.backend.is_coordinator():
                 if not skip_save_predictions:
                     save_prediction_outputs(postproc_predictions,
                                             output_directory)
@@ -827,7 +825,7 @@ class LudwigModel:
                     else {**eval_stats[of_name]} for of_name in eval_stats
                 }
 
-            if is_on_master():
+            if self.backend.is_coordinator():
                 # if we are skipping all saving,
                 # there is no need to create a directory that will remain empty
                 should_create_exp_dir = not (
@@ -846,12 +844,12 @@ class LudwigModel:
                     self.training_set_metadata,
                     output_directory=output_directory,
                     skip_save_unprocessed_output=skip_save_unprocessed_output
-                                                 or not is_on_master(),
+                                                 or not self.backend.is_coordinator(),
                 )
             else:
                 postproc_predictions = predictions  # = {}
 
-            if is_on_master():
+            if self.backend.is_coordinator():
                 should_save_predictions = (
                         collect_predictions
                         and postproc_predictions is not None
@@ -1353,7 +1351,7 @@ class LudwigModel:
         ```
 
         """
-        if is_on_master():
+        if self.backend.is_coordinator():
             weights_save_path = os.path.join(
                 model_dir,
                 MODEL_WEIGHTS_FILE_NAME
