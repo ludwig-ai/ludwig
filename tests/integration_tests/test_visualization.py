@@ -268,14 +268,12 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -419,14 +417,12 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -440,7 +436,7 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -492,14 +488,12 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -512,7 +506,7 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
@@ -633,14 +627,12 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -653,7 +645,7 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -702,14 +694,12 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
 
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -722,7 +712,7 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     ground_truth_metadata = exp_dir_name + '/model/training_set_metadata.json'
     test_cmd_pdf = ['python',
                     '-m',
@@ -775,14 +765,12 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -838,14 +826,12 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -858,7 +844,7 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -910,14 +896,12 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -930,7 +914,7 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -981,14 +965,12 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1001,7 +983,7 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1050,14 +1032,12 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1070,7 +1050,7 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1121,14 +1101,12 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1141,7 +1119,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1192,14 +1170,12 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1212,7 +1188,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1265,14 +1241,12 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1285,7 +1259,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1371,7 +1345,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1453,7 +1427,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1527,7 +1501,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1580,14 +1554,12 @@ def test_visualization_roc_curves_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1600,7 +1572,7 @@ def test_visualization_roc_curves_output_saved(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1709,14 +1681,12 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1729,7 +1699,7 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1782,14 +1752,12 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1802,7 +1770,7 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1851,14 +1819,12 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1914,14 +1880,12 @@ def test_load_ground_truth_split_from_file(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, representation='sparse'),
         category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1930,7 +1894,7 @@ def test_load_ground_truth_split_from_file(csv_filename):
     output_feature_name = get_output_feature_name(exp_dir_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
-    split_file = experiment_source_data_name + '_split.csv'
+    split_file = experiment_source_data_name + '.split.csv'
 
     # retrieve ground truth from source data set
     ground_truth_train_split = _extract_ground_truth_values(
