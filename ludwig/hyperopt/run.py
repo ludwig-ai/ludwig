@@ -6,7 +6,7 @@ from typing import Union, List
 import pandas as pd
 import yaml
 
-from ludwig.backend import Backend
+from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE
 from ludwig.features.feature_registries import output_type_registry
@@ -143,6 +143,8 @@ def hyperopt(
 
     :return: (List[dict]) The results for the hyperparameter optimization
     """
+    backend = initialize_backend(backend)
+
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
         with open(config, 'r') as def_file:
