@@ -306,8 +306,8 @@ class ParallelExecutor(HyperoptExecutor):
                                 gpu_id, available_gpu_memory)
                         )
                         new_gpu_memory_limit = required_gpu_memory - \
-                                               (
-                                                       self.TF_REQUIRED_MEMORY_PER_WORKER * self.num_workers)
+                            (
+                                self.TF_REQUIRED_MEMORY_PER_WORKER * self.num_workers)
                     else:
                         new_gpu_memory_limit = gpu_memory_limit
                         if new_gpu_memory_limit > available_gpu_memory:
@@ -590,7 +590,6 @@ class FiberExecutor(HyperoptExecutor):
 
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(self, hyperopt_sampler, output_feature, metric, split, goal, **kwargs):
-        ray.init(ignore_reinit_error=True)
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
         self.search_space = hyperopt_sampler
@@ -599,12 +598,10 @@ class RayTuneExecutor(HyperoptExecutor):
         self.split = split
         self.goal = goal
         self.trial_id = 0
-        self.experiment_kwargs = {}
 
-    def _run_experiment(self, config):
+    def _run_experiment(self, config, hyperopt_dict):
 
         self.trial_id += 1
-        hyperopt_dict = copy.deepcopy(self.experiment_kwargs)
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config)
         hyperopt_dict["config"] = modified_config
@@ -646,7 +643,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 debug=False,
                 **kwargs):
 
-        self.experiment_kwargs = dict(
+        hyperopt_dict = dict(
             config=config,
             dataset=dataset,
             training_set=training_set,
@@ -677,7 +674,8 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=debug,
         )
 
-        analysis = tune.run(self._run_experiment, config=self.search_space)
+        analysis = tune.run(tune.with_parameters(
+            self._run_experiment, hyperopt_dict=hyperopt_dict), config=self.search_space)
 
         hyperopt_results = analysis.results_df.sort_values(
             "metric_score", ascending=self.goal != MAXIMIZE)
