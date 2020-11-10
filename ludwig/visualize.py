@@ -1017,15 +1017,16 @@ def binary_threshold_vs_metric_cli(
         ground_truth_split,
         split_file
     )
-    feature_metadata = metadata[output_feature_name]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     binary_threshold_vs_metric(
-        probabilities_per_model, ground_truth, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -3019,7 +3020,9 @@ def confidence_thresholding_2thresholds_3d(
 
 def binary_threshold_vs_metric(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         metrics: List[str],
         positive_label: int = 1,
         model_names: List[str] = None,
@@ -3043,8 +3046,9 @@ def binary_threshold_vs_metric(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param metrics: (List[str]) metrics to display (`'f1'`, `'precision'`,
         `'recall'`, `'accuracy'`).
     :param positive_label: (int, default: `1`) numeric encoded value for the
@@ -3060,6 +3064,13 @@ def binary_threshold_vs_metric(
 
     :return: (`None`)
     """
+
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
     metrics_list = convert_to_list(metrics)
