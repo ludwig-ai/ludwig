@@ -601,11 +601,11 @@ class RayTuneExecutor(HyperoptExecutor):
 
     def _run_experiment(self, config, hyperopt_dict):
 
-        self.trial_id += 1
+        trial_id = tune.get_trial_id()
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config)
         hyperopt_dict["config"] = modified_config
-        hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{self.trial_id}'
+        hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
 
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
         metric_score = self.get_metric_score(eval_stats)
