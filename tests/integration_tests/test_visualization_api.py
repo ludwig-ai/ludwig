@@ -93,15 +93,20 @@ class Experiment:
             return_type='dict'
         )
         self.output_feature_name = self.output_features[0][NAME]
+        self.ground_truth_metadata = self.preprocessed_data[3]
+        self.ground_truth = test_df[self.output_feature_name]
         # probabilities need to be list of lists containing each row data
         # from the probability columns
         # ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
         self.probability = predictions[self.output_feature_name][PROBABILITY]
-        self.predictions = predictions[self.output_feature_name][PREDICTIONS]
         self.probabilities = predictions[self.output_feature_name][
             PROBABILITIES]
-        self.ground_truth_metadata = self.preprocessed_data[3]
-        self.ground_truth = test_df[self.output_feature_name]
+        self.predictions = predictions[self.output_feature_name][PREDICTIONS]
+
+        # numeric encoded values required for some visualizations
+        of_metadata = self.ground_truth_metadata[self.output_feature_name]
+        self.predictions_num = [of_metadata['str2idx'][x]
+                                for x in self.predictions]
 
     def _create_model(self):
         """Configure and setup test model"""
@@ -160,13 +165,13 @@ def test_learning_curves_vis_api(experiment_to_use):
         assert 4 == len(figure_cnt)
 
 
-def test_compare_performance_vis_api(csv_filename):
+def test_compare_performance_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    experiment = Experiment(csv_filename)
+    experiment = experiment_to_use
     # extract test stats only
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
@@ -183,7 +188,6 @@ def test_compare_performance_vis_api(csv_filename):
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
@@ -213,14 +217,14 @@ def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
         assert 1 == len(figure_cnt)
 
 
-def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
+def test_compare_classifier_performance_from_pred_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    prediction = experiment.prediction_raw
+    experiment = experiment_to_use
+    prediction = experiment.predictions
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
@@ -237,24 +241,25 @@ def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
-def test_compare_classifiers_performance_subset_vis_api(csv_filename):
+def test_compare_classifiers_performance_subset_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output)
         visualize.compare_classifiers_performance_subset(
-            [probability, probability],
+            [probabilities, probabilities],
             experiment.ground_truth,
+            experiment.ground_truth_metadata,
+            experiment.output_feature_name,
             top_n_classes=[6],
             labels_limit=0,
             subset='ground_truth',
@@ -264,25 +269,26 @@ def test_compare_classifiers_performance_subset_vis_api(csv_filename):
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
-def test_compare_classifiers_performance_changing_k_vis_api(csv_filename):
+def test_compare_classifiers_performance_changing_k_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_classifiers_performance_changing_k(
-            [probability, probability],
+            [probabilities, probabilities],
             experiment.ground_truth,
+            experiment.ground_truth_metadata,
+            experiment.output_feature_name,
             top_k=3,
             labels_limit=0,
             model_namess=['Model1', 'Model2'],
@@ -294,13 +300,13 @@ def test_compare_classifiers_performance_changing_k_vis_api(csv_filename):
     shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
-def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
+def test_compare_classifiers_multiclass_multimetric_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    experiment = Experiment(csv_filename)
+    experiment = experiment_to_use
     # extract test stats only
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
@@ -319,25 +325,27 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 4 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
-def test_compare_classifiers_predictions_vis_api(csv_filename):
+def test_compare_classifiers_predictions_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    prediction = experiment.prediction
+    experiment = experiment_to_use
+    predictions = experiment.predictions
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_classifiers_predictions(
-            [prediction, prediction],
+            [predictions, predictions],
             experiment.ground_truth,
+            experiment.ground_truth_metadata,
+            experiment.output_feature_name,
             labels_limit=0,
             model_names=['Model1', 'Model2'],
             output_directory=experiment.output_dir,
@@ -345,25 +353,28 @@ def test_compare_classifiers_predictions_vis_api(csv_filename):
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
-def test_compare_classifiers_predictions_distribution_vis_api(csv_filename):
+def test_compare_classifiers_predictions_distribution_vis_api(
+        experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    prediction = experiment.prediction
+    experiment = experiment_to_use
+    predictions = experiment.predictions_num
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_classifiers_predictions_distribution(
-            [prediction, prediction],
+            [predictions, predictions],
             experiment.ground_truth,
+            experiment.ground_truth_metadata,
+            experiment.output_feature_name,
             labels_limit=0,
             model_names=['Model1', 'Model2'],
             output_directory=experiment.output_dir,
@@ -371,7 +382,6 @@ def test_compare_classifiers_predictions_distribution_vis_api(csv_filename):
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_confidence_thresholding_vis_api(csv_filename):
