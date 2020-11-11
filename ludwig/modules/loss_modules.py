@@ -143,16 +143,18 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,
+            feature_loss=None,
             name=None
     ):
         super(SigmoidCrossEntropyLoss, self).__init__(name=name)
+        self.feature_loss = feature_loss
 
     def call(self, y, y_pred):
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=tf.cast(y, tf.float32),
-            logits=y_pred[LOGITS]
+        loss = weighted_sigmoid_cross_entropy(
+            y_pred[LOGITS],
+            tf.cast(y, tf.float32),
+            **self.feature_loss
         )
-
         return loss
 
 
@@ -214,11 +216,13 @@ def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,
         tf.constant(class_weights, dtype=tf.float32), 0)
     sample_weights = tf.reduce_sum(
         tf.multiply(one_hot_labels, class_weights_const), 1)
-    return tf.losses.softmax_cross_entropy(onehot_labels=one_hot_labels,
-                                           logits=logits,
-                                           label_smoothing=labels_smoothing,
-                                           weights=sample_weights,
-                                           reduction=tf.losses.Reduction.NONE)
+    return tf.compat.v1.losses.softmax_cross_entropy(
+        onehot_labels=one_hot_labels,
+        logits=logits,
+        label_smoothing=labels_smoothing,
+        weights=sample_weights,
+        reduction=tf.losses.Reduction.NONE
+    )
 
 
 def sigmoid_cross_entropy_with_class_weighting(logits, multi_class_labels,
@@ -226,23 +230,25 @@ def sigmoid_cross_entropy_with_class_weighting(logits, multi_class_labels,
                                                labels_smoothing=0.0):
     class_weights_const = tf.expand_dims(
         tf.constant(class_weights, dtype=tf.float32), 0)
-    sample_weights = tf.reduce_sum(
-        tf.multiply(multi_class_labels, class_weights_const), 1)
-    return tf.losses.sigmoid_cross_entropy(
+    sample_weights = tf.multiply(multi_class_labels, class_weights_const)
+    return tf.compat.v1.losses.sigmoid_cross_entropy(
         multi_class_labels=multi_class_labels,
         logits=logits,
         label_smoothing=labels_smoothing,
         weights=sample_weights,
-        reduction=tf.losses.Reduction.NONE)
+        reduction=tf.losses.Reduction.NONE
+    )
 
 
 def mean_confidence_penalty(probabilities, num_classes):
     max_entropy = tf.constant(np.log(num_classes), dtype=tf.float32)
     # clipping needed for avoiding log(0) = -inf
-    entropy_per_class = tf.maximum(- probabilities *
-                                   tf.log(
-                                       tf.clip_by_value(probabilities, 1e-10,
-                                                        1)), 0)
+    entropy_per_class = tf.maximum(
+        - probabilities * tf.math.log(
+            tf.clip_by_value(probabilities, 1e-10, 1)
+        ),
+        0
+    )
     entropy = tf.reduce_sum(entropy_per_class, -1)
     penalty = (max_entropy - entropy) / max_entropy
     return tf.reduce_mean(penalty)
@@ -357,21 +363,43 @@ def weighted_softmax_cross_entropy(
 ):
     use_class_weights = not isinstance(class_weights, (int, float))
     if use_class_weights:
-        train_loss = softmax_cross_entropy_with_class_weighting(
+        loss = softmax_cross_entropy_with_class_weighting(
             logits,
             vector_labels,
             class_weights,
             labels_smoothing
         )
     else:
-        train_loss = tf.keras.losses.categorical_crossentropy(
+        loss = tf.keras.losses.categorical_crossentropy(
             y_true=vector_labels,
             y_pred=logits,
             from_logits=True,
             label_smoothing=labels_smoothing
         )
-    return train_loss
+    return loss
 
+def weighted_sigmoid_cross_entropy(
+        logits,
+        vector_labels,
+        class_weights=1,
+        labels_smoothing=0,
+        **kwargs
+):
+    use_class_weights = not isinstance(class_weights, (int, float))
+    if use_class_weights:
+        loss = sigmoid_cross_entropy_with_class_weighting(
+            logits,
+            vector_labels,
+            class_weights,
+            labels_smoothing
+        )
+    else:
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=vector_labels,
+            logits=logits,
+            # labels_smoothing=labels_smoothing  # todo reintroduce
+        )
+    return loss
 
 def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
                                unique, class_counts, distortion):

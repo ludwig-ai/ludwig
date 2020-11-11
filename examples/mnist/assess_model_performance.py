@@ -12,11 +12,12 @@ import pandas as pd
 from sklearn.metrics import accuracy_score
 
 from ludwig.api import LudwigModel
+from ludwig.datasets import mnist
 
 # create data set for predictions
 test_data = {'image_path': [], 'label': []}
-current_dir = os.getcwd()
-test_dir = os.path.join(current_dir, 'data', 'mnist_png', 'testing')
+dataset = mnist.Mnist()
+test_dir = os.path.join(dataset.processed_dataset_path, 'testing')
 for label in os.listdir(test_dir):
     files = os.listdir(os.path.join(test_dir, label))
     test_data['image_path'] += [os.path.join(test_dir, label, f) for f in

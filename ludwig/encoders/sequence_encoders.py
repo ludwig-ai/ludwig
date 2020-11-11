@@ -121,7 +121,7 @@ class SequenceEmbedEncoder(Layer):
                     are not trainable.
             :type embeddings_trainable: Boolean
             :param pretrained_embeddings: by default `dense` embeddings
-                   are initialized randomly, but this parameter allow to specify
+                   are initialized randomly, but this parameter allows to specify
                    a path to a file containing embeddings in the GloVe format.
                    When the file containing the embeddings is loaded, only the
                    embeddings with labels present in the vocabulary are kept,
@@ -275,7 +275,7 @@ class ParallelCNN(Layer):
                     are not trainable.
             :type embeddings_trainable: Boolean
             :param pretrained_embeddings: by default `dense` embeddings
-                   are initialized randomly, but this parameter allow to specify
+                   are initialized randomly, but this parameter allows to specify
                    a path to a file containing embeddings in the GloVe format.
                    When the file containing the embeddings is loaded, only the
                    embeddings with labels present in the vocabulary are kept,
@@ -337,7 +337,7 @@ class ParallelCNN(Layer):
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
                    to `fc_layers` with the value
-                   `[{fc_size: 512}, {fc_size: 256}]`.
+                   `[{fc_size: 512}, {fc_size: 256}]`
                    (only applies if `reduce_output` is not `None`).
             :type fc_layers: List
             :param num_fc_layers: if `fc_layers` is `None`, this is the number
@@ -596,7 +596,7 @@ class StackedCNN(Layer):
                     are not trainable.
             :type embeddings_trainable: Boolean
             :param pretrained_embeddings: by default `dense` embeddings
-                   are initialized randomly, but this parameter allow to specify
+                   are initialized randomly, but this parameter allows to specify
                    a path to a file containing embeddings in the GloVe format.
                    When the file containing the embeddings is loaded, only the
                    embeddings with labels present in the vocabulary are kept,
@@ -658,7 +658,7 @@ class StackedCNN(Layer):
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
                    to `fc_layers` with the value
-                   `[{fc_size: 512}, {fc_size: 256}]`.
+                   `[{fc_size: 512}, {fc_size: 256}]`
                    (only applies if `reduce_output` is not `None`).
             :type fc_layers: List
             :param num_fc_layers: if `fc_layers` is `None`, this is the number
@@ -948,7 +948,7 @@ class StackedParallelCNN(Layer):
                     are not trainable.
             :type embeddings_trainable: Boolean
             :param pretrained_embeddings: by default `dense` embeddings
-                   are initialized randomly, but this parameter allow to specify
+                   are initialized randomly, but this parameter allows to specify
                    a path to a file containing embeddings in the GloVe format.
                    When the file containing the embeddings is loaded, only the
                    embeddings with labels present in the vocabulary are kept,
@@ -1017,7 +1017,7 @@ class StackedParallelCNN(Layer):
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
                    to `fc_layers` with the value
-                   `[{fc_size: 512}, {fc_size: 256}]`.
+                   `[{fc_size: 512}, {fc_size: 256}]`
                    (only applies if `reduce_output` is not `None`).
             :type fc_layers: List
             :param num_fc_layers: if `fc_layers` is `None`, this is the number
@@ -1296,7 +1296,7 @@ class StackedRNN(Layer):
                     are not trainable.
             :type embeddings_trainable: Boolean
             :param pretrained_embeddings: by default `dense` embeddings
-                   are initialized randomly, but this parameter allow to specify
+                   are initialized randomly, but this parameter allows to specify
                    a path to a file containing embeddings in the GloVe format.
                    When the file containing the embeddings is loaded, only the
                    embeddings with labels present in the vocabulary are kept,
@@ -1593,7 +1593,7 @@ class StackedCNNRNN(Layer):
                     are not trainable.
             :type embeddings_trainable: Boolean
             :param pretrained_embeddings: by default `dense` embeddings
-                   are initialized randomly, but this parameter allow to specify
+                   are initialized randomly, but this parameter allows to specify
                    a path to a file containing embeddings in the GloVe format.
                    When the file containing the embeddings is loaded, only the
                    embeddings with labels present in the vocabulary are kept,
@@ -1887,7 +1887,7 @@ class StackedTransformer(Layer):
                     are not trainable.
             :type embeddings_trainable: Boolean
             :param pretrained_embeddings: by default `dense` embeddings
-                   are initialized randomly, but this parameter allow to specify
+                   are initialized randomly, but this parameter allows to specify
                    a path to a file containing embeddings in the GloVe format.
                    When the file containing the embeddings is loaded, only the
                    embeddings with labels present in the vocabulary are kept,

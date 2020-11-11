@@ -6,7 +6,6 @@ from collections import namedtuple
 
 import pytest
 import yaml
-
 from ludwig.api import kfold_cross_validate
 from ludwig.experiment import kfold_cross_validate_cli
 from ludwig.utils.data_utils import load_json
@@ -233,7 +232,7 @@ def test_kfold_cv_api_from_file():
 
 
 def test_kfold_cv_api_in_memory():
-    # k-fold_cross_validate api with in-memory model defintion
+    # k-fold_cross_validate api with in-memory config
     num_folds = 3
 
     # setup temporary directory to run test

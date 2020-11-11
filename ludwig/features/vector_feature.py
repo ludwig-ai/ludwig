@@ -99,6 +99,7 @@ class VectorFeatureMixin(object):
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = 'dense'
+    vector_size = 0
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -260,7 +261,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    result[PREDICTIONS]
+                    postprocessed[PREDICTIONS]
                 )
             del result[PREDICTIONS]
 

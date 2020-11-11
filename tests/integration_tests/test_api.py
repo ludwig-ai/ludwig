@@ -18,6 +18,7 @@ import shutil
 import tempfile
 
 import numpy as np
+import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import read_csv
@@ -292,13 +293,16 @@ def test_api_training_determinism(csv_filename):
         rand_y = 24
 
         model_1 = LudwigModel(config)
-        model_1.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
+        model_1.train(dataset=data_csv, output_directory=tmpdir,
+                      random_seed=rand_x)
 
         model_2 = LudwigModel(config)
-        model_2.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_y)
+        model_2.train(dataset=data_csv, output_directory=tmpdir,
+                      random_seed=rand_y)
 
         model_3 = LudwigModel(config)
-        model_3.train(dataset=data_csv, output_directory=tmpdir, random_seed=rand_x)
+        model_3.train(dataset=data_csv, output_directory=tmpdir,
+                      random_seed=rand_x)
 
         model_weights_1 = model_1.model.get_weights()
         model_weights_2 = model_2.model.get_weights()
@@ -313,3 +317,175 @@ def test_api_training_determinism(csv_filename):
 
         for weight_1, weight_3 in zip(model_weights_1, model_weights_3):
             assert np.allclose(weight_1, weight_3)
+
+
+def run_api_commands(
+        input_features,
+        output_features,
+        data_csv,
+        output_dir,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
+        skip_save_processed_input=False,
+        skip_save_unprocessed_output=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
+        skip_collect_predictions=False,
+        skip_collect_overall_stats=False,
+):
+    """
+    Helper method to avoid code repetition in running an experiment
+    :param input_features: input schema
+    :param output_features: output schema
+    :param data_csv: path to data
+    :return: None
+    """
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {'type': 'concat', 'fc_size': 14},
+        'training': {'epochs': 2}
+    }
+
+    model = LudwigModel(config)
+
+    # Training with csv
+    model.train(
+        dataset=data_csv,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
+        skip_save_processed_input=skip_save_processed_input,
+        output_directory=output_dir
+    )
+    model.predict(
+        dataset=data_csv,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        output_directory=output_dir
+    )
+    model.evaluate(
+        dataset=data_csv,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
+        collect_predictions=not skip_collect_predictions,
+        collect_overall_stats=not skip_collect_overall_stats,
+        output_directory=output_dir
+    )
+    model.experiment(
+        dataset=data_csv,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
+        skip_save_processed_input=skip_save_processed_input,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
+        skip_collect_predictions=skip_collect_predictions,
+        skip_collect_overall_stats=skip_collect_overall_stats,
+        output_directory=output_dir
+    )
+
+
+@pytest.mark.parametrize('skip_save_training_description', [False, True])
+@pytest.mark.parametrize('skip_save_training_statistics', [False, True])
+@pytest.mark.parametrize('skip_save_model', [False, True])
+@pytest.mark.parametrize('skip_save_progress', [False, True])
+@pytest.mark.parametrize('skip_save_log', [False, True])
+@pytest.mark.parametrize('skip_save_processed_input', [False, True])
+def test_api_skip_parameters_train(
+        csv_filename,
+        skip_save_training_description,
+        skip_save_training_statistics,
+        skip_save_model,
+        skip_save_progress,
+        skip_save_log,
+        skip_save_processed_input,
+):
+    # Single sequence input, single category output
+    input_features = [category_feature(vocab_size=2)]
+    output_features = [category_feature(vocab_size=2)]
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        # Generate test data
+        rel_path = generate_data(input_features, output_features,
+                                 os.path.join(output_dir, csv_filename))
+        run_api_commands(
+            input_features,
+            output_features,
+            data_csv=rel_path,
+            output_dir=output_dir,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
+        )
+
+
+@pytest.mark.parametrize('skip_save_unprocessed_output', [False, True])
+@pytest.mark.parametrize('skip_save_predictions', [False, True])
+def test_api_skip_parameters_predict(
+        csv_filename,
+        skip_save_unprocessed_output,
+        skip_save_predictions,
+):
+    # Single sequence input, single category output
+    input_features = [category_feature(vocab_size=2)]
+    output_features = [category_feature(vocab_size=2)]
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        # Generate test data
+        rel_path = generate_data(input_features, output_features,
+                                 os.path.join(output_dir, csv_filename))
+        run_api_commands(
+            input_features,
+            output_features,
+            data_csv=rel_path,
+            output_dir=output_dir,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_predictions=skip_save_predictions,
+        )
+
+
+@pytest.mark.parametrize('skip_save_unprocessed_output', [False, True])
+@pytest.mark.parametrize('skip_save_predictions', [False, True])
+@pytest.mark.parametrize('skip_save_eval_stats', [False, True])
+@pytest.mark.parametrize('skip_collect_predictions', [False, True])
+@pytest.mark.parametrize('skip_collect_overall_stats', [False, True])
+def test_api_skip_parameters_evaluate(
+        csv_filename,
+        skip_save_unprocessed_output,
+        skip_save_predictions,
+        skip_save_eval_stats,
+        skip_collect_predictions,
+        skip_collect_overall_stats,
+):
+    # Single sequence input, single category output
+    input_features = [category_feature(vocab_size=2)]
+    output_features = [category_feature(vocab_size=2)]
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        # Generate test data
+        rel_path = generate_data(input_features, output_features,
+                                 os.path.join(output_dir, csv_filename))
+        run_api_commands(
+            input_features,
+            output_features,
+            data_csv=rel_path,
+            output_dir=output_dir,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_predictions=skip_save_predictions,
+            skip_save_eval_stats=skip_save_eval_stats,
+            skip_collect_predictions=skip_collect_predictions,
+            skip_collect_overall_stats=skip_collect_overall_stats,
+        )
