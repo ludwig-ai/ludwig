@@ -775,9 +775,6 @@ def confidence_thresholding_data_vs_acc_subset_cli(
         ground_truth_split,
         split_file
     )
-    feature_metadata = metadata[output_feature_name]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
@@ -785,6 +782,8 @@ def confidence_thresholding_data_vs_acc_subset_cli(
     confidence_thresholding_data_vs_acc_subset(
         probabilities_per_model,
         ground_truth,
+        metadata,
+        output_feature_name,
         **kwargs
     )
 
@@ -2458,11 +2457,13 @@ def confidence_thresholding_data_vs_acc(
 
 def confidence_thresholding_data_vs_acc_subset(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         top_n_classes: List[int],
         labels_limit: int,
         subset: str,
-        model_names: Union[str, List[str]]=None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -2492,8 +2493,9 @@ def confidence_thresholding_data_vs_acc_subset(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -2512,6 +2514,12 @@ def confidence_thresholding_data_vs_acc_subset(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
     if labels_limit > 0:
