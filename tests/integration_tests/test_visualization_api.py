@@ -51,10 +51,13 @@ def run_api_experiment(input_features, output_features):
     return model
 
 
-# todo determine feasibility of putting Experiment() into a pytest.fixture
-# to reduce the number of times Ludwig.evaluate() has to be run to generate
-# result for the visualization tests, should help reduce run-time of these
-# tests.
+@pytest.fixture(scope='module')
+def experiment_to_use():
+    with TemporaryDirectory() as tmpdir:
+        experiment = Experiment('data_for_test.csv', tmpdir)
+        return experiment
+
+
 class Experiment:
     """Helper class to create model test data, setup and run experiment.
 
@@ -118,12 +121,6 @@ class Experiment:
         }
         return LudwigModel(config, logging_level=logging.WARN)
 
-
-@pytest.fixture(scope='module')
-def experiment_to_use():
-    with TemporaryDirectory() as tmpdir:
-        experiment = Experiment('data_for_test.csv', tmpdir)
-        return experiment
 
 def obtain_df_splits(data_csv):
     """Split input data csv file in to train, validation and test dataframes.
@@ -738,142 +735,154 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
     input_features = [binary_feature(), bag_feature()]
     output_features = [binary_feature()]
 
-    # Generate test data
-    data_csv = generate_data(input_features, output_features, csv_filename)
-    output_feature_name = output_features[0]['name']
+    with TemporaryDirectory() as tmpvizdir:
+        # Generate test data
+        data_csv = generate_data(input_features, output_features,
+                                 os.path.join(tmpvizdir, csv_filename))
+        output_feature_name = output_features[0]['name']
 
-    model = run_api_experiment(input_features, output_features)
-    data_df = read_csv(data_csv)
-    _, _, output_dir = model.train(dataset=data_df)
-    # extract test metrics
-    test_stats, _, _ = model.evaluate(dataset=data_df,
-                                      collect_overall_stats=True,
-                                      output_directory=output_dir)
-    test_stats = test_stats
-    viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = os.path.join(output_dir, '*.{}'.format(
-            viz_output))
-        visualize.roc_curves_from_test_statistics(
-            [test_stats, test_stats],
-            output_feature_name,
-            model_names=['Model1', 'Model2'],
-            output_directory=output_dir,
-            file_format=viz_output
+        model = run_api_experiment(input_features, output_features)
+        data_df = read_csv(data_csv)
+        _, _, output_dir = model.train(
+            dataset=data_df,
+            output_directory=os.path.join(tmpvizdir, 'results')
         )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 1 == len(figure_cnt)
-    shutil.rmtree(output_dir, ignore_errors=True)
+        # extract test metrics
+        test_stats, _, _ = model.evaluate(dataset=data_df,
+                                          collect_overall_stats=True,
+                                          output_directory=output_dir)
+        test_stats = test_stats
+        viz_outputs = ('pdf', 'png')
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = os.path.join(output_dir, '*.{}'.format(
+                viz_output))
+            visualize.roc_curves_from_test_statistics(
+                [test_stats, test_stats],
+                output_feature_name,
+                model_names=['Model1', 'Model2'],
+                output_directory=output_dir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
 
 
-def test_calibration_1_vs_all_vis_api(csv_filename):
+def test_calibration_1_vs_all_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = os.path.join(
-            experiment.output_dir, '*.{}'.format(viz_output)
-        )
-        visualize.calibration_1_vs_all(
-            [probability, probability],
-            experiment.ground_truth,
-            top_n_classes=[6],
-            labels_limit=0,
-            model_namess=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 7 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = os.path.join(
+                tmpvizdir, '*.{}'.format(viz_output)
+            )
+            visualize.calibration_1_vs_all(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                top_n_classes=[6],
+                labels_limit=0,
+                model_namess=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 7 == len(figure_cnt)
 
 
-def test_calibration_multiclass_vis_api(csv_filename):
+def test_calibration_multiclass_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.calibration_multiclass(
-            [probability, probability],
-            experiment.ground_truth,
-            labels_limit=0,
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 2 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.calibration_multiclass(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                labels_limit=0,
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 2 == len(figure_cnt)
 
 
-def test_confusion_matrix_vis_api(csv_filename):
+def test_confusion_matrix_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
+    experiment = experiment_to_use
     # extract test stats only
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.confusion_matrix(
-            [test_stats, test_stats],
-            experiment.ground_truth_metadata,
-            experiment.output_feature_name,
-            top_n_classes=[0],
-            normalize=False,
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 4 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.confusion_matrix(
+                [test_stats, test_stats],
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                top_n_classes=[0],
+                normalize=False,
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 4 == len(figure_cnt)
 
 
-def test_frequency_vs_f1_vis_api(csv_filename):
+def test_frequency_vs_f1_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
+    experiment = experiment_to_use
     # extract test stats
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.frequency_vs_f1(
-            [test_stats, test_stats],
-            experiment.ground_truth_metadata,
-            experiment.output_feature_name,
-            top_n_classes=[0],
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 2 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.frequency_vs_f1(
+                [test_stats, test_stats],
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                top_n_classes=[0],
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 2 == len(figure_cnt)
 
 
 def test_hyperopt_report_vis_api(hyperopt_results):

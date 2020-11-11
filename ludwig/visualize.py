@@ -1322,7 +1322,7 @@ def learning_curves(
 
 def compare_performance(
         test_stats_per_model: List[dict],
-        output_feature_name: str,
+        output_feature_name: Union[str, None],
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -3534,7 +3534,7 @@ def calibration_multiclass(
         metadata: dict,
         output_feature_name: str,
         labels_limit: int,
-        model_names: str = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
