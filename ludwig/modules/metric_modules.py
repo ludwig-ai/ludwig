@@ -172,8 +172,9 @@ class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
             name='sigmoid_cross_entropy_metric'
     ):
         super(SigmoidCrossEntropyMetric, self).__init__(name=name)
-
-        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss()
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(
+            feature_loss
+        )
 
     def update_state(self, y, y_hat):
         super().update_state(self.sigmoid_cross_entropy_function(y, y_hat))

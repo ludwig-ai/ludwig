@@ -18,8 +18,8 @@ import os
 import struct
 from multiprocessing.pool import ThreadPool
 
-import png
-from array import array
+import numpy as np
+from skimage.io import imsave
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.load import CSVLoadMixin
@@ -58,8 +58,8 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         os.makedirs(self.processed_temp_path, exist_ok=True)
         for dataset in ["training", "testing"]:
             print(f'>>> create ludwig formatted {dataset} data')
-            labels, data, rows, cols = self.read_source_dataset(dataset, self.raw_dataset_path)
-            self.write_output_dataset(labels, data, rows, cols, os.path.join(self.processed_temp_path, dataset))
+            labels, data = self.read_source_dataset(dataset, self.raw_dataset_path)
+            self.write_output_dataset(labels, data, os.path.join(self.processed_temp_path, dataset))
         self.output_training_and_test_data()
         os.rename(self.processed_temp_path, self.processed_dataset_path)
         print('>>> completed data preparation')
@@ -83,21 +83,20 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
 
         with open(fname_lbl, 'rb') as flbl:
             struct.unpack(">II", flbl.read(8))
-            lbl = array("b", flbl.read())
+            lbl = np.frombuffer(flbl.read(), dtype=np.uint8)
 
         with open(fname_img, 'rb') as fimg:
             magic_nr, size, rows, cols = struct.unpack(">IIII", fimg.read(16))
-            img = array("B", fimg.read())
+            img = np.frombuffer(fimg.read(), dtype=np.uint8)
+            img = img.reshape((size, rows, cols))
 
-        return lbl, img, rows, cols
+        return lbl, img
 
-    def write_output_dataset(self, labels, data, rows, cols, output_dir):
+    def write_output_dataset(self, labels, data, output_dir):
         """Create output directories where we write out the images.
         :args:
             labels (str) : the labels for the image
             data (np.array) : the binary array corresponding to the image
-            rows (int) : the number of rows in the image
-            cols (int) : the number of columns in the image
             output_dir (str) : the output directory that we need to write to
             path (str): the raw dataset path
         :returns:
@@ -114,13 +113,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         def write_processed_image(t):
             i, label = t
             output_filename = os.path.join(output_dirs[label], str(i) + ".png")
-            with open(output_filename, "wb") as h:
-                w = png.Writer(cols, rows, greyscale=True)
-                data_i = [
-                    data[(i * rows * cols + j * cols): (i * rows * cols + (j + 1) * cols)]
-                    for j in range(rows)
-                ]
-                w.write(h, data_i)
+            imsave(output_filename, data[i])
 
         # write out image data
         tasks = list(enumerate(labels))

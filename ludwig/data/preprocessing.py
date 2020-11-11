@@ -966,6 +966,23 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                     resolve_pointers(encoder_fpp, feature, 'feature.')
                 )
 
+        fill_value = precompute_fill_value(
+            dataset_df,
+            feature,
+            preprocessing_parameters
+        )
+        if fill_value is not None:
+            preprocessing_parameters = {
+                'computed_fill_value': fill_value,
+                **preprocessing_parameters
+            }
+
+        handle_missing_values(
+            dataset_df,
+            feature,
+            preprocessing_parameters
+        )
+
         get_feature_meta = get_from_registry(
             feature[TYPE],
             base_type_registry
@@ -976,17 +993,6 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
             preprocessing_parameters
         )
 
-        fill_value = precompute_fill_value(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
-
-        if fill_value is not None:
-            preprocessing_parameters = {
-                'computed_fill_value': fill_value,
-                **preprocessing_parameters
-            }
         metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata

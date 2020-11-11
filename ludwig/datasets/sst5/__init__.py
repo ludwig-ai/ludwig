@@ -21,11 +21,11 @@ from ludwig.datasets.mixins.process import *
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = SST2(cache_dir=cache_dir)
+    dataset = SST5(cache_dir=cache_dir)
     return dataset.load(split=split)
 
 
-class SST2(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
+class SST5(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
            BaseDataset):
     """The SST2 dataset.
 
@@ -37,18 +37,13 @@ class SST2(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
     the following cutoffs:
     [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
 
-    In the construction of this dataset, we remove all neutral phrases
-    and assign a negative label if the original rating falls
-    into the following range: [0, 0.4] and a positive label
-    if the original rating is between (0.6, 1.0].
-
     This class pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming
     training data into a destination dataframe that can be use by Ludwig.
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name='sst2', cache_dir=cache_dir)
+        super().__init__(dataset_name='sst5', cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         sentences_df = pd.read_csv(
@@ -104,11 +99,17 @@ class SST2(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
 
         def get_sentiment_label(phrase_id):
             sentiment = id2sent[phrase_id]
-            if sentiment <= 0.4:  # negative
-                return 0
-            elif sentiment > 0.6:  # positive
-                return 1
-            return -1  # neutral
+            if sentiment <= 0.2:
+                return 'very_negative'
+            elif sentiment <= 0.4:
+                return 'negative'
+            elif sentiment <= 0.6:
+                return 'neutral'
+            elif sentiment <= 0.8:
+                return 'positive'
+            elif sentiment <= 1.0:
+                return 'very_positive'
+            return 'neutral'
 
         sentences_df['sentence'] = sentences_df['sentence'].apply(
             format_sentence
@@ -137,4 +138,4 @@ class SST2(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                                           f'{split_name}.csv'),
                              index=False)
 
-        super(SST2, self).process_downloaded_dataset()
+        super(SST5, self).process_downloaded_dataset()
