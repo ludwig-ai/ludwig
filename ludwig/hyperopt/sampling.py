@@ -291,7 +291,8 @@ class PySOTSampler(HyperoptSampler):
         return self.sampled_so_far >= self.num_samples
 
 
-def get_tune_search_space(parameters):
+def get_tune_search_space(parameters, num_samples):
+    sampler = {}
     config = {}
     for param, values in parameters.items():
         space = values["space"].lower()
@@ -309,7 +310,9 @@ def get_tune_search_space(parameters):
                 raise ValueError(
                     "Parameter '{}' not defined for {}".format(arg, param))
         config[param] = space_function(**space_input_args)
-    return config
+    sampler["config"] = config
+    sampler["num_samples"] = num_samples
+    return sampler
 
 
 def get_build_hyperopt_sampler(strategy_type):

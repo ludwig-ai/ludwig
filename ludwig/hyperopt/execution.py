@@ -592,7 +592,8 @@ class RayTuneExecutor(HyperoptExecutor):
     def __init__(self, hyperopt_sampler, output_feature, metric, split, goal, **kwargs):
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
-        self.search_space = hyperopt_sampler
+        self.search_space = hyperopt_sampler["config"]
+        self.num_samples = hyperopt_sampler["num_samples"]
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
@@ -674,8 +675,8 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=debug,
         )
 
-        analysis = tune.run(tune.with_parameters(
-            self._run_experiment, hyperopt_dict=hyperopt_dict), config=self.search_space)
+        analysis = tune.run(tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict),
+                            config=self.search_space, num_samples=self.num_samples)
 
         hyperopt_results = analysis.results_df.sort_values(
             "metric_score", ascending=self.goal != MAXIMIZE)

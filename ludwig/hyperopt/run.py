@@ -257,7 +257,7 @@ def hyperopt(
     if executor[TYPE] == RAY:
         if isinstance(dataset, str) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
-        hyperopt_sampler = get_tune_search_space(parameters)
+        hyperopt_sampler = get_tune_search_space(parameters, sampler.get("num_samples", 1))
     else:
         hyperopt_sampler = get_build_hyperopt_sampler(
             sampler[TYPE]
