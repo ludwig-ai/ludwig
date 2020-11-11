@@ -674,54 +674,59 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
         test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
     metrics = ['accuracy']
     positive_label = 2
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.binary_threshold_vs_metric(
-            [probability, probability],
-            experiment.ground_truth,
-            metrics,
-            positive_label,
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.binary_threshold_vs_metric(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                metrics,
+                positive_label,
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
 
 
-def test_roc_curves_vis_api(csv_filename):
+def test_roc_curves_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
     positive_label = 2
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.roc_curves(
-            [probability, probability],
-            experiment.ground_truth,
-            positive_label,
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.roc_curves(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                positive_label,
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
 
 
 def test_roc_curves_from_test_statistics_vis_api(csv_filename):
