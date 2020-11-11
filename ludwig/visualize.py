@@ -722,9 +722,6 @@ def confidence_thresholding_data_vs_acc_cli(
         ground_truth_split,
         split_file
     )
-    feature_metadata = metadata[output_feature_name]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
@@ -732,6 +729,8 @@ def confidence_thresholding_data_vs_acc_cli(
     confidence_thresholding_data_vs_acc(
         probabilities_per_model,
         ground_truth,
+        metadata,
+        output_feature_name,
         **kwargs
     )
 
@@ -2360,7 +2359,9 @@ def confidence_thresholding(
 
 def confidence_thresholding_data_vs_acc(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
@@ -2380,8 +2381,9 @@ def confidence_thresholding_data_vs_acc(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -2395,6 +2397,12 @@ def confidence_thresholding_data_vs_acc(
     # Return
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
     probs = probabilities_per_model
