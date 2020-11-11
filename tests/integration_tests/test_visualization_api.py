@@ -541,55 +541,58 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
         category_feature(vocab_size=2, reduce_input='sum')
     ]
     encoder = 'parallel_cnn'
-    # Generate test data
-    data_csv = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = encoder
-    model = run_api_experiment(input_features, output_features)
-    test_df, train_df, val_df = obtain_df_splits(data_csv)
-    _, _, output_dir = model.train(
-        training_set=train_df,
-        validation_set=val_df
-    )
-    test_stats, predictions, _ = model.evaluate(
-        dataset=test_df,
-        collect_predictions=True,
-        output_dir=output_dir
-    )
-
-    output_feature_name1 = output_features[0]['name']
-    output_feature_name2 = output_features[1]['name']
-    # probabilities need to be list of lists containing each row data from the
-    # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-    probability1 = predictions.iloc[:, [2, 3, 4]].values
-    probability2 = predictions.iloc[:, [7, 8, 9]].values
-
-    ground_truth_metadata = model.training_set_metadata
-    target_predictions1 = test_df[output_feature_name1]
-    target_predictions2 = test_df[output_feature_name2]
-    ground_truth1 = np.asarray([
-        ground_truth_metadata[output_feature_name1]['str2idx'][prediction]
-        for prediction in target_predictions1
-    ])
-    ground_truth2 = np.asarray([
-        ground_truth_metadata[output_feature_name2]['str2idx'][prediction]
-        for prediction in target_predictions2
-    ])
-    viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = os.path.join(output_dir, '*.{}').format(
-            viz_output)
-        visualize.confidence_thresholding_2thresholds_2d(
-            [probability1, probability2],
-            [ground_truth1, ground_truth2],
-            [output_feature_name1, output_feature_name2],
-            labels_limit=0,
-            model_names=['Model1'],
-            output_directory=output_dir,
-            file_format=viz_output
+    with TemporaryDirectory() as tmpvizdir:
+        # Generate test data
+        data_csv = generate_data(input_features, output_features,
+                                 os.path.join(tmpvizdir, csv_filename))
+        input_features[0]['encoder'] = encoder
+        model = run_api_experiment(input_features, output_features)
+        test_df, train_df, val_df = obtain_df_splits(data_csv)
+        _, _, output_dir = model.train(
+            training_set=train_df,
+            validation_set=val_df,
+            output_directory=os.path.join(tmpvizdir, 'results')
         )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 3 == len(figure_cnt)
-    shutil.rmtree(output_dir, ignore_errors=True)
+        test_stats, predictions, _ = model.evaluate(
+            dataset=test_df,
+            collect_predictions=True,
+            output_dir=output_dir
+        )
+
+        output_feature_name1 = output_features[0]['name']
+        output_feature_name2 = output_features[1]['name']
+        # probabilities need to be list of lists containing each row data from the
+        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
+        probability1 = predictions.iloc[:, [2, 3, 4]].values
+        probability2 = predictions.iloc[:, [7, 8, 9]].values
+
+        ground_truth_metadata = model.training_set_metadata
+        target_predictions1 = test_df[output_feature_name1]
+        target_predictions2 = test_df[output_feature_name2]
+        ground_truth1 = np.asarray([
+            ground_truth_metadata[output_feature_name1]['str2idx'][prediction]
+            for prediction in target_predictions1
+        ])
+        ground_truth2 = np.asarray([
+            ground_truth_metadata[output_feature_name2]['str2idx'][prediction]
+            for prediction in target_predictions2
+        ])
+        viz_outputs = ('pdf', 'png')
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = os.path.join(output_dir, '*.{}').format(
+                viz_output)
+            visualize.confidence_thresholding_2thresholds_2d(
+                [probability1, probability2],
+                [ground_truth1, ground_truth2],
+                model.training_set_metadata,
+                [output_feature_name1, output_feature_name2],
+                labels_limit=0,
+                model_names=['Model1'],
+                output_directory=output_dir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 3 == len(figure_cnt)
 
 
 def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
@@ -610,61 +613,65 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
         category_feature(vocab_size=2, reduce_input='sum')
     ]
     encoder = 'parallel_cnn'
-    # Generate test data
-    data_csv = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = encoder
-    model = run_api_experiment(input_features, output_features)
-    test_df, train_df, val_df = obtain_df_splits(data_csv)
-    _, _, output_dir = model.train(
-        training_set=train_df,
-        validation_set=val_df
-    )
-    test_stats, predictions, _ = model.evaluate(
-        dataset=test_df,
-        collect_predictions=True,
-        output_directory=output_dir
-    )
-
-    output_feature_name1 = output_features[0]['name']
-    output_feature_name2 = output_features[1]['name']
-    # probabilities need to be list of lists containing each row data from the
-    # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-    probability1 = predictions.iloc[:, [2, 3, 4]].values
-    probability2 = predictions.iloc[:, [7, 8, 9]].values
-
-    ground_truth_metadata = model.training_set_metadata
-    target_predictions1 = test_df[output_feature_name1]
-    target_predictions2 = test_df[output_feature_name2]
-    ground_truth1 = np.asarray([
-        ground_truth_metadata[output_feature_name1]['str2idx'][prediction]
-        for prediction in target_predictions1
-    ])
-    ground_truth2 = np.asarray([
-        ground_truth_metadata[output_feature_name2]['str2idx'][prediction]
-        for prediction in target_predictions2
-    ])
-    viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = os.path.join(
-            output_dir, '*.{}'.format(viz_output)
+    with TemporaryDirectory() as tmpvizdir:
+        # Generate test data
+        data_csv = generate_data(input_features, output_features,
+                                 os.path.join(tmpvizdir, csv_filename))
+        input_features[0]['encoder'] = encoder
+        model = run_api_experiment(input_features, output_features)
+        test_df, train_df, val_df = obtain_df_splits(data_csv)
+        _, _, output_dir = model.train(
+            training_set=train_df,
+            validation_set=val_df,
+            output_directory=os.path.join(tmpvizdir, 'results')
         )
-        visualize.confidence_thresholding_2thresholds_3d(
-            [probability1, probability2],
-            [ground_truth1, ground_truth2],
-            [output_feature_name1, output_feature_name2],
-            labels_limit=0,
-            output_directory=output_dir,
-            file_format=viz_output
+        test_stats, predictions, _ = model.evaluate(
+            dataset=test_df,
+            collect_predictions=True,
+            output_directory=output_dir
         )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 1 == len(figure_cnt)
-    shutil.rmtree(output_dir, ignore_errors=True)
+
+        output_feature_name1 = output_features[0]['name']
+        output_feature_name2 = output_features[1]['name']
+        # probabilities need to be list of lists containing each row data from the
+        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
+        probability1 = predictions.iloc[:, [2, 3, 4]].values
+        probability2 = predictions.iloc[:, [7, 8, 9]].values
+
+        ground_truth_metadata = model.training_set_metadata
+        target_predictions1 = test_df[output_feature_name1]
+        target_predictions2 = test_df[output_feature_name2]
+        ground_truth1 = np.asarray([
+            ground_truth_metadata[output_feature_name1]['str2idx'][prediction]
+            for prediction in target_predictions1
+        ])
+        ground_truth2 = np.asarray([
+            ground_truth_metadata[output_feature_name2]['str2idx'][prediction]
+            for prediction in target_predictions2
+        ])
+        viz_outputs = ('pdf', 'png')
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = os.path.join(
+                output_dir, '*.{}'.format(viz_output)
+            )
+            visualize.confidence_thresholding_2thresholds_3d(
+                [probability1, probability2],
+                [ground_truth1, ground_truth2],
+                model.training_set_metadata,
+                [output_feature_name1, output_feature_name2],
+                labels_limit=0,
+                output_directory=output_dir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
 
 
-def test_binary_threshold_vs_metric_vis_api(csv_filename):
+def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
     experiment = Experiment(csv_filename)
