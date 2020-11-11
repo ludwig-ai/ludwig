@@ -826,16 +826,16 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         ground_truth_split,
         split_file
     )
-    feature_metadata = metadata[output_feature_name]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_data_vs_acc_subset_per_class(
         probabilities_per_model,
-        ground_truth, metadata, output_feature_name, **kwargs
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -2599,7 +2599,7 @@ def confidence_thresholding_data_vs_acc_subset(
 
 def confidence_thresholding_data_vs_acc_subset_per_class(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
         metadata: dict,
         output_feature_name: str,
         top_n_classes: Union[int, List[int]],
@@ -2639,8 +2639,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
     :param output_feature_name: (str) name of the output feature to use
@@ -2662,6 +2661,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     # Return
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     filename_template = \
         'confidence_thresholding_data_vs_acc_subset_per_class_{}.' + file_format
     filename_template_path = generate_filename_template_path(
