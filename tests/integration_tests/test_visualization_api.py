@@ -399,118 +399,128 @@ def test_compare_classifiers_predictions_distribution_vis_api(
             assert 1 == len(figure_cnt)
 
 
-def test_confidence_thresholding_vis_api(csv_filename):
+def test_confidence_thresholding_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.confidence_thresholding(
-            [probability, probability],
-            experiment.ground_truth,
-            labels_limit=0,
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.confidence_thresholding(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                labels_limit=0,
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
 
 
-def test_confidence_thresholding_data_vs_acc_vis_api(csv_filename):
+def test_confidence_thresholding_data_vs_acc_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.confidence_thresholding_data_vs_acc(
-            [probability, probability],
-            experiment.ground_truth,
-            labels_limit=0,
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.confidence_thresholding_data_vs_acc(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                labels_limit=0,
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
 
 
-def test_confidence_thresholding_data_vs_acc_subset_vis_api(csv_filename):
+def test_confidence_thresholding_data_vs_acc_subset_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.confidence_thresholding_data_vs_acc_subset(
-            [probability, probability],
-            experiment.ground_truth,
-            top_n_classes=[3],
-            labels_limit=0,
-            subset='ground_truth',
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.confidence_thresholding_data_vs_acc_subset(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                top_n_classes=[3],
+                labels_limit=0,
+                subset='ground_truth',
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            assert 1 == len(figure_cnt)
 
 
 def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(
-        csv_filename
+        experiment_to_use
 ):
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param experiment_to_use: Object containing trained model and results to
+        test visualization
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probabilities = experiment.probabilities
     viz_outputs = ('pdf', 'png')
-    for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
-        )
-        visualize.confidence_thresholding_data_vs_acc_subset_per_class(
-            [probability, probability],
-            experiment.ground_truth,
-            experiment.ground_truth_metadata,
-            experiment.output_feature_name,
-            top_n_classes=[3],
-            labels_limit=0,
-            subset='ground_truth',
-            model_names=['Model1', 'Model2'],
-            output_directory=experiment.output_dir,
-            file_format=viz_output
-        )
-        figure_cnt = glob.glob(vis_output_pattern_pdf)
-        # 3 figures should be saved because experiment setting top_n_classes = 3
-        # hence one figure per class
-        assert 3 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
+    with TemporaryDirectory() as tmpvizdir:
+        for viz_output in viz_outputs:
+            vis_output_pattern_pdf = tmpvizdir + '/*.{}'.format(
+                viz_output
+            )
+            visualize.confidence_thresholding_data_vs_acc_subset_per_class(
+                [probabilities, probabilities],
+                experiment.ground_truth,
+                experiment.ground_truth_metadata,
+                experiment.output_feature_name,
+                top_n_classes=[3],
+                labels_limit=0,
+                subset='ground_truth',
+                model_names=['Model1', 'Model2'],
+                output_directory=tmpvizdir,
+                file_format=viz_output
+            )
+            figure_cnt = glob.glob(vis_output_pattern_pdf)
+            # 3 figures should be saved because experiment setting top_n_classes = 3
+            # hence one figure per class
+            assert 3 == len(figure_cnt)
 
 
 def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
