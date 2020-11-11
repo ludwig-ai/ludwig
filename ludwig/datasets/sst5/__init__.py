@@ -27,14 +27,14 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
 
 class SST5(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
            BaseDataset):
-    """The SST2 dataset.
+    """The SST5 dataset.
 
     This dataset is constructed using the Stanford Sentiment Treebank Dataset.
-    This dataset contains binary labels (positive or negative) for each sample.
+    This dataset contains five labels (very negative, negative, neutral, 
+    positive, very positive) for each sample.
 
-    The original dataset specified 5 labels:
-    very negative, negative, neutral, positive, very positive with
-    the following cutoffs:
+    In the original dataset, the  5 labels: very negative, negative, neutral, positive, 
+    and very positive have the following cutoffs:
     [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
 
     This class pulls in an array of mixins for different types of functionality
@@ -129,8 +129,7 @@ class SST5(ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             pairs = []
             for sent, phrase_id in zip(sents, phrase_ids):
                 sent_label = get_sentiment_label(phrase_id)
-                if sent_label != -1:  # only include non-neutral samples
-                    pairs.append([sent, sent_label])
+                pairs.append([sent, sent_label])
 
             final_csv = pd.DataFrame(pairs)
             final_csv.columns = ['sentence', 'label']
