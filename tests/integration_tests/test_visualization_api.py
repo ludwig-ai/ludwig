@@ -17,6 +17,8 @@ import glob
 import os
 import shutil
 from tempfile import TemporaryDirectory
+import logging
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -48,6 +50,7 @@ def run_api_experiment(input_features, output_features):
     model = LudwigModel(config)
     return model
 
+
 # todo determine feasibility of putting Experiment() into a pytest.fixture
 # to reduce the number of times Ludwig.evaluate() has to be run to generate
 # result for the visualization tests, should help reduce run-time of these
@@ -58,52 +61,47 @@ class Experiment:
     Contain the needed model experiment statistics as class attributes.
     """
 
-    def __init__(self, csv_filename):
-        self.csv_file = csv_filename
+    def __init__(self, csv_filename, tmpdir):
+        self.tmpdir = tmpdir
+        self.csv_file = os.path.join(tmpdir, csv_filename)
         self.input_features = [
-            text_feature(vocab_size=10, min_len=1, representation='sparse'),
             category_feature(vocab_size=10)
         ]
         self.output_features = [
             category_feature(vocab_size=2, reduce_input='sum')]
-        encoder = 'parallel_cnn'
         data_csv = generate_data(
             self.input_features,
             self.output_features,
             self.csv_file
         )
-        self.input_features[0]['encoder'] = encoder
         self.model = self._create_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
-        self.train_stats, _, self.output_dir = self.model.train(
+        (
+            self.train_stats,
+            self.preprocessed_data,
+            self.output_dir
+        ) = self.model.train(
             training_set=train_df,
-            validation_set=val_df
+            validation_set=val_df,
+            output_directory=os.path.join(tmpdir, 'results')
         )
         self.test_stats_full, predictions, self.output_dir = self.model.evaluate(
             dataset=test_df,
             collect_overall_stats=True,
             collect_predictions=True,
-            output_directory=self.output_dir
+            output_directory=self.output_dir,
+            return_type='dict'
         )
-        self.output_feature_name = self.output_features[0]['name']
+        self.output_feature_name = self.output_features[0][NAME]
         # probabilities need to be list of lists containing each row data
         # from the probability columns
         # ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-        num_probs = self.output_features[0]['vocab_size']
-        self.probability = predictions.iloc[:, 1:(num_probs + 2)].values
-        self.ground_truth_metadata = self.model.training_set_metadata
-        target_predictions = test_df[self.output_feature_name]
-        output_feature_name = self.output_features[0][NAME]
-        self.ground_truth = np.asarray([
-            self.ground_truth_metadata[output_feature_name]['str2idx'][
-                test_row]
-            for test_row in target_predictions
-        ])
-        self.prediction_raw = predictions.iloc[:, 0].tolist()
-        self.prediction = np.asarray([
-            self.ground_truth_metadata[output_feature_name]['str2idx'][
-                pred_row]
-            for pred_row in self.prediction_raw])
+        self.probability = predictions[self.output_feature_name][PROBABILITY]
+        self.predictions = predictions[self.output_feature_name][PREDICTIONS]
+        self.probabilities = predictions[self.output_feature_name][
+            PROBABILITIES]
+        self.ground_truth_metadata = self.preprocessed_data[3]
+        self.ground_truth = test_df[self.output_feature_name]
 
     def _create_model(self):
         """Configure and setup test model"""
@@ -113,8 +111,14 @@ class Experiment:
             'combiner': {'type': 'concat', 'fc_size': 14},
             'training': {'epochs': 2}
         }
-        return LudwigModel(config)
+        return LudwigModel(config, logging_level=logging.WARN)
 
+
+@pytest.fixture(scope='module')
+def experiment_to_use():
+    with TemporaryDirectory() as tmpdir:
+        experiment = Experiment('data_for_test.csv', tmpdir)
+        return experiment
 
 def obtain_df_splits(data_csv):
     """Split input data csv file in to train, validation and test dataframes.
@@ -135,26 +139,25 @@ def obtain_df_splits(data_csv):
     return test_df, train_df, val_df
 
 
-def test_learning_curves_vis_api(csv_filename):
+def test_learning_curves_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    experiment = Experiment(csv_filename)
+    experiment = experiment_to_use
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output)
         visualize.learning_curves(
-            experiment.train_stats,
+            [experiment.train_stats],
             output_feature_name=None,
             output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 4 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_performance_vis_api(csv_filename):
@@ -183,14 +186,14 @@ def test_compare_performance_vis_api(csv_filename):
     shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
-def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
+def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
     """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    experiment = Experiment(csv_filename)
-    probability = experiment.probability
+    experiment = experiment_to_use
+    probability = experiment.probabilities
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
@@ -198,6 +201,8 @@ def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
         visualize.compare_classifiers_performance_from_prob(
             [probability, probability],
             experiment.ground_truth,
+            experiment.ground_truth_metadata,
+            experiment.output_feature_name,
             top_n_classes=[0],
             labels_limit=0,
             model_namess=['Model1', 'Model2'],
@@ -206,7 +211,6 @@ def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
