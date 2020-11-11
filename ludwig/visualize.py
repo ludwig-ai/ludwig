@@ -944,9 +944,6 @@ def confidence_thresholding_2thresholds_3d_cli(
         ground_truth_split,
         split_file
     )
-    feature_metadata = metadata[threshold_output_feature_names[0]]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth0 = vfunc(ground_truth0, feature_metadata['str2idx'])
 
     ground_truth1 = _extract_ground_truth_values(
         ground_truth,
@@ -954,8 +951,6 @@ def confidence_thresholding_2thresholds_3d_cli(
         ground_truth_split,
         split_file
     )
-    feature_metadata = metadata[threshold_output_feature_names[1]]
-    ground_truth1 = vfunc(ground_truth1, feature_metadata['str2idx'])
 
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
@@ -963,6 +958,7 @@ def confidence_thresholding_2thresholds_3d_cli(
     confidence_thresholding_2thresholds_3d(
         probabilities_per_model,
         [ground_truth0, ground_truth1],
+        metadata,
         threshold_output_feature_names,
         **kwargs
     )
@@ -2752,8 +2748,8 @@ def confidence_thresholding_2thresholds_2d(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
+        ground truth data
     :param metadata: (dict) feature metadata dictionary
     :param threshold_output_feature_names: (List[str]) List containing two output
         feature names for visualization.
@@ -2943,7 +2939,8 @@ def confidence_thresholding_2thresholds_2d(
 
 def confidence_thresholding_2thresholds_3d(
         probabilities_per_model: List[np.array],
-        ground_truths: np.array,
+        ground_truths: Union[List[np.array], List[pd.Series]],
+        metadata,
         threshold_output_feature_names: List[str],
         labels_limit: int,
         output_directory: str = None,
@@ -2962,8 +2959,9 @@ def confidence_thresholding_2thresholds_3d(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
+        ground truth data
+    :param metadata: (dict) feature metadata dictionary
     :param threshold_output_feature_names: (List[str]) List containing two output
         feature names for visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -2986,8 +2984,17 @@ def confidence_thresholding_2thresholds_3d(
     except RuntimeError:
         return
     probs = probabilities_per_model
-    gt_1 = ground_truths[0]
-    gt_2 = ground_truths[1]
+
+    if not isinstance(ground_truths[0], np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[threshold_output_feature_names[0]]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        gt_1 = vfunc(ground_truths[0], feature_metadata['str2idx'])
+        feature_metadata = metadata[threshold_output_feature_names[1]]
+        gt_2 = vfunc(ground_truths[1], feature_metadata['str2idx'])
+    else:
+        gt_1 = ground_truths[0]
+        gt_2 = ground_truths[1]
 
     if labels_limit > 0:
         gt_1[gt_1 > labels_limit] = labels_limit
