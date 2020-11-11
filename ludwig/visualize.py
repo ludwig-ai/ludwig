@@ -24,7 +24,6 @@ from typing import List, Union
 import numpy as np
 import pandas as pd
 import sklearn
-import h5py
 from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss

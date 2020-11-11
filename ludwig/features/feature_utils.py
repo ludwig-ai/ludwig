@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
-import json
 import numpy as np
-from typing import Union
 
 from ludwig.constants import SEQUENCE, PREPROCESSING, NAME
 from ludwig.constants import TEXT
@@ -25,7 +22,6 @@ from ludwig.constants import TIMESERIES
 from ludwig.utils.misc_utils import hash_dict
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import tokenizer_registry
-from ludwig.utils.data_utils import load_json
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 
