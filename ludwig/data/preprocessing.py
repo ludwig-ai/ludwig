@@ -1110,6 +1110,8 @@ def load_hdf5(
             dataset[feature[NAME]] = hdf5_data[feature[NAME]][()]
 
     if not split_data:
+        if SPLIT in hdf5_data:
+            dataset[SPLIT] = hdf5_data[SPLIT][()]
         hdf5_data.close()
         if shuffle_training:
             dataset = data_utils.shuffle_dict_unison_inplace(dataset)
@@ -1512,10 +1514,12 @@ def preprocess_for_prediction(
         data_format_preprocessor_registry
     )
 
-    processed = data_format_processor.preprocess_for_prediction(dataset,
-                                                                features,
-                                                                preprocessing_params,
-                                                                training_set_metadata)
+    processed = data_format_processor.preprocess_for_prediction(
+        dataset,
+        features,
+        preprocessing_params,
+        training_set_metadata
+    )
     dataset, training_set_metadata, new_hdf5_fp = processed
     if new_hdf5_fp:
         hdf5_fp = new_hdf5_fp
