@@ -616,10 +616,16 @@ class RayTuneExecutor(HyperoptExecutor):
     def _run_experiment(self, config, hyperopt_dict):
 
         trial_id = tune.get_trial_id()
+        gpus_ids = ray.get_gpu_ids()
+        if gpus_ids:
+            gpus = ",".join(str(id) for id in gpus_ids)
+        else:
+            gpus = None
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config)
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
+        hyperopt_dict["gpus"] = gpus
 
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
         metric_score = self.get_metric_score(eval_stats)
@@ -686,6 +692,19 @@ class RayTuneExecutor(HyperoptExecutor):
             gpus = gpus.strip()
             gpu_ids = gpus.split(",")
             num_gpus = len(gpu_ids)
+
+            if num_gpus < available_gpus:
+                logger.warning(
+                    'WARNING: gpus could be increased to {} '
+                    'that is the num of available gpus'.format(available_gpus)
+                )
+            elif num_gpus > available_gpus:
+                logger.warning(
+                    'WARNING: Defined gpus {} is greater '
+                    'than {} num of available gpus. '
+                    'Setting num_gpus to {}'.format(gpus, available_gpus, available_gpus)
+                )
+                num_gpus = available_gpus
 
             if num_gpus < self.gpu_resources_per_trial:
                 logger.warning(
