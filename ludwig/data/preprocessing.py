@@ -23,7 +23,8 @@ import pandas as pd
 
 from ludwig.constants import *
 from ludwig.constants import TEXT
-from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
+from ludwig.data.concatenate_datasets import concatenate_datasets, \
+    concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
@@ -1326,10 +1327,11 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        concatenated_df = concatenate_csv(
+        concatenated_df = concatenate_datasets(
             training_set,
             validation_set,
-            test_set
+            test_set,
+            read_fn=read_fn
         )
         concatenated_df.src = training_set
 
