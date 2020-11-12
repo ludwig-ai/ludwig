@@ -60,18 +60,35 @@ def get_horovod_kwargs():
     )
 
 
+class RayRemoteModel:
+    def __init__(self, model):
+        self.cls, self.args, state = list(model.__reduce__())
+        self.state = ray.put(state)
+
+    def load(self):
+        obj = self.cls(*self.args)
+        obj.__setstate__(ray.get(self.state))
+        return obj
+
+
 class RayTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, trainer_kwargs):
         setting = RayExecutor.create_settings(timeout_s=30)
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
         self.executor.start(executable_cls=RemoteTrainer, executable_kwargs=trainer_kwargs)
 
-    def train(self, *args, **kwargs):
-        results = self.executor.execute(lambda trainer: trainer.train(*args, **kwargs))
+    def train(self, model, *args, **kwargs):
+        model = RayRemoteModel(model)
+        results = self.executor.execute(
+            lambda trainer: trainer.train(model.load(), *args, **kwargs)
+        )
         return results[0]
 
-    def train_online(self, *args, **kwargs):
-        results = self.executor.execute(lambda trainer: trainer.train_online(*args, **kwargs))
+    def train_online(self, model, *args, **kwargs):
+        model = RayRemoteModel(model)
+        results = self.executor.execute(
+            lambda trainer: trainer.train_online(model.load(), *args, **kwargs)
+        )
         return results[0]
 
     @property
@@ -93,21 +110,24 @@ class RayPredictor(BasePredictor):
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
         self.executor.start(executable_cls=RemotePredictor, executable_kwargs=predictor_kwargs)
 
-    def batch_predict(self, *args, **kwargs):
+    def batch_predict(self, model, *args, **kwargs):
+        model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda predictor: predictor.batch_predict(*args, **kwargs)
+            lambda predictor: predictor.batch_predict(model.load(), *args, **kwargs)
         )
         return results[0]
 
-    def batch_evaluation(self, *args, **kwargs):
+    def batch_evaluation(self, model, *args, **kwargs):
+        model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda predictor: predictor.batch_evaluation(*args, **kwargs)
+            lambda predictor: predictor.batch_evaluation(model.load(), *args, **kwargs)
         )
         return results[0]
 
-    def batch_collect_activations(self, *args, **kwargs):
+    def batch_collect_activations(self, model, *args, **kwargs):
+        model = RayRemoteModel(model)
         return self.executor.execute_single(
-            lambda predictor: predictor.batch_collect_activations(*args, **kwargs)
+            lambda predictor: predictor.batch_collect_activations(model.load(), *args, **kwargs)
         )
 
     def shutdown(self):
