@@ -199,6 +199,29 @@ def test_experiment_multi_input_intent_classification(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
+def test_experiment_multiclass_with_class_weights(csv_filename):
+    # Multiple inputs, Single category output
+    input_features = [category_feature(vocab_size=10)]
+    output_features = [category_feature(vocab_size=3,
+                                        loss={"class_weights": [0, 1, 2, 3]})]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_experiment_multilabel_with_class_weights(csv_filename):
+    # Multiple inputs, Single category output
+    input_features = [category_feature(vocab_size=10)]
+    output_features = [set_feature(vocab_size=3,
+                                   loss={"class_weights": [0, 0, 1, 2, 3]}
+                                   )]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
 @pytest.mark.parametrize(
     'output_features',
     [
@@ -625,56 +648,6 @@ def test_experiment_tied_weights(csv_filename):
         input_features[0]['encoder'] = encoder
         input_features[1]['encoder'] = encoder
         run_experiment(input_features, output_features, dataset=rel_path)
-
-
-@pytest.mark.parametrize('dec_beam_width', [1, 3])
-@pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
-@pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
-@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
-@pytest.mark.parametrize('enc_encoder', ENCODERS)
-def test_sequence_generator(
-        enc_encoder,
-        enc_cell_type,
-        dec_cell_type,
-        dec_attention,
-        dec_beam_width,
-        csv_filename
-):
-    # Define input and output features
-    input_features = [
-        sequence_feature(
-            min_len=5,
-            max_len=10,
-            encoder='rnn',
-            cell_type='lstm',
-            reduce_output=None
-        )
-    ]
-    output_features = [
-        sequence_feature(
-            min_len=5,
-            max_len=10,
-            decoder='generator',
-            cell_type='lstm',
-            attention='bahdanau',
-            reduce_input=None
-        )
-    ]
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    # setup encoder specification
-    input_features[0]['encoder'] = enc_encoder
-    input_features[0]['cell_type'] = enc_cell_type
-
-    # setup decoder specification
-    output_features[0]['cell_type'] = dec_cell_type
-    output_features[0]['attention'] = dec_attention
-    output_features[0]['beam_width'] = dec_beam_width
-
-    # run the experiment
-    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])

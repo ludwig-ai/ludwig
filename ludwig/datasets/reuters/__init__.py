@@ -15,14 +15,14 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.process import IdentityProcessMixin
 from ludwig.datasets.mixins.download import ZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Reuters(cache_dir=cache_dir)
-    return dataset.load()
+    return dataset.load(split=split)
 
 
 class Reuters(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):

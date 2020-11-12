@@ -20,11 +20,11 @@ from abc import ABC, abstractmethod
 import h5py
 import numpy as np
 import pandas as pd
-import os
 
 from ludwig.constants import *
 from ludwig.constants import TEXT
-from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
+from ludwig.data.concatenate_datasets import concatenate_datasets, \
+    concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
@@ -977,32 +977,34 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                         resolve_pointers(encoder_fpp, feature, 'feature.')
                     )
 
-            get_feature_meta = get_from_registry(
-                feature[TYPE],
-                base_type_registry
-            ).get_feature_meta
-
-            proc_feature_to_metadata[feature[PROC_COLUMN]] = get_feature_meta(
-                dataset_df[feature[COLUMN]].astype(str),
-                preprocessing_parameters
-            )
-
             fill_value = precompute_fill_value(
                 dataset_df,
                 feature,
                 preprocessing_parameters
             )
-
             if fill_value is not None:
                 preprocessing_parameters = {
                     'computed_fill_value': fill_value,
                     **preprocessing_parameters
                 }
-            proc_feature_to_metadata[feature[PROC_COLUMN]][
-                PREPROCESSING] = preprocessing_parameters
 
-        metadata[feature[NAME]] = proc_feature_to_metadata[
-            feature[PROC_COLUMN]]
+            handle_missing_values(
+                dataset_df,
+                feature,
+                preprocessing_parameters
+            )
+
+            get_feature_meta = get_from_registry(
+                feature[TYPE],
+                base_type_registry
+            ).get_feature_meta
+
+            metadata[feature[NAME]] = get_feature_meta(
+                dataset_df[feature[NAME]].astype(str),
+                preprocessing_parameters
+            )
+
+            metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
@@ -1126,6 +1128,8 @@ def load_hdf5(
             dataset[feature[PROC_COLUMN]] = hdf5_data[feature[PROC_COLUMN]][()]
 
     if not split_data:
+        if SPLIT in hdf5_data:
+            dataset[SPLIT] = hdf5_data[SPLIT][()]
         hdf5_data.close()
         if shuffle_training:
             dataset = data_utils.shuffle_dict_unison_inplace(dataset)
@@ -1344,10 +1348,11 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        concatenated_df = concatenate_csv(
+        concatenated_df = concatenate_datasets(
             training_set,
             validation_set,
-            test_set
+            test_set,
+            read_fn=read_fn
         )
         concatenated_df.src = training_set
 
@@ -1532,10 +1537,12 @@ def preprocess_for_prediction(
         data_format_preprocessor_registry
     )
 
-    processed = data_format_processor.preprocess_for_prediction(dataset,
-                                                                features,
-                                                                preprocessing_params,
-                                                                training_set_metadata)
+    processed = data_format_processor.preprocess_for_prediction(
+        dataset,
+        features,
+        preprocessing_params,
+        training_set_metadata
+    )
     dataset, training_set_metadata, new_hdf5_fp = processed
     if new_hdf5_fp:
         hdf5_fp = new_hdf5_fp

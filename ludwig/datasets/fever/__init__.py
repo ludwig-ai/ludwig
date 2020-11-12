@@ -15,18 +15,19 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import ZipDownloadMixin
+from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import IdentityProcessMixin
+from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = OhsuMed(cache_dir=cache_dir)
+    dataset = Fever(cache_dir=cache_dir)
     return dataset.load(split=split)
 
 
-class OhsuMed(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
-    """The OhsuMed dataset.
+class Fever(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
+            CSVLoadMixin, BaseDataset):
+    """The Fever dataset.
 
     This pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming training data into a destination
@@ -34,4 +35,4 @@ class OhsuMed(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset)
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="ohsumed", cache_dir=cache_dir)
+        super().__init__(dataset_name="fever", cache_dir=cache_dir)

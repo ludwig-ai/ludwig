@@ -99,6 +99,7 @@ class VectorFeatureMixin(object):
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = 'dense'
+    vector_size = 0
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)

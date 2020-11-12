@@ -67,6 +67,7 @@ class Trainer:
             decay=False,
             decay_rate=0.96,
             decay_steps=10000,
+            staircase=False,
             batch_size=128,
             eval_batch_size=0,
             bucketing_field=None,
@@ -187,6 +188,7 @@ class Trainer:
         self.decay = decay
         self.decay_rate = decay_rate
         self.decay_steps = decay_steps
+        self.staircase = staircase
         self.batch_size = batch_size
         self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
         self.bucketing_field = bucketing_field
@@ -231,7 +233,6 @@ class Trainer:
             summary_writer,
             metrics,
             step,
-            learning_rate=None
     ):
         if not summary_writer:
             return
@@ -244,9 +245,6 @@ class Trainer:
                     )
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag, metric_val, step=step)
-            if learning_rate:
-                tf.summary.scalar("combined/epoch_learning_rate",
-                                  learning_rate, step=step)
         summary_writer.flush()
 
     @classmethod
@@ -255,7 +253,8 @@ class Trainer:
             train_summary_writer,
             combined_loss,
             all_losses,
-            step
+            step,
+            learning_rate=None
     ):
         if not train_summary_writer:
             return
@@ -269,6 +268,10 @@ class Trainer:
             for feature_name, loss in all_losses.items():
                 loss_tag = "{}/step_training_loss".format(feature_name)
                 tf.summary.scalar(loss_tag, loss, step=step)
+
+            if learning_rate:
+                tf.summary.scalar("combined/step_learning_rate",
+                                  learning_rate, step=step)
 
         train_summary_writer.flush()
 
@@ -476,7 +479,7 @@ class Trainer:
                         digits=digits_per_epochs
                     )
                 )
-            current_learning_rate = progress_tracker.learning_rate
+
             # needed because batch size may change
             batcher.batch_size = progress_tracker.batch_size
 
@@ -495,6 +498,39 @@ class Trainer:
 
             # training step loop
             while not batcher.last_batch():
+
+                # Set learning rate for this batch
+                current_learning_rate = progress_tracker.learning_rate
+
+                if self.decay:
+                    current_learning_rate = exponential_decay(
+                        current_learning_rate,
+                        self.decay_rate,
+                        self.decay_steps,
+                        progress_tracker.steps,
+                        self.staircase
+                    )
+
+                if self.horovod:
+                    current_learning_rate = learning_rate_warmup_distributed(
+                        current_learning_rate,
+                        progress_tracker.epoch,
+                        self.learning_rate_warmup_epochs,
+                        self.horovod.size(),
+                        batcher.step,
+                        batcher.steps_per_epoch
+                    ) * self.horovod.size()
+                else:
+                    current_learning_rate = learning_rate_warmup(
+                        current_learning_rate,
+                        progress_tracker.epoch,
+                        self.learning_rate_warmup_epochs,
+                        batcher.step,
+                        batcher.steps_per_epoch
+                    )
+                self.optimizer.set_learning_rate(current_learning_rate)
+
+                # obtain batch
                 batch = batcher.next_batch()
                 inputs = {
                     i_feat.feature_name: batch[i_feat.proc_column]
@@ -531,6 +567,7 @@ class Trainer:
                         combined_loss=loss,
                         all_losses=all_losses,
                         step=progress_tracker.steps,
+                        learning_rate=current_learning_rate,
                     )
 
                 if self.horovod and first_batch:
@@ -544,33 +581,6 @@ class Trainer:
                                                      root_rank=0)
                     self.horovod.broadcast_variables(
                         self.optimizer.variables(), root_rank=0)
-
-                if self.decay:
-                    current_learning_rate = exponential_decay(
-                        current_learning_rate,
-                        self.decay_rate,
-                        self.decay_steps,
-                        batcher.step
-                    )
-
-                if self.horovod:
-                    current_learning_rate = learning_rate_warmup_distributed(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        self.horovod.size(),
-                        batcher.step,
-                        batcher.steps_per_epoch
-                    ) * self.horovod.size()
-                else:
-                    current_learning_rate = learning_rate_warmup(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        batcher.step,
-                        batcher.steps_per_epoch
-                    )
-                self.optimizer.set_learning_rate(current_learning_rate)
 
                 progress_tracker.steps += 1
                 if is_on_master():
@@ -606,7 +616,6 @@ class Trainer:
                 summary_writer=train_summary_writer,
                 metrics=progress_tracker.train_metrics,
                 step=progress_tracker.epoch,
-                learning_rate=current_learning_rate,
             )
 
             if validation_set is not None and validation_set.size > 0:

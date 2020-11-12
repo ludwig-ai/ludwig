@@ -287,7 +287,7 @@ class SequenceGeneratorDecoder(Layer):
             encoder_end_state=None
     ):
         # ================ Setup ================
-        batch_size = encoder_output.shape[0]
+        batch_size = tf.shape(encoder_output)[0]
 
         # Prepare target for decoding
         target_sequence_length = sequence_length_2D(target)
