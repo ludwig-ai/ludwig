@@ -11,56 +11,50 @@
 
 </div>
 
-Ludwig is a toolbox that allows users to train and test deep learning models without the need to write code.
-It is built on top of TensorFlow.
+Ludwig은 사용자들이 코드를 작성할 필요 없이 딥러닝 모델을 학습시키고 사용할 수 있게 하는 TensorFlow 기반으로 만들어진 toolbox입니다.
 
-To train a model you need to provide is a file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
-Simple commands can be used to train models both locally and in a distributed way, and to use them to predict new data.
+이 모델을 학습시키기 위해서는 입출력 데이터가 들어있는 파일이 제공되어야 합니다. 나머지는 Ludwig가 알아서 처리해줄 것입니다. 간단한 명령어들은 단일기기 혹은 분산기기를 통해 모델을 학습하는 데에 사용될 수 있고, 또한 새로운 데이터를 예측하는 데에 사용됩니다.
 
-A programmatic API is also available to use Ludwig from Python.
-A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
+파이썬 프로그램 API 또한 Ludwig에서 사용 가능합니다. 시각화 기능의 모음은 모델 훈련을 분석하고 모델 성능을 test하고 그것들을 비교하는 것을 가능하게 해줍니다.
 
-Ludwig is built with extensibility principles in mind and is based on datatype abstractions, making it easy to add support for new datatypes as well as new model architectures.
+Ludwig는 확장성을 염두에 두고 설계되었으며, 데이터 타입 추상화에 기반을 두고 있어서 새로운 모델 아키텍처뿐만 아니라 새로운 데이터 타입에 대한 지원을 쉽게 추가할 수 있습니다.
 
-It can be used by practitioners to quickly train and test deep learning models as well as by researchers to obtain strong baselines to compare against and have an experimentation setting that ensures comparability by performing the same data processing and evaluation.
+Ludwig은 사용자들이 딥러닝 모델을 빠르게 학습하고 테스트하는 것은 물론, 연구자들이 딥러닝 모델과 비교할 수 있는 강력한 기준과 동일한 데이터 평가를 통해 비교 가능성을 보장하는 테스트 설정을 확보할 수 있도록 활용됩니다.
 
-Ludwig provides a set of model architectures that can be combined together to create an end-to-end model for a given use case.
-As an analogy, if deep learning libraries provide the building blocks to make your building, Ludwig provides the buildings to make your city, and you can choose among the available buildings or add your own building to the set of available ones.
+Ludwig는 특정 use case의 end-to-end 모델을 작성하기 위해 조합할 수 있는 일련의 모델 아키텍처를 제공합니다. 도시를 설계하는 것을 예로 들어, 딥러닝 라이브러리가 도시 내부 건물의 구성요소(기둥, 바닥, 등)를 제공하고 있다면, Ludwig는 도시를 구성하는 건물을 제공하고 있습니다. 그러면 사용자는 도시 내부의 만들어진 건물 중 하나를 선택해 사용하거나, 새로운 건물을 추가할 수 있습니다.
 
-The core design principles baked into the toolbox are:
-- No coding required: no coding skills are required to train a model and use it for obtaining predictions.
-- Generality: a new datatype-based approach to deep learning model design makes the tool usable across many different use cases.
-- Flexibility: experienced users have extensive control over model building and training, while newcomers will find it easy to use.
-- Extensibility: easy to add new model architecture and new feature datatypes.
-- Understandability: deep learning model internals are often considered black boxes, but Ludwig provides standard visualizations to understand their performance and compare their predictions.
+toolbox에 반영된 핵심 설계 원리는 아래와 같습니다:
+- No coding required: 모델을 학습시키고 예측된 데이터를 얻는 데에 코딩 스킬이 필요하지 않습니다.
+- Generality: 딥러닝 모델 설계에 대한 새로운 데이터 유형 기반 접근방식은 다양한 use case들에 적용할 수 있는 tool을 만들어줍니다.
+- Flexibility: 숙련된 사용자들은 모델 제작과 훈련을 광범위하게 제어하는 반면, 초보자들은 그것을 쉽게 사용할 수 있습니다.
+- Extensibility: 새로운 모델 아키텍처와 새로운 데이터타입을 쉽게 추가할 수 있습니다.
+- Understandability: 종종 딥러닝 모델 내부는 진행상황을 확인할 수 없는 것처럼 여겨지지만, Ludwig는 성능을 이해하고 예측된 데이터들을 비교하기위한 표준 시각화 기능을 제공합니다.
 - Open Source: Apache License 2.0
 
 
 Installation
 ============
 
-Ludwig requires you to use Python 3.6+.
-If you don’t have Python 3 installed, install it by running:
+Ludwig는 Python 3.6이상 버전을 요구합니다. 만약 Python 3가 설치 되어있지 않으면 다음 명령어를 이용해서 설치하세요.
 
 ```
 sudo apt install python3  # on ubuntu
 brew install python3      # on mac
 ```
 
-You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
+만약 [파이썬 가상환경](https://docs.python-guide.org/dev/virtualenvs/)에서 사용하고 싶다면 아래 명령어를 사용하세요.
 
 ```
 virtualenv -p python3 venv
 ```
 
-In order to install Ludwig just run:
+Ludwig를 설치하려면 아래 명령어를 사용하세요.
 
 ```
 pip install ludwig
 ```
 
-This will install only Ludwig's basic requirements, different feature types require different dependencies.
-We divided them as different extras so that users could install only the ones they actually need:
+위의 명령어는 Ludwig을 실행하기 위해 필요한 파일만 설치하게 되며, 더 많은 기능이 필요하다면 아래와 같은 파일들을 설치하면 됩니다.
  - `ludwig[text]` for text dependencies.
  - `ludwig[audio]` for audio and speech dependencies.
  - `ludwig[image]` for image dependencies.
