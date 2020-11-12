@@ -1169,6 +1169,7 @@ def preprocess_for_training(
     # in case data_format is one of the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
+    checksum = None
     if data_format in CACHEABLE_FORMATS:
         if dataset:
             if (file_exists_with_diff_extension(dataset, 'hdf5') and
@@ -1198,7 +1199,6 @@ def preprocess_for_training(
                         "if saving of processed input is not skipped "
                         "they will be overridden"
                     )
-                    training_set_metadata['checksum'] = checksum
 
         elif training_set:
             if (file_exists_with_diff_extension(training_set, 'hdf5') and
@@ -1236,7 +1236,6 @@ def preprocess_for_training(
                         "if saving of processed input is not skipped "
                         "they will be overridden"
                     )
-                    training_set_metadata['checksum'] = checksum
 
     data_format_processor = get_from_registry(
         data_format,
@@ -1254,6 +1253,9 @@ def preprocess_for_training(
         random_seed=random_seed
     )
     training_set, test_set, validation_set, training_set_metadata = processed
+
+    if checksum is not None:
+        training_set_metadata['checksum'] = checksum
 
     replace_text_feature_level(
         features,
@@ -1343,7 +1345,7 @@ def _preprocess_file_for_training(
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
             data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
-            logger.info('Writing train set metadata with vocabulary')
+            logger.info('Writing train set metadata')
             training_set_metadata_fp = replace_file_extension(dataset,
                                                               'meta.json')
             data_utils.save_json(training_set_metadata_fp,

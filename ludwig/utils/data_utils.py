@@ -206,13 +206,12 @@ def load_hdf5(data_fp):
 
 
 # def save_hdf5(data_fp: str, data: Dict[str, object]):
-def save_hdf5(data_fp, data, metadata=None):
+def save_hdf5(data_fp, data, metadata=None, overwrite=True):
     if metadata is None:
         metadata = {}
-    mode = 'w'
     if os.path.isfile(data_fp):
-        mode = 'r+'
-    with h5py.File(data_fp, mode) as h5_file:
+        os.remove(data_fp)
+    with h5py.File(data_fp, 'w') as h5_file:
         for key, value in data.items():
             dataset = h5_file.create_dataset(key, data=value)
             if key in metadata:
