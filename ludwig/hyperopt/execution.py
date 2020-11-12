@@ -659,6 +659,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         available_resources = ray.available_resources()
         available_cpus = available_resources["CPU"]
+        available_gpus = available_resources.get("GPU", 0)
 
         if self.cpu_resources_per_trial > available_cpus:
             logger.warning(
@@ -668,6 +669,39 @@ class RayTuneExecutor(HyperoptExecutor):
                     available_cpus, self.cpu_resources_per_trial)
             )
             self.cpu_resources_per_trial = available_cpus
+
+        if gpus is None:
+            gpus = get_available_gpus_cuda_string()
+
+        if gpus is None:
+            if self.gpu_resources_per_trial != 0:
+                logger.warning(
+                    'WARNING: Setting gpu_resources_per_trial to 0 '
+                    'as there are no available gpus found.'
+                )
+                self.gpu_resources_per_trial = 0
+        else:
+            if isinstance(gpus, int):
+                gpus = str(gpus)
+            gpus = gpus.strip()
+            gpu_ids = gpus.split(",")
+            num_gpus = len(gpu_ids)
+
+            if num_gpus < self.gpu_resources_per_trial:
+                logger.warning(
+                    'WARNING: Setting gpu_resources_per_trial to {} '
+                    'as the defined gpu_resources_per_trial {} '
+                    'is greater than the num of available gpus'.format(
+                        num_gpus, self.gpu_resources_per_trial)
+                )
+                self.gpu_resources_per_trial = num_gpus
+
+            if self.gpu_resources_per_trial == 0:
+                logger.warning(
+                    'WARNING: Setting gpu_resources_per_trial to default 1 '
+                    'as there are {} num of available gpus'.format(num_gpus)
+                )
+                self.gpu_resources_per_trial = 1
 
         hyperopt_dict = dict(
             config=config,
