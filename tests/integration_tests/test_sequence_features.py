@@ -122,7 +122,7 @@ def test_sequence_encoders(
     while not batcher.last_batch():
         batch = batcher.next_batch()
         inputs = {
-            i_feat.feature_name: batch[i_feat.feature_name]
+            i_feat.feature_name: batch[i_feat.proc_column]
             for i_feat in model.model.input_features.values()
         }
 
@@ -132,7 +132,9 @@ def test_sequence_encoders(
             tf.cast(inputs[input_feature_name], dtype=tf.int32))
 
         # check encoder output for proper content, type and shape
-        batch_size = batch[input_feature_name].shape[0]
+        proc_column = model.model.input_features[
+            input_feature_name].proc_column
+        batch_size = batch[proc_column].shape[0]
         seq_size = input_features[0]['max_len']
 
         assert 'encoder_output' in encoder_out
