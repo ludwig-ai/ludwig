@@ -1174,11 +1174,12 @@ def preprocess_for_training(
                     file_exists_with_diff_extension(dataset, 'meta.json')):
                 training_set_metadata_fp = replace_file_extension(dataset,
                                                                   'meta.json')
-                training_set_metadata = data_utils.load_json(
+                cache_training_set_metadata = data_utils.load_json(
                     training_set_metadata_fp)
 
                 checksum = calculate_checksum(dataset, config)
-                cache_checksum = training_set_metadata.get('checksum', None)
+                cache_checksum = cache_training_set_metadata.get('checksum',
+                                                                 None)
 
                 if checksum == cache_checksum:
                     logger.info(
@@ -1186,6 +1187,7 @@ def preprocess_for_training(
                         'of the dataset, using them instead'
                     )
                     dataset = replace_file_extension(dataset, 'hdf5')
+                    training_set_metadata = cache_training_set_metadata
                     config['data_hdf5_fp'] = dataset
                     data_format = 'hdf5'
                 else:
@@ -1204,14 +1206,15 @@ def preprocess_for_training(
 
                 training_set_metadata_fp = replace_file_extension(training_set,
                                                                   'meta.json')
-                training_set_metadata = data_utils.load_json(
+                cache_training_set_metadata = data_utils.load_json(
                     training_set_metadata_fp
                 )
 
                 # should we add also validation and test set
                 # to the checksum calculation? maybe it's redundant
                 checksum = calculate_checksum(training_set, config)
-                cache_checksum = training_set_metadata.get('checksum', None)
+                cache_checksum = cache_training_set_metadata.get('checksum',
+                                                                 None)
 
                 if checksum == cache_checksum:
                     logger.info(
@@ -1222,6 +1225,7 @@ def preprocess_for_training(
                     validation_set = replace_file_extension(validation_set,
                                                             'hdf5')
                     test_set = replace_file_extension(test_set, 'hdf5')
+                    training_set_metadata = cache_training_set_metadata
                     config['data_hdf5_fp'] = training_set
                     data_format = 'hdf5'
                 else:
