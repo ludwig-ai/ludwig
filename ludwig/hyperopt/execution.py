@@ -589,9 +589,20 @@ class FiberExecutor(HyperoptExecutor):
 
 
 class RayTuneExecutor(HyperoptExecutor):
-    def __init__(self, hyperopt_sampler, output_feature, metric, split, goal, **kwargs):
+    def __init__(
+            self,
+            hyperopt_sampler: dict,
+            output_feature: str,
+            metric: str,
+            split: str,
+            goal: str,
+            cpu_resources_per_trial: int = 1,
+            gpu_resources_per_trial: int = 0,
+            **kwargs
+    ) -> None:
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
+        ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler["config"]
         self.num_samples = hyperopt_sampler["num_samples"]
         self.output_feature = output_feature
@@ -599,6 +610,8 @@ class RayTuneExecutor(HyperoptExecutor):
         self.split = split
         self.goal = goal
         self.trial_id = 0
+        self.cpu_resources_per_trial = cpu_resources_per_trial
+        self.gpu_resources_per_trial = gpu_resources_per_trial
 
     def _run_experiment(self, config, hyperopt_dict):
 
@@ -644,6 +657,18 @@ class RayTuneExecutor(HyperoptExecutor):
                 debug=False,
                 **kwargs):
 
+        available_resources = ray.available_resources()
+        available_cpus = available_resources["CPU"]
+
+        if self.cpu_resources_per_trial > available_cpus:
+            logger.warning(
+                'WARNING: Setting cpu_resources_per_trial to {} '
+                'as the defined cpu_resources_per_trial {} '
+                'is greater than the num of available cpus'.format(
+                    available_cpus, self.cpu_resources_per_trial)
+            )
+            self.cpu_resources_per_trial = available_cpus
+
         hyperopt_dict = dict(
             config=config,
             dataset=dataset,
@@ -675,8 +700,8 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=debug,
         )
 
-        analysis = tune.run(tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict),
-                            config=self.search_space, num_samples=self.num_samples)
+        analysis = tune.run(tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict), config=self.search_space,
+                            num_samples=self.num_samples, resources_per_trial={"cpu": self.cpu_resources_per_trial, "gpu": self.gpu_resources_per_trial})
 
         hyperopt_results = analysis.results_df.sort_values(
             "metric_score", ascending=self.goal != MAXIMIZE)
