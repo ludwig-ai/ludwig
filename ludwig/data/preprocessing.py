@@ -29,6 +29,7 @@ from ludwig.data.concatenate_datasets import concatenate_datasets, \
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
@@ -1639,6 +1640,7 @@ def get_preprocessing_params(config):
 
 def calculate_checksum(original_dataset, config):
     info = {}
+    info['ludwig_version'] = LUDWIG_VERSION
     info['dataset_modification_date'] = os.path.getmtime(original_dataset)
     info['global_preprocessing'] = config['preprocessing']
     features = config['input_features'] + config['output_features']
