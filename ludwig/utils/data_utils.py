@@ -63,6 +63,10 @@ CACHEABLE_FORMATS = set.union(*(CSV_FORMATS, TSV_FORMATS,
                                 STATA_FORMATS))
 
 
+def get_split_path(dataset_fp):
+    return os.path.splitext(dataset_fp)[0] + '.split.csv'
+
+
 def get_abs_path(data_csv_path, file_path):
     if data_csv_path is not None:
         return os.path.join(data_csv_path, file_path)
