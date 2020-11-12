@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import os
 from abc import ABC, abstractmethod
 
 import h5py
@@ -50,7 +51,8 @@ from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed, merge_with_defaults)
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
-                                     resolve_pointers, set_random_seed)
+                                     resolve_pointers, set_random_seed,
+                                     hash_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -1170,36 +1172,64 @@ def preprocess_for_training(
         if dataset:
             if (file_exists_with_diff_extension(dataset, 'hdf5') and
                     file_exists_with_diff_extension(dataset, 'meta.json')):
-                logger.info(
-                    'Found hdf5 and meta.json with the same filename '
-                    'of the input file, using them instead'
-                )
-                dataset = replace_file_extension(dataset, 'hdf5')
                 training_set_metadata_fp = replace_file_extension(dataset,
                                                                   'meta.json')
                 training_set_metadata = data_utils.load_json(
                     training_set_metadata_fp)
-                config['data_hdf5_fp'] = dataset
-                data_format = 'hdf5'
+
+                checksum = calculate_checksum(dataset, config)
+                cache_checksum = training_set_metadata.get('checksum', None)
+
+                if checksum == cache_checksum:
+                    logger.info(
+                        'Found hdf5 and meta.json with the same filename '
+                        'of the dataset, using them instead'
+                    )
+                    dataset = replace_file_extension(dataset, 'hdf5')
+                    config['data_hdf5_fp'] = dataset
+                    data_format = 'hdf5'
+                else:
+                    logger.info(
+                        "Found hdf5 and meta.json with the same filename "
+                        "of the dataset, but checksum don't match, "
+                        "so they will be overridden"
+                    )
+                    training_set_metadata['checksum'] = checksum
 
         elif training_set:
             if (file_exists_with_diff_extension(training_set, 'hdf5') and
                     file_exists_with_diff_extension(training_set,
                                                     'meta.json')):
-                logger.info(
-                    'Found hdf5 and json with the same filename '
-                    'of the csv, using them instead'
-                )
-                training_set = replace_file_extension(training_set, 'hdf5')
+
                 training_set_metadata_fp = replace_file_extension(training_set,
                                                                   'meta.json')
                 training_set_metadata = data_utils.load_json(
                     training_set_metadata_fp
                 )
-                validation_set = replace_file_extension(validation_set, 'hdf5')
-                test_set = replace_file_extension(test_set, 'hdf5')
-                config['data_hdf5_fp'] = training_set
-                data_format = 'hdf5'
+
+                # should we add also validation and test set
+                # to the checksum calculation? maybe it's redundant
+                checksum = calculate_checksum(training_set, config)
+                cache_checksum = training_set_metadata.get('checksum', None)
+
+                if checksum == cache_checksum:
+                    logger.info(
+                        'Found hdf5 and meta.json with the same filename '
+                        'of the dataset, using them instead'
+                    )
+                    training_set = replace_file_extension(training_set, 'hdf5')
+                    validation_set = replace_file_extension(validation_set,
+                                                            'hdf5')
+                    test_set = replace_file_extension(test_set, 'hdf5')
+                    config['data_hdf5_fp'] = training_set
+                    data_format = 'hdf5'
+                else:
+                    logger.info(
+                        "Found hdf5 and meta.json with the same filename "
+                        "of the dataset, but checksum don't match, "
+                        "so they will be overridden"
+                    )
+                    training_set_metadata['checksum'] = checksum
 
     data_format_processor = get_from_registry(
         data_format,
@@ -1599,3 +1629,15 @@ def get_preprocessing_params(config):
         )
 
     return merged_preprocessing_params
+
+
+def calculate_checksum(original_dataset, config):
+    info = {}
+    info['dataset_modification_date'] = os.path.getmtime(original_dataset)
+    info['global_preprocessing'] = config['preprocessing']
+    features = config['input_features'] + config['output_features']
+    info['feature_names'] = [feature[NAME] for feature in features]
+    info['feature_preprocessing'] = [feature.get(PREPROCESSING, {})
+                                     for feature in features]
+    hash = hash_dict(info, max_length=None)
+    return hash.decode('ascii')
