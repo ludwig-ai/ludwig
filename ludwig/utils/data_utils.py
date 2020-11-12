@@ -210,7 +210,12 @@ def save_hdf5(data_fp, data, metadata=None, overwrite=True):
     if metadata is None:
         metadata = {}
     if os.path.isfile(data_fp):
-        os.remove(data_fp)
+        if overwrite:
+            os.remove(data_fp)
+        else:
+            raise ValueError(f"HDF5 file {data_fp} already exists. "
+                             f"Remove it manually or set "
+                             f"the `overwrite` parameter to True.")
     with h5py.File(data_fp, 'w') as h5_file:
         for key, value in data.items():
             dataset = h5_file.create_dataset(key, data=value)
