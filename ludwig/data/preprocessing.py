@@ -1192,7 +1192,8 @@ def preprocess_for_training(
                     logger.info(
                         "Found hdf5 and meta.json with the same filename "
                         "of the dataset, but checksum don't match, "
-                        "so they will be overridden"
+                        "if saving of processed input is not skipped "
+                        "they will be overridden"
                     )
                     training_set_metadata['checksum'] = checksum
 
@@ -1227,7 +1228,8 @@ def preprocess_for_training(
                     logger.info(
                         "Found hdf5 and meta.json with the same filename "
                         "of the dataset, but checksum don't match, "
-                        "so they will be overridden"
+                        "if saving of processed input is not skipped "
+                        "they will be overridden"
                     )
                     training_set_metadata['checksum'] = checksum
 
