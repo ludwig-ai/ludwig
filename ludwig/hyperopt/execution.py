@@ -4,15 +4,18 @@ import signal
 from abc import ABC, abstractmethod
 from typing import Union
 
-import ray
-from ray import tune
-
 from ludwig.api import LudwigModel
 from ludwig.constants import *
 from ludwig.hyperopt.sampling import HyperoptSampler, logger
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
+
+try:
+    import ray
+    from ray import tune
+except ImportError:
+    ray = None
 
 
 class HyperoptExecutor(ABC):
@@ -600,6 +603,10 @@ class RayTuneExecutor(HyperoptExecutor):
             gpu_resources_per_trial: int = 0,
             **kwargs
     ) -> None:
+        if ray is None:
+            raise ImportError('ray module is not installed. To '
+                              'install it,try running pip install ray'
+                              )
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
         ray.init(ignore_reinit_error=True)
@@ -702,7 +709,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 logger.warning(
                     'WARNING: Defined gpus {} is greater '
                     'than {} num of available gpus. '
-                    'Setting num_gpus to {}'.format(gpus, available_gpus, available_gpus)
+                    'Setting num_gpus to {}'.format(
+                        gpus, available_gpus, available_gpus)
                 )
                 num_gpus = available_gpus
 

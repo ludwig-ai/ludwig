@@ -21,8 +21,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
 
+
 import numpy as np
-from ray import tune
 
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
@@ -107,7 +107,7 @@ class HyperoptSampler(ABC):
         pass
 
     def update_batch(self, parameters_metric_tuples: Iterable[
-        Tuple[Dict[str, Any], float]]):
+            Tuple[Dict[str, Any], float]]):
         for (sampled_parameters, metric_score) in parameters_metric_tuples:
             self.update(sampled_parameters, metric_score)
 
@@ -292,6 +292,12 @@ class PySOTSampler(HyperoptSampler):
 
 
 def get_tune_search_space(parameters, num_samples):
+    try:
+        from ray import tune
+    except ImportError:
+        raise ImportError('ray module is not installed. To '
+                          'install it,try running pip install ray[tune]'
+                          )
     sampler = {}
     config = {}
     for param, values in parameters.items():
