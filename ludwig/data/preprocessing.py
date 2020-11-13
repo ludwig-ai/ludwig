@@ -1199,6 +1199,8 @@ def preprocess_for_training(
                         "if saving of processed input is not skipped "
                         "they will be overridden"
                     )
+                    os.remove(replace_file_extension(dataset, 'hdf5'))
+                    os.remove(training_set_metadata_fp)
 
         elif training_set:
             if (file_exists_with_diff_extension(training_set, 'hdf5') and
@@ -1236,6 +1238,8 @@ def preprocess_for_training(
                         "if saving of processed input is not skipped "
                         "they will be overridden"
                     )
+                    os.remove(replace_file_extension(training_set, 'hdf5'))
+                    os.remove(training_set_metadata_fp)
 
     data_format_processor = get_from_registry(
         data_format,
