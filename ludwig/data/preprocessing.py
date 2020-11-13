@@ -23,7 +23,8 @@ import pandas as pd
 
 from ludwig.constants import *
 from ludwig.constants import TEXT
-from ludwig.data.concatenate_datasets import concatenate_csv, concatenate_df
+from ludwig.data.concatenate_datasets import concatenate_datasets, \
+    concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
@@ -1110,6 +1111,8 @@ def load_hdf5(
             dataset[feature[NAME]] = hdf5_data[feature[NAME]][()]
 
     if not split_data:
+        if SPLIT in hdf5_data:
+            dataset[SPLIT] = hdf5_data[SPLIT][()]
         hdf5_data.close()
         if shuffle_training:
             dataset = data_utils.shuffle_dict_unison_inplace(dataset)
@@ -1324,10 +1327,11 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        concatenated_df = concatenate_csv(
+        concatenated_df = concatenate_datasets(
             training_set,
             validation_set,
-            test_set
+            test_set,
+            read_fn=read_fn
         )
         concatenated_df.src = training_set
 
@@ -1512,10 +1516,12 @@ def preprocess_for_prediction(
         data_format_preprocessor_registry
     )
 
-    processed = data_format_processor.preprocess_for_prediction(dataset,
-                                                                features,
-                                                                preprocessing_params,
-                                                                training_set_metadata)
+    processed = data_format_processor.preprocess_for_prediction(
+        dataset,
+        features,
+        preprocessing_params,
+        training_set_metadata
+    )
     dataset, training_set_metadata, new_hdf5_fp = processed
     if new_hdf5_fp:
         hdf5_fp = new_hdf5_fp
