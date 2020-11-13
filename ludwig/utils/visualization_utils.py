@@ -708,11 +708,39 @@ def confidence_fitlering_3d_plot(
     handle_1.set_color(colors[0])
     handle_2.set_color(colors[1])
 
-    handle_1._edgecolors2d = handle_1._edgecolors3d
-    handle_2._edgecolors2d = handle_2._edgecolors3d
+    ### the next block is needed because matplotlib 3.3.3 renamed
+    # _edgecolors3d -> _edgecolor3d
+    # _facecolors3d -> _facecolor3d
+    # but we want to try to keep compatibility with older versions
+    ##### BEGIN COMPATIBILITY BLOCK #####
+    if hasattr(handle_1, '_edgecolors3d'):
+        edgecolor3d = handle_1._edgecolors3d
+    else:
+        edgecolor3d = handle_1._edgecolor3d
+    handle_1._edgecolors2d = edgecolor3d
+    handle_1._edgecolor2d = edgecolor3d
 
-    handle_1._facecolors2d = handle_1._facecolors3d
-    handle_2._facecolors2d = handle_2._facecolors3d
+    if hasattr(handle_2, '_edgecolors3d'):
+        edgecolor3d = handle_2._edgecolors3d
+    else:
+        edgecolor3d = handle_2._edgecolor3d
+    handle_2._edgecolors2d = edgecolor3d
+    handle_2._edgecolor2d = edgecolor3d
+
+    if hasattr(handle_1, '_facecolors3d'):
+        facecolor3d = handle_1._facecolors3d
+    else:
+        facecolor3d = handle_1._facecolor3d
+    handle_1._facecolors2d = facecolor3d
+    handle_1._facecolor2d = facecolor3d
+
+    if hasattr(handle_2, '_facecolors3d'):
+        facecolor3d = handle_2._facecolors3d
+    else:
+        facecolor3d = handle_2._facecolor3d
+    handle_2._facecolors2d = facecolor3d
+    handle_2._facecolor2d = facecolor3d
+    ##### END COMPATIBILITY BLOCK #####
 
     ax.legend(frameon=True, loc=3, handles=[handle_1, handle_2])
 
