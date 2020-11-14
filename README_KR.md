@@ -64,13 +64,12 @@ pip install ludwig
  - `ludwig[viz]` for visualization dependencies.
  - `ludwig[test]` for dependencies needed for testing.
 
-Distributed training is supported with [Horovod](https://github.com/horovod/horovod), which can be installed with `pip install ludwig[horovod]` or `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]` for GPU support.
-See Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html)  for full details on available installation options.
+[Horovod](https://github.com/horovod/horovod)를 통해 분산 학습이 지원되며, `pip install ludwig[horovod]` 또는 `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]` 와 같이 GPU 환경에서 설치가 가능합니다.
+설치 가능한 옵션들을 더 확인하고 싶으시다면 Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) 를 참고하시기 바랍니다.
 
-Any combination of extra packages can be installed at the same time with `pip install ludwig[extra1,extra2,...]` like for instance `pip install ludwig[text,viz]`.
-The full set of dependencies can be installed with `pip install ludwig[full]`.
+추가하려는 package들은  `pip install ludwig[extra1,extra2,...]` 의 명령어를 통해 설치가 가능합니다. 예를 들어, `pip install ludwig[text,viz]` 와 같은 조합으로 설치가 가능합니다. 모든 파일들을 한 번에 설치하려면 `pip install ludwig[full]`을 사용하면 됩니다.
 
-For developers who wish to build the source code from the repository:
+소스코드를 repository에서 build하려는 개발자들은 아래와 같은 방법을 사용하면 됩니다.
 
 ```
 git clone git@github.com:uber/ludwig.git
@@ -80,24 +79,19 @@ source venv/bin/activate
 pip install -e '.[test]'
 ```
 
-**Note:** that if you are running without GPUs, you may wish to use the CPU-only version of TensorFlow, 
-which takes up much less space on disk.
-To use a CPU-only TensorFlow version, uninstall `tensorflow` and  replace it with `tensorflow-cpu` after having installed `ludwig`.
-Be sure to install a version within the compatible range as shown in `requirements.txt`.
+**Note:** 만약 GPU없이 실행 중이라면, 가벼운 용량의 CPU로만 사용할 수 있는 TensorFlow를 사용하고 싶으실 겁니다. CPU로만 사용할 수 있는 TensorFlow 버전을 사용하고 싶다면 `tensorflow`를 삭제하고 `ludwig`를 설치한 후 `tensorflow-cpu`로 대체하면 됩니다. `requirements.txt`에 명시되어 있는 대로 호환 가능한 범위 내의 버전을 설치해야만 합니다.
 
 
 Basic Principles
 ----------------
 
-Ludwig provides three main functionalities: training models and using them to predict and evaluate them.
-It is based on datatype abstraction, so that the same data preprocessing and postprocessing will be performed on different datasets that share datatypes and the same encoding and decoding models developed can be re-used across several tasks.
+Ludwig는 모델학습, 학습된 모델을 이용한 예측, 평가의 3가지 주요 기능을 제공합니다. 이것은 데이터 유형 추상화에 기반합니다. 그래서 같은 데이터를 이용해 사전, 사후 처리과정을 데이터 유형을 공유하는 서로 다른 dataset으로 실행되고, 개발된 encoding및 decoding 모델을 다른 여러 작업에서 재사용이 가능합니다.
 
-Training a model in Ludwig is pretty straightforward: you provide a dataset file and a config YAML file.
+Ludwig로 모델을 학습시키는 것은 굉장히 간단합니다. 단지 dataset file과 yaml파일만 제공해주면 됩니다.
 
-The config contains a list of input features and output features, all you have to do is specify names of the columns in the dataset that are inputs to your model alongside with their datatypes, and names of columns in the dataset that will be outputs, the target variables which the model will learn to predict.
-Ludwig will compose a deep learning model accordingly and train it for you.
+config파일에는, 입출력 값의 속성을 포함합니다. 당신이 해야 할 것은 dataset파일에서 열에 해당하는 데이터들의 이름만 정의해주면 됩니다. 여기에 필요한 것은 모델에 대한 입력 데이터 유형, 그리고 모델이 예측하는 대상 변수인 출력 데이터 집합의 열 이름입니다. Ludwig는 그에 따라 딥러닝 모델을 만들어 당신을 위해 학습할 것입니다.
 
-Currently, the available datatypes in Ludwig are:
+현재, Ludwig에서 사용가능한 데이터유형은 아래와 같습니다.
 
 - binary
 - numerical
@@ -113,7 +107,7 @@ Currently, the available datatypes in Ludwig are:
 - h3
 - vector
 
-By choosing different datatype for inputs and outputs, users can solve many different tasks, for instance:
+서로 다른 입력과 출력의 데이터유형을 사용하는 경우, 사용자들은 다양한 작업을 진행할 수 있습니다. 아래는 그 예시입니다.
 
 - text input + category output = text classifier
 - image input + category output = image classifier
@@ -124,10 +118,9 @@ By choosing different datatype for inputs and outputs, users can solve many diff
 - timeseries input + numerical output = forecasting model
 - category, numerical and binary inputs + binary output = fraud detection
 
-take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several more tasks.
+[예시](https://ludwig-ai.github.io/ludwig-docs/examples/)를 참고하여 Ludwig을 통해 어떤 작업을 실행하는지 확인하세요.
 
-The config can contain additional information, in particular how to preprocess each column in the data, which encoder and decoder to use for each one, architectural  and training parameters, hyperparameters to optimize.
-This allows ease of use for novices and flexibility for experts.
+Config 파일은 인코더와 디코더가 사용할 각 열에 저장된 데이터를 사전 처리하는 방법, 최적화할 아키텍처 및 학습 매개변수, 하이퍼 파라미터 등의 추가정보를 저장합니다. 이를 통해 초보자는 쉽게 사용할 수 있고, 전문가도 유연하게 사용할 수 있습니다.
 
 
 Training
