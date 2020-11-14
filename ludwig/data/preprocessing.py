@@ -1361,7 +1361,7 @@ def _preprocess_file_for_training(
             logger.info('Writing train set metadata')
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
             training_set_metadata[CHECKSUM] = calculate_checksum(
-                training_set,
+                dataset,
                 {'features': features, PREPROCESSING: preprocessing_params}
             )
             training_set_metadata_fp = replace_file_extension(dataset,

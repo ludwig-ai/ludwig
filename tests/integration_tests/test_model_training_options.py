@@ -12,7 +12,8 @@ from sklearn.model_selection import train_test_split
 from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
 from ludwig.modules.optimization_modules import optimizers_registry
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, replace_file_extension
+from tests.integration_tests.utils import category_feature, generate_data
 
 RANDOM_SEED = 42
 NUMBER_OBSERVATIONS = 500
@@ -372,3 +373,51 @@ def test_regularization(generated_data, tmp_path):
 
     # ensure all losses obtained with the different methods are different
     assert len(regularization_losses) == len(regularization_losses_set)
+
+
+# test cache checksum function
+def test_cache_checksum(csv_filename, tmp_path):
+    # setup for training
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=2)]
+
+    source_dataset = os.path.join(tmp_path, csv_filename)
+    source_dataset = generate_data(input_features, output_features,
+                                   source_dataset)
+
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'preprocessing': {'text': {'most_common_word': 1000}},
+        'training': {'epochs': 2}
+    }
+
+    # conduct initial training
+    output_directory = os.path.join(tmp_path, 'results')
+    model = LudwigModel(config)
+    _, _, train_output_directory1 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    first_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # conduct second training
+    model = LudwigModel(config)
+    _, _, train_output_directory2 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    second_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # time stamps should be the same
+    assert first_training_timestamp == second_training_timestamp
+
+    # conduct third training
+    # force recreating cache file by changing checksum
+    config['preprocessing']['text']['most_common_word'] = 2000
+    model = LudwigModel(config)
+    _, _, train_output_directory3 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    third_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamp for third training should be later than first timestamp
+    assert first_training_timestamp < third_training_timestamp
