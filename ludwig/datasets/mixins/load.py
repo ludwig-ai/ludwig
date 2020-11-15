@@ -38,14 +38,20 @@ class CSVLoadMixin:
         :param split: Splits along 'split' column if present
         :returns: A pandas dataframe
         """
-        dataset_csv = os.path.join(self.processed_dataset_path, self.csv_filename)
+        dataset_csv = os.path.join(self.processed_dataset_path,
+                                   self.csv_filename)
         data_df = pd.read_csv(dataset_csv)
-        data_df[SPLIT] = pd.to_numeric(data_df[SPLIT], downcast='integer')
+        if SPLIT in data_df:
+            data_df[SPLIT] = pd.to_numeric(data_df[SPLIT])
         if split:
-            training_set = data_df[data_df[SPLIT] == 0]
-            val_set = data_df[data_df[SPLIT] == 1]
-            test_set = data_df[data_df[SPLIT] == 2]
-            return training_set, test_set, val_set
+            if SPLIT in data_df:
+                training_set = data_df[data_df[SPLIT] == 0]
+                val_set = data_df[data_df[SPLIT] == 1]
+                test_set = data_df[data_df[SPLIT] == 2]
+                return training_set, test_set, val_set
+            else:
+                raise ValueError("The dataset does not have splits, "
+                                 "load with `split=False`")
         return data_df
 
     @property

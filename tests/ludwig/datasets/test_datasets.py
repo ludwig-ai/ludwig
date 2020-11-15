@@ -1,23 +1,29 @@
 import os
-import pytest
 import tempfile
-import pandas as pd
-
 from unittest import mock
 
+import pandas as pd
+import pytest
 
 from ludwig.datasets.base_dataset import BaseDataset
-from ludwig.datasets.mixins.download import ZipDownloadMixin, UncompressedFileDownloadMixin
+from ludwig.datasets.mixins.download import ZipDownloadMixin, \
+    UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import IdentityProcessMixin, MultifileJoinProcessMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin, \
+    MultifileJoinProcessMixin
 
 SUPPORTED_UNCOMPRESSED_FILETYPES = ['json', 'jsonl', 'tsv', 'csv']
 
-class FakeCSVDataset(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
+
+class FakeCSVDataset(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin,
+                     BaseDataset):
     def __init__(self, cache_dir=None):
         super().__init__(dataset_name="fake", cache_dir=cache_dir)
 
-class FakeMultiFileDataset(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
+
+class FakeMultiFileDataset(UncompressedFileDownloadMixin,
+                           MultifileJoinProcessMixin, CSVLoadMixin,
+                           BaseDataset):
     def __init__(self, cache_dir=None):
         super().__init__(dataset_name="multifiles", cache_dir=cache_dir)
 
@@ -26,7 +32,8 @@ def test_load_csv_dataset():
     input_df = pd.DataFrame({
         'name': ['Raphael', 'Donatello'],
         'mask': ['red', 'purple'],
-        'weapon': ['sai', 'bo staff']
+        'weapon': ['sai', 'bo staff'],
+        'split': [0, 1]
     })
 
     extracted_filename = 'input.csv'
@@ -37,7 +44,9 @@ def test_load_csv_dataset():
 
     with tempfile.TemporaryDirectory() as source_dir:
         archive_filename = os.path.join(source_dir, 'archive.zip')
-        input_df.to_csv(archive_filename, index=False, compression=compression_opts)
+        input_df.to_csv(archive_filename,
+                        index=False,
+                        compression=compression_opts)
 
         config = dict(
             version=1.0,
@@ -46,7 +55,8 @@ def test_load_csv_dataset():
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with mock.patch('ludwig.datasets.base_dataset.read_config', return_value=config):
+            with mock.patch('ludwig.datasets.base_dataset.read_config',
+                            return_value=config):
                 dataset = FakeCSVDataset(tmpdir)
 
                 assert not dataset.is_downloaded()
@@ -79,9 +89,15 @@ def test_multifile_join_dataset(f_type):
             'weapon': ['stick']
         })
     else:
-        train_df = pd.DataFrame([{'name': 'joe'}, {'mask':'green'}, {'weapon':'stick'}])
-        test_df = pd.DataFrame([{'name': 'janice'}, {'mask':'black'}, {'weapon':'gun'}])
-        val_df = pd.DataFrame([{'name': 'sara'}, {'mask':'pink'}, {'weapon':'gun'}])
+        train_df = pd.DataFrame([{'name': 'joe'},
+                                 {'mask': 'green'},
+                                 {'weapon': 'stick'}])
+        test_df = pd.DataFrame([{'name': 'janice'},
+                                {'mask': 'black'},
+                                {'weapon': 'gun'}])
+        val_df = pd.DataFrame([{'name': 'sara'},
+                               {'mask': 'pink'},
+                               {'weapon': 'gun'}])
 
     #filetypes = ['json', 'tsv', 'jsonl']
     train_filename = 'train.' + f_type
@@ -111,25 +127,29 @@ def test_multifile_join_dataset(f_type):
 
         config = {
             'version': 1.0,
-            'download_urls': ['file://' + train_filepath, 'file://' + test_filepath, 'file://' + val_filepath],
+            'download_urls': ['file://' + train_filepath,
+                              'file://' + test_filepath,
+                              'file://' + val_filepath],
             'split_filenames': {
                 'train_file': train_filename,
-                'test_file' : test_filename,
-                'val_file' : val_filename
+                'test_file': test_filename,
+                'val_file': val_filename
             },
-            'download_file_type' : f_type,
+            'download_file_type': f_type,
             'csv_filename': 'fake.csv',
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with mock.patch('ludwig.datasets.base_dataset.read_config', return_value=config):
+            with mock.patch('ludwig.datasets.base_dataset.read_config',
+                            return_value=config):
                 dataset = FakeMultiFileDataset(tmpdir)
 
                 assert not dataset.is_downloaded()
                 assert not dataset.is_processed()
 
                 output_df = dataset.load()
-                assert output_df.shape[0] == train_df.shape[0] + test_df.shape[0] + val_df.shape[0]
+                assert output_df.shape[0] == train_df.shape[0] + \
+                       test_df.shape[0] + val_df.shape[0]
 
                 assert dataset.is_downloaded()
                 assert dataset.is_processed()
