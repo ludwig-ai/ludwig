@@ -22,9 +22,8 @@ import numpy as np
 from skimage.io import imsave
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.download import GZipDownloadMixin
-
+from ludwig.datasets.mixins.load import CSVLoadMixin
 
 NUM_LABELS = 10
 
@@ -58,8 +57,11 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         os.makedirs(self.processed_temp_path, exist_ok=True)
         for dataset in ["training", "testing"]:
             print(f'>>> create ludwig formatted {dataset} data')
-            labels, data = self.read_source_dataset(dataset, self.raw_dataset_path)
-            self.write_output_dataset(labels, data, os.path.join(self.processed_temp_path, dataset))
+            labels, data = self.read_source_dataset(dataset,
+                                                    self.raw_dataset_path)
+            self.write_output_dataset(labels, data,
+                                      os.path.join(self.processed_temp_path,
+                                                   dataset))
         self.output_training_and_test_data()
         os.rename(self.processed_temp_path, self.processed_dataset_path)
         print('>>> completed data preparation')
@@ -126,13 +128,22 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         """The final method where we create a training and test file by iterating through
         all the images and labels previously created.
         """
-        with open(os.path.join(self.processed_temp_path, self.csv_filename), 'w') as output_file:
+        with open(
+                os.path.join(self.processed_temp_path, self.csv_filename),
+                'w'
+        ) as output_file:
+            output_file.write('image_path,label,split\n')
             for name in ["training", "testing"]:
                 split = 0 if name == 'training' else 2
-                output_file.write('image_path,label,split\n')
                 for i in range(NUM_LABELS):
-                    img_path = os.path.join(self.processed_temp_path, '{}/{}'.format(name, i))
-                    final_img_path = os.path.join(self.processed_dataset_path, '{}/{}'.format(name, i))
+                    img_path = os.path.join(
+                        self.processed_temp_path,
+                        '{}/{}'.format(name, i)
+                    )
+                    final_img_path = os.path.join(
+                        self.processed_dataset_path,
+                        '{}/{}'.format(name, i)
+                    )
                     for file in os.listdir(img_path):
                         if file.endswith(".png"):
                             output_file.write('{},{},{}\n'.format(

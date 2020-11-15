@@ -40,10 +40,11 @@ class CSVLoadMixin:
         """
         dataset_csv = os.path.join(self.processed_dataset_path, self.csv_filename)
         data_df = pd.read_csv(dataset_csv)
+        data_df[SPLIT] = pd.to_numeric(data_df[SPLIT], downcast='integer')
         if split:
-            training_set = data_df[data_df[SPLIT] == "0"]
-            val_set = data_df[data_df[SPLIT] == "1"]
-            test_set = data_df[data_df[SPLIT] == "2"]
+            training_set = data_df[data_df[SPLIT] == 0]
+            val_set = data_df[data_df[SPLIT] == 1]
+            test_set = data_df[data_df[SPLIT] == 2]
             return training_set, test_set, val_set
         return data_df
 
