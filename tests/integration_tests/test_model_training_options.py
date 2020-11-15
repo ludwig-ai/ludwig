@@ -9,6 +9,7 @@ import pytest
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
+from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
 from ludwig.modules.optimization_modules import optimizers_registry
@@ -432,10 +433,9 @@ def test_cache_checksum(csv_filename, tmp_path):
     # timestamps should be different
     assert third_training_timestamp < fourth_training_timestamp
 
-    # force change in features
-    input_features = [category_feature(vocab_size=5), category_feature()]
-    source_dataset = generate_data(input_features, output_features,
-                                   source_dataset)
+    # force change in feature preprocessing
+    input_features = config['input_features'].copy()
+    input_features[0]['preprocessing'] = {'lowercase': True}
     config['input_features'] = input_features
     model = LudwigModel(config)
     _, _, train_output_directory5 = \
@@ -445,3 +445,28 @@ def test_cache_checksum(csv_filename, tmp_path):
 
     # timestamps should be different
     assert fourth_training_timestamp < fifth_training_timestamp
+
+    # force change in features names (and properties)
+    input_features = [category_feature(vocab_size=5), category_feature()]
+    source_dataset = generate_data(input_features, output_features,
+                                   source_dataset)
+    config['input_features'] = input_features
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    sixth_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert fifth_training_timestamp < sixth_training_timestamp
+
+    # force change in Ludwig version
+    global_vars.LUDWIG_VERSION = 'new_version'
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    seventh_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert sixth_training_timestamp < seventh_training_timestamp
