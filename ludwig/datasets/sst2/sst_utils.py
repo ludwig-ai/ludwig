@@ -79,6 +79,10 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                         pass
 
         def format_sentence(sent):
+            """ 
+            formats raw sentences by decoding into utf-8 and replacing 
+            -LRB- and -RRB- tokens with their matching characters
+            """
             formatted_sent = ' '.join(
                 [w.encode('latin1').decode('utf-8')
                  for w in sent.strip().split(' ')])
@@ -87,6 +91,10 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             return formatted_sent
 
         def get_sentence_idxs(split):
+            """
+            Given a dataset split (train, test, dev), returns the 
+            set of corresponding sentence indexes in sentences_df.
+            """
             return set(
                 datasplit_df[
                     datasplit_df['splitset_label'] == split
@@ -94,6 +102,10 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             )
 
         def get_sentences(sentences_idxs):
+            """
+            Given a set of sentence indexes, returns the corresponding
+            sentences in sentences_df
+            """
             criterion = sentences_df['sentence_index'].map(
                 lambda x: x in sentences_idxs
             )
@@ -105,8 +117,8 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
 
         splits = {
             'train': 1,
-            'dev': 3,
-            'test': 2
+            'test': 2,
+            'dev': 3
         }
 
         for split_name, split_id in splits.items():
