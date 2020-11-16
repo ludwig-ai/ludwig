@@ -1292,7 +1292,11 @@ class LudwigModel:
         ```
 
         """
+        # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
+        # TensorFlow with default parameters
         horovod = configure_horovod(use_horovod)
+        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads, horovod)
+
         config = broadcast_return(lambda: load_json(os.path.join(
             model_dir,
             MODEL_HYPERPARAMETERS_FILE_NAME
