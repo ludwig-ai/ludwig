@@ -305,6 +305,7 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                                             'experiment_run',
                                             'model')
                                         )
+        stdout = completed_process.stdout.decode('utf-8')
 
         # parse output of collect_summary to find tensor names to use
         # in the collect_wights and collect_activations.
@@ -312,9 +313,9 @@ def test_collect_summary_activations_weights_cli(csv_filename):
         # search for substring with layer names
         layers = re.search(
             "Layers(\w|\d|\:|\/|\n)*Weights",
-            completed_process.stdout
+            stdout
         )
-        substring = completed_process.stdout[layers.start(): layers.end()]
+        substring = stdout[layers.start(): layers.end()]
 
         # extract layer names
         layers_list = []
@@ -327,9 +328,9 @@ def test_collect_summary_activations_weights_cli(csv_filename):
         # search for substring with weights names
         weights = re.search(
             "Weights(\w|\d|\:|\/|\n)*",
-            completed_process.stdout
+            stdout
         )
-        substring = completed_process.stdout[weights.start(): weights.end()]
+        substring = stdout[weights.start(): weights.end()]
 
         # extract weights names
         weights_list = []
