@@ -147,7 +147,7 @@ def test_train_cli_training_set(csv_filename):
 
 
 def test_train_cli_horovod(csv_filename):
-    """Test training using `ludwig train --dataset`."""
+    """Test training using `horovodrun -np 2 ludwig train --dataset`."""
     with tempfile.TemporaryDirectory() as tmpdir:
         config_filename = os.path.join(tmpdir,
                                        'config.yaml')
