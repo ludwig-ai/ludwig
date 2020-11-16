@@ -28,18 +28,28 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def _run_ludwig(command, **ludwig_kwargs):
-    commands = ['ludwig', command]
+def _run_commands(commands, **ludwig_kwargs):
     for arg_name, value in ludwig_kwargs.items():
         commands += ['--' + arg_name, value]
     cmdline = ' '.join(commands)
     print(cmdline)
-    completed_process = subprocess.run(cmdline, shell=True, encoding='utf-8',
+    completed_process = subprocess.run(cmdline,
+                                       shell=True,
                                        stdout=subprocess.PIPE,
                                        env=os.environ.copy())
     assert completed_process.returncode == 0
 
     return completed_process
+
+
+def _run_ludwig(command, **ludwig_kwargs):
+    commands = ['ludwig', command]
+    return _run_commands(commands, **ludwig_kwargs)
+
+
+def _run_ludwig_horovod(command, **ludwig_kwargs):
+    commands = ['horovodrun', '-np', '2', 'ludwig', command]
+    return _run_commands(commands, **ludwig_kwargs)
 
 
 def _prepare_data(csv_filename, config_filename):
@@ -134,6 +144,33 @@ def test_train_cli_training_set(csv_filename):
                     test_set=test_filename,
                     config_file=config_filename,
                     output_directory=tmpdir)
+
+
+def test_train_cli_horovod(csv_filename):
+    """Test training using `ludwig train --dataset`."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config_filename = os.path.join(tmpdir,
+                                       'config.yaml')
+        dataset_filename = _prepare_data(csv_filename,
+                                         config_filename)
+        _run_ludwig_horovod(
+            'train',
+            dataset=dataset_filename,
+            config_file=config_filename,
+            output_directory=tmpdir,
+            experiment_name='horovod_experiment',
+        )
+
+        # Check that `model_load_path` works correctly
+        _run_ludwig_horovod(
+            'train',
+            dataset=dataset_filename,
+            config_file=config_filename,
+            output_directory=tmpdir,
+            model_load_path=os.path.join(
+                tmpdir, 'horovod_experiment_run', 'model'
+            ),
+        )
 
 
 def test_export_savedmodel_cli(csv_filename):
