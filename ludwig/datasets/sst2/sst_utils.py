@@ -15,6 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 from abc import abstractmethod, ABC
+from typing import Set
+
+from pandas import DataFrame
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import ZipDownloadMixin
@@ -52,6 +55,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             os.path.join(self.raw_dataset_path,
                          'SST-2/original/datasetSentences.txt'),
             sep=('\t'))
+
         datasplit_df = pd.read_csv(
             os.path.join(self.raw_dataset_path,
                          'SST-2/original/datasetSplit.txt'),
@@ -78,39 +82,6 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                     except ValueError:
                         pass
 
-        def format_sentence(sent):
-            """ 
-            formats raw sentences by decoding into utf-8 and replacing 
-            -LRB- and -RRB- tokens with their matching characters
-            """
-            formatted_sent = ' '.join(
-                [w.encode('latin1').decode('utf-8')
-                 for w in sent.strip().split(' ')])
-            formatted_sent = formatted_sent.replace('-LRB-', '(')
-            formatted_sent = formatted_sent.replace('-RRB-', ')')
-            return formatted_sent
-
-        def get_sentence_idxs(split):
-            """
-            Given a dataset split (train, test, dev), returns the 
-            set of corresponding sentence indexes in sentences_df.
-            """
-            return set(
-                datasplit_df[
-                    datasplit_df['splitset_label'] == split
-                    ]['sentence_index']
-            )
-
-        def get_sentences(sentences_idxs):
-            """
-            Given a set of sentence indexes, returns the corresponding
-            sentences in sentences_df
-            """
-            criterion = sentences_df['sentence_index'].map(
-                lambda x: x in sentences_idxs
-            )
-            return sentences_df[criterion]['sentence'].tolist()
-
         sentences_df['sentence'] = sentences_df['sentence'].apply(
             format_sentence
         )
@@ -122,15 +93,15 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
         }
 
         for split_name, split_id in splits.items():
-            sent_idxs = get_sentence_idxs(split_id)
-            sents = get_sentences(sent_idxs)
-            phrase_ids = [phrase2id[phrase] for phrase in sents]
+            sentence_idcs = get_sentence_idcs_in_split(datasplit_df, split_id)
+            sentences = get_sentences_with_idcs(sentences_df, sentence_idcs)
+            phrase_ids = [phrase2id[phrase] for phrase in sentences]
 
             pairs = []
-            for sent, phrase_id in zip(sents, phrase_ids):
-                sent_label = self.get_sentiment_label(id2sent, phrase_id)
-                if sent_label != -1:  # only include non-neutral samples
-                    pairs.append([sent, sent_label])
+            for sentence, phrase_id in zip(sentences, phrase_ids):
+                label = self.get_sentiment_label(id2sent, phrase_id)
+                if label != -1:  # only include non-neutral samples
+                    pairs.append([sentence, label])
 
             final_csv = pd.DataFrame(pairs)
             final_csv.columns = ['sentence', 'label']
@@ -139,3 +110,37 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                              index=False)
 
         super(SST, self).process_downloaded_dataset()
+
+
+def format_sentence(sentence: str):
+    """
+    Formats raw sentences by decoding into utf-8 and replacing
+    -LRB- and -RRB- tokens with their matching characters
+    """
+    formatted_sent = ' '.join(
+        [w.encode('latin1').decode('utf-8')
+         for w in sentence.strip().split(' ')])
+    formatted_sent = formatted_sent.replace('-LRB-', '(')
+    formatted_sent = formatted_sent.replace('-RRB-', ')')
+    return formatted_sent
+
+
+def get_sentence_idcs_in_split(datasplit: DataFrame, split_id: int):
+    """
+    Given a dataset split is (1 for train, 2 for test, 3 for dev),
+    returns the set of corresponding sentence indices in sentences_df.
+    """
+    return set(
+        datasplit[datasplit['splitset_label'] == split_id]['sentence_index']
+    )
+
+
+def get_sentences_with_idcs(sentences: DataFrame, sentences_idcs: Set[int]):
+    """
+    Given a set of sentence indices,
+    returns the corresponding sentences texts in sentences
+    """
+    criterion = sentences['sentence_index'].map(
+        lambda x: x in sentences_idcs
+    )
+    return sentences[criterion]['sentence'].tolist()
