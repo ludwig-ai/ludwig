@@ -1,3 +1,4 @@
+import os
 import copy
 import multiprocessing
 import signal
@@ -6,7 +7,7 @@ from typing import Union
 
 from ludwig.api import LudwigModel
 from ludwig.constants import *
-from ludwig.hyperopt.sampling import HyperoptSampler, logger
+from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -594,7 +595,7 @@ class FiberExecutor(HyperoptExecutor):
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(
             self,
-            hyperopt_sampler: dict,
+            hyperopt_sampler,
             output_feature: str,
             metric: str,
             split: str,
@@ -607,11 +608,15 @@ class RayTuneExecutor(HyperoptExecutor):
             raise ImportError('ray module is not installed. To '
                               'install it,try running pip install ray'
                               )
+        if not isinstance(hyperopt_sampler, RayTuneSampler):
+            raise ValueError('Sampler {} is not compatible with RayTuneExecutor, '
+                             'please use the RayTuneSampler'.format(hyperopt_sampler)
+                             )
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
         ray.init(ignore_reinit_error=True)
-        self.search_space = hyperopt_sampler["config"]
-        self.num_samples = hyperopt_sampler["num_samples"]
+        self.search_space = hyperopt_sampler.search_space
+        self.num_samples = hyperopt_sampler.num_samples
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
@@ -729,6 +734,9 @@ class RayTuneExecutor(HyperoptExecutor):
                     'as there are {} num of available gpus'.format(num_gpus)
                 )
                 self.gpu_resources_per_trial = 1
+
+        if isinstance(dataset, str) and not os.path.isabs(dataset):
+            dataset = os.path.abspath(dataset)
 
         hyperopt_dict = dict(
             config=config,

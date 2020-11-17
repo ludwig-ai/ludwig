@@ -10,7 +10,7 @@ from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE, RAY
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
-from ludwig.hyperopt.sampling import get_build_hyperopt_sampler, get_tune_search_space
+from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, \
     print_hyperopt_results, save_hyperopt_stats
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -254,14 +254,11 @@ def hyperopt(
                 )
             )
 
-    if executor[TYPE] == RAY:
-        if isinstance(dataset, str) and not os.path.isabs(dataset):
-            dataset = os.path.abspath(dataset)
-        hyperopt_sampler = get_tune_search_space(parameters, sampler.get("num_samples", 1))
-    else:
-        hyperopt_sampler = get_build_hyperopt_sampler(
-            sampler[TYPE]
-        )(goal, parameters, **sampler)
+
+    hyperopt_sampler = get_build_hyperopt_sampler(
+        sampler[TYPE]
+    )(goal, parameters, **sampler)
+
 
     hyperopt_executor = get_build_hyperopt_executor(
         executor[TYPE]

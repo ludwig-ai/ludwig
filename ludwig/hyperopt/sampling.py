@@ -291,34 +291,51 @@ class PySOTSampler(HyperoptSampler):
         return self.sampled_so_far >= self.num_samples
 
 
-def get_tune_search_space(parameters, num_samples):
-    try:
-        from ray import tune
-    except ImportError:
-        raise ImportError('ray module is not installed. To '
-                          'install it,try running pip install ray[tune]'
-                          )
-    sampler = {}
-    config = {}
-    for param, values in parameters.items():
-        space = values["space"].lower()
-        if hasattr(tune, space):
-            space_function = getattr(tune, space)
-        else:
-            raise ValueError(
-                "'{}' method is not supported in the Ray Tune module".format(space))
-        space_input_args = {}
-        space_required_args = inspect.getfullargspec(space_function).args
-        for arg in space_required_args:
-            if arg in values:
-                space_input_args[arg] = values[arg]
+class RayTuneSampler(HyperoptSampler):
+    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=1,
+                 **kwargs) -> None:
+        HyperoptSampler.__init__(self, goal, parameters)
+        self.search_space = self._get_search_space(parameters)
+        self.num_samples = num_samples
+
+    def _get_search_space(self, parameters):
+        try:
+            from ray import tune
+        except ImportError:
+            raise ImportError('ray module is not installed. To install '
+                              'it, please try running pip install ray[tune]'
+                              )
+        config = {}
+        for param, values in parameters.items():
+            space = values["space"].lower()
+            if hasattr(tune, space):
+                space_function = getattr(tune, space)
             else:
                 raise ValueError(
-                    "Parameter '{}' not defined for {}".format(arg, param))
-        config[param] = space_function(**space_input_args)
-    sampler["config"] = config
-    sampler["num_samples"] = num_samples
-    return sampler
+                    "'{}' method is not supported in the Ray Tune module".format(space))
+            space_input_args = {}
+            space_required_args = inspect.getfullargspec(space_function).args
+            for arg in space_required_args:
+                if arg in values:
+                    space_input_args[arg] = values[arg]
+                else:
+                    raise ValueError(
+                        "Parameter '{}' not defined for {}".format(arg, param))
+            config[param] = space_function(**space_input_args)
+        return config
+
+    def sample(self) -> Dict[str, Any]:
+        pass
+
+    def update(
+            self,
+            sampled_parameters: Dict[str, Any],
+            statistics: Dict[str, Any]
+    ):
+        pass
+
+    def finished(self) -> bool:
+        pass
 
 
 def get_build_hyperopt_sampler(strategy_type):
@@ -329,4 +346,5 @@ sampler_registry = {
     "grid": GridSampler,
     "random": RandomSampler,
     "pysot": PySOTSampler,
+    "ray": RayTuneSampler
 }
