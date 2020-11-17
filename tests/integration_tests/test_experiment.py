@@ -198,6 +198,7 @@ def test_experiment_multi_input_intent_classification(csv_filename):
         input_features[0]['encoder'] = encoder
         run_experiment(input_features, output_features, dataset=rel_path)
 
+
 def test_experiment_multiclass_with_class_weights(csv_filename):
     # Multiple inputs, Single category output
     input_features = [category_feature(vocab_size=10)]
@@ -207,6 +208,7 @@ def test_experiment_multiclass_with_class_weights(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
+
 
 def test_experiment_multilabel_with_class_weights(csv_filename):
     # Multiple inputs, Single category output
@@ -218,6 +220,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
+
 
 @pytest.mark.parametrize(
     'output_features',

@@ -84,15 +84,18 @@ class GZipDownloadMixin:
         os.makedirs(self.raw_temp_path, exist_ok=True)
         for file_download_url in self.download_urls:
             filename = file_download_url.split('/')[-1]
-            with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024, miniters=1, desc=filename) as t:
+            with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024,
+                          miniters=1, desc=filename) as t:
                 urllib.request.urlretrieve(
                     file_download_url,
                     os.path.join(self.raw_temp_path, filename),
                     t.update_to
                 )
             gzip_content_file = '.'.join(filename.split('.')[:-1])
-            with gzip.open(os.path.join(self.raw_temp_path, filename)) as gzfile:
-                with open(os.path.join(self.raw_temp_path, gzip_content_file), 'wb') as output:
+            with gzip.open(
+                    os.path.join(self.raw_temp_path, filename)) as gzfile:
+                with open(os.path.join(self.raw_temp_path, gzip_content_file),
+                          'wb') as output:
                     shutil.copyfileobj(gzfile, output)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
@@ -115,12 +118,11 @@ class UncompressedFileDownloadMixin:
         os.makedirs(self.raw_temp_path, exist_ok=True)
         for url in self.download_url:
             filename = url.split('/')[-1]
-            urllib.request.urlretrieve(url, os.path.join(self.raw_temp_path,filename))
+            urllib.request.urlretrieve(url, os.path.join(self.raw_temp_path,
+                                                         filename))
 
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
     @property
     def download_url(self):
         return self.config["download_urls"]
-
-

@@ -378,6 +378,7 @@ def weighted_softmax_cross_entropy(
         )
     return loss
 
+
 def weighted_sigmoid_cross_entropy(
         logits,
         vector_labels,

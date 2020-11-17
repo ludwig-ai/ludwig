@@ -365,7 +365,7 @@ class JaccardMetric(tf.keras.metrics.Metric):
             axis=1
         )
 
-        jaccard_index = intersection / union  #shape [b]
+        jaccard_index = intersection / union  # shape [b]
 
         # update metric state tensors
         self.jaccard_total.assign_add(tf.reduce_sum(jaccard_index))

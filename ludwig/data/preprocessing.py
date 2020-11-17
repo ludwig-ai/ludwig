@@ -30,6 +30,7 @@ from ludwig.data.concatenate_datasets import concatenate_datasets, \
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
@@ -48,8 +49,9 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      read_sas, read_spss, read_stata, read_tsv,
                                      replace_file_extension, split_dataset_ttv,
                                      text_feature_data_field)
+from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
-                                   default_random_seed, merge_with_defaults)
+                                   default_random_seed)
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
@@ -944,60 +946,68 @@ def build_dataset(
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
     metadata = {}
+    proc_feature_to_metadata = {}
+
     for feature in features:
-        if PREPROCESSING in feature:
-            preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]],
-                feature[PREPROCESSING]
-            )
-        else:
-            preprocessing_parameters = global_preprocessing_parameters[
-                feature[TYPE]
-            ]
 
-        # deal with encoders that have fixed preprocessing
-        if 'encoder' in feature:
-            encoders_registry = get_from_registry(
-                feature[TYPE],
-                input_type_registry
-            ).encoder_registry
-            encoder_class = encoders_registry[feature['encoder']]
-            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
-                encoder_fpp = encoder_class.fixed_preprocessing_parameters
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
 
+        if feature[PROC_COLUMN] not in proc_feature_to_metadata:
+
+            if PREPROCESSING in feature:
                 preprocessing_parameters = merge_dict(
-                    preprocessing_parameters,
-                    resolve_pointers(encoder_fpp, feature, 'feature.')
+                    global_preprocessing_parameters[feature[TYPE]],
+                    feature[PREPROCESSING]
                 )
+            else:
+                preprocessing_parameters = global_preprocessing_parameters[
+                    feature[TYPE]
+                ]
 
-        fill_value = precompute_fill_value(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
-        if fill_value is not None:
-            preprocessing_parameters = {
-                'computed_fill_value': fill_value,
-                **preprocessing_parameters
-            }
+            # deal with encoders that have fixed preprocessing
+            if 'encoder' in feature:
+                encoders_registry = get_from_registry(
+                    feature[TYPE],
+                    input_type_registry
+                ).encoder_registry
+                encoder_class = encoders_registry[feature['encoder']]
+                if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
+                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-        handle_missing_values(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
+                    preprocessing_parameters = merge_dict(
+                        preprocessing_parameters,
+                        resolve_pointers(encoder_fpp, feature, 'feature.')
+                    )
 
-        get_feature_meta = get_from_registry(
-            feature[TYPE],
-            base_type_registry
-        ).get_feature_meta
+            fill_value = precompute_fill_value(
+                dataset_df,
+                feature,
+                preprocessing_parameters
+            )
+            if fill_value is not None:
+                preprocessing_parameters = {
+                    'computed_fill_value': fill_value,
+                    **preprocessing_parameters
+                }
 
-        metadata[feature[NAME]] = get_feature_meta(
-            dataset_df[feature[NAME]].astype(str),
-            preprocessing_parameters
-        )
+            handle_missing_values(
+                dataset_df,
+                feature,
+                preprocessing_parameters
+            )
 
-        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+            get_feature_meta = get_from_registry(
+                feature[TYPE],
+                base_type_registry
+            ).get_feature_meta
+
+            metadata[feature[NAME]] = get_feature_meta(
+                dataset_df[feature[NAME]].astype(str),
+                preprocessing_parameters
+            )
+
+            metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
@@ -1005,24 +1015,31 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 def build_data(dataset_df, features, training_set_metadata):
     dataset = {}
     for feature in features:
-        preprocessing_parameters = training_set_metadata[feature[NAME]][
-            PREPROCESSING]
-        handle_missing_values(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
-        add_feature_data = get_from_registry(
-            feature[TYPE],
-            base_type_registry
-        ).add_feature_data
-        add_feature_data(
-            feature,
-            dataset_df,
-            dataset,
-            training_set_metadata,
-            preprocessing_parameters
-        )
+
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
+
+        if feature[PROC_COLUMN] not in dataset:
+            preprocessing_parameters = \
+                training_set_metadata[feature[NAME]][
+                    PREPROCESSING]
+            handle_missing_values(
+                dataset_df,
+                feature,
+                preprocessing_parameters
+            )
+            add_feature_data = get_from_registry(
+                feature[TYPE],
+                base_type_registry
+            ).add_feature_data
+            add_feature_data(
+                feature,
+                dataset_df,
+                dataset,
+                training_set_metadata,
+                preprocessing_parameters
+            )
+
     return dataset
 
 
@@ -1031,14 +1048,14 @@ def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
     elif missing_value_strategy == FILL_WITH_MODE:
-        return dataset_df[feature[NAME]].value_counts().index[0]
+        return dataset_df[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
-        return dataset_df[feature[NAME]].mean()
+        return dataset_df[feature[COLUMN]].mean()
 
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
@@ -1051,15 +1068,15 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
     computed_fill_value = preprocessing_parameters.get('computed_fill_value')
 
     if computed_fill_value is not None:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
+        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             computed_fill_value,
         )
     elif missing_value_strategy in ['backfill', 'bfill', 'pad', 'ffill']:
-        dataset_df[feature[NAME]] = dataset_df[feature[NAME]].fillna(
+        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
     elif missing_value_strategy == DROP_ROW:
-        dataset_df.dropna(subset=[feature[NAME]], inplace=True)
+        dataset_df.dropna(subset=[feature[COLUMN]], inplace=True)
     else:
         raise ValueError('Invalid missing value strategy')
 
@@ -1111,7 +1128,7 @@ def load_hdf5(
             text_data_field = text_feature_data_field(feature)
             dataset[text_data_field] = hdf5_data[text_data_field][()]
         else:
-            dataset[feature[NAME]] = hdf5_data[feature[NAME]][()]
+            dataset[feature[PROC_COLUMN]] = hdf5_data[feature[PROC_COLUMN]][()]
 
     if not split_data:
         if SPLIT in hdf5_data:
@@ -1352,6 +1369,10 @@ def _preprocess_file_for_training(
             metadata=training_set_metadata,
             random_seed=random_seed
         )
+
+        # save split values for use by visualization routines
+        split_fp = get_split_path(dataset)
+        save_array(split_fp, data[SPLIT])
 
         if is_on_master() and not skip_save_processed_input:
             logger.info('Writing preprocessed dataset cache')
@@ -1618,15 +1639,15 @@ def replace_text_feature_level(features, datasets):
         if feature[TYPE] == TEXT:
             for dataset in datasets:
                 if dataset is not None:
-                    dataset[feature[NAME]] = dataset[
+                    dataset[feature[PROC_COLUMN]] = dataset[
                         '{}_{}'.format(
-                            feature[NAME],
+                            feature[PROC_COLUMN],
                             feature['level']
                         )
                     ]
                     for level in ('word', 'char'):
                         name_level = '{}_{}'.format(
-                            feature[NAME],
+                            feature[PROC_COLUMN],
                             level)
                         if name_level in dataset:
                             del dataset[name_level]

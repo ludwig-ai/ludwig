@@ -26,10 +26,11 @@ from distutils.util import strtobool
 import cloudpickle
 import pandas as pd
 
-from ludwig.constants import VECTOR
+from ludwig.constants import VECTOR, COLUMN, NAME, PROC_COLUMN
 from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.experiment import experiment_cli
+from ludwig.features.feature_utils import compute_feature_hash
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -119,26 +120,31 @@ def random_string(length=5):
     return uuid.uuid4().hex[:length].upper()
 
 
-def numerical_feature(normalization=None):
-    return {
+def numerical_feature(normalization=None, **kwargs):
+    feature = {
         'name': 'num_' + random_string(),
         'type': 'numerical',
         'preprocessing': {
             'normalization': normalization
         }
     }
+    feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
 
 
 def category_feature(**kwargs):
-    cat_feature = {
+    feature = {
         'type': 'category',
         'name': 'category_' + random_string(),
         'vocab_size': 10,
         'embedding_size': 5
     }
-
-    cat_feature.update(kwargs)
-    return cat_feature
+    feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
 
 
 def text_feature(**kwargs):
@@ -153,6 +159,8 @@ def text_feature(**kwargs):
         'state_size': 8
     }
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -165,11 +173,13 @@ def set_feature(**kwargs):
         'embedding_size': 5
     }
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def sequence_feature(**kwargs):
-    seq_feature = {
+    feature = {
         'type': 'sequence',
         'name': 'sequence_' + random_string(),
         'vocab_size': 10,
@@ -181,12 +191,14 @@ def sequence_feature(**kwargs):
         'num_filters': 8,
         'hidden_size': 8
     }
-    seq_feature.update(kwargs)
-    return seq_feature
+    feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
 
 
 def image_feature(folder, **kwargs):
-    img_feature = {
+    feature = {
         'type': 'image',
         'name': 'image_' + random_string(),
         'encoder': 'resnet',
@@ -201,8 +213,10 @@ def image_feature(folder, **kwargs):
         'fc_size': 8,
         'num_filters': 8
     }
-    img_feature.update(kwargs)
-    return img_feature
+    feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
 
 
 def audio_feature(folder, **kwargs):
@@ -238,24 +252,32 @@ def audio_feature(folder, **kwargs):
         'destination_folder': folder
     }
     feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def timeseries_feature(**kwargs):
-    ts_feature = {
+    feature = {
         'name': 'timeseries_' + random_string(),
         'type': 'timeseries',
         'max_len': 7
     }
-    ts_feature.update(kwargs)
-    return ts_feature
+    feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
 
 
-def binary_feature():
-    return {
+def binary_feature(**kwargs):
+    feature = {
         'name': 'binary_' + random_string(),
         'type': 'binary'
     }
+    feature.update(kwargs)
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
+    return feature
 
 
 def bag_feature(**kwargs):
@@ -267,7 +289,8 @@ def bag_feature(**kwargs):
         'embedding_size': 5
     }
     feature.update(kwargs)
-
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -279,9 +302,9 @@ def date_feature(**kwargs):
             'datetime_format': random.choice(list(DATETIME_FORMATS.keys()))
         }
     }
-
     feature.update(kwargs)
-
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -291,7 +314,8 @@ def h3_feature(**kwargs):
         'type': 'h3'
     }
     feature.update(kwargs)
-
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
@@ -302,15 +326,16 @@ def vector_feature(**kwargs):
         'name': 'vector_' + random_string()
     }
     feature.update(kwargs)
-
+    feature[COLUMN] = feature[NAME]
+    feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def run_experiment(
-    input_features,
-    output_features,
-    skip_save_processed_input=True,
-    **kwargs
+        input_features,
+        output_features,
+        skip_save_processed_input=True,
+        **kwargs
 ):
     """
     Helper method to avoid code repetition in running an experiment. Deletes
@@ -414,8 +439,9 @@ def spawn(fn):
         p.join()
         results = queue.get()
         if isinstance(results, Exception):
-            raise RuntimeError(f'Spawned subprocess raised {type(results).__name__}, '
-                               f'check log output above for stack trace.')
+            raise RuntimeError(
+                f'Spawned subprocess raised {type(results).__name__}, '
+                f'check log output above for stack trace.')
         return results
 
     return wrapped_fn

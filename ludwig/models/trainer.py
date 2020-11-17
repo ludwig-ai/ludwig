@@ -533,11 +533,11 @@ class Trainer:
                 # obtain batch
                 batch = batcher.next_batch()
                 inputs = {
-                    i_feat.feature_name: batch[i_feat.feature_name]
+                    i_feat.feature_name: batch[i_feat.proc_column]
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: batch[o_feat.feature_name]
+                    o_feat.feature_name: batch[o_feat.proc_column]
                     for o_feat in model.output_features.values()
                 }
 
@@ -751,11 +751,11 @@ class Trainer:
         while not batcher.last_batch():
             batch = batcher.next_batch()
             inputs = {
-                i_feat.feature_name: batch[i_feat.feature_name]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
             targets = {
-                o_feat.feature_name: batch[o_feat.feature_name]
+                o_feat.feature_name: batch[o_feat.proc_column]
                 for o_feat in model.output_features.values()
             }
 

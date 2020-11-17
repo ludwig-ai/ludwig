@@ -17,6 +17,8 @@
 import h5py
 import numpy as np
 
+from ludwig.constants import PREPROCESSING, PROC_COLUMN
+
 
 class Dataset:
     def __init__(self, dataset, input_features, output_features, data_hdf5_fp):
@@ -26,28 +28,28 @@ class Dataset:
 
         self.input_features = {}
         for feature in input_features:
-            feature_name = feature['name']
-            self.input_features[feature_name] = feature
+            proc_column = feature[PROC_COLUMN]
+            self.input_features[proc_column] = feature
         self.output_features = {}
         for feature in output_features:
-            feature_name = feature['name']
-            self.output_features[feature_name] = feature
+            proc_column = feature[PROC_COLUMN]
+            self.output_features[proc_column] = feature
         self.features = self.input_features.copy()
         self.features.update(self.output_features)
         self.data_hdf5_fp = data_hdf5_fp
 
-    def get(self, feature_name, idx=None):
+    def get(self, proc_column, idx=None):
         if idx is None:
             idx = range(self.size)
         if (self.data_hdf5_fp is None or
-                'preprocessing' not in self.features[feature_name] or
-                'in_memory' not in self.features[feature_name][
+                PREPROCESSING not in self.features[proc_column] or
+                'in_memory' not in self.features[proc_column][
                     'preprocessing']):
-            return self.dataset[feature_name][idx]
-        if self.features[feature_name]['preprocessing']['in_memory']:
-            return self.dataset[feature_name][idx]
+            return self.dataset[proc_column][idx]
+        if self.features[proc_column][PREPROCESSING]['in_memory']:
+            return self.dataset[proc_column][idx]
 
-        sub_batch = self.dataset[feature_name][idx]
+        sub_batch = self.dataset[proc_column][idx]
 
         indices = np.empty((3, len(sub_batch)), dtype=np.int64)
         indices[0, :] = sub_batch
@@ -55,7 +57,7 @@ class Dataset:
         indices = indices[:, np.argsort(indices[0])]
 
         with h5py.File(self.data_hdf5_fp, 'r') as h5_file:
-            im_data = h5_file[feature_name + '_data'][indices[0, :], :, :]
+            im_data = h5_file[proc_column + '_data'][indices[0, :], :, :]
         indices[2, :] = np.arange(len(sub_batch))
         indices = indices[:, np.argsort(indices[1])]
         return im_data[indices[2, :]]

@@ -61,10 +61,10 @@ class BinaryFeatureMixin(object):
             metadata,
             preprocessing_parameters=None
     ):
-        column = dataset_df[feature[NAME]]
+        column = dataset_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(str2bool)
-        dataset[feature[NAME]] = column.astype(np.bool_).values
+        dataset[feature[PROC_COLUMN]] = column.astype(np.bool_).values
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):

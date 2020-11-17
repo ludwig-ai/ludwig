@@ -21,7 +21,8 @@ import sys
 import numpy as np
 import tensorflow as tf
 
-from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE, NAME
+from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE, COLUMN, PROC_COLUMN, \
+    PREPROCESSING, NAME
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -241,10 +242,14 @@ class AudioFeatureMixin(object):
                 'type has to be present in audio_feature dictionary '
                 'for audio.')
 
+        name = feature[NAME]
+        column = feature[COLUMN]
+        proc_column = feature[PROC_COLUMN]
+
         src_path = None
         # this is not super nice, but works both and DFs and lists
         first_path = '.'
-        for first_path in dataset_df[feature[NAME]]:
+        for first_path in dataset_df[column]:
             break
         if hasattr(dataset_df, 'src'):
             src_path = os.path.dirname(os.path.abspath(dataset_df.src))
@@ -254,10 +259,9 @@ class AudioFeatureMixin(object):
         num_audio_utterances = len(dataset_df)
         padding_value = preprocessing_parameters['padding_value']
         normalization_type = preprocessing_parameters['norm']
-        feature_name = feature[NAME]
 
-        feature_dim = metadata[feature_name]['feature_dim']
-        max_length = metadata[feature_name]['max_length']
+        feature_dim = metadata[name]['feature_dim']
+        max_length = metadata[name]['max_length']
         audio_feature_dict = preprocessing_parameters['audio_feature']
         audio_file_length_limit_in_s = preprocessing_parameters[
             'audio_file_length_limit_in_s']
@@ -276,12 +280,12 @@ class AudioFeatureMixin(object):
             'max_length_in_s': audio_file_length_limit_in_s
         }
 
-        if feature['preprocessing']['in_memory']:
-            dataset[feature[NAME]] = np.empty(
+        if feature[PREPROCESSING]['in_memory']:
+            dataset[proc_column] = np.empty(
                 (num_audio_utterances, max_length, feature_dim),
                 dtype=np.float32
             )
-            for i, path in enumerate(dataset_df[feature[NAME]]):
+            for i, path in enumerate(dataset_df[column]):
                 filepath = get_abs_path(
                     src_path,
                     path
@@ -291,7 +295,7 @@ class AudioFeatureMixin(object):
                     padding_value, normalization_type, audio_stats
                 )
 
-                dataset[feature[NAME]][i, :, :] = audio_feature
+                dataset[proc_column][i, :, :] = audio_feature
 
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))

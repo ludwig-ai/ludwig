@@ -70,8 +70,8 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            dataset[feature[NAME]] = np.array(
-                [x.split() for x in dataset_df[feature[NAME]]],
+            dataset[feature[PROC_COLUMN]] = np.array(
+                [x.split() for x in dataset_df[feature[COLUMN]]],
                 dtype=np.float32
             )
         except ValueError:
@@ -82,7 +82,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = len(dataset[feature[NAME]][0])
+        vector_size = len(dataset[feature[PROC_COLUMN]][0])
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
