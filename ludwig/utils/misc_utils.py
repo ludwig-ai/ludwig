@@ -25,6 +25,7 @@ import subprocess as sp
 import sys
 from collections import OrderedDict
 from collections.abc import Mapping
+from typing import Union
 
 import numpy
 
@@ -238,7 +239,7 @@ def check_which_config(config, config_file):
     return config
 
 
-def hash_dict(d: dict, max_length: int = 6) -> bytes:
+def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     s = json.dumps(d, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
     d = h.digest()

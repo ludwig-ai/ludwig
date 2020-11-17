@@ -101,3 +101,5 @@ NAME = 'name'
 COLUMN = 'column'
 TYPE = 'type'
 PROC_COLUMN = 'proc_column'
+
+CHECKSUM = 'checksum'

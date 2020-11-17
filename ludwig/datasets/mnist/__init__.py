@@ -128,16 +128,22 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         """The final method where we create a training and test file by iterating through
         all the images and labels previously created.
         """
-        with open(os.path.join(self.processed_temp_path, self.csv_filename),
-                  'w') as output_file:
+        with open(
+                os.path.join(self.processed_temp_path, self.csv_filename),
+                'w'
+        ) as output_file:
+            output_file.write('image_path,label,split\n')
             for name in ["training", "testing"]:
                 split = 0 if name == 'training' else 2
-                output_file.write('image_path,label,split\n')
                 for i in range(NUM_LABELS):
-                    img_path = os.path.join(self.processed_temp_path,
-                                            '{}/{}'.format(name, i))
-                    final_img_path = os.path.join(self.processed_dataset_path,
-                                                  '{}/{}'.format(name, i))
+                    img_path = os.path.join(
+                        self.processed_temp_path,
+                        '{}/{}'.format(name, i)
+                    )
+                    final_img_path = os.path.join(
+                        self.processed_dataset_path,
+                        '{}/{}'.format(name, i)
+                    )
                     for file in os.listdir(img_path):
                         if file.endswith(".png"):
                             output_file.write('{},{},{}\n'.format(

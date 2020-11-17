@@ -32,7 +32,8 @@ def test_load_csv_dataset():
     input_df = pd.DataFrame({
         'name': ['Raphael', 'Donatello'],
         'mask': ['red', 'purple'],
-        'weapon': ['sai', 'bo staff']
+        'weapon': ['sai', 'bo staff'],
+        'split': [0, 1]
     })
 
     extracted_filename = 'input.csv'
@@ -43,7 +44,9 @@ def test_load_csv_dataset():
 
     with tempfile.TemporaryDirectory() as source_dir:
         archive_filename = os.path.join(source_dir, 'archive.zip')
-        input_df.to_csv(archive_filename, index=False, compression=compression_opts)
+        input_df.to_csv(archive_filename,
+                        index=False,
+                        compression=compression_opts)
 
         config = dict(
             version=1.0,
@@ -52,7 +55,8 @@ def test_load_csv_dataset():
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with mock.patch('ludwig.datasets.base_dataset.read_config', return_value=config):
+            with mock.patch('ludwig.datasets.base_dataset.read_config',
+                            return_value=config):
                 dataset = FakeCSVDataset(tmpdir)
 
                 assert not dataset.is_downloaded()
@@ -86,12 +90,15 @@ def test_multifile_join_dataset(f_type):
             'weapon': ['stick']
         })
     else:
-        train_df = pd.DataFrame(
-            [{'name': 'joe'}, {'mask': 'green'}, {'weapon': 'stick'}])
-        test_df = pd.DataFrame(
-            [{'name': 'janice'}, {'mask': 'black'}, {'weapon': 'gun'}])
-        val_df = pd.DataFrame(
-            [{'name': 'sara'}, {'mask': 'pink'}, {'weapon': 'gun'}])
+        train_df = pd.DataFrame([{'name': 'joe'},
+                                 {'mask': 'green'},
+                                 {'weapon': 'stick'}])
+        test_df = pd.DataFrame([{'name': 'janice'},
+                                {'mask': 'black'},
+                                {'weapon': 'gun'}])
+        val_df = pd.DataFrame([{'name': 'sara'},
+                               {'mask': 'pink'},
+                               {'weapon': 'gun'}])
 
     # filetypes = ['json', 'tsv', 'jsonl']
     train_filename = 'train.' + f_type
@@ -142,8 +149,8 @@ def test_multifile_join_dataset(f_type):
                 assert not dataset.is_processed()
 
                 output_df = dataset.load()
-                assert output_df.shape[0] == train_df.shape[0] + test_df.shape[
-                    0] + val_df.shape[0]
+                assert output_df.shape[0] == train_df.shape[0] + \
+                       test_df.shape[0] + val_df.shape[0]
 
                 assert dataset.is_downloaded()
                 assert dataset.is_processed()
