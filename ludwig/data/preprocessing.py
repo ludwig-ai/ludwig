@@ -1661,38 +1661,6 @@ def replace_text_feature_level(features, datasets):
                             del dataset[name_level]
 
 
-def get_preprocessing_params(config):
-    config = merge_with_defaults(config)
-
-    global_preprocessing_parameters = config[PREPROCESSING]
-    features = (
-            config['input_features'] +
-            config['output_features']
-    )
-
-    global_preprocessing_parameters = merge_dict(
-        default_preprocessing_parameters,
-        global_preprocessing_parameters
-    )
-
-    merged_preprocessing_params = []
-    for feature in features:
-        if PREPROCESSING in feature:
-            local_preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]],
-                feature[PREPROCESSING]
-            )
-        else:
-            local_preprocessing_parameters = global_preprocessing_parameters[
-                feature[TYPE]
-            ]
-        merged_preprocessing_params.append(
-            (feature[NAME], feature[TYPE], local_preprocessing_parameters)
-        )
-
-    return merged_preprocessing_params
-
-
 def calculate_checksum(original_dataset, config):
     info = {}
     info['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
