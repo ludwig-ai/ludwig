@@ -96,7 +96,8 @@ def create_vocabulary(
         vocab_file=None,
         unknown_symbol=UNKNOWN_SYMBOL,
         padding_symbol=PADDING_SYMBOL,
-        pretrained_model_name_or_path=None
+        pretrained_model_name_or_path=None,
+        pretrained_tokenizer_fast=False,
 ):
     vocab = None
     max_line_length = 0
@@ -108,6 +109,7 @@ def create_vocabulary(
     )(
         vocab_file=vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
+        pretrained_tokenizer_fast=pretrained_tokenizer_fast,
     )
 
     if tokenizer_type == 'hf_tokenizer':
@@ -1157,6 +1159,7 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 class HFTokenizer(BaseTokenizer):
     def __init__(self,
                  pretrained_model_name_or_path,
+                 pretrained_tokenizer_fast=False,
                  **kwargs
                  ):
         super().__init__()
@@ -1164,6 +1167,7 @@ class HFTokenizer(BaseTokenizer):
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
+            use_fast=pretrained_tokenizer_fast
         )
 
     def __call__(self, text):

@@ -46,6 +46,7 @@ class TextFeatureMixin(object):
         'char_most_common': 70,
         'word_tokenizer': 'space_punct',
         'pretrained_model_name_or_path': None,
+        'pretrained_tokenizer_fast': False,
         'word_vocab_file': None,
         'word_sequence_length_limit': 256,
         'word_most_common': 20000,
@@ -94,7 +95,9 @@ class TextFeatureMixin(object):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path']
+                'pretrained_model_name_or_path'],
+            pretrained_tokenizer_fast=preprocessing_parameters[
+                'pretrained_tokenizer_fast']
         )
         return (
             char_idx2str,
