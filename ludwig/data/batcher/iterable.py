@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.data.batcher.base import Batcher
+from ludwig.data.batcher.base import BatchProvider
 
 
-class IterableBatcher(Batcher):
+class IterableBatchProvider(BatchProvider):
     def __init__(self,
                  dataset,
                  data,

@@ -19,7 +19,7 @@ import tensorflow as tf
 from petastorm import make_batch_reader
 from petastorm.tf_utils import make_petastorm_dataset
 
-from ludwig.data.batcher.iterable import IterableBatcher
+from ludwig.data.batcher.iterable import IterableBatchProvider
 from ludwig.data.dataset.base import Dataset
 
 
@@ -76,8 +76,8 @@ class ParquetDataset(Dataset):
 
         steps_per_epoch = int(local_samples / batch_size)
 
-        batcher = IterableBatcher(self,
-                                  dataset,
-                                  steps_per_epoch,
-                                  ignore_last=ignore_last)
+        batcher = IterableBatchProvider(self,
+                                        dataset,
+                                        steps_per_epoch,
+                                        ignore_last=ignore_last)
         return batcher

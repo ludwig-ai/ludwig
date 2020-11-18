@@ -16,10 +16,10 @@
 # ==============================================================================
 import math
 
-from ludwig.data.batcher.base import Batcher
+from ludwig.data.batcher.base import BatchProvider
 
 
-class RandomAccessBatcher(Batcher):
+class RandomAccessBatchProvider(BatchProvider):
     def __init__(self, dataset, sampler,
                  batch_size=128,
                  ignore_last=False):
@@ -49,9 +49,9 @@ class RandomAccessBatcher(Batcher):
                 break
 
         sub_batch = {}
-        for features_name in self.dataset.features:
-            sub_batch[features_name] = self.dataset.get(
-                features_name,
+        for proc_column in self.dataset.features:
+            sub_batch[proc_column] = self.dataset.get(
+                proc_column,
                 indices
             )
 

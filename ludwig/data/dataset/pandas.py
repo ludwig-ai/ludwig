@@ -18,7 +18,7 @@ import h5py
 import numpy as np
 
 from ludwig.constants import PREPROCESSING
-from ludwig.data.batcher.random_access import RandomAccessBatcher
+from ludwig.data.batcher.random_access import RandomAccessBatchProvider
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.sampler import DistributedSampler
 
@@ -72,8 +72,8 @@ class PandasDataset(Dataset):
                                      shuffle=should_shuffle,
                                      seed=seed,
                                      horovod=horovod)
-        batcher = RandomAccessBatcher(self,
-                                      sampler,
-                                      batch_size=batch_size,
-                                      ignore_last=ignore_last)
+        batcher = RandomAccessBatchProvider(self,
+                                            sampler,
+                                            batch_size=batch_size,
+                                            ignore_last=ignore_last)
         return batcher
