@@ -31,7 +31,7 @@ def concatenate_csv(train_csv, vali_csv, test_csv, output_csv):
         train_csv, vali_csv, test_csv, read_csv, LOCAL_BACKEND
     )
 
-    logger.info('Saving concatenated csv..')
+    logger.info('Saving concatenated dataset as csv..')
     concatenated_df.to_csv(output_csv, encoding='utf-8', index=False)
     logger.info('done')
 

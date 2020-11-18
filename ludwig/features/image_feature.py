@@ -49,7 +49,7 @@ class ImageFeatureMixin(object):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         return {
-            'preprocessing': preprocessing_parameters
+            PREPROCESSING: preprocessing_parameters
         }
 
     @staticmethod
@@ -230,12 +230,12 @@ class ImageFeatureMixin(object):
             backend
     ):
         set_default_value(
-            feature['preprocessing'],
+            feature[PREPROCESSING],
             'in_memory',
             preprocessing_parameters['in_memory']
         )
         set_default_value(
-            feature['preprocessing'],
+            feature[PREPROCESSING],
             'num_processes',
             preprocessing_parameters['num_processes']
         )
@@ -247,7 +247,7 @@ class ImageFeatureMixin(object):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_path = next(iter(dataset_df[feature[NAME]]))
+        first_path = next(iter(dataset_df[feature[COLUMN]]))
 
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
@@ -265,9 +265,9 @@ class ImageFeatureMixin(object):
             preprocessing_parameters, first_path
         )
 
-        metadata[feature[NAME]]['preprocessing']['height'] = height
-        metadata[feature[NAME]]['preprocessing']['width'] = width
-        metadata[feature[NAME]]['preprocessing'][
+        metadata[feature[NAME]][PREPROCESSING]['height'] = height
+        metadata[feature[NAME]][PREPROCESSING]['width'] = width
+        metadata[feature[NAME]][PREPROCESSING][
             'num_channels'] = num_channels
 
         read_image_and_resize = partial(
@@ -280,10 +280,10 @@ class ImageFeatureMixin(object):
             user_specified_num_channels=user_specified_num_channels
         )
 
-        if feature['preprocessing']['in_memory']:
+        if feature[PREPROCESSING]['in_memory']:
             # Number of processes to run in parallel for preprocessing
-            num_processes = feature['preprocessing']['num_processes']
-            metadata[feature[NAME]]['preprocessing'][
+            num_processes = feature[PREPROCESSING]['num_processes']
+            metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
             metadata[feature[NAME]]['reshape'] = (height, width, num_channels)
 
@@ -300,7 +300,7 @@ class ImageFeatureMixin(object):
                             num_processes
                         )
                     )
-                    dataset[feature[NAME]] = pool.map(read_image_and_resize, all_file_paths)
+                    dataset[feature[PROC_COLUMN]] = pool.map(read_image_and_resize, all_file_paths)
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -308,8 +308,8 @@ class ImageFeatureMixin(object):
                     'No process pool initialized. Using internal process for preprocessing images'
                 )
 
-                dataset[feature[NAME]] = backend.processor.map_objects(
-                    dataset[feature[NAME]],
+                dataset[feature[PROC_COLUMN]] = backend.processor.map_objects(
+                    dataset[feature[COLUMN]],
                     lambda file_path: read_image_and_resize(get_abs_path(src_path, file_path))
                 )
         else:
@@ -326,7 +326,7 @@ class ImageFeatureMixin(object):
             with h5py.File(data_fp, mode) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
-                    feature[NAME] + '_data',
+                    feature[PROC_COLUMN] + '_data',
                     (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
@@ -336,7 +336,7 @@ class ImageFeatureMixin(object):
                     )
                 h5_file.flush()
 
-            dataset[feature[NAME]] = np.arange(num_images)
+            dataset[feature[PROC_COLUMN]] = np.arange(num_images)
         return dataset
 
 
@@ -383,12 +383,12 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             **kwargs
     ):
         for key in ['height', 'width', 'num_channels', 'scaling']:
-            input_feature[key] = feature_metadata['preprocessing'][key]
+            input_feature[key] = feature_metadata[PREPROCESSING][key]
 
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-        set_default_value(input_feature, 'preprocessing', {})
+        set_default_value(input_feature, PREPROCESSING, {})
 
     encoder_registry = {
         'stacked_cnn': Stacked2DCNN,

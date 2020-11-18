@@ -67,12 +67,12 @@ class H3FeatureMixin(object):
             preprocessing_parameters,
             backend
     ):
-        column = dataset_df[feature[NAME]]
+        column = dataset_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
 
-        dataset[feature[NAME]] = backend.processor.map_objects(
+        dataset[feature[PROC_COLUMN]] = backend.processor.map_objects(
             column,
             lambda x: np.array(x, dtype=np.uint8)
         )

@@ -212,14 +212,14 @@ class TextFeatureMixin(object):
             backend
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+            dataset_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        dataset = dataset.drop(feature[NAME], axis=1)
-        dataset['{}_char'.format(feature[NAME])] = chars_data
-        dataset['{}_word'.format(feature[NAME])] = words_data
+        dataset = dataset.drop(feature[COLUMN], axis=1)
+        dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data
         return dataset
 
 
@@ -390,7 +390,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0,'
                     'but no class similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -481,6 +481,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             probs = result[PROBABILITIES]
             if probs is not None:
+                probs = probs.numpy()
 
                 if len(probs) > 0 and isinstance(probs[0], list):
                     prob = []

@@ -1,5 +1,5 @@
 version: 1.0
-download_urls: 
+download_urls:
   - https://s3-eu-west-1.amazonaws.com/fever.public/train.jsonl
   - https://s3-eu-west-1.amazonaws.com/fever.public/paper_dev.jsonl
   - https://s3-eu-west-1.amazonaws.com/fever.public/paper_test.jsonl

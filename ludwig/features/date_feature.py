@@ -102,8 +102,8 @@ class DateFeatureMixin(object):
             backend
     ):
         datetime_format = preprocessing_parameters['datetime_format']
-        dataset[feature[NAME]] = backend.processor.map_objects(
-            dataset[feature[NAME]],
+        dataset[feature[PROC_COLUMN]] = backend.processor.map_objects(
+            dataset[feature[COLUMN]],
             lambda x: np.array(DateFeatureMixin.date_to_list(
                 x, datetime_format, preprocessing_parameters
             ), dtype=np.int16)

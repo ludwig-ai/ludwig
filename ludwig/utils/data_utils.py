@@ -36,7 +36,7 @@ try:
 except ImportError:
     DASK_DF_FORMATS = set()
 
-from ludwig.constants import NAME, PREPROCESSING, SPLIT
+from ludwig.constants import PREPROCESSING, SPLIT, PROC_COLUMN
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME)
@@ -72,6 +72,10 @@ CACHEABLE_FORMATS = set.union(*(CSV_FORMATS, TSV_FORMATS,
                                 STATA_FORMATS))
 
 PANDAS_DF = pd
+
+
+def get_split_path(dataset_fp):
+    return os.path.splitext(dataset_fp)[0] + '.split.csv'
 
 
 def get_abs_path(data_csv_path, file_path):
@@ -373,7 +377,7 @@ def class_counts(dataset, labels_field):
 
 
 def text_feature_data_field(text_feature):
-    return text_feature[NAME] + '_' + text_feature['level']
+    return text_feature[PROC_COLUMN] + '_' + text_feature['level']
 
 
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):

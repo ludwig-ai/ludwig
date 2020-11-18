@@ -99,7 +99,7 @@ class Projector(Layer):
                 raise ValueError(
                     'The clip parameter of {} is {}. '
                     'It must be a list or a tuple of length 2.'.format(
-                        self.feature_name,
+                        self.feature_id,
                         self.clip
                     )
                 )

@@ -82,8 +82,8 @@ class BagFeatureMixin(object):
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[NAME]] = BagFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+        dataset[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
+            dataset_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
@@ -93,6 +93,7 @@ class BagFeatureMixin(object):
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
     encoder = 'embed'
+    vocab = []
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
