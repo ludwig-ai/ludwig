@@ -37,7 +37,7 @@ import yaml
 from ludwig.backend import LOCAL_BACKEND, Backend, create_backend
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
-from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
                                        preprocess_for_prediction,

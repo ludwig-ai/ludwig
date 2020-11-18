@@ -24,12 +24,13 @@ from ludwig.utils.batcher import Batcher
 
 class Dataset:
     def __init__(self, dataset, features, data_hdf5_fp):
-        self.dataset = dataset
-
-        self.size = min(map(len, self.dataset.values()))
-
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
+        self.size = len(dataset)
+
+        self.dataset = {}
+        for col in dataset.columns:
+            self.dataset[col] = np.stack(dataset[col].to_numpy())
 
     def get(self, proc_column, idx=None):
         if idx is None:
