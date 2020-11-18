@@ -30,12 +30,6 @@ import pandas as pd
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
-try:
-    import dask.dataframe as dd
-    DASK_DF_FORMATS = {dd.core.DataFrame}
-except ImportError:
-    DASK_DF_FORMATS = set()
-
 from ludwig.constants import PREPROCESSING, SPLIT, PROC_COLUMN
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
@@ -48,7 +42,7 @@ DATA_PROCESSED_CACHE_DIR = 'data_processed_cache_dir'
 DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
 HDF5_DATASET_KEY = 'dataset'
 DICT_FORMATS = {'dict', 'dictionary', dict}
-DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame} | DASK_DF_FORMATS
+DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame}
 CSV_FORMATS = {'csv'}
 TSV_FORMATS = {'tsv'}
 JSON_FORMATS = {'json'}

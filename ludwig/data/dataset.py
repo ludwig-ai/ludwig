@@ -18,20 +18,18 @@ import h5py
 import numpy as np
 
 from ludwig.constants import PREPROCESSING
-from ludwig.data.batcher.random_access import RandomAccessBatcher
-from ludwig.data.dataset.base import Dataset
 from ludwig.data.sampler import DistributedSampler
+from ludwig.utils.batcher import Batcher
 
 
-class PandasDataset(Dataset):
+class Dataset:
     def __init__(self, dataset, features, data_hdf5_fp):
+        self.dataset = dataset
+
+        self.size = min(map(len, self.dataset.values()))
+
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
-        self.size = len(dataset)
-
-        self.dataset = {}
-        for col in dataset.columns:
-            self.dataset[col] = np.stack(dataset[col].to_numpy())
 
     def get(self, proc_column, idx=None):
         if idx is None:
@@ -72,8 +70,8 @@ class PandasDataset(Dataset):
                                      shuffle=should_shuffle,
                                      seed=seed,
                                      horovod=horovod)
-        batcher = RandomAccessBatcher(self,
-                                      sampler,
-                                      batch_size=batch_size,
-                                      ignore_last=ignore_last)
+        batcher = Batcher(self,
+                          sampler,
+                          batch_size=batch_size,
+                          ignore_last=ignore_last)
         return batcher

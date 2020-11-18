@@ -1210,7 +1210,6 @@ def load_hdf5(
         split_data=True,
         shuffle_training=False
 ):
-    # TODO dask: this needs to work with DataFrames
     logger.info('Loading data from: {0}'.format(hdf5_file_path))
 
     def shuffle(df):
