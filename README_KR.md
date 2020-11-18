@@ -126,7 +126,7 @@ Config 파일은 인코더와 디코더가 사용할 각 열에 저장된 데이
 Training
 --------
 
-For example, given a text classification dataset like the following:
+예를 들어, 아래와 같이 분류된 dataset형식의 파일을 보면:
 
 | doc_text                              | class    |
 |---------------------------------------|----------|
@@ -135,92 +135,90 @@ For example, given a text classification dataset like the following:
 | LeBron James joins the Lakers ...     | sport    |
 | ...                                   | ...      |
 
-you want to learn a model that uses the content of the `doc_text` column as input to predict the values in the `class` column.
-You can use the following config:
+`doc_text`열의 내용을 입력으로 사용하여 `class`열의 값을 예측하는 모델을 학습시키려고 할 때 다음과 같은 config파일 구성을 사용할 수 있습니다:
 
 ```yaml
 {input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}
 ```
 
-and start the training typing the following command in your console:
+그리고 사용자의 콘솔창에서 다음의 명령을 입력하여 학습을 시작합니다:
 
 ```
 ludwig train --dataset path/to/file.csv --config "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
 ```
 
-where `path/to/file.csv` is the path to a UTF-8 encoded CSV file containing the dataset in the previous table (many other data formats are supported).
+위의 명령어에서 `path/to/file.csv`부분은 위의 표(이외에 많은 데이터 타입이 지원됩니다)에서 UTF-8로 인코딩 되어 있는 dataset파일을 포함하는 경로입니다.
 Ludwig will:
 
-1. Perform a random split of the data.
-2. Preprocess the dataset.
-3. Build a ParallelCNN model (the default for text features) that decodes output classes through a softmax classifier.
-4. Train the model on the training set until the performance on the validation set stops improving.
+1. data의 무작위 분할을 실시합니다
+2. dataset을 사전 처리합니다.
+3. Softmax classifier를 통해 결과를 해석하는 ParallelCNN모델(text 기능의 기본값)을 구축합니다.
+4. 검증 세트의 성능이 더 이상 개선되지 않을 때까지 학습을 반복합니다.
 
-Training progress will be displayed in the console, but the TensorBoard can also be used.
+학습 과정이 콘솔창에서 보여 질 것이고 TensorBoard 또한 사용될 수 있습니다.
 
-If you prefer to use an RNN encoder and increase the number of epochs to train for, all you have to do is to change the config to:
+만약 RNN encoder를 사용하거나 epoch의 숫자를 더 키워 학습시키는 것을 더 선호한다면 아래와 같은 형식의 config파일 형식을 사용하면 됩니다:
 
 ```yaml
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) to find out all the options available to you in the config and take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different tasks.
+사용자가 config파일에서 사용가능한 명령어들을 확인하고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/)를 참고하고, [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/)을 통해 여러가지 다른 작업에 Ludwig을 사용하는 방법을 확인하세요.
 
-After training, Ludwig will create a `results` directory containing the trained model with its hyperparameters and summary statistics of the training process.
-You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
+학습 후, Ludwig는 학습된 모델과 hyperparameter, 학습 과정의 통계 요약이 포함된 `results`폴더를 생성할 것입니다.
+사용자들은 시각화 방법들 중 하나인 도구를 사용하여 시각화를 할 수 있습니다. 예를 들어:
 
 ```
 ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
 ```
 
-This command will display a graph like the following, where you can see loss and accuracy during the training process:
+위의 명령어는 아래와 같이 그래프를 나타낼 것이고 학습 과정에 있어서의 손실과 정확도를 확인할 수 있습니다.
 
 ![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
-Several more visualizations are available, please refer to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations) for more details.
+시각화 하는 더 다양한 방법을 알고 싶으시다면 [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations)에서 확인해주시기 바랍니다.
 
 
 Distributed Training
 --------------------
 
-You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training) for full details.
+사용자는 [Horovod](https://github.com/horovod/horovod)를 통해 사용자가 훈련시킨 모델을 배포할 수 있고 여러 GPU가 있는 단일 기계 및 여러 GPU가 있는 다중 기계를 통해 학습하는 것을 허용합니다. 더 자세한 정보를 알고 싶으시다면 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training)를 확인해주시기 바랍니다. 
 
 
 Prediction and Evaluation
 -------------------------
 
-If you want your previously trained model to predict target output values on new data, you can type the following command in your console:
+이전에 학습시킨 모델로 새로운 data의 출력 값을 예측하고 싶다면 콘솔창에서 다음의 명령어를 입력하면 됩니다:
 
 ```
 ludwig predict --dataset path/to/data.csv --model_path /path/to/model
 ```
 
-Running this command will return model predictions.
+이 명령어를 실행하면 모델이 예측 값을 반환합니다.
 
-If your dataset also contains ground truth values of the target outputs, you can compare them to the predictions obtained from the model to evaluate the model performance.
+dataset에 출력의 진리 값이 포함된 경우 모델에서 얻은 예측 값과 비교하여 모델 성능을 평가할 수 있습니다.
 
 ```
 ludwig evaluate --dataset path/to/data.csv --model_path /path/to/model
 ```
 
-This will produce evaluation performance statistics that can be visualized by the `visualize` tool, which can also be used to compare performances and predictions of different models, for instance:
+위 명령어는 `visualize` tool에 의해 시각화 되고 다른 모델들 간의 성능과 예측을 비교하는데 사용되는 평가 성능 통계를 만들어 냅니다. 예를 들어:
 
 ```
 ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
 ```
 
-will return a bar plot comparing the models on different metrics:
+여러 측정 기준에 대한 모델들을 비교하는 막대 그래프를 반환합니다:
 
 ![Performance Comparison](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/compare_performance.png "Performance Comparison")
 
-A handy `ludwig experiment` command that performs training and prediction one after the other is also available.
+학습과 예측을 교대로 수행하는 간단한 `ludwig experiment`명령어 또한 사용 가능합니다.
 
 
 Programmatic API
 ----------------
 
-Ludwig also provides a simple programmatic API that allows you to train or load a model and use it to obtain predictions on new data:
+Ludwig는 사용자가 모델을 학습시키거나 불러오게 해주고 새로운 데이터에 대한 예측 값을 얻는 데에 사용하는 간단한 프로그램 API를 제공합니다:
 
 ```python
 from ludwig.api import LudwigModel
@@ -237,25 +235,24 @@ model = LudwigModel.load(model_path)
 predictions = model.predict(test_data)
 ```
 
-`config` containing the same information of the YAML file provided to the command line interface.
-More details are provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) and in the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
+YAML 파일에 대한 같은 정보를 포함하고 있는 `config`는 CLI(Command Line Interface)에 제공됩니다. 더 자세한 정보는 [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/)과 [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/)에서 제공됩니다.
 
 
 Extensibility
 -------------
 
-Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes that contain functions to preprocess the data, encode it, and decode it.
+Ludwig는 처음부터 확장성을 염두에 두고 제작되었습니다. 
+데이터를 사전 처리, 부호화 및 복호화 기능을 포함한 추상 클래스의 데이터 유형별 구현을 추가하면 현재 지원되지 않는 데이터형을 쉽게 추가할 수 있습니다.
 
-Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending on the datatype) as inputs and provides tensors as output.
-This encourages reuse and sharing new models with the community.
-Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/) for further details.
+나아가 자체적인 특정 hyperparameters가 있는 새로운 모델들은 (데이터타입에 따라, 특정 등급의) tensor들을 입력으로 받아들이고 tensor들을 출력으로 제공하는 클래스를 구현함으로써 쉽게 추가할 수 있다.
+이것은 모델의 재사용과 커뮤니티와의 공유를 장려합니다.
+자세한 내용은 [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/)를 참조하십시오.
 
 
 Full documentation
 ------------------
 
-You can find the full documentation [here](https://ludwig-ai.github.io/ludwig-docs).
+전체 문서는 [여기](https://ludwig-ai.github.io/ludwig-docs)에서 확인할 수 있습니다.
 
 
 License
