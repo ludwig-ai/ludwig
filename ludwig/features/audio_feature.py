@@ -22,7 +22,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE, COLUMN, PROC_COLUMN, \
-    PREPROCESSING, NAME, RESHAPE
+    PREPROCESSING, NAME
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -319,10 +319,6 @@ class AudioFeatureMixin(object):
         audio_feature_dict = preprocessing_parameters['audio_feature']
         audio_file_length_limit_in_s = preprocessing_parameters[
             'audio_file_length_limit_in_s']
-
-        if feature[PROC_COLUMN] not in metadata:
-            metadata[feature[PROC_COLUMN]] = {}
-        metadata[feature[PROC_COLUMN]][RESHAPE] = (max_length, feature_dim)
 
         if num_audio_utterances == 0:
             raise ValueError(
