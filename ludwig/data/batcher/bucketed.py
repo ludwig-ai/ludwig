@@ -16,10 +16,10 @@
 # ==============================================================================
 import numpy as np
 
-from ludwig.data.batcher.base import BatchProvider
+from ludwig.data.batcher.base import Batcher
 
 
-class BucketedBatchProvider(BatchProvider):
+class BucketedBatchProvider(Batcher):
     def __init__(self, dataset, bucketing_field, batch_size=128, buckets=10,
                  should_shuffle=True, ignore_last=False,
                  should_trim=False, trim_side='right'):

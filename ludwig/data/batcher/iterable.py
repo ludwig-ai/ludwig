@@ -14,18 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.data.batcher.base import BatchProvider
+from ludwig.data.batcher.base import Batcher
 
 
-class IterableBatchProvider(BatchProvider):
+class IterableBatchProvider(Batcher):
     def __init__(self,
                  dataset,
-                 data,
+                 iterable_dataset,
+                 batch_size,
                  steps_per_epoch,
+                 shuffle_buffer_size,
                  ignore_last=False):
+
+        if shuffle_buffer_size > 0:
+            iterable_dataset = iterable_dataset.shuffle(shuffle_buffer_size)
+        iterable_dataset = iterable_dataset.batch(batch_size)
+
         self.dataset = dataset
-        self.data = data
-        self.data_it = iter(data)
+        self.data_it = iter(iterable_dataset)
 
         self.ignore_last = ignore_last
         self.steps_per_epoch = steps_per_epoch

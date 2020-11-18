@@ -18,7 +18,7 @@
 from abc import ABC, abstractmethod
 
 
-class BatchProvider(ABC):
+class Batcher(ABC):
     @abstractmethod
     def next_batch(self):
         raise NotImplementedError()

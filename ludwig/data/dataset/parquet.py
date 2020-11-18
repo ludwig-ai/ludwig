@@ -67,18 +67,20 @@ class ParquetDataset(Dataset):
         total_samples = reader.dataset.metadata.num_rows
         local_samples = int(total_samples / shard_count) if shard_count else total_samples
 
-        dataset = make_petastorm_dataset(reader)
-        dataset = dataset.unbatch()
+        shuffle_buffer_size = 0
         if should_shuffle:
             rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
-            buffer_size = min(rows_per_piece, local_samples)
-            dataset = dataset.shuffle(buffer_size)
-        dataset = dataset.batch(batch_size)
+            shuffle_buffer_size = min(rows_per_piece, local_samples)
+
+        tf_data = make_petastorm_dataset(reader)
+        tf_data = tf_data.unbatch()
 
         steps_per_epoch = int(local_samples / batch_size)
 
         batcher = IterableBatchProvider(self,
-                                        dataset,
+                                        tf_data,
+                                        batch_size,
                                         steps_per_epoch,
+                                        shuffle_buffer_size,
                                         ignore_last=ignore_last)
         return batcher

@@ -16,10 +16,10 @@
 # ==============================================================================
 import math
 
-from ludwig.data.batcher.base import BatchProvider
+from ludwig.data.batcher.base import Batcher
 
 
-class RandomAccessBatchProvider(BatchProvider):
+class RandomAccessBatchProvider(Batcher):
     def __init__(self, dataset, sampler,
                  batch_size=128,
                  ignore_last=False):
