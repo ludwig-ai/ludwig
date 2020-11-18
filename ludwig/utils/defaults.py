@@ -170,7 +170,7 @@ def _perform_sanity_checks(config):
         )
 
 
-def _set_feature_ids(config: dict) -> None:
+def _set_feature_column(config: dict) -> None:
     for feature in config['input_features'] + config['output_features']:
         if COLUMN not in feature:
             feature[COLUMN] = feature[NAME]
@@ -184,7 +184,7 @@ def _set_proc_column(config: dict) -> None:
 
 def merge_with_defaults(config):
     _perform_sanity_checks(config)
-    _set_feature_ids(config)
+    _set_feature_column(config)
     _set_proc_column(config)
 
     # ===== Preprocessing =====
