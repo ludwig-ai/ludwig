@@ -820,6 +820,11 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             random_seed=default_random_seed
     ):
+        if dataset is None and training_set is None:
+            raise ValueError(
+                'One of `dataset` or `training_set` must be not None')
+        not_none_set = dataset if dataset is not None else training_set
+
         if not training_set_metadata:
             raise ValueError('When providing HDF5 data, '
                              'training_set_metadata must not be None.')
@@ -829,19 +834,22 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         if DATA_TRAIN_HDF5_FP not in training_set_metadata:
             logger.warning(
                 'data_train_hdf5_fp not present in training_set_metadata. '
-                'Adding it with the current HDF5 file path {}'.format(dataset)
+                'Adding it with the current HDF5 file path {}'.format(
+                    not_none_set
+                )
             )
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
-        elif training_set_metadata[DATA_TRAIN_HDF5_FP] != dataset:
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = not_none_set
+
+        elif training_set_metadata[DATA_TRAIN_HDF5_FP] != not_none_set:
             logger.warning(
                 'data_train_hdf5_fp in training_set_metadata is {}, '
                 'different from the current HDF5 file path {}. '
                 'Replacing it'.format(
                     training_set_metadata[DATA_TRAIN_HDF5_FP],
-                    dataset
+                    not_none_set
                 )
             )
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = not_none_set
 
         if dataset is not None:
             training_set, test_set, validation_set = load_hdf5(
@@ -849,22 +857,22 @@ class HDF5Preprocessor(DataFormatPreprocessor):
                 features,
                 shuffle_training=True
             )
+
         elif training_set is not None:
             kwargs = dict(features=features, split_data=False)
             training_set = load_hdf5(training_set,
                                      shuffle_training=True,
                                      **kwargs)
+
             if validation_set is not None:
                 validation_set = load_hdf5(validation_set,
                                            shuffle_training=False,
                                            **kwargs)
+
             if test_set is not None:
                 test_set = load_hdf5(test_set,
                                      shuffle_training=False,
                                      **kwargs)
-        else:
-            raise ValueError(
-                'One of `dataset` or `training_set` must be not None')
 
         return training_set, test_set, validation_set, training_set_metadata
 
