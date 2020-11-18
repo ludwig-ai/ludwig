@@ -19,7 +19,7 @@ import math
 from ludwig.data.batcher.base import Batcher
 
 
-class RandomAccessBatchProvider(Batcher):
+class RandomAccessBatcher(Batcher):
     def __init__(self, dataset, sampler,
                  batch_size=128,
                  ignore_last=False):

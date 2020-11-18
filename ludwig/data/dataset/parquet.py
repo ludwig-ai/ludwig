@@ -20,7 +20,7 @@ from petastorm import make_batch_reader
 from petastorm.tf_utils import make_petastorm_dataset
 
 from ludwig.constants import RESHAPE
-from ludwig.data.batcher.iterable import IterableBatchProvider
+from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
 
 
@@ -77,10 +77,10 @@ class ParquetDataset(Dataset):
 
         steps_per_epoch = int(local_samples / batch_size)
 
-        batcher = IterableBatchProvider(self,
-                                        tf_data,
-                                        batch_size,
-                                        steps_per_epoch,
-                                        shuffle_buffer_size,
-                                        ignore_last=ignore_last)
+        batcher = IterableBatcher(self,
+                                  tf_data,
+                                  batch_size,
+                                  steps_per_epoch,
+                                  shuffle_buffer_size,
+                                  ignore_last=ignore_last)
         return batcher

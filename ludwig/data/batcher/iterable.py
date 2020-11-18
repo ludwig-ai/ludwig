@@ -17,7 +17,7 @@
 from ludwig.data.batcher.base import Batcher
 
 
-class IterableBatchProvider(Batcher):
+class IterableBatcher(Batcher):
     def __init__(self,
                  dataset,
                  iterable_dataset,
