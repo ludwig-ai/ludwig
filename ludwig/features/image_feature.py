@@ -285,7 +285,10 @@ class ImageFeatureMixin(object):
             num_processes = feature[PREPROCESSING]['num_processes']
             metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
-            metadata[feature[NAME]]['reshape'] = (height, width, num_channels)
+
+            if feature[PROC_COLUMN] not in metadata:
+                metadata[feature[PROC_COLUMN]] = {}
+            metadata[feature[PROC_COLUMN]][RESHAPE] = (height, width, num_channels)
 
             # Split the dataset into pools only if we have an explicit request to use
             # multiple processes. In case we have multiple input images use the

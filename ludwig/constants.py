@@ -103,3 +103,4 @@ TYPE = 'type'
 PROC_COLUMN = 'proc_column'
 
 CHECKSUM = 'checksum'
+RESHAPE = 'reshape'

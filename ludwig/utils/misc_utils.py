@@ -244,7 +244,7 @@ def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     s = json.dumps(d, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
     d = h.digest()
-    b = base64.b64encode(d)
+    b = base64.b64encode(d, altchars=b'__')
     return b[:max_length]
 
 

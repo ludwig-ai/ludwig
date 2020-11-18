@@ -22,6 +22,7 @@ import dask
 import dask.array as da
 import dask.dataframe as dd
 
+from ludwig.constants import RESHAPE
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.processor.base import DataProcessor
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
@@ -54,7 +55,7 @@ class DaskProcessor(DataProcessor):
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
-    def create_dataset(self, dataset, tag, config, training_set_metadata):
+    def create_dataset(self, df, tag, config, training_set_metadata):
         cache_dir = training_set_metadata.get(DATA_PROCESSED_CACHE_DIR)
         tag = tag.lower()
         dataset_parquet_fp = os.path.join(cache_dir, f'{tag}.parquet')
@@ -62,15 +63,16 @@ class DaskProcessor(DataProcessor):
         # Workaround: https://issues.apache.org/jira/browse/ARROW-1614
         features = get_proc_features(config)
         for name, feature in features.items():
-            reshape = training_set_metadata[name].get('reshape')
-            if reshape is not None:
-                dataset[name] = self.map_objects(dataset[name], lambda x: x.reshape(-1))
+            if name in training_set_metadata:
+                reshape = training_set_metadata[name].get(RESHAPE)
+                if reshape is not None:
+                    df[name] = self.map_objects(df[name], lambda x: x.reshape(-1))
 
         os.makedirs(dataset_parquet_fp, exist_ok=True)
-        dataset.to_parquet(dataset_parquet_fp,
-                           engine='pyarrow',
-                           write_index=False,
-                           schema='infer')
+        df.to_parquet(dataset_parquet_fp,
+                      engine='pyarrow',
+                      write_index=False,
+                      schema='infer')
 
         dataset_parquet_url = 'file://' + os.path.abspath(dataset_parquet_fp)
         training_set_metadata[DATASET_SPLIT_URL.format(tag)] = dataset_parquet_url
