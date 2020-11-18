@@ -148,7 +148,8 @@ ludwig train --dataset path/to/file.csv --config "{input_features: [{name: doc_t
 ```
 
 위의 명령어에서 `path/to/file.csv`부분은 위의 표(이외에 많은 데이터 타입이 지원됩니다)에서 UTF-8로 인코딩 되어 있는 dataset파일을 포함하는 경로입니다.
-Ludwig will:
+
+Ludwig은 다음과 같은 동작을 합니다:
 
 1. data의 무작위 분할을 실시합니다
 2. dataset을 사전 처리합니다.
