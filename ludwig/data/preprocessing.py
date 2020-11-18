@@ -56,7 +56,7 @@ from ludwig.utils.defaults import (default_preprocessing_parameters,
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
-                                     hash_dict, get_features_from_lists)
+                                     hash_dict, get_proc_features_from_lists)
 
 logger = logging.getLogger(__name__)
 
@@ -1730,7 +1730,7 @@ def preprocess_for_prediction(
         elif split == TEST:
             dataset = test_set
 
-    features = get_features_from_lists(
+    features = get_proc_features_from_lists(
         config['input_features'],
         output_features
     )

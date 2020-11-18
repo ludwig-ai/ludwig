@@ -25,7 +25,7 @@ import dask.dataframe as dd
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.processor.base import DataProcessor
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
-from ludwig.utils.misc_utils import get_features
+from ludwig.utils.misc_utils import get_proc_features
 
 
 def set_scheduler(scheduler):
@@ -60,7 +60,7 @@ class DaskProcessor(DataProcessor):
         dataset_parquet_fp = os.path.join(cache_dir, f'{tag}.parquet')
 
         # Workaround: https://issues.apache.org/jira/browse/ARROW-1614
-        features = get_features(config)
+        features = get_proc_features(config)
         for name, feature in features.items():
             reshape = training_set_metadata[name].get('reshape')
             if reshape is not None:

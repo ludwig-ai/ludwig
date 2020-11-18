@@ -21,7 +21,7 @@ import pandas as pd
 from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.processor.base import DataProcessor
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
-from ludwig.utils.misc_utils import get_features
+from ludwig.utils.misc_utils import get_proc_features
 
 
 class PandasProcessor(DataProcessor):
@@ -46,7 +46,7 @@ class PandasProcessor(DataProcessor):
     def create_dataset(self, dataset, tag, config, training_set_metadata):
         return PandasDataset(
             dataset,
-            get_features(config),
+            get_proc_features(config),
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
