@@ -34,4 +34,4 @@ class toxicComments(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoad
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="toxic-comments", cache_dir=cache_dir)
+        super().__init__(dataset_name="toxicComments", cache_dir=cache_dir)
