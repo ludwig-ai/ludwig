@@ -21,7 +21,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
+from ludwig.encoders.bag_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils.misc_utils import set_default_value
@@ -92,6 +92,7 @@ class BagFeatureMixin(object):
 
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
+    encoder_registry = ENCODER_REGISTRY
     encoder = 'embed'
     vocab = []
 
@@ -129,8 +130,3 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-
-    encoder_registry = {
-        'embed': BagEmbedWeightedEncoder,
-        None: BagEmbedWeightedEncoder
-    }
