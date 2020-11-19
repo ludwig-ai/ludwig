@@ -35,6 +35,7 @@ from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
+from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
@@ -81,17 +82,44 @@ class NumericalFeatureMixin(object):
         dataset[feature[PROC_COLUMN]] = dataset_df[feature[COLUMN]].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
-            if preprocessing_parameters['normalization'] == 'zscore':
-                mean = metadata[feature[NAME]]['mean']
-                std = metadata[feature[NAME]]['std']
-                dataset[feature[PROC_COLUMN]] = (dataset[
-                                                     feature[
-                                                         PROC_COLUMN]] - mean) / std
-            elif preprocessing_parameters['normalization'] == 'minmax':
-                min_ = metadata[feature[NAME]]['min']
-                max_ = metadata[feature[NAME]]['max']
-                values = dataset[feature[PROC_COLUMN]]
-                dataset[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
+            normalization_type = preprocessing_parameters['normalization']
+            NumericTransformer = get_from_registry(
+                normalization_type,
+                numeric_transformation_registry
+            )
+
+            if normalization_type == 'zscore':
+                numeric_transformer = NumericTransformer(
+                    metadata[feature[NAME]]['mean'],
+                    metadata[feature[NAME]]['std']
+                )
+            elif normalization_type == 'minmax':
+                numeric_transformer = NumericTransformer(
+                    metadata[feature[NAME]]['min'],
+                    metadata[feature[NAME]]['max']
+                )
+            else:
+                raise ValueError(
+                    'Normalization "{}" not supported. Valid values are '
+                    '"minmax" or "zscore"'.format(normalization_type)
+                )
+
+            values = dataset[feature[PROC_COLUMN]]
+            dataset[feature[PROC_COLUMN]] = numeric_transformer.transform(
+                values)
+
+            # todo: clean up after implementing numeric transformers
+            # if preprocessing_parameters['normalization'] == 'zscore':
+            #     mean = metadata[feature[NAME]]['mean']
+            #     std = metadata[feature[NAME]]['std']
+            #     dataset[feature[PROC_COLUMN]] = (dataset[
+            #                                          feature[
+            #                                              PROC_COLUMN]] - mean) / std
+            # elif preprocessing_parameters['normalization'] == 'minmax':
+            #     min_ = metadata[feature[NAME]]['min']
+            #     max_ = metadata[feature[NAME]]['max']
+            #     values = dataset[feature[PROC_COLUMN]]
+            #     dataset[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -267,7 +295,35 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = predictions[PREDICTIONS].numpy()
+            if metadata['preprocessing']['normalization'] is not None:
+                normalization_type = metadata['preprocessing']['normalization']
+                NumericTransformer = get_from_registry(
+                    normalization_type,
+                    numeric_transformation_registry
+                )
+                if normalization_type == 'zscore':
+                    numeric_transformer = NumericTransformer(
+                        metadata['mean'],
+                        metadata['std']
+                    )
+                elif normalization_type == 'minmax':
+                    numeric_transformer = NumericTransformer(
+                        metadata['min'],
+                        metadata['max']
+                    )
+                else:
+                    raise ValueError(
+                        'Normalization "{}" not supported. Valid values are '
+                        '"minmax" or "zscore"'.format(normalization_type)
+                    )
+
+                values_to_return = numeric_transformer.inverse_transform(
+                    predictions[PREDICTIONS].numpy()
+                )
+            else:
+                values_to_return = predictions[PREDICTIONS].numpy()
+
+            postprocessed[PREDICTIONS] = values_to_return
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
@@ -314,3 +370,34 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         'None': Regressor,
         None: Regressor
     }
+
+
+class ZScoreTransformer:
+    def __init__(self, mu: float, sigma: float):
+        self.mu = mu
+        self.sigma = sigma
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        return (x - self.mu) / self.sigma
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x * self.sigma + self.mu
+
+
+class MinMaxTransformer:
+    def __init__(self, min_value: float, max_value: float):
+        self.min_value = min_value
+        self.max_value = max_value
+        self.range = max_value - min_value
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        return (x - self.min_value) / self.range
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x * self.range + self.min_value
+
+
+numeric_transformation_registry = {
+    'minmax': MinMaxTransformer,
+    'zscore': ZScoreTransformer
+}
