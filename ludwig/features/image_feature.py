@@ -25,7 +25,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.image_encoders import Stacked2DCNN, ResNetEncoder
+from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.image_utils import greyscale
@@ -384,11 +384,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, PREPROCESSING, {})
 
-    encoder_registry = {
-        'stacked_cnn': Stacked2DCNN,
-        'resnet': ResNetEncoder,
-        None: Stacked2DCNN
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 image_scaling_registry = {

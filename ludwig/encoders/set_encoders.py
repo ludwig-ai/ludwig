@@ -15,16 +15,26 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
-from tensorflow.keras.layers import Layer
-
+from ludwig.encoders.base import Encoder, register_default
 from ludwig.modules.embedding_modules import EmbedSparse
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-class SetSparseEncoder(Layer):
+ENCODER_REGISTRY = {}
+
+
+class SetEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register_default(name='embed')
+class SetSparseEncoder(SetEncoder):
 
     def __init__(
             self,

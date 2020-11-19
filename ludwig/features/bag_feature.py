@@ -92,7 +92,6 @@ class BagFeatureMixin(object):
 
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    encoder_registry = ENCODER_REGISTRY
     encoder = 'embed'
     vocab = []
 
@@ -130,3 +129,5 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    encoder_registry = ENCODER_REGISTRY

@@ -15,15 +15,30 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
 from tensorflow.keras.layers import Layer
 
+from ludwig.encoders.base import DEFAULT_KEYS, Encoder, register
+from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.modules.embedding_modules import Embed
 
 logger = logging.getLogger(__name__)
 
 
-class CategoricalEmbedEncoder(Layer):
+ENCODER_REGISTRY = {
+    key: PassthroughEncoder for key in DEFAULT_KEYS + ['passthrough']
+}
+
+
+class CategoricalEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register(name='dense')
+class CategoricalEmbedEncoder(CategoricalEncoder):
 
     def __init__(
             self,
@@ -66,6 +81,7 @@ class CategoricalEmbedEncoder(Layer):
         return embedded
 
 
+@register(name='sparse')
 class CategoricalSparseEncoder(Layer):
 
     def __init__(

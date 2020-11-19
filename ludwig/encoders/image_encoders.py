@@ -15,11 +15,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
 import tensorflow as tf
 from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Layer
 
+from ludwig.encoders.base import Encoder, register, register_default
 from ludwig.modules.convolutional_modules import Conv2DStack, \
     get_resnet_block_sizes
 from ludwig.modules.convolutional_modules import ResNet2
@@ -28,7 +29,17 @@ from ludwig.modules.fully_connected_modules import FCStack
 logger = logging.getLogger(__name__)
 
 
-class Stacked2DCNN(Layer):
+ENCODER_REGISTRY = {}
+
+
+class ImageEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register_default(name='stacked_cnn')
+class Stacked2DCNN(ImageEncoder):
 
     def __init__(
             self,
@@ -139,7 +150,8 @@ class Stacked2DCNN(Layer):
         return {'encoder_output': outputs}
 
 
-class ResNetEncoder(Layer):
+@register(name='resnet')
+class ResNetEncoder(ImageEncoder):
 
     def __init__(
             self,
