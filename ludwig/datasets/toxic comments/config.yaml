@@ -1,0 +1,4 @@
+version: 1.0
+download_urls:
+  - https://raw.githubusercontent.com/balajibalasubramanian/Kaggle-Toxic-Comments-Challenge/master/data/train.csv
+csv_filename: train.csv
