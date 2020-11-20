@@ -61,6 +61,8 @@ class NumericalFeatureMixin(object):
                     'min': column.astype(np.float32).min(),
                     'max': column.astype(np.float32).max()
                 }
+            elif preprocessing_parameters['normalization'] == 'log1p':
+                return {}
             else:
                 logger.info(
                     'Currently zscore and minmax are the only '
@@ -98,6 +100,8 @@ class NumericalFeatureMixin(object):
                     metadata[feature[NAME]]['min'],
                     metadata[feature[NAME]]['max']
                 )
+            elif normalization_type == 'log1p':
+                numeric_transformer = NumericTransformer()
             else:
                 raise ValueError(
                     'Normalization "{}" not supported. Valid values are '
@@ -311,6 +315,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                         metadata['min'],
                         metadata['max']
                     )
+                elif normalization_type == 'log1p':
+                    numeric_transformer = NumericTransformer()
                 else:
                     raise ValueError(
                         'Normalization "{}" not supported. Valid values are '
@@ -397,7 +403,22 @@ class MinMaxTransformer:
         return x * self.range + self.min_value
 
 
+class Log1pTransformer:
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        if np.any(x <= 0):
+            raise ValueError(
+                'One or more values are non-positive.  '
+                'log1p normalization only defined for positive values.'
+            )
+        return np.log1p(x)
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return np.expm1(x)
+
+
 numeric_transformation_registry = {
     'minmax': MinMaxTransformer,
-    'zscore': ZScoreTransformer
+    'zscore': ZScoreTransformer,
+    'log1p': Log1pTransformer
 }
