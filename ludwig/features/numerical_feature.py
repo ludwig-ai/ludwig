@@ -90,40 +90,11 @@ class NumericalFeatureMixin(object):
                 numeric_transformation_registry
             )
 
-            if normalization_type == 'zscore':
-                numeric_transformer = NumericTransformer(
-                    metadata[feature[NAME]]['mean'],
-                    metadata[feature[NAME]]['std']
-                )
-            elif normalization_type == 'minmax':
-                numeric_transformer = NumericTransformer(
-                    metadata[feature[NAME]]['min'],
-                    metadata[feature[NAME]]['max']
-                )
-            elif normalization_type == 'log1p':
-                numeric_transformer = NumericTransformer()
-            else:
-                raise ValueError(
-                    'Normalization "{}" not supported. Valid values are '
-                    '"minmax" or "zscore"'.format(normalization_type)
-                )
+            numeric_transformer = NumericTransformer(**metadata[feature[NAME]])
 
             values = dataset[feature[PROC_COLUMN]]
             dataset[feature[PROC_COLUMN]] = numeric_transformer.transform(
                 values)
-
-            # todo: clean up after implementing numeric transformers
-            # if preprocessing_parameters['normalization'] == 'zscore':
-            #     mean = metadata[feature[NAME]]['mean']
-            #     std = metadata[feature[NAME]]['std']
-            #     dataset[feature[PROC_COLUMN]] = (dataset[
-            #                                          feature[
-            #                                              PROC_COLUMN]] - mean) / std
-            # elif preprocessing_parameters['normalization'] == 'minmax':
-            #     min_ = metadata[feature[NAME]]['min']
-            #     max_ = metadata[feature[NAME]]['max']
-            #     values = dataset[feature[PROC_COLUMN]]
-            #     dataset[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -305,24 +276,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                     normalization_type,
                     numeric_transformation_registry
                 )
-                if normalization_type == 'zscore':
-                    numeric_transformer = NumericTransformer(
-                        metadata['mean'],
-                        metadata['std']
-                    )
-                elif normalization_type == 'minmax':
-                    numeric_transformer = NumericTransformer(
-                        metadata['min'],
-                        metadata['max']
-                    )
-                elif normalization_type == 'log1p':
-                    numeric_transformer = NumericTransformer()
-                else:
-                    raise ValueError(
-                        'Normalization "{}" not supported. Valid values are '
-                        '"minmax" or "zscore"'.format(normalization_type)
-                    )
 
+                numeric_transformer = NumericTransformer(**metadata)
                 values_to_return = numeric_transformer.inverse_transform(
                     predictions[PREDICTIONS].numpy()
                 )
@@ -379,9 +334,9 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
 
 class ZScoreTransformer:
-    def __init__(self, mu: float, sigma: float):
-        self.mu = mu
-        self.sigma = sigma
+    def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
+        self.mu = mean
+        self.sigma = std
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return (x - self.mu) / self.sigma
@@ -391,10 +346,10 @@ class ZScoreTransformer:
 
 
 class MinMaxTransformer:
-    def __init__(self, min_value: float, max_value: float):
-        self.min_value = min_value
-        self.max_value = max_value
-        self.range = max_value - min_value
+    def __init__(self, min: float = None, max: float = None, **kwargs: dict):
+        self.min_value = min
+        self.max_value = max
+        self.range = self.max_value - self.min_value
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return (x - self.min_value) / self.range
@@ -404,6 +359,8 @@ class MinMaxTransformer:
 
 
 class Log1pTransformer:
+    def __init__(self, **kwargs: dict):
+        pass
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         if np.any(x <= 0):
