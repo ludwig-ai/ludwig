@@ -21,11 +21,11 @@ from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = toxicComments(cache_dir=cache_dir)
+    dataset = ToxicComments(cache_dir=cache_dir)
     return dataset.load(split=split)
 
 
-class toxicComments(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
+class ToxicComments(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
     """The toxic-comments dataset.
 
     This pulls in an array of mixins for different types of functionality
@@ -34,4 +34,4 @@ class toxicComments(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoad
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="toxicComments", cache_dir=cache_dir)
+        super().__init__(dataset_name="ToxicComments", cache_dir=cache_dir)
