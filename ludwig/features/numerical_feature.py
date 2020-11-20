@@ -366,7 +366,7 @@ class Log1pTransformer:
         if np.any(x <= 0):
             raise ValueError(
                 'One or more values are non-positive.  '
-                'log1p normalization only defined for positive values.'
+                'log1p normalization is defined only for positive values.'
             )
         return np.log1p(x)
 
