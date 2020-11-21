@@ -50,28 +50,36 @@ class NumericalFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        if preprocessing_parameters['normalization'] is not None:
-            if preprocessing_parameters['normalization'] == 'zscore':
-                return {
-                    'mean': column.astype(np.float32).mean(),
-                    'std': column.astype(np.float32).std()
-                }
-            elif preprocessing_parameters['normalization'] == 'minmax':
-                return {
-                    'min': column.astype(np.float32).min(),
-                    'max': column.astype(np.float32).max()
-                }
-            elif preprocessing_parameters['normalization'] == 'log1p':
-                return {}
-            else:
-                logger.info(
-                    'Currently zscore and minmax are the only '
-                    'normalization strategies available. No {}'.format(
-                        preprocessing_parameters['normalization'])
-                )
-                return {}
-        else:
-            return {}
+        numeric_transformer = get_from_registry(
+            preprocessing_parameters.get('normalization', None),
+            numeric_transformation_registry
+        )(**preprocessing_parameters)
+
+        return numeric_transformer.fit_transform_params(column)
+
+        # todo clean up if new code works
+        # if preprocessing_parameters['normalization'] is not None:
+        #     if preprocessing_parameters['normalization'] == 'zscore':
+        #         return {
+        #             'mean': column.astype(np.float32).mean(),
+        #             'std': column.astype(np.float32).std()
+        #         }
+        #     elif preprocessing_parameters['normalization'] == 'minmax':
+        #         return {
+        #             'min': column.astype(np.float32).min(),
+        #             'max': column.astype(np.float32).max()
+        #         }
+        #     elif preprocessing_parameters['normalization'] == 'log1p':
+        #         return {}
+        #     else:
+        #         logger.info(
+        #             'Currently zscore and minmax are the only '
+        #             'normalization strategies available. No {}'.format(
+        #                 preprocessing_parameters['normalization'])
+        #         )
+        #         return {}
+        # else:
+        #     return {}
 
     @staticmethod
     def add_feature_data(
@@ -327,27 +335,65 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
 class ZScoreTransformer:
     def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
+        # When parameters are None we only need object to use
+        # the fit_transform_params method, other methods should not be used
         self.mu = mean
         self.sigma = std
 
     def transform(self, x: np.ndarray) -> np.ndarray:
+        if self.mu is None or self.sigma is None:
+            raise ValueError(
+                'Numeric transformer needs to be instantiated with '
+                'min and max values.'
+            )
         return (x - self.mu) / self.sigma
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        if self.mu is None or self.sigma is None:
+            raise ValueError(
+                'Numeric transformer needs to be instantiated with '
+                'min and max values.'
+            )
         return x * self.sigma + self.mu
+
+    @staticmethod
+    def fit_transform_params(column: np.ndarray) -> dict:
+        return {
+            'mean': column.astype(np.float32).mean(),
+            'std': column.astype(np.float32).std()
+        }
 
 
 class MinMaxTransformer:
     def __init__(self, min: float = None, max: float = None, **kwargs: dict):
+        # When parameters are None we only need object to use
+        # the fit_transform_params method, other methods should not be used
         self.min_value = min
         self.max_value = max
-        self.range = self.max_value - self.min_value
+        self.range = None if min is None or max is None else max - min
 
     def transform(self, x: np.ndarray) -> np.ndarray:
+        if self.range is None:
+            raise ValueError(
+                'Numeric transformer needs to be instantiated with '
+                'min and max values.'
+            )
         return (x - self.min_value) / self.range
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        if self.range is None:
+            raise ValueError(
+                'Numeric transformer needs to be instantiated with '
+                'min and max values.'
+            )
         return x * self.range + self.min_value
+
+    @staticmethod
+    def fit_transform_params(column: np.ndarray) -> dict:
+        return {
+            'min': column.astype(np.float32).min(),
+            'max': column.astype(np.float32).max()
+        }
 
 
 class Log1pTransformer:
@@ -365,6 +411,10 @@ class Log1pTransformer:
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         return np.expm1(x)
 
+    @staticmethod
+    def fit_transform_params(column: np.ndarray) -> dict:
+        return {}
+
 
 class IdentityTransformer:
     def __init__(self, **kwargs):
@@ -375,6 +425,10 @@ class IdentityTransformer:
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         return x
+
+    @staticmethod
+    def fit_transform_params(column: np.ndarray) -> dict:
+        return {}
 
 
 numeric_transformation_registry = {
