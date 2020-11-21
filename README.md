@@ -1,3 +1,4 @@
+[Translated in Korean](README_KR.md)
 ![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
 <div align="center">
