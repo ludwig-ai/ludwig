@@ -83,18 +83,15 @@ class NumericalFeatureMixin(object):
     ):
         dataset[feature[PROC_COLUMN]] = dataset_df[feature[COLUMN]].astype(
             np.float32).values
-        if preprocessing_parameters['normalization'] is not None:
-            normalization_type = preprocessing_parameters['normalization']
-            NumericTransformer = get_from_registry(
-                normalization_type,
-                numeric_transformation_registry
-            )
 
-            numeric_transformer = NumericTransformer(**metadata[feature[NAME]])
+        # normalize data as required
+        numeric_transformer = get_from_registry(
+            preprocessing_parameters.get('normalization', None),
+            numeric_transformation_registry
+        )(**metadata[feature[NAME]])
 
-            values = dataset[feature[PROC_COLUMN]]
-            dataset[feature[PROC_COLUMN]] = numeric_transformer.transform(
-                values)
+        dataset[feature[PROC_COLUMN]] = \
+            numeric_transformer.transform(dataset[feature[PROC_COLUMN]])
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -270,21 +267,16 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            if metadata['preprocessing']['normalization'] is not None:
-                normalization_type = metadata['preprocessing']['normalization']
-                NumericTransformer = get_from_registry(
-                    normalization_type,
-                    numeric_transformation_registry
-                )
-
-                numeric_transformer = NumericTransformer(**metadata)
-                values_to_return = numeric_transformer.inverse_transform(
+            # as needed convert predictions make to original value space
+            numeric_transformer = get_from_registry(
+                metadata['preprocessing'].get('normalization', None),
+                numeric_transformation_registry
+            )(**metadata)
+            postprocessed[PREDICTIONS] = \
+                numeric_transformer.inverse_transform(
                     predictions[PREDICTIONS].numpy()
                 )
-            else:
-                values_to_return = predictions[PREDICTIONS].numpy()
 
-            postprocessed[PREDICTIONS] = values_to_return
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
@@ -374,8 +366,20 @@ class Log1pTransformer:
         return np.expm1(x)
 
 
+class IdentityTransformer:
+    def __init__(self, **kwargs):
+        pass
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        return x
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x
+
+
 numeric_transformation_registry = {
     'minmax': MinMaxTransformer,
     'zscore': ZScoreTransformer,
-    'log1p': Log1pTransformer
+    'log1p': Log1pTransformer,
+    None: IdentityTransformer
 }
