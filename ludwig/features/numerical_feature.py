@@ -344,7 +344,7 @@ class ZScoreTransformer:
         if self.mu is None or self.sigma is None:
             raise ValueError(
                 'Numeric transformer needs to be instantiated with '
-                'min and max values.'
+                'mean and std values.'
             )
         return (x - self.mu) / self.sigma
 
@@ -352,7 +352,7 @@ class ZScoreTransformer:
         if self.mu is None or self.sigma is None:
             raise ValueError(
                 'Numeric transformer needs to be instantiated with '
-                'min and max values.'
+                'mean and std values.'
             )
         return x * self.sigma + self.mu
 
