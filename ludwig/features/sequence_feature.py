@@ -19,9 +19,8 @@ import os
 import numpy as np
 
 from ludwig.constants import *
-from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
-from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
-from ludwig.encoders.sequence_encoders import ENCODER_REGISTRY
+from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
+from ludwig.encoders.sequence_encoders import ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
@@ -164,7 +163,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
 
-    encoder_registry = ENCODER_REGISTRY
+    encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
@@ -504,7 +503,4 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-    decoder_registry = {
-        'generator': SequenceGeneratorDecoder,
-        'tagger': SequenceTaggerDecoder
-    }
+    decoder_registry = DECODER_REGISTRY
