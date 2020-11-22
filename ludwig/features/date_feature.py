@@ -40,6 +40,12 @@ class DateFeatureMixin(object):
         'datetime_format': None
     }
 
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'datetime_format': {'type': 'string'},
+    }
+
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         return {

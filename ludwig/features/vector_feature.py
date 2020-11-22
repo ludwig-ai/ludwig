@@ -47,6 +47,12 @@ class VectorFeatureMixin(object):
         'fill_value': ""
     }
 
+    preprocessing_schema = {
+        'vector_size': {'type': 'integer', 'minimum': 0},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'number'},
+    }
+
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         return {

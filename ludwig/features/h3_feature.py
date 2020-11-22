@@ -40,6 +40,11 @@ class H3FeatureMixin(object):
         # mode 1 edge 0 resolution 0 base_cell 0
     }
 
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'integer'},
+    }
+
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         return {}

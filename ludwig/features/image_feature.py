@@ -54,10 +54,10 @@ class ImageFeatureMixin(object):
     }
 
     preprocessing_schema = {
-        'missing_value_strategy': {'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'in_memory': {'type': 'boolean'},
-        'resize_method': {'enum': RESIZE_METHODS},
-        'scaling': {'enum': list(image_scaling_registry.keys())},
+        'resize_method': {'type': 'string', 'enum': RESIZE_METHODS},
+        'scaling': {'type': 'string', 'enum': list(image_scaling_registry.keys())},
         'num_processes': {'type': 'integer', 'minimum': 0},
         'height': {'type': 'integer', 'minimum': 0},
         'width': {'type': 'integer', 'minimum': 0},

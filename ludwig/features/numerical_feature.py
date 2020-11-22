@@ -47,6 +47,12 @@ class NumericalFeatureMixin(object):
         'normalization': None
     }
 
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'normalization': {'type': 'string', 'enum': [None, 'zscore', 'minmax']},
+    }
+
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         if preprocessing_parameters['normalization'] is not None:

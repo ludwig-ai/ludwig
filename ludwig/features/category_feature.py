@@ -53,6 +53,13 @@ class CategoryFeatureMixin(object):
         'fill_value': UNKNOWN_SYMBOL
     }
 
+    preprocessing_schema = {
+        'most_common': {'type': 'integer', 'minimum': 0},
+        'lowercase': {'type': 'boolean'},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+    }
+
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         idx2str, str2idx, str2freq, _, _, _, _ = create_vocabulary(
