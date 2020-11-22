@@ -19,7 +19,7 @@ from abc import ABC
 
 import tensorflow as tf
 
-from ludwig.encoders.base import Encoder, register
+from ludwig.encoders.base import Encoder, Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.initializer_modules import get_initializer
@@ -29,7 +29,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = {}
+ENCODER_REGISTRY = Registry()
 
 
 class H3Encoder(Encoder, ABC):

@@ -20,7 +20,7 @@ from abc import ABC
 import tensorflow as tf
 from tensorflow.keras.layers import Flatten
 
-from ludwig.encoders.base import Encoder, register, register_default
+from ludwig.encoders.base import Encoder, Registry, register, register_default
 from ludwig.modules.convolutional_modules import Conv2DStack, \
     get_resnet_block_sizes
 from ludwig.modules.convolutional_modules import ResNet2
@@ -29,7 +29,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = {}
+ENCODER_REGISTRY = Registry()
 
 
 class ImageEncoder(Encoder, ABC):

@@ -17,18 +17,16 @@
 import logging
 from abc import ABC
 
-from tensorflow.keras.layers import Layer
-
-from ludwig.encoders.base import DEFAULT_KEYS, Encoder, register
+from ludwig.encoders.base import DEFAULT_KEYS, Encoder, Registry, register
 from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.modules.embedding_modules import Embed
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = {
+ENCODER_REGISTRY = Registry({
     key: PassthroughEncoder for key in DEFAULT_KEYS + ['passthrough']
-}
+})
 
 
 class CategoricalEncoder(Encoder, ABC):
@@ -82,7 +80,7 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
 
 
 @register(name='sparse')
-class CategoricalSparseEncoder(Layer):
+class CategoricalSparseEncoder(CategoricalEncoder):
 
     def __init__(
             self,

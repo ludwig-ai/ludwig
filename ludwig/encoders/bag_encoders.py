@@ -17,14 +17,14 @@
 import logging
 from abc import ABC
 
-from ludwig.encoders.base import Encoder, register_default
+from ludwig.encoders.base import Encoder, Registry, register_default
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = {}
+ENCODER_REGISTRY = Registry()
 
 
 class BagEncoder(Encoder, ABC):

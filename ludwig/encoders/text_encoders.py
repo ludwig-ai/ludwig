@@ -21,16 +21,13 @@ from abc import ABC
 import tensorflow as tf
 
 from ludwig.encoders import sequence_encoders
-from ludwig.encoders.base import Encoder, register
+from ludwig.encoders.base import Encoder, Registry, register
 from ludwig.modules.reduction_modules import SequenceReducer
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = {
-    # TODO(travis): this will not work with custom sequence encoders added after this module is imported
-    **sequence_encoders.ENCODER_REGISTRY
-}
+ENCODER_REGISTRY = Registry(sequence_encoders.ENCODER_REGISTRY)
 
 
 class TextEncoder(Encoder, ABC):

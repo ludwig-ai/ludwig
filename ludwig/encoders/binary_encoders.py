@@ -19,16 +19,16 @@ from abc import ABC
 
 import tensorflow as tf
 
-from ludwig.encoders.base import Encoder, register_default
+from ludwig.encoders.base import Encoder, Registry, register_default
 from ludwig.encoders.generic_encoders import DenseEncoder
 
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = {
+ENCODER_REGISTRY = Registry({
     'dense': DenseEncoder
-}
+})
 
 
 class BinaryEncoder(Encoder, ABC):
