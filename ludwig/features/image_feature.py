@@ -58,7 +58,10 @@ class ImageFeatureMixin(object):
         'in_memory': {'type': 'boolean'},
         'resize_method': {'enum': RESIZE_METHODS},
         'scaling': {'enum': list(image_scaling_registry.keys())},
-        'num_processes': {'type': 'integer', 'minimum': 0}
+        'num_processes': {'type': 'integer', 'minimum': 0},
+        'height': {'type': 'integer', 'minimum': 0},
+        'width': {'type': 'integer', 'minimum': 0},
+        'num_channels': {'type': 'integer', 'minimum': 0},
     }
 
     @staticmethod
