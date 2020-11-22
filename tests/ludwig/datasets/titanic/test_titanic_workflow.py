@@ -1,6 +1,3 @@
-import gzip
-import os
-import shutil
 import tempfile
 import pandas as pd
 from unittest import mock
@@ -27,7 +24,7 @@ def test_download_titanic_dataset():
         'cabin': [1, 2, 4],
         'embarked': ["C", "Q", "S"],
         'boat': [0, 0, 0],
-        'body': [0, 1],
+        'body': [0, 1, 0],
         'home.dest': ["Croatia", "Italy","Sweden"],
         'survived': [0, 1, 0]
     })
@@ -45,14 +42,13 @@ def test_download_titanic_dataset():
         'cabin': [2, 2, 1],
         'embarked': ["Q", "Q", "C"],
         'boat': [0, 0, 0],
-        'body': [0, 1],
+        'body': [0, 1, 0],
         'home.dest': ["Sweden", "Slovenia", "Italy"],
         'survived': [0, 1, 0]
     })
     titanic_train_filename = "titanic_train.csv"
     titanic_test_filename = "titanic_test.csv"
     with tempfile.TemporaryDirectory() as source_dir:
-        archive_filename = os.path.join(source_dir, 'archive.zip')
         titanic_train_df.to_csv(index=False)
         titanic_test_df.to_csv(index=False)
 

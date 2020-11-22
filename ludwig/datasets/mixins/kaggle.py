@@ -1,21 +1,23 @@
 import os
+from pathlib import Path
 from kaggle.api.kaggle_api_extended import KaggleApi
+
+DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
 
 
 class KaggleMixin:
     """A mixin to abstract away the details of the kaggle API which includes
     the ability to authenticate against the kaggle API, list the various datasets
     and finally download the dataset"""
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
 
-    def __init__(self):
-        """We instantiate a handle to the API and authenticate here, the requirements
-        for authentication are that Kaggle API requires an API token:
-        1) Go to the Account Tab ( https://www.kaggle.com/<username>/account )
-        and click ‘Create API Token’.  A file named kaggle.json will be downloaded.
-        2) Move this file in to ~/.kaggle/  folder in Mac and Linux or to C:\Users\<username>\.kaggle\ on windows.
-        This is required for authentication and do not skip this step."""
+    def __init__(self, dataset_name="titanic", cache_dir=DEFAULT_CACHE_LOCATION):
+        print("processing the dataset "+dataset_name+" with cache location="+cache_dir)
         api = KaggleApi()
         api.authenticate()
+
 
     def list_downloads(self) -> list:
         """In kaggle they use the term competitions, here we list all
@@ -34,3 +36,7 @@ class KaggleMixin:
         # Signature: competition_download_files(competition, path=None, force=False, quiet=True)
         self.api.competition_download_files('titanic', path=self.raw_temp_path)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
+
+    @property
+    def download_urls(self):
+        return self.config["download_urls"]

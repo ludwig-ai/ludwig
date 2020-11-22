@@ -20,8 +20,6 @@ from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
-NUM_LABELS = 10
-
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Titanic(cache_dir=cache_dir)
@@ -29,7 +27,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
 
 
 class Titanic(CSVLoadMixin, KaggleMixin, BaseDataset):
-    """The Mnist dataset.
+    """The Titanic dataset.
 
     This pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming training data into a destination
