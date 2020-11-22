@@ -15,8 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import inspect
-
 from jsonschema import validate
 
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -37,13 +35,10 @@ def get_schema():
                         'name': {'type': 'string'},
                         'type': {'type': 'string', 'enum': INPUT_FEATURE_TYPES},
                         'column': {'type': 'string'},
-                        'proc_column': {'type': 'string'},
-                        'preprocessing': {},
                         'encoder': {'type': 'string'}
                     },
-                    'allOf': get_input_encoder_conds(),
+                    'allOf': get_input_encoder_conds() + get_input_preproc_conds(),
                     'required': ['name', 'type'],
-                    'additionalProperties': False,
                 }
             },
             'combiner': {},
@@ -66,23 +61,23 @@ def get_input_encoder_conds():
             {'encoder': {'enum': encoder_names}},
         )
         conds.append(encoder_cond)
+    return conds
 
-        # To enable ease of swapping between different encoders, we allow the union
-        # of all encoder params to be specified together.
-        config_args = set()
-        for encoder_name in encoder_names:
-            encoder_cls = feature_cls.encoder_registry[encoder_name]
-            signature = inspect.signature(encoder_cls.__init__)
-            config_args.update([
-                k for k, v in signature.parameters.items()
-                if v.default is not inspect.Parameter.empty
-            ])
 
-        encoder_arg_cond = create_cond(
+def get_input_preproc_conds():
+    conds = []
+    for feature_type in INPUT_FEATURE_TYPES:
+        feature_cls = input_type_registry[feature_type]
+        preproc_spec = {
+            'type': 'object',
+            'properties': feature_cls.preprocessing_schema,
+            'additionalProperties': False,
+        }
+        preproc_cond = create_cond(
             {'type': feature_type},
-            {arg: {} for arg in config_args}
+            {'preprocessing': preproc_spec},
         )
-        conds.append(encoder_arg_cond)
+        conds.append(preproc_cond)
     return conds
 
 

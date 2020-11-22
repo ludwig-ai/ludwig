@@ -36,6 +36,13 @@ from ludwig.utils.misc_utils import set_default_value
 logger = logging.getLogger(__name__)
 
 
+image_scaling_registry = {
+    'pixel_normalization': lambda x: x * 1.0 / 255,
+    'pixel_standardization': lambda x: tf.map_fn(
+        lambda f: tf.image.per_image_standardization(f), x)
+}
+
+
 class ImageFeatureMixin(object):
     type = IMAGE
     preprocessing_defaults = {
@@ -44,6 +51,14 @@ class ImageFeatureMixin(object):
         'resize_method': 'interpolate',
         'scaling': 'pixel_normalization',
         'num_processes': 1
+    }
+
+    preprocessing_schema = {
+        'missing_value_strategy': {'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'in_memory': {'type': 'boolean'},
+        'resize_method': {'enum': RESIZE_METHODS},
+        'scaling': {'enum': list(image_scaling_registry.keys())},
+        'num_processes': {'type': 'integer', 'minimum': 0}
     }
 
     @staticmethod
@@ -389,10 +404,3 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         'resnet': ResNetEncoder,
         None: Stacked2DCNN
     }
-
-
-image_scaling_registry = {
-    'pixel_normalization': lambda x: x * 1.0 / 255,
-    'pixel_standardization': lambda x: tf.map_fn(
-        lambda f: tf.image.per_image_standardization(f), x)
-}

@@ -22,13 +22,17 @@ from ludwig.utils.schema import validate_config
 
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import sequence_feature
 
 
 def test_config_basic():
     for encoder in ENCODERS:
         config = {
-            'input_features': [sequence_feature(reduce_output='sum', encoder=encoder)],
+            'input_features': [
+                sequence_feature(reduce_output='sum', encoder=encoder),
+                image_feature('/tmp/destination_folder'),
+            ],
             'output_features': [category_feature(vocab_size=2, reduce_input='sum')],
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
@@ -49,6 +53,29 @@ def test_config_bad_feature_type():
 def test_config_bad_encoder_name():
     config = {
         'input_features': [sequence_feature(reduce_output='sum', encoder='fake')],
+        'output_features': [category_feature(vocab_size=2, reduce_input='sum')],
+        'combiner': {'type': 'concat', 'fc_size': 14},
+    }
+
+    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+        validate_config(config)
+
+
+def test_config_bad_preprocessing_param():
+    config = {
+        'input_features': [
+            sequence_feature(reduce_output='sum', encoder='fake'),
+            image_feature(
+                '/tmp/destination_folder',
+                preprocessing={
+                     'in_memory': True,
+                     'height': 12,
+                     'width': 12,
+                     'num_channels': 3,
+                     'tokenizer': 'space',
+                },
+            ),
+        ],
         'output_features': [category_feature(vocab_size=2, reduce_input='sum')],
         'combiner': {'type': 'concat', 'fc_size': 14},
     }
