@@ -55,7 +55,7 @@ def register(name):
 
 def register_default(name):
     def wrap(cls):
-        ludwig.utils.registry.register(name)
+        cls.register(name)
         cls.register_default()
         return cls
     return wrap
