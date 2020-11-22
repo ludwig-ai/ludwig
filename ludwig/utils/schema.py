@@ -36,11 +36,14 @@ def get_schema():
                     'properties': {
                         'name': {'type': 'string'},
                         'type': {'type': 'string', 'enum': INPUT_FEATURE_TYPES},
+                        'column': {'type': 'string'},
+                        'proc_column': {'type': 'string'},
                         'preprocessing': {},
                         'encoder': {'type': 'string'}
                     },
                     'allOf': get_input_encoder_conds(),
-                    'required': ['name', 'type']
+                    'required': ['name', 'type'],
+                    'additionalProperties': False,
                 }
             },
             'combiner': {},
@@ -57,25 +60,29 @@ def get_input_encoder_conds():
     conds = []
     for feature_type in INPUT_FEATURE_TYPES:
         feature_cls = input_type_registry[feature_type]
-        encoder_names = sorted(list(feature_cls.encoder_registry.keys()))
+        encoder_names = list(feature_cls.encoder_registry.keys())
         encoder_cond = create_cond(
             {'type': feature_type},
             {'encoder': {'enum': encoder_names}},
         )
         conds.append(encoder_cond)
 
+        # To enable ease of swapping between different encoders, we allow the union
+        # of all encoder params to be specified together.
+        config_args = set()
         for encoder_name in encoder_names:
             encoder_cls = feature_cls.encoder_registry[encoder_name]
             signature = inspect.signature(encoder_cls.__init__)
-            config_args = [
+            config_args.update([
                 k for k, v in signature.parameters.items()
                 if v.default is not inspect.Parameter.empty
-            ]
-            encoder_arg_cond = create_cond(
-                {'type': feature_type, 'encoder': encoder_cls},
-                {arg: {} for arg in config_args}
-            )
-            conds.append(encoder_arg_cond)
+            ])
+
+        encoder_arg_cond = create_cond(
+            {'type': feature_type},
+            {arg: {} for arg in config_args}
+        )
+        conds.append(encoder_arg_cond)
     return conds
 
 

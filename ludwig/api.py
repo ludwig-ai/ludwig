@@ -66,6 +66,7 @@ from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
                                      get_output_directory)
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.schema import validate_config
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
@@ -184,6 +185,7 @@ class LudwigModel:
 
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
+        validate_config(self.config)
 
         # setup horovod
         self._horovod = configure_horovod(use_horovod)
