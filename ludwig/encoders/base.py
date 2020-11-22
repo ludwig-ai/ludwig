@@ -31,10 +31,10 @@ class Registry(UserDict):
     that item added or removed.
     """
     def __init__(self, parent=None):
-        super().__init__(parent)
         self.children = []
         if isinstance(parent, Registry):
             parent.children.append(self)
+        super().__init__(parent)
 
     def __setitem__(self, key, value):
         for child in self.children:
