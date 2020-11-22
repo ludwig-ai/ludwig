@@ -18,6 +18,7 @@ import logging
 import os
 
 import numpy as np
+import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY
