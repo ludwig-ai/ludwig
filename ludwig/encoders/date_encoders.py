@@ -20,7 +20,8 @@ from abc import ABC
 
 import tensorflow as tf
 
-from ludwig.encoders.base import Encoder, Registry, register
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 

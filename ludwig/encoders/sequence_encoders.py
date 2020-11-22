@@ -20,7 +20,8 @@ from abc import ABC
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 
-from ludwig.encoders.base import Encoder, Registry, register, register_default
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register, register_default
 from ludwig.modules.attention_modules import TrasformerStack
 from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D

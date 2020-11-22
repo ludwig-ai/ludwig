@@ -17,7 +17,8 @@
 import logging
 from abc import ABC
 
-from ludwig.encoders.base import Encoder, Registry, register_default
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register_default
 from ludwig.modules.embedding_modules import EmbedSparse
 from ludwig.modules.fully_connected_modules import FCStack
 

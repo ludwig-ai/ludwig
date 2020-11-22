@@ -20,7 +20,8 @@ from abc import ABC
 import tensorflow as tf
 from tensorflow.keras.layers import Flatten
 
-from ludwig.encoders.base import Encoder, Registry, register, register_default
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register, register_default
 from ludwig.modules.convolutional_modules import Conv2DStack, \
     get_resnet_block_sizes
 from ludwig.modules.convolutional_modules import ResNet2

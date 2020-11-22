@@ -19,7 +19,8 @@ from abc import ABC
 
 import tensorflow as tf
 
-from ludwig.encoders.base import Encoder, Registry, register_default
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register_default
 from ludwig.encoders.generic_encoders import DenseEncoder
 
 

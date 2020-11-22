@@ -16,50 +16,10 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from collections import UserDict
 
 from tensorflow.keras.layers import Layer
 
-
-DEFAULT_KEYS = ['None', 'none', 'null', None]
-
-
-class Registry(UserDict):
-    """Registry is like a normal dict, but with optional child dicts.
-
-    When an item is added / removed from the parent, the children will also have
-    that item added or removed.
-    """
-    def __init__(self, parent=None):
-        self.children = []
-        if isinstance(parent, Registry):
-            parent.children.append(self)
-        super().__init__(parent)
-
-    def __setitem__(self, key, value):
-        for child in self.children:
-            child.__setitem__(key, value)
-        super().__setitem__(key, value)
-
-    def __delitem__(self, key):
-        for child in self.children:
-            child.__delitem__(key)
-        super().__delitem__(key)
-
-
-def register(name):
-    def wrap(cls):
-        cls.register(name)
-        return cls
-    return wrap
-
-
-def register_default(name):
-    def wrap(cls):
-        cls.register(name)
-        cls.register_default()
-        return cls
-    return wrap
+from ludwig.utils.registry import DEFAULT_KEYS
 
 
 class Encoder(Layer, ABC):

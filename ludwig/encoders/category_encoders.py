@@ -17,7 +17,8 @@
 import logging
 from abc import ABC
 
-from ludwig.encoders.base import DEFAULT_KEYS, Encoder, Registry, register
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register, DEFAULT_KEYS
 from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.modules.embedding_modules import Embed
 
