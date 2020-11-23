@@ -57,30 +57,6 @@ class NumericalFeatureMixin(object):
 
         return numeric_transformer.fit_transform_params(column)
 
-        # todo clean up if new code works
-        # if preprocessing_parameters['normalization'] is not None:
-        #     if preprocessing_parameters['normalization'] == 'zscore':
-        #         return {
-        #             'mean': column.astype(np.float32).mean(),
-        #             'std': column.astype(np.float32).std()
-        #         }
-        #     elif preprocessing_parameters['normalization'] == 'minmax':
-        #         return {
-        #             'min': column.astype(np.float32).min(),
-        #             'max': column.astype(np.float32).max()
-        #         }
-        #     elif preprocessing_parameters['normalization'] == 'log1p':
-        #         return {}
-        #     else:
-        #         logger.info(
-        #             'Currently zscore and minmax are the only '
-        #             'normalization strategies available. No {}'.format(
-        #                 preprocessing_parameters['normalization'])
-        #         )
-        #         return {}
-        # else:
-        #     return {}
-
     @staticmethod
     def add_feature_data(
             feature,
