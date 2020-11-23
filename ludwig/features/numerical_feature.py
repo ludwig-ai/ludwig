@@ -53,7 +53,7 @@ class NumericalFeatureMixin(object):
         numeric_transformer = get_from_registry(
             preprocessing_parameters.get('normalization', None),
             numeric_transformation_registry
-        )(**preprocessing_parameters)
+        )
 
         return numeric_transformer.fit_transform_params(column)
 
@@ -335,25 +335,13 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
 class ZScoreTransformer:
     def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
-        # When parameters are None we only need object to use
-        # the fit_transform_params method, other methods should not be used
         self.mu = mean
         self.sigma = std
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        if self.mu is None or self.sigma is None:
-            raise ValueError(
-                'Numeric transformer needs to be instantiated with '
-                'mean and std values.'
-            )
         return (x - self.mu) / self.sigma
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
-        if self.mu is None or self.sigma is None:
-            raise ValueError(
-                'Numeric transformer needs to be instantiated with '
-                'mean and std values.'
-            )
         return x * self.sigma + self.mu
 
     @staticmethod
@@ -366,18 +354,11 @@ class ZScoreTransformer:
 
 class MinMaxTransformer:
     def __init__(self, min: float = None, max: float = None, **kwargs: dict):
-        # When parameters are None we only need object to use
-        # the fit_transform_params method, other methods should not be used
         self.min_value = min
         self.max_value = max
         self.range = None if min is None or max is None else max - min
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        if self.range is None:
-            raise ValueError(
-                'Numeric transformer needs to be instantiated with '
-                'min and max values.'
-            )
         return (x - self.min_value) / self.range
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
