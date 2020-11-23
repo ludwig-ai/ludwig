@@ -21,7 +21,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
 
-
 import numpy as np
 
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
@@ -30,6 +29,7 @@ from ludwig.constants import (CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE,
                               TYPE)
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import str2bool
+
 
 logger = logging.getLogger(__name__)
 
@@ -292,10 +292,11 @@ class PySOTSampler(HyperoptSampler):
 
 
 class RayTuneSampler(HyperoptSampler):
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=1,
+    def __init__(self, goal: str, parameters: Dict[str, Any], search_alg: dict = None, num_samples=1,
                  **kwargs) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         self.search_space = self._get_search_space(parameters)
+        self.search_alg_dict = search_alg
         self.num_samples = num_samples
 
     def _get_search_space(self, parameters):

@@ -617,6 +617,7 @@ class RayTuneExecutor(HyperoptExecutor):
         ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = hyperopt_sampler.num_samples
+        self.search_alg_dict = hyperopt_sampler.search_alg_dict
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
@@ -769,7 +770,22 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=debug,
         )
 
-        analysis = tune.run(tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict), config=self.search_space,
+        if self.search_alg_dict is not None:
+            if TYPE not in self.search_alg_dict:
+                logger.warning(
+                    "WARNING: Kindly set type param for search_alg "
+                    "to utilize Tune's Search Algorithms."
+                )
+                search_alg = None
+            else:
+                mode = "min" if self.goal != MAXIMIZE else "max"
+                search_alg_type = self.search_alg_dict.pop(TYPE)
+                search_alg = tune.create_searcher(
+                    search_alg_type, metric="metric_score", mode=mode, **self.search_alg_dict)
+        else:
+            search_alg = None
+
+        analysis = tune.run(tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict), config=self.search_space, search_alg=search_alg,
                             num_samples=self.num_samples, resources_per_trial={"cpu": self.cpu_resources_per_trial, "gpu": self.gpu_resources_per_trial})
 
         hyperopt_results = analysis.results_df.sort_values(
