@@ -74,11 +74,11 @@ class Backend(ABC):
 class LocalBackend(Backend):
     def __init__(self):
         super().__init__()
-        self._processor = PandasEngine()
+        self._df_engine = PandasEngine()
 
     @property
     def df_engine(self):
-        return self._processor
+        return self._df_engine
 
     @property
     def supports_multiprocessing(self):

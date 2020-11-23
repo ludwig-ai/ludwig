@@ -1459,6 +1459,7 @@ def _preprocess_file_for_training(
         if backend.cache_enabled:
             training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
+        # TODO dask: consolidate hdf5 cache with backend cache
         if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
@@ -1733,6 +1734,7 @@ def preprocess_for_prediction(
         output_features
     )
 
+    # TODO dask: support postprocessing using Backend
     dataset = Dataset(
         dataset,
         features,
