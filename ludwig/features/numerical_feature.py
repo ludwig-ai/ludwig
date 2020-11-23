@@ -357,7 +357,8 @@ class Log1pTransformer:
     def __init__(self, **kwargs: dict):
         pass
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def transform(x: np.ndarray) -> np.ndarray:
         if np.any(x <= 0):
             raise ValueError(
                 'One or more values are non-positive.  '
@@ -365,7 +366,8 @@ class Log1pTransformer:
             )
         return np.log1p(x)
 
-    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def inverse_transform(x: np.ndarray) -> np.ndarray:
         return np.expm1(x)
 
     @staticmethod
@@ -377,10 +379,12 @@ class IdentityTransformer:
     def __init__(self, **kwargs):
         pass
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def transform(x: np.ndarray) -> np.ndarray:
         return x
 
-    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def inverse_transform(x: np.ndarray) -> np.ndarray:
         return x
 
     @staticmethod
