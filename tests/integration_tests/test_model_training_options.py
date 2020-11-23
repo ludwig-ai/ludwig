@@ -2,6 +2,7 @@ import json
 import os.path
 import re
 from collections import namedtuple
+import logging
 
 import numpy as np
 import pandas as pd
@@ -12,8 +13,10 @@ from sklearn.model_selection import train_test_split
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
+from ludwig.features.numerical_feature import numeric_transformation_registry
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
+from ludwig.utils.misc_utils import get_from_registry
 from tests.integration_tests.utils import category_feature, generate_data
 
 RANDOM_SEED = 42
@@ -475,3 +478,66 @@ def test_cache_checksum(csv_filename, tmp_path):
 
     # timestamps should be different
     assert prior_training_timestamp < current_training_timestamp
+
+
+@pytest.mark.parametrize(
+    'transformer_key', list(numeric_transformation_registry.keys())
+)
+def test_numeric_transformer(transformer_key, tmpdir):
+    Transformer = get_from_registry(transformer_key,
+                                    numeric_transformation_registry)
+    transformer_name = Transformer().__class__.__name__
+    if transformer_name == 'Log1pTransformer':
+        raw_values = np.random.lognormal(5, 2, size=100)
+    else:
+        raw_values = np.random.normal(5, 2, size=100)
+
+    parameters = Transformer.fit_transform_params(raw_values)
+    if transformer_name in {'Log1pTransformer', 'IdentityTransformer'}:
+        # should be empty
+        assert not bool(parameters)
+    else:
+        # should not be empty
+        assert bool(parameters)
+
+    # instantiate numeric transformer
+    numeric_transfomer = Transformer(**parameters)
+
+    # transform values
+    transformed_values = numeric_transfomer.transform(raw_values)
+
+    # inverse transform the prior transformed values
+    reconstructed_values = \
+        numeric_transfomer.inverse_transform(transformed_values)
+
+    # should now match
+    assert np.allclose(raw_values, reconstructed_values)
+
+    # now test numeric transformer with output feature
+    df = pd.DataFrame(np.array([raw_values, raw_values]).T, columns=['x', 'y'])
+    config = {
+        'input_features': [
+            {'name': 'x', 'type': 'numerical'}
+        ],
+        'output_features': [
+            {'name': 'y', 'type': 'numerical',
+             'preprocessing': {'normalization': transformer_key}}
+        ],
+        'combiner': {
+            'type': 'concat',
+        },
+        'training': {
+            'epochs': 2,
+            'batch_size': 16,
+        }
+    }
+
+    args = {
+        'config': config,
+        'skip_save_processed_input': True,
+        'output_directory': os.path.join(tmpdir, 'results'),
+        'logging_level': logging.WARN
+    }
+
+    # ensure no exceptions are raised
+    experiment_cli(dataset=df, **args)
