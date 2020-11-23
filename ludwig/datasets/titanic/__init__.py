@@ -40,8 +40,8 @@ class Titanic(CSVLoadMixin, KaggleMixin, BaseDataset):
     processed_temp_path: str
     processed_dataset_path: str
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="titanic", cache_dir=cache_dir)
+    def __init__(self, dataset_name="titanic", cache_dir=DEFAULT_CACHE_LOCATION):
+        super().__init__(dataset_name, cache_dir)
 
     def process_downloaded_dataset(self):
         """ The final method where we create a training and test file by iterating through
