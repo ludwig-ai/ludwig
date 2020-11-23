@@ -22,7 +22,7 @@ from collections import Counter
 
 import numpy as np
 
-from ludwig.data.processor.pandas import PANDAS
+from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text

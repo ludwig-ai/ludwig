@@ -71,7 +71,7 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            dataset[feature[PROC_COLUMN]] = backend.processor.map_objects(
+            dataset[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                 dataset[feature[COLUMN]],
                 lambda x: np.array(x.split(), dtype=np.float32)
             )
@@ -83,7 +83,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = backend.processor.compute(dataset[feature[PROC_COLUMN]].map(len).max())
+        vector_size = backend.df_engine.compute(dataset[feature[PROC_COLUMN]].map(len).max())
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(

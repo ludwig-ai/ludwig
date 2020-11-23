@@ -49,7 +49,7 @@ class NumericalFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        compute = backend.processor.compute
+        compute = backend.df_engine.compute
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 return {

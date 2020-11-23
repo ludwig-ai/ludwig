@@ -53,7 +53,7 @@ class SetFeatureMixin(object):
             preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return {
             'idx2str': idx2str,
@@ -76,7 +76,7 @@ class SetFeatureMixin(object):
             set_vector[feature_vector] = 1
             return set_vector.astype(np.bool)
 
-        return backend.processor.map_objects(column, to_dense)
+        return backend.df_engine.map_objects(column, to_dense)
 
     @staticmethod
     def add_feature_data(

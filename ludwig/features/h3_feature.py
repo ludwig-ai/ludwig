@@ -72,7 +72,7 @@ class H3FeatureMixin(object):
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
 
-        dataset[feature[PROC_COLUMN]] = backend.processor.map_objects(
+        dataset[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
             column,
             lambda x: np.array(x, dtype=np.uint8)
         )
