@@ -48,25 +48,24 @@ def test_download_titanic_dataset():
     })
     titanic_train_filename = "titanic_train.csv"
     titanic_test_filename = "titanic_test.csv"
-    with tempfile.TemporaryDirectory() as source_dir:
-        titanic_train_df.to_csv(index=False)
-        titanic_test_df.to_csv(index=False)
+    titanic_train_df.to_csv(index=False)
+    titanic_test_df.to_csv(index=False)
 
-        config = {
-            'version': 1.0,
-            'split_filenames': {
-                'train_file': titanic_train_filename,
-                'test_file': titanic_test_filename
-            },
-            'csv_filename': 'fake_titanic.csv',
-        }
+    config = {
+        'version': 1.0,
+        'split_filenames': {
+            'train_file': titanic_train_filename,
+            'test_file': titanic_test_filename
+        },
+        'csv_filename': 'fake_titanic.csv',
+    }
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with mock.patch('ludwig.datasets.base_dataset.read_config',
-                            return_value=config):
-                dataset = FakeTitanicDataset(tmpdir)
-                assert not dataset.is_downloaded()
-                assert not dataset.is_processed()
-                dataset.download()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with mock.patch('ludwig.datasets.base_dataset.read_config',
+                        return_value=config):
+            dataset = FakeTitanicDataset(tmpdir)
+            assert not dataset.is_downloaded()
+            assert not dataset.is_processed()
+            dataset.download()
 
-                assert dataset.is_downloaded()
+            assert dataset.is_downloaded()
