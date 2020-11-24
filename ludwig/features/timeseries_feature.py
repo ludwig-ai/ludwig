@@ -73,12 +73,12 @@ class TimeseriesFeatureMixin(object):
             tokenizer_registry
         )()
 
-        ts_vectors = backend.processor.map_objects(
+        ts_vectors = backend.df_engine.map_objects(
             timeseries,
             lambda ts: np.array(tokenizer(ts)).astype(np.float32)
         )
 
-        max_length = backend.processor.compute(ts_vectors.map(len).max())
+        max_length = backend.df_engine.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
             logger.debug(
                 'max length of {0}: {1} < limit: {2}'.format(
@@ -102,7 +102,7 @@ class TimeseriesFeatureMixin(object):
                 padded[max_length - limit:] = vector[:limit]
             return padded
 
-        return backend.processor.map_objects(ts_vectors, pad)
+        return backend.df_engine.map_objects(ts_vectors, pad)
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):

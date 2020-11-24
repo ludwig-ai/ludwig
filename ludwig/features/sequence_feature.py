@@ -76,7 +76,7 @@ class SequenceFeatureMixin(object):
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
@@ -104,7 +104,7 @@ class SequenceFeatureMixin(object):
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
             ],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return sequence_data
 

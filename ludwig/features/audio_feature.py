@@ -131,9 +131,9 @@ class AudioFeatureMixin(object):
             filepath = get_abs_path(src_path, path)
             return soundfile.read(filepath)
 
-        processor = backend.processor
-        raw_audio = processor.map_objects(column, read_audio)
-        processed_audio = processor.map_objects(
+        df_engine = backend.df_engine
+        raw_audio = df_engine.map_objects(column, read_audio)
+        processed_audio = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._transform_to_feature(
                 audio=row[0],
@@ -146,7 +146,7 @@ class AudioFeatureMixin(object):
             )
         )
 
-        audio_stats = processor.map_objects(
+        audio_stats = df_engine.map_objects(
             raw_audio,
             lambda row: AudioFeatureMixin._get_stats(
                 audio=row[0],
@@ -164,7 +164,7 @@ class AudioFeatureMixin(object):
                     AudioFeatureMixin._merge_stats(merged_stats, audio_stats)
             return merged_stats
 
-        merged_stats = processor.reduce_objects(audio_stats, reduce)
+        merged_stats = df_engine.reduce_objects(audio_stats, reduce)
         merged_stats['mean'] = calculate_mean(merged_stats['sum'], merged_stats['count'])
         merged_stats['var'] = calculate_var(merged_stats['sum'], merged_stats['sum2'], merged_stats['count'])
         return processed_audio, merged_stats

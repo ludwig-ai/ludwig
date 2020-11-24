@@ -22,7 +22,7 @@ import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
-from ludwig.data.processor.pandas import PandasProcessor
+from ludwig.data.dataframe.pandas import PandasEngine
 
 
 class Backend(ABC):
@@ -31,7 +31,7 @@ class Backend(ABC):
 
     @property
     @abstractmethod
-    def processor(self):
+    def df_engine(self):
         raise NotImplementedError()
 
     @property
@@ -74,11 +74,11 @@ class Backend(ABC):
 class LocalBackend(Backend):
     def __init__(self):
         super().__init__()
-        self._processor = PandasProcessor()
+        self._df_engine = PandasEngine()
 
     @property
-    def processor(self):
-        return self._processor
+    def df_engine(self):
+        return self._df_engine
 
     @property
     def supports_multiprocessing(self):

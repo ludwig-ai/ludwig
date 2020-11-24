@@ -68,7 +68,7 @@ class Timer(object):
         return time.clock() - self._proc
 
     def tic(self):
-        """Like Matlab tic/toc for wall time and processor time"""
+        """Like Matlab tic/toc for wall time and dataframe time"""
         self.reset()
 
     def toc(self):
@@ -76,7 +76,7 @@ class Timer(object):
         return self.wall()
 
     def tocproc(self):
-        """Like Matlab tic/toc, but for processor time"""
+        """Like Matlab tic/toc, but for dataframe time"""
         return self.proc()
 
 

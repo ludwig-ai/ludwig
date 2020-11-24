@@ -60,7 +60,7 @@ class CategoryFeatureMixin(object):
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
             add_padding=False,
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return {
             'idx2str': idx2str,

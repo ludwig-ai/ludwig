@@ -48,7 +48,7 @@ class BagFeatureMixin(object):
             preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            processor=backend.processor,
+            processor=backend.df_engine,
         )
         return {
             'idx2str': idx2str,
@@ -71,7 +71,7 @@ class BagFeatureMixin(object):
             bag_vector[list(col_counter.keys())] = list(col_counter.values())
             return bag_vector
 
-        return backend.processor.map_objects(column, to_vector)
+        return backend.df_engine.map_objects(column, to_vector)
 
     @staticmethod
     def add_feature_data(

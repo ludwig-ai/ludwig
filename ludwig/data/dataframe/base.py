@@ -15,52 +15,49 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-import pandas as pd
-
-from ludwig.data.dataset import Dataset
-from ludwig.data.processor.base import DataProcessor
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
-from ludwig.utils.misc_utils import get_proc_features
+from abc import ABC, abstractmethod
 
 
-class PandasProcessor(DataProcessor):
+class DataFrameEngine(ABC):
+    @abstractmethod
     def parallelize(self, data):
-        return data
+        raise NotImplementedError()
 
+    @abstractmethod
     def persist(self, data):
-        return data
+        raise NotImplementedError()
 
+    @abstractmethod
     def compute(self, data):
-        return data
+        raise NotImplementedError()
 
+    @abstractmethod
     def from_pandas(self, df):
-        return df
+        raise NotImplementedError()
 
+    @abstractmethod
     def map_objects(self, series, map_fn):
-        return series.map(map_fn)
+        raise NotImplementedError()
 
+    @abstractmethod
     def reduce_objects(self, series, reduce_fn):
-        return reduce_fn(series)
+        raise NotImplementedError()
 
+    @abstractmethod
     def create_dataset(self, dataset, tag, config, training_set_metadata):
-        return Dataset(
-            dataset,
-            get_proc_features(config),
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-        )
+        raise NotImplementedError()
 
     @property
+    @abstractmethod
     def array_lib(self):
-        return np
+        raise NotImplementedError()
 
     @property
+    @abstractmethod
     def df_lib(self):
-        return pd
+        raise NotImplementedError()
 
     @property
+    @abstractmethod
     def use_hdf5_cache(self):
-        return True
-
-
-PANDAS = PandasProcessor()
+        raise NotImplementedError()
