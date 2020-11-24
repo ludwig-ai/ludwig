@@ -583,7 +583,7 @@ class Trainer:
                         self.optimizer.variables(), root_rank=0)
 
                 progress_tracker.steps += 1
-                progress_tracker.learning_rate = current_learning_rate
+                progress_tracker.current_learning_rate = current_learning_rate
 
                 if is_on_master():
                     progress_bar.update(1)
