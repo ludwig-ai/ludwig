@@ -19,10 +19,9 @@ import os
 from abc import ABC, abstractmethod
 from copy import copy
 
+import ludwig
 import numpy as np
 import pandas as pd
-
-import ludwig
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -32,8 +31,10 @@ from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_PROCESSED_CACHE_DIR,
-                                     DATA_TRAIN_HDF5_FP, HDF5_DATASET_KEY, DATAFRAME_FORMATS,
+from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
+                                     DATA_PROCESSED_CACHE_DIR,
+                                     DATA_TRAIN_HDF5_FP, HDF5_DATASET_KEY,
+                                     DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
                                      FEATHER_FORMATS, FWF_FORMATS,
                                      HDF5_FORMATS, HTML_FORMATS, JSON_FORMATS,
@@ -47,8 +48,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_PROCES
                                      read_html, read_json, read_jsonl,
                                      read_orc, read_parquet, read_pickle,
                                      read_sas, read_spss, read_stata, read_tsv,
-                                     replace_file_extension, split_dataset_ttv,
-                                     text_feature_data_field)
+                                     replace_file_extension, split_dataset_ttv)
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
@@ -1770,6 +1770,7 @@ def calculate_checksum(original_dataset, config):
                config.get('output_features', []) + \
                config.get('features', [])
     info['feature_names'] = [feature[NAME] for feature in features]
+    info['feature_types'] = [feature[TYPE] for feature in features]
     info['feature_preprocessing'] = [feature.get(PREPROCESSING, {})
                                      for feature in features]
     hash = hash_dict(info, max_length=None)
