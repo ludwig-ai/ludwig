@@ -217,7 +217,6 @@ class TextFeatureMixin(object):
             preprocessing_parameters,
             backend
         )
-        dataset = dataset.drop(feature[COLUMN], axis=1)
         dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
         dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data
         return dataset

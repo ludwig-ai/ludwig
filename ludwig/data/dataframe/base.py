@@ -20,6 +20,10 @@ from abc import ABC, abstractmethod
 
 class DataFrameEngine(ABC):
     @abstractmethod
+    def empty_df_like(self, df):
+        raise NotImplementedError()
+
+    @abstractmethod
     def parallelize(self, data):
         raise NotImplementedError()
 

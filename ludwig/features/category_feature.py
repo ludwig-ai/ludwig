@@ -92,7 +92,6 @@ class CategoryFeatureMixin(object):
             dataset_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
         )
-        dataset = dataset.drop(feature[COLUMN], axis=1)
         return dataset
 
 

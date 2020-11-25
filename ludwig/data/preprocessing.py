@@ -1075,7 +1075,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
                     **preprocessing_parameters
                 }
 
-            handle_missing_values(
+            dataset_df = handle_missing_values(
                 dataset_df,
                 feature,
                 preprocessing_parameters
@@ -1098,7 +1098,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
 
 
 def build_data(input_df, features, training_set_metadata, backend):
-    dataset = copy(input_df)
+    dataset = backend.df_engine.empty_df_like(input_df)
     for feature in features:
 
         if PROC_COLUMN not in feature:
@@ -1108,8 +1108,8 @@ def build_data(input_df, features, training_set_metadata, backend):
             preprocessing_parameters = \
                 training_set_metadata[feature[NAME]][
                     PREPROCESSING]
-            dataset = handle_missing_values(
-                dataset,
+            input_df = handle_missing_values(
+                input_df,
                 feature,
                 preprocessing_parameters
             )

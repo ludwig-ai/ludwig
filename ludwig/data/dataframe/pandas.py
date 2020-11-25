@@ -25,6 +25,9 @@ from ludwig.utils.misc_utils import get_proc_features
 
 
 class PandasEngine(DataFrameEngine):
+    def empty_df_like(self, df):
+        return pd.DataFrame(index=df.index)
+
     def parallelize(self, data):
         return data
 
