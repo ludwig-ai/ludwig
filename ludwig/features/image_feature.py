@@ -308,7 +308,7 @@ class ImageFeatureMixin(object):
                 )
 
                 dataset[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                    dataset[feature[COLUMN]],
+                    dataset_df[feature[COLUMN]],
                     lambda file_path: read_image_and_resize(get_abs_path(src_path, file_path))
                 )
         else:
