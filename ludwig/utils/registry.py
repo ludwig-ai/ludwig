@@ -24,26 +24,50 @@ DEFAULT_KEYS = ['None', 'none', 'null', None]
 
 
 class Registry(UserDict):
-    """Registry is like a normal dict, but with optional child dicts.
+    """Registry is like a normal dict, but with an optional parent dict.
 
-    When an item is added / removed from the parent, the children will also have
-    that item added or removed.
+    Items are considered to exist in the registry if they are added to either
+    the registry itself, or its parent.
     """
-    def __init__(self, parent=None):
-        self.children = []
-        if isinstance(parent, Registry):
-            parent.children.append(self)
-        super().__init__(parent)
+    def __init__(self, source=None):
+        init_data = None
+        parent = {}
+        if isinstance(source, Registry):
+            parent = source
+        else:
+            init_data = source
 
-    def __setitem__(self, key, value):
-        for child in self.children:
-            child.__setitem__(key, value)
-        super().__setitem__(key, value)
+        self.parent = parent
+        super().__init__(init_data)
 
-    def __delitem__(self, key):
-        for child in self.children:
-            child.__delitem__(key)
-        super().__delitem__(key)
+    def __getitem__(self, key):
+        if self.parent and key not in self.data:
+            return self.parent.__getitem__(key)
+        return self.data.__getitem__(key)
+
+    def __contains__(self, key):
+        return key in self.data or key in self.parent
+
+    def __len__(self):
+        return len(self.data) + len(self.parent)
+
+    def __iter__(self):
+        return self._merged().__iter__()
+
+    def keys(self):
+        return self._merged().keys()
+
+    def values(self):
+        return self._merged().values()
+
+    def items(self):
+        return self._merged().items()
+
+    def _merged(self):
+        return {
+            **self.parent,
+            **self.data
+        }
 
 
 def register(name):
