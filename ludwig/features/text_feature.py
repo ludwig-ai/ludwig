@@ -205,21 +205,21 @@ class TextFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            output_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
-        dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data
-        return dataset
+        output_df['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        output_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        return output_df
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):

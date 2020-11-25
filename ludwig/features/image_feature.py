@@ -223,8 +223,8 @@ class ImageFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            output_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -240,14 +240,14 @@ class ImageFeatureMixin(object):
             preprocessing_parameters['num_processes']
         )
         src_path = None
-        if hasattr(dataset_df, 'src'):
-            src_path = os.path.dirname(os.path.abspath(dataset_df.src))
+        if hasattr(input_df, 'src'):
+            src_path = os.path.dirname(os.path.abspath(input_df.src))
 
-        num_images = len(dataset_df)
+        num_images = len(input_df)
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_path = next(iter(dataset_df[feature[COLUMN]]))
+        first_path = next(iter(input_df[feature[COLUMN]]))
 
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
@@ -291,7 +291,7 @@ class ImageFeatureMixin(object):
             # standard code anyway.
             if backend.supports_multiprocessing and (num_processes > 1 or num_images > 1):
                 all_file_paths = [get_abs_path(src_path, file_path)
-                                  for file_path in dataset_df[feature[NAME]]]
+                                  for file_path in input_df[feature[NAME]]]
 
                 with Pool(num_processes) as pool:
                     logger.debug(
@@ -299,7 +299,7 @@ class ImageFeatureMixin(object):
                             num_processes
                         )
                     )
-                    dataset[feature[PROC_COLUMN]] = pool.map(read_image_and_resize, all_file_paths)
+                    output_df[feature[PROC_COLUMN]] = pool.map(read_image_and_resize, all_file_paths)
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -307,17 +307,17 @@ class ImageFeatureMixin(object):
                     'No process pool initialized. Using internal process for preprocessing images'
                 )
 
-                dataset[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                    dataset_df[feature[COLUMN]],
+                output_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+                    input_df[feature[COLUMN]],
                     lambda file_path: read_image_and_resize(get_abs_path(src_path, file_path))
                 )
         else:
             backend.check_lazy_load_supported(feature)
 
             all_file_paths = [get_abs_path(src_path, file_path)
-                              for file_path in dataset_df[feature[NAME]]]
+                              for file_path in input_df[feature[NAME]]]
 
-            data_fp = os.path.splitext(dataset_df.src)[0] + '.hdf5'
+            data_fp = os.path.splitext(input_df.src)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
                 mode = 'r+'
@@ -335,8 +335,8 @@ class ImageFeatureMixin(object):
                     )
                 h5_file.flush()
 
-            dataset[feature[PROC_COLUMN]] = np.arange(num_images)
-        return dataset
+            output_df[feature[PROC_COLUMN]] = np.arange(num_images)
+        return output_df
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):

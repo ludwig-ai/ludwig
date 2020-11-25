@@ -111,19 +111,19 @@ class SequenceFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            output_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]], preprocessing_parameters,
             backend
         )
-        dataset[feature[PROC_COLUMN]] = sequence_data
-        return dataset
+        output_df[feature[PROC_COLUMN]] = sequence_data
+        return output_df
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):

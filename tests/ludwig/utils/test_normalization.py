@@ -56,8 +56,8 @@ def test_norm():
 
     NumericalFeatureMixin.add_feature_data(
         feature=num_feature,
-        dataset_df=data_df,
-        dataset=data,
+        input_df=data_df,
+        output_df=data,
         metadata={num_feature[NAME]: feature_1_meta},
         preprocessing_parameters={'normalization': 'zscore'},
         backend=LOCAL_BACKEND
@@ -69,8 +69,8 @@ def test_norm():
 
     NumericalFeatureMixin.add_feature_data(
         feature=num_feature,
-        dataset_df=data_df,
-        dataset=data,
+        input_df=data_df,
+        output_df=data,
         metadata={num_feature[NAME]: feature_2_meta},
         preprocessing_parameters={'normalization': 'minmax'},
         backend=LOCAL_BACKEND

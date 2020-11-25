@@ -56,8 +56,8 @@ class VectorFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            output_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -66,13 +66,13 @@ class VectorFeatureMixin(object):
                 Expects all the vectors to be of the same size. The vectors need to be
                 whitespace delimited strings. Missing values are not handled.
                 """
-        if len(dataset_df) == 0:
+        if len(input_df) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
         # Convert the string of features into a numpy array
         try:
-            dataset[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                dataset_df[feature[COLUMN]],
+            output_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+                input_df[feature[COLUMN]],
                 lambda x: np.array(x.split(), dtype=np.float32)
             )
         except ValueError:
@@ -83,7 +83,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = backend.df_engine.compute(dataset[feature[PROC_COLUMN]].map(len).max())
+        vector_size = backend.df_engine.compute(output_df[feature[PROC_COLUMN]].map(len).max())
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -96,7 +96,7 @@ class VectorFeatureMixin(object):
             logger.debug('Observed vector size: {}'.format(vector_size))
 
         metadata[feature[NAME]]['vector_size'] = vector_size
-        return dataset
+        return output_df
 
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):

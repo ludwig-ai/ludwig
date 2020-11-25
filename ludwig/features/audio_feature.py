@@ -275,8 +275,8 @@ class AudioFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            output_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -303,14 +303,14 @@ class AudioFeatureMixin(object):
         src_path = None
         # this is not super nice, but works both and DFs and lists
         first_path = '.'
-        for first_path in dataset_df[column]:
+        for first_path in input_df[column]:
             break
-        if hasattr(dataset_df, 'src'):
-            src_path = os.path.dirname(os.path.abspath(dataset_df.src))
+        if hasattr(input_df, 'src'):
+            src_path = os.path.dirname(os.path.abspath(input_df.src))
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Audio file paths must be absolute')
 
-        num_audio_utterances = len(dataset_df)
+        num_audio_utterances = len(input_df)
         padding_value = preprocessing_parameters['padding_value']
         normalization_type = preprocessing_parameters['norm']
 
@@ -326,7 +326,7 @@ class AudioFeatureMixin(object):
 
         if feature[PREPROCESSING]['in_memory']:
             audio_features, audio_stats = AudioFeatureMixin._process_in_memory(
-                dataset_df[feature[NAME]],
+                input_df[feature[NAME]],
                 src_path,
                 audio_feature_dict,
                 feature_dim,
@@ -336,7 +336,7 @@ class AudioFeatureMixin(object):
                 audio_file_length_limit_in_s,
                 backend
             )
-            dataset[proc_column] = audio_features
+            output_df[proc_column] = audio_features
 
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))
@@ -358,7 +358,7 @@ class AudioFeatureMixin(object):
         else:
             backend.check_lazy_load_supported(feature)
 
-        return dataset
+        return output_df
 
     @staticmethod
     def _get_max_length_feature(

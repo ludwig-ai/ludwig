@@ -76,19 +76,19 @@ class BagFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            output_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+        output_df[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        return dataset
+        return output_df
 
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
