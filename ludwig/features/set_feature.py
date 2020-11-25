@@ -82,18 +82,18 @@ class SetFeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        output_df[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
+        proc_df[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        return output_df
+        return proc_df
 
 
 class SetInputFeature(SetFeatureMixin, InputFeature):

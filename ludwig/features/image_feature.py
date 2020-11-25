@@ -224,7 +224,7 @@ class ImageFeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -299,7 +299,7 @@ class ImageFeatureMixin(object):
                             num_processes
                         )
                     )
-                    output_df[feature[PROC_COLUMN]] = pool.map(read_image_and_resize, all_file_paths)
+                    proc_df[feature[PROC_COLUMN]] = pool.map(read_image_and_resize, all_file_paths)
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -307,7 +307,7 @@ class ImageFeatureMixin(object):
                     'No process pool initialized. Using internal process for preprocessing images'
                 )
 
-                output_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+                proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                     input_df[feature[COLUMN]],
                     lambda file_path: read_image_and_resize(get_abs_path(src_path, file_path))
                 )
@@ -335,8 +335,8 @@ class ImageFeatureMixin(object):
                     )
                 h5_file.flush()
 
-            output_df[feature[PROC_COLUMN]] = np.arange(num_images)
-        return output_df
+            proc_df[feature[PROC_COLUMN]] = np.arange(num_images)
+        return proc_df
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):

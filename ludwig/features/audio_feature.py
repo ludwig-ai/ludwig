@@ -276,7 +276,7 @@ class AudioFeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -336,7 +336,7 @@ class AudioFeatureMixin(object):
                 audio_file_length_limit_in_s,
                 backend
             )
-            output_df[proc_column] = audio_features
+            proc_df[proc_column] = audio_features
 
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))
@@ -358,7 +358,7 @@ class AudioFeatureMixin(object):
         else:
             backend.check_lazy_load_supported(feature)
 
-        return output_df
+        return proc_df
 
     @staticmethod
     def _get_max_length_feature(

@@ -83,16 +83,16 @@ class CategoryFeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        output_df[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
+        proc_df[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
         )
-        return output_df
+        return proc_df
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):

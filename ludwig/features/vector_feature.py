@@ -57,7 +57,7 @@ class VectorFeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -71,7 +71,7 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            output_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+            proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                 input_df[feature[COLUMN]],
                 lambda x: np.array(x.split(), dtype=np.float32)
             )
@@ -83,7 +83,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = backend.df_engine.compute(output_df[feature[PROC_COLUMN]].map(len).max())
+        vector_size = backend.df_engine.compute(proc_df[feature[PROC_COLUMN]].map(len).max())
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -96,7 +96,7 @@ class VectorFeatureMixin(object):
             logger.debug('Observed vector size: {}'.format(vector_size))
 
         metadata[feature[NAME]]['vector_size'] = vector_size
-        return output_df
+        return proc_df
 
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):

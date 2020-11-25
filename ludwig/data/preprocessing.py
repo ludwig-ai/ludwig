@@ -1098,13 +1098,13 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
 
 
 def build_data(input_df, features, training_set_metadata, backend):
-    output_df = backend.df_engine.empty_df_like(input_df)
+    proc_df = backend.df_engine.empty_df_like(input_df)
     for feature in features:
 
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
-        if feature[PROC_COLUMN] not in output_df:
+        if feature[PROC_COLUMN] not in proc_df:
             preprocessing_parameters = \
                 training_set_metadata[feature[NAME]][
                     PREPROCESSING]
@@ -1117,16 +1117,16 @@ def build_data(input_df, features, training_set_metadata, backend):
                 feature[TYPE],
                 base_type_registry
             ).add_feature_data
-            output_df = add_feature_data(
+            proc_df = add_feature_data(
                 feature,
                 input_df,
-                output_df,
+                proc_df,
                 training_set_metadata,
                 preprocessing_parameters,
                 backend
             )
 
-    return output_df
+    return proc_df
 
 
 def precompute_fill_value(dataset_df, feature, preprocessing_parameters):

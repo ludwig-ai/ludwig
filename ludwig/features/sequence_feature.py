@@ -112,7 +112,7 @@ class SequenceFeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -122,8 +122,8 @@ class SequenceFeatureMixin(object):
             metadata[feature[NAME]], preprocessing_parameters,
             backend
         )
-        output_df[feature[PROC_COLUMN]] = sequence_data
-        return output_df
+        proc_df[feature[PROC_COLUMN]] = sequence_data
+        return proc_df
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):

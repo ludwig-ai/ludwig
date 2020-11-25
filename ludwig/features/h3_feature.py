@@ -62,7 +62,7 @@ class H3FeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -72,11 +72,11 @@ class H3FeatureMixin(object):
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
 
-        output_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
             column,
             lambda x: np.array(x, dtype=np.uint8)
         )
-        return output_df
+        return proc_df
 
 
 class H3InputFeature(H3FeatureMixin, InputFeature):

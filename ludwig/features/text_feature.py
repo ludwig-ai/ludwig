@@ -206,7 +206,7 @@ class TextFeatureMixin(object):
     def add_feature_data(
             feature,
             input_df,
-            output_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
@@ -217,9 +217,9 @@ class TextFeatureMixin(object):
             preprocessing_parameters,
             backend
         )
-        output_df['{}_char'.format(feature[PROC_COLUMN])] = chars_data
-        output_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
-        return output_df
+        proc_df['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        proc_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        return proc_df
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
