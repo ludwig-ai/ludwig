@@ -60,7 +60,7 @@ class AudioFeatureMixin(object):
         'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'in_memory': {'type': 'boolean'},
         'padding_value': {'type': 'number', 'minimum': 0},
-        'norm': {'type': 'string', 'enum': [None, 'per_file', 'global']},
+        'norm': {'type': ['string', 'null'], 'enum': [None, 'per_file', 'global']},
         'audio_feature': {
             'type': 'object',
             'properties': {
