@@ -72,7 +72,7 @@ class VectorFeatureMixin(object):
         # Convert the string of features into a numpy array
         try:
             dataset[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                dataset[feature[COLUMN]],
+                dataset_df[feature[COLUMN]],
                 lambda x: np.array(x.split(), dtype=np.float32)
             )
         except ValueError:
