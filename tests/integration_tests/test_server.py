@@ -155,7 +155,7 @@ def test_server_integration(csv_filename):
     data, files = convert_to_form(first_entry)
     server_response = client.post('/predict', data=data, files=files)
     server_response = server_response.json()
-g
+
     server_response_keys = sorted(list(server_response.keys()))
     assert server_response_keys == sorted(output_keys_for(output_features))
 
