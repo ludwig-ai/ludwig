@@ -20,6 +20,7 @@ import numpy as np
 from ludwig.constants import PREPROCESSING
 from ludwig.data.sampler import DistributedSampler
 from ludwig.utils.batcher import Batcher
+from ludwig.utils.data_utils import to_numpy_dataset
 
 
 class Dataset:
@@ -27,10 +28,7 @@ class Dataset:
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
         self.size = len(dataset)
-
-        self.dataset = {}
-        for col in dataset.columns:
-            self.dataset[col] = np.stack(dataset[col].to_numpy())
+        self.dataset = to_numpy_dataset(dataset)
 
     def get(self, proc_column, idx=None):
         if idx is None:

@@ -33,7 +33,7 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      DATA_PROCESSED_CACHE_DIR,
-                                     DATA_TRAIN_HDF5_FP, HDF5_DATASET_KEY,
+                                     DATA_TRAIN_HDF5_FP,
                                      DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
                                      FEATHER_FORMATS, FWF_FORMATS,
@@ -1214,7 +1214,7 @@ def load_hdf5(
     def shuffle(df):
         return df.sample(frac=1).reset_index(drop=True)
 
-    dataset = pd.read_hdf(hdf5_file_path, key=HDF5_DATASET_KEY)
+    dataset = data_utils.load_hdf5(hdf5_file_path)
     if not split_data:
         if shuffle_training:
             dataset = shuffle(dataset)
@@ -1467,7 +1467,7 @@ def _preprocess_file_for_training(
 
             logger.info('Writing preprocessed dataset cache')
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-            data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
+            data_utils.save_hdf5(data_hdf5_fp, data)
 
             logger.info('Writing train set metadata')
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
@@ -1528,7 +1528,6 @@ def _preprocess_file_for_training(
             data_utils.save_hdf5(
                 data_train_hdf5_fp,
                 training_data,
-                training_set_metadata
             )
 
             if validation_set is not None:
@@ -1540,7 +1539,6 @@ def _preprocess_file_for_training(
                 data_utils.save_hdf5(
                     data_validation_hdf5_fp,
                     validation_data,
-                    training_set_metadata
                 )
 
             if test_set is not None:
@@ -1552,7 +1550,6 @@ def _preprocess_file_for_training(
                 data_utils.save_hdf5(
                     data_test_hdf5_fp,
                     test_data,
-                    training_set_metadata
                 )
 
             logger.info('Writing train set metadata')
