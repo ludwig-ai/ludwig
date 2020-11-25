@@ -51,6 +51,7 @@ class VectorFeatureMixin(object):
         'vector_size': {'type': 'integer', 'minimum': 0},
         'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'number'},
+        'computed_fill_value': {'type': 'number'},
     }
 
     @staticmethod

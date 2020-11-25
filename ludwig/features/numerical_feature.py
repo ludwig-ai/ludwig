@@ -49,7 +49,8 @@ class NumericalFeatureMixin(object):
 
     preprocessing_schema = {
         'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
-        'fill_value': {'type': 'string'},
+        'fill_value': {'type': 'number'},
+        'computed_fill_value': {'type': 'number'},
         'normalization': {'type': ['string', 'null'], 'enum': [None, 'zscore', 'minmax']},
     }
 

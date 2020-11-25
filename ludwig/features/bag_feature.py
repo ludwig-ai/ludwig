@@ -47,6 +47,7 @@ class BagFeatureMixin(object):
         'lowercase': {'type': 'boolean'},
         'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
     }
 
     @staticmethod

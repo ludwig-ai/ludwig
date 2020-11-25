@@ -43,6 +43,7 @@ class H3FeatureMixin(object):
     preprocessing_schema = {
         'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'integer'},
+        'computed_fill_value': {'type': 'integer'},
     }
 
     @staticmethod
