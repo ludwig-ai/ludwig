@@ -36,7 +36,7 @@ data_df = pd.DataFrame(pd.Series([
     10
 ]), columns=['x'])
 
-data = pd.DataFrame(columns=['x'])
+proc_df = pd.DataFrame(columns=['x'])
 
 
 def test_norm():
@@ -57,12 +57,12 @@ def test_norm():
     NumericalFeatureMixin.add_feature_data(
         feature=num_feature,
         input_df=data_df,
-        output_df=data,
+        proc_df=proc_df,
         metadata={num_feature[NAME]: feature_1_meta},
         preprocessing_parameters={'normalization': 'zscore'},
         backend=LOCAL_BACKEND
     )
-    assert np.allclose(np.array(data[num_feature[PROC_COLUMN]]),
+    assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]),
                        np.array([-1.26491106, -0.63245553, 0, 0.63245553,
                                  1.26491106])
                        )
@@ -70,11 +70,11 @@ def test_norm():
     NumericalFeatureMixin.add_feature_data(
         feature=num_feature,
         input_df=data_df,
-        output_df=data,
+        proc_df=proc_df,
         metadata={num_feature[NAME]: feature_2_meta},
         preprocessing_parameters={'normalization': 'minmax'},
         backend=LOCAL_BACKEND
     )
-    assert np.allclose(np.array(data[num_feature[PROC_COLUMN]]),
+    assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]),
                        np.array([0, 0.25, 0.5, 0.75, 1])
                        )
