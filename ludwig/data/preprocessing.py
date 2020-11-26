@@ -17,23 +17,24 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-
-import h5py
-import numpy as np
-import pandas as pd
+from copy import copy
 
 import ludwig
+import numpy as np
+import pandas as pd
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
-from ludwig.data.concatenate_datasets import concatenate_datasets, \
-    concatenate_df
+from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
-                                     DATA_TRAIN_HDF5_FP, DATAFRAME_FORMATS,
+                                     DATA_PROCESSED_CACHE_DIR,
+                                     DATA_TRAIN_HDF5_FP,
+                                     DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
                                      FEATHER_FORMATS, FWF_FORMATS,
                                      HDF5_FORMATS, HTML_FORMATS, JSON_FORMATS,
@@ -47,15 +48,14 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      read_html, read_json, read_jsonl,
                                      read_orc, read_parquet, read_pickle,
                                      read_sas, read_spss, read_stata, read_tsv,
-                                     replace_file_extension, split_dataset_ttv,
-                                     text_feature_data_field)
+                                     replace_file_extension, split_dataset_ttv)
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
-                                     hash_dict)
+                                     hash_dict, get_proc_features_from_lists)
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +73,7 @@ class DataFormatPreprocessor(ABC):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         pass
@@ -83,7 +84,8 @@ class DataFormatPreprocessor(ABC):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         pass
 
@@ -99,6 +101,7 @@ class DictPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         num_overrides = override_in_memory_flag(features, True)
@@ -108,14 +111,15 @@ class DictPreprocessor(DataFormatPreprocessor):
                 'with {} data format.'.format('dict')
             )
 
+        df_engine = backend.df_engine
         if dataset is not None:
-            dataset = pd.DataFrame(dataset)
+            dataset = df_engine.from_pandas(pd.DataFrame(dataset))
         if training_set_metadata is not None:
-            training_set = pd.DataFrame(training_set)
+            training_set = df_engine.from_pandas(pd.DataFrame(training_set))
         if validation_set is not None:
-            validation_set = pd.DataFrame(validation_set)
+            validation_set = df_engine.from_pandas(pd.DataFrame(validation_set))
         if test_set is not None:
-            test_set = pd.DataFrame(test_set)
+            test_set = df_engine.from_pandas(pd.DataFrame(test_set))
 
         return _preprocess_df_for_training(
             features,
@@ -125,6 +129,7 @@ class DictPreprocessor(DataFormatPreprocessor):
             test_set,
             training_set_metadata=training_set_metadata,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -133,13 +138,15 @@ class DictPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset, training_set_metadata = build_dataset(
             pd.DataFrame(dataset),
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -155,6 +162,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         num_overrides = override_in_memory_flag(features, True)
@@ -172,6 +180,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             test_set,
             training_set_metadata=training_set_metadata,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -180,13 +189,15 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset, training_set_metadata = build_dataset(
             dataset,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -202,6 +213,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -214,6 +226,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -222,7 +235,8 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset_df = read_csv(dataset)
         dataset_df.src = dataset
@@ -230,7 +244,8 @@ class CSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -246,6 +261,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -258,6 +274,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -266,7 +283,8 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         dataset_df = read_tsv(dataset)
         dataset_df.src = dataset
@@ -274,7 +292,8 @@ class TSVPreprocessor(DataFormatPreprocessor):
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -290,6 +309,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -302,6 +322,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -310,15 +331,17 @@ class JSONPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_json(dataset)
+        dataset_df = read_json(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -334,6 +357,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -346,6 +370,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -354,15 +379,17 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_jsonl(dataset)
+        dataset_df = read_jsonl(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -378,6 +405,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -390,6 +418,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -398,15 +427,17 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_excel(dataset)
+        dataset_df = read_excel(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -422,6 +453,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -434,6 +466,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -442,15 +475,17 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_parquet(dataset)
+        dataset_df = read_parquet(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -466,6 +501,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -478,6 +514,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -486,15 +523,17 @@ class PicklePreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_pickle(dataset)
+        dataset_df = read_pickle(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -510,6 +549,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -522,6 +562,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -530,15 +571,17 @@ class FatherPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_feather(dataset)
+        dataset_df = read_feather(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -554,6 +597,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -566,6 +610,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -574,15 +619,17 @@ class FWFPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_fwf(dataset)
+        dataset_df = read_fwf(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -598,6 +645,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -610,6 +658,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -618,15 +667,17 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_html(dataset)
+        dataset_df = read_html(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -642,6 +693,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -654,6 +706,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -662,15 +715,17 @@ class ORCPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_orc(dataset)
+        dataset_df = read_orc(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -686,6 +741,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -698,6 +754,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -706,15 +763,17 @@ class SASPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_sas(dataset)
+        dataset_df = read_sas(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -730,6 +789,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -742,6 +802,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -750,15 +811,17 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_spss(dataset)
+        dataset_df = read_spss(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -774,6 +837,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         return _preprocess_file_for_training(
@@ -786,6 +850,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
+            backend=backend,
             random_seed=random_seed
         )
 
@@ -794,15 +859,17 @@ class StataPreprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
-        dataset_df = read_stata(dataset)
+        dataset_df = read_stata(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
-            metadata=training_set_metadata
+            metadata=training_set_metadata,
+            backend=backend
         )
         return dataset, training_set_metadata, None
 
@@ -818,6 +885,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             training_set_metadata=None,
             skip_save_processed_input=False,
             preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
         if dataset is None and training_set is None:
@@ -881,7 +949,8 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             dataset,
             features,
             preprocessing_params,
-            training_set_metadata
+            training_set_metadata,
+            backend
     ):
         hdf5_fp = dataset
         dataset = load_hdf5(
@@ -919,8 +988,12 @@ def build_dataset(
         features,
         global_preprocessing_parameters,
         metadata=None,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
 ):
+    df_engine = backend.df_engine
+    dataset_df = df_engine.parallelize(dataset_df)
+
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
         global_preprocessing_parameters
@@ -930,13 +1003,15 @@ def build_dataset(
         metadata = build_metadata(
             dataset_df,
             features,
-            global_preprocessing_parameters
+            global_preprocessing_parameters,
+            backend
         )
 
     dataset = build_data(
         dataset_df,
         features,
-        metadata
+        metadata,
+        backend
     )
 
     dataset[SPLIT] = get_split(
@@ -946,13 +1021,14 @@ def build_dataset(
             'split_probabilities'
         ],
         stratify=global_preprocessing_parameters['stratify'],
+        backend=backend,
         random_seed=random_seed
     )
 
     return dataset, metadata
 
 
-def build_metadata(dataset_df, features, global_preprocessing_parameters):
+def build_metadata(dataset_df, features, global_preprocessing_parameters, backend):
     metadata = {}
     proc_feature_to_metadata = {}
 
@@ -999,7 +1075,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                     **preprocessing_parameters
                 }
 
-            handle_missing_values(
+            dataset_df = handle_missing_values(
                 dataset_df,
                 feature,
                 preprocessing_parameters
@@ -1012,7 +1088,8 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
 
             metadata[feature[NAME]] = get_feature_meta(
                 dataset_df[feature[NAME]].astype(str),
-                preprocessing_parameters
+                preprocessing_parameters,
+                backend
             )
 
             metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
@@ -1020,19 +1097,19 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
     return metadata
 
 
-def build_data(dataset_df, features, training_set_metadata):
-    dataset = {}
+def build_data(input_df, features, training_set_metadata, backend):
+    proc_df = backend.df_engine.empty_df_like(input_df)
     for feature in features:
 
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
-        if feature[PROC_COLUMN] not in dataset:
+        if feature[PROC_COLUMN] not in proc_df:
             preprocessing_parameters = \
                 training_set_metadata[feature[NAME]][
                     PREPROCESSING]
-            handle_missing_values(
-                dataset_df,
+            input_df = handle_missing_values(
+                input_df,
                 feature,
                 preprocessing_parameters
             )
@@ -1040,15 +1117,16 @@ def build_data(dataset_df, features, training_set_metadata):
                 feature[TYPE],
                 base_type_registry
             ).add_feature_data
-            add_feature_data(
+            proc_df = add_feature_data(
                 feature,
-                dataset_df,
-                dataset,
+                input_df,
+                proc_df,
                 training_set_metadata,
-                preprocessing_parameters
+                preprocessing_parameters,
+                backend
             )
 
-    return dataset
+    return proc_df
 
 
 def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
@@ -1084,9 +1162,11 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
             method=missing_value_strategy,
         )
     elif missing_value_strategy == DROP_ROW:
-        dataset_df.dropna(subset=[feature[COLUMN]], inplace=True)
+        dataset_df = dataset_df.dropna(subset=[feature[COLUMN]])
     else:
         raise ValueError('Invalid missing value strategy')
+
+    return dataset_df
 
 
 def get_split(
@@ -1094,25 +1174,27 @@ def get_split(
         force_split=False,
         split_probabilities=(0.7, 0.1, 0.2),
         stratify=None,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
 ):
     if SPLIT in dataset_df and not force_split:
         split = dataset_df[SPLIT]
     else:
         set_random_seed(random_seed)
+
         if stratify is None or stratify not in dataset_df:
-            split = np.random.choice(
-                3,
-                len(dataset_df),
-                p=split_probabilities,
+            split = dataset_df.index.to_series().map(
+                lambda x: np.random.choice(3, 1, p=split_probabilities)
             ).astype(np.int8)
         else:
             split = np.zeros(len(dataset_df))
             for val in dataset_df[stratify].unique():
+                # TODO dask: find a way to better parallelize this operation
                 idx_list = (
                     dataset_df.index[dataset_df[stratify] == val].tolist()
                 )
-                val_list = np.random.choice(
+                array_lib = backend.df_engine.array_lib
+                val_list = array_lib.random.choice(
                     3,
                     len(idx_list),
                     p=split_probabilities,
@@ -1128,30 +1210,20 @@ def load_hdf5(
         shuffle_training=False
 ):
     logger.info('Loading data from: {0}'.format(hdf5_file_path))
-    # Load data from file
-    hdf5_data = h5py.File(hdf5_file_path, 'r')
-    dataset = {}
-    for feature in features:
-        if feature[TYPE] == TEXT:
-            text_data_field = text_feature_data_field(feature)
-            dataset[text_data_field] = hdf5_data[text_data_field][()]
-        else:
-            dataset[feature[PROC_COLUMN]] = hdf5_data[feature[PROC_COLUMN]][()]
 
+    def shuffle(df):
+        return df.sample(frac=1).reset_index(drop=True)
+
+    dataset = data_utils.load_hdf5(hdf5_file_path)
     if not split_data:
-        if SPLIT in hdf5_data:
-            dataset[SPLIT] = hdf5_data[SPLIT][()]
-        hdf5_data.close()
         if shuffle_training:
-            dataset = data_utils.shuffle_dict_unison_inplace(dataset)
+            dataset = shuffle(dataset)
         return dataset
 
-    split = hdf5_data[SPLIT][()]
-    hdf5_data.close()
-    training_set, test_set, validation_set = split_dataset_ttv(dataset, split)
+    training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
 
     if shuffle_training:
-        training_set = data_utils.shuffle_dict_unison_inplace(training_set)
+        training_set = shuffle(training_set)
 
     return training_set, test_set, validation_set
 
@@ -1171,6 +1243,7 @@ def preprocess_for_training(
         data_format=None,
         skip_save_processed_input=False,
         preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed
 ):
     # sanity check to make sure some data source is provided
@@ -1288,6 +1361,7 @@ def preprocess_for_training(
         training_set_metadata=training_set_metadata,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=preprocessing_params,
+        backend=backend,
         random_seed=random_seed
     )
     training_set, test_set, validation_set, training_set_metadata = processed
@@ -1300,29 +1374,30 @@ def preprocess_for_training(
         [training_set, validation_set, test_set]
     )
 
-    training_dataset = Dataset(
+    df_engine = backend.df_engine
+    training_dataset = df_engine.create_dataset(
         training_set,
-        config['input_features'],
-        config['output_features'],
-        training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+        TRAINING,
+        config,
+        training_set_metadata
     )
 
     validation_dataset = None
     if validation_set is not None:
-        validation_dataset = Dataset(
+        validation_dataset = df_engine.create_dataset(
             validation_set,
-            config['input_features'],
-            config['output_features'],
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            VALIDATION,
+            config,
+            training_set_metadata
         )
 
     test_dataset = None
     if test_set is not None:
-        test_dataset = Dataset(
+        test_dataset = df_engine.create_dataset(
             test_set,
-            config['input_features'],
-            config['output_features'],
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            TEST,
+            config,
+            training_set_metadata
         )
 
     return (
@@ -1343,6 +1418,7 @@ def _preprocess_file_for_training(
         read_fn=read_csv,
         skip_save_processed_input=False,
         preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed
 ):
     """
@@ -1368,24 +1444,30 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        dataset_df = read_fn(dataset)
+        dataset_df = read_fn(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
+
         data, training_set_metadata = build_dataset(
             dataset_df,
             features,
             preprocessing_params,
             metadata=training_set_metadata,
+            backend=backend,
             random_seed=random_seed
         )
 
-        # save split values for use by visualization routines
-        split_fp = get_split_path(dataset)
-        save_array(split_fp, data[SPLIT])
+        if backend.cache_enabled:
+            training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
-        if is_on_master() and not skip_save_processed_input:
+        # TODO dask: consolidate hdf5 cache with backend cache
+        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
+            # save split values for use by visualization routines
+            split_fp = get_split_path(dataset)
+            save_array(split_fp, data[SPLIT])
+
             logger.info('Writing preprocessed dataset cache')
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-            data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
+            data_utils.save_hdf5(data_hdf5_fp, data)
 
             logger.info('Writing train set metadata')
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
@@ -1398,9 +1480,10 @@ def _preprocess_file_for_training(
             data_utils.save_json(training_set_metadata_fp,
                                  training_set_metadata)
 
+        # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
-            data[SPLIT]
+            SPLIT
         )
 
     elif training_set:
@@ -1413,11 +1496,12 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        concatenated_df = concatenate_datasets(
+        concatenated_df = concatenate_files(
             training_set,
             validation_set,
             test_set,
-            read_fn=read_fn
+            read_fn,
+            backend
         )
         concatenated_df.src = training_set
 
@@ -1426,21 +1510,24 @@ def _preprocess_file_for_training(
             features,
             preprocessing_params,
             metadata=training_set_metadata,
+            backend=backend,
             random_seed=random_seed
         )
 
+        if backend.cache_enabled:
+            training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
-            data[SPLIT]
+            SPLIT
         )
 
-        if is_on_master() and not skip_save_processed_input:
+        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             logger.info('Writing preprocessed training set cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(
                 data_train_hdf5_fp,
                 training_data,
-                training_set_metadata
             )
 
             if validation_set is not None:
@@ -1452,7 +1539,6 @@ def _preprocess_file_for_training(
                 data_utils.save_hdf5(
                     data_validation_hdf5_fp,
                     validation_data,
-                    training_set_metadata
                 )
 
             if test_set is not None:
@@ -1464,7 +1550,6 @@ def _preprocess_file_for_training(
                 data_utils.save_hdf5(
                     data_test_hdf5_fp,
                     test_data,
-                    training_set_metadata
                 )
 
             logger.info('Writing train set metadata')
@@ -1496,6 +1581,7 @@ def _preprocess_df_for_training(
         test_set=None,
         training_set_metadata=None,
         preprocessing_params=default_preprocessing_parameters,
+        backend=LOCAL_BACKEND,
         random_seed=default_random_seed
 ):
     """ Method to pre-process dataframes. This doesn't have the option to save the
@@ -1514,7 +1600,8 @@ def _preprocess_df_for_training(
         dataset = concatenate_df(
             training_set,
             validation_set,
-            test_set
+            test_set,
+            backend
         )
 
     dataset, training_set_metadata = build_dataset(
@@ -1522,11 +1609,16 @@ def _preprocess_df_for_training(
         features,
         preprocessing_params,
         metadata=training_set_metadata,
-        random_seed=random_seed
+        random_seed=random_seed,
+        backend=backend
     )
+
+    if backend.cache_enabled:
+        training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+
     training_set, test_set, validation_set = split_dataset_ttv(
         dataset,
-        dataset[SPLIT]
+        SPLIT
     )
     return training_set, test_set, validation_set, training_set_metadata
 
@@ -1537,7 +1629,8 @@ def preprocess_for_prediction(
         training_set_metadata=None,
         data_format=None,
         split=FULL,
-        include_outputs=True
+        include_outputs=True,
+        backend=LOCAL_BACKEND
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core
@@ -1612,7 +1705,8 @@ def preprocess_for_prediction(
         dataset,
         features,
         preprocessing_params,
-        training_set_metadata
+        training_set_metadata,
+        backend
     )
     dataset, training_set_metadata, new_hdf5_fp = processed
     if new_hdf5_fp:
@@ -1623,7 +1717,7 @@ def preprocess_for_prediction(
     if split != FULL:
         training_set, test_set, validation_set = split_dataset_ttv(
             dataset,
-            dataset[SPLIT]
+            SPLIT
         )
         if split == TRAINING:
             dataset = training_set
@@ -1632,10 +1726,15 @@ def preprocess_for_prediction(
         elif split == TEST:
             dataset = test_set
 
+    features = get_proc_features_from_lists(
+        config['input_features'],
+        output_features
+    )
+
+    # TODO dask: support postprocessing using Backend
     dataset = Dataset(
         dataset,
-        config['input_features'],
-        output_features,
+        features,
         hdf5_fp
     )
 
@@ -1670,6 +1769,7 @@ def calculate_checksum(original_dataset, config):
                config.get('output_features', []) + \
                config.get('features', [])
     info['feature_names'] = [feature[NAME] for feature in features]
+    info['feature_types'] = [feature[TYPE] for feature in features]
     info['feature_preprocessing'] = [feature.get(PREPROCESSING, {})
                                      for feature in features]
     hash = hash_dict(info, max_length=None)

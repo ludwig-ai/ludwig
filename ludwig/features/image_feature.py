@@ -47,7 +47,7 @@ class ImageFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {
             PREPROCESSING: preprocessing_parameters
         }
@@ -223,10 +223,11 @@ class ImageFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
     ):
         set_default_value(
             feature[PREPROCESSING],
@@ -239,14 +240,14 @@ class ImageFeatureMixin(object):
             preprocessing_parameters['num_processes']
         )
         src_path = None
-        if hasattr(dataset_df, 'src'):
-            src_path = os.path.dirname(os.path.abspath(dataset_df.src))
+        if hasattr(input_df, 'src'):
+            src_path = os.path.dirname(os.path.abspath(input_df.src))
 
-        num_images = len(dataset_df)
+        num_images = len(input_df)
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_path = next(iter(dataset_df[feature[COLUMN]]))
+        first_path = next(iter(input_df[feature[COLUMN]]))
 
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
@@ -278,8 +279,6 @@ class ImageFeatureMixin(object):
             resize_method=preprocessing_parameters['resize_method'],
             user_specified_num_channels=user_specified_num_channels
         )
-        all_file_paths = [get_abs_path(src_path, file_path)
-                          for file_path in dataset_df[feature[COLUMN]]]
 
         if feature[PREPROCESSING]['in_memory']:
             # Number of processes to run in parallel for preprocessing
@@ -287,34 +286,38 @@ class ImageFeatureMixin(object):
             metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
 
-            dataset[feature[PROC_COLUMN]] = np.empty(
-                (num_images, height, width, num_channels),
-                dtype=np.uint8
-            )
             # Split the dataset into pools only if we have an explicit request to use
             # multiple processes. In case we have multiple input images use the
             # standard code anyway.
-            if num_processes > 1 or num_images > 1:
+            if backend.supports_multiprocessing and (num_processes > 1 or num_images > 1):
+                all_file_paths = [get_abs_path(src_path, file_path)
+                                  for file_path in input_df[feature[NAME]]]
+
                 with Pool(num_processes) as pool:
                     logger.debug(
                         'Using {} processes for preprocessing images'.format(
                             num_processes
                         )
                     )
-                    dataset[feature[PROC_COLUMN]] = np.array(
-                        pool.map(read_image_and_resize, all_file_paths)
-                    )
-
+                    proc_df[feature[PROC_COLUMN]] = pool.map(read_image_and_resize, all_file_paths)
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
                 logger.debug(
-                    'No process pool initialized. Using one process for preprocessing images'
+                    'No process pool initialized. Using internal process for preprocessing images'
                 )
-                img = read_image_and_resize(all_file_paths[0])
-                dataset[feature[PROC_COLUMN]] = np.array([img])
+
+                proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+                    input_df[feature[COLUMN]],
+                    lambda file_path: read_image_and_resize(get_abs_path(src_path, file_path))
+                )
         else:
-            data_fp = os.path.splitext(dataset_df.src)[0] + '.hdf5'
+            backend.check_lazy_load_supported(feature)
+
+            all_file_paths = [get_abs_path(src_path, file_path)
+                              for file_path in input_df[feature[NAME]]]
+
+            data_fp = os.path.splitext(input_df.src)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
                 mode = 'r+'
@@ -332,7 +335,8 @@ class ImageFeatureMixin(object):
                     )
                 h5_file.flush()
 
-            dataset[feature[PROC_COLUMN]] = np.arange(num_images)
+            proc_df[feature[PROC_COLUMN]] = np.arange(num_images)
+        return proc_df
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
@@ -363,7 +367,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.uint8
 
     def get_input_shape(self):
