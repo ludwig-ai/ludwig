@@ -17,7 +17,6 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from copy import copy
 
 import ludwig
 import numpy as np
@@ -26,7 +25,8 @@ from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
-from ludwig.data.dataset import Dataset
+from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
@@ -1732,7 +1732,7 @@ def preprocess_for_prediction(
     )
 
     # TODO dask: support postprocessing using Backend
-    dataset = Dataset(
+    dataset = PandasDataset(
         dataset,
         features,
         hdf5_fp

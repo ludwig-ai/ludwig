@@ -29,6 +29,9 @@ from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
 from ludwig.utils.misc_utils import get_proc_features
 
 
+TMP_INDEX_COL = '__tmp_index_col__'
+
+
 def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
@@ -38,7 +41,7 @@ class DaskEngine(DataFrameEngine):
         self._parallelism = parallelism or multiprocessing.cpu_count()
 
     def empty_df_like(self, df):
-        return df.index.to_frame()
+        return df.index.to_frame(name=TMP_INDEX_COL)
 
     def parallelize(self, data):
         return data.repartition(self.parallelism)
@@ -72,6 +75,7 @@ class DaskEngine(DataFrameEngine):
                     df[name] = self.map_objects(df[name], lambda x: x.reshape(-1))
 
         os.makedirs(dataset_parquet_fp, exist_ok=True)
+        df = df.drop(TMP_INDEX_COL, 1)
         df.to_parquet(dataset_parquet_fp,
                       engine='pyarrow',
                       write_index=False,
