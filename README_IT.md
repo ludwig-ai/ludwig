@@ -11,31 +11,28 @@
 
 </div>
 
-Translated in [
-🇮🇹 Italiano](README_KR.md) and [🇰🇷 한국인](README_KR.md).
+Ludwig è uno strumento che permette agli utenti di addestrare modelli di deep learning e di usarli per ottenere predizioni senza bisogno di scrivere codice.
+È basato su TensorFlow.
 
-Ludwig is a toolbox that allows users to train and test deep learning models without the need to write code.
-It is built on top of TensorFlow.
+Per addestrare un modello bisogna fornire un file di dati, una lista di colonne da utilizzare come input e una lista di colonne da usare come output, Ludwig si occuperà del resto.
+Si possono usare semplici comandi per addestrare modelli sia in locale che in modo distribuito, e per utilizzarli per predire nuovi dati.
 
-To train a model you need to provide is a file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
-Simple commands can be used to train models both locally and in a distributed way, and to use them to predict new data.
+Ludwig mette a disposizione anche un'API programmatica in Python.
+Una suite di strumenti di visualizzazione permette di analizzare le prestazioni dei modelli in fase di apprendimento ed in fase di predizione e di compararle.
 
-A programmatic API is also available to use Ludwig from Python.
-A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
+Ludwig è costruito seguendo principi di estendibilità ed utlizza astrazione basata sui tipi di dato, in modo che sia facile aggiungere supporto per nuovi tipi di dati e nuove architetture dei modelli.
 
-Ludwig is built with extensibility principles in mind and is based on datatype abstractions, making it easy to add support for new datatypes as well as new model architectures.
+Può essere usato da data scientist per addestrare e testare modelli di deep learning velocemente così come può essere utilizzato da ricercatori per ottenere forti baseline con cui comparare e per avere un amviente sperimentale che garantisca comarabilità in quanto esegue la stess elaborazione dei dati e la stessa valutazione delle prestazioni.
 
-It can be used by practitioners to quickly train and test deep learning models as well as by researchers to obtain strong baselines to compare against and have an experimentation setting that ensures comparability by performing the same data processing and evaluation.
+Ludwig mette a disposizione un insieme di architetture di modelli che possono essere combinate per creare un modello end-to-end per ciascun caso d'uso.
+Per analogia, se le librerie di deep learning mettono a disposizione mattoni per creare un edificio, Ludwig mette a disposizione edifici per creare una città, ed è possibie scegliere tra gli edifici messi a disposizione o aggiungerne di propri.
 
-Ludwig provides a set of model architectures that can be combined together to create an end-to-end model for a given use case.
-As an analogy, if deep learning libraries provide the building blocks to make your building, Ludwig provides the buildings to make your city, and you can choose among the available buildings or add your own building to the set of available ones.
-
-The core design principles baked into the toolbox are:
-- No coding required: no coding skills are required to train a model and use it for obtaining predictions.
-- Generality: a new datatype-based approach to deep learning model design makes the tool usable across many different use cases.
-- Flexibility: experienced users have extensive control over model building and training, while newcomers will find it easy to use.
-- Extensibility: easy to add new model architecture and new feature datatypes.
-- Understandability: deep learning model internals are often considered black boxes, but Ludwig provides standard visualizations to understand their performance and compare their predictions.
+I principi di progettazione su cui Ludwig si basa sono:
+- Non è necessario scrivere codice: non è necessario saper programmare per addestrare un modello e per utilizzarlo per ottenere predizioni.
+- Generalità: il nuovo approccio alla costruzione dei modelli di deep learning basato sui tipi di dato rende lo strumento utilizzabile in molti casi d'uso.
+- Flessibilità: untenti esperti hanno completo controllo sul processo di creazione dei modelli e sul loro addestramento, ma allo stesso tempo è facile da usare per i neofiti.
+- Estendibilità: è facile aggiungere nuovi tipi di dato e nuove architetture dei modelli.
+- Compresibilità: i meccanismi interni dei modelli di deep learning sono spesso considerati delle scatole nere, ma Ludwig mette a disposizione visualizzazioni standard per comprendere le loro prestazioni e comparare le loro predizioni.
 - Open Source: Apache License 2.0
 
 
