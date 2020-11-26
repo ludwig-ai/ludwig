@@ -17,26 +17,18 @@
 import h5py
 import numpy as np
 
-from ludwig.constants import PREPROCESSING, PROC_COLUMN
+from ludwig.constants import PREPROCESSING
+from ludwig.data.sampler import DistributedSampler
+from ludwig.utils.batcher import Batcher
+from ludwig.utils.data_utils import to_numpy_dataset
 
 
 class Dataset:
-    def __init__(self, dataset, input_features, output_features, data_hdf5_fp):
-        self.dataset = dataset
-
-        self.size = min(map(len, self.dataset.values()))
-
-        self.input_features = {}
-        for feature in input_features:
-            proc_column = feature[PROC_COLUMN]
-            self.input_features[proc_column] = feature
-        self.output_features = {}
-        for feature in output_features:
-            proc_column = feature[PROC_COLUMN]
-            self.output_features[proc_column] = feature
-        self.features = self.input_features.copy()
-        self.features.update(self.output_features)
+    def __init__(self, dataset, features, data_hdf5_fp):
+        self.features = features
         self.data_hdf5_fp = data_hdf5_fp
+        self.size = len(dataset)
+        self.dataset = to_numpy_dataset(dataset)
 
     def get(self, proc_column, idx=None):
         if idx is None:
@@ -67,3 +59,18 @@ class Dataset:
 
     def __len__(self):
         return self.size
+
+    def initialize_batcher(self, batch_size=128,
+                           should_shuffle=True,
+                           seed=0,
+                           ignore_last=False,
+                           horovod=None):
+        sampler = DistributedSampler(len(self),
+                                     shuffle=should_shuffle,
+                                     seed=seed,
+                                     horovod=horovod)
+        batcher = Batcher(self,
+                          sampler,
+                          batch_size=batch_size,
+                          ignore_last=ignore_last)
+        return batcher
