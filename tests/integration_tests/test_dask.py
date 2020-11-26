@@ -45,7 +45,7 @@ from tests.integration_tests.utils import vector_feature
 
 
 def split(data_parquet):
-    data_df = read_parquet(data_parquet, LOCAL_BACKEND.processor.df_lib)
+    data_df = read_parquet(data_parquet, LOCAL_BACKEND.df_engine.df_lib)
     train_df = data_df.sample(frac=0.8)
     test_df = data_df.drop(train_df.index).sample(frac=0.5)
     validation_df = data_df.drop(train_df.index).drop(test_df.index)
