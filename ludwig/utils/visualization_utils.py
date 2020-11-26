@@ -1231,7 +1231,7 @@ def hyperopt_report(
                 hyperopt_results_df,
                 hp_name,
                 metric,
-                title.format(hp_name)
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None,
                 log_scale_x=hp_params[
@@ -1242,7 +1242,7 @@ def hyperopt_report(
                 hyperopt_results_df,
                 hp_name,
                 metric,
-                title.format(hp_name)
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None
             )
@@ -1268,7 +1268,7 @@ def hyperopt_report(
     hyperopt_pair_plot(
         hyperopt_results_df,
         metric,
-        title.format("pair plot")
+        title.format("pair plot"),
         filename_template.format('pair_plot') if filename_template else None
     )
 
