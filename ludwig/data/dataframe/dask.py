@@ -24,7 +24,7 @@ import dask.dataframe as dd
 
 from ludwig.constants import RESHAPE
 from ludwig.data.dataset.parquet import ParquetDataset
-from ludwig.data.processor.base import DataProcessor
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
 from ludwig.utils.misc_utils import get_proc_features
 
@@ -33,9 +33,12 @@ def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
 
-class DaskProcessor(DataProcessor):
+class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None):
         self._parallelism = parallelism or multiprocessing.cpu_count()
+
+    def empty_df_like(self, df):
+        return df.index.to_frame()
 
     def parallelize(self, data):
         return data.repartition(self.parallelism)

@@ -425,7 +425,7 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     :return: Experiment data as array
     """
     if file_name.endswith('.hdf5') and field is not None:
-        dataset = pd.read_hdf(file_name, key=HDF5_COLUMNS_KEY)
+        dataset = load_hdf5(file_name)
         column = dataset[field]
         array = column[dataset[SPLIT] == ground_truth_split].values  # ground truth
     elif file_name.endswith('.npy'):
