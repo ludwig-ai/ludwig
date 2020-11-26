@@ -1,4 +1,3 @@
-[Translated in Korean](README_KR.md)
 ![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
 <div align="center">
@@ -11,6 +10,8 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4210/badge)](https://bestpractices.coreinfrastructure.org/projects/4210)
 
 </div>
+
+Translated in [🇰🇷 Korean](README_KR.md)/
 
 Ludwig is a toolbox that allows users to train and test deep learning models without the need to write code.
 It is built on top of TensorFlow.
