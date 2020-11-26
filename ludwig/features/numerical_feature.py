@@ -49,7 +49,7 @@ class NumericalFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        compute = backend.processor.compute
+        compute = backend.df_engine.compute
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 return {
@@ -74,27 +74,27 @@ class NumericalFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[PROC_COLUMN]] = dataset_df[feature[COLUMN]].astype(
+        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 mean = metadata[feature[NAME]]['mean']
                 std = metadata[feature[NAME]]['std']
-                dataset[feature[PROC_COLUMN]] = (dataset[
+                proc_df[feature[PROC_COLUMN]] = (proc_df[
                                                      feature[
                                                          PROC_COLUMN]] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
                 min_ = metadata[feature[NAME]]['min']
                 max_ = metadata[feature[NAME]]['max']
-                values = dataset[feature[PROC_COLUMN]]
-                dataset[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
-        return dataset
+                values = proc_df[feature[PROC_COLUMN]]
+                proc_df[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
+        return proc_df
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):

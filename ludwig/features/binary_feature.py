@@ -56,17 +56,17 @@ class BinaryFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        column = dataset_df[feature[COLUMN]]
+        column = input_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(str2bool)
-        dataset[feature[PROC_COLUMN]] = column.astype(np.bool_).values
-        return dataset
+        proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
+        return proc_df
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):

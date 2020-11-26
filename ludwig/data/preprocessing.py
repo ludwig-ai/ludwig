@@ -19,22 +19,22 @@ import os
 from abc import ABC, abstractmethod
 from copy import copy
 
+import ludwig
 import numpy as np
 import pandas as pd
-
-import ludwig
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
-from ludwig.data.dataset.base import Dataset
-from ludwig.data.dataset.pandas import PandasDataset
+from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_PROCESSED_CACHE_DIR,
-                                     DATA_TRAIN_HDF5_FP, HDF5_DATASET_KEY, DATAFRAME_FORMATS,
+from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
+                                     DATA_PROCESSED_CACHE_DIR,
+                                     DATA_TRAIN_HDF5_FP,
+                                     DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
                                      FEATHER_FORMATS, FWF_FORMATS,
                                      HDF5_FORMATS, HTML_FORMATS, JSON_FORMATS,
@@ -48,8 +48,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS, DATA_PROCES
                                      read_html, read_json, read_jsonl,
                                      read_orc, read_parquet, read_pickle,
                                      read_sas, read_spss, read_stata, read_tsv,
-                                     replace_file_extension, split_dataset_ttv,
-                                     text_feature_data_field)
+                                     replace_file_extension, split_dataset_ttv)
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
@@ -112,15 +111,15 @@ class DictPreprocessor(DataFormatPreprocessor):
                 'with {} data format.'.format('dict')
             )
 
-        processor = backend.processor
+        df_engine = backend.df_engine
         if dataset is not None:
-            dataset = processor.from_pandas(pd.DataFrame(dataset))
+            dataset = df_engine.from_pandas(pd.DataFrame(dataset))
         if training_set_metadata is not None:
-            training_set = processor.from_pandas(pd.DataFrame(training_set))
+            training_set = df_engine.from_pandas(pd.DataFrame(training_set))
         if validation_set is not None:
-            validation_set = processor.from_pandas(pd.DataFrame(validation_set))
+            validation_set = df_engine.from_pandas(pd.DataFrame(validation_set))
         if test_set is not None:
-            test_set = processor.from_pandas(pd.DataFrame(test_set))
+            test_set = df_engine.from_pandas(pd.DataFrame(test_set))
 
         return _preprocess_df_for_training(
             features,
@@ -335,7 +334,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_json(dataset, backend.processor.df_lib)
+        dataset_df = read_json(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -383,7 +382,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_jsonl(dataset, backend.processor.df_lib)
+        dataset_df = read_jsonl(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -431,7 +430,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_excel(dataset, backend.processor.df_lib)
+        dataset_df = read_excel(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -479,7 +478,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_parquet(dataset, backend.processor.df_lib)
+        dataset_df = read_parquet(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -527,7 +526,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_pickle(dataset, backend.processor.df_lib)
+        dataset_df = read_pickle(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -575,7 +574,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_feather(dataset, backend.processor.df_lib)
+        dataset_df = read_feather(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -623,7 +622,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_fwf(dataset, backend.processor.df_lib)
+        dataset_df = read_fwf(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -671,7 +670,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_html(dataset, backend.processor.df_lib)
+        dataset_df = read_html(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -719,7 +718,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_orc(dataset, backend.processor.df_lib)
+        dataset_df = read_orc(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -767,7 +766,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_sas(dataset, backend.processor.df_lib)
+        dataset_df = read_sas(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -815,7 +814,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_spss(dataset, backend.processor.df_lib)
+        dataset_df = read_spss(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -863,7 +862,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             training_set_metadata,
             backend
     ):
-        dataset_df = read_stata(dataset, backend.processor.df_lib)
+        dataset_df = read_stata(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -992,8 +991,8 @@ def build_dataset(
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
 ):
-    processor = backend.processor
-    dataset_df = processor.parallelize(dataset_df)
+    df_engine = backend.df_engine
+    dataset_df = df_engine.parallelize(dataset_df)
 
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
@@ -1076,7 +1075,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
                     **preprocessing_parameters
                 }
 
-            handle_missing_values(
+            dataset_df = handle_missing_values(
                 dataset_df,
                 feature,
                 preprocessing_parameters
@@ -1099,18 +1098,18 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
 
 
 def build_data(input_df, features, training_set_metadata, backend):
-    dataset = copy(input_df)
+    proc_df = backend.df_engine.empty_df_like(input_df)
     for feature in features:
 
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
-        if feature[PROC_COLUMN] not in dataset:
+        if feature[PROC_COLUMN] not in proc_df:
             preprocessing_parameters = \
                 training_set_metadata[feature[NAME]][
                     PREPROCESSING]
-            dataset = handle_missing_values(
-                dataset,
+            input_df = handle_missing_values(
+                input_df,
                 feature,
                 preprocessing_parameters
             )
@@ -1118,16 +1117,16 @@ def build_data(input_df, features, training_set_metadata, backend):
                 feature[TYPE],
                 base_type_registry
             ).add_feature_data
-            dataset = add_feature_data(
+            proc_df = add_feature_data(
                 feature,
                 input_df,
-                dataset,
+                proc_df,
                 training_set_metadata,
                 preprocessing_parameters,
                 backend
             )
 
-    return dataset
+    return proc_df
 
 
 def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
@@ -1194,7 +1193,7 @@ def get_split(
                 idx_list = (
                     dataset_df.index[dataset_df[stratify] == val].tolist()
                 )
-                array_lib = backend.processor.array_lib
+                array_lib = backend.df_engine.array_lib
                 val_list = array_lib.random.choice(
                     3,
                     len(idx_list),
@@ -1210,13 +1209,12 @@ def load_hdf5(
         split_data=True,
         shuffle_training=False
 ):
-    # TODO dask: this needs to work with DataFrames
     logger.info('Loading data from: {0}'.format(hdf5_file_path))
 
     def shuffle(df):
         return df.sample(frac=1).reset_index(drop=True)
 
-    dataset = pd.read_hdf(hdf5_file_path, key=HDF5_DATASET_KEY)
+    dataset = data_utils.load_hdf5(hdf5_file_path)
     if not split_data:
         if shuffle_training:
             dataset = shuffle(dataset)
@@ -1376,8 +1374,8 @@ def preprocess_for_training(
         [training_set, validation_set, test_set]
     )
 
-    processor = backend.processor
-    training_dataset = processor.create_dataset(
+    df_engine = backend.df_engine
+    training_dataset = df_engine.create_dataset(
         training_set,
         TRAINING,
         config,
@@ -1386,7 +1384,7 @@ def preprocess_for_training(
 
     validation_dataset = None
     if validation_set is not None:
-        validation_dataset = processor.create_dataset(
+        validation_dataset = df_engine.create_dataset(
             validation_set,
             VALIDATION,
             config,
@@ -1395,7 +1393,7 @@ def preprocess_for_training(
 
     test_dataset = None
     if test_set is not None:
-        test_dataset = processor.create_dataset(
+        test_dataset = df_engine.create_dataset(
             test_set,
             TEST,
             config,
@@ -1446,7 +1444,7 @@ def _preprocess_file_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        dataset_df = read_fn(dataset, backend.processor.df_lib)
+        dataset_df = read_fn(dataset, backend.df_engine.df_lib)
         dataset_df.src = dataset
 
         data, training_set_metadata = build_dataset(
@@ -1461,14 +1459,15 @@ def _preprocess_file_for_training(
         if backend.cache_enabled:
             training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
-        if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
+        # TODO dask: consolidate hdf5 cache with backend cache
+        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
 
             logger.info('Writing preprocessed dataset cache')
             data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-            data_utils.save_hdf5(data_hdf5_fp, data, training_set_metadata)
+            data_utils.save_hdf5(data_hdf5_fp, data)
 
             logger.info('Writing train set metadata')
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
@@ -1523,13 +1522,12 @@ def _preprocess_file_for_training(
             SPLIT
         )
 
-        if is_on_master() and not skip_save_processed_input and backend.processor.use_hdf5_cache:
+        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             logger.info('Writing preprocessed training set cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(
                 data_train_hdf5_fp,
                 training_data,
-                training_set_metadata
             )
 
             if validation_set is not None:
@@ -1541,7 +1539,6 @@ def _preprocess_file_for_training(
                 data_utils.save_hdf5(
                     data_validation_hdf5_fp,
                     validation_data,
-                    training_set_metadata
                 )
 
             if test_set is not None:
@@ -1553,7 +1550,6 @@ def _preprocess_file_for_training(
                 data_utils.save_hdf5(
                     data_test_hdf5_fp,
                     test_data,
-                    training_set_metadata
                 )
 
             logger.info('Writing train set metadata')
@@ -1735,7 +1731,8 @@ def preprocess_for_prediction(
         output_features
     )
 
-    dataset = PandasDataset(
+    # TODO dask: support postprocessing using Backend
+    dataset = Dataset(
         dataset,
         features,
         hdf5_fp
@@ -1772,6 +1769,7 @@ def calculate_checksum(original_dataset, config):
                config.get('output_features', []) + \
                config.get('features', [])
     info['feature_names'] = [feature[NAME] for feature in features]
+    info['feature_types'] = [feature[TYPE] for feature in features]
     info['feature_preprocessing'] = [feature.get(PREPROCESSING, {})
                                      for feature in features]
     hash = hash_dict(info, max_length=None)

@@ -11,6 +11,8 @@
 
 </div>
 
+Translated in [🇰🇷 Korean](README_KR.md)/
+
 Ludwig is a toolbox that allows users to train and test deep learning models without the need to write code.
 It is built on top of TensorFlow.
 

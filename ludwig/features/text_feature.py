@@ -76,7 +76,7 @@ class TextFeatureMixin(object):
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         (
             word_idx2str,
@@ -96,7 +96,7 @@ class TextFeatureMixin(object):
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return (
             char_idx2str,
@@ -180,7 +180,7 @@ class TextFeatureMixin(object):
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
             ],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         word_data = build_sequence_matrix(
             sequences=column,
@@ -197,7 +197,7 @@ class TextFeatureMixin(object):
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
             ],
-            processor=backend.processor
+            processor=backend.df_engine
         )
 
         return char_data, word_data
@@ -205,22 +205,21 @@ class TextFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        dataset = dataset.drop(feature[COLUMN], axis=1)
-        dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
-        dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data
-        return dataset
+        proc_df['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        proc_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        return proc_df
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):

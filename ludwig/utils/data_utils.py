@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 DATASET_SPLIT_URL = 'dataset_{}_fp'
 DATA_PROCESSED_CACHE_DIR = 'data_processed_cache_dir'
 DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
-HDF5_DATASET_KEY = 'dataset'
+HDF5_COLUMNS_KEY = 'columns'
 DICT_FORMATS = {'dict', 'dictionary', dict}
 DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame} | DASK_DF_FORMATS
 CSV_FORMATS = {'csv'}
@@ -207,11 +207,42 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
                   indent=indent)
 
 
-def save_hdf5(data_fp, data, metadata=None):
+def to_numpy_dataset(df):
+    dataset = {}
+    for col in df.columns:
+        dataset[col] = np.stack(df[col].to_numpy())
+    return dataset
+
+
+def from_numpy_dataset(dataset):
+    col_mapping = {}
+    for k, v in dataset.items():
+        *unstacked, = v
+        col_mapping[k] = unstacked
+    return pd.DataFrame.from_dict(col_mapping)
+
+
+def save_hdf5(data_fp, data):
     mode = 'w'
     if os.path.isfile(data_fp):
         mode = 'r+'
-    data.to_hdf(data_fp, key=HDF5_DATASET_KEY, mode=mode)
+
+    numpy_dataset = to_numpy_dataset(data)
+    with h5py.File(data_fp, mode) as h5_file:
+        h5_file.create_dataset(HDF5_COLUMNS_KEY, data=np.array(data.columns.values, dtype='S'))
+        for column in data.columns:
+            h5_file.create_dataset(column, data=numpy_dataset[column])
+
+
+def load_hdf5(data_fp):
+    hdf5_data = h5py.File(data_fp, 'r')
+    columns = [s.decode('utf-8') for s in hdf5_data[HDF5_COLUMNS_KEY][()].tolist()]
+
+    numpy_dataset = {}
+    for column in columns:
+        numpy_dataset[column] = hdf5_data[column][()]
+
+    return from_numpy_dataset(numpy_dataset)
 
 
 def load_object(object_fp):
@@ -394,7 +425,7 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     :return: Experiment data as array
     """
     if file_name.endswith('.hdf5') and field is not None:
-        dataset = pd.read_hdf(file_name, key=HDF5_DATASET_KEY)
+        dataset = pd.read_hdf(file_name, key=HDF5_COLUMNS_KEY)
         column = dataset[field]
         array = column[dataset[SPLIT] == ground_truth_split].values  # ground truth
     elif file_name.endswith('.npy'):

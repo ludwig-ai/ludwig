@@ -95,20 +95,20 @@ class DateFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
         datetime_format = preprocessing_parameters['datetime_format']
-        dataset[feature[PROC_COLUMN]] = backend.processor.map_objects(
-            dataset[feature[COLUMN]],
+        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+            input_df[feature[COLUMN]],
             lambda x: np.array(DateFeatureMixin.date_to_list(
                 x, datetime_format, preprocessing_parameters
             ), dtype=np.int16)
         )
-        return dataset
+        return proc_df
 
 
 class DateInputFeature(DateFeatureMixin, InputFeature):

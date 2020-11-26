@@ -60,7 +60,7 @@ class CategoryFeatureMixin(object):
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
             add_padding=False,
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return {
             'idx2str': idx2str,
@@ -82,17 +82,17 @@ class CategoryFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
         )
-        return dataset
+        return proc_df
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):

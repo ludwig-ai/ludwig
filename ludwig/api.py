@@ -1669,7 +1669,7 @@ def kfold_cross_validate(
     elif data_format in CACHEABLE_FORMATS:
         data_reader = get_from_registry(data_format,
                                         external_data_reader_registry)
-        data_df = data_reader(dataset, backend.processor.df_lib)
+        data_df = data_reader(dataset, backend.df_engine.df_lib)
         data_dir = os.path.dirname(dataset)
     else:
         ValueError(

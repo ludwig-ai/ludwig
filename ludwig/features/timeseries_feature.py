@@ -73,12 +73,12 @@ class TimeseriesFeatureMixin(object):
             tokenizer_registry
         )()
 
-        ts_vectors = backend.processor.map_objects(
+        ts_vectors = backend.df_engine.map_objects(
             timeseries,
             lambda ts: np.array(tokenizer(ts)).astype(np.float32)
         )
 
-        max_length = backend.processor.compute(ts_vectors.map(len).max())
+        max_length = backend.df_engine.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
             logger.debug(
                 'max length of {0}: {1} < limit: {2}'.format(
@@ -102,7 +102,7 @@ class TimeseriesFeatureMixin(object):
                 padded[max_length - limit:] = vector[:limit]
             return padded
 
-        return backend.processor.map_objects(ts_vectors, pad)
+        return backend.df_engine.map_objects(ts_vectors, pad)
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
@@ -118,19 +118,19 @@ class TimeseriesFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        return dataset
+        return proc_df
 
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
@@ -220,19 +220,19 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #         return tf.placeholder(
 #             tf.float32,
 #             [None, self.max_sequence_length],
-#             name='{}_placeholder'.format(self.feature_id)
+#             name='{}_placeholder'.format(self.feature_name)
 #         )
 #
 #     def _get_metrics(self, targets, predictions):
-#         with tf.variable_scope('metrics_{}'.format(self.feature_id)):
-#             error_val = error(targets, predictions, self.feature_id)
-#             absolute_error_val = absolute_error(targets, predictions, self.feature_id)
-#             squared_error_val = squared_error(targets, predictions, self.feature_id)
-#             r2_val = r2(targets, predictions, self.feature_id)
+#         with tf.variable_scope('metrics_{}'.format(self.feature_name)):
+#             error_val = error(targets, predictions, self.feature_name)
+#             absolute_error_val = absolute_error(targets, predictions, self.feature_name)
+#             squared_error_val = squared_error(targets, predictions, self.feature_name)
+#             r2_val = r2(targets, predictions, self.feature_name)
 #         return error_val, squared_error_val, absolute_error_val, r2_val
 #
 #     def _get_loss(self, targets, predictions):
-#         with tf.variable_scope('loss_{}'.format(self.feature_id)):
+#         with tf.variable_scope('loss_{}'.format(self.feature_name)):
 #             if self.loss[TYPE] == 'mean_squared_error':
 #                 train_loss = tf.losses.mean_squared_error(
 #                     labels=targets,
@@ -253,7 +253,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #                 )
 #             train_mean_loss = tf.reduce_mean(
 #                 train_loss,
-#                 name='train_mean_loss_{}'.format(self.feature_id)
+#                 name='train_mean_loss_{}'.format(self.feature_name)
 #             )
 #         return train_mean_loss, train_loss
 #
@@ -270,7 +270,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #
 #         # ================ Placeholder ================
 #         targets = self._get_output_placeholder()
-#         output_tensors[self.feature_id] = targets
+#         output_tensors[self.feature_name] = targets
 #         logger.debug('  targets_placeholder: {0}'.format(targets))
 #
 #         # ================ Predictions ================
@@ -294,9 +294,9 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             is_timeseries=True
 #         )
 #
-#         output_tensors[LAST_PREDICTIONS + '_' + self.feature_id] = last_predictions
-#         output_tensors[PREDICTIONS + '_' + self.feature_id] = predictions_sequence
-#         output_tensors[LENGTHS + '_' + self.feature_id] = predictions_sequence_length
+#         output_tensors[LAST_PREDICTIONS + '_' + self.feature_name] = last_predictions
+#         output_tensors[PREDICTIONS + '_' + self.feature_name] = predictions_sequence
+#         output_tensors[LENGTHS + '_' + self.feature_name] = predictions_sequence_length
 #
 #         # ================ metrics ================
 #         (
@@ -309,22 +309,22 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             predictions_sequence
 #         )
 #
-#         output_tensors[ERROR + '_' + self.feature_id] = error_val
-#         output_tensors[SQUARED_ERROR + '_' + self.feature_id] = squared_error_val
-#         output_tensors[ABSOLUTE_ERROR + '_' + self.feature_id] = absolute_error_val
-#         output_tensors[R2 + '_' + self.feature_id] = r2_val
+#         output_tensors[ERROR + '_' + self.feature_name] = error_val
+#         output_tensors[SQUARED_ERROR + '_' + self.feature_name] = squared_error_val
+#         output_tensors[ABSOLUTE_ERROR + '_' + self.feature_name] = absolute_error_val
+#         output_tensors[R2 + '_' + self.feature_name] = r2_val
 #
 #         if 'sampled' not in self.loss[TYPE]:
 #             tf.summary.scalar(
-#                 'batch_train_mean_squared_error_{}'.format(self.feature_id),
+#                 'batch_train_mean_squared_error_{}'.format(self.feature_name),
 #                 tf.reduce_mean(squared_error)
 #             )
 #             tf.summary.scalar(
-#                 'batch_train_mean_absolute_error_{}'.format(self.feature_id),
+#                 'batch_train_mean_absolute_error_{}'.format(self.feature_name),
 #                 tf.reduce_mean(absolute_error)
 #             )
 #             tf.summary.scalar(
-#                 'batch_train_mean_r2_{}'.format(self.feature_id),
+#                 'batch_train_mean_r2_{}'.format(self.feature_name),
 #                 tf.reduce_mean(r2)
 #             )
 #
@@ -334,11 +334,11 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             predictions_sequence
 #         )
 #
-#         output_tensors[TRAIN_MEAN_LOSS + '_' + self.feature_id] = train_mean_loss
-#         output_tensors[EVAL_LOSS + '_' + self.feature_id] = eval_loss
+#         output_tensors[TRAIN_MEAN_LOSS + '_' + self.feature_name] = train_mean_loss
+#         output_tensors[EVAL_LOSS + '_' + self.feature_name] = eval_loss
 #
 #         tf.summary.scalar(
-#             'batch_train_mean_loss_{}'.format(self.feature_id),
+#             'batch_train_mean_loss_{}'.format(self.feature_name),
 #             train_mean_loss,
 #         )
 #

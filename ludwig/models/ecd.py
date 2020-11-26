@@ -58,8 +58,8 @@ class ECD(tf.keras.Model):
 
     def get_model_inputs(self, training=True):
         inputs = {
-            input_feature_id: input_feature.create_input()
-            for input_feature_id, input_feature in
+            input_feature_name: input_feature.create_input()
+            for input_feature_name, input_feature in
             self.input_features.items()
         }
 
@@ -67,8 +67,8 @@ class ECD(tf.keras.Model):
             return inputs
 
         targets = {
-            output_feature_id: output_feature.create_input()
-            for output_feature_id, output_feature in
+            output_feature_name: output_feature.create_input()
+            for output_feature_name, output_feature in
             self.output_features.items()
         }
         return inputs, targets
@@ -83,11 +83,11 @@ class ECD(tf.keras.Model):
         keras_model.save(save_path)
 
     def call(self, inputs, training=None, mask=None):
-        # parameter inputs is a dict feature_id -> tensor / ndarray
+        # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
         # parameter (inputs, targets) where
-        #   inputs is a dict feature_id -> tensor/ndarray
-        #   targets is dict feature_id -> tensor/ndarray
+        #   inputs is a dict feature_name -> tensor/ndarray
+        #   targets is dict feature_name -> tensor/ndarray
 
         if isinstance(inputs, tuple):
             inputs, targets = inputs
@@ -96,32 +96,32 @@ class ECD(tf.keras.Model):
         assert inputs.keys() == self.input_features.keys()
 
         encoder_outputs = {}
-        for input_feature_id, input_values in inputs.items():
-            encoder = self.input_features[input_feature_id]
+        for input_feature_name, input_values in inputs.items():
+            encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values, training=training,
                                      mask=mask)
-            encoder_outputs[input_feature_id] = encoder_output
+            encoder_outputs[input_feature_name] = encoder_output
 
         combiner_outputs = self.combiner(encoder_outputs)
 
         output_logits = {}
         output_last_hidden = {}
-        for output_feature_id, decoder in self.output_features.items():
+        for output_feature_name, decoder in self.output_features.items():
             # use presence or absence of targets
             # to signal training or prediction
             decoder_inputs = (combiner_outputs, copy.copy(output_last_hidden))
             if targets is not None:
                 # targets are only used during training,
                 # during prediction they are omitted
-                decoder_inputs = (decoder_inputs, targets[output_feature_id])
+                decoder_inputs = (decoder_inputs, targets[output_feature_name])
 
             decoder_outputs = decoder(
                 decoder_inputs,
                 training=training,
                 mask=mask
             )
-            output_logits[output_feature_id] = decoder_outputs
-            output_last_hidden[output_feature_id] = decoder_outputs[
+            output_logits[output_feature_name] = decoder_outputs
+            output_last_hidden[output_feature_name] = decoder_outputs[
                 'last_hidden']
 
         return output_logits
@@ -161,9 +161,9 @@ class ECD(tf.keras.Model):
         outputs = self.call(inputs, training=False)
 
         predictions = {}
-        for of_id in of_list:
-            predictions[of_id] = self.output_features[of_id].predictions(
-                outputs[of_id],
+        for of_name in of_list:
+            predictions[of_name] = self.output_features[of_name].predictions(
+                outputs[of_name],
                 training=False
             )
 
@@ -197,11 +197,11 @@ class ECD(tf.keras.Model):
     def train_loss(self, targets, predictions, regularization_lambda=0.0):
         train_loss = 0
         of_train_losses = {}
-        for of_id, of_obj in self.output_features.items():
-            of_train_loss = of_obj.train_loss(targets[of_id],
-                                              predictions[of_id])
+        for of_name, of_obj in self.output_features.items():
+            of_train_loss = of_obj.train_loss(targets[of_name],
+                                              predictions[of_name])
             train_loss += of_obj.loss['weight'] * of_train_loss
-            of_train_losses[of_id] = of_train_loss
+            of_train_losses[of_name] = of_train_loss
         train_loss += regularization_lambda * sum(
             self.losses)  # regularization / other losses
         return train_loss, of_train_losses
@@ -209,26 +209,26 @@ class ECD(tf.keras.Model):
     def eval_loss(self, targets, predictions):
         eval_loss = 0
         of_eval_losses = {}
-        for of_id, of_obj in self.output_features.items():
+        for of_name, of_obj in self.output_features.items():
             of_eval_loss = of_obj.eval_loss(
-                targets[of_id], predictions[of_id]
+                targets[of_name], predictions[of_name]
             )
             eval_loss += of_obj.loss['weight'] * of_eval_loss
-            of_eval_losses[of_id] = of_eval_loss
+            of_eval_losses[of_name] = of_eval_loss
         eval_loss += sum(self.losses)  # regularization / other losses
         return eval_loss, of_eval_losses
 
     def update_metrics(self, targets, predictions):
-        for of_id, of_obj in self.output_features.items():
-            of_obj.update_metrics(targets[of_id], predictions[of_id])
+        for of_name, of_obj in self.output_features.items():
+            of_obj.update_metrics(targets[of_name], predictions[of_name])
         self.eval_loss_metric.update_state(
             self.eval_loss(targets, predictions)[0]
         )
 
     def get_metrics(self):
         all_of_metrics = {}
-        for of_id, of_obj in self.output_features.items():
-            all_of_metrics[of_id] = of_obj.get_metrics()
+        for of_name, of_obj in self.output_features.items():
+            all_of_metrics[of_name] = of_obj.get_metrics()
         all_of_metrics[COMBINED] = {
             LOSS: self.eval_loss_metric.result().numpy()
         }
@@ -296,10 +296,10 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
 
     encoder_obj = None
     if input_feature_def.get(TIED, None) is not None:
-        tied_input_feature_id = input_feature_def[TIED]
-        if tied_input_feature_id in other_input_features:
+        tied_input_feature_name = input_feature_def[TIED]
+        if tied_input_feature_name in other_input_features:
             encoder_obj = other_input_features[
-                tied_input_feature_id].encoder_obj
+                tied_input_feature_name].encoder_obj
 
     input_feature_class = get_from_registry(
         input_feature_def[TYPE],
