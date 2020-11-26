@@ -1373,6 +1373,7 @@ def hyperopt_pair_plot(
 
     sns.set_style('white')
     fig = plt.figure(figsize=(20, 20))
+    figure.suptitle(title)
     gs = fig.add_gridspec(num_param, num_param)
 
     for i, param1 in enumerate(params):
@@ -1394,7 +1395,6 @@ def hyperopt_pair_plot(
                 )
 
     plt.tight_layout(pad=5)
-    plt.title(title)
     if filename:
         plt.savefig(filename)
     else:
