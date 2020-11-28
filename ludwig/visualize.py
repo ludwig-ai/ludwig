@@ -4168,7 +4168,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '-f',
+        '-ofn',
         '--output_feature_name',
         default=[],
         help='name of the output feature to visualize'
