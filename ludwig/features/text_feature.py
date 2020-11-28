@@ -58,6 +58,11 @@ class TextFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, input_df, proc_df, backend):
+        proc_df[feature[COLUMN]] = input_df[feature[COLUMN]]
+        return proc_df
+
+    @staticmethod
     def feature_meta(column, preprocessing_parameters, backend):
         (
             char_idx2str,

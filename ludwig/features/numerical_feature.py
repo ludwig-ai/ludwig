@@ -48,6 +48,13 @@ class NumericalFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, input_df, proc_df, backend):
+        proc_df[feature[COLUMN]] = backend.df_engine.df_lib.to_numeric(
+            input_df[feature[COLUMN]], errors='coerce', downcast='float'
+        )
+        return proc_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         compute = backend.df_engine.compute
         if preprocessing_parameters['normalization'] is not None:
@@ -80,15 +87,13 @@ class NumericalFeatureMixin(object):
             preprocessing_parameters,
             backend
     ):
-        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(
-            np.float32).values
+        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 mean = metadata[feature[NAME]]['mean']
                 std = metadata[feature[NAME]]['std']
-                proc_df[feature[PROC_COLUMN]] = (proc_df[
-                                                     feature[
-                                                         PROC_COLUMN]] - mean) / std
+                proc_df[feature[PROC_COLUMN]] = \
+                    (proc_df[feature[PROC_COLUMN]] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
                 min_ = metadata[feature[NAME]]['min']
                 max_ = metadata[feature[NAME]]['max']

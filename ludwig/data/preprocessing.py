@@ -17,11 +17,11 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from copy import copy
 
-import ludwig
 import numpy as np
 import pandas as pd
+
+import ludwig
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -117,7 +117,8 @@ class DictPreprocessor(DataFormatPreprocessor):
         if training_set_metadata is not None:
             training_set = df_engine.from_pandas(pd.DataFrame(training_set))
         if validation_set is not None:
-            validation_set = df_engine.from_pandas(pd.DataFrame(validation_set))
+            validation_set = df_engine.from_pandas(
+                pd.DataFrame(validation_set))
         if test_set is not None:
             test_set = df_engine.from_pandas(pd.DataFrame(test_set))
 
@@ -999,6 +1000,13 @@ def build_dataset(
         global_preprocessing_parameters
     )
 
+    dataset_df = cast_columns(
+        dataset_df,
+        features,
+        global_preprocessing_parameters,
+        backend
+    )
+
     if metadata is None:
         metadata = build_metadata(
             dataset_df,
@@ -1028,7 +1036,29 @@ def build_dataset(
     return dataset, metadata
 
 
-def build_metadata(dataset_df, features, global_preprocessing_parameters, backend):
+def cast_columns(input_df, features, global_preprocessing_parameters, backend):
+    # todo figure out if global_preprocessing_parameters is needed
+    proc_df = backend.df_engine.empty_df_like(input_df)
+
+    for feature in features:
+        cast_column = get_from_registry(
+            feature[TYPE],
+            base_type_registry
+        ).cast_column
+        # todo figure out if additional parameters are needed
+        #  for the cast_column function
+        proc_df = cast_column(
+            feature,
+            input_df,
+            proc_df,
+            backend
+        )
+
+    return proc_df
+
+
+def build_metadata(dataset_df, features, global_preprocessing_parameters,
+                   backend):
     metadata = {}
     proc_feature_to_metadata = {}
 
@@ -1457,7 +1487,8 @@ def _preprocess_file_for_training(
         )
 
         if backend.cache_enabled:
-            training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+            training_set_metadata[
+                DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         # TODO dask: consolidate hdf5 cache with backend cache
         if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
@@ -1515,7 +1546,8 @@ def _preprocess_file_for_training(
         )
 
         if backend.cache_enabled:
-            training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+            training_set_metadata[
+                DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
@@ -1614,7 +1646,8 @@ def _preprocess_df_for_training(
     )
 
     if backend.cache_enabled:
-        training_set_metadata[DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
+        training_set_metadata[
+            DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
     training_set, test_set, validation_set = split_dataset_ttv(
         dataset,

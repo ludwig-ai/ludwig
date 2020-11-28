@@ -68,6 +68,11 @@ class SequenceFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, input_df, proc_df, backend):
+        proc_df[feature[COLUMN]] = input_df[feature[COLUMN]]
+        return proc_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],

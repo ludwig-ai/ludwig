@@ -48,6 +48,11 @@ class VectorFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, input_df, proc_df, backend):
+        proc_df[feature[COLUMN]] = input_df[feature[COLUMN]]
+        return proc_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         return {
             'preprocessing': preprocessing_parameters
