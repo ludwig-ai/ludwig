@@ -50,11 +50,10 @@ class BinaryFeatureMixin(object):
     }
 
     @staticmethod
-    def cast_column(feature, input_df, proc_df, backend):
+    def cast_column(feature, dataset_df, backend):
         # todo maybe move code from add_feature_data here
         #  + figure out what NaN is in a bool column
-        proc_df[feature[COLUMN]] = input_df[feature[COLUMN]]
-        return proc_df
+        return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

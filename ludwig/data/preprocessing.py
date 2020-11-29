@@ -1036,10 +1036,9 @@ def build_dataset(
     return dataset, metadata
 
 
-def cast_columns(input_df, features, global_preprocessing_parameters, backend):
+def cast_columns(dataset_df, features, global_preprocessing_parameters,
+                 backend):
     # todo figure out if global_preprocessing_parameters is needed
-    proc_df = backend.df_engine.empty_df_like(input_df)
-
     for feature in features:
         cast_column = get_from_registry(
             feature[TYPE],
@@ -1047,14 +1046,13 @@ def cast_columns(input_df, features, global_preprocessing_parameters, backend):
         ).cast_column
         # todo figure out if additional parameters are needed
         #  for the cast_column function
-        proc_df = cast_column(
+        dataset_df = cast_column(
             feature,
-            input_df,
-            proc_df,
+            dataset_df,
             backend
         )
 
-    return proc_df
+    return dataset_df
 
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters,

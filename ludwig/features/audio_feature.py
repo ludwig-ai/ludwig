@@ -56,9 +56,8 @@ class AudioFeatureMixin(object):
     }
 
     @staticmethod
-    def cast_column(feature, input_df, proc_df, backend):
-        proc_df[feature[COLUMN]] = input_df[feature[COLUMN]]
-        return proc_df
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

@@ -48,11 +48,11 @@ class NumericalFeatureMixin(object):
     }
 
     @staticmethod
-    def cast_column(feature, input_df, proc_df, backend):
-        proc_df[feature[COLUMN]] = backend.df_engine.df_lib.to_numeric(
-            input_df[feature[COLUMN]], errors='coerce', downcast='float'
+    def cast_column(feature, dataset_df, backend):
+        dataset_df[feature[COLUMN]] = backend.df_engine.df_lib.to_numeric(
+            dataset_df[feature[COLUMN]], errors='coerce', downcast='float'
         )
-        return proc_df
+        return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
