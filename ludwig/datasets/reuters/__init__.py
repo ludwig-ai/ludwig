@@ -15,9 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.process import IdentityProcessMixin
 from ludwig.datasets.mixins.download import ZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):

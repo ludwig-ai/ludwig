@@ -48,17 +48,18 @@ class NumericalFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        compute = backend.df_engine.compute
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 return {
-                    'mean': column.astype(np.float32).mean(),
-                    'std': column.astype(np.float32).std()
+                    'mean': compute(column.astype(np.float32).mean()),
+                    'std': compute(column.astype(np.float32).std())
                 }
             elif preprocessing_parameters['normalization'] == 'minmax':
                 return {
-                    'min': column.astype(np.float32).min(),
-                    'max': column.astype(np.float32).max()
+                    'min': compute(column.astype(np.float32).min()),
+                    'max': compute(column.astype(np.float32).max())
                 }
             else:
                 logger.info(
@@ -73,24 +74,27 @@ class NumericalFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
+            backend
     ):
-        dataset[feature[NAME]] = dataset_df[feature[NAME]].astype(
+        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 mean = metadata[feature[NAME]]['mean']
                 std = metadata[feature[NAME]]['std']
-                dataset[feature[NAME]] = (dataset[
-                                              feature[NAME]] - mean) / std
+                proc_df[feature[PROC_COLUMN]] = (proc_df[
+                                                     feature[
+                                                         PROC_COLUMN]] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
                 min_ = metadata[feature[NAME]]['min']
                 max_ = metadata[feature[NAME]]['max']
-                values = dataset[feature[NAME]]
-                dataset[feature[NAME]] = (values - min_) / (max_ - min_)
+                values = proc_df[feature[PROC_COLUMN]]
+                proc_df[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
+        return proc_df
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -116,7 +120,8 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):
@@ -225,7 +230,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     #     for metric in self.metric_functions.values():
     #         metric.update_state(targets, predictions[PREDICTIONS])
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.float32
 
     def get_output_shape(self):
@@ -276,7 +282,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         if PROBABILITIES in predictions and len(
                 predictions[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = predictions[PROBABILITIES]
+            postprocessed[PROBABILITIES] = predictions[PROBABILITIES].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),

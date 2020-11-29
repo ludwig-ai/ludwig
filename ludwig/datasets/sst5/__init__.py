@@ -42,7 +42,7 @@ class SST5(SST):
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name='sst5', cache_dir=cache_dir)
 
-    def get_sentiment_label(id2sent, phrase_id):
+    def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]
         if sentiment <= 0.2:
             return 'very_negative'

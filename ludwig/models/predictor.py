@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
-from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import sum_dicts
@@ -43,8 +42,8 @@ class Predictor:
             dataset,
             dataset_name=None
     ):
-        batcher = initialize_batcher(
-            dataset, self._batch_size,
+        batcher = dataset.initialize_batcher(
+            self._batch_size,
             should_shuffle=False,
             horovod=self._horovod
         )
@@ -64,7 +63,7 @@ class Predictor:
             batch = batcher.next_batch()
 
             inputs = {
-                i_feat.feature_name: batch[i_feat.feature_name]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
 
@@ -102,8 +101,8 @@ class Predictor:
             collect_predictions=False,
             dataset_name=None
     ):
-        batcher = initialize_batcher(
-            dataset, self._batch_size,
+        batcher = dataset.initialize_batcher(
+            self._batch_size,
             should_shuffle=False,
             horovod=self._horovod
         )
@@ -123,11 +122,11 @@ class Predictor:
             batch = batcher.next_batch()
 
             inputs = {
-                i_feat.feature_name: batch[i_feat.feature_name]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
             targets = {
-                o_feat.feature_name: batch[o_feat.feature_name]
+                o_feat.feature_name: batch[o_feat.proc_column]
                 for o_feat in model.output_features.values()
             }
 
@@ -189,8 +188,7 @@ class Predictor:
         activation_model = tf.keras.Model(inputs=keras_model_inputs,
                                           outputs=output_nodes)
 
-        batcher = initialize_batcher(
-            dataset,
+        batcher = dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False
         )
@@ -207,7 +205,7 @@ class Predictor:
             batch = batcher.next_batch()
 
             inputs = {
-                i_feat.feature_name: batch[i_feat.feature_name]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
             outputs = activation_model(inputs)
@@ -260,11 +258,12 @@ def calculate_overall_stats(
     overall_stats = {}
     for of_name, output_feature in output_features.items():
         feature_metadata = output_feature.overall_statistics_metadata()
-        feature_metadata.update(training_set_metadata[of_name])
+        feature_metadata.update(
+            training_set_metadata[output_feature.feature_name])
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             predictions[of_name],  # predictions
-            dataset.get(of_name),  # target
+            dataset.get(output_feature.proc_column),  # target
             feature_metadata,  # output feature metadata
         )
     return overall_stats

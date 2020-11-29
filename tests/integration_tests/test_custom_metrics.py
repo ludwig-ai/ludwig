@@ -103,7 +103,6 @@ def test_ErrorScore(generated_data):
 
 
 def test_JaccardMetric():
-
     # set up synthentic data for testing
     targets = np.array([
         [True, True, False], [True, False, True], [False, True, False],

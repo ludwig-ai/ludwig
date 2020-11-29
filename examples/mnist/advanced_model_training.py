@@ -47,7 +47,7 @@ list_of_fc_layers = [
     FullyConnectedLayers(name='Option2', fc_layers=[{'fc_size': 128},
                                                     {'fc_size': 64}]),
 
-    FullyConnectedLayers(name='Option3', fc_layers=[{'fc_size':128}])
+    FullyConnectedLayers(name='Option3', fc_layers=[{'fc_size': 128}])
 ]
 
 #

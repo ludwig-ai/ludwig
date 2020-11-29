@@ -68,6 +68,7 @@ def test_load_csv_dataset():
                 assert dataset.is_downloaded()
                 assert dataset.is_processed()
 
+
 @pytest.mark.parametrize('f_type', SUPPORTED_UNCOMPRESSED_FILETYPES)
 def test_multifile_join_dataset(f_type):
     if f_type is not 'jsonl':
@@ -99,7 +100,7 @@ def test_multifile_join_dataset(f_type):
                                {'mask': 'pink'},
                                {'weapon': 'gun'}])
 
-    #filetypes = ['json', 'tsv', 'jsonl']
+    # filetypes = ['json', 'tsv', 'jsonl']
     train_filename = 'train.' + f_type
     test_filename = 'test.' + f_type
     val_filename = 'val.' + f_type

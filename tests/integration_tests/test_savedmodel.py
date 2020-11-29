@@ -153,7 +153,7 @@ def test_savedmodel(csv_filename, should_load_model):
 
         data_to_predict = {
             name: tf.convert_to_tensor(
-                dataset.dataset[name],
+                dataset.dataset[feature.proc_column],
                 dtype=feature.get_input_dtype()
             )
             for name, feature in ludwig_model.model.input_features.items()
