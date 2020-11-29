@@ -50,13 +50,12 @@ class NumericalFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        compute = backend.df_engine.compute
         numeric_transformer = get_from_registry(
             preprocessing_parameters.get('normalization', None),
             numeric_transformation_registry
         )
 
-        return numeric_transformer.fit_transform_params(column)
+        return numeric_transformer.fit_transform_params(column, backend)
 
     @staticmethod
     def add_feature_data(
@@ -327,10 +326,14 @@ class ZScoreTransformer:
         return x * self.sigma + self.mu
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray) -> dict:
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'LocalBackend'
+    ) -> dict:
+        compute = backend.df_engine.compute
         return {
-            'mean': column.astype(np.float32).mean(),
-            'std': column.astype(np.float32).std()
+            'mean': compute(column.astype(np.float32).mean()),
+            'std': compute(column.astype(np.float32).std())
         }
 
 
@@ -352,10 +355,14 @@ class MinMaxTransformer:
         return x * self.range + self.min_value
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray) -> dict:
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'LocalBackend'
+    ) -> dict:
+        compute = backend.df_engine.compute
         return {
-            'min': column.astype(np.float32).min(),
-            'max': column.astype(np.float32).max()
+            'min': compute(column.astype(np.float32).min()),
+            'max': compute(column.astype(np.float32).max())
         }
 
 
@@ -375,7 +382,10 @@ class Log1pTransformer:
         return np.expm1(x)
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray) -> dict:
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'LocalBackend'
+    ) -> dict:
         return {}
 
 
@@ -390,7 +400,10 @@ class IdentityTransformer:
         return x
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray) -> dict:
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'LocalBackend'
+    ) -> dict:
         return {}
 
 
