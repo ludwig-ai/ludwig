@@ -79,6 +79,8 @@ class NumericalFeatureMixin(object):
         proc_df[feature[PROC_COLUMN]] = \
             numeric_transformer.transform(proc_df[feature[PROC_COLUMN]])
 
+        return proc_df
+
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     encoder = 'passthrough'
