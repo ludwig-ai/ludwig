@@ -7,6 +7,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import *
 from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
+from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -20,8 +21,42 @@ class HyperoptExecutor(ABC):
         self.metric = metric
         self.split = split
 
-    def get_metric_score(self, eval_stats) -> float:
+    def get_metric_score(self, train_stats, eval_stats) -> float:
+        if (train_stats is not None and
+                self.split in train_stats and
+                self.output_feature in train_stats[self.split] and
+                self.metric in train_stats[self.split][self.output_feature]):
+            logger.info("Returning metric score from training statistics")
+            return self.get_metric_score_from_train_stats(train_stats)
+        else:
+            logger.info("Returning metric score from eval statistics. "
+                        "If skip_save_model is True, eval statistics "
+                        "are calculated using the model at the last epoch "
+                        "rather than the model at the epoch with "
+                        "best validation performance")
+            return self.get_metric_score_from_eval_stats(eval_stats)
+
+    def get_metric_score_from_eval_stats(self, eval_stats) -> float:
         return eval_stats[self.output_feature][self.metric]
+
+    def get_metric_score_from_train_stats(self, train_stats) -> float:
+        # grab the results of the model with highest validation test performance
+        train_valiset_stats = train_stats[VALIDATION]
+        train_evalset_stats = train_stats[self.split]
+
+        validation_field_result = train_valiset_stats[self.output_feature]
+        best_function = get_best_function(self.metric)
+
+        # results of the model with highest validation test performance
+        epoch_best_vali_metric, best_vali_metric = best_function(
+            enumerate(validation_field_result[self.metric]),
+            key=lambda pair: pair[1]
+        )
+        best_vali_metric_epoch_eval_metric = train_evalset_stats[
+            self.output_feature][self.metric][
+            epoch_best_vali_metric]
+
+        return best_vali_metric_epoch_eval_metric
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
@@ -150,7 +185,7 @@ class SerialExecutor(HyperoptExecutor):
                     random_seed=random_seed,
                     debug=debug,
                 )
-                metric_score = self.get_metric_score(eval_stats)
+                metric_score = self.get_metric_score(train_stats, eval_stats)
                 metric_scores.append(metric_score)
 
                 hyperopt_results.append(
@@ -200,7 +235,7 @@ class ParallelExecutor(HyperoptExecutor):
     def _run_experiment(self, hyperopt_dict):
         parameters = hyperopt_dict["parameters"]
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
-        metric_score = self.get_metric_score(eval_stats)
+        metric_score = self.get_metric_score(train_stats, eval_stats)
 
         return {
             "parameters": parameters,
@@ -216,7 +251,7 @@ class ParallelExecutor(HyperoptExecutor):
             hyperopt_dict["gpus"] = gpu_id_meta["gpu_id"]
             hyperopt_dict["gpu_memory_limit"] = gpu_id_meta["gpu_memory_limit"]
             train_stats, eval_stats = run_experiment(**hyperopt_dict)
-            metric_score = self.get_metric_score(eval_stats)
+            metric_score = self.get_metric_score(train_stats, eval_stats)
         finally:
             self.queue.put(gpu_id_meta)
         return {
@@ -565,7 +600,7 @@ class FiberExecutor(HyperoptExecutor):
 
             for stats, parameters in zip(stats_batch, sampled_parameters):
                 train_stats, eval_stats = stats
-                metric_score = self.get_metric_score(eval_stats)
+                metric_score = self.get_metric_score(train_stats, eval_stats)
                 metric_scores.append(metric_score)
 
                 hyperopt_results.append(
