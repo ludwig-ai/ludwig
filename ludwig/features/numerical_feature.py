@@ -328,7 +328,7 @@ class ZScoreTransformer:
     @staticmethod
     def fit_transform_params(
             column: np.ndarray,
-            backend: 'LocalBackend'
+            backend: 'Backend'
     ) -> dict:
         compute = backend.df_engine.compute
         return {
@@ -357,7 +357,7 @@ class MinMaxTransformer:
     @staticmethod
     def fit_transform_params(
             column: np.ndarray,
-            backend: 'LocalBackend'
+            backend: 'Backend'
     ) -> dict:
         compute = backend.df_engine.compute
         return {
@@ -384,7 +384,7 @@ class Log1pTransformer:
     @staticmethod
     def fit_transform_params(
             column: np.ndarray,
-            backend: 'LocalBackend'
+            backend: 'Backend'
     ) -> dict:
         return {}
 
@@ -402,7 +402,7 @@ class IdentityTransformer:
     @staticmethod
     def fit_transform_params(
             column: np.ndarray,
-            backend: 'LocalBackend'
+            backend: 'Backend'
     ) -> dict:
         return {}
 
