@@ -300,6 +300,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
+            postprocessed[PROBABILITIES] = np.concatenate(
+                [1 - postprocessed[PROBABILITIES],
+                postprocessed[PROBABILITIES]],
+                axis=1
+            )
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
@@ -307,10 +312,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 )
             del result[PROBABILITIES]
 
-        if PREDICTIONS in postprocessed and PROBABILITIES in postprocessed:
-            preds = postprocessed[PREDICTIONS]
-            probs = postprocessed[PROBABILITIES]
-            postprocessed[PROBABILITY] = abs((1 - preds) - probs)
+        if PROBABILITIES in postprocessed:
+            postprocessed[PROBABILITY] = np.amax(
+                postprocessed[PROBABILITIES], axis=1
+            )
 
         return postprocessed
 
