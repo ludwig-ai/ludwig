@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.experiment import experiment_cli
 from ludwig.features.numerical_feature import numeric_transformation_registry
 from ludwig.modules.optimization_modules import optimizers_registry
@@ -492,7 +493,8 @@ def test_numeric_transformer(transformer_key, tmpdir):
     else:
         raw_values = np.random.normal(5, 2, size=100)
 
-    parameters = Transformer.fit_transform_params(raw_values)
+    backend = LOCAL_BACKEND
+    parameters = Transformer.fit_transform_params(raw_values, backend)
     if transformer_name in {'Log1pTransformer', 'IdentityTransformer'}:
         # should be empty
         assert not bool(parameters)
