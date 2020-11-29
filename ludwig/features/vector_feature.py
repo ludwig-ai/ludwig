@@ -48,7 +48,7 @@ class VectorFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {
             'preprocessing': preprocessing_parameters
         }
@@ -56,23 +56,24 @@ class VectorFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
+            backend
     ):
         """
                 Expects all the vectors to be of the same size. The vectors need to be
                 whitespace delimited strings. Missing values are not handled.
                 """
-        if len(dataset_df) == 0:
+        if len(input_df) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
         # Convert the string of features into a numpy array
         try:
-            dataset[feature[PROC_COLUMN]] = np.array(
-                [x.split() for x in dataset_df[feature[COLUMN]]],
-                dtype=np.float32
+            proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+                input_df[feature[COLUMN]],
+                lambda x: np.array(x.split(), dtype=np.float32)
             )
         except ValueError:
             logger.error(
@@ -82,7 +83,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = len(dataset[feature[PROC_COLUMN]][0])
+        vector_size = backend.df_engine.compute(proc_df[feature[PROC_COLUMN]].map(len).max())
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -95,6 +96,7 @@ class VectorFeatureMixin(object):
             logger.debug('Observed vector size: {}'.format(vector_size))
 
         metadata[feature[NAME]]['vector_size'] = vector_size
+        return proc_df
 
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
@@ -120,7 +122,8 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):
@@ -216,7 +219,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.float32
 
     def get_output_shape(self):

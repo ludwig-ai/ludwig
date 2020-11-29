@@ -30,6 +30,7 @@ from typing import Union
 import numpy
 
 import ludwig.globals
+from ludwig.constants import PROC_COLUMN
 from ludwig.utils.data_utils import figure_data_format
 
 
@@ -243,5 +244,13 @@ def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     s = json.dumps(d, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
     d = h.digest()
-    b = base64.b64encode(d)
+    b = base64.b64encode(d, altchars=b'__')
     return b[:max_length]
+
+
+def get_proc_features(config):
+    return get_proc_features_from_lists(config['input_features'], config['output_features'])
+
+
+def get_proc_features_from_lists(*args):
+    return {feature[PROC_COLUMN]: feature for features in args for feature in features}

@@ -12,7 +12,6 @@ PyYAML>=3.12
 absl-py
 requests
 
-
 # new data format support
 xlwt            # excel
 xlrd            # excel

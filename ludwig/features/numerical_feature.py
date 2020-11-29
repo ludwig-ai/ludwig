@@ -49,7 +49,8 @@ class NumericalFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        compute = backend.df_engine_compute
         numeric_transformer = get_from_registry(
             preprocessing_parameters.get('normalization', None),
             numeric_transformation_registry
@@ -60,12 +61,13 @@ class NumericalFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
+            backend
     ):
-        dataset[feature[PROC_COLUMN]] = dataset_df[feature[COLUMN]].astype(
+        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(
             np.float32).values
 
         # normalize data as required
@@ -74,8 +76,8 @@ class NumericalFeatureMixin(object):
             numeric_transformation_registry
         )(**metadata[feature[NAME]])
 
-        dataset[feature[PROC_COLUMN]] = \
-            numeric_transformer.transform(dataset[feature[PROC_COLUMN]])
+        proc_df[feature[PROC_COLUMN]] = \
+            numeric_transformer.transform(proc_df[feature[PROC_COLUMN]])
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -101,7 +103,8 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):
@@ -210,7 +213,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     #     for metric in self.metric_functions.values():
     #         metric.update_state(targets, predictions[PREDICTIONS])
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.float32
 
     def get_output_shape(self):
