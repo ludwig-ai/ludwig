@@ -307,6 +307,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 )
             del result[PROBABILITIES]
 
+        if PREDICTIONS in postprocessed and PROBABILITIES in postprocessed:
+            preds = postprocessed[PREDICTIONS]
+            probs = postprocessed[PROBABILITIES]
+            postprocessed[PROBABILITY] = abs((1 - preds) - probs)
+
         return postprocessed
 
     @staticmethod
