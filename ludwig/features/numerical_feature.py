@@ -50,7 +50,7 @@ class NumericalFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        compute = backend.df_engine_compute
+        compute = backend.df_engine.compute
         numeric_transformer = get_from_registry(
             preprocessing_parameters.get('normalization', None),
             numeric_transformation_registry
