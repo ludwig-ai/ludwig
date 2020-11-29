@@ -1245,7 +1245,7 @@ def frequency_vs_f1_cli(
 
 def learning_curves(
         train_stats_per_model: List[dict],
-        output_feature_name: Union[str, None],
+        output_feature_name: Union[str, None] = None,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -1322,7 +1322,7 @@ def learning_curves(
 
 def compare_performance(
         test_stats_per_model: List[dict],
-        output_feature_name: Union[str, None],
+        output_feature_name: Union[str, None] = None,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
