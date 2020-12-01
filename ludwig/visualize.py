@@ -1261,7 +1261,7 @@ def learning_curves(
 
     :param train_stats_per_model: (List[dict]) list containing dictionary of
         training statistics per model.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
+    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
@@ -1338,7 +1338,7 @@ def compare_performance(
 
     :param test_stats_per_model: (List[dict]) dictionary containing evaluation
         performance statistics.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
+    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
