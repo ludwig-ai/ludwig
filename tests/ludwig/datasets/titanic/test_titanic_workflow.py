@@ -52,10 +52,10 @@ def test_download_titanic_dataset():
     titanic_test_df.to_csv(index=False)
 
     config = {
-        'version': 1.0,
-        'split_filenames': {
-            'train_file': titanic_train_filename,
-            'test_file': titanic_test_filename
+    'version': 1.0,
+    'split_filenames': {
+        'train_file': titanic_train_filename,
+        'test_file': titanic_test_filename
         },
         'csv_filename': 'fake_titanic.csv',
     }
@@ -63,9 +63,11 @@ def test_download_titanic_dataset():
     with tempfile.TemporaryDirectory() as tmpdir:
         with mock.patch('ludwig.datasets.base_dataset.read_config',
                         return_value=config):
-            dataset = FakeTitanicDataset(tmpdir)
-            assert not dataset.is_downloaded()
-            assert not dataset.is_processed()
-            dataset.download()
+            with mock.patch('ludwig.datasets.mixins.kaggle.KaggleMixin.api.authenticate', return_value=None):
+                dataset = FakeTitanicDataset(tmpdir)
+                assert not dataset.is_downloaded()
+                assert not dataset.is_processed()
+                dataset.download()
+                assert dataset.is_downloaded()
 
-            assert dataset.is_downloaded()
+

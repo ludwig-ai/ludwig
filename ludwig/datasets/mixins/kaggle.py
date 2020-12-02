@@ -6,6 +6,7 @@ DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
 api = KaggleApi()
 api.authenticate()
 
+
 class KaggleMixin:
     """A mixin to abstract away the details of the kaggle API which includes
     the ability to authenticate against the kaggle API, list the various datasets
@@ -20,6 +21,7 @@ class KaggleMixin:
         competition objects associated with the titanic data and return that as a list
         :Return:
             a list of competition objects associated with Titanic"""
+
         return api.competitions_list(search="titanic")
 
     def download_raw_dataset(self):
