@@ -48,6 +48,7 @@ def test_binary_predictions(tmpdir, distinct_values):
     )
     data_df = pd.read_csv(data_csv_path)
 
+    # Optionally convert bool values to strings, e.g., {'Yes', 'No'}
     false_value, true_value = distinct_values
     data_df[feature[NAME]] = data_df[feature[NAME]].map(
         lambda x: true_value if x else false_value
@@ -64,10 +65,8 @@ def test_binary_predictions(tmpdir, distinct_values):
         output_directory=os.path.join(tmpdir, 'output'),
     )
 
+    # Check that metadata JSON saves and loads correctly
     ludwig_model = LudwigModel.load(os.path.join(output_directory, 'model'))
-
-    # with open(os.path.join(output_directory, 'model/training_set_metadata.json'), 'r') as f:
-    #     print(f.read())
 
     # Produce an even mix of True and False predictions, as the model may be biased towards
     # one direction without training

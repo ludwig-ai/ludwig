@@ -80,8 +80,8 @@ class BinaryFeatureMixin(object):
     ):
         column = input_df[feature[COLUMN]]
 
-        metadata = metadata[feature[NAME]]
         if column.dtype == object:
+            metadata = metadata[feature[NAME]]
             if 'str2bool' in metadata:
                 column = column.map(lambda x: metadata['str2bool'][x])
             else:
