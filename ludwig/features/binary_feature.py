@@ -58,7 +58,7 @@ class BinaryFeatureMixin(object):
         if len(distinct_values) > 2:
             raise ValueError(
                 f'Binary feature column expects 2 distinct values, '
-                f'found {distinct_values.values.tolist()}'
+                f'found: {distinct_values.values.tolist()}'
             )
 
         str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
@@ -80,7 +80,7 @@ class BinaryFeatureMixin(object):
     ):
         column = input_df[feature[COLUMN]]
         if column.dtype == object:
-            str2bool = metadata['str2bool']
+            str2bool = metadata[feature[NAME]]['str2bool']
             column = column.map(lambda x: str2bool[x])
         proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
         return proc_df
