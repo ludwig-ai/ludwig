@@ -59,10 +59,15 @@ def test_binary_predictions(tmpdir, distinct_values):
         'training': {'epochs': 1}
     }
     ludwig_model = LudwigModel(config)
-    ludwig_model.train(
+    _, _, output_directory = ludwig_model.train(
         dataset=data_df,
         output_directory=os.path.join(tmpdir, 'output'),
     )
+
+    ludwig_model = LudwigModel.load(os.path.join(output_directory, 'model'))
+
+    # with open(os.path.join(output_directory, 'model/training_set_metadata.json'), 'r') as f:
+    #     print(f.read())
 
     # Produce an even mix of True and False predictions, as the model may be biased towards
     # one direction without training

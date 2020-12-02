@@ -62,7 +62,7 @@ class BinaryFeatureMixin(object):
             )
 
         str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
-        bool2str = {b: v for v, b in str2bool.items()}
+        bool2str = [k for k, v in sorted(str2bool.items(), key=lambda item: item[1])]
 
         return {
             'str2bool': str2bool,
