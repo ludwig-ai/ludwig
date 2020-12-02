@@ -79,9 +79,15 @@ class BinaryFeatureMixin(object):
             backend
     ):
         column = input_df[feature[COLUMN]]
+
+        metadata = metadata[feature[NAME]]
         if column.dtype == object:
-            str2bool = metadata[feature[NAME]]['str2bool']
-            column = column.map(lambda x: str2bool[x])
+            if 'str2bool' in metadata:
+                column = column.map(lambda x: metadata['str2bool'][x])
+            else:
+                # No predefined mapping from string to bool, so compute it directly
+                column = column.map(strings_utils.str2bool)
+
         proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
         return proc_df
 
