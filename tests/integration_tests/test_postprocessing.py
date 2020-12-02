@@ -71,14 +71,14 @@ def test_binary_predictions(tmpdir):
 
     cols = set(preds_df.columns)
     assert f'{feature[NAME]}_predictions' in cols
-    assert f'{feature[NAME]}_probabilities_0' in cols
-    assert f'{feature[NAME]}_probabilities_1' in cols
+    assert f'{feature[NAME]}_probabilities_False' in cols
+    assert f'{feature[NAME]}_probabilities_True' in cols
     assert f'{feature[NAME]}_probability' in cols
 
     for pred, prob_0, prob_1, prob in zip(
         preds_df[f'{feature[NAME]}_predictions'],
-        preds_df[f'{feature[NAME]}_probabilities_0'],
-        preds_df[f'{feature[NAME]}_probabilities_1'],
+        preds_df[f'{feature[NAME]}_probabilities_False'],
+        preds_df[f'{feature[NAME]}_probabilities_True'],
         preds_df[f'{feature[NAME]}_probability'],
     ):
         assert pred is True or pred is False
