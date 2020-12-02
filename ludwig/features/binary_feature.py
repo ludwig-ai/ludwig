@@ -300,6 +300,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
+            postprocessed[PROBABILITIES] = np.stack(
+                [1 - postprocessed[PROBABILITIES],
+                postprocessed[PROBABILITIES]],
+                axis=1
+            )
+            postprocessed[PROBABILITY] = np.amax(
+                postprocessed[PROBABILITIES], axis=1
+            )
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
