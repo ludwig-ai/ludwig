@@ -317,5 +317,5 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         'null': Regressor,
         'none': Regressor,
         'None': Regressor,
-        None: Regressor
+         None: Regressor
     }
