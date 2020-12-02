@@ -1087,7 +1087,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters, backen
             ).get_feature_meta
 
             metadata[feature[NAME]] = get_feature_meta(
-                dataset_df[feature[NAME]].astype(str),
+                dataset_df[feature[NAME]],
                 preprocessing_parameters,
                 backend
             )

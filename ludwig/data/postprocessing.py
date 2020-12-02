@@ -85,7 +85,12 @@ def convert_to_df(
                             class_name = training_set_metadata[of_name][
                                 'idx2str'][i]
                         elif output_feature.type == BINARY:
-                            class_name = 'True' if i == 1 else 'False'
+                            if (of_name in training_set_metadata and
+                                    'bool2str' in training_set_metadata[of_name]):
+                                class_name = training_set_metadata[of_name][
+                                    'bool2str'][i]
+                            else:
+                                class_name = 'True' if i == 1 else 'False'
                         else:
                             class_name = str(i)
                         data_for_df[
