@@ -15,17 +15,18 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Fever(cache_dir=cache_dir)
-    return dataset.load()
+    return dataset.load(split=split)
 
 
-class Fever(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
+class Fever(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
+            CSVLoadMixin, BaseDataset):
     """The Fever dataset.
 
     This pulls in an array of mixins for different types of functionality

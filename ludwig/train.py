@@ -159,7 +159,14 @@ def train_cli(
                                 config_file)
 
     if model_load_path:
-        model = LudwigModel.load(model_load_path)
+        model = LudwigModel.load(
+            model_load_path,
+            logging_level=logging_level,
+            use_horovod=use_horovod,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+        )
     else:
         model = LudwigModel(
             config=config,

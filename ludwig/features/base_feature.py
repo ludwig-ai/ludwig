@@ -20,6 +20,7 @@ from typing import Dict
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
@@ -42,8 +43,16 @@ class BaseFeature(object):
 
         if NAME not in feature:
             raise ValueError('Missing feature name')
-
         self.feature_name = feature[NAME]
+
+        if COLUMN not in feature:
+            feature[COLUMN] = self.feature_name
+        self.column = feature[COLUMN]
+
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
+        self.proc_column = feature[PROC_COLUMN]
+
         self.type = None
 
     def overwrite_defaults(self, feature):
@@ -71,8 +80,9 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
                               dtype=self.get_input_dtype(),
                               name=self.name + '_input')
 
+    @classmethod
     @abstractmethod
-    def get_input_dtype(self):
+    def get_input_dtype(cls):
         """Returns the Tensor data type this input accepts."""
         pass
 
@@ -174,8 +184,9 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                               dtype=self.get_output_dtype(),
                               name=self.name + '_input')
 
+    @classmethod
     @abstractmethod
-    def get_output_dtype(self):
+    def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
         pass
 
@@ -385,7 +396,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                     'bucketing_field to None / null, as activating it will '
                     'reduce the length of the field the bucketing is performed '
                     'on.'.format(
-                        self.feature_name,
+                        self.column,
                         self.dependencies,
                         hidden,
                         dependencies_hidden

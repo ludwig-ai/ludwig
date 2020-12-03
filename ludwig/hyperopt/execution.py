@@ -835,9 +835,9 @@ def get_parameters_dict(parameters):
 def substitute_parameters(config, parameters):
     parameters_dict = get_parameters_dict(parameters)
     for input_feature in config["input_features"]:
-        set_values(input_feature, input_feature[NAME], parameters_dict)
+        set_values(input_feature, input_feature[COLUMN], parameters_dict)
     for output_feature in config["output_features"]:
-        set_values(output_feature, output_feature[NAME], parameters_dict)
+        set_values(output_feature, output_feature[COLUMN], parameters_dict)
     set_values(config["combiner"], "combiner", parameters_dict)
     set_values(config["training"], "training", parameters_dict)
     set_values(config["preprocessing"], "preprocessing",

@@ -41,7 +41,12 @@ class H3FeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        # todo: add cast to int64
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {}
 
     @staticmethod
@@ -61,16 +66,22 @@ class H3FeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
     ):
-        column = dataset_df[feature[NAME]]
+        column = input_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
-        dataset[feature[NAME]] = np.array(column.tolist(), dtype=np.uint8)
+
+        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+            column,
+            lambda x: np.array(x, dtype=np.uint8)
+        )
+        return proc_df
 
 
 class H3InputFeature(H3FeatureMixin, InputFeature):
@@ -95,7 +106,8 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.uint8
 
     def get_input_shape(self):

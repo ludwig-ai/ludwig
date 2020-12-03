@@ -234,3 +234,11 @@ def calculate_incr_var(var_prev, mean_prev, mean, length):
 
 def calculate_incr_mean(count, mean, length):
     return mean + (length - mean) / float(count)
+
+
+def calculate_var(sum1, sum2, count):
+    return (sum2 - ((sum1 * sum1) / float(count))) / float(count - 1)
+
+
+def calculate_mean(sum1, count):
+    return sum1 / float(count)

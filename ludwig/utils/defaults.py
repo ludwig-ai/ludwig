@@ -20,6 +20,7 @@ from ludwig.constants import *
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry,
                                                 output_type_registry)
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      set_default_value)
 
@@ -169,8 +170,22 @@ def _perform_sanity_checks(config):
         )
 
 
+def _set_feature_column(config: dict) -> None:
+    for feature in config['input_features'] + config['output_features']:
+        if COLUMN not in feature:
+            feature[COLUMN] = feature[NAME]
+
+
+def _set_proc_column(config: dict) -> None:
+    for feature in config['input_features'] + config['output_features']:
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
+
+
 def merge_with_defaults(config):
     _perform_sanity_checks(config)
+    _set_feature_column(config)
+    _set_proc_column(config)
 
     # ===== Preprocessing =====
     config['preprocessing'] = merge_dict(
@@ -184,13 +199,13 @@ def merge_with_defaults(config):
                 config['input_features'] +
                 config['output_features']
         )
-        feature_names = set(f[NAME] for f in features)
+        feature_names = set(f[COLUMN] for f in features)
         if stratify not in feature_names:
             logger.warning(
                 'Stratify is not among the features. '
                 'Cannot establish if it is a binary or category'
             )
-        elif ([f for f in features if f[NAME] == stratify][0][TYPE]
+        elif ([f for f in features if f[COLUMN] == stratify][0][TYPE]
               not in {BINARY, CATEGORY}):
             raise ValueError('Stratify feature must be binary or category')
 
