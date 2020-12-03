@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import copy
-import inspect
+from inspect import signature
 import itertools
 import logging
 from abc import ABC, abstractmethod
@@ -308,21 +308,22 @@ class RayTuneSampler(HyperoptSampler):
                               )
         config = {}
         for param, values in parameters.items():
-            space = values["space"].lower()
-            if hasattr(tune, space):
-                space_function = getattr(tune, space)
+            param_search_type = values["space"].lower()
+            if hasattr(tune, param_search_type):
+                param_search_space = getattr(tune, param_search_type)
             else:
                 raise ValueError(
-                    "'{}' method is not supported in the Ray Tune module".format(space))
-            space_input_args = {}
-            space_required_args = inspect.getfullargspec(space_function).args
-            for arg in space_required_args:
-                if arg in values:
-                    space_input_args[arg] = values[arg]
+                    "'{}' method is not supported in the Ray Tune module".format(param_search_space))
+            param_search_input_args = {}
+            param_search_space_sig = signature(param_search_space)
+            for arg in param_search_space_sig.parameters.values():
+                if arg.name in values:
+                    param_search_input_args[arg.name] = values[arg.name]
                 else:
-                    raise ValueError(
-                        "Parameter '{}' not defined for {}".format(arg, param))
-            config[param] = space_function(**space_input_args)
+                    if arg.default is arg.empty:
+                        raise ValueError(
+                            "Parameter '{}' not defined for {}".format(arg, param))
+            config[param] = param_search_space(**param_search_input_args)
         return config
 
     def sample(self) -> Dict[str, Any]:
