@@ -98,6 +98,12 @@ MAXIMIZE = 'maximize'
 SAMPLER = 'sampler'
 
 NAME = 'name'
+COLUMN = 'column'
 TYPE = 'type'
 
 RAY = 'ray'
+
+PROC_COLUMN = 'proc_column'
+
+CHECKSUM = 'checksum'
+

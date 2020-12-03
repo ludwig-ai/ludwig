@@ -112,6 +112,7 @@ def update_config_with_metadata(config,
             config['output_features']
     ):
         if 'preprocessing' in feature:
-            feature['preprocessing'] = training_set_metadata[feature[NAME]][
-                'preprocessing'
-            ]
+            feature['preprocessing'] = \
+                training_set_metadata[feature[NAME]][
+                    'preprocessing'
+                ]

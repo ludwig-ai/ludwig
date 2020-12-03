@@ -34,6 +34,7 @@ ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
+from ludwig.backend import LOCAL_BACKEND, Backend, create_backend
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.data.dataset import Dataset
@@ -145,6 +146,7 @@ class LudwigModel:
             self,
             config: Union[str, dict],
             logging_level: int = logging.ERROR,
+            backend: Union[Backend, str] = LOCAL_BACKEND,
             use_horovod: bool = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
@@ -158,6 +160,8 @@ class LudwigModel:
         :param config: (Union[str, dict]) in-memory representation of
             config or string path to a YAML config file.
         :param logging_level: (int) Log level that will be sent to stderr.
+        :param backend: (Union[Backend, str]) `Backend` or string name
+            of backend to use to execute preprocessing / training steps.
         :param use_horovod: (bool) use Horovod for distributed training.
             Will be set automatically if `horovodrun` is used to launch
             the training script.
@@ -185,6 +189,10 @@ class LudwigModel:
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
 
+        self.backend = backend
+        if isinstance(backend, str):
+            self.backend = create_backend(backend)
+
         # setup horovod
         self._horovod = configure_horovod(use_horovod)
 
@@ -205,9 +213,9 @@ class LudwigModel:
     def train(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
-            training_set: Union[str, dict, pd.DataFrame] = None,
-            validation_set: Union[str, dict, pd.DataFrame] = None,
-            test_set: Union[str, dict, pd.DataFrame] = None,
+            training_set: Union[str, dict, pd.DataFrame, Dataset] = None,
+            validation_set: Union[str, dict, pd.DataFrame, Dataset] = None,
+            test_set: Union[str, dict, pd.DataFrame, Dataset] = None,
             training_set_metadata: Union[str, dict] = None,
             data_format: str = None,
             experiment_name: str = 'api_experiment',
@@ -360,172 +368,184 @@ class LudwigModel:
             description_fn, training_stats_fn, model_dir = get_file_names(
                 output_directory)
 
-        # save description
-        if is_on_master():
-            description = get_experiment_description(
-                self.config,
-                dataset=dataset,
-                training_set=training_set,
-                validation_set=validation_set,
-                test_set=test_set,
-                training_set_metadata=training_set_metadata,
-                data_format=data_format,
-                random_seed=random_seed
-            )
-            if not skip_save_training_description:
-                save_json(description_fn, description)
-            # print description
-            logger.info('Experiment name: {}'.format(experiment_name))
-            logger.info('Model name: {}'.format(model_name))
-            logger.info('Output directory: {}'.format(output_directory))
-            logger.info('\n')
-            for key, value in description.items():
-                logger.info('{}: {}'.format(key, pformat(value, indent=4)))
-            logger.info('\n')
+        with self.backend.create_cache_dir():
+            if isinstance(training_set, Dataset) and training_set_metadata is not None:
+                preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
+            else:
+                # save description
+                if is_on_master():
+                    description = get_experiment_description(
+                        self.config,
+                        dataset=dataset,
+                        training_set=training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        training_set_metadata=training_set_metadata,
+                        data_format=data_format,
+                        random_seed=random_seed
+                    )
+                    if not skip_save_training_description:
+                        save_json(description_fn, description)
+                    # print description
+                    logger.info('Experiment name: {}'.format(experiment_name))
+                    logger.info('Model name: {}'.format(model_name))
+                    logger.info('Output directory: {}'.format(output_directory))
+                    logger.info('\n')
+                    for key, value in description.items():
+                        logger.info('{}: {}'.format(key, pformat(value, indent=4)))
+                    logger.info('\n')
 
-        # preprocess
-        preprocessed_data = preprocess_for_training(
-            self.config,
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            data_format=data_format,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=self.config[PREPROCESSING],
-            random_seed=random_seed
-        )
+                preprocessed_data = self.preprocess(
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    model_resume_path=model_resume_path,
+                    skip_save_training_description=skip_save_training_description,
+                    skip_save_training_statistics=skip_save_training_statistics,
+                    skip_save_model=skip_save_model,
+                    skip_save_progress=skip_save_progress,
+                    skip_save_log=skip_save_log,
+                    skip_save_processed_input=skip_save_processed_input,
+                    output_directory=output_directory,
+                    random_seed=random_seed,
+                    devbug=debug,
+                    **kwargs,
+                )
+                (training_set,
+                 validation_set,
+                 test_set,
+                 training_set_metadata) = preprocessed_data
 
-        (training_set,
-         validation_set,
-         test_set,
-         training_set_metadata) = preprocessed_data
-        self.training_set_metadata = training_set_metadata
+            self.training_set_metadata = training_set_metadata
 
-        if is_on_master():
-            logger.info('Training set: {0}'.format(training_set.size))
-            if validation_set is not None:
-                logger.info('Validation set: {0}'.format(validation_set.size))
-            if test_set is not None:
-                logger.info('Test set: {0}'.format(test_set.size))
+            if is_on_master():
+                logger.info('Training set: {0}'.format(len(training_set)))
+                if validation_set is not None:
+                    logger.info('Validation set: {0}'.format(len(validation_set)))
+                if test_set is not None:
+                    logger.info('Test set: {0}'.format(len(test_set)))
 
-        if is_on_master():
-            if not skip_save_model:
-                # save train set metadata
-                os.makedirs(model_dir, exist_ok=True)
-                save_json(
-                    os.path.join(
-                        model_dir,
-                        TRAIN_SET_METADATA_FILE_NAME
-                    ),
+            if is_on_master():
+                if not skip_save_model:
+                    # save train set metadata
+                    os.makedirs(model_dir, exist_ok=True)
+                    save_json(
+                        os.path.join(
+                            model_dir,
+                            TRAIN_SET_METADATA_FILE_NAME
+                        ),
+                        training_set_metadata
+                    )
+
+            contrib_command("train_init", experiment_directory=output_directory,
+                            experiment_name=experiment_name, model_name=model_name,
+                            output_directory=output_directory,
+                            resume=model_resume_path is not None)
+
+            # Build model if not provided
+            # if it was provided it means it was already loaded
+            if not self.model:
+                if is_on_master():
+                    print_boxed('MODEL', print_fun=logger.debug)
+                # update config with metadata properties
+                update_config_with_metadata(
+                    self.config,
                     training_set_metadata
                 )
+                self.model = LudwigModel.create_model(self.config,
+                                                      random_seed=random_seed)
 
-        contrib_command("train_init", experiment_directory=output_directory,
-                        experiment_name=experiment_name, model_name=model_name,
-                        output_directory=output_directory,
-                        resume=model_resume_path is not None)
+            # init trainer
+            trainer = Trainer(
+                **self.config[TRAINING],
+                resume=model_resume_path is not None,
+                skip_save_model=skip_save_model,
+                skip_save_progress=skip_save_progress,
+                skip_save_log=skip_save_log,
+                random_seed=random_seed,
+                horoovd=self._horovod,
+                debug=debug
+            )
 
-        # Build model if not provided
-        # if it was provided it means it was already loaded
-        if not self.model:
+            contrib_command("train_model", self.model, self.config,
+                            self.config_fp)
+
+            # train model
             if is_on_master():
-                print_boxed('MODEL', print_fun=logger.debug)
-            # update config with metadata properties
-            update_config_with_metadata(
-                self.config,
-                training_set_metadata
+                print_boxed('TRAINING')
+                if not skip_save_model:
+                    self.save_config(model_dir)
+
+            train_stats = trainer.train(
+                self.model,
+                training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                save_path=model_dir,
             )
-            self.model = LudwigModel.create_model(self.config,
-                                                  random_seed=random_seed)
 
-        # init trainer
-        trainer = Trainer(
-            **self.config[TRAINING],
-            resume=model_resume_path is not None,
-            skip_save_model=skip_save_model,
-            skip_save_progress=skip_save_progress,
-            skip_save_log=skip_save_log,
-            random_seed=random_seed,
-            horoovd=self._horovod,
-            debug=debug
-        )
+            train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+            train_stats = {
+                TRAINING: train_trainset_stats,
+                VALIDATION: train_valiset_stats,
+                TEST: train_testset_stats
+            }
 
-        contrib_command("train_model", self.model, self.config,
-                        self.config_fp)
+            # save training statistics
+            if is_on_master():
+                if not skip_save_training_statistics:
+                    save_json(training_stats_fn, train_stats)
 
-        # train model
-        if is_on_master():
-            print_boxed('TRAINING')
-            if not skip_save_model:
-                self.save_config(model_dir)
+            # grab the results of the model with highest validation test performance
+            validation_field = trainer.validation_field
+            validation_metric = trainer.validation_metric
+            validation_field_result = train_valiset_stats[validation_field]
 
-        train_stats = trainer.train(
-            self.model,
-            training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            save_path=model_dir,
-        )
-
-        train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
-        train_stats = {
-            TRAINING: train_trainset_stats,
-            VALIDATION: train_valiset_stats,
-            TEST: train_testset_stats
-        }
-
-        # save training statistics
-        if is_on_master():
-            if not skip_save_training_statistics:
-                save_json(training_stats_fn, train_stats)
-
-        # grab the results of the model with highest validation test performance
-        validation_field = trainer.validation_field
-        validation_metric = trainer.validation_metric
-        validation_field_result = train_valiset_stats[validation_field]
-
-        best_function = get_best_function(validation_metric)
-        # results of the model with highest validation test performance
-        if is_on_master() and validation_set is not None:
-            epoch_best_vali_metric, best_vali_metric = best_function(
-                enumerate(validation_field_result[validation_metric]),
-                key=lambda pair: pair[1]
-            )
-            logger.info(
-                'Best validation model epoch: {0}'.format(
-                    epoch_best_vali_metric + 1)
-            )
-            logger.info(
-                'Best validation model {0} on validation set {1}: {2}'.format(
-                    validation_metric, validation_field, best_vali_metric
-                ))
-            if test_set is not None:
-                best_vali_metric_epoch_test_metric = train_testset_stats[
-                    validation_field][validation_metric][
-                    epoch_best_vali_metric]
-
-                logger.info(
-                    'Best validation model {0} on test set {1}: {2}'.format(
-                        validation_metric,
-                        validation_field,
-                        best_vali_metric_epoch_test_metric
-                    )
+            best_function = get_best_function(validation_metric)
+            # results of the model with highest validation test performance
+            if is_on_master() and validation_set is not None:
+                epoch_best_vali_metric, best_vali_metric = best_function(
+                    enumerate(validation_field_result[validation_metric]),
+                    key=lambda pair: pair[1]
                 )
-            logger.info(
-                '\nFinished: {0}_{1}'.format(experiment_name, model_name))
-            logger.info('Saved to: {0}'.format(output_directory))
+                logger.info(
+                    'Best validation model epoch: {0}'.format(
+                        epoch_best_vali_metric + 1)
+                )
+                logger.info(
+                    'Best validation model {0} on validation set {1}: {2}'.format(
+                        validation_metric, validation_field, best_vali_metric
+                    ))
+                if test_set is not None:
+                    best_vali_metric_epoch_test_metric = train_testset_stats[
+                        validation_field][validation_metric][
+                        epoch_best_vali_metric]
 
-        contrib_command("train_save", output_directory)
+                    logger.info(
+                        'Best validation model {0} on test set {1}: {2}'.format(
+                            validation_metric,
+                            validation_field,
+                            best_vali_metric_epoch_test_metric
+                        )
+                    )
+                logger.info(
+                    '\nFinished: {0}_{1}'.format(experiment_name, model_name))
+                logger.info('Saved to: {0}'.format(output_directory))
 
-        self.training_set_metadata = training_set_metadata
+            contrib_command("train_save", output_directory)
 
-        if not skip_save_model:
-            # Load the best weights from saved checkpoint
-            self.load_weights(model_dir)
+            self.training_set_metadata = training_set_metadata
 
-        return train_stats, preprocessed_data, output_directory
+            if not skip_save_model:
+                # Load the best weights from saved checkpoint
+                self.load_weights(model_dir)
+
+            return train_stats, preprocessed_data, output_directory
 
     def train_online(
             self,
@@ -1239,6 +1259,7 @@ class LudwigModel:
             data_format=data_format,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=self.config[PREPROCESSING],
+            backend=self.backend,
             random_seed=random_seed
         )
 
@@ -1292,7 +1313,11 @@ class LudwigModel:
         ```
 
         """
+        # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
+        # TensorFlow with default parameters
         horovod = configure_horovod(use_horovod)
+        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads, horovod)
+
         config = broadcast_return(lambda: load_json(os.path.join(
             model_dir,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -1517,6 +1542,7 @@ def kfold_cross_validate(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
+        backend: Union[Backend, str] = LOCAL_BACKEND,
         use_horovod: bool = None,
         logging_level: int = logging.INFO,
         debug: bool = False,
@@ -1591,6 +1617,8 @@ def kfold_cross_validate(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to
             use multithreading parallelism
            to improve performance at the cost of determinism.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+            of backend to use to execute preprocessing / training steps.
     :param use_horovod: (bool, default: `None`) flag for using horovod
     :param debug: (bool, default: `False`) If `True` turns on tfdbg
             with `inf_or_nan` checks.
@@ -1641,7 +1669,7 @@ def kfold_cross_validate(
     elif data_format in CACHEABLE_FORMATS:
         data_reader = get_from_registry(data_format,
                                         external_data_reader_registry)
-        data_df = data_reader(dataset)
+        data_df = data_reader(dataset, backend.df_engine.df_lib)
         data_dir = os.path.dirname(dataset)
     else:
         ValueError(
@@ -1669,6 +1697,7 @@ def kfold_cross_validate(
             model = LudwigModel(
                 config=config,
                 logging_level=logging_level,
+                backend=backend,
                 use_horovod=use_horovod,
                 gpus=gpus,
                 gpu_memory_limit=gpu_memory_limit,

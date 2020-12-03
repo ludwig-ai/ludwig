@@ -1,5 +1,5 @@
 version: 1.0
-download_urls: 
+download_urls:
   - https://raw.githubusercontent.com/google-research/google-research/master/goemotions/data/train.tsv
   - https://raw.githubusercontent.com/google-research/google-research/master/goemotions/data/dev.tsv
   - https://raw.githubusercontent.com/google-research/google-research/master/goemotions/data/test.tsv

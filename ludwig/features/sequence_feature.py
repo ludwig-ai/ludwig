@@ -68,7 +68,11 @@ class SequenceFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
         idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
@@ -76,7 +80,7 @@ class SequenceFeatureMixin(object):
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-
+            processor=backend.df_engine
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
@@ -91,7 +95,7 @@ class SequenceFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         sequence_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['str2idx'],
@@ -103,22 +107,27 @@ class SequenceFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
-            ]
+            ],
+            processor=backend.df_engine
         )
         return sequence_data
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            dataset_df[feature[NAME]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters)
-        dataset[feature[NAME]] = sequence_data
+            input_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]], preprocessing_parameters,
+            backend
+        )
+        proc_df[feature[PROC_COLUMN]] = sequence_data
+        return proc_df
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
@@ -148,7 +157,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -247,7 +257,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             target=None,
             training=None
     ):
-        if training:
+        if training and target is not None:
             return self.decoder_obj._logits_training(
                 inputs,
                 target=tf.cast(target, dtype=tf.int32),
@@ -260,7 +270,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         # Generator Decoder
         return self.decoder_obj._predictions_eval(inputs, training=training)
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int32
 
     def get_output_shape(self):
@@ -288,7 +299,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     'for the <UNK> and <PAD> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
                         output_feature['num_classes'],
-                        output_feature[NAME]
+                        output_feature[COLUMN]
                     )
                 )
 
@@ -315,7 +326,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                                 'the first row {}. All rows must have '
                                 'the same length.'.format(
                                     curr_row,
-                                    output_feature[NAME],
+                                    output_feature[COLUMN],
                                     curr_row_length,
                                     first_row_length
                                 )
@@ -329,7 +340,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'The class_similarities matrix of {} has '
                         '{} rows and {} columns, '
                         'their number must be identical.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             len(similarities),
                             all_rows_length
                         )
@@ -342,7 +353,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'Check the metadata JSON file to see the classes '
                         'and their order and '
                         'consider <UNK> and <PAD> class too.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             all_rows_length,
                             output_feature['num_classes']
                         )
@@ -359,7 +370,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0, '
                     'but no class_similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -407,7 +418,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS].numpy()
-            lengths = result[LENGTHS]
+            lengths = result[LENGTHS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token]

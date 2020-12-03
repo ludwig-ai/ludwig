@@ -42,7 +42,6 @@ from ludwig.modules.metric_modules import get_improved_fun
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
-from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import is_on_master
@@ -458,8 +457,7 @@ class Trainer:
             )
 
         set_random_seed(self.random_seed)
-        batcher = initialize_batcher(
-            training_set,
+        batcher = training_set.initialize_batcher(
             batch_size=self.batch_size,
             seed=self.random_seed,
             horovod=self.horovod
@@ -533,11 +531,11 @@ class Trainer:
                 # obtain batch
                 batch = batcher.next_batch()
                 inputs = {
-                    i_feat.feature_name: batch[i_feat.feature_name]
+                    i_feat.feature_name: batch[i_feat.proc_column]
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: batch[o_feat.feature_name]
+                    o_feat.feature_name: batch[o_feat.proc_column]
                     for o_feat in model.output_features.values()
                 }
 
@@ -618,7 +616,7 @@ class Trainer:
                 step=progress_tracker.epoch,
             )
 
-            if validation_set is not None and validation_set.size > 0:
+            if validation_set is not None and len(validation_set) > 0:
                 # eval metrics on validation set
                 self.evaluation(
                     model,
@@ -635,7 +633,7 @@ class Trainer:
                     step=progress_tracker.epoch,
                 )
 
-            if test_set is not None and test_set.size > 0:
+            if test_set is not None and len(test_set) > 0:
                 # eval metrics on test set
                 self.evaluation(
                     model,
@@ -734,8 +732,7 @@ class Trainer:
             model,
             dataset,
     ):
-        batcher = initialize_batcher(
-            dataset,
+        batcher = dataset.initialize_batcher(
             batch_size=self.batch_size,
             horovod=self.horovod
         )
@@ -751,11 +748,11 @@ class Trainer:
         while not batcher.last_batch():
             batch = batcher.next_batch()
             inputs = {
-                i_feat.feature_name: batch[i_feat.feature_name]
+                i_feat.feature_name: batch[i_feat.proc_column]
                 for i_feat in model.input_features.values()
             }
             targets = {
-                o_feat.feature_name: batch[o_feat.feature_name]
+                o_feat.feature_name: batch[o_feat.proc_column]
                 for o_feat in model.output_features.values()
             }
 

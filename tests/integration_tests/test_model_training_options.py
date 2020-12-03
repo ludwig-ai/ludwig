@@ -9,10 +9,12 @@ import pytest
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
+from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
 from ludwig.modules.optimization_modules import optimizers_registry
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, replace_file_extension
+from tests.integration_tests.utils import category_feature, generate_data
 
 RANDOM_SEED = 42
 NUMBER_OBSERVATIONS = 500
@@ -372,3 +374,99 @@ def test_regularization(generated_data, tmp_path):
 
     # ensure all losses obtained with the different methods are different
     assert len(regularization_losses) == len(regularization_losses_set)
+
+
+# test cache checksum function
+def test_cache_checksum(csv_filename, tmp_path):
+    # setup for training
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=2)]
+
+    source_dataset = os.path.join(tmp_path, csv_filename)
+    source_dataset = generate_data(input_features, output_features,
+                                   source_dataset)
+
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'preprocessing': {'text': {'most_common_word': 1000}},
+        'training': {'epochs': 2}
+    }
+
+    # conduct initial training
+    output_directory = os.path.join(tmp_path, 'results')
+    model = LudwigModel(config)
+    _, _, train_output_directory1 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    first_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # conduct second training, should not force recreating hdf5
+    model = LudwigModel(config)
+    _, _, train_output_directory2 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    second_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # time stamps should be the same
+    assert first_training_timestamp == second_training_timestamp
+
+    # force recreating cache file by changing checksum
+    config['preprocessing']['text']['most_common_word'] = 2000
+    model = LudwigModel(config)
+    _, _, train_output_directory3 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    third_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamp should differ
+    assert first_training_timestamp < third_training_timestamp
+
+    # force recreating cache by updating modification time of source dataset
+    os.utime(source_dataset)
+    model = LudwigModel(config)
+    _, _, train_output_directory4 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    fourth_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert third_training_timestamp < fourth_training_timestamp
+
+    # force change in feature preprocessing
+    input_features = config['input_features'].copy()
+    input_features[0]['preprocessing'] = {'lowercase': True}
+    config['input_features'] = input_features
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    fifth_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert fourth_training_timestamp < fifth_training_timestamp
+
+    # force change in features names (and properties)
+    input_features = [category_feature(vocab_size=5), category_feature()]
+    source_dataset = generate_data(input_features, output_features,
+                                   source_dataset)
+    config['input_features'] = input_features
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    sixth_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert fifth_training_timestamp < sixth_training_timestamp
+
+    # force change in Ludwig version
+    global_vars.LUDWIG_VERSION = 'new_version'
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    seventh_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert sixth_training_timestamp < seventh_training_timestamp

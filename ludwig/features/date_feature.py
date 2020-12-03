@@ -41,7 +41,11 @@ class DateFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {
             'preprocessing': preprocessing_parameters
         }
@@ -95,19 +99,20 @@ class DateFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters,
+            backend
     ):
         datetime_format = preprocessing_parameters['datetime_format']
-        dates_to_lists = [
-            np.array(DateFeatureMixin.date_to_list(
-                row, datetime_format, preprocessing_parameters
-            ))
-            for row in dataset_df[feature[NAME]]
-        ]
-        dataset[feature[NAME]] = np.array(dates_to_lists, dtype=np.int16)
+        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+            input_df[feature[COLUMN]],
+            lambda x: np.array(DateFeatureMixin.date_to_list(
+                x, datetime_format, preprocessing_parameters
+            ), dtype=np.int16)
+        )
+        return proc_df
 
 
 class DateInputFeature(DateFeatureMixin, InputFeature):
@@ -131,7 +136,8 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int16
 
     def get_input_shape(self):

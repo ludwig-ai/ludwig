@@ -50,21 +50,29 @@ class BinaryFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        # todo maybe move code from add_feature_data here
+        #  + figure out what NaN is in a bool column
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {}
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters,
+            backend
     ):
-        column = dataset_df[feature[NAME]]
+        column = input_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(str2bool)
-        dataset[feature[NAME]] = column.astype(np.bool_).values
+        proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
+        return proc_df
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
@@ -93,7 +101,8 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         return encoder_outputs
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.bool
 
     def get_input_shape(self):
@@ -195,7 +204,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     #         else:
     #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.bool
 
     def get_output_shape(self):
@@ -296,6 +306,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
+            postprocessed[PROBABILITIES] = np.stack(
+                [1 - postprocessed[PROBABILITIES],
+                postprocessed[PROBABILITIES]],
+                axis=1
+            )
+            postprocessed[PROBABILITY] = np.amax(
+                postprocessed[PROBABILITIES], axis=1
+            )
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
