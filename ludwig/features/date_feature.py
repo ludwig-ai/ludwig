@@ -41,6 +41,10 @@ class DateFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         return {
             'preprocessing': preprocessing_parameters
