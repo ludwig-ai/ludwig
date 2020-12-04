@@ -298,6 +298,7 @@ class RayTuneSampler(HyperoptSampler):
         self.search_space = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
         self.num_samples = num_samples
+        self.goal = goal
 
     def _get_search_space(self, parameters):
         try:

@@ -260,7 +260,7 @@ def hyperopt(
 
     hyperopt_executor = get_build_hyperopt_executor(
         executor[TYPE]
-    )(hyperopt_sampler, output_feature, metric, split, goal, **executor)
+    )(hyperopt_sampler, output_feature, metric, split, **executor)
 
     hyperopt_results = hyperopt_executor.execute(
         config,

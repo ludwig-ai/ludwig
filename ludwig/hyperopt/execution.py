@@ -599,7 +599,6 @@ class RayTuneExecutor(HyperoptExecutor):
             output_feature: str,
             metric: str,
             split: str,
-            goal: str,
             cpu_resources_per_trial: int = 1,
             gpu_resources_per_trial: int = 0,
             **kwargs
@@ -617,11 +616,11 @@ class RayTuneExecutor(HyperoptExecutor):
         ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = hyperopt_sampler.num_samples
+        self.goal = hyperopt_sampler.goal
         self.search_alg_dict = hyperopt_sampler.search_alg_dict
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
-        self.goal = goal
         self.trial_id = 0
         self.cpu_resources_per_trial = cpu_resources_per_trial
         self.gpu_resources_per_trial = gpu_resources_per_trial
