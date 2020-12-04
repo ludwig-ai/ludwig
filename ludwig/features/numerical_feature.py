@@ -35,6 +35,7 @@ from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
+from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
@@ -56,27 +57,12 @@ class NumericalFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        compute = backend.df_engine.compute
-        if preprocessing_parameters['normalization'] is not None:
-            if preprocessing_parameters['normalization'] == 'zscore':
-                return {
-                    'mean': compute(column.astype(np.float32).mean()),
-                    'std': compute(column.astype(np.float32).std())
-                }
-            elif preprocessing_parameters['normalization'] == 'minmax':
-                return {
-                    'min': compute(column.astype(np.float32).min()),
-                    'max': compute(column.astype(np.float32).max())
-                }
-            else:
-                logger.info(
-                    'Currently zscore and minmax are the only '
-                    'normalization strategies available. No {}'.format(
-                        preprocessing_parameters['normalization'])
-                )
-                return {}
-        else:
-            return {}
+        numeric_transformer = get_from_registry(
+            preprocessing_parameters.get('normalization', None),
+            numeric_transformation_registry
+        )
+
+        return numeric_transformer.fit_transform_params(column, backend)
 
     @staticmethod
     def add_feature_data(
@@ -87,18 +73,18 @@ class NumericalFeatureMixin(object):
             preprocessing_parameters,
             backend
     ):
-        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].values
-        if preprocessing_parameters['normalization'] is not None:
-            if preprocessing_parameters['normalization'] == 'zscore':
-                mean = metadata[feature[NAME]]['mean']
-                std = metadata[feature[NAME]]['std']
-                proc_df[feature[PROC_COLUMN]] = \
-                    (proc_df[feature[PROC_COLUMN]] - mean) / std
-            elif preprocessing_parameters['normalization'] == 'minmax':
-                min_ = metadata[feature[NAME]]['min']
-                max_ = metadata[feature[NAME]]['max']
-                values = proc_df[feature[PROC_COLUMN]]
-                proc_df[feature[PROC_COLUMN]] = (values - min_) / (max_ - min_)
+        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(
+            np.float32).values
+
+        # normalize data as required
+        numeric_transformer = get_from_registry(
+            preprocessing_parameters.get('normalization', None),
+            numeric_transformation_registry
+        )(**metadata[feature[NAME]])
+
+        proc_df[feature[PROC_COLUMN]] = \
+            numeric_transformer.transform(proc_df[feature[PROC_COLUMN]])
+
         return proc_df
 
 
@@ -277,7 +263,16 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             skip_save_unprocessed_output = True
 
         if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = predictions[PREDICTIONS].numpy()
+            # as needed convert predictions make to original value space
+            numeric_transformer = get_from_registry(
+                metadata['preprocessing'].get('normalization', None),
+                numeric_transformation_registry
+            )(**metadata)
+            postprocessed[PREDICTIONS] = \
+                numeric_transformer.inverse_transform(
+                    predictions[PREDICTIONS].numpy()
+                )
+
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
@@ -324,3 +319,104 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         'None': Regressor,
         None: Regressor
     }
+
+
+class ZScoreTransformer:
+    def __init__(self, mean: float = None, std: float = None, **kwargs: dict):
+        self.mu = mean
+        self.sigma = std
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        return (x - self.mu) / self.sigma
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x * self.sigma + self.mu
+
+    @staticmethod
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'Backend'
+    ) -> dict:
+        compute = backend.df_engine.compute
+        return {
+            'mean': compute(column.astype(np.float32).mean()),
+            'std': compute(column.astype(np.float32).std())
+        }
+
+
+class MinMaxTransformer:
+    def __init__(self, min: float = None, max: float = None, **kwargs: dict):
+        self.min_value = min
+        self.max_value = max
+        self.range = None if min is None or max is None else max - min
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        return (x - self.min_value) / self.range
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        if self.range is None:
+            raise ValueError(
+                'Numeric transformer needs to be instantiated with '
+                'min and max values.'
+            )
+        return x * self.range + self.min_value
+
+    @staticmethod
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'Backend'
+    ) -> dict:
+        compute = backend.df_engine.compute
+        return {
+            'min': compute(column.astype(np.float32).min()),
+            'max': compute(column.astype(np.float32).max())
+        }
+
+
+class Log1pTransformer:
+    def __init__(self, **kwargs: dict):
+        pass
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        if np.any(x <= 0):
+            raise ValueError(
+                'One or more values are non-positive.  '
+                'log1p normalization is defined only for positive values.'
+            )
+        return np.log1p(x)
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return np.expm1(x)
+
+    @staticmethod
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'Backend'
+    ) -> dict:
+        return {}
+
+
+class IdentityTransformer:
+    def __init__(self, **kwargs):
+        pass
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        return x
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x
+
+    @staticmethod
+    def fit_transform_params(
+            column: np.ndarray,
+            backend: 'Backend'
+    ) -> dict:
+        return {}
+
+
+numeric_transformation_registry = {
+    'minmax': MinMaxTransformer,
+    'zscore': ZScoreTransformer,
+    'log1p': Log1pTransformer,
+    None: IdentityTransformer
+}
