@@ -2172,6 +2172,7 @@ def compare_classifiers_predictions(
          'same prediction', 'different prediction'],
         [0, 1, 1, 2, 2],
         title='{} vs {}'.format(name_c1, name_c2),
+        tight_layout=kwargs.pop('tight_layout', True),
         filename=filename
     )
 
