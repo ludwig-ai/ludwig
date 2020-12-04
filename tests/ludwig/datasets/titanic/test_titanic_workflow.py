@@ -1,6 +1,7 @@
 import tempfile
 import pandas as pd
 from unittest import mock
+from mock import MagicMock
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.titanic import Titanic
 
@@ -63,11 +64,9 @@ def test_download_titanic_dataset():
     with tempfile.TemporaryDirectory() as tmpdir:
         with mock.patch('ludwig.datasets.base_dataset.read_config',
                         return_value=config):
-            with mock.patch('ludwig.datasets.mixins.kaggle.KaggleMixin.api.authenticate', return_value=None):
-                dataset = FakeTitanicDataset(tmpdir)
-                assert not dataset.is_downloaded()
-                assert not dataset.is_processed()
-                dataset.download()
-                assert dataset.is_downloaded()
+            with mock.patch('ludwig.datasets.mixins.kaggle.KaggleApi') as mock_kaggle_cls:
+                mock_kaggle_api = MagicMock()
+                mock_kaggle_cls.return_value = mock_kaggle_api
+                mock_kaggle_api.authenticate.assert_called_once
 
 

@@ -4,3 +4,4 @@ split_filenames:
   test_file: titanic_test.csv
 download_file_type: csv
 csv_filename: titanic.csv
+competition: titanic

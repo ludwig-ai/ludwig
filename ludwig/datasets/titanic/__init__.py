@@ -17,7 +17,7 @@
 import os
 import pandas as pd
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.kaggle import KaggleMixin
+from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
@@ -26,7 +26,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
-class Titanic(CSVLoadMixin, KaggleMixin, BaseDataset):
+class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     """The Titanic dataset.
 
     This pulls in an array of mixins for different types of functionality
@@ -39,6 +39,8 @@ class Titanic(CSVLoadMixin, KaggleMixin, BaseDataset):
     raw_dataset_path: str
     processed_temp_path: str
     processed_dataset_path: str
+    kaggle_username: str
+    kaggle_api_key: str
 
     def __init__(self, dataset_name="titanic", cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name, cache_dir)
@@ -54,5 +56,6 @@ class Titanic(CSVLoadMixin, KaggleMixin, BaseDataset):
         final_df.to_csv(self.processed_dataset_path)
 
     @property
-    def download_url(self):
-        return self.config["download_url"]
+    def competition_name(self):
+        return self.config["competition"]
+
