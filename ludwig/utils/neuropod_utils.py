@@ -48,10 +48,12 @@ def postprocess_for_neuropod(predicted, config):
             postprocessed[feature_name + "_predictions"] = \
                 np.expand_dims(
                     predicted[feature_name][PREDICTIONS].astype('str'), 1)
-            postprocessed[feature_name + "_probabilities"] = \
+            postprocessed[feature_name + "_probability"] = \
                 np.expand_dims(
-                    predicted[feature_name][PROBABILITIES].astype('float64'),
+                    predicted[feature_name][PROBABILITY].astype('float64'),
                     1)
+            postprocessed[feature_name + "_probabilities"] = \
+                predicted[feature_name][PROBABILITIES].astype('float64')
         elif feature_type == NUMERICAL:
             postprocessed[feature_name + "_predictions"] = \
                 np.expand_dims(
@@ -188,9 +190,14 @@ def export_neuropod(
                 "shape": (None, 1)
             })
             output_spec.append({
-                "name": feature_name + '_probabilities',
+                "name": feature_name + '_probability',
                 "dtype": "float64",
                 "shape": (None, 1)
+            })
+            output_spec.append({
+                "name": feature_name + '_probabilities',
+                "dtype": "float64",
+                "shape": (None, 2)
             })
         elif feature_type == NUMERICAL:
             output_spec.append({

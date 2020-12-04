@@ -50,6 +50,12 @@ class BinaryFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        # todo maybe move code from add_feature_data here
+        #  + figure out what NaN is in a bool column
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         return {}
 
@@ -300,6 +306,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
+            postprocessed[PROBABILITIES] = np.stack(
+                [1 - postprocessed[PROBABILITIES],
+                postprocessed[PROBABILITIES]],
+                axis=1
+            )
+            postprocessed[PROBABILITY] = np.amax(
+                postprocessed[PROBABILITIES], axis=1
+            )
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),

@@ -16,6 +16,7 @@
 # ==============================================================================
 import pandas as pd
 
+from ludwig.constants import BINARY
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS, \
     normalize_numpy
@@ -83,6 +84,8 @@ def convert_to_df(
                                 'idx2str' in training_set_metadata[of_name]):
                             class_name = training_set_metadata[of_name][
                                 'idx2str'][i]
+                        elif output_feature.type == BINARY:
+                            class_name = 'True' if i == 1 else 'False'
                         else:
                             class_name = str(i)
                         data_for_df[
