@@ -60,7 +60,6 @@ class SetFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             processor=backend.df_engine
         )
-        print(str2idx)
         return {
             'idx2str': idx2str,
             'str2idx': str2idx,
