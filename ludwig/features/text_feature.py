@@ -59,7 +59,6 @@ class TextFeatureMixin(object):
 
     @staticmethod
     def cast_column(feature, dataset_df, backend):
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].astype(str)
         return dataset_df
 
     @staticmethod
@@ -122,6 +121,7 @@ class TextFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(
             column, preprocessing_parameters, backend
         )
@@ -217,7 +217,7 @@ class TextFeatureMixin(object):
             backend
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            input_df[feature[COLUMN]],
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend

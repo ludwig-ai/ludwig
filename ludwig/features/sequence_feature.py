@@ -69,11 +69,11 @@ class SequenceFeatureMixin(object):
 
     @staticmethod
     def cast_column(feature, dataset_df, backend):
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].astype(str)
         return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
@@ -123,7 +123,7 @@ class SequenceFeatureMixin(object):
             backend
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            input_df[feature[COLUMN]],
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]], preprocessing_parameters,
             backend
         )

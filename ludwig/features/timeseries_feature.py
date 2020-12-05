@@ -44,11 +44,11 @@ class TimeseriesFeatureMixin(object):
 
     @staticmethod
     def cast_column(feature, dataset_df, backend):
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].astype(str)
         return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tokenizer = get_from_registry(
             preprocessing_parameters['tokenizer'],
             tokenizer_registry
@@ -130,7 +130,7 @@ class TimeseriesFeatureMixin(object):
             backend
     ):
         proc_df[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
-            input_df[feature[COLUMN]],
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend

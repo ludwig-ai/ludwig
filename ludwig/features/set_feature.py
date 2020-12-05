@@ -48,11 +48,11 @@ class SetFeatureMixin(object):
 
     @staticmethod
     def cast_column(feature, dataset_df, backend):
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].astype(str)
         return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters['tokenizer'],
@@ -60,6 +60,7 @@ class SetFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             processor=backend.df_engine
         )
+        print(str2idx)
         return {
             'idx2str': idx2str,
             'str2idx': str2idx,
@@ -93,7 +94,7 @@ class SetFeatureMixin(object):
             backend
     ):
         proc_df[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
-            input_df[feature[COLUMN]],
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
