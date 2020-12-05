@@ -69,6 +69,7 @@ class SequenceFeatureMixin(object):
 
     @staticmethod
     def cast_column(feature, dataset_df, backend):
+        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].astype(str)
         return dataset_df
 
     @staticmethod
@@ -122,7 +123,7 @@ class SequenceFeatureMixin(object):
             backend
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            input_df[feature[COLUMN]].astype(str),
+            input_df[feature[COLUMN]],
             metadata[feature[NAME]], preprocessing_parameters,
             backend
         )
