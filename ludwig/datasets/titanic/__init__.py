@@ -33,7 +33,6 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     which belongs in the workflow for ingesting and transforming training data into a destination
     dataframe that can fit into Ludwig's training API.
     """
-
     config: dict
     raw_temp_path: str
     raw_dataset_path: str
@@ -42,14 +41,22 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     kaggle_username: str
     kaggle_api_key: str
 
-    def __init__(self, dataset_name="titanic", cache_dir=DEFAULT_CACHE_LOCATION):
+    def __init__(self,
+                 kaggle_username=None,
+                 kaggle_api_key=None,
+                 dataset_name="titanic",
+                 cache_dir=DEFAULT_CACHE_LOCATION):
+        self.kaggle_username = kaggle_username
+        self.kaggle_api_key = kaggle_api_key
         super().__init__(dataset_name, cache_dir)
 
     def process_downloaded_dataset(self):
         """ The final method where we create a training and test file by iterating through
         both of these files"""
-        train_df = pd.read_csv(os.path.join(self.processed_temp_path, "titanic_train.csv"))
-        test_df = pd.read_csv(os.path.join(self.processed_temp_path, "titanic_test.csv"))
+        train_file = self.config["split_filenames"]["train_file"]
+        test_file = self.config["split_filenames"]["test_file"]
+        train_df = pd.read_csv(os.path.join(self.processed_temp_path, train_file))
+        test_df = pd.read_csv(os.path.join(self.processed_temp_path, test_file))
         train_df["split"] = 0
         test_df["split"] = 2
         final_df = pd.concat([train_df, train_df], axis=1)
