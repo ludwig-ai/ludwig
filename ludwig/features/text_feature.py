@@ -121,6 +121,7 @@ class TextFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(
             column, preprocessing_parameters, backend
         )

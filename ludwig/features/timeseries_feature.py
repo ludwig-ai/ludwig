@@ -48,6 +48,7 @@ class TimeseriesFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tokenizer = get_from_registry(
             preprocessing_parameters['tokenizer'],
             tokenizer_registry
