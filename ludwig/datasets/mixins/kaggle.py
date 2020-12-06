@@ -26,16 +26,15 @@ class KaggleDownloadMixin:
             api.authenticate()
         os.makedirs(self.raw_temp_path, exist_ok=True)
         # Download all files for a competition
-        # Signature: competition_download_files(competition, path=None, force=False, quiet=True)
-        api.competition_download_files('titanic', path=self.raw_temp_path)
+        api.competition_download_files(self.competition_name, path=self.raw_temp_path)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
     @contextmanager
-    def update_env(**kwargs):
+    def update_env(self, **kwargs):
         override_env = {k: v for k, v in kwargs.items() if v is not None}
         old = os.environ
         try:
-            os.environ = {os.environ, override_env}
+            os.environ.update(override_env)
             yield
         finally:
             os.environ = old

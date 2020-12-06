@@ -59,6 +59,7 @@ def test_download_titanic_dataset():
         'test_file': titanic_test_filename
         },
         'csv_filename': 'fake_titanic.csv',
+        'competition': 'titanic'
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -68,5 +69,7 @@ def test_download_titanic_dataset():
                 mock_kaggle_api = MagicMock()
                 mock_kaggle_cls.return_value = mock_kaggle_api
                 mock_kaggle_api.authenticate.assert_called_once
+                titanic_handle = FakeTitanicDataset()
+                titanic_handle.download()
 
 

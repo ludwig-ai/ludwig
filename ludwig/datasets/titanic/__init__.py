@@ -33,13 +33,6 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     which belongs in the workflow for ingesting and transforming training data into a destination
     dataframe that can fit into Ludwig's training API.
     """
-    config: dict
-    raw_temp_path: str
-    raw_dataset_path: str
-    processed_temp_path: str
-    processed_dataset_path: str
-    kaggle_username: str
-    kaggle_api_key: str
 
     def __init__(self,
                  kaggle_username=None,
