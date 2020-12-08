@@ -36,6 +36,8 @@ SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
 
+BOOL_TRUE_STRS = {'yes', 'y', 'true', 't', '1'}
+
 
 def make_safe_filename(s):
     def safe_char(c):
@@ -53,7 +55,7 @@ def strip_accents(s):
 
 
 def str2bool(v):
-    return str(v).lower() in ('yes', 'true', 't', '1')
+    return str(v).lower() in BOOL_TRUE_STRS
 
 
 def match_replace(string_to_match, list_regex):

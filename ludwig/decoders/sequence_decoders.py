@@ -437,6 +437,11 @@ class SequenceGeneratorDecoder(Layer):
                 predictions,
                 [[0, 0], [0, seq_len_diff]]
             )
+            probabilities = tf.pad(
+                probabilities,
+                [[0, 0], [0, seq_len_diff], [0, 0]],
+                constant_values=1.0 / self.vocab_size
+            )
 
         # -1 because they include pad
         lengths = decoder_lengths[:, 0] - 1
