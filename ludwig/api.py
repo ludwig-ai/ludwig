@@ -25,7 +25,10 @@ import copy
 import logging
 import os
 import tempfile
+import re
 from pprint import pformat
+from operator import iand
+from functools import reduce
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
@@ -34,6 +37,7 @@ ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
+import tensorflow as tf
 from ludwig.backend import LOCAL_BACKEND, Backend, create_backend
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
@@ -221,6 +225,7 @@ class LudwigModel:
             experiment_name: str = 'api_experiment',
             model_name: str = 'run',
             model_resume_path: str = None,
+            transfer_model_path: str = None,
             skip_save_training_description: bool = False,
             skip_save_training_statistics: bool = False,
             skip_save_model: bool = False,
@@ -278,6 +283,11 @@ class LudwigModel:
             epoch and the state of the optimizer are restored such that
             training can be effectively continued from a previously interrupted
             training process.
+        # todo: write proper doc
+        :param transfer_model_path: (str, default: `None`) path to pretrained model
+            from which weights will be loaded. The size of parameters for the current model
+            should have equal or more number of parameters than the pretrained model. `model_resume_path`
+            should be `None` for this to be effective.
         :param skip_save_training_description: (bool, default: `False`)
             disables saving the description JSON file.
         :param skip_save_training_statistics: (bool, default: `False`)
@@ -329,6 +339,10 @@ class LudwigModel:
         """
         # setup directories and file names
         if model_resume_path is not None:
+            if transfer_model_path:
+                logger.warning(f'Transfer of weights will not be done from {transfer_model_path}, '
+                               f'but training will be resumed from {model_resume_path}')
+                transfer_model_path = None
             if os.path.exists(model_resume_path):
                 output_directory = model_resume_path
             else:
@@ -460,6 +474,11 @@ class LudwigModel:
                 self.model = LudwigModel.create_model(self.config,
                                                       random_seed=random_seed)
 
+                if transfer_model_path:
+                    logger.info("Tranfer model from %s", transfer_model_path)
+                    pretrained_model = LudwigModel.load(transfer_model_path)
+                    self.model = self._transfer_weights_partial(self.model, pretrained_model.model)
+
             # init trainer
             trainer = Trainer(
                 **self.config[TRAINING],
@@ -546,6 +565,55 @@ class LudwigModel:
                 self.load_weights(model_dir)
 
             return train_stats, preprocessed_data, output_directory
+
+    def _transfer_weights_partial(self, current_model, pretrained_model):
+        def clean_layer_name(name):
+            return re.sub(r'_\d', "", name)
+
+        def check_weights(current_model, pretrained_model):
+            pass
+
+        def recurse_model(current_model, pretrained_model):
+            for idx, layer in enumerate(current_model.layers):
+                # logger.info("layer: %s", idx)
+                print("layer: ", idx)
+                layer_name = clean_layer_name(layer.name)
+                pretrained_layer_name = clean_layer_name(pretrained_model.layers[idx].name)
+                if layer_name == pretrained_layer_name:
+                    if isinstance(layer, tf.keras.Model):
+                        recurse_model(layer, pretrained_model.layers[idx])
+
+                    # else transfer weights
+                    else:
+                        print(f'Transfer weights for layer: {layer_name}')
+                        new_weights = []
+                        for w_curr, w_pretrained in zip(current_model.get_weights(), pretrained_model.get_weights()):
+                            shape_curr, shape_pretrained = w_curr.shape, w_pretrained.shape
+                            len_shape_curr, len_shape_pretrained = len(shape_curr), len(shape_pretrained)
+                            if len_shape_curr != len_shape_pretrained:
+                                print(f'Cannot transfer some weights for layer {layer_name} as '
+                                      f'shape of weights are {shape_curr} and {shape_pretrained}')
+
+                            # Current model should have more or equal number of features.
+
+                            if not reduce(iand, [size_curr >= size_pretrained for
+                                                 size_curr, size_pretrained in zip(shape_curr, shape_pretrained)]):
+                                print(f'Cannot transfer some weights for layer {layer_name} as '
+                                      f'shape of weights are {shape_curr} and {shape_pretrained}')
+                            else:
+                                print("transfered")
+                                idx_to_change = [slice(0, s) for s in shape_pretrained]
+                                w_curr[idx_to_change] = w_pretrained
+                            new_weights.append(w_curr)
+                        current_model.set_weights(new_weights)
+                else:
+                    print(f'Name of layer for current model is {layer_name} and for '
+                          f'pretrained model is {pretrained_layer_name}.'
+                          f'Weights cannot be transfered.')
+            return current_model
+
+        current_model = recurse_model(current_model, pretrained_model)
+        return current_model
 
     def train_online(
             self,
