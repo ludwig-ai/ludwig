@@ -211,8 +211,15 @@ def to_numpy_dataset(df):
 def from_numpy_dataset(dataset):
     col_mapping = {}
     for k, v in dataset.items():
-        *unstacked, = v
-        col_mapping[k] = unstacked
+        if len(v.shape) > 1:
+            # unstacking, needed for ndarrays of dimension 2 and more
+            *vals, = v
+        else:
+            # not unstacking. Needed because otherwise pandas casts types
+            # the way it wants, like converting a list of float32 scalats
+            # to a column of float64
+            vals = v
+        col_mapping[k] = vals
     return pd.DataFrame.from_dict(col_mapping)
 
 
