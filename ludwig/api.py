@@ -21,6 +21,44 @@
     Date last modified: 5/21/2019
     Python Version: 3+
 """
+from ludwig.utils.tf_utils import initialize_tensorflow
+from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.misc_utils import (get_experiment_description,
+                                     get_file_names, get_from_registry,
+                                     get_output_directory)
+from ludwig.utils.horovod_utils import (broadcast_return, configure_horovod,
+                                        is_on_master, set_on_master)
+from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
+                                     DICT_FORMATS,
+                                     external_data_reader_registry,
+                                     figure_data_format, generate_kfold_splits,
+                                     load_json, save_json)
+from ludwig.modules.metric_modules import get_best_function
+from ludwig.models.trainer import Trainer
+from ludwig.models.predictor import (Predictor, calculate_overall_stats,
+                                     print_evaluation_stats,
+                                     save_evaluation_stats,
+                                     save_prediction_outputs)
+from ludwig.models.ecd import ECD
+from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
+                            MODEL_WEIGHTS_FILE_NAME,
+                            TRAIN_SET_METADATA_FILE_NAME,
+                            set_disable_progressbar)
+from ludwig.features.feature_registries import \
+    update_config_with_metadata
+from ludwig.data.preprocessing import (load_metadata,
+                                       preprocess_for_prediction,
+                                       preprocess_for_training)
+from ludwig.data.postprocessing import convert_predictions, postprocess
+from ludwig.data.dataset import Dataset
+from ludwig.contrib import contrib_command
+from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
+from ludwig.backend import LOCAL_BACKEND, Backend, create_backend
+import tensorflow as tf
+import yaml
+import pandas as pd
+import numpy as np
 import copy
 import logging
 import os
@@ -34,44 +72,6 @@ from typing import Dict, List, Optional, Tuple, Union
 import ludwig.contrib
 
 ludwig.contrib.contrib_import()
-import numpy as np
-import pandas as pd
-import yaml
-import tensorflow as tf
-from ludwig.backend import LOCAL_BACKEND, Backend, create_backend
-from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command
-from ludwig.data.dataset import Dataset
-from ludwig.data.postprocessing import convert_predictions, postprocess
-from ludwig.data.preprocessing import (load_metadata,
-                                       preprocess_for_prediction,
-                                       preprocess_for_training)
-from ludwig.features.feature_registries import \
-    update_config_with_metadata
-from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
-                            MODEL_WEIGHTS_FILE_NAME,
-                            TRAIN_SET_METADATA_FILE_NAME,
-                            set_disable_progressbar)
-from ludwig.models.ecd import ECD
-from ludwig.models.predictor import (Predictor, calculate_overall_stats,
-                                     print_evaluation_stats,
-                                     save_evaluation_stats,
-                                     save_prediction_outputs)
-from ludwig.models.trainer import Trainer
-from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
-                                     DICT_FORMATS,
-                                     external_data_reader_registry,
-                                     figure_data_format, generate_kfold_splits,
-                                     load_json, save_json)
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.horovod_utils import (broadcast_return, configure_horovod,
-                                        is_on_master, set_on_master)
-from ludwig.utils.misc_utils import (get_experiment_description,
-                                     get_file_names, get_from_registry,
-                                     get_output_directory)
-from ludwig.utils.print_utils import print_boxed
-from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
@@ -225,7 +225,7 @@ class LudwigModel:
             experiment_name: str = 'api_experiment',
             model_name: str = 'run',
             model_resume_path: str = None,
-            transfer_model_path: str = None,
+            smaller_model_path: str = None,
             skip_save_training_description: bool = False,
             skip_save_training_statistics: bool = False,
             skip_save_model: bool = False,
@@ -283,11 +283,11 @@ class LudwigModel:
             epoch and the state of the optimizer are restored such that
             training can be effectively continued from a previously interrupted
             training process.
-        # todo: write proper doc
-        :param transfer_model_path: (str, default: `None`) path to pretrained model
-            from which weights will be loaded. The size of parameters for the current model
-            should have equal or more number of parameters than the pretrained model. `model_resume_path`
-            should be `None` for this to be effective.
+        :param smaller_model_path: (str, default: `None`) path to pre trained, smaller model
+            from which weights will be transferred to the new model.
+            The current model should have equal or more number of parameters than the pre trained model.
+            `model_resume_path` should be `None` for this to be effective. If new feature has
+            been added, it should be appended at the end.
         :param skip_save_training_description: (bool, default: `False`)
             disables saving the description JSON file.
         :param skip_save_training_statistics: (bool, default: `False`)
@@ -339,10 +339,10 @@ class LudwigModel:
         """
         # setup directories and file names
         if model_resume_path is not None:
-            if transfer_model_path:
-                logger.warning(f'Transfer of weights will not be done from {transfer_model_path}, '
+            if smaller_model_path:
+                logger.warning(f'Transfer of weights will not be done from {smaller_model_path}, '
                                f'but training will be resumed from {model_resume_path}')
-                transfer_model_path = None
+                smaller_model_path = None
             if os.path.exists(model_resume_path):
                 output_directory = model_resume_path
             else:
@@ -366,12 +366,12 @@ class LudwigModel:
         # if we are skipping all saving,
         # there is no need to create a directory that will remain empty
         should_create_output_directory = not (
-                skip_save_training_description and
-                skip_save_training_statistics and
-                skip_save_model and
-                skip_save_progress and
-                skip_save_log and
-                skip_save_processed_input
+            skip_save_training_description and
+            skip_save_training_statistics and
+            skip_save_model and
+            skip_save_progress and
+            skip_save_log and
+            skip_save_processed_input
         )
 
         description_fn = training_stats_fn = model_dir = None
@@ -384,7 +384,8 @@ class LudwigModel:
 
         with self.backend.create_cache_dir():
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
-                preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = (
+                    training_set, validation_set, test_set, training_set_metadata)
             else:
                 # save description
                 if is_on_master():
@@ -403,10 +404,12 @@ class LudwigModel:
                     # print description
                     logger.info('Experiment name: {}'.format(experiment_name))
                     logger.info('Model name: {}'.format(model_name))
-                    logger.info('Output directory: {}'.format(output_directory))
+                    logger.info(
+                        'Output directory: {}'.format(output_directory))
                     logger.info('\n')
                     for key, value in description.items():
-                        logger.info('{}: {}'.format(key, pformat(value, indent=4)))
+                        logger.info('{}: {}'.format(
+                            key, pformat(value, indent=4)))
                     logger.info('\n')
 
                 preprocessed_data = self.preprocess(
@@ -440,7 +443,8 @@ class LudwigModel:
             if is_on_master():
                 logger.info('Training set: {0}'.format(len(training_set)))
                 if validation_set is not None:
-                    logger.info('Validation set: {0}'.format(len(validation_set)))
+                    logger.info('Validation set: {0}'.format(
+                        len(validation_set)))
                 if test_set is not None:
                     logger.info('Test set: {0}'.format(len(test_set)))
 
@@ -474,10 +478,12 @@ class LudwigModel:
                 self.model = LudwigModel.create_model(self.config,
                                                       random_seed=random_seed)
 
-                if transfer_model_path:
-                    logger.info("Tranfer model from %s", transfer_model_path)
-                    pretrained_model = LudwigModel.load(transfer_model_path)
-                    self.model = self._transfer_weights_partial(self.model, pretrained_model.model)
+                if smaller_model_path:
+                    logger.info(
+                        "Tranfer weights from smaller model at %s", smaller_model_path)
+                    pretrained_model = LudwigModel.load(smaller_model_path)
+                    self.model = LudwigModel._transfer_weights_partial(
+                        self.model, pretrained_model.model)
 
             # init trainer
             trainer = Trainer(
@@ -566,53 +572,72 @@ class LudwigModel:
 
             return train_stats, preprocessed_data, output_directory
 
-    def _transfer_weights_partial(self, current_model, pretrained_model):
+    @staticmethod
+    def _transfer_weights_partial(current_model, pretrained_model):
         def clean_layer_name(name):
             return re.sub(r'_\d', "", name)
 
-        def check_weights(current_model, pretrained_model):
-            pass
+        def check_n_layers(current_model, pretrained_model):
+            """
+            Do not transfer if the number of layers is different.
+            """
+            l1, l2 = len(current_model.layers), len(pretrained_model.layers)
+            if l1 == l2:
+                for layer_current, layer_pretrained in zip(current_model.layers, pretrained_model.layers):
+                    if isinstance(layer_current, tf.keras.Model):
+                        if isinstance(layer_pretrained, tf.keras.Model):
+                            check_n_layers(layer_current, layer_pretrained)
+                        else:
+                            logger.warning(f'Current model layer: {layer_current} is instance of `tf.keras.Model` '
+                                           f'but corresponding layer in smaller model: {layer_pretrained} is not. Cannot'
+                                           f'transfer weights')
+                            return False
+            else:
+                logger.warning(f'Number of layers in current model is {l1} while in smaller model is {l2}.'
+                               f'Cannot transfer weights')
+                return False
+            return True
 
         def recurse_model(current_model, pretrained_model):
             for idx, layer in enumerate(current_model.layers):
-                # logger.info("layer: %s", idx)
-                print("layer: ", idx)
                 layer_name = clean_layer_name(layer.name)
-                pretrained_layer_name = clean_layer_name(pretrained_model.layers[idx].name)
+                pretrained_layer_name = clean_layer_name(
+                    pretrained_model.layers[idx].name)
                 if layer_name == pretrained_layer_name:
                     if isinstance(layer, tf.keras.Model):
                         recurse_model(layer, pretrained_model.layers[idx])
 
                     # else transfer weights
                     else:
-                        print(f'Transfer weights for layer: {layer_name}')
+                        logger.debug(f'Transfer weights for layer: {layer_name}')
                         new_weights = []
                         for w_curr, w_pretrained in zip(current_model.get_weights(), pretrained_model.get_weights()):
                             shape_curr, shape_pretrained = w_curr.shape, w_pretrained.shape
-                            len_shape_curr, len_shape_pretrained = len(shape_curr), len(shape_pretrained)
+                            len_shape_curr, len_shape_pretrained = len(
+                                shape_curr), len(shape_pretrained)
                             if len_shape_curr != len_shape_pretrained:
-                                print(f'Cannot transfer some weights for layer {layer_name} as '
+                                logger.warning(f'Cannot transfer some weights for layer {layer_name} as '
                                       f'shape of weights are {shape_curr} and {shape_pretrained}')
 
                             # Current model should have more or equal number of features.
-
-                            if not reduce(iand, [size_curr >= size_pretrained for
-                                                 size_curr, size_pretrained in zip(shape_curr, shape_pretrained)]):
-                                print(f'Cannot transfer some weights for layer {layer_name} as '
-                                      f'shape of weights are {shape_curr} and {shape_pretrained}')
-                            else:
-                                print("transfered")
-                                idx_to_change = [slice(0, s) for s in shape_pretrained]
-                                w_curr[idx_to_change] = w_pretrained
+                            elif len_shape_pretrained > 0:
+                                if not reduce(iand, [size_curr >= size_pretrained for
+                                                     size_curr, size_pretrained in zip(shape_curr, shape_pretrained)]):
+                                    logger.warning(f'Cannot transfer some weights for layer {layer_name} as '
+                                          f'shape of weights are {shape_curr} and {shape_pretrained}')
+                                else:
+                                    idx_to_change = [slice(0, s)
+                                                     for s in shape_pretrained]
+                                    w_curr[idx_to_change] = w_pretrained
                             new_weights.append(w_curr)
                         current_model.set_weights(new_weights)
                 else:
-                    print(f'Name of layer for current model is {layer_name} and for '
+                    logger.warning(f'Name of layer for current model is {layer_name} and for '
                           f'pretrained model is {pretrained_layer_name}.'
                           f'Weights cannot be transfered.')
             return current_model
-
-        current_model = recurse_model(current_model, pretrained_model)
+        if check_n_layers(current_model, pretrained_model):
+            current_model = recurse_model(current_model, pretrained_model)
         return current_model
 
     def train_online(
@@ -770,7 +795,7 @@ class LudwigModel:
             # if we are skipping all saving,
             # there is no need to create a directory that will remain empty
             should_create_exp_dir = not (
-                    skip_save_unprocessed_output and skip_save_predictions
+                skip_save_unprocessed_output and skip_save_predictions
             )
             if should_create_exp_dir:
                 os.makedirs(output_directory, exist_ok=True)
@@ -782,7 +807,7 @@ class LudwigModel:
             self.training_set_metadata,
             output_directory=output_directory,
             skip_save_unprocessed_output=skip_save_unprocessed_output
-                                         or not is_on_master(),
+            or not is_on_master(),
         )
         converted_postproc_predictions = convert_predictions(
             postproc_predictions,
@@ -909,9 +934,9 @@ class LudwigModel:
             # if we are skipping all saving,
             # there is no need to create a directory that will remain empty
             should_create_exp_dir = not (
-                    skip_save_unprocessed_output and
-                    skip_save_predictions and
-                    skip_save_eval_stats
+                skip_save_unprocessed_output and
+                skip_save_predictions and
+                skip_save_eval_stats
             )
             if should_create_exp_dir:
                 os.makedirs(output_directory, exist_ok=True)
@@ -924,16 +949,16 @@ class LudwigModel:
                 self.training_set_metadata,
                 output_directory=output_directory,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
+                or not is_on_master(),
             )
         else:
             postproc_predictions = predictions  # = {}
 
         if is_on_master():
             should_save_predictions = (
-                    collect_predictions
-                    and postproc_predictions is not None
-                    and not skip_save_predictions
+                collect_predictions
+                and postproc_predictions is not None
+                and not skip_save_predictions
             )
             if should_save_predictions:
                 save_prediction_outputs(postproc_predictions, output_directory)
@@ -1337,7 +1362,7 @@ class LudwigModel:
          training_set_metadata) = preprocessed_data
 
         return proc_training_set, proc_validation_set, proc_test_set, \
-               training_set_metadata
+            training_set_metadata
 
     @staticmethod
     def load(
@@ -1384,7 +1409,8 @@ class LudwigModel:
         # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         horovod = configure_horovod(use_horovod)
-        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads, horovod)
+        initialize_tensorflow(gpus, gpu_memory_limit,
+                              allow_parallel_threads, horovod)
 
         config = broadcast_return(lambda: load_json(os.path.join(
             model_dir,
@@ -1742,7 +1768,7 @@ def kfold_cross_validate(
     else:
         ValueError(
             "{} format is not supported for k_fold_cross_validate()"
-                .format(data_format)
+            .format(data_format)
         )
 
     kfold_cv_stats = {}
