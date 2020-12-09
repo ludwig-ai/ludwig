@@ -46,14 +46,16 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     def process_downloaded_dataset(self):
         """ The final method where we create a training and test file by iterating through
         both of these files"""
+        os.makedirs(self.processed_dataset_path, exist_ok=True)
         train_file = self.config["split_filenames"]["train_file"]
         test_file = self.config["split_filenames"]["test_file"]
-        train_df = pd.read_csv(os.path.join(self.processed_temp_path, train_file))
-        test_df = pd.read_csv(os.path.join(self.processed_temp_path, test_file))
+        train_df = pd.read_csv(os.path.join(self.raw_dataset_path, train_file))
+        test_df = pd.read_csv(os.path.join(self.raw_dataset_path, test_file))
         train_df["split"] = 0
         test_df["split"] = 2
         final_df = pd.concat([train_df, train_df], axis=1)
-        final_df.to_csv(self.processed_dataset_path)
+        final_path = os.path.join(self.processed_dataset_path, 'titanic.csv')
+        final_df.to_csv(final_path, index=False, header=True)
 
     @property
     def competition_name(self):

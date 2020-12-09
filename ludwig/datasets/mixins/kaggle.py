@@ -1,12 +1,14 @@
 import os
 from contextlib import contextmanager
+from zipfile import ZipFile
 from kaggle.api.kaggle_api_extended import KaggleApi
 
 
 class KaggleDownloadMixin:
     """A mixin to abstract away the details of the kaggle API which includes
     the ability to authenticate against the kaggle API, list the various datasets
-    and finally download the dataset"""
+    and finally download the dataset, we derive from ZipDownloadMixin to take
+    advantage of extracting contents from the titanic zip file"""
     config: dict
     raw_dataset_path: str
     raw_temp_path: str
@@ -27,6 +29,9 @@ class KaggleDownloadMixin:
         os.makedirs(self.raw_temp_path, exist_ok=True)
         # Download all files for a competition
         api.competition_download_files(self.competition_name, path=self.raw_temp_path)
+        titanic_zip = os.path.join(self.raw_temp_path, "titanic.zip")
+        with ZipFile(titanic_zip, 'r') as zipObj:
+            zipObj.extractall(self.raw_temp_path)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
     @contextmanager
