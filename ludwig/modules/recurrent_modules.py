@@ -17,6 +17,8 @@ import inspect
 import logging
 
 from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
+from tensorflow.keras.layers import SimpleRNNCell, GRUCell, LSTMCell
+from tensorflow.keras.layers import StackedRNNCells
 
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -26,6 +28,12 @@ rnn_layers_registry = {
     'rnn': SimpleRNN,
     'gru': GRU,
     'lstm': LSTM,
+}
+
+rnncell_layers_registry = {
+    'rnn': SimpleRNNCell,
+    'gru': GRUCell,
+    'lstm': LSTMCell
 }
 
 
@@ -107,3 +115,56 @@ class RecurrentStack(Layer):
             if len(final_state) == 1:
                 final_state = final_state[0]
         return hidden, final_state
+
+
+class RecurrentCellStack(StackedRNNCells):
+    def __init__(
+            self,
+            state_size=256,
+            cell_type='rnn',
+            num_layers=1,
+            **kwargs
+    ):
+        # super(RecurrentCellStack, self).__init__()
+
+        self._state_size = state_size
+        self.cell_type = cell_type
+        self.num_layers = num_layers
+
+        rnn_cell = get_from_registry(cell_type, rnncell_layers_registry)
+        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        super().__init__(rnn_cells)
+
+    # def call(self, inputs, states, constants=None, training=None, **kwargs):
+    #     return self(inputs, states, constants=constants,
+    #                          training=training,  **kwargs)
+
+    # def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
+    #     return self.decoder_rnncell.cells[0].get_initial_state(
+    #         inputs=inputs,
+    #         batch_size=batch_size,
+    #         dtype=dtype
+    #     )
+
+    # @property
+    # def output_size(self):
+    #     return self.decoder_rnncell.output_size
+
+    @property
+    def state_size(self):
+        state_size_tuple = tuple(c.state_size for c in
+                                 (self.cells[
+                                  ::-1] if self.reverse_state_order else self.cells))
+        if len(state_size_tuple) == 1:
+            return state_size_tuple
+        else:
+            return (state_size_tuple[0],)
+
+    def get_config(self):
+        base_configs = super().get_config()
+        return {
+            **base_configs,
+            'state_size': self.state_size,
+            'cell_type': self.cell_type,
+            'num_layers': self.num_layers
+        }

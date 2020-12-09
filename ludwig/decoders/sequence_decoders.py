@@ -17,7 +17,8 @@ import logging
 
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
+from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
+    StackedRNNCells
 from tensorflow.keras.layers import Layer, Dense, Embedding
 from tensorflow.keras.layers import average
 from tensorflow_addons.seq2seq import AttentionWrapper
@@ -26,6 +27,7 @@ from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
+from ludwig.modules.recurrent_modules import RecurrentCellStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
@@ -121,8 +123,11 @@ class SequenceGeneratorDecoder(Layer):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
-        self.decoder_rnncell = \
-            get_from_registry(cell_type, rnn_layers_registry)(state_size)
+        rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
+        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        # self.decoder_rnncell = StackedRNNCells(rnn_cells)
+        self.decoder_rnncell = RecurrentCellStack(state_size, cell_type,
+                                                  num_layers)
         logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
