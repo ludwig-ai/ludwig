@@ -466,13 +466,15 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 elif isinstance(probs, np.ndarray):
                     if (probs.shape) == 3:  # prob of each class of each token
                         probs = np.amax(probs, axis=-1)
-                    prob = np.prod(probs, axis=-1)
+                    prob = np.prod(probs,
+                                   axis=-1)  # todo convert this to sum of log probabilities up to EOS
 
                 # commenting probabilities out because usually it is huge:
                 # dataset x length x classes
                 # todo: add a mechanism for letting the user decide to save it
                 # postprocessed[PROBABILITIES] = probs
-                postprocessed[PROBABILITY] = prob
+                postprocessed[
+                    PROBABILITY] = prob  # todo return sum of log probabilities
 
                 if not skip_save_unprocessed_output:
                     # commenting probabilities out, see comment above

@@ -18,7 +18,7 @@ import logging
 
 from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
 from tensorflow.keras.layers import SimpleRNNCell, GRUCell, LSTMCell
-from tensorflow.keras.layers import StackedRNNCells
+from tensorflow.keras.layers import StackedRNNCells, AbstractRNNCell
 
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -117,6 +117,21 @@ class RecurrentStack(Layer):
         return hidden, final_state
 
 
+class LudwigStackedRNNCells(StackedRNNCells):
+
+    # this was intended to fix an issue with TFA, however I'm thinking
+    # this is not the correct fix.
+    @property
+    def state_size(self):
+        state_size_tuple = tuple(c.state_size for c in
+                                 (self.cells[
+                                  ::-1] if self.reverse_state_order else self.cells))
+        if len(state_size_tuple) == 1:
+            return state_size_tuple
+        else:
+            return (state_size_tuple[0],)
+
+
 class RecurrentCellStack(StackedRNNCells):
     def __init__(
             self,
@@ -139,32 +154,41 @@ class RecurrentCellStack(StackedRNNCells):
     #     return self(inputs, states, constants=constants,
     #                          training=training,  **kwargs)
 
-    # def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
-    #     return self.decoder_rnncell.cells[0].get_initial_state(
-    #         inputs=inputs,
-    #         batch_size=batch_size,
-    #         dtype=dtype
-    #     )
+    def get_initial_state(self, inputs=None, batch_size=None, dtype=None):
+        state = []
+        for c in self.cells:
+            state.append(
+                c.get_initial_state(
+                    inputs=inputs,
+                    batch_size=batch_size,
+                    dtype=dtype
+                )
+            )
+        return state
 
     # @property
     # def output_size(self):
-    #     return self.decoder_rnncell.output_size
+    #     return self.stacked_rnn_cells.cells[-1].output_size
 
-    @property
-    def state_size(self):
-        state_size_tuple = tuple(c.state_size for c in
-                                 (self.cells[
-                                  ::-1] if self.reverse_state_order else self.cells))
-        if len(state_size_tuple) == 1:
-            return state_size_tuple
-        else:
-            return (state_size_tuple[0],)
+    # @property
+    # def state_size(self):
+    #     cells = self.stacked_rnn_cells
+    #     state_size_tuple = tuple(c.state_size for c in
+    #                              (cells.cells[
+    #                               ::-1] if cells.reverse_state_order else cells.cells))
+    #     if len(state_size_tuple) == 1:
+    #         return state_size_tuple
+    #     else:
+    #         return (state_size_tuple[0],)
+
+    # def call(self, inputs, state, training=None):
+    #     return self.stacked_rnn_cells(inputs, state, training=training)
 
     def get_config(self):
         base_configs = super().get_config()
         return {
             **base_configs,
-            'state_size': self.state_size,
+            'state_size': self._state_size,
             'cell_type': self.cell_type,
             'num_layers': self.num_layers
         }
