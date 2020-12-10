@@ -46,7 +46,7 @@ class KaggleDownloadMixin:
     @contextmanager
     def update_env(self, **kwargs):
         override_env = {k: v for k, v in kwargs.items() if v is not None}
-        old = os.environ
+        old = os.environ.copy()
         try:
             os.environ.update(override_env)
             yield
