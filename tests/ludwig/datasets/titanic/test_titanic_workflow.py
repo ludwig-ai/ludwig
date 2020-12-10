@@ -60,19 +60,16 @@ def test_download_titanic_dataset(tmpdir):
 
         archive_filename = os.path.join(source_dir, 'titanic.zip')
         with zipfile.ZipFile(archive_filename, "w") as z:
-            z.write(train_fname)
-            z.write(test_fname)
-
-        train_outname = os.path.join(tmpdir, 'train.csv')
-        test_outname = os.path.join(tmpdir, 'test.csv')
+            z.write(train_fname, 'train.csv')
+            z.write(test_fname, 'test.csv')
 
         config = {
             'version': 1.0,
             'competition': 'titanic',
             'archive_filename': 'titanic.zip',
             'split_filenames': {
-                'train_file': train_outname,
-                'test_file': test_outname,
+                'train_file': 'train.csv',
+                'test_file': 'test.csv',
             },
             'csv_filename': 'titanic.csv',
         }
@@ -88,6 +85,18 @@ def test_download_titanic_dataset(tmpdir):
                 mock_kaggle_api.competition_download_files = download_files
                 mock_kaggle_cls.return_value = mock_kaggle_api
 
-                titanic_handle = FakeTitanicDataset(tmpdir)
-                titanic_handle.download()
+                dataset = FakeTitanicDataset(tmpdir)
+                assert not dataset.is_downloaded()
+
+                dataset.download()
+                assert dataset.is_downloaded()
                 mock_kaggle_api.authenticate.assert_called_once()
+
+                assert not dataset.is_processed()
+                dataset.process()
+                assert dataset.is_processed()
+
+                output_train_df, output_test_df, output_val_df = dataset.load(split=True)
+                assert len(output_train_df) == len(titanic_train_df)
+                assert len(output_test_df) == len(titanic_test_df)
+                assert len(output_val_df) == 0
