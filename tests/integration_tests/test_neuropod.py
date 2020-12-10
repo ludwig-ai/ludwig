@@ -151,11 +151,9 @@ def test_neuropod(csv_filename):
                 neuropod_pred = preds[
                     output_feature_name + "_predictions"].tolist()
                 if output_feature_type == BINARY:
-                    neuropod_pred = list(
-                        map(lambda x: str2bool(x), neuropod_pred))
+                    neuropod_pred = [ str2bool(x) for x in neuropod_pred]
                 if output_feature_type in {SEQUENCE, TEXT, SET}:
-                    neuropod_pred = list(
-                        map(lambda x: x.split(), neuropod_pred))
+                    neuropod_pred = [ x.split() for x in neuropod_pred]
 
                 original_pred = original_predictions_df[
                     output_feature_name + "_predictions"].tolist()
@@ -167,9 +165,7 @@ def test_neuropod(csv_filename):
                 neuropod_prob = preds[
                     output_feature_name + "_probability"].tolist()
                 if output_feature_type in {SEQUENCE, TEXT, SET}:
-                    neuropod_prob = list(
-                        map(lambda x: [float(n) for n in x.split()],
-                            neuropod_prob))
+                    neuropod_prob = [ [float(n) for n in x.split()] for x in neuropod_prob]
                 if any(isinstance(el, list) for el in neuropod_prob):
                     neuropod_prob = np.array(list(
                         itertools.zip_longest(*neuropod_prob, fillvalue=0)
