@@ -21,8 +21,12 @@ from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = Titanic(cache_dir=cache_dir)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_api_key=None):
+    dataset = Titanic(
+        cache_dir=cache_dir,
+        kaggle_username=kaggle_username,
+        kaggle_api_key=kaggle_api_key
+    )
     return dataset.load(split=split)
 
 
