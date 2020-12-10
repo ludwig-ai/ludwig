@@ -38,8 +38,8 @@ class KaggleDownloadMixin:
         api.competition_download_files(self.competition_name, path=self.raw_temp_path)
 
         titanic_zip = os.path.join(self.raw_temp_path, self.archive_filename)
-        with ZipFile(titanic_zip, 'r') as zipObj:
-            zipObj.extractall(self.raw_temp_path)
+        with ZipFile(titanic_zip, 'r') as z:
+            z.extractall(self.raw_temp_path)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
 
