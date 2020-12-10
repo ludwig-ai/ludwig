@@ -59,8 +59,3 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
         final_df = pd.concat([train_df, test_df])
         final_path = os.path.join(self.processed_dataset_path, self.csv_filename)
         final_df.to_csv(final_path, index=False, header=True)
-
-    @property
-    def competition_name(self):
-        return self.config["competition"]
-
