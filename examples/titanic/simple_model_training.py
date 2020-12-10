@@ -10,7 +10,7 @@ import logging
 # Import required libraries
 import os
 import shutil
-from ludwig.datasets.titanic import Titanic
+from ludwig.datasets import titanic
 from ludwig.api import LudwigModel
 
 # clean out prior results
@@ -19,15 +19,15 @@ shutil.rmtree('./results', ignore_errors=True)
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./model1_config.yaml',
                     logging_level=logging.INFO)
-dataset = Titanic().load()
 
+training_set, test_set, _ = titanic.load(split=True)
 # initiate model training
 (
     train_stats,  # dictionary containing training statistics
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory # location of training results stored on disk
  ) = model.train(
-    dataset=dataset,
+    dataset=training_set,
     experiment_name='simple_experiment',
     model_name='simple_model'
 )

@@ -1,5 +1,6 @@
 import tempfile
 import pandas as pd
+import os
 from unittest import mock
 from mock import MagicMock
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
@@ -47,8 +48,22 @@ def test_download_titanic_dataset():
         'home.dest': ["Sweden", "Slovenia", "Italy"],
         'survived': [0, 1, 0]
     })
-    titanic_train_filename = "titanic_train.csv"
-    titanic_test_filename = "titanic_test.csv"
+
+    extracted_filenames = ['train.csv', 'test.csv']
+    archive_name = "titanic.zip"
+    compression_opts = dict(
+        method='zip',
+        archive_name=extracted_filenames
+    )
+    with tempfile.TemporaryDirectory() as source_dir:
+        archive_filename = os.path.join(source_dir, 'archive.zip')
+        titanic_train_df.to_csv(archive_filename,
+                        index=False,
+                        compression=compression_opts)
+
+
+    titanic_train_filename = "train.csv"
+    titanic_test_filename = "test.csv"
     titanic_train_df.to_csv(index=False)
     titanic_test_df.to_csv(index=False)
 
@@ -58,7 +73,7 @@ def test_download_titanic_dataset():
         'train_file': titanic_train_filename,
         'test_file': titanic_test_filename
         },
-        'csv_filename': 'fake_titanic.csv',
+        'csv_filename': 'titanic.csv',
         'competition': 'titanic'
     }
 
@@ -68,8 +83,8 @@ def test_download_titanic_dataset():
             with mock.patch('ludwig.datasets.mixins.kaggle.KaggleApi') as mock_kaggle_cls:
                 mock_kaggle_api = MagicMock()
                 mock_kaggle_cls.return_value = mock_kaggle_api
-                mock_kaggle_api.authenticate.assert_called_once
                 titanic_handle = FakeTitanicDataset()
                 titanic_handle.download()
+                mock_kaggle_api.authenticate.assert_called_once
 
 
