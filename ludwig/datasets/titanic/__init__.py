@@ -54,7 +54,7 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
         train_df["split"] = 0
         test_df["split"] = 2
         final_df = pd.concat([train_df, train_df], axis=1)
-        final_path = os.path.join(self.processed_dataset_path, 'titanic.csv')
+        final_path = os.path.join(self.processed_dataset_path, self.csv_filename)
         final_df.to_csv(final_path, index=False, header=True)
 
     @property

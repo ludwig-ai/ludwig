@@ -1,8 +1,10 @@
 import tempfile
 import pandas as pd
 import os
+import zipfile
+from shutil import copy
 from unittest import mock
-from mock import MagicMock
+
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.titanic import Titanic
 
@@ -12,7 +14,7 @@ class FakeTitanicDataset(Titanic):
         super().__init__(cache_dir=cache_dir)
 
 
-def test_download_titanic_dataset():
+def test_download_titanic_dataset(tmpdir):
     titanic_train_df = pd.DataFrame({
         'passenger_id': [1216, 699, 234],
         'pclass': [3, 3, 4],
@@ -49,42 +51,43 @@ def test_download_titanic_dataset():
         'survived': [0, 1, 0]
     })
 
-    extracted_filenames = ['train.csv', 'test.csv']
-    archive_name = "titanic.zip"
-    compression_opts = dict(
-        method='zip',
-        archive_name=extracted_filenames
-    )
     with tempfile.TemporaryDirectory() as source_dir:
-        archive_filename = os.path.join(source_dir, 'archive.zip')
-        titanic_train_df.to_csv(archive_filename,
-                        index=False,
-                        compression=compression_opts)
+        train_fname = os.path.join(source_dir, 'train.csv')
+        titanic_train_df.to_csv(train_fname, index=False)
 
+        test_fname = os.path.join(source_dir, 'test.csv')
+        titanic_test_df.to_csv(test_fname, index=False)
 
-    titanic_train_filename = "train.csv"
-    titanic_test_filename = "test.csv"
-    titanic_train_df.to_csv(index=False)
-    titanic_test_df.to_csv(index=False)
+        archive_filename = os.path.join(source_dir, 'titanic.zip')
+        with zipfile.ZipFile(archive_filename, "w") as z:
+            z.write(train_fname)
+            z.write(test_fname)
 
-    config = {
-    'version': 1.0,
-    'split_filenames': {
-        'train_file': titanic_train_filename,
-        'test_file': titanic_test_filename
-        },
-        'csv_filename': 'titanic.csv',
-        'competition': 'titanic'
-    }
+        train_outname = os.path.join(tmpdir, 'train.csv')
+        test_outname = os.path.join(tmpdir, 'test.csv')
 
-    with tempfile.TemporaryDirectory() as tmpdir:
+        config = {
+            'version': 1.0,
+            'competition': 'titanic',
+            'archive_filename': 'titanic.zip',
+            'split_filenames': {
+                'train_file': train_outname,
+                'test_file': test_outname,
+            },
+            'csv_filename': 'titanic.csv',
+        }
+
+        def download_files(competition_name, path):
+            assert competition_name == 'titanic'
+            copy(archive_filename, path)
+
         with mock.patch('ludwig.datasets.base_dataset.read_config',
                         return_value=config):
-            with mock.patch('ludwig.datasets.mixins.kaggle.KaggleApi') as mock_kaggle_cls:
-                mock_kaggle_api = MagicMock()
+            with mock.patch('ludwig.datasets.mixins.kaggle.create_kaggle_client') as mock_kaggle_cls:
+                mock_kaggle_api = mock.MagicMock()
+                mock_kaggle_api.competition_download_files = download_files
                 mock_kaggle_cls.return_value = mock_kaggle_api
-                titanic_handle = FakeTitanicDataset()
+
+                titanic_handle = FakeTitanicDataset(tmpdir)
                 titanic_handle.download()
-                mock_kaggle_api.authenticate.assert_called_once
-
-
+                mock_kaggle_api.authenticate.assert_called_once()
