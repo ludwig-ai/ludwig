@@ -5,12 +5,11 @@ import zipfile
 from shutil import copy
 from unittest import mock
 
-from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.titanic import Titanic
 
 
 class FakeTitanicDataset(Titanic):
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
+    def __init__(self, cache_dir):
         super().__init__(cache_dir=cache_dir)
 
 

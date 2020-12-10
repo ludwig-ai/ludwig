@@ -39,13 +39,12 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     """
 
     def __init__(self,
+                 cache_dir=DEFAULT_CACHE_LOCATION,
                  kaggle_username=None,
-                 kaggle_api_key=None,
-                 dataset_name="titanic",
-                 cache_dir=DEFAULT_CACHE_LOCATION):
+                 kaggle_api_key=None):
         self.kaggle_username = kaggle_username
         self.kaggle_api_key = kaggle_api_key
-        super().__init__(dataset_name, cache_dir)
+        super().__init__(dataset_name='titanic', cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         """ The final method where we create a training and test file by iterating through
