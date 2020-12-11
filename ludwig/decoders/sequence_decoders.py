@@ -287,14 +287,13 @@ class SequenceGeneratorDecoder(Layer):
             if self.attention_mechanism is not None:
                 decoder_initial_state = decoder_initial_state.clone(
                     cell_state=encoder_state)
+                decoder_initial_state = [
+                    decoder_initial_state * self.num_layers]
             else:
-                initial_state_list = []
-                for _ in range(self.num_layers):
-                    if not isinstance(encoder_state, list):
-                        initial_state_list.append([encoder_state])
-                    else:
-                        initial_state_list.append(encoder_state)
-                decoder_initial_state = initial_state_list
+                if not isinstance(encoder_state, list):
+                    decoder_initial_state = [[encoder_state] * self.num_layers]
+                else:
+                    decoder_initial_state = [encoder_state * self.num_layers]
 
         return decoder_initial_state
 
