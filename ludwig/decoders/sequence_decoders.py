@@ -27,7 +27,6 @@ from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
-from ludwig.modules.recurrent_modules import RecurrentCellStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
@@ -124,10 +123,11 @@ class SequenceGeneratorDecoder(Layer):
             activity_regularizer=activity_regularizer
         )
         rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
-        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
-        # self.decoder_rnncell = StackedRNNCells(rnn_cells)
-        self.decoder_rnncell = RecurrentCellStack(state_size, cell_type,
-                                                  num_layers)
+        if num_layers == 1:
+            self.decoder_rnncell = rnn_cell(state_size)
+        else:
+            rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+            self.decoder_rnncell = StackedRNNCells(rnn_cells)
         logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
@@ -267,14 +267,14 @@ class SequenceGeneratorDecoder(Layer):
             batch_size=batch_size,
             dtype=dtype)
 
-        if self.num_layers == 1:  # todo need to account for num_layer > 1 and LSTMCell state representation
-            # handle situation where encoder and decoder are different cell_types
-            # and to account for inconsistent wrapping for encoder state w/in lists
-            if self.cell_type == 'lstm' and not isinstance(encoder_state, list):
-                encoder_state = [encoder_state, encoder_state]
-            elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
-                encoder_state = encoder_state[0]
+        # handle situation where encoder and decoder are different cell_types
+        # and to account for inconsistent wrapping for encoder state w/in lists
+        if self.cell_type == 'lstm' and not isinstance(encoder_state, list):
+            encoder_state = [encoder_state, encoder_state]
+        elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
+            encoder_state = encoder_state[0]
 
+        if self.num_layers == 1:  # todo need to refine for Attention
             if self.attention_mechanism is not None:
                 decoder_initial_state = decoder_initial_state.clone(
                     cell_state=encoder_state)
@@ -283,6 +283,18 @@ class SequenceGeneratorDecoder(Layer):
                     decoder_initial_state = [encoder_state]
                 else:
                     decoder_initial_state = encoder_state
+        else:
+            if self.attention_mechanism is not None:
+                decoder_initial_state = decoder_initial_state.clone(
+                    cell_state=encoder_state)
+            else:
+                initial_state_list = []
+                for _ in range(self.num_layers):
+                    if not isinstance(encoder_state, list):
+                        initial_state_list.append([encoder_state])
+                    else:
+                        initial_state_list.append(encoder_state)
+                decoder_initial_state = initial_state_list
 
         return decoder_initial_state
 
