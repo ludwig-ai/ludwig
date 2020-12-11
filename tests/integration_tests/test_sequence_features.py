@@ -311,11 +311,7 @@ def test_sequence_decoders(
 #
 # final sanity test.  Checks a subset of sequence parameters
 #
-@pytest.marm
-
-, parameterize('dec_num_layers', [1, 3])
-
-
+@pytest.mark.parametrize('dec_num_layers', [1, 3])
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
