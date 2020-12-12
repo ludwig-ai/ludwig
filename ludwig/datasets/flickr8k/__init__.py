@@ -36,16 +36,8 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="flickr8k", cache_dir=cache_dir)
 
-    def download(self):
-        super().download()
-        print(f"downloaded raw dataset to {self.raw_dataset_path}")
-
     def process_downloaded_dataset(self):
         os.makedirs(self.processed_temp_path, exist_ok=True)
-        print(f"created temp processed folder at {self.processed_temp_path}")
-        print("dataset processing not yet implemented")
-
-        # Go through Flickr8k.token.txt to create a dictionary of image_name and array of captions
 
         image_to_caption = defaultdict(list)
         with open(
@@ -59,12 +51,6 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                 line[1] = '\"' + line[1] + '\"'
                 image_to_caption[line[0]].append(line[1])
 
-        # go through each of Flickr_8k.devImages.txt     Flickr_8k.trainImages.txt and Flickr_8k.testImages.txt
-            # for each .txt file
-                # for each line
-                    # grab the image file name
-                    # get the related captions in the above dictionary
-                    # write them to the csv file as a single line seperated by commas
         with open(
                 os.path.join(self.processed_temp_path, self.csv_filename),
                 'w'
@@ -88,3 +74,4 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                                 *image_to_caption[image_name],
                                 i
                             ))
+        os.rename(self.processed_temp_path, self.processed_dataset_path)
