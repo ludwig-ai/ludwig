@@ -59,6 +59,7 @@ class ZipDownloadMixin:
         """
         os.makedirs(self.raw_temp_path, exist_ok=True)
         for url in self.download_urls:
+            print(f">>> downloading from {url}")
             with urlopen(url) as zipresp:
                 with ZipFile(BytesIO(zipresp.read())) as zfile:
                     zfile.extractall(self.raw_temp_path)
