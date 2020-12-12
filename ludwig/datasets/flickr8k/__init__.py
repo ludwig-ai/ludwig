@@ -23,7 +23,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Flickr8k(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class Flickr8k(BaseDataset, ZipDownloadMixin):
+class Flickr8k(ZipDownloadMixin, BaseDataset):
     """The Flickr8k dataset.
 
     This pulls in an array of mixins for different types of functionality
