@@ -16,7 +16,7 @@
 # ==============================================================================
 import os
 
-from ludwig.datasets.base_dataset import BaseDataset
+from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import ZipDownloadMixin
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
