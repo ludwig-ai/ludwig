@@ -49,8 +49,8 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
             for line in captions_file:
                 line = line.split("#")
                 line[1] = line[1].strip("\n01234.\t ")
-                line[1] = '\"' + line[1] + '\"'
                 line[1] = re.sub('\"', '\"\"', line[1])
+                line[1] = '\"' + line[1] + '\"'
                 image_to_caption[line[0]].append(line[1])
 
         with open(
