@@ -15,15 +15,17 @@
 # limitations under the License.
 # ==============================================================================
 import os
+from collections import defaultdict
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import ZipDownloadMixin
+from ludwig.datasets.mixins.load import CSVLoadMixin
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Flickr8k(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class Flickr8k(ZipDownloadMixin, BaseDataset):
+class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
     """The Flickr8k dataset.
 
     This pulls in an array of mixins for different types of functionality
@@ -40,5 +42,49 @@ class Flickr8k(ZipDownloadMixin, BaseDataset):
 
     def process_downloaded_dataset(self):
         os.makedirs(self.processed_temp_path, exist_ok=True)
-        print(f"created temp processed folder at {self.process_downloaded_dataset}")
+        print(f"created temp processed folder at {self.processed_temp_path}")
         print("dataset processing not yet implemented")
+
+        # Go through Flickr8k.token.txt to create a dictionary of image_name and array of captions
+
+        image_to_caption = defaultdict(list)
+        with open(
+            f"{self.raw_dataset_path}/Flickr8k.token.txt",
+            "r"
+        ) as captions_file:
+            image_to_caption = defaultdict(list)
+            for line in captions_file:
+                line = line.split("#")
+                line[1] = line[1].strip("\n01234.\t ")
+                line[1] = '\"' + line[1] + '\"'
+                image_to_caption[line[0]].append(line[1])
+
+        # go through each of Flickr_8k.devImages.txt     Flickr_8k.trainImages.txt and Flickr_8k.testImages.txt
+            # for each .txt file
+                # for each line
+                    # grab the image file name
+                    # get the related captions in the above dictionary
+                    # write them to the csv file as a single line seperated by commas
+        with open(
+                os.path.join(self.processed_temp_path, self.csv_filename),
+                'w'
+        ) as output_file:
+            output_file.write('image_path,caption0,caption1,caption2,')
+            output_file.write('caption3,caption4,split\n')
+            splits = ["train", "dev", "test"]
+            for i in range(len(splits)):
+                split = splits[i]
+                with open(
+                    f"{self.raw_dataset_path}/Flickr_8k.{split}Images.txt",
+                    "r"
+                ) as split_file:
+                    for image_name in split_file:
+                        image_name = image_name.strip('\n')
+                        if image_name in image_to_caption:
+                            output_file.write('{},{},{},{},{},{},{}\n'.format(
+                                "{}/Flicker8k_Dataset/{}".format(
+                                    self.raw_dataset_path, image_name
+                                ),
+                                *image_to_caption[image_name],
+                                i
+                            ))
