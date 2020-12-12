@@ -16,6 +16,7 @@
 # ==============================================================================
 import os
 from collections import defaultdict
+import re
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import ZipDownloadMixin
@@ -49,6 +50,7 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                 line = line.split("#")
                 line[1] = line[1].strip("\n01234.\t ")
                 line[1] = '\"' + line[1] + '\"'
+                line[1] = re.sub('\"', '\"\"', line[1])
                 image_to_caption[line[0]].append(line[1])
 
         with open(
