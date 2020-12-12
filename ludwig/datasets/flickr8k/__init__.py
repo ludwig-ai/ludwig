@@ -32,7 +32,7 @@ class Flickr8k(ZipDownloadMixin, BaseDataset):
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="mnist", cache_dir=cache_dir)
+        super().__init__(dataset_name="flickr8k", cache_dir=cache_dir)
 
     def download(self):
         super().download()
