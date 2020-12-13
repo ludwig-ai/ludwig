@@ -224,6 +224,7 @@ def test_sequence_encoders(
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
 #
+@pytest.mark.parametrize('dec_num_layers', [1, 3])
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
@@ -241,6 +242,7 @@ def test_sequence_decoders(
         dec_cell_type,
         dec_attention,
         dec_beam_width,
+        dec_num_layers,
         combiner_output_shapes,
         generate_sequence_training_data
 ):
@@ -252,6 +254,7 @@ def test_sequence_decoders(
     output_features[0]['cell_type'] = dec_cell_type
     output_features[0]['attention'] = dec_attention
     output_features[0]['beam_width'] = dec_beam_width
+    output_features[0]['num_layers'] = dec_num_layers
 
     model, _ = setup_model_scaffolding(
         raw_df,
