@@ -224,8 +224,8 @@ def test_sequence_encoders(
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
 #
-@pytest.mark.parametrize('dec_num_layers', [1, 3])
-@pytest.mark.parametrize('dec_beam_width', [1, 3])
+@pytest.mark.parametrize('dec_num_layers', [1, 2])
+@pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize(
@@ -314,8 +314,8 @@ def test_sequence_decoders(
 #
 # final sanity test.  Checks a subset of sequence parameters
 #
-@pytest.mark.parametrize('dec_num_layers', [1, 3])
-@pytest.mark.parametrize('dec_beam_width', [1, 3])
+@pytest.mark.parametrize('dec_num_layers', [1, 2])
+@pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])

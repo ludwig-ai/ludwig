@@ -296,13 +296,15 @@ class SequenceGeneratorDecoder(Layer):
                     cell_state=(encoder_state,) * self.num_layers)
                 decoder_initial_state = decoder_initial_state  # todo need to confirm why this does not need [decoder_initial_state * self.num_layers]
             else:
-                if not isinstance(encoder_state, list):
-                    # decoder_initial_state = ([encoder_state] * self.num_layers)
-                    # beam search requires enclosing tuple for encoder state,
-                    # GRUCell & SimpleRNNCell
-                    decoder_initial_state = (encoder_state,) * self.num_layers
-                else:
-                    decoder_initial_state = [encoder_state * self.num_layers]
+                decoder_initial_state = (encoder_state,) * self.num_layers
+                # todo testing
+                # if not isinstance(encoder_state, list):
+                #     # decoder_initial_state = ([encoder_state] * self.num_layers)
+                #     # beam search requires enclosing tuple for encoder state,
+                #     # GRUCell & SimpleRNNCell
+                #     decoder_initial_state = (encoder_state,) * self.num_layers
+                # else:
+                #     decoder_initial_state = [encoder_state * self.num_layers]
 
         return decoder_initial_state
 
