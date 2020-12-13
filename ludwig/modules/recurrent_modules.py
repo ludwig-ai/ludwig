@@ -17,8 +17,6 @@ import inspect
 import logging
 
 from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
-from tensorflow.keras.layers import SimpleRNNCell, GRUCell, LSTMCell
-from tensorflow.keras.layers import StackedRNNCells, AbstractRNNCell
 
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -28,12 +26,6 @@ rnn_layers_registry = {
     'rnn': SimpleRNN,
     'gru': GRU,
     'lstm': LSTM,
-}
-
-rnncell_layers_registry = {
-    'rnn': SimpleRNNCell,
-    'gru': GRUCell,
-    'lstm': LSTMCell
 }
 
 
