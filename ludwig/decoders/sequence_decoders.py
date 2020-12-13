@@ -141,11 +141,18 @@ class SequenceGeneratorDecoder(Layer):
                 self.attention_mechanism = BahdanauAttention(units=state_size)
             logger.debug('  {}'.format(self.attention_mechanism))
 
-            self.decoder_rnncell = AttentionWrapper(
-                self.decoder_rnncell,
-                self.attention_mechanism,
-                attention_layer_size=state_size
-            )
+            if num_layers == 1:
+                self.decoder_rnncell = AttentionWrapper(
+                    self.decoder_rnncell,
+                    self.attention_mechanism,
+                    attention_layer_size=state_size
+                )
+            else:  # todo testing if list of objects will work, testing assumption
+                self.decoder_rnncell = AttentionWrapper(
+                    self.decoder_rnncell,
+                    [self.attention_mechanism] * num_layers,
+                    attention_layer_size=[state_size] * num_layers
+                )
             logger.debug('  {}'.format(self.decoder_rnncell))
 
     def _logits_training(self, inputs, target, training=None):
@@ -274,7 +281,7 @@ class SequenceGeneratorDecoder(Layer):
         elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
             encoder_state = encoder_state[0]
 
-        if self.num_layers == 1:  # todo need to refine for Attention
+        if self.num_layers == 1:  # todo need to refine for Attention, testing assumpption
             if self.attention_mechanism is not None:
                 decoder_initial_state = decoder_initial_state.clone(
                     cell_state=encoder_state)
@@ -283,12 +290,11 @@ class SequenceGeneratorDecoder(Layer):
                     decoder_initial_state = [encoder_state]
                 else:
                     decoder_initial_state = encoder_state
-        else:
+        else:  # todo testing assumption
             if self.attention_mechanism is not None:
                 decoder_initial_state = decoder_initial_state.clone(
-                    cell_state=encoder_state)
-                decoder_initial_state = [
-                    decoder_initial_state * self.num_layers]
+                    cell_state=(encoder_state,) * self.num_layers)
+                decoder_initial_state = decoder_initial_state  # todo need to confirm why this does not need [decoder_initial_state * self.num_layers]
             else:
                 if not isinstance(encoder_state, list):
                     decoder_initial_state = [[encoder_state] * self.num_layers]
