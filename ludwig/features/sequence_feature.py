@@ -464,22 +464,27 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                             probs[i][j] = np.max(probs[i][j])
                         prob.append(np.prod(probs[i]))
                 elif isinstance(probs, np.ndarray):
-                    if (probs.shape) == 3:  # prob of each class of each token
-                        probs = np.amax(probs, axis=-1)
-                    prob = np.prod(probs,
-                                   axis=-1)  # todo convert this to sum of log probabilities up to EOS
+                    # prob of token in the position
+                    if len(
+                            probs.shape) == 3:  # prob of each class of each token
+                        seq_probs = np.amax(probs, axis=-1)
 
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                # postprocessed[PROBABILITIES] = probs
-                postprocessed[
-                    PROBABILITY] = prob  # todo return sum of log probabilities
+                        # sum log probability for tokens up to sequence length
+                        # create mask only tokens for sequence length
+                        mask = np.arange(seq_probs.shape[-1]) \
+                               < np.array(result[LENGTHS]).reshape(-1, 1)
+                        log_prob = np.sum(np.log(seq_probs) * mask, axis=-1)
+
+                        # commenting probabilities out because usually it is huge:
+                        # dataset x length x classes
+                        # todo: add a mechanism for letting the user decide to save it
+                        postprocessed[PROBABILITIES] = seq_probs
+                        postprocessed[PROBABILITY] = log_prob
 
                 if not skip_save_unprocessed_output:
                     # commenting probabilities out, see comment above
-                    # np.save(npy_filename.format(name, PROBABILITIES), probs)
-                    np.save(npy_filename.format(name, PROBABILITY), prob)
+                    np.save(npy_filename.format(name, PROBABILITIES), seq_probs)
+                    np.save(npy_filename.format(name, PROBABILITY), log_prob)
 
             del result[PROBABILITIES]
 
