@@ -123,11 +123,8 @@ class SequenceGeneratorDecoder(Layer):
             activity_regularizer=activity_regularizer
         )
         rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
-        if num_layers == 1:
-            self.decoder_rnncell = rnn_cell(state_size)
-        else:
-            rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
-            self.decoder_rnncell = StackedRNNCells(rnn_cells)
+        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        self.decoder_rnncell = StackedRNNCells(rnn_cells)
         logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
@@ -140,19 +137,11 @@ class SequenceGeneratorDecoder(Layer):
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
             logger.debug('  {}'.format(self.attention_mechanism))
-
-            if num_layers == 1:
-                self.decoder_rnncell = AttentionWrapper(
-                    self.decoder_rnncell,
-                    self.attention_mechanism,
-                    attention_layer_size=state_size
-                )
-            else:  # todo testing if list of objects will work, testing assumption
-                self.decoder_rnncell = AttentionWrapper(
-                    self.decoder_rnncell,
-                    [self.attention_mechanism] * num_layers,
-                    attention_layer_size=[state_size] * num_layers
-                )
+            self.decoder_rnncell = AttentionWrapper(
+                self.decoder_rnncell,
+                [self.attention_mechanism] * num_layers,
+                attention_layer_size=[state_size] * num_layers
+            )
             logger.debug('  {}'.format(self.decoder_rnncell))
 
     def _logits_training(self, inputs, target, training=None):
@@ -281,21 +270,11 @@ class SequenceGeneratorDecoder(Layer):
         elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
             encoder_state = encoder_state[0]
 
-        if self.num_layers == 1:  # todo need to refine for Attention, testing assumpption
-            if self.attention_mechanism is not None:
-                decoder_initial_state = decoder_initial_state.clone(
-                    cell_state=encoder_state)
-            else:
-                if not isinstance(encoder_state, list):
-                    decoder_initial_state = [encoder_state]
-                else:
-                    decoder_initial_state = encoder_state
-        else:  # todo testing assumption
-            if self.attention_mechanism is not None:
-                decoder_initial_state = decoder_initial_state.clone(
-                    cell_state=(encoder_state,) * self.num_layers)
-            else:
-                decoder_initial_state = (encoder_state,) * self.num_layers
+        if self.attention_mechanism is not None:
+            decoder_initial_state = decoder_initial_state.clone(
+                cell_state=(encoder_state,) * self.num_layers)
+        else:
+            decoder_initial_state = (encoder_state,) * self.num_layers
 
         return decoder_initial_state
 
@@ -436,11 +415,7 @@ class SequenceGeneratorDecoder(Layer):
             decoder_init_kwargs=dict(
                 start_tokens=start_tokens,
                 end_token=end_token,
-                # following construct required to work around inconsistent handling
-                # of encoder_end_state by tfa
-                initial_state=decoder_initial_state \
-                    if len(decoder_initial_state) != 1 \
-                    else decoder_initial_state[0]
+                initial_state=decoder_initial_state
             ),
         )
 
