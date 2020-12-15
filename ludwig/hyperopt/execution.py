@@ -24,6 +24,8 @@ class HyperoptExecutor(ABC):
     def get_metric_score(self, train_stats, eval_stats) -> float:
         if (train_stats is not None and
                 self.split in train_stats and
+                VALIDATION in train_stats and  # needed otherwise can-t figure
+                # out the best epoch
                 self.output_feature in train_stats[self.split] and
                 self.metric in train_stats[self.split][self.output_feature]):
             logger.info("Returning metric score from training statistics")
