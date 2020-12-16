@@ -5,9 +5,9 @@ language: python
 jobs:
   include:
     - python: "3.6"
-      env: TENSORFLOW=2.2.0
+      env: TENSORFLOW=2.3.1
     - python: "3.7"
-      env: TENSORFLOW=2.3.0
+      env: TENSORFLOW=2.4.0
     - python: "3.8"
       env: TENSORFLOW=nightly
 before_install:
