@@ -457,33 +457,30 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             probs = result[PROBABILITIES].numpy()
             if probs is not None:
 
-                if len(probs) > 0 and isinstance(probs[0], list):
-                    prob = []
-                    for i in range(len(probs)):
-                        # todo: should adapt for the case of beam > 1
-                        for j in range(len(probs[i])):
-                            probs[i][j] = np.max(probs[i][j])
-                        prob.append(np.prod(probs[i]))
-                elif isinstance(probs, np.ndarray):
-                    # prob of token in the position
-                    if len(
-                            probs.shape) == 3:  # prob of each class of each token
-                        seq_probs = np.amax(probs, axis=-1)
+                # probs should be shape [b, s, nc]
+                if len(probs.shape) == 3:
+                    # get probability of token in that sequence position
+                    seq_probs = np.amax(probs, axis=-1)
 
-                        # sum log probability for tokens up to sequence length
-                        # create mask only tokens for sequence length
-                        mask = np.arange(seq_probs.shape[-1]) \
-                               < np.array(result[LENGTHS]).reshape(-1, 1)
-                        log_prob = np.sum(np.log(seq_probs) * mask, axis=-1)
+                    # sum log probability for tokens up to sequence length
+                    # create mask only tokens for sequence length
+                    mask = np.arange(seq_probs.shape[-1]) \
+                           < np.array(result[LENGTHS]).reshape(-1, 1)
+                    log_prob = np.sum(np.log(seq_probs) * mask, axis=-1)
 
-                        # commenting probabilities out because usually it is huge:
-                        # dataset x length x classes
-                        # todo: add a mechanism for letting the user decide to save it
-                        postprocessed[PROBABILITIES] = seq_probs
-                        postprocessed[PROBABILITY] = log_prob
+                    # commenting probabilities out because usually it is huge:
+                    # dataset x length x classes
+                    # todo: add a mechanism for letting the user decide to save it
+                    postprocessed[PROBABILITIES] = seq_probs
+                    postprocessed[PROBABILITY] = log_prob
+                else:
+                    raise ValueError(
+                        'Sequence probability array should be 3-dimensional '
+                        'shape, instead shape is {:d}-dimensional'
+                            .format(len(probs.shape))
+                    )
 
                 if not skip_save_unprocessed_output:
-                    # commenting probabilities out, see comment above
                     np.save(npy_filename.format(name, PROBABILITIES), seq_probs)
                     np.save(npy_filename.format(name, PROBABILITY), log_prob)
 
