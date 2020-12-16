@@ -540,6 +540,13 @@ def create_data_set_to_use(data_format, raw_data):
             index=False
         )
 
+    elif data_format == 'excel_xls':
+        dataset_to_use = replace_file_extension(raw_data, 'xls')
+        pd.read_csv(raw_data).to_excel(
+            dataset_to_use,
+            index=False
+        )
+
     elif data_format == 'feather':
         dataset_to_use = replace_file_extension(raw_data, 'feather')
         pd.read_csv(raw_data).to_feather(

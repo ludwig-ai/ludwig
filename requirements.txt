@@ -15,7 +15,7 @@ requests
 
 # new data format support
 xlwt            # excel
-xlrd<2          # excel
+xlrd            # excel
 openpyxl        # excel
 pyarrow         # parquet
 lxml            # html
