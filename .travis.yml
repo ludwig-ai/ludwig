@@ -24,7 +24,7 @@ install:
     else
       pip install tensorflow==$TENSORFLOW
     fi
-  - HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install '.[test]'
+  - HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install --no-cache-dir '.[test]'
 script:
   - pip list
   - pytest -v tests
