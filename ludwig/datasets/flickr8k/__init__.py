@@ -39,7 +39,7 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
 
     def process_downloaded_dataset(self):
         os.makedirs(self.processed_temp_path, exist_ok=True)
-
+        # create a dictionary matching image_path --> list of captions
         image_to_caption = defaultdict(list)
         with open(
             f"{self.raw_dataset_path}/Flickr8k.token.txt",
@@ -48,11 +48,12 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
             image_to_caption = defaultdict(list)
             for line in captions_file:
                 line = line.split("#")
+                # the regex is to format the string to fit properly in a csv
                 line[1] = line[1].strip("\n01234.\t ")
                 line[1] = re.sub('\"', '\"\"', line[1])
                 line[1] = '\"' + line[1] + '\"'
                 image_to_caption[line[0]].append(line[1])
-
+        # create csv file with 7 columns: image_path, 5 captions, and split
         with open(
                 os.path.join(self.processed_temp_path, self.csv_filename),
                 'w'
@@ -76,4 +77,5 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                                 *image_to_caption[image_name],
                                 i
                             ))
+        # Note: csv is stored in /processed while images are stored in /raw
         os.rename(self.processed_temp_path, self.processed_dataset_path)
