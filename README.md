@@ -37,7 +37,7 @@ The core design principles baked into the toolbox are:
 - Understandability: deep learning model internals are often considered black boxes, but Ludwig provides standard visualizations to understand their performance and compare their predictions.
 - Open Source: Apache License 2.0
 
-![LF AI & Data logo](https://raw.githubusercontent.com/lfai/artwork/master/lfaidata-assets/lfaidata/horizontal/color/lfaidata-horizontal-color.png "LF AI & Data logo")
+![LF AI & Data logo](https://raw.githubusercontent.com/lfai/artwork/master/lfaidata-assets/lfaidata/horizontal/color/lfaidata-horizontal-color.png =200x "LF AI & Data logo")
 
 Ludwig is hosted by the Linux Foundation as part of the [LF AI & Data Foundation](https://lfaidata.foundation/). For details
 about who's involved and how Ludwig fits into the larger open source AI landscape, 
