@@ -71,6 +71,7 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                         image_name = image_name.strip('\n')
                         if image_name in image_to_caption:
                             output_file.write('{},{},{},{},{},{},{}\n'.format(
+                                # Note: image folder is named Flicker8k_Dataset
                                 "{}/Flicker8k_Dataset/{}".format(
                                     self.raw_dataset_path, image_name
                                 ),
