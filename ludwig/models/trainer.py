@@ -291,7 +291,7 @@ class Trainer:
         # ====== General setup =======
         output_features = model.output_features
         digits_per_epochs = len(str(self.epochs))
-        # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
+        # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/ludwig-ai/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
