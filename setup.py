@@ -54,7 +54,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
 
-    url='https://github.com/uber/ludwig',
+    url='https://github.com/ludwig-ai/ludwig',
     download_url='https://pypi.org/project/ludwig/',
 
     author='Piero Molino',
