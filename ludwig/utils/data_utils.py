@@ -136,7 +136,12 @@ def read_jsonl(data_fp, df_lib):
 
 
 def read_excel(data_fp, df_lib):
-    return df_lib.read_excel(data_fp)
+    fp_split = os.path.splitext(data_fp)
+    if fp_split[1] == '.xls':
+        excel_engine = 'xlrd'
+    else:
+        excel_engine = 'openpyxl'
+    return df_lib.read_excel(data_fp, engine=excel_engine)
 
 
 def read_parquet(data_fp, df_lib):
