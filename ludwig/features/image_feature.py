@@ -120,17 +120,17 @@ class ImageFeatureMixin(object):
 
             if img_num_channels != num_channels:
                 logger.warning(
-                    "Image {0} has {1} channels, where as {2}"
-                    " channels are expected. Dropping/adding channels"
+                    "Image {0} has {1} channels, where as {2} "
+                    "channels are expected. Dropping/adding channels "
                     "with 0s as appropriate".format(
                         filepath, img_num_channels, num_channels))
         else:
             # If the image isn't like the first image, raise exception
             if img_num_channels != num_channels:
                 raise ValueError(
-                    'Image {0} has {1} channels, unlike the first image, which'
-                    ' has {2} channels. Make sure all the iamges have the same'
-                    'number of channels or use the num_channels property in'
+                    'Image {0} has {1} channels, unlike the first image, which '
+                    'has {2} channels. Make sure all the images have the same '
+                    'number of channels or use the num_channels property in '
                     'image preprocessing'.format(filepath,
                                                  img_num_channels,
                                                  num_channels))
@@ -140,8 +140,8 @@ class ImageFeatureMixin(object):
                 "Images are not of the same size. "
                 "Expected size is {0}, "
                 "current image size is {1}."
-                "Images are expected to be all of the same size"
-                "or explicit image width and height are expected"
+                "Images are expected to be all of the same size "
+                "or explicit image width and height are expected "
                 "to be provided. "
                 "Additional information: "
                 "https://ludwig-ai.github.io/ludwig-docs/user_guide/#image-features-preprocessing"
