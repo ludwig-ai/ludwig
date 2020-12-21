@@ -49,6 +49,12 @@ class BinaryFeatureMixin(object):
         'fill_value': 0
     }
 
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'integer'},
+        'computed_fill_value': {'type': 'integer'},
+    }
+
     @staticmethod
     def cast_column(feature, dataset_df, backend):
         # todo maybe move code from add_feature_data here
