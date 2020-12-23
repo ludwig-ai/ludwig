@@ -351,6 +351,8 @@ class TabNetCombiner(tf.keras.Model):
 
         if dropout > 0:
             self.dropout = tf.keras.layers.Dropout(dropout)
+        else:
+            self.dropout = None
 
     def call(
             self,
@@ -372,6 +374,8 @@ class TabNetCombiner(tf.keras.Model):
             hidden,
             training=training,
         )
+        if self.dropout:
+            hidden = self.dropout(hidden, training=training)
 
         return_data = {'combiner_output': hidden, 'attention_masks': masks}
 

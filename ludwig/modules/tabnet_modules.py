@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 import tensorflow as tf
-from tensorflow_addons.activations import sparsemax
+from tensorflow_addons.layers import Sparsemax
 
 from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
@@ -75,6 +75,7 @@ class TabNet(tf.keras.Model):
             )
         self.final_projection = tf.keras.layers.Dense(self.output_size)
 
+
     def call(
             self,
             features: tf.Tensor,
@@ -131,7 +132,7 @@ class TabNet(tf.keras.Model):
 
         final_output = self.final_projection(out_accumulator)
 
-        self.add_loss(self.sparsity * total_entropy / self.num_steps)
+        self.add_loss(-self.sparsity * total_entropy / self.num_steps)
 
         return final_output, masks
 
@@ -148,7 +149,7 @@ class FeatureBlock(tf.keras.Model):
             epsilon: float = 1e-5,
     ):
         super(FeatureBlock, self).__init__()
-        self.apply_gpu = apply_glu
+        self.apply_glu = apply_glu
         self.size = size
         units = size * 2 if apply_glu else size
 
@@ -164,7 +165,7 @@ class FeatureBlock(tf.keras.Model):
     def call(self, inputs, training: bool = None, alpha: float = 0.0):
         hidden = self.fc_layer(inputs)
         hidden = self.batch_norm(hidden, training=training, alpha=alpha)
-        if self.apply_gpu:
+        if self.apply_glu:
             hidden = glu(hidden, self.size)
         return hidden
 
@@ -184,10 +185,11 @@ class AttentiveTransformer(tf.keras.Model):
             bn_virtual_divider=bn_virtual_divider,
             apply_glu=False,
         )
+        self.sparsemax = Sparsemax()
 
     def call(self, inputs, prior_scales, training=None, alpha: float = 0.0):
         hidden = self.feature_block(inputs, training=training, alpha=alpha)
-        return sparsemax(hidden * prior_scales)
+        return self.sparsemax(hidden * prior_scales)
 
 
 # from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
