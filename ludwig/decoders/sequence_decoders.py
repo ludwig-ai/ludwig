@@ -18,8 +18,9 @@ import logging
 
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
-from tensorflow.keras.layers import Dense, Embedding
+from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
+    StackedRNNCells
+from tensorflow.keras.layers import Layer, Dense, Embedding
 from tensorflow.keras.layers import average
 from tensorflow_addons.seq2seq import AttentionWrapper
 from tensorflow_addons.seq2seq import BahdanauAttention
@@ -134,8 +135,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
-        self.decoder_rnncell = \
-            get_from_registry(cell_type, rnn_layers_registry)(state_size)
+        rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
+        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        self.decoder_rnncell = StackedRNNCells(rnn_cells)
         logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
@@ -148,11 +150,10 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
             logger.debug('  {}'.format(self.attention_mechanism))
-
             self.decoder_rnncell = AttentionWrapper(
                 self.decoder_rnncell,
-                self.attention_mechanism,
-                attention_layer_size=state_size
+                [self.attention_mechanism] * num_layers,
+                attention_layer_size=[state_size] * num_layers
             )
             logger.debug('  {}'.format(self.decoder_rnncell))
 
@@ -284,12 +285,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
 
         if self.attention_mechanism is not None:
             decoder_initial_state = decoder_initial_state.clone(
-                cell_state=encoder_state)
+                cell_state=(encoder_state,) * self.num_layers)
         else:
-            if not isinstance(encoder_state, list):
-                decoder_initial_state = [encoder_state]
-            else:
-                decoder_initial_state = encoder_state
+            decoder_initial_state = (encoder_state,) * self.num_layers
 
         return decoder_initial_state
 
@@ -430,11 +428,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             decoder_init_kwargs=dict(
                 start_tokens=start_tokens,
                 end_token=end_token,
-                # following construct required to work around inconsistent handling
-                # of encoder_end_state by tfa
-                initial_state=decoder_initial_state \
-                    if len(decoder_initial_state) != 1 \
-                    else decoder_initial_state[0]
+                initial_state=decoder_initial_state
             ),
         )
 
