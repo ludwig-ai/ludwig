@@ -193,4 +193,80 @@ def test_hyperopt_run_hyperopt(csv_filename):
         os.path.join('results_hyperopt', 'hyperopt_statistics.json')
     )
 
+def test_hyperopt_executor_get_metric_score():
+    executor = EXECUTORS[0]
+    output_feature = "of_name"
+    split = 'test'
 
+    train_stats = {
+        'training': {
+            output_feature: {
+                'loss': [0.58760345, 1.5066891],
+                'accuracy': [0.6666667, 0.33333334],
+                'hits_at_k': [1.0, 1.0]
+            },
+            'combined': {
+                'loss': [0.58760345, 1.5066891]
+            }
+        },
+        'validation': {
+            output_feature: {
+                'loss': [0.30233705, 2.6505466],
+                'accuracy': [1.0, 0.0],
+                'hits_at_k': [1.0, 1.0]
+            },
+            'combined': {
+                'loss': [0.30233705, 2.6505466]
+            }
+        },
+        'test': {
+            output_feature: {
+                'loss': [1.0876318, 1.4353828],
+                'accuracy': [0.7, 0.5],
+                'hits_at_k': [1.0, 1.0]
+            },
+            'combined': {
+                'loss': [1.0876318, 1.4353828]
+            }
+        }
+    }
+
+    eval_stats = {
+        output_feature: {
+            'loss': 1.4353828,
+            'accuracy': 0.5,
+            'hits_at_k': 1.0,
+            'overall_stats': {
+                'token_accuracy': 1.0,
+                'avg_precision_macro': 1.0,
+                'avg_recall_macro': 1.0,
+                'avg_f1_score_macro': 1.0,
+                'avg_precision_micro': 1.0,
+                'avg_recall_micro': 1.0,
+                'avg_f1_score_micro': 1.0,
+                'avg_precision_weighted': 1.0,
+                'avg_recall_weighted': 1.0,
+                'avg_f1_score_weighted': 1.0,
+                'kappa_score': 0.6
+            },
+            'combined': {'loss': 1.4353828}
+        }
+    }
+
+    metric = 'loss'
+    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
+        None, output_feature, metric, split, **executor)
+    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
+    assert score == 1.0876318
+
+    metric = 'accuracy'
+    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
+        None, output_feature, metric, split, **executor)
+    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
+    assert score == 0.7
+
+    metric = 'overall_stats.kappa_score'
+    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
+        None, output_feature, metric, split, **executor)
+    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
+    assert score == 0.6
