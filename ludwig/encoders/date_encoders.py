@@ -16,17 +16,29 @@
 # ==============================================================================
 import logging
 import math
+from abc import ABC
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer
 
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-class DateEmbed(Layer):
+ENCODER_REGISTRY = Registry()
+
+
+class DateEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register(name='embed')
+class DateEmbed(DateEncoder):
 
     def __init__(
             self,
@@ -312,7 +324,8 @@ class DateEmbed(Layer):
         return {'encoder_output': hidden}
 
 
-class DateWave(Layer):
+@register(name='wave')
+class DateWave(DateEncoder):
 
     def __init__(
             self,

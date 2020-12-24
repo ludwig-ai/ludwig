@@ -13,21 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from abc import ABC
 import logging
 
 import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
-from tensorflow.keras.layers import Layer, Dense, Embedding
+from tensorflow.keras.layers import Dense, Embedding
 from tensorflow.keras.layers import average
 from tensorflow_addons.seq2seq import AttentionWrapper
 from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
+from ludwig.decoders.base import Decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry, register
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
@@ -41,7 +44,17 @@ rnn_layers_registry = {
 PAD_TOKEN = 0
 
 
-class SequenceGeneratorDecoder(Layer):
+DECODER_REGISTRY = Registry()
+
+
+class SequenceDecoder(Decoder, ABC):
+    @classmethod
+    def register(cls, name):
+        DECODER_REGISTRY[name] = cls
+
+
+@register(name='generator')
+class SequenceGeneratorDecoder(SequenceDecoder):
 
     def __init__(
             self,
@@ -695,7 +708,8 @@ def extract_sequence_probabilities(decoder_output, beam_width, sequence_id=0):
     return probabilities
 
 
-class SequenceTaggerDecoder(Layer):
+@register(name='tagger')
+class SequenceTaggerDecoder(SequenceDecoder):
 
     def __init__(
             self,
