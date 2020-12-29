@@ -48,7 +48,7 @@ with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
 
 setup(
     name='ludwig',
-    version='0.3.2-dev1',
+    version='0.3.2',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
