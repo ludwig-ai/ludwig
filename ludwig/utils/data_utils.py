@@ -527,9 +527,7 @@ def normalize_numpy(obj):
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, set):
-            return list(obj)
-        elif isinstance(obj, tuple):
+        if isinstance(obj, (set, tuple)):
             return list(obj)
         elif isinstance(obj, np.integer):
             return int(obj)
