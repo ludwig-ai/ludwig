@@ -1355,10 +1355,11 @@ def compare_performance(
     
     ```python
     model_a = LudwigModel(config,logging_level=logging.INFO)
-    model_b = LudwigModel(config,logging_level=logging.INFO)
-    a_training_stats, a_preprocessed_data, b_output_directory = model_a.train(dataset=dataset)
+    model_a.train(dataset=dataset)
+    a_evaluation_stats, a_preprocessed_data, b_output_directory = model_a.evaluate(dataset=dataset)
+    model_b = LudwigModel.load('path/to/model/',logging_level=logging.INFO)
     b_evaluation_stats, b_preprocessed_data, b_output_directory = model_b.evaluate(dataset=dataset)
-    compare_performance([a_training_stats, b_evaluation_stats], model_names=['A', 'B'])
+    compare_performance([a_evaluation_stats, b_evaluation_stats], model_names=['A', 'B'])
     ```
     """
     ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats',
