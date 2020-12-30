@@ -1354,11 +1354,11 @@ def compare_performance(
     # Example usage:
     
     ```python
-    model_a = LudwigModel(config,logging_level=logging.INFO)
-    model_a.train(dataset=dataset)
-    a_evaluation_stats, a_preprocessed_data, b_output_directory = model_a.evaluate(dataset=dataset)
-    model_b = LudwigModel.load('path/to/model/',logging_level=logging.INFO)
-    b_evaluation_stats, b_preprocessed_data, b_output_directory = model_b.evaluate(dataset=dataset)
+    model_a = LudwigModel(config)
+    model_a.train(dataset)
+    a_evaluation_stats, _, _ = model_a.evaluate(eval_set)
+    model_b = LudwigModel.load('path/to/model/')
+    b_evaluation_stats, _, _ = model_b.evaluate(eval_set)
     compare_performance([a_evaluation_stats, b_evaluation_stats], model_names=['A', 'B'])
     ```
     """
