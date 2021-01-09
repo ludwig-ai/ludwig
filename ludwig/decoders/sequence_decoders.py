@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from abc import ABC
 import logging
 
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
+from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
+    StackedRNNCells
 from tensorflow.keras.layers import Layer, Dense, Embedding
 from tensorflow.keras.layers import average
 from tensorflow_addons.seq2seq import AttentionWrapper
@@ -25,9 +27,11 @@ from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
+from ludwig.decoders.base import Decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry, register
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
@@ -41,7 +45,17 @@ rnn_layers_registry = {
 PAD_TOKEN = 0
 
 
-class SequenceGeneratorDecoder(Layer):
+DECODER_REGISTRY = Registry()
+
+
+class SequenceDecoder(Decoder, ABC):
+    @classmethod
+    def register(cls, name):
+        DECODER_REGISTRY[name] = cls
+
+
+@register(name='generator')
+class SequenceGeneratorDecoder(SequenceDecoder):
 
     def __init__(
             self,
@@ -121,8 +135,9 @@ class SequenceGeneratorDecoder(Layer):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
-        self.decoder_rnncell = \
-            get_from_registry(cell_type, rnn_layers_registry)(state_size)
+        rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
+        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        self.decoder_rnncell = StackedRNNCells(rnn_cells)
         logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
@@ -135,11 +150,10 @@ class SequenceGeneratorDecoder(Layer):
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
             logger.debug('  {}'.format(self.attention_mechanism))
-
             self.decoder_rnncell = AttentionWrapper(
                 self.decoder_rnncell,
-                self.attention_mechanism,
-                attention_layer_size=state_size
+                [self.attention_mechanism] * num_layers,
+                attention_layer_size=[state_size] * num_layers
             )
             logger.debug('  {}'.format(self.decoder_rnncell))
 
@@ -271,12 +285,9 @@ class SequenceGeneratorDecoder(Layer):
 
         if self.attention_mechanism is not None:
             decoder_initial_state = decoder_initial_state.clone(
-                cell_state=encoder_state)
+                cell_state=(encoder_state,) * self.num_layers)
         else:
-            if not isinstance(encoder_state, list):
-                decoder_initial_state = [encoder_state]
-            else:
-                decoder_initial_state = encoder_state
+            decoder_initial_state = (encoder_state,) * self.num_layers
 
         return decoder_initial_state
 
@@ -417,11 +428,7 @@ class SequenceGeneratorDecoder(Layer):
             decoder_init_kwargs=dict(
                 start_tokens=start_tokens,
                 end_token=end_token,
-                # following construct required to work around inconsistent handling
-                # of encoder_end_state by tfa
-                initial_state=decoder_initial_state \
-                    if len(decoder_initial_state) != 1 \
-                    else decoder_initial_state[0]
+                initial_state=decoder_initial_state
             ),
         )
 
@@ -695,7 +702,8 @@ def extract_sequence_probabilities(decoder_output, beam_width, sequence_id=0):
     return probabilities
 
 
-class SequenceTaggerDecoder(Layer):
+@register(name='tagger')
+class SequenceTaggerDecoder(SequenceDecoder):
 
     def __init__(
             self,

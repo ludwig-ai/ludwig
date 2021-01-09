@@ -103,7 +103,6 @@ class RecurrentStack(Layer):
             outputs = layer(hidden, training=training, mask=mask)
             hidden = outputs[0]
             final_state = outputs[1:]
-        if final_state:
-            if len(final_state) == 1:
-                final_state = final_state[0]
+        if final_state and len(final_state) == 1:
+            final_state = final_state[0]
         return hidden, final_state

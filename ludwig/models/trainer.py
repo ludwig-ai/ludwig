@@ -291,7 +291,7 @@ class Trainer:
         # ====== General setup =======
         output_features = model.output_features
         digits_per_epochs = len(str(self.epochs))
-        # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
+        # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/ludwig-ai/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
@@ -695,9 +695,8 @@ class Trainer:
                     break
             else:
                 # there's no validation, so we save the model at each iteration
-                if is_on_master():
-                    if not self.skip_save_model:
-                        model.save_weights(model_weights_path)
+                if is_on_master() and not self.skip_save_model:
+                    model.save_weights(model_weights_path)
 
             # ========== Save training progress ==========
             if is_on_master():
@@ -709,8 +708,6 @@ class Trainer:
                             TRAINING_PROGRESS_TRACKER_FILE_NAME
                         )
                     )
-
-            if is_on_master():
                 contrib_command("train_epoch_end", progress_tracker)
                 logger.info('')
 
@@ -846,30 +843,28 @@ class Trainer:
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
-            if is_on_master():
-                if not skip_save_model:
-                    model.save_weights(model_weights_path)
-                    logger.info(
-                        'Validation {} on {} improved, model saved'.format(
-                            validation_metric,
-                            validation_output_feature_name
-                        )
+            if is_on_master() and not skip_save_model:
+                model.save_weights(model_weights_path)
+                logger.info(
+                    'Validation {} on {} improved, model saved'.format(
+                        validation_metric,
+                        validation_output_feature_name
                     )
+                )
 
         progress_tracker.last_improvement = (
                 progress_tracker.epoch - progress_tracker.last_improvement_epoch
         )
-        if progress_tracker.last_improvement != 0:
-            if is_on_master():
-                logger.info(
-                    'Last improvement of {} validation {} '
-                    'happened {} epoch{} ago'.format(
-                        validation_output_feature_name,
-                        validation_metric,
-                        progress_tracker.last_improvement,
-                        '' if progress_tracker.last_improvement == 1 else 's'
-                    )
+        if progress_tracker.last_improvement != 0 and is_on_master():
+            logger.info(
+                'Last improvement of {} validation {} '
+                'happened {} epoch{} ago'.format(
+                    validation_output_feature_name,
+                    validation_metric,
+                    progress_tracker.last_improvement,
+                    '' if progress_tracker.last_improvement == 1 else 's'
                 )
+            )
 
         # ========== Reduce Learning Rate Plateau logic ========
         if reduce_learning_rate_on_plateau > 0:
@@ -950,19 +945,18 @@ class Trainer:
                 )
 
         # ========== Early Stop logic ==========
-        if early_stop > 0:
-            if progress_tracker.last_improvement >= early_stop:
-                if is_on_master():
-                    logger.info(
-                        "\nEARLY STOPPING due to lack of "
-                        "validation improvement, "
-                        "it has been {0} epochs since last "
-                        "validation improvement\n".format(
-                            progress_tracker.epoch -
-                            progress_tracker.last_improvement_epoch
-                        )
+        if 0 < early_stop <= progress_tracker.last_improvement:
+            if is_on_master():
+                logger.info(
+                    "\nEARLY STOPPING due to lack of "
+                    "validation improvement, "
+                    "it has been {0} epochs since last "
+                    "validation improvement\n".format(
+                        progress_tracker.epoch -
+                        progress_tracker.last_improvement_epoch
                     )
-                should_break = True
+                )
+            should_break = True
         return should_break
 
     def set_epochs_to_1_or_quit(self, signum, frame):
