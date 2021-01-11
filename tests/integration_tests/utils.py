@@ -59,6 +59,7 @@ HF_ENCODERS = [
     'longformer',
     'flaubert',
     'electra',
+    'mt5'
 ]
 
 
