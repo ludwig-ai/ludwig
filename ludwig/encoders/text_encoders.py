@@ -290,7 +290,7 @@ class XLNetEncoder(TextEncoder):
             "input_ids": inputs,
             "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
+            "token_type_ids": tf.zeros_like(inputs),
         })
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
@@ -690,7 +690,7 @@ class MT5Encoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(T5Encoder, self).__init__()
+        super(MT5Encoder, self).__init__()
         try:
             from transformers import TFMT5Model
         except ModuleNotFoundError:
@@ -787,12 +787,12 @@ class FlauBERTEncoder(TextEncoder):
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'jplu/tf-flaubert-base-uncased',
+        'pretrained_model_name_or_path': 'jplu/tf-flaubert-small-cased',
     }
 
     def __init__(
             self,
-            pretrained_model_name_or_path='jplu/tf-flaubert-base-uncased',
+            pretrained_model_name_or_path='jplu/tf-flaubert-small-cased',
             reduce_output='sum',
             trainable=True,
             num_tokens=None,
