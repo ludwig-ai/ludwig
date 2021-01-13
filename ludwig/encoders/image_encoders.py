@@ -101,7 +101,9 @@ class Stacked2DCNN(Layer):
             default_pool_strides=pool_strides,
         )
 
-        logger.debug('  FCStacl')
+        self.flatten = Flatten()
+
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -131,7 +133,8 @@ class Stacked2DCNN(Layer):
             inputs,
             training,
         )
-        hidden = tf.reshape(hidden, [hidden.shape[0], -1])
+
+        hidden = self.flatten(hidden, training=training)
 
         # ================ Fully Connected ================
         outputs = self.fc_stack(hidden)
