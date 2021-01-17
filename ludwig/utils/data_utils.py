@@ -579,8 +579,6 @@ def clear_data_cache():
 def figure_data_format_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return pd.DataFrame
-    elif isinstance(dataset, dd.core.DataFrame):
-        return dd.core.DataFrame
     elif isinstance(dataset, dict):
         return dict
     elif isinstance(dataset, str):

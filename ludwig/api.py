@@ -1296,7 +1296,7 @@ class LudwigModel:
         # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         backend = initialize_backend(backend)
-        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads, horovod)
+        backend.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
 
         config = backend.broadcast_return(
             lambda: load_json(os.path.join(
