@@ -22,7 +22,7 @@ import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
-from ludwig.data.processor.pandas import PANDAS
+from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -90,7 +90,7 @@ class Backend(CacheMixin, ABC):
 
     @property
     @abstractmethod
-    def processor(self):
+    def df_engine(self):
         raise NotImplementedError()
 
     @property
@@ -105,7 +105,7 @@ class Backend(CacheMixin, ABC):
 
 class LocalPreprocessingMixin:
     @property
-    def processor(self):
+    def df_engine(self):
         return PANDAS
 
     @property
