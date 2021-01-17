@@ -245,7 +245,7 @@ class TransformerXLEncoder(TextEncoder):
         return {'encoder_output': hidden}
 
 
-@register(name='xlnet')
+# @register(name='xlnet')
 class XLNetEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
@@ -779,7 +779,7 @@ class XLMRoBERTaEncoder(TextEncoder):
         return {'encoder_output': hidden}
 
 
-@register(name='flaubert')
+# @register(name='flaubert')
 class FlauBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
@@ -824,7 +824,7 @@ class FlauBERTEncoder(TextEncoder):
             'input_ids': inputs,
             'training': training,
             'attention_mask': mask,
-            'token_type_ids': tf.zeros_like(inputs)
+            'token_type_ids': tf.zeros_like(inputs),
         })
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
