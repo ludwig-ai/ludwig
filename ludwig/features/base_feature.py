@@ -169,15 +169,30 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         )
 
         # set up two sequence reducers, one for inputs and other for dependencies
-        self.reduce_sequence_input = SequenceReducer(
-            reduce_mode=self.reduce_input
-        )
-        if self.dependencies:
-            self.dependency_reducers = {}
-            for dependency in self.dependencies:
-                self.dependency_reducers[dependency] = SequenceReducer(
-                    reduce_mode=self.reduce_dependencies
-                )
+        # self.reduce_sequence_input = SequenceReducer(
+        #     reduce_mode=self.reduce_input
+        # )
+        self.reduce_sequence_input = None
+
+    def build(self, input_shape):
+        # test required to handle prediction call
+        if isinstance(input_shape[0], dict):
+            tensor_shape = input_shape[0]['combiner_output']
+        elif isinstance(input_shape[0], tuple):
+            tensor_shape = input_shape[0][0]['combiner_output']
+        else:
+            raise ValueError('Invalid data structure from combiner')
+
+        if tensor_shape.rank > 2:
+            self.reduce_sequence_input = SequenceReducer(
+                reduce_mode=self.reduce_input
+            )
+            if self.dependencies:
+                self.dependency_reducers = {}
+                for dependency in self.dependencies:
+                    self.dependency_reducers[dependency] = SequenceReducer(
+                        reduce_mode=self.reduce_dependencies
+                    )
 
     def create_input(self):
         return tf.keras.Input(shape=self.get_output_shape(),

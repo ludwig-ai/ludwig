@@ -82,7 +82,7 @@ class SequenceGeneratorDecoder(Layer):
         self.attention_mechanism = None
 
         self.reduce_input = reduce_input if reduce_input else 'sum'
-        self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_input)
+        # self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_input)
 
         if is_timeseries:
             self.vocab_size = 1
@@ -142,6 +142,9 @@ class SequenceGeneratorDecoder(Layer):
                 attention_layer_size=state_size
             )
             logger.debug('  {}'.format(self.decoder_rnncell))
+
+    def build(self, input_shape):
+        print("entered build()")
 
     def _logits_training(self, inputs, target, training=None):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]

@@ -341,6 +341,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
+    def build(self, input_shape):
+        print("build for textoutputfeature")
+
     @classmethod
     def get_output_dtype(cls):
         return tf.int32
