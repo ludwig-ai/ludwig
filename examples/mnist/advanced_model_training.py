@@ -15,6 +15,7 @@ import yaml
 
 # ## Import required libraries
 from ludwig.api import LudwigModel
+from ludwig.datasets import mnist
 from ludwig.visualize import learning_curves
 
 # clean out old results
@@ -46,11 +47,14 @@ list_of_fc_layers = [
     FullyConnectedLayers(name='Option2', fc_layers=[{'fc_size': 128},
                                                     {'fc_size': 64}]),
 
-    FullyConnectedLayers(name='Option3', fc_layers=[{'fc_size':128}])
+    FullyConnectedLayers(name='Option3', fc_layers=[{'fc_size': 128}])
 ]
 
 #
 list_of_train_stats = []
+
+# load and split MNIST dataset
+training_set, test_set, _ = mnist.load(split=True)
 
 # ## Train models
 for model_option in list_of_fc_layers:
@@ -67,7 +71,8 @@ for model_option in list_of_fc_layers:
 
     # initiate model training
     train_stats, _, _ = model.train(
-        dataset='./data/mnist_dataset_training.csv',
+        training_set=training_set,
+        test_set=test_set,
         experiment_name='multiple_experiment',
         model_name=model_option.name)
 

@@ -1,1 +1,2 @@
 include *.txt
+recursive-include ludwig/datasets *.yaml

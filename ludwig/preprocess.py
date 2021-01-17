@@ -210,7 +210,7 @@ def cli(sys_argv):
     # ----------------
     preprocessing_def = parser.add_mutually_exclusive_group(required=True)
     preprocessing_def.add_argument(
-        '-pd',
+        '-pc',
         '--preprocessing_config',
         type=yaml.safe_load,
         help='preproceesing config. '

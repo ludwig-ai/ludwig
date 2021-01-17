@@ -2,6 +2,7 @@ import json
 import os.path
 import re
 from collections import namedtuple
+import logging
 
 import numpy as np
 import pandas as pd
@@ -9,10 +10,15 @@ import pytest
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
+from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.experiment import experiment_cli
+from ludwig.features.numerical_feature import numeric_transformation_registry
 from ludwig.modules.optimization_modules import optimizers_registry
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, replace_file_extension
+from ludwig.utils.misc_utils import get_from_registry
+from tests.integration_tests.utils import category_feature, generate_data
 
 RANDOM_SEED = 42
 NUMBER_OBSERVATIONS = 500
@@ -372,3 +378,168 @@ def test_regularization(generated_data, tmp_path):
 
     # ensure all losses obtained with the different methods are different
     assert len(regularization_losses) == len(regularization_losses_set)
+
+
+# test cache checksum function
+def test_cache_checksum(csv_filename, tmp_path):
+    # setup for training
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=2)]
+
+    source_dataset = os.path.join(tmp_path, csv_filename)
+    source_dataset = generate_data(input_features, output_features,
+                                   source_dataset)
+
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'preprocessing': {'text': {'most_common_word': 1000}},
+        'training': {'epochs': 2}
+    }
+
+    # conduct initial training
+    output_directory = os.path.join(tmp_path, 'results')
+    model = LudwigModel(config)
+    _, _, train_output_directory1 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    first_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # conduct second training, should not force recreating hdf5
+    model = LudwigModel(config)
+    _, _, train_output_directory2 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    current_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # time stamps should be the same
+    assert first_training_timestamp == current_training_timestamp
+
+    # force recreating cache file by changing checksum
+    prior_training_timestamp = current_training_timestamp
+    config['preprocessing']['text']['most_common_word'] = 2000
+    model = LudwigModel(config)
+    _, _, train_output_directory3 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    current_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamp should differ
+    assert prior_training_timestamp < current_training_timestamp
+
+    # force recreating cache by updating modification time of source dataset
+    prior_training_timestamp = current_training_timestamp
+    os.utime(source_dataset)
+    model = LudwigModel(config)
+    _, _, train_output_directory4 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    current_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert prior_training_timestamp < current_training_timestamp
+
+    # force change in feature preprocessing
+    prior_training_timestamp = current_training_timestamp
+    input_features = config['input_features'].copy()
+    input_features[0]['preprocessing'] = {'lowercase': True}
+    config['input_features'] = input_features
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    current_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert prior_training_timestamp < current_training_timestamp
+
+    # force change in features names (and properties)
+    prior_training_timestamp = current_training_timestamp
+    input_features = [category_feature(vocab_size=5), category_feature()]
+    source_dataset = generate_data(input_features, output_features,
+                                   source_dataset)
+    config['input_features'] = input_features
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    current_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert prior_training_timestamp < current_training_timestamp
+
+    # force change in Ludwig version
+    prior_training_timestamp = current_training_timestamp
+    global_vars.LUDWIG_VERSION = 'new_version'
+    model = LudwigModel(config)
+    _, _, train_output_directory5 = \
+        model.train(dataset=source_dataset, output_directory=output_directory)
+    current_training_timestamp = \
+        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+
+    # timestamps should be different
+    assert prior_training_timestamp < current_training_timestamp
+
+
+@pytest.mark.parametrize(
+    'transformer_key', list(numeric_transformation_registry.keys())
+)
+def test_numeric_transformer(transformer_key, tmpdir):
+    Transformer = get_from_registry(transformer_key,
+                                    numeric_transformation_registry)
+    transformer_name = Transformer().__class__.__name__
+    if transformer_name == 'Log1pTransformer':
+        raw_values = np.random.lognormal(5, 2, size=100)
+    else:
+        raw_values = np.random.normal(5, 2, size=100)
+
+    backend = LOCAL_BACKEND
+    parameters = Transformer.fit_transform_params(raw_values, backend)
+    if transformer_name in {'Log1pTransformer', 'IdentityTransformer'}:
+        # should be empty
+        assert not bool(parameters)
+    else:
+        # should not be empty
+        assert bool(parameters)
+
+    # instantiate numeric transformer
+    numeric_transfomer = Transformer(**parameters)
+
+    # transform values
+    transformed_values = numeric_transfomer.transform(raw_values)
+
+    # inverse transform the prior transformed values
+    reconstructed_values = \
+        numeric_transfomer.inverse_transform(transformed_values)
+
+    # should now match
+    assert np.allclose(raw_values, reconstructed_values)
+
+    # now test numeric transformer with output feature
+    df = pd.DataFrame(np.array([raw_values, raw_values]).T, columns=['x', 'y'])
+    config = {
+        'input_features': [
+            {'name': 'x', 'type': 'numerical'}
+        ],
+        'output_features': [
+            {'name': 'y', 'type': 'numerical',
+             'preprocessing': {'normalization': transformer_key}}
+        ],
+        'combiner': {
+            'type': 'concat',
+        },
+        'training': {
+            'epochs': 2,
+            'batch_size': 16,
+        }
+    }
+
+    args = {
+        'config': config,
+        'skip_save_processed_input': True,
+        'output_directory': os.path.join(tmpdir, 'results'),
+        'logging_level': logging.WARN
+    }
+
+    # ensure no exceptions are raised
+    experiment_cli(dataset=df, **args)

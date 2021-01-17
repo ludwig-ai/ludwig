@@ -20,7 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.h3_encoders import H3Embed, H3WeightedSum, H3RNN
+from ludwig.encoders.h3_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
@@ -39,6 +39,11 @@ class H3FeatureMixin(object):
         'fill_value': 576495936675512319
         # mode 1 edge 0 resolution 0 base_cell 0
     }
+
+    @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        # todo: add cast to int64
+        return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -61,22 +66,22 @@ class H3FeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        column = dataset_df[feature[NAME]]
+        column = input_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
 
-        dataset[feature[NAME]] = backend.processor.map_objects(
+        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
             column,
             lambda x: np.array(x, dtype=np.uint8)
         )
-        return dataset
+        return proc_df
 
 
 class H3InputFeature(H3FeatureMixin, InputFeature):
@@ -121,8 +126,4 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': H3Embed,
-        'weighted_sum': H3WeightedSum,
-        'rnn': H3RNN
-    }
+    encoder_registry = ENCODER_REGISTRY

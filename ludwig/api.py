@@ -417,8 +417,6 @@ class LudwigModel:
                     logger.info('Validation set: {0}'.format(len(validation_set)))
                 if test_set is not None:
                     logger.info('Test set: {0}'.format(len(test_set)))
-
-            if self.backend.is_coordinator():
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
@@ -1295,7 +1293,10 @@ class LudwigModel:
         ```
 
         """
+        # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
+        # TensorFlow with default parameters
         backend = initialize_backend(backend)
+        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads, horovod)
 
         config = backend.broadcast_return(
             lambda: load_json(os.path.join(
@@ -1644,7 +1645,7 @@ def kfold_cross_validate(
     elif data_format in CACHEABLE_FORMATS:
         data_reader = get_from_registry(data_format,
                                         external_data_reader_registry)
-        data_df = data_reader(dataset, backend.processor.df_lib)
+        data_df = data_reader(dataset, backend.df_engine.df_lib)
         data_dir = os.path.dirname(dataset)
     else:
         ValueError(

@@ -14,12 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os
 
 import numpy as np
+import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.text_encoders import *
+from ludwig.encoders.text_encoders import ENCODER_REGISTRY
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
@@ -57,6 +59,10 @@ class TextFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
     def feature_meta(column, preprocessing_parameters, backend):
         (
             char_idx2str,
@@ -75,7 +81,7 @@ class TextFeatureMixin(object):
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         (
             word_idx2str,
@@ -95,7 +101,7 @@ class TextFeatureMixin(object):
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return (
             char_idx2str,
@@ -116,6 +122,7 @@ class TextFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(
             column, preprocessing_parameters, backend
         )
@@ -179,7 +186,7 @@ class TextFeatureMixin(object):
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
             ],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         word_data = build_sequence_matrix(
             sequences=column,
@@ -196,7 +203,7 @@ class TextFeatureMixin(object):
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
             ],
-            processor=backend.processor
+            processor=backend.df_engine
         )
 
         return char_data, word_data
@@ -204,22 +211,21 @@ class TextFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        dataset = dataset.drop(feature[NAME], axis=1)
-        dataset['{}_char'.format(feature[NAME])] = chars_data
-        dataset['{}_word'.format(feature[NAME])] = words_data
-        return dataset
+        proc_df['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        proc_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        return proc_df
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
@@ -302,26 +308,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
                 encoder_class.default_params
             )
 
-    encoder_registry = {
-        'bert': BERTEncoder,
-        'gpt': GPTEncoder,
-        'gpt2': GPT2Encoder,
-        # 'transformer_xl': TransformerXLEncoder,
-        'xlnet': XLNetEncoder,
-        'xlm': XLMEncoder,
-        'roberta': RoBERTaEncoder,
-        'distilbert': DistilBERTEncoder,
-        'ctrl': CTRLEncoder,
-        'camembert': CamemBERTEncoder,
-        'albert': ALBERTEncoder,
-        't5': T5Encoder,
-        'xlmroberta': XLMRoBERTaEncoder,
-        'flaubert': FlauBERTEncoder,
-        'electra': ELECTRAEncoder,
-        'longformer': LongformerEncoder,
-        'auto_transformer': AutoTransformerEncoder,
-        **SequenceInputFeature.encoder_registry
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
@@ -389,7 +376,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0,'
                     'but no class similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -475,6 +462,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             probs = result[PROBABILITIES]
             if probs is not None:
+                probs = probs.numpy()
 
                 if len(probs) > 0 and isinstance(probs[0], list):
                     prob = []

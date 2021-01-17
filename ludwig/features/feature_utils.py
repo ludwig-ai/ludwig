@@ -16,9 +16,10 @@
 # ==============================================================================
 import numpy as np
 
-from ludwig.constants import SEQUENCE
+from ludwig.constants import SEQUENCE, PREPROCESSING, NAME
 from ludwig.constants import TEXT
 from ludwig.constants import TIMESERIES
+from ludwig.utils.misc_utils import hash_dict
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import tokenizer_registry
 
@@ -45,3 +46,8 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
            tokenizer(set_string)]
 
     return np.array(out, dtype=np.int32)
+
+
+def compute_feature_hash(feature: dict) -> str:
+    preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
+    return feature[NAME] + "_" + preproc_hash.decode('ascii')

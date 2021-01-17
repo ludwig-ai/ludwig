@@ -6,15 +6,19 @@
 # This example is the API example for this Ludwig command line example
 # (https://ludwig-ai.github.io/ludwig-docs/examples/#kaggles-titanic-predicting-survivors).
 
-import logging
 # Import required libraries
+import logging
 import os
 import shutil
 
 from ludwig.api import LudwigModel
+from ludwig.datasets import titanic
 
 # clean out prior results
 shutil.rmtree('./results', ignore_errors=True)
+
+# Download and prepare the dataset
+training_set, _, _ = titanic.load(split=True)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./model1_config.yaml',
@@ -26,7 +30,7 @@ model = LudwigModel(config='./model1_config.yaml',
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory # location of training results stored on disk
  ) = model.train(
-    dataset='./data/train.csv',
+    dataset=training_set,
     experiment_name='simple_experiment',
     model_name='simple_model'
 )

@@ -3,10 +3,10 @@ from io import StringIO
 
 import pandas as pd
 import pytest
-
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
@@ -14,6 +14,7 @@ from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import run_experiment
+from tests.integration_tests.utils import sequence_feature
 
 #
 # this test is focused on testing input sequence features with all encoders
@@ -22,6 +23,7 @@ from tests.integration_tests.utils import run_experiment
 #
 
 TEST_HIDDEN_SIZE = 8
+
 
 # generates dataset that can be used for rest of test
 # Note: sequence_feature function specifies hidden size to be 8
@@ -35,7 +37,7 @@ def generate_sequence_training_data():
             cell_type='lstm',
             reduce_output=None
         )
-     ]
+    ]
 
     output_features = [
         sequence_feature(
@@ -58,15 +60,15 @@ def generate_sequence_training_data():
 
     return df, input_features, output_features
 
+
 # setups up minimal number of data structures required to support initialized
 # input and output features.  The function returns initialized LudwigModel
 # and batcher for training dataset
 def setup_model_scaffolding(
-    raw_df,
-    input_features,
-    output_features
+        raw_df,
+        input_features,
+        output_features
 ):
-
     # setup input feature for testing
     config = {'input_features': input_features,
               'output_features': output_features}
@@ -90,6 +92,7 @@ def setup_model_scaffolding(
 
     return model, batcher
 
+
 # test sequence input features
 # pytest parameters:
 #   enc_cell_type: encoder cell types
@@ -97,9 +100,9 @@ def setup_model_scaffolding(
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_encoder', ENCODERS)
 def test_sequence_encoders(
-    enc_encoder,
-    enc_cell_type,
-    generate_sequence_training_data
+        enc_encoder,
+        enc_cell_type,
+        generate_sequence_training_data
 ):
     # retrieve pre-computed dataset and features
     raw_df = generate_sequence_training_data[0]
@@ -108,7 +111,6 @@ def test_sequence_encoders(
     input_feature_name = input_features[0]['name']
     input_features[0]['encoder'] = enc_encoder
     input_features[0]['cell_type'] = enc_cell_type
-
 
     model, batcher = setup_model_scaffolding(
         raw_df,
@@ -119,16 +121,19 @@ def test_sequence_encoders(
     while not batcher.last_batch():
         batch = batcher.next_batch()
         inputs = {
-            i_feat.feature_name: batch[i_feat.feature_name]
+            i_feat.feature_name: batch[i_feat.proc_column]
             for i_feat in model.model.input_features.values()
         }
 
         # retrieve encoder to test
         encoder = model.model.input_features[input_feature_name].encoder_obj
-        encoder_out = encoder(tf.cast(inputs[input_feature_name], dtype=tf.int32))
+        encoder_out = encoder(
+            tf.cast(inputs[input_feature_name], dtype=tf.int32))
 
         # check encoder output for proper content, type and shape
-        batch_size = batch[input_feature_name].shape[0]
+        proc_column = model.model.input_features[
+            input_feature_name].proc_column
+        batch_size = batch[proc_column].shape[0]
         seq_size = input_features[0]['max_len']
 
         assert 'encoder_output' in encoder_out
@@ -136,17 +141,20 @@ def test_sequence_encoders(
 
         if enc_encoder == 'parallel_cnn':
             number_parallel_cnn_layers = \
-                len(model.model.input_features[input_feature_name].encoder_obj.conv_layers)
-            hidden_size = input_features[0]['state_size'] * number_parallel_cnn_layers
+                len(model.model.input_features[
+                        input_feature_name].encoder_obj.conv_layers)
+            hidden_size = input_features[0][
+                              'state_size'] * number_parallel_cnn_layers
             assert encoder_out['encoder_output'].shape.as_list() == \
                    [batch_size, seq_size, hidden_size]
 
         elif enc_encoder == 'stacked_parallel_cnn':
             number_parallel_cnn_layers = \
-                len(model.model.input_features[input_feature_name]\
-                    .encoder_obj.parallel_conv1d_stack\
+                len(model.model.input_features[input_feature_name] \
+                    .encoder_obj.parallel_conv1d_stack \
                     .stacked_parallel_layers[0])
-            hidden_size = input_features[0]['state_size'] * number_parallel_cnn_layers
+            hidden_size = input_features[0][
+                              'state_size'] * number_parallel_cnn_layers
             assert encoder_out['encoder_output'].shape.as_list() == \
                    [batch_size, seq_size, hidden_size]
 
@@ -157,12 +165,15 @@ def test_sequence_encoders(
             assert 'encoder_output_state' in encoder_out
             if enc_cell_type == 'lstm':
                 assert isinstance(encoder_out['encoder_output_state'], list)
-                assert encoder_out['encoder_output_state'][0].shape.as_list() == \
+                assert encoder_out['encoder_output_state'][
+                           0].shape.as_list() == \
                        [batch_size, TEST_HIDDEN_SIZE]
-                assert encoder_out['encoder_output_state'][1].shape.as_list() == \
+                assert encoder_out['encoder_output_state'][
+                           1].shape.as_list() == \
                        [batch_size, TEST_HIDDEN_SIZE]
             else:
-                assert isinstance(encoder_out['encoder_output_state'], tf.Tensor)
+                assert isinstance(encoder_out['encoder_output_state'],
+                                  tf.Tensor)
                 assert encoder_out['encoder_output_state'].shape.as_list() == \
                        [batch_size, TEST_HIDDEN_SIZE]
 
@@ -178,7 +189,8 @@ def test_sequence_encoders(
                 assert encoder_out['encoder_output_state'][1].shape.as_list() \
                        == [batch_size, TEST_HIDDEN_SIZE]
             else:
-                assert isinstance(encoder_out['encoder_output_state'], tf.Tensor)
+                assert isinstance(encoder_out['encoder_output_state'],
+                                  tf.Tensor)
                 assert encoder_out['encoder_output_state'].shape.as_list() \
                        == [batch_size, TEST_HIDDEN_SIZE]
 
@@ -186,17 +198,14 @@ def test_sequence_encoders(
             assert encoder_out['encoder_output'].shape.as_list() \
                    == [batch_size, 1, TEST_HIDDEN_SIZE]
 
-        elif enc_encoder == 'transformer':
-            assert encoder_out['encoder_output'].shape.as_list() \
-                   == [batch_size, seq_size, TEST_HIDDEN_SIZE]
-
-        elif enc_encoder == 'embed':
+        elif enc_encoder == 'transformer' or enc_encoder == 'embed':
             assert encoder_out['encoder_output'].shape.as_list() \
                    == [batch_size, seq_size, TEST_HIDDEN_SIZE]
 
         else:
-            raise ValueError('{} is an invalid encoder specification'\
+            raise ValueError('{} is an invalid encoder specification' \
                              .format(enc_encoder))
+
 
 #
 # tests output feature sequence with `Generator` decoder
@@ -211,7 +220,8 @@ def test_sequence_encoders(
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
 #
-@pytest.mark.parametrize('dec_beam_width', [1, 3])
+@pytest.mark.parametrize('dec_num_layers', [1, 2])
+@pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize(
@@ -220,16 +230,17 @@ def test_sequence_encoders(
         ((128, 10, 8), None),
         ((128, 10, 32), None),
         ((128, 10, 8), ((128, 8), (128, 8))),
-        ((128, 10, 8), ((128, 8), ))
+        ((128, 10, 8), ((128, 8),))
 
     ]
 )
 def test_sequence_decoders(
-    dec_cell_type,
-    dec_attention,
-    dec_beam_width,
-    combiner_output_shapes,
-    generate_sequence_training_data
+        dec_cell_type,
+        dec_attention,
+        dec_beam_width,
+        dec_num_layers,
+        combiner_output_shapes,
+        generate_sequence_training_data
 ):
     # retrieve pre-computed dataset and features
     raw_df = generate_sequence_training_data[0]
@@ -239,6 +250,7 @@ def test_sequence_decoders(
     output_features[0]['cell_type'] = dec_cell_type
     output_features[0]['attention'] = dec_attention
     output_features[0]['beam_width'] = dec_beam_width
+    output_features[0]['num_layers'] = dec_num_layers
 
     model, _ = setup_model_scaffolding(
         raw_df,
@@ -272,7 +284,7 @@ def test_sequence_decoders(
     num_classes = model.config['output_features'][0]['num_classes']
 
     # confirm output is what is expected
-    assert len(decoder_out)  == 5
+    assert len(decoder_out) == 5
     logits, lengths, preds, last_preds, probs = decoder_out
 
     # confirm shape and format of deocoder output
@@ -294,10 +306,12 @@ def test_sequence_decoders(
     assert isinstance(probs, tf.Tensor)
     assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
 
+
 #
 # final sanity test.  Checks a subset of sequence parameters
 #
-@pytest.mark.parametrize('dec_beam_width', [1, 3])
+@pytest.mark.parametrize('dec_num_layers', [1, 2])
+@pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
@@ -308,6 +322,7 @@ def test_sequence_generator(
         dec_cell_type,
         dec_attention,
         dec_beam_width,
+        dec_num_layers,
         csv_filename
 ):
     # Define input and output features
@@ -342,6 +357,7 @@ def test_sequence_generator(
     output_features[0]['cell_type'] = dec_cell_type
     output_features[0]['attention'] = dec_attention
     output_features[0]['beam_width'] = dec_beam_width
+    output_features[0]['num_layers'] = dec_num_layers
 
     # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path)

@@ -23,7 +23,7 @@ import tensorflow as tf
 from dateutil.parser import parse
 
 from ludwig.constants import *
-from ludwig.encoders.date_encoders import DateEmbed, DateWave
+from ludwig.encoders.date_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.misc_utils import set_default_value
 
@@ -39,6 +39,10 @@ class DateFeatureMixin(object):
         'fill_value': '',
         'datetime_format': None
     }
+
+    @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -95,20 +99,20 @@ class DateFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
         datetime_format = preprocessing_parameters['datetime_format']
-        dataset[feature[NAME]] = backend.processor.map_objects(
-            dataset[feature[NAME]],
+        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+            input_df[feature[COLUMN]],
             lambda x: np.array(DateFeatureMixin.date_to_list(
                 x, datetime_format, preprocessing_parameters
             ), dtype=np.int16)
         )
-        return dataset
+        return proc_df
 
 
 class DateInputFeature(DateFeatureMixin, InputFeature):
@@ -152,7 +156,4 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': DateEmbed,
-        'wave': DateWave
-    }
+    encoder_registry = ENCODER_REGISTRY

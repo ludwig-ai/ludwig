@@ -17,6 +17,7 @@
 import pandas as pd
 
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.constants import BINARY
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS, \
     normalize_numpy
@@ -39,7 +40,7 @@ def postprocess(
     for of_name, output_feature in output_features.items():
         postprocessed[of_name] = output_feature.postprocess_predictions(
             predictions[of_name],
-            training_set_metadata.get(of_name, {}),
+            training_set_metadata[of_name],
             output_directory=output_directory,
             skip_save_unprocessed_output=skip_save_unprocessed_output
         )
@@ -73,33 +74,34 @@ def convert_to_df(
         training_set_metadata,
 ):
     data_for_df = {}
-    for output_feature_name, output_feature in output_features.items():
-        output_feature_type = output_feature.type
-        output_feature_dict = predictions[output_feature_name]
+    for of_name, output_feature in output_features.items():
+        output_feature_dict = predictions[of_name]
         for key_val in output_feature_dict.items():
             output_subgroup_name, output_type_value = key_val
             if (hasattr(output_type_value, 'shape') and
                 len(output_type_value.shape)) > 1:
-                if output_feature_type in SEQUENCE_TYPES:
+                if output_feature.type in SEQUENCE_TYPES:
                     data_for_df[
-                        '{}_{}'.format(
-                            output_feature_name,
-                            output_subgroup_name
-                        )
+                        '{}_{}'.format(of_name, output_subgroup_name)
                     ] = output_type_value.tolist()
                 else:
                     for i, value in enumerate(output_type_value.T):
-                        if (output_feature_name in training_set_metadata and
-                                'idx2str' in training_set_metadata[
-                                    output_feature_name]):
-                            class_name = \
-                                training_set_metadata[output_feature_name][
-                                    'idx2str'][i]
+                        if (of_name in training_set_metadata and
+                                'idx2str' in training_set_metadata[of_name]):
+                            class_name = training_set_metadata[of_name][
+                                'idx2str'][i]
+                        elif output_feature.type == BINARY:
+                            if (of_name in training_set_metadata and
+                                    'bool2str' in training_set_metadata[of_name]):
+                                class_name = training_set_metadata[of_name][
+                                    'bool2str'][i]
+                            else:
+                                class_name = 'True' if i == 1 else 'False'
                         else:
                             class_name = str(i)
                         data_for_df[
                             '{}_{}_{}'.format(
-                                output_feature_name,
+                                of_name,
                                 output_subgroup_name,
                                 class_name
                             )
@@ -107,7 +109,7 @@ def convert_to_df(
             else:
                 data_for_df[
                     '{}_{}'.format(
-                        output_feature_name,
+                        of_name,
                         output_subgroup_name
                     )
                 ] = normalize_numpy(output_type_value)

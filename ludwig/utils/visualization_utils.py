@@ -371,9 +371,10 @@ def donut(
         outside_labels,
         outside_groups,
         title=None,
+        tight_layout=None,
         filename=None
 ):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7,5))
 
     if title is not None:
         ax.set_title(title)
@@ -433,11 +434,13 @@ def donut(
             labels.append(outside_labels[so_far])
             so_far += 1
 
-    ax.legend(wedges, labels, frameon=True)
-    plt.tight_layout()
+    if tight_layout:
+        ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.30, 1.00))
+    else:
+        ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.50, 1.00))
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
-        plt.savefig(filename)
+        plt.savefig(filename, bbox_inches = "tight")
     else:
         plt.show()
 
@@ -708,11 +711,39 @@ def confidence_fitlering_3d_plot(
     handle_1.set_color(colors[0])
     handle_2.set_color(colors[1])
 
-    handle_1._edgecolors2d = handle_1._edgecolors3d
-    handle_2._edgecolors2d = handle_2._edgecolors3d
+    ### the next block is needed because matplotlib 3.3.3 renamed
+    # _edgecolors3d -> _edgecolor3d
+    # _facecolors3d -> _facecolor3d
+    # but we want to try to keep compatibility with older versions
+    ##### BEGIN COMPATIBILITY BLOCK #####
+    if hasattr(handle_1, '_edgecolors3d'):
+        edgecolor3d = handle_1._edgecolors3d
+    else:
+        edgecolor3d = handle_1._edgecolor3d
+    handle_1._edgecolors2d = edgecolor3d
+    handle_1._edgecolor2d = edgecolor3d
 
-    handle_1._facecolors2d = handle_1._facecolors3d
-    handle_2._facecolors2d = handle_2._facecolors3d
+    if hasattr(handle_2, '_edgecolors3d'):
+        edgecolor3d = handle_2._edgecolors3d
+    else:
+        edgecolor3d = handle_2._edgecolor3d
+    handle_2._edgecolors2d = edgecolor3d
+    handle_2._edgecolor2d = edgecolor3d
+
+    if hasattr(handle_1, '_facecolors3d'):
+        facecolor3d = handle_1._facecolors3d
+    else:
+        facecolor3d = handle_1._facecolor3d
+    handle_1._facecolors2d = facecolor3d
+    handle_1._facecolor2d = facecolor3d
+
+    if hasattr(handle_2, '_facecolors3d'):
+        facecolor3d = handle_2._facecolors3d
+    else:
+        facecolor3d = handle_2._facecolor3d
+    handle_2._facecolors2d = facecolor3d
+    handle_2._facecolor2d = facecolor3d
+    ##### END COMPATIBILITY BLOCK #####
 
     ax.legend(frameon=True, loc=3, handles=[handle_1, handle_2])
 
@@ -900,7 +931,6 @@ def brier_plot(
     plt.xlabel('class')
     plt.ylabel('brier')
 
-    x = np.array(range(brier_scores.shape[0]))
     for i in range(brier_scores.shape[1]):
         plt.plot(brier_scores[:, i],
                  label=algorithm_names[
@@ -1187,12 +1217,14 @@ def hyperopt_report(
         filename_template,
         float_precision=3
 ):
+    title = "Hyperopt Report: {}"
     for hp_name, hp_params in hyperparameters.items():
         if hp_params[TYPE] == 'int':
             hyperopt_int_plot(
                 hyperopt_results_df,
                 hp_name,
                 metric,
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None
             )
@@ -1201,6 +1233,7 @@ def hyperopt_report(
                 hyperopt_results_df,
                 hp_name,
                 metric,
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None,
                 log_scale_x=hp_params[
@@ -1211,6 +1244,7 @@ def hyperopt_report(
                 hyperopt_results_df,
                 hp_name,
                 metric,
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None
             )
@@ -1236,6 +1270,7 @@ def hyperopt_report(
     hyperopt_pair_plot(
         hyperopt_results_df,
         metric,
+        title.format("pair plot"),
         filename_template.format('pair_plot') if filename_template else None
     )
 
@@ -1244,6 +1279,7 @@ def hyperopt_int_plot(
         hyperopt_results_df,
         hp_name,
         metric,
+        title,
         filename,
         log_scale_x=False,
         log_scale_y=True
@@ -1255,6 +1291,7 @@ def hyperopt_int_plot(
         y=metric,
         data=hyperopt_results_df
     )
+    seaborn_figure.set_title(title)
     if log_scale_x:
         seaborn_figure.set(xscale="log")
     if log_scale_y:
@@ -1273,6 +1310,7 @@ def hyperopt_float_plot(
         hyperopt_results_df,
         hp_name,
         metric,
+        title,
         filename,
         log_scale_x=False,
         log_scale_y=True
@@ -1284,6 +1322,7 @@ def hyperopt_float_plot(
         y=metric,
         data=hyperopt_results_df
     )
+    seaborn_figure.set_title(title)
     seaborn_figure.set(ylabel=metric)
     if log_scale_x:
         seaborn_figure.set(xscale="log")
@@ -1300,6 +1339,7 @@ def hyperopt_category_plot(
         hyperopt_results_df,
         hp_name,
         metric,
+        title,
         filename,
         log_scale=True
 ):
@@ -1311,6 +1351,7 @@ def hyperopt_category_plot(
         data=hyperopt_results_df,
         fit_reg=False
     )
+    seaborn_figure.set_title(title)
     seaborn_figure.set(ylabel=metric)
     sns.despine()
     if log_scale:
@@ -1325,6 +1366,7 @@ def hyperopt_category_plot(
 def hyperopt_pair_plot(
         hyperopt_results_df,
         metric,
+        title,
         filename
 ):
     params = sorted(list(hyperopt_results_df.keys()))
@@ -1333,6 +1375,7 @@ def hyperopt_pair_plot(
 
     sns.set_style('white')
     fig = plt.figure(figsize=(20, 20))
+    fig.suptitle(title)
     gs = fig.add_gridspec(num_param, num_param)
 
     for i, param1 in enumerate(params):
@@ -1354,7 +1397,6 @@ def hyperopt_pair_plot(
                 )
 
     plt.tight_layout(pad=5)
-
     if filename:
         plt.savefig(filename)
     else:

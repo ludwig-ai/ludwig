@@ -43,7 +43,12 @@ class TimeseriesFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tokenizer = get_from_registry(
             preprocessing_parameters['tokenizer'],
             tokenizer_registry
@@ -73,12 +78,12 @@ class TimeseriesFeatureMixin(object):
             tokenizer_registry
         )()
 
-        ts_vectors = backend.processor.map_objects(
+        ts_vectors = backend.df_engine.map_objects(
             timeseries,
             lambda ts: np.array(tokenizer(ts)).astype(np.float32)
         )
 
-        max_length = backend.processor.compute(ts_vectors.map(len).max())
+        max_length = backend.df_engine.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
             logger.debug(
                 'max length of {0}: {1} < limit: {2}'.format(
@@ -102,7 +107,7 @@ class TimeseriesFeatureMixin(object):
                 padded[max_length - limit:] = vector[:limit]
             return padded
 
-        return backend.processor.map_objects(ts_vectors, pad)
+        return backend.df_engine.map_objects(ts_vectors, pad)
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
@@ -118,19 +123,19 @@ class TimeseriesFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[NAME]] = TimeseriesFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        return dataset
+        return proc_df
 
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):

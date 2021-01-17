@@ -23,8 +23,7 @@ from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
+from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
@@ -36,7 +35,7 @@ from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
-from ludwig.utils.strings_utils import str2bool
+from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
 
@@ -49,23 +48,52 @@ class BinaryFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        # todo maybe move code from add_feature_data here
+        #  + figure out what NaN is in a bool column
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        return {}
+        if column.dtype != object:
+            return {}
+
+        distinct_values = backend.df_engine.compute(column.drop_duplicates())
+        if len(distinct_values) > 2:
+            raise ValueError(
+                f'Binary feature column expects 2 distinct values, '
+                f'found: {distinct_values.values.tolist()}'
+            )
+
+        str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
+        bool2str = [k for k, v in sorted(str2bool.items(), key=lambda item: item[1])]
+
+        return {
+            'str2bool': str2bool,
+            'bool2str': bool2str,
+        }
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        column = dataset_df[feature[NAME]]
+        column = input_df[feature[COLUMN]]
+
         if column.dtype == object:
-            column = column.map(str2bool)
-        dataset[feature[NAME]] = column.astype(np.bool_).values
-        return dataset
+            metadata = metadata[feature[NAME]]
+            if 'str2bool' in metadata:
+                column = column.map(lambda x: metadata['str2bool'][x])
+            else:
+                # No predefined mapping from string to bool, so compute it directly
+                column = column.map(strings_utils.str2bool)
+
+        proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
+        return proc_df
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
@@ -114,14 +142,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'dense': DenseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
@@ -284,7 +305,13 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
+            preds = result[PREDICTIONS].numpy()
+            if 'bool2str' in metadata:
+                preds = [
+                    metadata['bool2str'][pred] for pred in preds
+                ]
+            postprocessed[PREDICTIONS] = preds
+
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
@@ -294,6 +321,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
+            postprocessed[PROBABILITIES] = np.stack(
+                [1 - postprocessed[PROBABILITIES],
+                postprocessed[PROBABILITIES]],
+                axis=1
+            )
+            postprocessed[PROBABILITY] = np.amax(
+                postprocessed[PROBABILITIES], axis=1
+            )
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),

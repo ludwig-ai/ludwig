@@ -31,8 +31,11 @@ from sklearn.metrics import brier_score_loss
 from ludwig.constants import *
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
-from ludwig.utils.data_utils import load_from_file, load_json
+from ludwig.utils.data_utils import load_from_file, load_json, load_array
 from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.data_utils import CACHEABLE_FORMATS, \
+    figure_data_format_dataset, external_data_reader_registry
+from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +150,74 @@ def _validate_output_feature_name_from_test_stats(
     except TypeError:
         return output_feature_names_set
 
+def _encode_categorical_feature(
+        raw: np.array,
+        str2idx: dict
+) -> np.array:
+    """encodes raw categorical string value to encoded numeric value
+
+    Args:
+    :param raw: (np.array) string categorical representation
+    :param str2idx: (dict) dictionary that maps string representation to
+        encoded value.
+
+    Returns:
+        np.array
+    """
+    return str2idx[raw]
+
+def _extract_ground_truth_values(
+        ground_truth: str,
+        output_feature_name: str,
+        ground_truth_split: int,
+        split_file: Union[str, None] = None) -> pd.Series:
+    """Helper function to extract ground truth values
+
+    Args:
+    :param ground_truth: (str) path to source data containing ground truth.
+    :param output_feature_name: (str) output feature name for ground
+        truth values.
+    :param ground_truth_split: (int) dataset split to use for ground truth,
+        defaults to 2.
+    :param split_file: (Union[str, None]) optional file path to split values.
+
+    # Return
+
+    :return pd.Series: ground truth values from source data set
+
+    """
+    # determine ground truth data format and get appropriate reader
+    data_format = figure_data_format_dataset(ground_truth)
+    if data_format not in CACHEABLE_FORMATS:
+        raise ValueError(
+            '{} is not supported for ground truth file, '
+            'valid types are {}'.format(data_format, CACHEABLE_FORMATS)
+        )
+    reader = get_from_registry(
+        data_format,
+        external_data_reader_registry
+    )
+
+    # retrieve ground truth from source data set
+    gt_df = reader(ground_truth)
+
+    # extract ground truth for visualization
+    if SPLIT in gt_df:
+        # get split value from source data set
+        split = gt_df[SPLIT]
+        gt = gt_df[output_feature_name][
+            split == ground_truth_split]
+    elif split_file is not None:
+        # retrieve from split file
+        split = load_array(split_file)
+        gt = gt_df[output_feature_name][
+            split == ground_truth_split]
+    else:
+        # use all the data in ground_truth
+        gt = gt_df[output_feature_name]
+
+    return gt
+
 
 def generate_filename_template_path(output_dir, filename_template):
     """Ensure path to template file can be constructed given an output dir.
@@ -208,7 +279,10 @@ def compare_classifiers_performance_from_prob_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_from_prob.
@@ -221,18 +295,41 @@ def compare_classifiers_performance_from_prob_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+        results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # translate string to encoded numeric value
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file=split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
+
     compare_classifiers_performance_from_prob(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        output_directory=output_directory,
+        **kwargs
     )
 
 
@@ -241,7 +338,9 @@ def compare_classifiers_performance_from_pred_cli(
         ground_truth: str,
         ground_truth_metadata: str,
         ground_truth_split: int,
+        split_file: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_from_pred
@@ -249,28 +348,45 @@ def compare_classifiers_performance_from_pred_cli(
     # Inputs
 
     :param predictions: (List[str]) path to experiment predictions file.
-    :param ground_truth: (str) path to grpound truth file.
+    :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+        results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
-    predictions_per_model_raw = load_data_for_viz(
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
+    predictions_per_model = load_data_for_viz(
         'load_from_file', predictions, dtype=str
     )
-    predictions_per_model = [
-        np.ndarray.flatten(pred) for pred in predictions_per_model_raw
-    ]
+
     compare_classifiers_performance_from_pred(
-        predictions_per_model, gt, metadata, output_feature_name, **kwargs
+        predictions_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        output_directory=output_directory,
+        **kwargs
     )
 
 
@@ -278,7 +394,10 @@ def compare_classifiers_performance_subset_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_subset.
@@ -291,19 +410,40 @@ def compare_classifiers_performance_subset_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
+
     compare_classifiers_performance_subset(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        output_directory=output_directory,
+        **kwargs
     )
 
 
@@ -311,6 +451,8 @@ def compare_classifiers_performance_changing_k_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -324,6 +466,10 @@ def compare_classifiers_performance_changing_k_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -331,12 +477,26 @@ def compare_classifiers_performance_changing_k_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_changing_k(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -369,6 +529,8 @@ def compare_classifiers_predictions_cli(
         predictions: List[str],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -381,6 +543,9 @@ def compare_classifiers_predictions_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -388,17 +553,36 @@ def compare_classifiers_predictions_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     predictions_per_model = load_data_for_viz(
         'load_from_file', predictions, dtype=str
     )
-    compare_classifiers_predictions(predictions_per_model, gt, **kwargs)
+
+    compare_classifiers_predictions(
+        predictions_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
+    )
 
 
 def compare_classifiers_predictions_distribution_cli(
         predictions: List[str],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -412,6 +596,9 @@ def compare_classifiers_predictions_distribution_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -419,12 +606,26 @@ def compare_classifiers_predictions_distribution_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     predictions_per_model = load_data_for_viz(
         'load_from_file', predictions, dtype=str
     )
     compare_classifiers_predictions_distribution(
-        predictions_per_model, gt, **kwargs
+        predictions_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -432,6 +633,8 @@ def confidence_thresholding_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -445,6 +648,9 @@ def confidence_thresholding_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -452,12 +658,26 @@ def confidence_thresholding_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -465,6 +685,8 @@ def confidence_thresholding_data_vs_acc_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -479,6 +701,9 @@ def confidence_thresholding_data_vs_acc_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -486,12 +711,26 @@ def confidence_thresholding_data_vs_acc_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_data_vs_acc(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -499,6 +738,8 @@ def confidence_thresholding_data_vs_acc_subset_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -513,6 +754,9 @@ def confidence_thresholding_data_vs_acc_subset_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -520,12 +764,26 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_data_vs_acc_subset(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -534,6 +792,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         ground_truth: str,
         ground_truth_metadata: str,
         ground_truth_split: int,
+        split_file: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -548,6 +807,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -555,13 +815,26 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 
     :return None:
     """
+    # retrieve feature metadata to convert raw predictions to encoded value
     metadata = load_json(ground_truth_metadata)
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_data_vs_acc_subset_per_class(
-        probabilities_per_model, gt, metadata, output_feature_name, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -569,6 +842,8 @@ def confidence_thresholding_2thresholds_2d_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
         **kwargs: dict
 ) -> None:
@@ -583,6 +858,9 @@ def confidence_thresholding_2thresholds_2d_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -591,21 +869,32 @@ def confidence_thresholding_2thresholds_2d_cli(
 
     :return None:
     """
-    gt1 = load_from_file(
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth0 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[0],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
-    gt2 = load_from_file(
+
+    ground_truth1 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[1],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_2d(
-        probabilities_per_model, [gt1, gt2], threshold_output_feature_names,
+        probabilities_per_model,
+        [ground_truth0, ground_truth1],
+        metadata,
+        threshold_output_feature_names,
         **kwargs
     )
 
@@ -614,6 +903,8 @@ def confidence_thresholding_2thresholds_3d_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
         **kwargs: dict
 ) -> None:
@@ -628,6 +919,9 @@ def confidence_thresholding_2thresholds_3d_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -636,21 +930,32 @@ def confidence_thresholding_2thresholds_3d_cli(
 
     :return None:
     """
-    gt1 = load_from_file(
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth0 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[0],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
-    gt2 = load_from_file(
+
+    ground_truth1 = _extract_ground_truth_values(
         ground_truth,
         threshold_output_feature_names[1],
-        ground_truth_split
+        ground_truth_split,
+        split_file
     )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_3d(
-        probabilities_per_model, [gt1, gt2], threshold_output_feature_names,
+        probabilities_per_model,
+        [ground_truth0, ground_truth1],
+        metadata,
+        threshold_output_feature_names,
         **kwargs
     )
 
@@ -659,6 +964,8 @@ def binary_threshold_vs_metric_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -672,6 +979,9 @@ def binary_threshold_vs_metric_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -679,12 +989,27 @@ def binary_threshold_vs_metric_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
     binary_threshold_vs_metric(
-        probabilities_per_model, gt, **kwargs
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
     )
 
 
@@ -692,6 +1017,8 @@ def roc_curves_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -705,6 +1032,9 @@ def roc_curves_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -712,11 +1042,28 @@ def roc_curves_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
-    roc_curves(probabilities_per_model, gt, **kwargs)
+    roc_curves(
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
+    )
 
 
 def roc_curves_from_test_statistics_cli(
@@ -745,6 +1092,8 @@ def calibration_1_vs_all_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -758,6 +1107,9 @@ def calibration_1_vs_all_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -765,17 +1117,39 @@ def calibration_1_vs_all_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+    feature_metadata = metadata[output_feature_name]
+    vfunc = np.vectorize(_encode_categorical_feature)
+    ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
-    calibration_1_vs_all(probabilities_per_model, gt, **kwargs)
+    calibration_1_vs_all(
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
+    )
 
 
 def calibration_multiclass_cli(
         probabilities: Union[str, List[str]],
         ground_truth: str,
         ground_truth_split: int,
+        split_file: str,
+        ground_truth_metadata: str,
         output_feature_name: str,
         **kwargs: dict
 ) -> None:
@@ -789,6 +1163,9 @@ def calibration_multiclass_cli(
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
         2 for `'test'` split.
+    :param split_file: (str, None) file path to csv file containing split values
+    :param ground_truth_metadata: (str) file path to feature metadata json file
+        created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
     :param kwargs: (dict) parameters for the requested visualizations.
 
@@ -796,11 +1173,28 @@ def calibration_multiclass_cli(
 
     :return None:
     """
-    gt = load_from_file(ground_truth, output_feature_name, ground_truth_split)
+
+    # retrieve feature metadata to convert raw predictions to encoded value
+    metadata = load_json(ground_truth_metadata)
+
+    # retrieve ground truth from source data set
+    ground_truth = _extract_ground_truth_values(
+        ground_truth,
+        output_feature_name,
+        ground_truth_split,
+        split_file
+    )
+
     probabilities_per_model = load_data_for_viz(
         'load_from_file', probabilities, dtype=float
     )
-    calibration_multiclass(probabilities_per_model, gt, **kwargs)
+    calibration_multiclass(
+        probabilities_per_model,
+        ground_truth,
+        metadata,
+        output_feature_name,
+        **kwargs
+    )
 
 
 def confusion_matrix_cli(
@@ -851,7 +1245,7 @@ def frequency_vs_f1_cli(
 
 def learning_curves(
         train_stats_per_model: List[dict],
-        output_feature_name: Union[str, None],
+        output_feature_name: Union[str, None] = None,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -867,7 +1261,7 @@ def learning_curves(
 
     :param train_stats_per_model: (List[dict]) list containing dictionary of
         training statistics per model.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
+    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
@@ -928,7 +1322,7 @@ def learning_curves(
 
 def compare_performance(
         test_stats_per_model: List[dict],
-        output_feature_name: str,
+        output_feature_name: Union[str, None] = None,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -944,7 +1338,7 @@ def compare_performance(
 
     :param test_stats_per_model: (List[dict]) dictionary containing evaluation
         performance statistics.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
+    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
@@ -956,6 +1350,17 @@ def compare_performance(
     # Return
 
     :return: (None)
+    
+    # Example usage:
+    
+    ```python
+    model_a = LudwigModel(config)
+    model_a.train(dataset)
+    a_evaluation_stats, _, _ = model_a.evaluate(eval_set)
+    model_b = LudwigModel.load('path/to/model/')
+    b_evaluation_stats, _, _ = model_b.evaluate(eval_set)
+    compare_performance([a_evaluation_stats, b_evaluation_stats], model_names=['A', 'B'])
+    ```
     """
     ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats',
                     'predictions', 'probabilities']
@@ -1028,10 +1433,12 @@ def compare_performance(
 
 
 def compare_classifiers_performance_from_prob(
-        probabilities_per_model: List[np.array],
-        ground_truth: np.array,
-        top_n_classes: List[int],
-        labels_limit: int,
+        probabilities_per_model: List[np.ndarray],
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
+        labels_limit: int = 0,
+        top_n_classes: Union[List[int], int] = 3,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -1045,10 +1452,11 @@ def compare_classifiers_performance_from_prob(
 
     # Inputs
 
-    :param probabilities_per_model: (List[numpy.array]) list of model
-        probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param probabilities_per_model: (List[np.ndarray]) path to experiment
+        probabilities file
+    :param ground_truth: (pd.Series) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -1065,6 +1473,13 @@ def compare_classifiers_performance_from_prob(
 
     :return: (None)
     """
+
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
     model_names_list = convert_to_list(model_names)
@@ -1091,14 +1506,15 @@ def compare_classifiers_performance_from_prob(
 
         hits_at_k = 0
         for j in range(len(ground_truth)):
-            hits_at_k += np.in1d(ground_truth[j], topk[i, :])
+            hits_at_k += np.in1d(ground_truth[j], topk[j])
         hits_at_ks.append(np.asscalar(hits_at_k) / len(ground_truth))
 
         mrr = 0
         for j in range(len(ground_truth)):
-            gt_pos_in_probs = prob[i, :] == ground_truth[j]
-            if np.any(gt_pos_in_probs):
-                mrr += (1 / -(np.asscalar(np.argwhere(gt_pos_in_probs)) -
+            ground_truth_pos_in_probs = prob[j] == ground_truth[j]
+            if np.any(ground_truth_pos_in_probs):
+                mrr += (1 / -(np.asscalar(
+                    np.argwhere(ground_truth_pos_in_probs)) -
                               prob.shape[1]))
         mrrs.append(mrr / len(ground_truth))
 
@@ -1119,8 +1535,8 @@ def compare_classifiers_performance_from_prob(
 
 
 def compare_classifiers_performance_from_pred(
-        predictions_per_model: List[list],
-        ground_truth: np.array,
+        predictions_per_model: List[np.ndarray],
+        ground_truth: Union[pd.Series, np.ndarray],
         metadata: dict,
         output_feature_name: str,
         labels_limit: int,
@@ -1137,14 +1553,10 @@ def compare_classifiers_performance_from_pred(
 
     # Inputs
 
-    :param predictions_per_model: (List[list]) list containing the model
-        predictions for the specified output_feature_name.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
-    :param metadata: (dict) intermediate preprocess structure created during
-        training containing the mappings of the input dataset.
-    :param output_feature_name: (str) name of the output feature to use
-        for the visualization.
+    :param predictions_per_model: (List[str]) path to experiment predictions file.
+    :param ground_truth: (pd.Series) ground truth values
+    :param metadata: (dict) feature metadata dictionary.
+    :param output_feature_name: (str) name of the output feature to visualize.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -1159,6 +1571,17 @@ def compare_classifiers_performance_from_pred(
 
     :return: (None)
     """
+
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
+    predictions_per_model = [
+        np.ndarray.flatten(np.array(pred)) for pred in predictions_per_model
+    ]
+
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
 
@@ -1215,13 +1638,15 @@ def compare_classifiers_performance_from_pred(
 
 def compare_classifiers_performance_subset(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         top_n_classes: List[int],
         labels_limit: (int),
         subset: str,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
-        file_format:str = 'pdf',
+        file_format: str = 'pdf',
         **kwargs
 ) -> None:
     """Produces model comparison barplot visualization from train subset.
@@ -1236,8 +1661,9 @@ def compare_classifiers_performance_subset(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -1256,6 +1682,12 @@ def compare_classifiers_performance_subset(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
     model_names_list = convert_to_list(model_names)
@@ -1340,7 +1772,9 @@ def compare_classifiers_performance_subset(
 
 def compare_classifiers_performance_changing_k(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         top_k: int,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
@@ -1359,8 +1793,9 @@ def compare_classifiers_performance_changing_k(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_k: (int) number of elements in the ranklist to consider.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
@@ -1376,6 +1811,12 @@ def compare_classifiers_performance_changing_k(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     k = top_k
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
@@ -1600,7 +2041,9 @@ def compare_classifiers_multiclass_multimetric(
 
 def compare_classifiers_predictions(
         predictions_per_model: List[list],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
@@ -1613,8 +2056,9 @@ def compare_classifiers_predictions(
 
     :param predictions_per_model: (List[list]) list containing the model
         predictions for the specified output_feature_name.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -1629,6 +2073,12 @@ def compare_classifiers_predictions(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     model_names_list = convert_to_list(model_names)
     name_c1 = (
         model_names_list[0] if model_names is not None and len(model_names) > 0
@@ -1733,13 +2183,16 @@ def compare_classifiers_predictions(
          'same prediction', 'different prediction'],
         [0, 1, 1, 2, 2],
         title='{} vs {}'.format(name_c1, name_c2),
+        tight_layout=kwargs.pop('tight_layout', True),
         filename=filename
     )
 
 
 def compare_classifiers_predictions_distribution(
         predictions_per_model: List[list],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
@@ -1757,8 +2210,9 @@ def compare_classifiers_predictions_distribution(
 
     :param predictions_per_model: (List[list]) list containing the model
         predictions for the specified output_feature_name.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -1773,6 +2227,12 @@ def compare_classifiers_predictions_distribution(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
@@ -1812,10 +2272,12 @@ def compare_classifiers_predictions_distribution(
 
 def confidence_thresholding(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
-        output_directory:str = None,
+        output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
 ) -> None:
@@ -1829,8 +2291,9 @@ def confidence_thresholding(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -1845,6 +2308,12 @@ def confidence_thresholding(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
     probs = probabilities_per_model
@@ -1903,7 +2372,9 @@ def confidence_thresholding(
 
 def confidence_thresholding_data_vs_acc(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
@@ -1923,8 +2394,9 @@ def confidence_thresholding_data_vs_acc(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -1938,6 +2410,12 @@ def confidence_thresholding_data_vs_acc(
     # Return
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
     probs = probabilities_per_model
@@ -1993,11 +2471,13 @@ def confidence_thresholding_data_vs_acc(
 
 def confidence_thresholding_data_vs_acc_subset(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         top_n_classes: List[int],
         labels_limit: int,
         subset: str,
-        model_names: Union[str, List[str]]=None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -2027,8 +2507,9 @@ def confidence_thresholding_data_vs_acc_subset(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_n_classes: (List[int]) list containing the number of classes
         to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -2047,6 +2528,12 @@ def confidence_thresholding_data_vs_acc_subset(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
     if labels_limit > 0:
@@ -2126,7 +2613,7 @@ def confidence_thresholding_data_vs_acc_subset(
 
 def confidence_thresholding_data_vs_acc_subset_per_class(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
         metadata: dict,
         output_feature_name: str,
         top_n_classes: Union[int, List[int]],
@@ -2166,8 +2653,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) intermediate preprocess structure created during
         training containing the mappings of the input dataset.
     :param output_feature_name: (str) name of the output feature to use
@@ -2189,6 +2675,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     # Return
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     filename_template = \
         'confidence_thresholding_data_vs_acc_subset_per_class_{}.' + file_format
     filename_template_path = generate_filename_template_path(
@@ -2276,11 +2768,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
 def confidence_thresholding_2thresholds_2d(
         probabilities_per_model: List[np.array],
-        ground_truths: np.array,
+        ground_truths: Union[List[np.array], List[pd.Series]],
+        metadata,
         threshold_output_feature_names: List[str],
         labels_limit: int,
         model_names: Union[str, List[str]] = None,
-        output_directory: str =None,
+        output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
 ) -> None:
@@ -2298,8 +2791,9 @@ def confidence_thresholding_2thresholds_2d(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
+        ground truth data
+    :param metadata: (dict) feature metadata dictionary
     :param threshold_output_feature_names: (List[str]) List containing two output
         feature names for visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -2331,8 +2825,17 @@ def confidence_thresholding_2thresholds_2d(
         output_directory,
         filename_template
     )
-    gt_1 = ground_truths[0]
-    gt_2 = ground_truths[1]
+
+    if not isinstance(ground_truths[0], np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[threshold_output_feature_names[0]]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        gt_1 = vfunc(ground_truths[0], feature_metadata['str2idx'])
+        feature_metadata = metadata[threshold_output_feature_names[1]]
+        gt_2 = vfunc(ground_truths[1], feature_metadata['str2idx'])
+    else:
+        gt_1 = ground_truths[0]
+        gt_2 = ground_truths[1]
 
     if labels_limit > 0:
         gt_1[gt_1 > labels_limit] = labels_limit
@@ -2479,7 +2982,8 @@ def confidence_thresholding_2thresholds_2d(
 
 def confidence_thresholding_2thresholds_3d(
         probabilities_per_model: List[np.array],
-        ground_truths: np.array,
+        ground_truths: Union[List[np.array], List[pd.Series]],
+        metadata,
         threshold_output_feature_names: List[str],
         labels_limit: int,
         output_directory: str = None,
@@ -2498,8 +3002,9 @@ def confidence_thresholding_2thresholds_3d(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[List[np.array], List[pd.Series]]) containing
+        ground truth data
+    :param metadata: (dict) feature metadata dictionary
     :param threshold_output_feature_names: (List[str]) List containing two output
         feature names for visualization.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
@@ -2522,8 +3027,17 @@ def confidence_thresholding_2thresholds_3d(
     except RuntimeError:
         return
     probs = probabilities_per_model
-    gt_1 = ground_truths[0]
-    gt_2 = ground_truths[1]
+
+    if not isinstance(ground_truths[0], np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[threshold_output_feature_names[0]]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        gt_1 = vfunc(ground_truths[0], feature_metadata['str2idx'])
+        feature_metadata = metadata[threshold_output_feature_names[1]]
+        gt_2 = vfunc(ground_truths[1], feature_metadata['str2idx'])
+    else:
+        gt_1 = ground_truths[0]
+        gt_2 = ground_truths[1]
 
     if labels_limit > 0:
         gt_1[gt_1 > labels_limit] = labels_limit
@@ -2602,7 +3116,9 @@ def confidence_thresholding_2thresholds_3d(
 
 def binary_threshold_vs_metric(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         metrics: List[str],
         positive_label: int = 1,
         model_names: List[str] = None,
@@ -2626,8 +3142,9 @@ def binary_threshold_vs_metric(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param metrics: (List[str]) metrics to display (`'f1'`, `'precision'`,
         `'recall'`, `'accuracy'`).
     :param positive_label: (int, default: `1`) numeric encoded value for the
@@ -2643,6 +3160,13 @@ def binary_threshold_vs_metric(
 
     :return: (`None`)
     """
+
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
     metrics_list = convert_to_list(metrics)
@@ -2727,7 +3251,9 @@ def binary_threshold_vs_metric(
 
 def roc_curves(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         positive_label: int = 1,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
@@ -2748,8 +3274,9 @@ def roc_curves(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param positive_label: (int, default: `1`) numeric encoded value for the
         positive class.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
@@ -2763,6 +3290,12 @@ def roc_curves(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
     fpr_tprs = []
@@ -2849,7 +3382,9 @@ def roc_curves_from_test_statistics(
 
 def calibration_1_vs_all(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         top_n_classes: List[int],
         labels_limit: int,
         model_names: List[str] = None,
@@ -2877,8 +3412,9 @@ def calibration_1_vs_all(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param top_n_classes: (list) List containing the number of classes to plot.
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
@@ -2894,6 +3430,12 @@ def calibration_1_vs_all(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
     filename_template = 'calibration_1_vs_all_{}.' + file_format
@@ -3000,9 +3542,11 @@ def calibration_1_vs_all(
 
 def calibration_multiclass(
         probabilities_per_model: List[np.array],
-        ground_truth: np.array,
+        ground_truth: Union[pd.Series, np.ndarray],
+        metadata: dict,
+        output_feature_name: str,
         labels_limit: int,
-        model_names: str = None,
+        model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
         **kwargs
@@ -3014,8 +3558,9 @@ def calibration_multiclass(
 
     :param probabilities_per_model: (List[numpy.array]) list of model
         probabilities.
-    :param ground_truth: (numpy.array) numpy.array containing ground truth data,
-        which are the numeric encoded values the category.
+    :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
+    :param metadata: (dict) feature metadata dictionary
+    :param output_feature_name: (str) output feature name
     :param labels_limit: (int) upper limit on the numeric encoded label value.
         Encoded numeric label values in dataset that are higher than
         `label_limit` are considered to be "rare" labels.
@@ -3030,6 +3575,12 @@ def calibration_multiclass(
 
     :return: (None)
     """
+    if not isinstance(ground_truth, np.ndarray):
+        # not np array, assume we need to translate raw value to encoded value
+        feature_metadata = metadata[output_feature_name]
+        vfunc = np.vectorize(_encode_categorical_feature)
+        ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
+
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
     filename_template = 'calibration_multiclass{}.' + file_format
@@ -3598,6 +4149,13 @@ def cli(sys_argv):
         '--ground_truth_metadata',
         help='input metadata JSON file'
     )
+    parser.add_argument(
+        '-sf',
+        '--split_file',
+        default=None,
+        help='file containing split values used in conjunction with '
+             'ground truth file.'
+    )
 
     parser.add_argument(
         '-od',
@@ -3622,7 +4180,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '-f',
+        '-ofn',
         '--output_feature_name',
         default=[],
         help='name of the output feature to visualize'

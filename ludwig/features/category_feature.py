@@ -22,9 +22,7 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.category_encoders import CategoricalEmbedEncoder
-from ludwig.encoders.category_encoders import CategoricalSparseEncoder
-from ludwig.encoders.generic_encoders import PassthroughEncoder
+from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
@@ -53,13 +51,18 @@ class CategoryFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, _, _, _, _ = create_vocabulary(
             column, 'stripped',
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
             add_padding=False,
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return {
             'idx2str': idx2str,
@@ -81,17 +84,17 @@ class CategoryFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[NAME]] = CategoryFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
         )
-        return dataset
+        return proc_df
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
@@ -139,15 +142,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'dense': CategoricalEmbedEncoder,
-        'sparse': CategoricalSparseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
@@ -267,7 +262,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     'for the <UNK> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
                         output_feature['num_classes'],
-                        output_feature[NAME]
+                        output_feature[COLUMN]
                     )
                 )
 
@@ -284,7 +279,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     'for the <UNK> class too.'.format(
                         output_feature[LOSS]['class_weights'].keys(),
                         feature_metadata['str2idx'].keys(),
-                        output_feature[NAME]
+                        output_feature[COLUMN]
                     )
                 )
             else:
@@ -316,7 +311,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                                 'the first row {}. All rows must have '
                                 'the same length.'.format(
                                     curr_row,
-                                    output_feature[NAME],
+                                    output_feature[COLUMN],
                                     curr_row_length,
                                     first_row_length
                                 )
@@ -330,7 +325,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         'The class_similarities matrix of {} has '
                         '{} rows and {} columns, '
                         'their number must be identical.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             len(similarities),
                             all_rows_length
                         )
@@ -343,7 +338,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         'Check the metadata JSON file to see the classes '
                         'and their order and '
                         'consider <UNK> class too.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             all_rows_length,
                             output_feature['num_classes']
                         )
@@ -361,7 +356,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0, '
                     'but no class_similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -400,7 +395,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
         npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            preds = predictions[PREDICTIONS]
+            preds = predictions[PREDICTIONS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     metadata['idx2str'][pred] for pred in preds
@@ -430,7 +425,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         if ('predictions_top_k' in predictions and
             len(predictions['predictions_top_k'])) > 0:
 
-            preds_top_k = predictions['predictions_top_k']
+            preds_top_k = predictions['predictions_top_k'].numpy()
             if 'idx2str' in metadata:
                 postprocessed['predictions_top_k'] = [
                     [metadata['idx2str'][pred] for pred in pred_top_k]

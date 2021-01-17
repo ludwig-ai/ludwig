@@ -19,17 +19,16 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.metrics import MeanIoU
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.set_encoders import SetSparseEncoder
+from ludwig.encoders.set_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
-from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.modules.metric_modules import JaccardMetric
+from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
@@ -47,13 +46,18 @@ class SetFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return {
             'idx2str': idx2str,
@@ -76,28 +80,29 @@ class SetFeatureMixin(object):
             set_vector[feature_vector] = 1
             return set_vector.astype(np.bool)
 
-        return backend.processor.map_objects(column, to_dense)
+        return backend.df_engine.map_objects(column, to_dense)
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[NAME]] = SetFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        return dataset
+        return proc_df
 
 
 class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = 'embed'
+    vocab = []
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -137,10 +142,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': SetSparseEncoder,
-        None: SetSparseEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
@@ -196,10 +198,12 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     def _setup_loss(self):
         self.train_loss_function = SigmoidCrossEntropyLoss(
+            feature_loss=self.loss,
             name='train_loss'
         )
 
         self.eval_loss_function = SigmoidCrossEntropyMetric(
+            feature_loss=self.loss,
             name='eval_loss'
         )
 
@@ -224,6 +228,43 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     ):
         output_feature[LOSS][TYPE] = None
         output_feature['num_classes'] = feature_metadata['vocab_size']
+
+        if isinstance(output_feature[LOSS]['class_weights'], (list, tuple)):
+            if (len(output_feature[LOSS]['class_weights']) !=
+                    output_feature['num_classes']):
+                raise ValueError(
+                    'The length of class_weights ({}) is not compatible with '
+                    'the number of classes ({}) for feature {}. '
+                    'Check the metadata JSON file to see the classes '
+                    'and their order and consider there needs to be a weight '
+                    'for the <UNK> and <PAD> class too.'.format(
+                        len(output_feature[LOSS]['class_weights']),
+                        output_feature['num_classes'],
+                        output_feature[NAME]
+                    )
+                )
+
+        if isinstance(output_feature[LOSS]['class_weights'], dict):
+            if (
+                    feature_metadata['str2idx'].keys() !=
+                    output_feature[LOSS]['class_weights'].keys()
+            ):
+                raise ValueError(
+                    'The class_weights keys ({}) are not compatible with '
+                    'the classes ({}) of feature {}. '
+                    'Check the metadata JSON file to see the classes '
+                    'and consider there needs to be a weight '
+                    'for the <UNK> and <PAD> class too.'.format(
+                        output_feature[LOSS]['class_weights'].keys(),
+                        feature_metadata['str2idx'].keys(),
+                        output_feature[NAME]
+                    )
+                )
+            else:
+                class_weights = output_feature[LOSS]['class_weights']
+                idx2str = feature_metadata['idx2str']
+                class_weights_list = [class_weights[s] for s in idx2str]
+                output_feature[LOSS]['class_weights'] = class_weights_list
 
     @staticmethod
     def calculate_overall_stats(
@@ -279,8 +320,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         set_default_value(output_feature, LOSS,
-                          {'weight': 1, TYPE: SIGMOID_CROSS_ENTROPY})
+                          {TYPE: SIGMOID_CROSS_ENTROPY, 'weight': 1})
         set_default_value(output_feature[LOSS], 'weight', 1)
+        set_default_value(output_feature[LOSS], 'class_weights', 1)
 
         set_default_value(output_feature, 'threshold', 0.5)
         set_default_value(output_feature, 'dependencies', [])

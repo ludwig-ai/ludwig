@@ -15,10 +15,13 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense
+from tensorflow.keras.layers import Dense
 
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register, register_default
 from ludwig.modules.attention_modules import TrasformerStack
 from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D
@@ -31,7 +34,17 @@ from ludwig.modules.reduction_modules import SequenceReducer
 logger = logging.getLogger(__name__)
 
 
-class SequencePassthroughEncoder(Layer):
+ENCODER_REGISTRY = Registry()
+
+
+class SequenceEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register_default(name='passthrough')
+class SequencePassthroughEncoder(SequenceEncoder):
 
     def __init__(
             self,
@@ -80,7 +93,8 @@ class SequencePassthroughEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class SequenceEmbedEncoder(Layer):
+@register(name='embed')
+class SequenceEmbedEncoder(SequenceEncoder):
 
     def __init__(
             self,
@@ -216,7 +230,8 @@ class SequenceEmbedEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class ParallelCNN(Layer):
+@register(name='parallel_cnn')
+class ParallelCNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -531,7 +546,8 @@ class ParallelCNN(Layer):
         return {'encoder_output': hidden}
 
 
-class StackedCNN(Layer):
+@register(name='stacked_cnn')
+class StackedCNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -888,7 +904,8 @@ class StackedCNN(Layer):
         return {'encoder_output': hidden}
 
 
-class StackedParallelCNN(Layer):
+@register(name='stacked_parallel_cnn')
+class StackedParallelCNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -1230,7 +1247,8 @@ class StackedParallelCNN(Layer):
         return {'encoder_output': hidden}
 
 
-class StackedRNN(Layer):
+@register(name='rnn')
+class StackedRNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -1514,7 +1532,8 @@ class StackedRNN(Layer):
         }
 
 
-class StackedCNNRNN(Layer):
+@register(name='cnnrnn')
+class StackedCNNRNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -1827,7 +1846,8 @@ class StackedCNNRNN(Layer):
         }
 
 
-class StackedTransformer(Layer):
+@register(name='transformer')
+class StackedTransformer(SequenceEncoder):
 
     def __init__(
             self,

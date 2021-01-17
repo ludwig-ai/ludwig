@@ -21,7 +21,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
+from ludwig.encoders.bag_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils.misc_utils import set_default_value
@@ -42,13 +42,18 @@ class BagFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            processor=backend.processor,
+            processor=backend.df_engine,
         )
         return {
             'idx2str': idx2str,
@@ -71,28 +76,29 @@ class BagFeatureMixin(object):
             bag_vector[list(col_counter.keys())] = list(col_counter.values())
             return bag_vector
 
-        return backend.processor.map_objects(column, to_vector)
+        return backend.df_engine.map_objects(column, to_vector)
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
-        dataset[feature[NAME]] = BagFeatureMixin.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
             backend
         )
-        return dataset
+        return proc_df
 
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
     encoder = 'embed'
+    vocab = []
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -130,7 +136,4 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': BagEmbedWeightedEncoder,
-        None: BagEmbedWeightedEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY

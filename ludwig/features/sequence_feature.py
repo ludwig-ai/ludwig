@@ -19,15 +19,8 @@ import os
 import numpy as np
 
 from ludwig.constants import *
-from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
-from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
-from ludwig.encoders.sequence_encoders import ParallelCNN, StackedTransformer
-from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
-from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
-from ludwig.encoders.sequence_encoders import StackedCNN
-from ludwig.encoders.sequence_encoders import StackedCNNRNN
-from ludwig.encoders.sequence_encoders import StackedParallelCNN
-from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
+from ludwig.encoders.sequence_encoders import ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
@@ -67,7 +60,12 @@ class SequenceFeatureMixin(object):
     }
 
     @staticmethod
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
@@ -75,7 +73,7 @@ class SequenceFeatureMixin(object):
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
@@ -103,26 +101,26 @@ class SequenceFeatureMixin(object):
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
             ],
-            processor=backend.processor
+            processor=backend.df_engine
         )
         return sequence_data
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
             backend
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            dataset_df[feature[NAME]].astype(str),
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]], preprocessing_parameters,
             backend
         )
-        dataset[feature[NAME]] = sequence_data
-        return dataset
+        proc_df[feature[PROC_COLUMN]] = sequence_data
+        return proc_df
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
@@ -175,20 +173,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
 
-    encoder_registry = {
-        'stacked_cnn': StackedCNN,
-        'parallel_cnn': ParallelCNN,
-        'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': StackedRNN,
-        'cnnrnn': StackedCNNRNN,
-        'transformer': StackedTransformer,
-        'embed': SequenceEmbedEncoder,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
-    }
+    encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
@@ -252,7 +237,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             target=None,
             training=None
     ):
-        if training:
+        if training and target is not None:
             return self.decoder_obj._logits_training(
                 inputs,
                 target=tf.cast(target, dtype=tf.int32),
@@ -294,7 +279,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     'for the <UNK> and <PAD> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
                         output_feature['num_classes'],
-                        output_feature[NAME]
+                        output_feature[COLUMN]
                     )
                 )
 
@@ -321,7 +306,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                                 'the first row {}. All rows must have '
                                 'the same length.'.format(
                                     curr_row,
-                                    output_feature[NAME],
+                                    output_feature[COLUMN],
                                     curr_row_length,
                                     first_row_length
                                 )
@@ -335,7 +320,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'The class_similarities matrix of {} has '
                         '{} rows and {} columns, '
                         'their number must be identical.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             len(similarities),
                             all_rows_length
                         )
@@ -348,7 +333,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'Check the metadata JSON file to see the classes '
                         'and their order and '
                         'consider <UNK> and <PAD> class too.'.format(
-                            output_feature[NAME],
+                            output_feature[COLUMN],
                             all_rows_length,
                             output_feature['num_classes']
                         )
@@ -365,7 +350,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0, '
                     'but no class_similarities are provided '
-                    'for feature {}'.format(output_feature[NAME])
+                    'for feature {}'.format(output_feature[COLUMN])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -408,7 +393,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS].numpy()
-            lengths = result[LENGTHS]
+            lengths = result[LENGTHS].numpy()
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token]
@@ -446,28 +431,32 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             probs = result[PROBABILITIES].numpy()
             if probs is not None:
 
-                if len(probs) > 0 and isinstance(probs[0], list):
-                    prob = []
-                    for i in range(len(probs)):
-                        # todo: should adapt for the case of beam > 1
-                        for j in range(len(probs[i])):
-                            probs[i][j] = np.max(probs[i][j])
-                        prob.append(np.prod(probs[i]))
-                elif isinstance(probs, np.ndarray):
-                    if (probs.shape) == 3:  # prob of each class of each token
-                        probs = np.amax(probs, axis=-1)
-                    prob = np.prod(probs, axis=-1)
+                # probs should be shape [b, s, nc]
+                if len(probs.shape) == 3:
+                    # get probability of token in that sequence position
+                    seq_probs = np.amax(probs, axis=-1)
 
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                # postprocessed[PROBABILITIES] = probs
-                postprocessed[PROBABILITY] = prob
+                    # sum log probability for tokens up to sequence length
+                    # create mask only tokens for sequence length
+                    mask = np.arange(seq_probs.shape[-1]) \
+                           < np.array(result[LENGTHS]).reshape(-1, 1)
+                    log_prob = np.sum(np.log(seq_probs) * mask, axis=-1)
+
+                    # commenting probabilities out because usually it is huge:
+                    # dataset x length x classes
+                    # todo: add a mechanism for letting the user decide to save it
+                    postprocessed[PROBABILITIES] = seq_probs
+                    postprocessed[PROBABILITY] = log_prob
+                else:
+                    raise ValueError(
+                        'Sequence probability array should be 3-dimensional '
+                        'shape, instead shape is {:d}-dimensional'
+                            .format(len(probs.shape))
+                    )
 
                 if not skip_save_unprocessed_output:
-                    # commenting probabilities out, see comment above
-                    # np.save(npy_filename.format(name, PROBABILITIES), probs)
-                    np.save(npy_filename.format(name, PROBABILITY), prob)
+                    np.save(npy_filename.format(name, PROBABILITIES), seq_probs)
+                    np.save(npy_filename.format(name, PROBABILITY), log_prob)
 
             del result[PROBABILITIES]
 
@@ -524,7 +513,4 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-    decoder_registry = {
-        'generator': SequenceGeneratorDecoder,
-        'tagger': SequenceTaggerDecoder
-    }
+    decoder_registry = DECODER_REGISTRY

@@ -27,8 +27,8 @@ import numpy as np
 import yaml
 
 from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE,
-                              NAME, NUMERICAL, PREPROCESSING, SEQUENCE, SET,
-                              TEXT, TIMESERIES, TYPE, VECTOR)
+                              NUMERICAL, PREPROCESSING, SEQUENCE, SET,
+                              TEXT, TIMESERIES, TYPE, VECTOR, NAME)
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_csv
