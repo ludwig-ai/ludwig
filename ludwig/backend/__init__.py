@@ -24,9 +24,8 @@ LOCAL_BACKEND = LocalBackend()
 LOCAL = 'local'
 DASK = 'dask'
 HOROVOD = 'horovod'
-RAY = 'ray'
 
-ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
+ALL_BACKENDS = [LOCAL, DASK, HOROVOD]
 
 
 def get_local_backend():
@@ -43,16 +42,10 @@ def create_horovod_backend():
     return HorovodBackend()
 
 
-def create_ray_backend():
-    from ludwig.backend.ray import RayBackend
-    return RayBackend()
-
-
 backend_registry = {
     LOCAL: get_local_backend,
     DASK: create_dask_backend,
     HOROVOD: create_horovod_backend,
-    RAY: create_ray_backend,
     None: get_local_backend,
 }
 
