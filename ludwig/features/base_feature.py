@@ -187,12 +187,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             self.reduce_sequence_input = SequenceReducer(
                 reduce_mode=self.reduce_input
             )
-            if self.dependencies:
-                self.dependency_reducers = {}
-                for dependency in self.dependencies:
-                    self.dependency_reducers[dependency] = SequenceReducer(
-                        reduce_mode=self.reduce_dependencies
-                    )
+        if self.dependencies:
+            self.dependency_reducers = {}
+            for dependency in self.dependencies:
+                self.dependency_reducers[dependency] = SequenceReducer(
+                    reduce_mode=self.reduce_dependencies
+                )
 
     def create_input(self):
         return tf.keras.Input(shape=self.get_output_shape(),
