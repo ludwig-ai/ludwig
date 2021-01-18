@@ -81,10 +81,9 @@ class BERTEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -136,11 +135,10 @@ class GPTEncoder(TextEncoder):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
-            'input_ids': inputs,
-            'training': training,
-            'attention_mask': mask,
-            'token_type_ids': tf.zeros_like(inputs)
-        })
+            "input_ids": inputs,
+            "attention_mask": mask,
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -189,10 +187,9 @@ class GPT2Encoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -245,7 +242,7 @@ class TransformerXLEncoder(TextEncoder):
         return {'encoder_output': hidden}
 
 
-# @register(name='xlnet')
+@register(name='xlnet')
 class XLNetEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
@@ -288,10 +285,9 @@ class XLNetEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
             "token_type_ids": tf.zeros_like(inputs),
-        })
+        }, training=training)
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -340,10 +336,9 @@ class XLMEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -393,10 +388,9 @@ class RoBERTaEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -448,9 +442,8 @@ class DistilBERTEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask
-        })
+        }, training=training)
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -498,11 +491,10 @@ class CTRLEncoder(TextEncoder):
         if mask is not None:
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
-            'input_ids': inputs,
-            'attention_mask': mask,
-            'token_type_ids': tf.zeros_like(inputs),
-            'training': training,
-        })
+            "input_ids": inputs,
+            "attention_mask": mask,
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -552,10 +544,9 @@ class CamemBERTEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -608,10 +599,9 @@ class ALBERTEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -767,10 +757,9 @@ class XLMRoBERTaEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -779,7 +768,7 @@ class XLMRoBERTaEncoder(TextEncoder):
         return {'encoder_output': hidden}
 
 
-# @register(name='flaubert')
+@register(name='flaubert')
 class FlauBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
@@ -822,10 +811,9 @@ class FlauBERTEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             'input_ids': inputs,
-            'training': training,
             'attention_mask': mask,
             'token_type_ids': tf.zeros_like(inputs),
-        })
+        }, training=training)
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -874,10 +862,9 @@ class ELECTRAEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -927,10 +914,9 @@ class LongformerEncoder(TextEncoder):
             mask = tf.cast(mask, dtype=tf.int32)
         transformer_outputs = self.transformer({
             "input_ids": inputs,
-            "training": training,
             "attention_mask": mask,
-            "token_type_ids": tf.zeros_like(inputs)
-        })
+            "token_type_ids": tf.zeros_like(inputs),
+        }, training=training)
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
