@@ -16,6 +16,7 @@
 # ==============================================================================
 import copy
 import itertools
+import json
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
@@ -130,11 +131,17 @@ class RandomSampler(HyperoptSampler):
                 values_str = []
                 values_types = {}
                 for value in param_values['values']:
-                    value_str = str(value)
-                    values_str.append(value_str)
                     value_type = type(value)
                     if value_type == bool:
+                        value_str = str(value)
                         value_type = str2bool
+                    elif value_type == str or value_type == int or \
+                        value_type == float:
+                        value_str = str(value)
+                    else:
+                        value_str = json.dumps(value)
+                        value_type = json.loads
+                    values_str.append(value_str)
                     values_types[value_str] = value_type
                 param_values['values'] = values_str
                 cat_params_values_types[param_name] = values_types
@@ -244,11 +251,17 @@ class PySOTSampler(HyperoptSampler):
                 values_str = []
                 values_types = {}
                 for value in param_values['values']:
-                    value_str = str(value)
-                    values_str.append(value_str)
                     value_type = type(value)
                     if value_type == bool:
+                        value_str = str(value)
                         value_type = str2bool
+                    elif value_type == str or value_type == int or \
+                        value_type == float:
+                        value_str = str(value)
+                    else:
+                        value_str = json.dumps(value)
+                        value_type = json.loads
+                    values_str.append(value_str)
                     values_types[value_str] = value_type
                 param_values['values'] = values_str
                 cat_params_values_types[param_name] = values_types
@@ -282,7 +295,11 @@ class PySOTSampler(HyperoptSampler):
     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
         for key in sampled_parameters:
             if key in self.cat_params_values_types:
-                sampled_parameters[key] = str(sampled_parameters[key])
+                if type(sampled_parameters[key]) == list:
+                    sampled_parameters[key] = json.dumps(sampled_parameters[
+                        key])
+                else:
+                    sampled_parameters[key] = str(sampled_parameters[key])
         self.pysot_optimizer.observe([sampled_parameters], [metric_score])
 
     def finished(self) -> bool:

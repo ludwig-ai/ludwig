@@ -48,6 +48,15 @@ HYPEROPT_CONFIG = {
             "space": "linear",
             "steps": 3,
         },
+       "combiner.fc_layers" : {
+            'type': 'category',
+            'values': [
+                [{'fc_size': 512}, {'fc_size': 256}],
+                [{'fc_size': 512}],
+                [{'fc_size': 256}]
+            ]
+        },
+        
         "utterance.cell_type": {
             "type": "category",
             "values": ["rnn", "gru"]
@@ -128,7 +137,8 @@ def test_hyperopt_executor_with_metric(csv_filename):
                            validate_output_feature=True,
                            validation_metric=ACCURACY)
 
-def test_hyperopt_run_hyperopt(csv_filename):
+@pytest.mark.parametrize('samplers', SAMPLERS)
+def test_hyperopt_run_hyperopt(csv_filename, samplers):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -146,6 +156,7 @@ def test_hyperopt_run_hyperopt(csv_filename):
 
     output_feature_name = output_features[0]['name']
 
+    
     hyperopt_configs = {
         "parameters": {
             "training.learning_rate": {
@@ -154,6 +165,14 @@ def test_hyperopt_run_hyperopt(csv_filename):
                 "high": 0.01,
                 "space": "log",
                 "steps": 3,
+            },
+            output_feature_name + ".fc_layers": {
+                'type': 'category',
+                'values': [
+                    [{'fc_size': 512}, {'fc_size': 256}],
+                    [{'fc_size': 512}],
+                    [{'fc_size': 256}]
+                ]
             },
             output_feature_name + ".fc_size": {
                 "type": "int",
@@ -173,7 +192,7 @@ def test_hyperopt_run_hyperopt(csv_filename):
         'output_feature': output_feature_name,
         'validation_metrics': 'loss',
         'executor': {'type': 'serial'},
-        'sampler': {'type': 'random', 'num_samples': 2}
+        'sampler': {'type': samplers["type"], 'num_samples': 2}
     }
 
     # add hyperopt parameter space to the config
@@ -192,6 +211,13 @@ def test_hyperopt_run_hyperopt(csv_filename):
     assert os.path.isfile(
         os.path.join('results_hyperopt', 'hyperopt_statistics.json')
     )
+
+    if os.path.isfile(
+        os.path.join('results_hyperopt', 'hyperopt_statistics.json')
+    ):
+        os.remove( 
+            os.path.join('results_hyperopt', 'hyperopt_statistics.json')
+        )
 
 def test_hyperopt_executor_get_metric_score():
     executor = EXECUTORS[0]
