@@ -144,7 +144,7 @@ class SequenceGeneratorDecoder(Layer):
             logger.debug('  {}'.format(self.decoder_rnncell))
 
     def build(self, input_shape):
-        print("entered build()")
+        print(">>>>>>>>>>>entered build()")
 
     def _logits_training(self, inputs, target, training=None):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
