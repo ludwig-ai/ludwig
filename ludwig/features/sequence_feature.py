@@ -259,9 +259,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             training=None
     ):
         if training and target is not None:
-            return self.decoder_obj._logits_training(
+            inputs = inputs, tf.cast(target, dtype=tf.int32)
+            return self.decoder_obj(
                 inputs,
-                target=tf.cast(target, dtype=tf.int32),
                 training=training
             )
         else:

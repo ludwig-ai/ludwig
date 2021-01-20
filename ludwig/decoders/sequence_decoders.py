@@ -144,15 +144,20 @@ class SequenceGeneratorDecoder(Layer):
             logger.debug('  {}'.format(self.decoder_rnncell))
 
     def build(self, input_shape):
-        print("/n>>>>>>>>>>>sequencegeneratordecoder entered build()\n")
-        self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_input)
+        # test required to handle different forms of input_shape
+        if isinstance(input_shape, dict):
+            tensor_shape = input_shape['hidden']
+        elif isinstance(input_shape, tuple):
+            tensor_shape = input_shape[0]['hidden']
 
-    def _logits_training(self, inputs, target, training=None):
-        input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
-        encoder_end_state = self.prepare_encoder_output_state(inputs)
+        if tensor_shape.rank > 2:
+            self.reduce_sequence = SequenceReducer(
+                reduce_mode=self.reduce_input)
+
+    def _logits_training(self, encoder_output, encoder_end_state, target):
 
         logits = self.decoder_teacher_forcing(
-            input,
+            encoder_output,
             target=target,
             encoder_end_state=encoder_end_state
         )
@@ -564,29 +569,47 @@ class SequenceGeneratorDecoder(Layer):
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
-        # shape [batch_size, seq_size, state_size]
-        encoder_output = inputs['hidden']
-        # form dependent on cell_type
-        # lstm: list([batch_size, state_size], [batch_size, state_size])
-        # rnn, gru: [batch_size, state_size]
-        encoder_output_state = self.prepare_encoder_output_state(inputs)
+        # training==True:
+        #    inputs is tuple(tuple(encoder_output, encoder_output_state), targets)
+        # training==False:
+        #    inputs is tuple(encoder_output, encoder_output_state)
 
-        if self.beam_width > 1:
-            decoder_outputs = self.decoder_beam_search(
-                encoder_output,
-                encoder_end_state=encoder_output_state,
-                training=training
-            )
+        if training:
+            encoder_output = inputs[0]['hidden']
+            encoder_output_state = self.prepare_encoder_output_state(inputs[0])
+            targets = inputs[1]
+            return self._logits_training(encoder_output,
+                                         encoder_output_state, targets)
         else:
-            decoder_outputs = self.decoder_greedy(
-                encoder_output,
-                encoder_end_state=encoder_output_state,
-                training=training
-            )
+            # this test is to work-around issue encountered with savedmodel
+            # because it appears that 'input' can be either a tuple containing
+            # dictionary or a dictionary itself
+            if isinstance(inputs, tuple):
+                inputs = inputs[0]
 
-        logits, lengths, preds, last_preds, probs = decoder_outputs
+            # shape [batch_size, seq_size, state_size]
+            encoder_output = inputs['hidden']
+            # form dependent on cell_type
+            # lstm: list([batch_size, state_size], [batch_size, state_size])
+            # rnn, gru: [batch_size, state_size]
+            encoder_output_state = self.prepare_encoder_output_state(inputs)
 
-        return logits, lengths, preds, last_preds, probs
+            if self.beam_width > 1:
+                decoder_outputs = self.decoder_beam_search(
+                    encoder_output,
+                    encoder_end_state=encoder_output_state,
+                    training=training
+                )
+            else:
+                decoder_outputs = self.decoder_greedy(
+                    encoder_output,
+                    encoder_end_state=encoder_output_state,
+                    training=training
+                )
+
+            logits, lengths, preds, last_preds, probs = decoder_outputs
+
+            return logits, lengths, preds, last_preds, probs
 
     def _predictions_eval(
             self,
@@ -743,10 +766,15 @@ class SequenceTaggerDecoder(Layer):
 
     def call(
             self,
-            inputs,
+            inputs_parm,
             training=None,
             mask=None
     ):
+        # test required to handle training and predictions calls
+        if isinstance(inputs_parm, tuple):
+            inputs = inputs_parm[0]
+        else:
+            inputs = inputs_parm
         # shape [batch_size, seq_size, state_size]
         if LOGITS in inputs:
             inputs = inputs[LOGITS]
