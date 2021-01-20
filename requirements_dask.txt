@@ -1,3 +1,0 @@
-dask[dataframe]
-petastorm>=0.9.7
-pyarrow>=2.0.0
