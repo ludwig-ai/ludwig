@@ -535,7 +535,6 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        default=LOCAL,
         help="specifies backend to use for parallel / distributed execution",
         choices=ALL_BACKENDS,
     )

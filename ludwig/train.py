@@ -163,7 +163,7 @@ def train_cli(
         model = LudwigModel.load(
             model_load_path,
             logging_level=logging_level,
-            use_horovod=use_horovod,
+            backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
@@ -378,7 +378,6 @@ def cli(sys_argv):
     parser.add_argument(
         "-b",
         "--backend",
-        default=LOCAL,
         help="specifies backend to use for parallel / distributed execution",
         choices=ALL_BACKENDS,
     )
