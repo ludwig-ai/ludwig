@@ -1,2 +1,3 @@
 spacy>=2.3
-transformers<4
+transformers==4.2.1
+sentencepiece
