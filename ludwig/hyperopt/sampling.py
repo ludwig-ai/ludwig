@@ -295,7 +295,7 @@ class PySOTSampler(HyperoptSampler):
     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
         for key in sampled_parameters:
             if key in self.cat_params_values_types:
-                if type(sampled_parameters[key]) == list:
+                if type(sampled_parameters[key]) not in {bool, int, float, str}:
                     sampled_parameters[key] = json.dumps(sampled_parameters[
                         key])
                 else:
