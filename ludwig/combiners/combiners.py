@@ -348,6 +348,7 @@ class ComparatorCombiner(tf.keras.Model):
         self.entity_2 = entity_2
         self.required_inputs = set(entity_1 + entity_2)
         self.fc_size = fc_size
+        
 
     def call(self, inputs, training=None, mask=None, **kwargs):  # encoder outputs
         assert (
@@ -358,6 +359,7 @@ class ComparatorCombiner(tf.keras.Model):
         # Entity 1 #
         ############
         e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
+
         # ================ Concat ================
         if len(e1_enc_outputs) > 1:
             e1_hidden = concatenate(e1_enc_outputs, 1)
@@ -366,11 +368,11 @@ class ComparatorCombiner(tf.keras.Model):
 
         # ================ Fully Connected ================
         e1_hidden = self.e1_fc_stack(e1_hidden, training=training, mask=mask)
-
         ############
         # Entity 2 #
         ############
         e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
+
         # ================ Concat ================
         if len(e2_enc_outputs) > 1:
             e2_hidden = concatenate(e2_enc_outputs, 1)
@@ -379,6 +381,7 @@ class ComparatorCombiner(tf.keras.Model):
 
         # ================ Fully Connected ================
         e2_hidden = self.e2_fc_stack(e2_hidden, training=training, mask=mask)
+
 
         ###########
         # Compare #
