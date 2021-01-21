@@ -6,6 +6,7 @@ import pandas as pd
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
+from ludwig.constants import SPLIT
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import split_dataset_ttv, read_csv
 from tests.integration_tests.utils import binary_feature, numerical_feature, \
@@ -62,9 +63,10 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     }
 
     data_df = read_csv(data_csv_path)
+    data_df[SPLIT] = get_split(data_df)
     training_set, test_set, validation_set = split_dataset_ttv(
         data_df,
-        get_split(data_df)
+        SPLIT
     )
     training_set = pd.DataFrame(training_set)
     validation_set = pd.DataFrame(validation_set)

@@ -1,2 +1,2 @@
 spacy>=2.3
-transformers
+transformers<4

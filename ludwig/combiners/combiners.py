@@ -126,7 +126,7 @@ class SequenceConcatCombiner(tf.keras.Model):
             or self.main_sequence_feature not in inputs
         ):
             for if_name, if_outputs in inputs.items():
-                # todo: when https://github.com/uber/ludwig/issues/810 is closed
+                # todo: when https://github.com/ludwig-ai/ludwig/issues/810 is closed
                 #       convert following test from using shape to use explicit
                 #       if_outputs[TYPE] values for sequence features
                 if len(if_outputs["encoder_output"].shape) == 3:

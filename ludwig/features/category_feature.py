@@ -22,9 +22,7 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.category_encoders import CategoricalEmbedEncoder
-from ludwig.encoders.category_encoders import CategoricalSparseEncoder
-from ludwig.encoders.generic_encoders import PassthroughEncoder
+from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
@@ -54,12 +52,18 @@ class CategoryFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, _, _, _, _ = create_vocabulary(
             column, 'stripped',
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            add_padding=False
+            add_padding=False,
+            processor=backend.df_engine
         )
         return {
             'idx2str': idx2str,
@@ -70,29 +74,28 @@ class CategoryFeatureMixin(object):
 
     @staticmethod
     def feature_data(column, metadata):
-        return np.array(
-            column.map(
-                lambda x: (
-                    metadata['str2idx'][x.strip()]
-                    if x.strip() in metadata['str2idx']
-                    else metadata['str2idx'][UNKNOWN_SYMBOL]
-                )
-            ),
-            dtype=int_type(metadata['vocab_size'])
-        )
+        return column.map(
+            lambda x: (
+                metadata['str2idx'][x.strip()]
+                if x.strip() in metadata['str2idx']
+                else metadata['str2idx'][UNKNOWN_SYMBOL]
+            )
+        ).astype(int_type(metadata['vocab_size']))
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters,
+            backend
     ):
-        dataset[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
-            metadata[feature[NAME]]
+        proc_df[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]],
         )
+        return proc_df
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
@@ -120,7 +123,8 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -139,15 +143,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'dense': CategoricalEmbedEncoder,
-        'sparse': CategoricalSparseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
@@ -198,7 +194,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             LOGITS: logits
         }
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int64
 
     def get_output_shape(self):

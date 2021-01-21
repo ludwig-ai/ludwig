@@ -22,7 +22,7 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.set_encoders import SetSparseEncoder
+from ludwig.encoders.set_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
@@ -47,12 +47,18 @@ class SetFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
-            lowercase=preprocessing_parameters['lowercase']
+            lowercase=preprocessing_parameters['lowercase'],
+            processor=backend.df_engine
         )
         return {
             'idx2str': idx2str,
@@ -63,40 +69,36 @@ class SetFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
-        feature_vector = np.array(
-            column.map(
-                lambda x: set_str_to_idx(
-                    x,
-                    metadata['str2idx'],
-                    preprocessing_parameters['tokenizer']
-                )
+    def feature_data(column, metadata, preprocessing_parameters, backend):
+        def to_dense(x):
+            feature_vector = set_str_to_idx(
+                x,
+                metadata['str2idx'],
+                preprocessing_parameters['tokenizer']
             )
-        )
 
-        set_matrix = np.zeros(
-            (len(column),
-             len(metadata['str2idx'])),
-        )
+            set_vector = np.zeros((len(metadata['str2idx']),))
+            set_vector[feature_vector] = 1
+            return set_vector.astype(np.bool)
 
-        for i in range(len(column)):
-            set_matrix[i, feature_vector[i]] = 1
-
-        return set_matrix.astype(np.bool)
+        return backend.df_engine.map_objects(column, to_dense)
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
             preprocessing_parameters,
+            backend
     ):
-        dataset[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
+        return proc_df
 
 
 class SetInputFeature(SetFeatureMixin, InputFeature):
@@ -121,7 +123,8 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.bool
 
     def get_input_shape(self):
@@ -140,10 +143,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': SetSparseEncoder,
-        None: SetSparseEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
@@ -213,7 +213,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[JACCARD] = JaccardMetric()
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.bool
 
     def get_output_shape(self):
