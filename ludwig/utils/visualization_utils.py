@@ -371,9 +371,10 @@ def donut(
         outside_labels,
         outside_groups,
         title=None,
+        tight_layout=None,
         filename=None
 ):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7,5))
 
     if title is not None:
         ax.set_title(title)
@@ -433,11 +434,13 @@ def donut(
             labels.append(outside_labels[so_far])
             so_far += 1
 
-    ax.legend(wedges, labels, frameon=True)
-    plt.tight_layout()
+    if tight_layout:
+        ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.30, 1.00))
+    else:
+        ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.50, 1.00))
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
-        plt.savefig(filename)
+        plt.savefig(filename, bbox_inches = "tight")
     else:
         plt.show()
 
@@ -1215,12 +1218,14 @@ def hyperopt_report(
         filename_template,
         float_precision=3
 ):
+    title = "Hyperopt Report: {}"
     for hp_name, hp_params in hyperparameters.items():
         if hp_params[TYPE] == 'int':
             hyperopt_int_plot(
                 hyperopt_results_df,
                 hp_name,
                 metric,
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None
             )
@@ -1229,6 +1234,7 @@ def hyperopt_report(
                 hyperopt_results_df,
                 hp_name,
                 metric,
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None,
                 log_scale_x=hp_params[
@@ -1239,6 +1245,7 @@ def hyperopt_report(
                 hyperopt_results_df,
                 hp_name,
                 metric,
+                title.format(hp_name),
                 filename_template.format(
                     hp_name) if filename_template else None
             )
@@ -1264,6 +1271,7 @@ def hyperopt_report(
     hyperopt_pair_plot(
         hyperopt_results_df,
         metric,
+        title.format("pair plot"),
         filename_template.format('pair_plot') if filename_template else None
     )
 
@@ -1272,6 +1280,7 @@ def hyperopt_int_plot(
         hyperopt_results_df,
         hp_name,
         metric,
+        title,
         filename,
         log_scale_x=False,
         log_scale_y=True
@@ -1283,6 +1292,7 @@ def hyperopt_int_plot(
         y=metric,
         data=hyperopt_results_df
     )
+    seaborn_figure.set_title(title)
     if log_scale_x:
         seaborn_figure.set(xscale="log")
     if log_scale_y:
@@ -1301,6 +1311,7 @@ def hyperopt_float_plot(
         hyperopt_results_df,
         hp_name,
         metric,
+        title,
         filename,
         log_scale_x=False,
         log_scale_y=True
@@ -1312,6 +1323,7 @@ def hyperopt_float_plot(
         y=metric,
         data=hyperopt_results_df
     )
+    seaborn_figure.set_title(title)
     seaborn_figure.set(ylabel=metric)
     if log_scale_x:
         seaborn_figure.set(xscale="log")
@@ -1328,6 +1340,7 @@ def hyperopt_category_plot(
         hyperopt_results_df,
         hp_name,
         metric,
+        title,
         filename,
         log_scale=True
 ):
@@ -1339,6 +1352,7 @@ def hyperopt_category_plot(
         data=hyperopt_results_df,
         fit_reg=False
     )
+    seaborn_figure.set_title(title)
     seaborn_figure.set(ylabel=metric)
     sns.despine()
     if log_scale:
@@ -1353,6 +1367,7 @@ def hyperopt_category_plot(
 def hyperopt_pair_plot(
         hyperopt_results_df,
         metric,
+        title,
         filename
 ):
     params = sorted(list(hyperopt_results_df.keys()))
@@ -1361,6 +1376,7 @@ def hyperopt_pair_plot(
 
     sns.set_style('white')
     fig = plt.figure(figsize=(20, 20))
+    fig.suptitle(title)
     gs = fig.add_gridspec(num_param, num_param)
 
     for i, param1 in enumerate(params):
@@ -1382,7 +1398,6 @@ def hyperopt_pair_plot(
                 )
 
     plt.tight_layout(pad=5)
-
     if filename:
         plt.savefig(filename)
     else:

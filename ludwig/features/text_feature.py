@@ -58,7 +58,11 @@ class TextFeatureMixin(object):
     }
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def feature_meta(column, preprocessing_parameters, backend):
         (
             char_idx2str,
             char_str2idx,
@@ -75,7 +79,8 @@ class TextFeatureMixin(object):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path']
+                'pretrained_model_name_or_path'],
+            processor=backend.df_engine
         )
         (
             word_idx2str,
@@ -94,7 +99,8 @@ class TextFeatureMixin(object):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path']
+                'pretrained_model_name_or_path'],
+            processor=backend.df_engine
         )
         return (
             char_idx2str,
@@ -114,9 +120,10 @@ class TextFeatureMixin(object):
         )
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(
-            column, preprocessing_parameters
+            column, preprocessing_parameters, backend
         )
         (
             char_idx2str,
@@ -162,7 +169,7 @@ class TextFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         char_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['char_str2idx'],
@@ -177,8 +184,8 @@ class TextFeatureMixin(object):
             ],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
-
+            ],
+            processor=backend.df_engine
         )
         word_data = build_sequence_matrix(
             sequences=column,
@@ -194,7 +201,8 @@ class TextFeatureMixin(object):
             ],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
+            ],
+            processor=backend.df_engine
         )
 
         return char_data, word_data
@@ -202,17 +210,21 @@ class TextFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters
+            input_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]],
+            preprocessing_parameters,
+            backend
         )
-        dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
-        dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        proc_df['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        proc_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        return proc_df
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
@@ -246,7 +258,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -328,7 +341,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int32
 
     def get_output_shape(self):
