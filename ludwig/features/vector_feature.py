@@ -68,7 +68,8 @@ class VectorFeatureMixin(object):
     ):
         """
                 Expects all the vectors to be of the same size. The vectors need to be
-                whitespace delimited strings. Missing values are not handled.
+                whitespace delimited strings or a numpy array of type float32. 
+                Missing values are not handled.
                 """
         if len(input_df) == 0:
             raise ValueError("There are no vectors in the dataset provided")
@@ -77,7 +78,10 @@ class VectorFeatureMixin(object):
         try:
             print('feature: ', feature)
             print('input_df: ', input_df)
-            if isinstance(input_df[feature[COLUMN]].iloc[0], np.ndarray) and input_df[feature[COLUMN]].iloc[0].dtype == np.float32:
+            if (
+                isinstance(input_df[feature[COLUMN]].iloc[0], np.ndarray) and
+                input_df[feature[COLUMN]].iloc[0].dtype == np.float32
+            ):
                 proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]]
             else: 
                 proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
