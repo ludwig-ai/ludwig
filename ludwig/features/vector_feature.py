@@ -77,7 +77,7 @@ class VectorFeatureMixin(object):
         try:
             print('feature: ', feature)
             print('input_df: ', input_df)
-            if isinstance(input_df[feature[COLUMN]][0], np.ndarray) and input_df[feature[COLUMN]][0].dtype == np.float32:
+            if isinstance(input_df[feature[COLUMN]].iloc[0], np.ndarray) and input_df[feature[COLUMN]].iloc[0].dtype == np.float32:
                 proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]]
             else: 
                 proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
