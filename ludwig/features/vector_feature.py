@@ -75,10 +75,15 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                input_df[feature[COLUMN]],
-                lambda x: np.array(x.split(), dtype=np.float32)
-            )
+            print('feature: ', feature)
+            print('input_df: ', input_df)
+            if isinstance(input_df[feature[COLUMN]][0], np.ndarray) and input_df[feature[COLUMN]][0].dtype == np.float32:
+                proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]]
+            else: 
+                proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+                    input_df[feature[COLUMN]],
+                    lambda x: np.array(x.split(), dtype=np.float32)
+                )
         except ValueError:
             logger.error(
                 'Unable to read the vector data. Make sure that all the vectors'
