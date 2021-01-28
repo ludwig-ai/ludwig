@@ -71,10 +71,12 @@ grid_functions_registry = {
 
 
 class HyperoptSampler(ABC):
-    def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
+    def __init__(self, goal: str, parameters: Dict[str, Any],
+                 batch_size: int = 1) -> None:
         assert goal in [MINIMIZE, MAXIMIZE]
         self.goal = goal  # useful for Bayesian strategy
         self.parameters = parameters
+        self.default_batch_size = batch_size
 
     @abstractmethod
     def sample(self) -> Dict[str, Any]:
@@ -82,8 +84,10 @@ class HyperoptSampler(ABC):
         # Define `build_hyperopt_strategy` which would take paramters as inputs
         pass
 
-    def sample_batch(self, batch_size: int = 1) -> List[Dict[str, Any]]:
+    def sample_batch(self, batch_size: int = None) -> List[Dict[str, Any]]:
         samples = []
+        if batch_size is None:
+            batch_size = self.default_batch_size
         for _ in range(batch_size):
             try:
                 samples.append(self.sample())
@@ -160,6 +164,7 @@ class RandomSampler(HyperoptSampler):
         self.num_samples = num_samples
         self.samples = self._determine_samples()
         self.sampled_so_far = 0
+        self.default_batch_size = self.num_samples
 
     def _determine_samples(self):
         samples = []
@@ -196,6 +201,7 @@ class GridSampler(HyperoptSampler):
         self.search_space = self._create_search_space()
         self.samples = self._get_grids()
         self.sampled_so_far = 0
+        self.default_batch_size = len(self.samples)
 
     def _create_search_space(self):
         search_space = {}
