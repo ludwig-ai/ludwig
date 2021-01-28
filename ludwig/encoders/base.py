@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # coding=utf-8
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,21 +15,24 @@
 # limitations under the License.
 # ==============================================================================
 
-LUDWIG_VERSION = '0.3.3-dev0'
+from abc import ABC, abstractmethod
 
-MODEL_WEIGHTS_FILE_NAME = 'model_weights'
-MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'
-TRAIN_SET_METADATA_FILE_NAME = 'training_set_metadata.json'
-TRAINING_PROGRESS_TRACKER_FILE_NAME = 'training_progress.json'
-TRAINING_CHECKPOINTS_DIR_PATH = 'training_checkpoints'
+from tensorflow.keras.layers import Layer
 
-DISABLE_PROGRESSBAR = False
+from ludwig.utils.registry import DEFAULT_KEYS
 
 
-def set_disable_progressbar(value):
-    global DISABLE_PROGRESSBAR
-    DISABLE_PROGRESSBAR = value
+class Encoder(Layer, ABC):
+    @abstractmethod
+    def call(self, inputs, training=None, mask=None):
+        raise NotImplementedError
 
+    @classmethod
+    @abstractmethod
+    def register(cls, name):
+        raise NotImplementedError
 
-def is_progressbar_disabled():
-    return DISABLE_PROGRESSBAR
+    @classmethod
+    def register_default(cls):
+        for key in DEFAULT_KEYS:
+            cls.register(name=key)

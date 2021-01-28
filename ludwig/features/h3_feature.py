@@ -20,7 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.h3_encoders import H3Embed, H3WeightedSum, H3RNN
+from ludwig.encoders.h3_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
@@ -126,8 +126,4 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': H3Embed,
-        'weighted_sum': H3WeightedSum,
-        'rnn': H3RNN
-    }
+    encoder_registry = ENCODER_REGISTRY

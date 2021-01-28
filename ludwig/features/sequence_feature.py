@@ -19,15 +19,8 @@ import os
 import numpy as np
 
 from ludwig.constants import *
-from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
-from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
-from ludwig.encoders.sequence_encoders import ParallelCNN, StackedTransformer
-from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
-from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
-from ludwig.encoders.sequence_encoders import StackedCNN
-from ludwig.encoders.sequence_encoders import StackedCNNRNN
-from ludwig.encoders.sequence_encoders import StackedParallelCNN
-from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
+from ludwig.encoders.sequence_encoders import ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
@@ -181,20 +174,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
 
-    encoder_registry = {
-        'stacked_cnn': StackedCNN,
-        'parallel_cnn': ParallelCNN,
-        'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': StackedRNN,
-        'cnnrnn': StackedCNNRNN,
-        'transformer': StackedTransformer,
-        'embed': SequenceEmbedEncoder,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
-    }
+    encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
@@ -457,28 +437,32 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             probs = result[PROBABILITIES].numpy()
             if probs is not None:
 
-                if len(probs) > 0 and isinstance(probs[0], list):
-                    prob = []
-                    for i in range(len(probs)):
-                        # todo: should adapt for the case of beam > 1
-                        for j in range(len(probs[i])):
-                            probs[i][j] = np.max(probs[i][j])
-                        prob.append(np.prod(probs[i]))
-                elif isinstance(probs, np.ndarray):
-                    if (probs.shape) == 3:  # prob of each class of each token
-                        probs = np.amax(probs, axis=-1)
-                    prob = np.prod(probs, axis=-1)
+                # probs should be shape [b, s, nc]
+                if len(probs.shape) == 3:
+                    # get probability of token in that sequence position
+                    seq_probs = np.amax(probs, axis=-1)
 
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                # postprocessed[PROBABILITIES] = probs
-                postprocessed[PROBABILITY] = prob
+                    # sum log probability for tokens up to sequence length
+                    # create mask only tokens for sequence length
+                    mask = np.arange(seq_probs.shape[-1]) \
+                           < np.array(result[LENGTHS]).reshape(-1, 1)
+                    log_prob = np.sum(np.log(seq_probs) * mask, axis=-1)
+
+                    # commenting probabilities out because usually it is huge:
+                    # dataset x length x classes
+                    # todo: add a mechanism for letting the user decide to save it
+                    postprocessed[PROBABILITIES] = seq_probs
+                    postprocessed[PROBABILITY] = log_prob
+                else:
+                    raise ValueError(
+                        'Sequence probability array should be 3-dimensional '
+                        'shape, instead shape is {:d}-dimensional'
+                            .format(len(probs.shape))
+                    )
 
                 if not skip_save_unprocessed_output:
-                    # commenting probabilities out, see comment above
-                    # np.save(npy_filename.format(name, PROBABILITIES), probs)
-                    np.save(npy_filename.format(name, PROBABILITY), prob)
+                    np.save(npy_filename.format(name, PROBABILITIES), seq_probs)
+                    np.save(npy_filename.format(name, PROBABILITY), log_prob)
 
             del result[PROBABILITIES]
 
@@ -535,7 +519,4 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-    decoder_registry = {
-        'generator': SequenceGeneratorDecoder,
-        'tagger': SequenceTaggerDecoder
-    }
+    decoder_registry = DECODER_REGISTRY
