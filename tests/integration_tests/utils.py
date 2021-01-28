@@ -46,7 +46,7 @@ HF_ENCODERS = [
     'bert',
     'gpt',
     'gpt2',
-    # 'transformer_xl',
+    ##'transformer_xl',
     'xlnet',
     'xlm',
     'roberta',
@@ -59,6 +59,7 @@ HF_ENCODERS = [
     'longformer',
     'flaubert',
     'electra',
+    'mt5'
 ]
 
 
@@ -535,6 +536,13 @@ def create_data_set_to_use(data_format, raw_data):
 
     elif data_format == 'excel':
         dataset_to_use = replace_file_extension(raw_data, 'xlsx')
+        pd.read_csv(raw_data).to_excel(
+            dataset_to_use,
+            index=False
+        )
+
+    elif data_format == 'excel_xls':
+        dataset_to_use = replace_file_extension(raw_data, 'xls')
         pd.read_csv(raw_data).to_excel(
             dataset_to_use,
             index=False

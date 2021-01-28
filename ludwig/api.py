@@ -429,8 +429,6 @@ class LudwigModel:
                     logger.info('Validation set: {0}'.format(len(validation_set)))
                 if test_set is not None:
                     logger.info('Test set: {0}'.format(len(test_set)))
-
-            if is_on_master():
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)

@@ -931,7 +931,6 @@ def brier_plot(
     plt.xlabel('class')
     plt.ylabel('brier')
 
-    x = np.array(range(brier_scores.shape[0]))
     for i in range(brier_scores.shape[1]):
         plt.plot(brier_scores[:, i],
                  label=algorithm_names[

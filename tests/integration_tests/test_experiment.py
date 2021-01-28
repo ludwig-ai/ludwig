@@ -435,7 +435,7 @@ def test_experiment_image_dataset(
 
 
 DATA_FORMATS_TO_TEST = [
-    'csv', 'df', 'dict', 'excel', 'feather', 'fwf', 'hdf5', 'html',
+    'csv', 'df', 'dict', 'excel', 'excel_xls', 'feather', 'fwf', 'hdf5', 'html',
     'json', 'jsonl', 'parquet', 'pickle', 'stata', 'tsv'
 ]
 @pytest.mark.parametrize('data_format', DATA_FORMATS_TO_TEST)

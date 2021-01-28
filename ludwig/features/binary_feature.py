@@ -23,8 +23,7 @@ from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
+from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
@@ -144,14 +143,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'dense': DenseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):

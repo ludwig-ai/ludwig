@@ -15,14 +15,31 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer
+
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register_default
+from ludwig.encoders.generic_encoders import DenseEncoder
+
 
 logger = logging.getLogger(__name__)
 
 
-class BinaryPassthroughEncoder(Layer):
+ENCODER_REGISTRY = Registry({
+    'dense': DenseEncoder
+})
+
+
+class BinaryEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register_default(name='passthrough')
+class BinaryPassthroughEncoder(BinaryEncoder):
 
     def __init__(
             self,

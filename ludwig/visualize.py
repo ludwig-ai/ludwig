@@ -1350,6 +1350,17 @@ def compare_performance(
     # Return
 
     :return: (None)
+    
+    # Example usage:
+    
+    ```python
+    model_a = LudwigModel(config)
+    model_a.train(dataset)
+    a_evaluation_stats, _, _ = model_a.evaluate(eval_set)
+    model_b = LudwigModel.load('path/to/model/')
+    b_evaluation_stats, _, _ = model_b.evaluate(eval_set)
+    compare_performance([a_evaluation_stats, b_evaluation_stats], model_names=['A', 'B'])
+    ```
     """
     ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats',
                     'predictions', 'probabilities']
