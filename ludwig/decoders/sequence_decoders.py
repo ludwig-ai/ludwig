@@ -168,6 +168,27 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             self.reduce_sequence = SequenceReducer(
                 reduce_mode=self.reduce_input)
 
+    def compute_output_shape(self, input_shape):
+        print("entered compute shape")
+
+    def compute_output_signature(self, input_signature):
+        # this code to account for calls during save_model
+        # todo: remove hard-code values used for testing
+        if isinstance(input_signature, dict):
+            batch_size = input_signature['hidden'].shape[0]
+        elif isinstance(input_signature, tuple):
+            batch_size = input_signature[0]['hidden'].shape[0]
+        if batch_size is None:
+            # compute output shape
+            if training:
+                return tf.TensorSpec([None, 3, 3], dtype=tf.float32)
+            else:
+                return tf.TensorSpec([None, 3, 3], dtype=tf.float), \
+                       tf.TensorSpec([None], dtype=tf.int32), \
+                       tf.TensorSpec([None, 1], dtype=tf.int64), \
+                       tf.TensorSpec([None], dtype=tf.int64), \
+                       tf.Tensorspec([None, 1, 3], dtype=tf.float32)
+
     def _logits_training(self, encoder_output, encoder_end_state, target):
 
         logits = self.decoder_teacher_forcing(
@@ -580,6 +601,23 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         #    inputs is tuple(tuple(encoder_output, encoder_output_state), targets)
         # training==False:
         #    inputs is tuple(encoder_output, encoder_output_state)
+
+        # this code to account for calls during save_model
+        # todo: remove hard-code values used for testing
+        if isinstance(inputs, dict):
+            batch_size = inputs['hidden'].shape[0]
+        elif isinstance(inputs, tuple):
+            batch_size = inputs[0]['hidden'].shape[0]
+        if batch_size is None:
+            # compute output shape
+            if training:
+                return tf.TensorSpec([None, 3, 3], dtype=tf.float32)
+            else:
+                return tf.TensorSpec([None, 3, 3], dtype=tf.float), \
+                       tf.TensorSpec([None], dtype=tf.int32), \
+                       tf.TensorSpec([None, 1], dtype=tf.int64), \
+                       tf.TensorSpec([None], dtype=tf.int64), \
+                       tf.Tensorspec([None, 1, 3], dtype=tf.float32)
 
         if training:
             encoder_output = inputs[0]['hidden']
