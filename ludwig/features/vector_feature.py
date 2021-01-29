@@ -76,8 +76,6 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            print('feature: ', feature)
-            print('input_df: ', input_df)
             if (
                 isinstance(input_df[feature[COLUMN]].iloc[0], np.ndarray) and
                 input_df[feature[COLUMN]].iloc[0].dtype == np.float32
