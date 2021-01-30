@@ -657,6 +657,7 @@ class RayTuneExecutor(HyperoptExecutor):
             split: str,
             cpu_resources_per_trial: int = None,
             gpu_resources_per_trial: int = None,
+            kubernetes_namespace: str = None,
             **kwargs
     ) -> None:
         if ray is None:
@@ -685,6 +686,7 @@ class RayTuneExecutor(HyperoptExecutor):
         self.trial_id = 0
         self.cpu_resources_per_trial = cpu_resources_per_trial
         self.gpu_resources_per_trial = gpu_resources_per_trial
+        self.kubernetes_namespace = kubernetes_namespace
 
     def _run_experiment(self, config, hyperopt_dict):
         trial_id = tune.get_trial_id()
@@ -783,6 +785,13 @@ class RayTuneExecutor(HyperoptExecutor):
         else:
             search_alg = None
 
+        sync_config = None
+        if self.kubernetes_namespace:
+            from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
+            sync_config = tune.SyncConfig(
+                sync_to_driver=NamespacedKubernetesSyncer("ray")
+            )
+
         analysis = tune.run(
             tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict),
             config=self.search_space,
@@ -793,6 +802,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 "gpu": self.gpu_resources_per_trial or 0,
             },
             queue_trials=True,
+            sync_config=sync_config,
         )
 
         hyperopt_results = analysis.results_df.sort_values(
