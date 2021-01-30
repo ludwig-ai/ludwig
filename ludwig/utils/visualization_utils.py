@@ -371,9 +371,10 @@ def donut(
         outside_labels,
         outside_groups,
         title=None,
+        tight_layout=None,
         filename=None
 ):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7,5))
 
     if title is not None:
         ax.set_title(title)
@@ -433,11 +434,13 @@ def donut(
             labels.append(outside_labels[so_far])
             so_far += 1
 
-    ax.legend(wedges, labels, frameon=True)
-    plt.tight_layout()
+    if tight_layout:
+        ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.30, 1.00))
+    else:
+        ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.50, 1.00))
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
-        plt.savefig(filename)
+        plt.savefig(filename, bbox_inches = "tight")
     else:
         plt.show()
 
@@ -928,7 +931,6 @@ def brier_plot(
     plt.xlabel('class')
     plt.ylabel('brier')
 
-    x = np.array(range(brier_scores.shape[0]))
     for i in range(brier_scores.shape[1]):
         plt.plot(brier_scores[:, i],
                  label=algorithm_names[

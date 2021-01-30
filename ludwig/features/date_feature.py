@@ -23,7 +23,7 @@ import tensorflow as tf
 from dateutil.parser import parse
 
 from ludwig.constants import *
-from ludwig.encoders.date_encoders import DateEmbed, DateWave
+from ludwig.encoders.date_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.misc_utils import set_default_value
 
@@ -156,7 +156,4 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': DateEmbed,
-        'wave': DateWave
-    }
+    encoder_registry = ENCODER_REGISTRY

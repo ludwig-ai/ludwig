@@ -1245,7 +1245,7 @@ def frequency_vs_f1_cli(
 
 def learning_curves(
         train_stats_per_model: List[dict],
-        output_feature_name: Union[str, None],
+        output_feature_name: Union[str, None] = None,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -1261,7 +1261,7 @@ def learning_curves(
 
     :param train_stats_per_model: (List[dict]) list containing dictionary of
         training statistics per model.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
+    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
@@ -1322,7 +1322,7 @@ def learning_curves(
 
 def compare_performance(
         test_stats_per_model: List[dict],
-        output_feature_name: Union[str, None],
+        output_feature_name: Union[str, None] = None,
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
@@ -1338,7 +1338,7 @@ def compare_performance(
 
     :param test_stats_per_model: (List[dict]) dictionary containing evaluation
         performance statistics.
-    :param output_feature_name: (Union[str, `None`]) name of the output feature
+    :param output_feature_name: (Union[str, `None`], default: `None`) name of the output feature
         to use for the visualization.  If `None`, use all output features.
     :param model_names: (Union[str, List[str]], default: `None`) model name or
         list of the model names to use as labels.
@@ -1350,6 +1350,17 @@ def compare_performance(
     # Return
 
     :return: (None)
+    
+    # Example usage:
+    
+    ```python
+    model_a = LudwigModel(config)
+    model_a.train(dataset)
+    a_evaluation_stats, _, _ = model_a.evaluate(eval_set)
+    model_b = LudwigModel.load('path/to/model/')
+    b_evaluation_stats, _, _ = model_b.evaluate(eval_set)
+    compare_performance([a_evaluation_stats, b_evaluation_stats], model_names=['A', 'B'])
+    ```
     """
     ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats',
                     'predictions', 'probabilities']
@@ -2172,6 +2183,7 @@ def compare_classifiers_predictions(
          'same prediction', 'different prediction'],
         [0, 1, 1, 2, 2],
         title='{} vs {}'.format(name_c1, name_c2),
+        tight_layout=kwargs.pop('tight_layout', True),
         filename=filename
     )
 
@@ -4168,7 +4180,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '-f',
+        '-ofn',
         '--output_feature_name',
         default=[],
         help='name of the output feature to visualize'

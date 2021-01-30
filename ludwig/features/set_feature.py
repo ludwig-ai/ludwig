@@ -22,7 +22,7 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.set_encoders import SetSparseEncoder
+from ludwig.encoders.set_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
@@ -52,6 +52,7 @@ class SetFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters['tokenizer'],
@@ -142,10 +143,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': SetSparseEncoder,
-        None: SetSparseEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):

@@ -14,12 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os
 
 import numpy as np
+import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.text_encoders import *
+from ludwig.encoders.text_encoders import ENCODER_REGISTRY
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.utils.horovod_utils import is_on_master
@@ -121,6 +123,7 @@ class TextFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(
             column, preprocessing_parameters, backend
         )
@@ -306,26 +309,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
                 encoder_class.default_params
             )
 
-    encoder_registry = {
-        'bert': BERTEncoder,
-        'gpt': GPTEncoder,
-        'gpt2': GPT2Encoder,
-        # 'transformer_xl': TransformerXLEncoder,
-        'xlnet': XLNetEncoder,
-        'xlm': XLMEncoder,
-        'roberta': RoBERTaEncoder,
-        'distilbert': DistilBERTEncoder,
-        'ctrl': CTRLEncoder,
-        'camembert': CamemBERTEncoder,
-        'albert': ALBERTEncoder,
-        't5': T5Encoder,
-        'xlmroberta': XLMRoBERTaEncoder,
-        'flaubert': FlauBERTEncoder,
-        'electra': ELECTRAEncoder,
-        'longformer': LongformerEncoder,
-        'auto_transformer': AutoTransformerEncoder,
-        **SequenceInputFeature.encoder_registry
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
