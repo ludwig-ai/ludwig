@@ -655,8 +655,8 @@ class RayTuneExecutor(HyperoptExecutor):
             output_feature: str,
             metric: str,
             split: str,
-            cpu_resources_per_trial: int = 1,
-            gpu_resources_per_trial: int = 0,
+            cpu_resources_per_trial: int = None,
+            gpu_resources_per_trial: int = None,
             **kwargs
     ) -> None:
         if ray is None:
@@ -669,7 +669,12 @@ class RayTuneExecutor(HyperoptExecutor):
                              )
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
-        ray.init(ignore_reinit_error=True)
+        try:
+            ray.init('auto', ignore_reinit_error=True)
+        except ConnectionError:
+            logger.info('Initializing new Ray cluster...')
+            ray.init()
+
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = hyperopt_sampler.num_samples
         self.goal = hyperopt_sampler.goal
@@ -682,7 +687,6 @@ class RayTuneExecutor(HyperoptExecutor):
         self.gpu_resources_per_trial = gpu_resources_per_trial
 
     def _run_experiment(self, config, hyperopt_dict):
-
         trial_id = tune.get_trial_id()
         gpus_ids = ray.get_gpu_ids()
         if gpus_ids:
@@ -696,7 +700,7 @@ class RayTuneExecutor(HyperoptExecutor):
         hyperopt_dict["gpus"] = gpus
 
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
-        metric_score = self.get_metric_score(eval_stats)
+        metric_score = self.get_metric_score(train_stats, eval_stats)
 
         tune.report(parameters=str(config), metric_score=metric_score,
                     training_stats=str(train_stats), eval_stats=str(eval_stats))
@@ -730,67 +734,6 @@ class RayTuneExecutor(HyperoptExecutor):
                 random_seed=default_random_seed,
                 debug=False,
                 **kwargs):
-
-        available_resources = ray.available_resources()
-        available_cpus = available_resources["CPU"]
-        available_gpus = available_resources.get("GPU", 0)
-
-        if self.cpu_resources_per_trial > available_cpus:
-            logger.warning(
-                'WARNING: Setting cpu_resources_per_trial to {} '
-                'as the defined cpu_resources_per_trial {} '
-                'is greater than the num of available cpus'.format(
-                    available_cpus, self.cpu_resources_per_trial)
-            )
-            self.cpu_resources_per_trial = available_cpus
-
-        if gpus is None:
-            gpus = get_available_gpus_cuda_string()
-
-        if gpus is None:
-            if self.gpu_resources_per_trial != 0:
-                logger.warning(
-                    'WARNING: Setting gpu_resources_per_trial to 0 '
-                    'as there are no available gpus found.'
-                )
-                self.gpu_resources_per_trial = 0
-        else:
-            if isinstance(gpus, int):
-                gpus = str(gpus)
-            gpus = gpus.strip()
-            gpu_ids = gpus.split(",")
-            num_gpus = len(gpu_ids)
-
-            if num_gpus < available_gpus:
-                logger.warning(
-                    'WARNING: gpus could be increased to {} '
-                    'that is the num of available gpus'.format(available_gpus)
-                )
-            elif num_gpus > available_gpus:
-                logger.warning(
-                    'WARNING: Defined gpus {} is greater '
-                    'than {} num of available gpus. '
-                    'Setting num_gpus to {}'.format(
-                        gpus, available_gpus, available_gpus)
-                )
-                num_gpus = available_gpus
-
-            if num_gpus < self.gpu_resources_per_trial:
-                logger.warning(
-                    'WARNING: Setting gpu_resources_per_trial to {} '
-                    'as the defined gpu_resources_per_trial {} '
-                    'is greater than the num of available gpus'.format(
-                        num_gpus, self.gpu_resources_per_trial)
-                )
-                self.gpu_resources_per_trial = num_gpus
-
-            if self.gpu_resources_per_trial == 0:
-                logger.warning(
-                    'WARNING: Setting gpu_resources_per_trial to default 1 '
-                    'as there are {} num of available gpus'.format(num_gpus)
-                )
-                self.gpu_resources_per_trial = 1
-
         if isinstance(dataset, str) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
@@ -840,11 +783,22 @@ class RayTuneExecutor(HyperoptExecutor):
         else:
             search_alg = None
 
-        analysis = tune.run(tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict), config=self.search_space, search_alg=search_alg,
-                            num_samples=self.num_samples, resources_per_trial={"cpu": self.cpu_resources_per_trial, "gpu": self.gpu_resources_per_trial})
+        analysis = tune.run(
+            tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict),
+            config=self.search_space,
+            search_alg=search_alg,
+            num_samples=self.num_samples,
+            resources_per_trial={
+                "cpu": self.cpu_resources_per_trial or 1,
+                "gpu": self.gpu_resources_per_trial or 0,
+            },
+            queue_trials=True,
+        )
 
         hyperopt_results = analysis.results_df.sort_values(
-            "metric_score", ascending=self.goal != MAXIMIZE)
+            "metric_score",
+            ascending=self.goal != MAXIMIZE
+        )
 
         return hyperopt_results.to_dict(orient="records")
 
