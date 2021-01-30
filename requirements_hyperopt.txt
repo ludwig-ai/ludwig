@@ -1,4 +1,4 @@
 fiber
 bayesmark>=0.0.7
 pySOT
-ray
+ray[tune]

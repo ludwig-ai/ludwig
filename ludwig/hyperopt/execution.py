@@ -724,7 +724,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 skip_save_model=False,
                 skip_save_progress=False,
                 skip_save_log=False,
-                skip_save_processed_input=False,
+                skip_save_processed_input=True,
                 skip_save_unprocessed_output=False,
                 skip_save_predictions=False,
                 skip_save_eval_stats=False,
@@ -789,7 +789,7 @@ class RayTuneExecutor(HyperoptExecutor):
         if self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
             sync_config = tune.SyncConfig(
-                sync_to_driver=NamespacedKubernetesSyncer("ray")
+                sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace)
             )
 
         analysis = tune.run(

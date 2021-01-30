@@ -15,8 +15,10 @@
 # ==============================================================================
 import logging
 import os.path
+from contextlib import contextmanager
 
 import pytest
+import ray
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.run import hyperopt
@@ -69,6 +71,15 @@ EXECUTORS = [
 ]
 
 
+@contextmanager
+def ray_init():
+    res = ray.init(num_cpus=4)
+    try:
+        yield res
+    finally:
+        ray.shutdown()
+
+
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
 def test_hyperopt_executor(sampler, executor, csv_filename,
@@ -106,15 +117,16 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(
-        sampler["type"])(goal, parameters, **sampler)
+    with ray_init():
+        hyperopt_sampler = get_build_hyperopt_sampler(
+            sampler["type"])(goal, parameters, **sampler)
 
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_sampler, output_feature, metric, split, **executor)
+        hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
+            hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(config,
-                              dataset=rel_path,
-                              gpus=get_available_gpus_cuda_string())
+        hyperopt_executor.execute(config,
+                                  dataset=rel_path,
+                                  gpus=get_available_gpus_cuda_string())
 
 
 def test_hyperopt_executor_with_metric(csv_filename):
@@ -123,6 +135,7 @@ def test_hyperopt_executor_with_metric(csv_filename):
                            csv_filename,
                            validate_output_feature=True,
                            validation_metric=ACCURACY)
+
 
 def test_hyperopt_run_hyperopt(csv_filename):
     input_features = [
@@ -170,11 +183,12 @@ def test_hyperopt_run_hyperopt(csv_filename):
     # add hyperopt parameter space to the config
     config['hyperopt'] = hyperopt_configs
 
-    hyperopt_results = hyperopt(
-        config,
-        dataset=rel_path,
-        output_directory='results_hyperopt'
-    )
+    with ray_init():
+        hyperopt_results = hyperopt(
+            config,
+            dataset=rel_path,
+            output_directory='results_hyperopt'
+        )
 
     # check for return results
     assert isinstance(hyperopt_results, list)
