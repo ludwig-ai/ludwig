@@ -35,7 +35,7 @@ def hyperopt(
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        skip_save_processed_input: bool = False,
+        skip_save_processed_input: bool = True,
         skip_save_unprocessed_output: bool = False,
         skip_save_predictions: bool = False,
         skip_save_eval_stats: bool = False,
