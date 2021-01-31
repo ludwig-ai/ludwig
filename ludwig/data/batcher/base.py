@@ -15,27 +15,18 @@
 # limitations under the License.
 # ==============================================================================
 
-from ludwig.backend.base import Backend, LocalBackend
+from abc import ABC, abstractmethod
 
 
-LOCAL_BACKEND = LocalBackend()
+class Batcher(ABC):
+    @abstractmethod
+    def next_batch(self):
+        raise NotImplementedError()
 
+    @abstractmethod
+    def last_batch(self):
+        raise NotImplementedError()
 
-def get_local_backend():
-    return LOCAL_BACKEND
-
-
-def create_dask_backend():
-    from ludwig.backend.dask import DaskBackend
-    return DaskBackend()
-
-
-backend_registry = {
-    'dask': create_dask_backend,
-    'local': get_local_backend,
-    None: get_local_backend,
-}
-
-
-def create_backend(name):
-    return backend_registry[name]()
+    @abstractmethod
+    def set_epoch(self, epoch):
+        raise NotImplementedError()

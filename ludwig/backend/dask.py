@@ -15,27 +15,24 @@
 # limitations under the License.
 # ==============================================================================
 
-from ludwig.backend.base import Backend, LocalBackend
+from ludwig.backend.base import Backend
+from ludwig.constants import NAME
+from ludwig.data.dataframe.dask import DaskEngine
 
 
-LOCAL_BACKEND = LocalBackend()
+class DaskBackend(Backend):
+    def __init__(self):
+        super().__init__()
+        self._df_engine = DaskEngine()
 
+    @property
+    def df_engine(self):
+        return self._df_engine
 
-def get_local_backend():
-    return LOCAL_BACKEND
+    @property
+    def supports_multiprocessing(self):
+        return False
 
-
-def create_dask_backend():
-    from ludwig.backend.dask import DaskBackend
-    return DaskBackend()
-
-
-backend_registry = {
-    'dask': create_dask_backend,
-    'local': get_local_backend,
-    None: get_local_backend,
-}
-
-
-def create_backend(name):
-    return backend_registry[name]()
+    def check_lazy_load_supported(self, feature):
+        raise ValueError(f'DaskBackend does not support lazy loading of data files at train time. '
+                         f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
