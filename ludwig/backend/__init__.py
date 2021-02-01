@@ -16,20 +16,44 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, LocalBackend
+from ludwig.utils.horovod_utils import has_horovodrun
 
 
 LOCAL_BACKEND = LocalBackend()
+
+LOCAL = 'local'
+HOROVOD = 'horovod'
+
+ALL_BACKENDS = [LOCAL, HOROVOD]
 
 
 def get_local_backend():
     return LOCAL_BACKEND
 
 
+def create_horovod_backend():
+    from ludwig.backend.horovod import HorovodBackend
+    return HorovodBackend()
+
+
 backend_registry = {
-    'local': get_local_backend,
+    LOCAL: get_local_backend,
+    HOROVOD: create_horovod_backend,
     None: get_local_backend,
 }
 
 
-def create_backend(name):
-    return backend_registry[name]()
+def create_backend(backend):
+    if isinstance(backend, Backend):
+        return backend
+
+    if backend is None and has_horovodrun():
+        backend = HOROVOD
+
+    return backend_registry[backend]()
+
+
+def initialize_backend(backend):
+    backend = create_backend(backend)
+    backend.initialize()
+    return backend

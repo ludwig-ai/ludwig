@@ -22,26 +22,14 @@ import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
-from ludwig.data.dataframe.pandas import PandasEngine
+from ludwig.data.dataframe.pandas import PANDAS
+from ludwig.models.predictor import Predictor
+from ludwig.models.trainer import Trainer
+from ludwig.utils.tf_utils import initialize_tensorflow
 
 
-class Backend(ABC):
-    def __init__(self, cache_dir=None):
-        self._cache_dir = cache_dir
-
-    @property
-    @abstractmethod
-    def df_engine(self):
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def supports_multiprocessing(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def check_lazy_load_supported(self, feature):
-        raise NotImplementedError()
+class CacheMixin:
+    _cache_dir: str
 
     @property
     def cache_enabled(self):
@@ -71,18 +59,97 @@ class Backend(ABC):
             self._cache_dir = prev_cache_dir
 
 
-class LocalBackend(Backend):
-    def __init__(self):
-        super().__init__()
-        self._df_engine = PandasEngine()
+class Backend(CacheMixin, ABC):
+    def __init__(self, cache_dir=None):
+        self._cache_dir = cache_dir
+
+    @abstractmethod
+    def initialize(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def initialize_tensorflow(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    @contextmanager
+    @abstractmethod
+    def create_trainer(self, **kwargs):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def sync_model(self, model):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def broadcast_return(self, fn):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def is_coordinator(self):
+        raise NotImplementedError()
 
     @property
+    @abstractmethod
     def df_engine(self):
-        return self._df_engine
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def supports_multiprocessing(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def check_lazy_load_supported(self, feature):
+        raise NotImplementedError()
+
+
+class LocalPreprocessingMixin:
+    @property
+    def df_engine(self):
+        return PANDAS
 
     @property
     def supports_multiprocessing(self):
         return True
 
     def check_lazy_load_supported(self, feature):
+        pass
+
+
+class LocalTrainingMixin:
+    def initialize_tensorflow(self, *args, **kwargs):
+        initialize_tensorflow(*args, **kwargs)
+
+    def create_trainer(self, **kwargs):
+        return Trainer(**kwargs)
+
+    def create_predictor(self, **kwargs):
+        return Predictor(**kwargs)
+
+    def sync_model(self, model):
+        pass
+
+    def broadcast_return(self, fn):
+        return fn()
+
+    def is_coordinator(self):
+        return True
+
+
+class RemoteTrainingMixin:
+    def sync_model(self, model):
+        pass
+
+    def broadcast_return(self, fn):
+        return fn()
+
+    def is_coordinator(self):
+        return True
+
+
+class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
+    def __init__(self):
+        super().__init__()
+
+    def initialize(self):
         pass

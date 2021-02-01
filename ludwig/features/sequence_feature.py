@@ -32,7 +32,6 @@ from ludwig.modules.metric_modules import PerplexityMetric
 from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.modules.metric_modules import SequenceLossMetric
 from ludwig.modules.metric_modules import TokenAccuracyMetric
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
@@ -391,12 +390,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         postprocessed = {}
         name = self.feature_name
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS].numpy()
             lengths = result[LENGTHS].numpy()
