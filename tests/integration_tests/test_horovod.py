@@ -84,7 +84,7 @@ def _prepare_data(csv_filename):
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Horovod is not supported on Windows")
 def test_horovod_implicit(csv_filename):
-    """Test Horovod running without `use_horovod=True`."""
+    """Test Horovod running without `backend='horovod'`."""
     _run_horovod(csv_filename)
 
 

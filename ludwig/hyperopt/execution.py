@@ -119,7 +119,7 @@ class HyperoptExecutor(ABC):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -162,7 +162,7 @@ class SerialExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -181,7 +181,7 @@ class SerialExecutor(HyperoptExecutor):
 
                 model = LudwigModel(
                     config=modified_config,
-                    use_horovod=use_horovod,
+                    backend=backend,
                     gpus=gpus,
                     gpu_memory_limit=gpu_memory_limit,
                     allow_parallel_threads=allow_parallel_threads,
@@ -315,7 +315,7 @@ class ParallelExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -460,14 +460,15 @@ class ParallelExecutor(HyperoptExecutor):
                             data_format=data_format,
                             experiment_name=f'{experiment_name}_{trial_id}',
                             model_name=model_name,
-                            # model_load_pat=model_load_path,
+                            # model_load_path=model_load_path,
                             # model_resume_path=model_resume_path,
                             skip_save_training_description=skip_save_training_description,
                             skip_save_training_statistics=skip_save_training_statistics,
                             skip_save_model=skip_save_model,
                             skip_save_progress=skip_save_progress,
                             skip_save_log=skip_save_log,
-                            skip_save_processed_input=skip_save_processed_input,
+                            # needed because of concurrent HDF5 writes
+                            skip_save_processed_input=True,
                             skip_save_unprocessed_output=skip_save_unprocessed_output,
                             skip_save_predictions=skip_save_predictions,
                             skip_save_eval_stats=skip_save_eval_stats,
@@ -475,7 +476,7 @@ class ParallelExecutor(HyperoptExecutor):
                             gpus=gpus,
                             gpu_memory_limit=gpu_memory_limit,
                             allow_parallel_threads=allow_parallel_threads,
-                            use_horovod=use_horovod,
+                            backend=backend,
                             random_seed=random_seed,
                             debug=debug,
                         )
@@ -567,7 +568,7 @@ class FiberExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=None,
+            backend=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -596,7 +597,7 @@ class FiberExecutor(HyperoptExecutor):
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
-            use_horovod=use_horovod,
+            backend=backend,
             random_seed=random_seed,
             debug=debug,
         )
@@ -890,7 +891,7 @@ def run_experiment(
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
-        use_horovod=None,
+        backend=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -899,7 +900,7 @@ def run_experiment(
     # & append it to `results`
     model = LudwigModel(
         config=config,
-        use_horovod=use_horovod,
+        backend=backend,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,

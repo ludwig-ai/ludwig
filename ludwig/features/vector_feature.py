@@ -34,7 +34,6 @@ from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
 from ludwig.modules.metric_modules import ErrorScore, \
     SoftmaxCrossEntropyMetric, MSEMetric, MAEMetric
 from ludwig.modules.metric_modules import R2Score
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
@@ -258,12 +257,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         postprocessed = {}
         name = self.feature_name
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:

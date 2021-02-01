@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pprint import pformat
 
@@ -10,9 +11,11 @@ from tqdm import tqdm
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
 from ludwig.utils.data_utils import save_csv, save_json
-from ludwig.utils.horovod_utils import is_on_master
+from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
+from ludwig.utils.tf_utils import initialize_tensorflow
+
 
 EXCLUE_PRED_SET = {LOGITS}
 SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
@@ -20,7 +23,49 @@ SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
 logger = logging.getLogger(__name__)
 
 
-class Predictor:
+class BasePredictor(ABC):
+    @abstractmethod
+    def batch_predict(
+            self,
+            model,
+            dataset,
+            dataset_name=None
+    ):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def batch_evaluation(
+            self,
+            model,
+            dataset,
+            collect_predictions=False,
+            dataset_name=None
+    ):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def batch_collect_activations(
+            self,
+            model,
+            layer_names,
+            dataset,
+            bucketing_field=None
+    ):
+        raise NotImplementedError()
+
+    # Remote implementations may override this
+    def shutdown(self):
+        pass
+
+    # Functions needed to treat Trainer as a context manager
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.shutdown()
+
+
+class Predictor(BasePredictor):
     """
     Predictor is a class that uses a model to predict and evaluate
     """
@@ -49,7 +94,7 @@ class Predictor:
         )
 
         progress_bar = None
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar = tqdm(
                 desc='Prediction' if dataset_name is None
                 else 'Prediction {0: <5.5}'.format(dataset_name),
@@ -80,10 +125,10 @@ class Predictor:
                         else:
                             predictions[of_name][pred_name].append(pred_values)
 
-            if is_on_master():
+            if self.is_coordinator():
                 progress_bar.update(1)
 
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
@@ -108,7 +153,7 @@ class Predictor:
         )
 
         progress_bar = None
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar = tqdm(
                 desc='Evaluation' if dataset_name is None
                 else 'Evaluation {0: <5.5}'.format(dataset_name),
@@ -145,10 +190,10 @@ class Predictor:
                                 predictions[of_name][pred_name].append(
                                     pred_values)
 
-            if is_on_master():
+            if self.is_coordinator():
                 progress_bar.update(1)
 
-        if is_on_master():
+        if self.is_coordinator():
             progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
@@ -247,6 +292,11 @@ class Predictor:
         )
 
         return merged_output_metrics
+
+    def is_coordinator(self):
+        if not self._horovod:
+            return True
+        return self._horovod.rank() == 0
 
 
 def calculate_overall_stats(
