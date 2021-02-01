@@ -691,16 +691,10 @@ class RayTuneExecutor(HyperoptExecutor):
 
     def _run_experiment(self, config, hyperopt_dict):
         trial_id = tune.get_trial_id()
-        gpus_ids = ray.get_gpu_ids()
-        if gpus_ids:
-            gpus = ",".join(str(id) for id in gpus_ids)
-        else:
-            gpus = None
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config)
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
-        hyperopt_dict["gpus"] = gpus
 
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
         metric_score = self.get_metric_score(train_stats, eval_stats)
@@ -733,7 +727,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 gpus=None,
                 gpu_memory_limit=None,
                 allow_parallel_threads=True,
-                use_horovod=None,
+                backend=None,
                 random_seed=default_random_seed,
                 debug=False,
                 **kwargs):
@@ -766,7 +760,7 @@ class RayTuneExecutor(HyperoptExecutor):
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
-            use_horovod=use_horovod,
+            backend=backend,
             random_seed=random_seed,
             debug=debug,
         )
