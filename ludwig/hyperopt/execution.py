@@ -16,6 +16,7 @@ from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 try:
     import ray
     from ray import tune
+    from ray.tune.utils import wait_for_gpu
 except ImportError:
     ray = None
 
@@ -690,6 +691,10 @@ class RayTuneExecutor(HyperoptExecutor):
         self.kubernetes_namespace = kubernetes_namespace
 
     def _run_experiment(self, config, hyperopt_dict):
+        for gpu_id in ray.get_gpu_ids():
+            # Previous trial may not have freed its memory yet, so wait to avoid OOM
+            wait_for_gpu(gpu_id)
+
         trial_id = tune.get_trial_id()
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config)
