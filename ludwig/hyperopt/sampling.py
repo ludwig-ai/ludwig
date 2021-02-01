@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+from inspect import signature
 import itertools
 import json
 import logging
@@ -22,13 +23,14 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
+
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
-
-from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, TYPE, \
-    SPACE, FLOAT
+from ludwig.constants import (CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE,
+                              TYPE)
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import str2bool
+
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +112,7 @@ class HyperoptSampler(ABC):
         pass
 
     def update_batch(self, parameters_metric_tuples: Iterable[
-        Tuple[Dict[str, Any], float]]):
+            Tuple[Dict[str, Any], float]]):
         for (sampled_parameters, metric_score) in parameters_metric_tuples:
             self.update(sampled_parameters, metric_score)
 
@@ -312,6 +314,56 @@ class PySOTSampler(HyperoptSampler):
         return self.sampled_so_far >= self.num_samples
 
 
+class RayTuneSampler(HyperoptSampler):
+    def __init__(self, goal: str, parameters: Dict[str, Any], search_alg: dict = None, num_samples=1,
+                 **kwargs) -> None:
+        HyperoptSampler.__init__(self, goal, parameters)
+        self.search_space = self._get_search_space(parameters)
+        self.search_alg_dict = search_alg
+        self.num_samples = num_samples
+        self.goal = goal
+
+    def _get_search_space(self, parameters):
+        try:
+            from ray import tune
+        except ImportError:
+            raise ImportError('ray module is not installed. To install '
+                              'it, please try running pip install ray[tune]'
+                              )
+        config = {}
+        for param, values in parameters.items():
+            param_search_type = values["space"].lower()
+            if hasattr(tune, param_search_type):
+                param_search_space = getattr(tune, param_search_type)
+            else:
+                raise ValueError(
+                    "'{}' method is not supported in the Ray Tune module".format(param_search_space))
+            param_search_input_args = {}
+            param_search_space_sig = signature(param_search_space)
+            for arg in param_search_space_sig.parameters.values():
+                if arg.name in values:
+                    param_search_input_args[arg.name] = values[arg.name]
+                else:
+                    if arg.default is arg.empty:
+                        raise ValueError(
+                            "Parameter '{}' not defined for {}".format(arg, param))
+            config[param] = param_search_space(**param_search_input_args)
+        return config
+
+    def sample(self) -> Dict[str, Any]:
+        pass
+
+    def update(
+            self,
+            sampled_parameters: Dict[str, Any],
+            statistics: Dict[str, Any]
+    ):
+        pass
+
+    def finished(self) -> bool:
+        pass
+
+
 def get_build_hyperopt_sampler(strategy_type):
     return get_from_registry(strategy_type, sampler_registry)
 
@@ -320,4 +372,5 @@ sampler_registry = {
     "grid": GridSampler,
     "random": RandomSampler,
     "pysot": PySOTSampler,
+    "ray": RayTuneSampler
 }
