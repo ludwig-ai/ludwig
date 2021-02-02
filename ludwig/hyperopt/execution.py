@@ -792,6 +792,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace)
             )
 
+        print('NUM SAMPLES', self.num_samples)
         analysis = tune.run(
             tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict),
             config=self.search_space,
@@ -803,6 +804,7 @@ class RayTuneExecutor(HyperoptExecutor):
             },
             queue_trials=True,
             sync_config=sync_config,
+            local_dir=output_directory,
         )
 
         hyperopt_results = analysis.results_df.sort_values(
