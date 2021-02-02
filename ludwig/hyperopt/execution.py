@@ -690,14 +690,16 @@ class RayTuneExecutor(HyperoptExecutor):
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
 
-    def _run_experiment(self, config, hyperopt_dict):
+    def _run_experiment(self, config, hyperopt_dict, resources_per_trial):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
-            wait_for_gpu(gpu_id)
+            gpu_memory_limit = min(resources_per_trial.get('gpu', 0.0), 1.0)
+            wait_for_gpu(gpu_id, gpu_memory_limit=gpu_memory_limit)
 
         trial_id = tune.get_trial_id()
         modified_config = substitute_parameters(
-            copy.deepcopy(hyperopt_dict["config"]), config)
+            copy.deepcopy(hyperopt_dict["config"]), config
+        )
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
 
@@ -792,15 +794,21 @@ class RayTuneExecutor(HyperoptExecutor):
                 sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace)
             )
 
+        resources_per_trial = {
+            "cpu": self.cpu_resources_per_trial or 1,
+            "gpu": self.gpu_resources_per_trial or 0,
+        }
+
         analysis = tune.run(
-            tune.with_parameters(self._run_experiment, hyperopt_dict=hyperopt_dict),
+            tune.with_parameters(
+                self._run_experiment,
+                hyperopt_dict=hyperopt_dict,
+                resources_per_trial=resources_per_trial
+            ),
             config=self.search_space,
             search_alg=search_alg,
             num_samples=self.num_samples,
-            resources_per_trial={
-                "cpu": self.cpu_resources_per_trial or 1,
-                "gpu": self.gpu_resources_per_trial or 0,
-            },
+            resources_per_trial=resources_per_trial,
             queue_trials=True,
             sync_config=sync_config,
             local_dir=output_directory,
