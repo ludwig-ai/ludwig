@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os.path
 
 import pytest
+
+import ray
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.run import hyperopt
@@ -26,6 +29,7 @@ from ludwig.utils.defaults import merge_with_defaults, ACCURACY
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 
 logger = logging.getLogger(__name__)
@@ -69,11 +73,19 @@ EXECUTORS = [
 ]
 
 
-@pytest.mark.parametrize('sampler', SAMPLERS)
-@pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename,
-                           validate_output_feature=False,
-                           validation_metric=None):
+@pytest.fixture
+def ray_start_4_cpus():
+    address_info = ray.init(num_cpus=4)
+    try:
+        yield address_info
+    finally:
+        ray.shutdown()
+
+
+@spawn
+def run_hyperopt_executor(sampler, executor, csv_filename,
+                          validate_output_feature=False,
+                          validation_metric=None):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -117,15 +129,21 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
                               gpus=get_available_gpus_cuda_string())
 
 
-def test_hyperopt_executor_with_metric(csv_filename):
-    test_hyperopt_executor({"type": "ray", "num_samples": 2},
-                           {"type": "ray"},
-                           csv_filename,
-                           validate_output_feature=True,
-                           validation_metric=ACCURACY)
+@pytest.mark.parametrize('sampler', SAMPLERS)
+@pytest.mark.parametrize('executor', EXECUTORS)
+def test_hyperopt_executor(sampler, executor, csv_filename, ray_start_4_cpus):
+    run_hyperopt_executor(sampler, executor, csv_filename)
 
 
-def test_hyperopt_run_hyperopt(csv_filename):
+def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
+    run_hyperopt_executor({"type": "ray", "num_samples": 2},
+                          {"type": "ray"},
+                          csv_filename,
+                          validate_output_feature=True,
+                          validation_metric=ACCURACY)
+
+
+def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
