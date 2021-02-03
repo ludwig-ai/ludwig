@@ -682,6 +682,7 @@ class RayTuneExecutor(HyperoptExecutor):
         self.num_samples = hyperopt_sampler.num_samples
         self.goal = hyperopt_sampler.goal
         self.search_alg_dict = hyperopt_sampler.search_alg_dict
+        self.scheduler = hyperopt_sampler.scheduler
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
@@ -772,6 +773,8 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=debug,
         )
 
+        mode = "min" if self.goal != MAXIMIZE else "max"
+        metric = "metric_score"
         if self.search_alg_dict is not None:
             if TYPE not in self.search_alg_dict:
                 logger.warning(
@@ -780,10 +783,9 @@ class RayTuneExecutor(HyperoptExecutor):
                 )
                 search_alg = None
             else:
-                mode = "min" if self.goal != MAXIMIZE else "max"
                 search_alg_type = self.search_alg_dict.pop(TYPE)
                 search_alg = tune.create_searcher(
-                    search_alg_type, metric="metric_score", mode=mode, **self.search_alg_dict)
+                    search_alg_type, metric=metric, mode=mode, **self.search_alg_dict)
         else:
             search_alg = None
 
@@ -806,12 +808,15 @@ class RayTuneExecutor(HyperoptExecutor):
                 resources_per_trial=resources_per_trial
             ),
             config=self.search_space,
+            scheduler=self.scheduler,
             search_alg=search_alg,
             num_samples=self.num_samples,
             resources_per_trial=resources_per_trial,
             queue_trials=True,
             sync_config=sync_config,
             local_dir=output_directory,
+            metric=metric,
+            mode=mode,
         )
 
         hyperopt_results = analysis.results_df.sort_values(

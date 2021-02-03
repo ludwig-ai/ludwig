@@ -31,6 +31,12 @@ from ludwig.constants import (CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE,
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import str2bool
 
+try:
+    from ray import tune
+    _HAS_RAY_TUNE = True
+except ImportError:
+    _HAS_RAY_TUNE = False
+
 
 logger = logging.getLogger(__name__)
 
@@ -315,21 +321,39 @@ class PySOTSampler(HyperoptSampler):
 
 
 class RayTuneSampler(HyperoptSampler):
-    def __init__(self, goal: str, parameters: Dict[str, Any], search_alg: dict = None, num_samples=1,
-                 **kwargs) -> None:
+    def __init__(
+            self,
+            goal: str,
+            parameters: Dict[str, Any],
+            search_alg: dict = None,
+            scheduler: dict = None,
+            num_samples=1,
+            **kwargs
+    ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
+        self._check_ray_tune()
         self.search_space = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
+        self.scheduler = self._create_scheduler(scheduler)
         self.num_samples = num_samples
         self.goal = goal
 
+    def _check_ray_tune(self):
+        if not _HAS_RAY_TUNE:
+            raise ValueError(
+                "Requested Ray sampler but Ray Tune is not installed. Run `pip install ray[tune]`"
+            )
+
+    def _create_scheduler(self, scheduler_config):
+        if not scheduler_config:
+            return None
+
+        return tune.create_scheduler(
+            scheduler_config.get("type"),
+            **scheduler_config
+        )
+
     def _get_search_space(self, parameters):
-        try:
-            from ray import tune
-        except ImportError:
-            raise ImportError('ray module is not installed. To install '
-                              'it, please try running pip install ray[tune]'
-                              )
         config = {}
         for param, values in parameters.items():
             param_search_type = values["space"].lower()
@@ -337,7 +361,8 @@ class RayTuneSampler(HyperoptSampler):
                 param_search_space = getattr(tune, param_search_type)
             else:
                 raise ValueError(
-                    "'{}' method is not supported in the Ray Tune module".format(param_search_space))
+                    f"'{param_search_type}' is not a supported Ray Tune search space")
+
             param_search_input_args = {}
             param_search_space_sig = signature(param_search_space)
             for arg in param_search_space_sig.parameters.values():

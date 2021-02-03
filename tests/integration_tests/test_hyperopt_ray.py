@@ -63,13 +63,23 @@ HYPEROPT_CONFIG = {
 SAMPLERS = [
     {"type": "ray"},
     {"type": "ray", "num_samples": 2},
-    # {"type": "ray", "search_alg": {"type": "ax"}, "num_samples": 3},
+    {
+        "type": "ray",
+        "search_alg": {
+            "type": "bohb"
+        },
+        "scheduler": {
+            "type": "hb_bohb",
+            "time_attr": "training_iteration",
+            "max_t": 100,
+            "reduction_factor": 4,
+        },
+        "num_samples": 3
+    },
 ]
 
 EXECUTORS = [
     {"type": "ray"},
-    {"type": "ray", "num_workers": 4},
-    {"type": "ray", "num_workers": 4, "cpu_resources_per_trial": 1},
 ]
 
 
@@ -113,6 +123,10 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
+    if sampler.get("search_alg", {}).get("type", "") == 'bohb':
+        # bohb does not support grid_search search space
+        del parameters['utterance.cell_type']
+
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
