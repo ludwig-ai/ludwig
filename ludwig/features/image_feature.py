@@ -15,10 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import multiprocessing
 import os
 import sys
 from functools import partial
-from multiprocessing import Pool
 
 import h5py
 import numpy as np
@@ -298,7 +298,8 @@ class ImageFeatureMixin(object):
                 all_file_paths = [get_abs_path(src_path, file_path)
                                   for file_path in input_df[feature[NAME]]]
 
-                with Pool(num_processes) as pool:
+                ctx = multiprocessing.get_context('spawn')
+                with ctx.Pool(num_processes) as pool:
                     logger.debug(
                         'Using {} processes for preprocessing images'.format(
                             num_processes
