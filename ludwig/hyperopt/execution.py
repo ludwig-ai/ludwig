@@ -691,11 +691,10 @@ class RayTuneExecutor(HyperoptExecutor):
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
 
-    def _run_experiment(self, config, hyperopt_dict, resources_per_trial):
+    def _run_experiment(self, config, hyperopt_dict):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
-            gpu_memory_limit = min(resources_per_trial.get('gpu', 0.0), 1.0)
-            wait_for_gpu(gpu_id, gpu_memory_limit=gpu_memory_limit)
+            wait_for_gpu(gpu_id)
 
         trial_id = tune.get_trial_id()
         modified_config = substitute_parameters(
@@ -805,7 +804,6 @@ class RayTuneExecutor(HyperoptExecutor):
             tune.with_parameters(
                 self._run_experiment,
                 hyperopt_dict=hyperopt_dict,
-                resources_per_trial=resources_per_trial
             ),
             config=self.search_space,
             scheduler=self.scheduler,
