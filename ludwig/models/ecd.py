@@ -24,9 +24,12 @@ class ECD(tf.keras.Model):
             output_features_def,
             random_seed=None,
     ):
-        self._input_features_df = input_features_def
-        self._combiner_def = combiner_def
-        self._output_features_df = output_features_def
+        # Deep copy to prevent TensorFlow from hijacking the dicts within the config and
+        # transforming them into _DictWrapper classes, which are not JSON serializable.
+        self._input_features_df = copy.deepcopy(input_features_def)
+        self._combiner_def = copy.deepcopy(combiner_def)
+        self._output_features_df = copy.deepcopy(output_features_def)
+
         self._random_seed = random_seed
 
         if random_seed is not None:
@@ -58,6 +61,7 @@ class ECD(tf.keras.Model):
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
+
 
     def get_model_inputs(self, training=True):
         inputs = {

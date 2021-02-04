@@ -35,50 +35,37 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 HYPEROPT_CONFIG = {
     "parameters": {
         "training.learning_rate": {
-            "type": "float",
-            "low": 0.0001,
-            "high": 0.1,
-            "space": "log",
-            "steps": 3,
+            "space": "loguniform",
+            "lower": 0.001,
+            "upper": 0.1,
         },
         "combiner.num_fc_layers": {
-            "type": "int",
-            "low": 1,
-            "high": 4,
-            "space": "linear",
-            "steps": 3,
+            "space": "randint",
+            "lower": 2,
+            "upper": 6
         },
-       "combiner.fc_layers" : {
-            'type': 'category',
-            'values': [
-                [{'fc_size': 512}, {'fc_size': 256}],
-                [{'fc_size': 512}],
-                [{'fc_size': 256}]
-            ]
-        },
-        
         "utterance.cell_type": {
-            "type": "category",
+            "space": "grid_search",
             "values": ["rnn", "gru"]
         },
         "utterance.bidirectional": {
-            "type": "category",
-            "values": [True, False]
+            "space": "choice",
+            "categories": [True, False]
         }
     },
     "goal": "minimize"
 }
 
 SAMPLERS = [
-    {"type": "grid"},
-    {"type": "random", "num_samples": 5},
-    {"type": "pysot", "num_samples": 5},
+    {"type": "ray"},
+    {"type": "ray", "num_samples": 2},
+    # {"type": "ray", "search_alg": {"type": "ax"}, "num_samples": 3},
 ]
 
 EXECUTORS = [
-    {"type": "serial"},
-    {"type": "parallel", "num_workers": 4},
-    {"type": "fiber", "num_workers": 4},
+    {"type": "ray"},
+    {"type": "ray", "num_workers": 4},
+    {"type": "ray", "num_workers": 4, "cpu_resources_per_trial": 1},
 ]
 
 
@@ -131,14 +118,14 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
 
 
 def test_hyperopt_executor_with_metric(csv_filename):
-    test_hyperopt_executor({"type": "random", "num_samples": 2},
-                           {"type": "serial"},
+    test_hyperopt_executor({"type": "ray", "num_samples": 2},
+                           {"type": "ray"},
                            csv_filename,
                            validate_output_feature=True,
                            validation_metric=ACCURACY)
 
-@pytest.mark.parametrize('samplers', SAMPLERS)
-def test_hyperopt_run_hyperopt(csv_filename, samplers):
+
+def test_hyperopt_run_hyperopt(csv_filename):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -156,43 +143,29 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
 
     output_feature_name = output_features[0]['name']
 
-    
     hyperopt_configs = {
         "parameters": {
             "training.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.01,
-                "space": "log",
-                "steps": 3,
-            },
-            output_feature_name + ".fc_layers": {
-                'type': 'category',
-                'values': [
-                    [{'fc_size': 512}, {'fc_size': 256}],
-                    [{'fc_size': 512}],
-                    [{'fc_size': 256}]
-                ]
+                "space": "loguniform",
+                "lower": 0.001,
+                "upper": 0.1,
             },
             output_feature_name + ".fc_size": {
-                "type": "int",
-                "low": 32,
-                "high": 256,
-                "steps": 5
+                "space": "randint",
+                "lower": 32,
+                "upper": 256
             },
             output_feature_name + ".num_fc_layers": {
-                'type': 'int',
-                'low': 1,
-                'high': 5,
-                'space': 'linear',
-                'steps': 4
+                "space": "randint",
+                "lower": 2,
+                "upper": 6
             }
         },
         "goal": "minimize",
         'output_feature': output_feature_name,
         'validation_metrics': 'loss',
-        'executor': {'type': 'serial'},
-        'sampler': {'type': samplers["type"], 'num_samples': 2}
+        'executor': {'type': 'ray'},
+        'sampler': {'type': 'ray', 'num_samples': 2}
     }
 
     # add hyperopt parameter space to the config
@@ -211,88 +184,3 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
     assert os.path.isfile(
         os.path.join('results_hyperopt', 'hyperopt_statistics.json')
     )
-
-    if os.path.isfile(
-        os.path.join('results_hyperopt', 'hyperopt_statistics.json')
-    ):
-        os.remove( 
-            os.path.join('results_hyperopt', 'hyperopt_statistics.json')
-        )
-
-def test_hyperopt_executor_get_metric_score():
-    executor = EXECUTORS[0]
-    output_feature = "of_name"
-    split = 'test'
-
-    train_stats = {
-        'training': {
-            output_feature: {
-                'loss': [0.58760345, 1.5066891],
-                'accuracy': [0.6666667, 0.33333334],
-                'hits_at_k': [1.0, 1.0]
-            },
-            'combined': {
-                'loss': [0.58760345, 1.5066891]
-            }
-        },
-        'validation': {
-            output_feature: {
-                'loss': [0.30233705, 2.6505466],
-                'accuracy': [1.0, 0.0],
-                'hits_at_k': [1.0, 1.0]
-            },
-            'combined': {
-                'loss': [0.30233705, 2.6505466]
-            }
-        },
-        'test': {
-            output_feature: {
-                'loss': [1.0876318, 1.4353828],
-                'accuracy': [0.7, 0.5],
-                'hits_at_k': [1.0, 1.0]
-            },
-            'combined': {
-                'loss': [1.0876318, 1.4353828]
-            }
-        }
-    }
-
-    eval_stats = {
-        output_feature: {
-            'loss': 1.4353828,
-            'accuracy': 0.5,
-            'hits_at_k': 1.0,
-            'overall_stats': {
-                'token_accuracy': 1.0,
-                'avg_precision_macro': 1.0,
-                'avg_recall_macro': 1.0,
-                'avg_f1_score_macro': 1.0,
-                'avg_precision_micro': 1.0,
-                'avg_recall_micro': 1.0,
-                'avg_f1_score_micro': 1.0,
-                'avg_precision_weighted': 1.0,
-                'avg_recall_weighted': 1.0,
-                'avg_f1_score_weighted': 1.0,
-                'kappa_score': 0.6
-            },
-            'combined': {'loss': 1.4353828}
-        }
-    }
-
-    metric = 'loss'
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
-    assert score == 1.0876318
-
-    metric = 'accuracy'
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
-    assert score == 0.7
-
-    metric = 'overall_stats.kappa_score'
-    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        None, output_feature, metric, split, **executor)
-    score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
-    assert score == 0.6

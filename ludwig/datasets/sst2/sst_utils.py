@@ -53,17 +53,17 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
     def process_downloaded_dataset(self):
         sentences_df = pd.read_csv(
             os.path.join(self.raw_dataset_path,
-                         'SST-2/original/datasetSentences.txt'),
+                         'stanfordSentimentTreebank/datasetSentences.txt'),
             sep=('\t'))
 
         datasplit_df = pd.read_csv(
             os.path.join(self.raw_dataset_path,
-                         'SST-2/original/datasetSplit.txt'),
+                        'stanfordSentimentTreebank/datasetSplit.txt'),
             sep=',')
 
         phrase2id = {}
         with open(os.path.join(self.raw_dataset_path,
-                               'SST-2/original/dictionary.txt')) as f:
+                            'stanfordSentimentTreebank/dictionary.txt')) as f:
             Lines = f.readlines()
             for line in Lines:
                 if line:
@@ -72,7 +72,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
 
         id2sent = {}
         with open(os.path.join(self.raw_dataset_path,
-                               'SST-2/original/sentiment_labels.txt')) as f:
+                    'stanfordSentimentTreebank/sentiment_labels.txt')) as f:
             Lines = f.readlines()
             for line in Lines:
                 if line:

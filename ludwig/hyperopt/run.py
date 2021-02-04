@@ -8,7 +8,7 @@ import yaml
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
-    LOSS, TYPE
+    LOSS, TYPE, RAY
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
@@ -35,7 +35,7 @@ def hyperopt(
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        skip_save_processed_input: bool = False,
+        skip_save_processed_input: bool = True,
         skip_save_unprocessed_output: bool = False,
         skip_save_predictions: bool = False,
         skip_save_eval_stats: bool = False,
@@ -161,6 +161,7 @@ def hyperopt(
         )
 
     hyperopt_config = config["hyperopt"]
+
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # print hyperopt config
@@ -259,6 +260,7 @@ def hyperopt(
     hyperopt_sampler = get_build_hyperopt_sampler(
         sampler[TYPE]
     )(goal, parameters, **sampler)
+
     hyperopt_executor = get_build_hyperopt_executor(
         executor[TYPE]
     )(hyperopt_sampler, output_feature, metric, split, **executor)

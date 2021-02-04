@@ -15,19 +15,22 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+from inspect import signature
 import itertools
+import json
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
+
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
-
-from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, TYPE, \
-    SPACE, FLOAT
+from ludwig.constants import (CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE,
+                              TYPE)
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import str2bool
+
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +73,12 @@ grid_functions_registry = {
 
 
 class HyperoptSampler(ABC):
-    def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
+    def __init__(self, goal: str, parameters: Dict[str, Any],
+                 batch_size: int = 1) -> None:
         assert goal in [MINIMIZE, MAXIMIZE]
         self.goal = goal  # useful for Bayesian strategy
         self.parameters = parameters
+        self.default_batch_size = batch_size
 
     @abstractmethod
     def sample(self) -> Dict[str, Any]:
@@ -81,8 +86,10 @@ class HyperoptSampler(ABC):
         # Define `build_hyperopt_strategy` which would take paramters as inputs
         pass
 
-    def sample_batch(self, batch_size: int = 1) -> List[Dict[str, Any]]:
+    def sample_batch(self, batch_size: int = None) -> List[Dict[str, Any]]:
         samples = []
+        if batch_size is None:
+            batch_size = self.default_batch_size
         for _ in range(batch_size):
             try:
                 samples.append(self.sample())
@@ -105,7 +112,7 @@ class HyperoptSampler(ABC):
         pass
 
     def update_batch(self, parameters_metric_tuples: Iterable[
-        Tuple[Dict[str, Any], float]]):
+            Tuple[Dict[str, Any], float]]):
         for (sampled_parameters, metric_score) in parameters_metric_tuples:
             self.update(sampled_parameters, metric_score)
 
@@ -130,11 +137,17 @@ class RandomSampler(HyperoptSampler):
                 values_str = []
                 values_types = {}
                 for value in param_values['values']:
-                    value_str = str(value)
-                    values_str.append(value_str)
                     value_type = type(value)
                     if value_type == bool:
+                        value_str = str(value)
                         value_type = str2bool
+                    elif value_type == str or value_type == int or \
+                        value_type == float:
+                        value_str = str(value)
+                    else:
+                        value_str = json.dumps(value)
+                        value_type = json.loads
+                    values_str.append(value_str)
                     values_types[value_str] = value_type
                 param_values['values'] = values_str
                 cat_params_values_types[param_name] = values_types
@@ -153,6 +166,7 @@ class RandomSampler(HyperoptSampler):
         self.num_samples = num_samples
         self.samples = self._determine_samples()
         self.sampled_so_far = 0
+        self.default_batch_size = self.num_samples
 
     def _determine_samples(self):
         samples = []
@@ -189,6 +203,7 @@ class GridSampler(HyperoptSampler):
         self.search_space = self._create_search_space()
         self.samples = self._get_grids()
         self.sampled_so_far = 0
+        self.default_batch_size = len(self.samples)
 
     def _create_search_space(self):
         search_space = {}
@@ -244,11 +259,17 @@ class PySOTSampler(HyperoptSampler):
                 values_str = []
                 values_types = {}
                 for value in param_values['values']:
-                    value_str = str(value)
-                    values_str.append(value_str)
                     value_type = type(value)
                     if value_type == bool:
+                        value_str = str(value)
                         value_type = str2bool
+                    elif value_type == str or value_type == int or \
+                        value_type == float:
+                        value_str = str(value)
+                    else:
+                        value_str = json.dumps(value)
+                        value_type = json.loads
+                    values_str.append(value_str)
                     values_types[value_str] = value_type
                 param_values['values'] = values_str
                 cat_params_values_types[param_name] = values_types
@@ -282,11 +303,65 @@ class PySOTSampler(HyperoptSampler):
     def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
         for key in sampled_parameters:
             if key in self.cat_params_values_types:
-                sampled_parameters[key] = str(sampled_parameters[key])
+                if type(sampled_parameters[key]) not in {bool, int, float, str}:
+                    sampled_parameters[key] = json.dumps(sampled_parameters[
+                        key])
+                else:
+                    sampled_parameters[key] = str(sampled_parameters[key])
         self.pysot_optimizer.observe([sampled_parameters], [metric_score])
 
     def finished(self) -> bool:
         return self.sampled_so_far >= self.num_samples
+
+
+class RayTuneSampler(HyperoptSampler):
+    def __init__(self, goal: str, parameters: Dict[str, Any], search_alg: dict = None, num_samples=1,
+                 **kwargs) -> None:
+        HyperoptSampler.__init__(self, goal, parameters)
+        self.search_space = self._get_search_space(parameters)
+        self.search_alg_dict = search_alg
+        self.num_samples = num_samples
+        self.goal = goal
+
+    def _get_search_space(self, parameters):
+        try:
+            from ray import tune
+        except ImportError:
+            raise ImportError('ray module is not installed. To install '
+                              'it, please try running pip install ray[tune]'
+                              )
+        config = {}
+        for param, values in parameters.items():
+            param_search_type = values["space"].lower()
+            if hasattr(tune, param_search_type):
+                param_search_space = getattr(tune, param_search_type)
+            else:
+                raise ValueError(
+                    "'{}' method is not supported in the Ray Tune module".format(param_search_space))
+            param_search_input_args = {}
+            param_search_space_sig = signature(param_search_space)
+            for arg in param_search_space_sig.parameters.values():
+                if arg.name in values:
+                    param_search_input_args[arg.name] = values[arg.name]
+                else:
+                    if arg.default is arg.empty:
+                        raise ValueError(
+                            "Parameter '{}' not defined for {}".format(arg, param))
+            config[param] = param_search_space(**param_search_input_args)
+        return config
+
+    def sample(self) -> Dict[str, Any]:
+        pass
+
+    def update(
+            self,
+            sampled_parameters: Dict[str, Any],
+            statistics: Dict[str, Any]
+    ):
+        pass
+
+    def finished(self) -> bool:
+        pass
 
 
 def get_build_hyperopt_sampler(strategy_type):
@@ -297,4 +372,5 @@ sampler_registry = {
     "grid": GridSampler,
     "random": RandomSampler,
     "pysot": PySOTSampler,
+    "ray": RayTuneSampler
 }
