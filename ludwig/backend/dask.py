@@ -17,20 +17,20 @@
 
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME
-from ludwig.data.dataframe.dask import DaskProcessor
+from ludwig.data.dataframe.dask import DaskEngine
 
 
 class DaskBackend(LocalTrainingMixin, Backend):
     def __init__(self):
         super().__init__()
-        self._processor = DaskProcessor()
+        self._df_engine = DaskEngine()
 
     def initialize(self):
         pass
 
     @property
-    def processor(self):
-        return self._processor
+    def df_engine(self):
+        return self._df_engine
 
     @property
     def supports_multiprocessing(self):

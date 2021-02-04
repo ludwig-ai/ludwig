@@ -19,6 +19,7 @@ import tensorflow as tf
 from petastorm import make_batch_reader
 from petastorm.tf_utils import make_petastorm_dataset
 
+from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
 
@@ -26,16 +27,15 @@ from ludwig.data.dataset.base import Dataset
 class ParquetDataset(Dataset):
     def __init__(self, url, features, training_set_metadata):
         self.url = url
-        self.features = features
         self.training_set_metadata = training_set_metadata
 
         with make_batch_reader(self.url) as reader:
             self.size = reader.dataset.metadata.num_rows
 
         self.reshape_features = {
-            name: list((-1, *training_set_metadata[name]['reshape']))
-            for name, feature in features.items()
-            if 'reshape' in training_set_metadata[name]
+            feature[PROC_COLUMN]: list((-1, *training_set_metadata[feature[NAME]]['reshape']))
+            for feature in features
+            if 'reshape' in training_set_metadata[feature[NAME]]
         }
 
     def get(self, feature_name, sample):

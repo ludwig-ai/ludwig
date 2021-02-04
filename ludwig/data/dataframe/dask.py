@@ -22,19 +22,28 @@ import dask
 import dask.array as da
 import dask.dataframe as dd
 
+from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
-from ludwig.utils.misc_utils import get_proc_features
+from ludwig.utils.misc_utils import get_combined_features
+
+TMP_COLUMN = '__TMP_COLUMN__'
 
 
 def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
 
-class DaskProcessor(DataFrameEngine):
+class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None):
         self._parallelism = parallelism or multiprocessing.cpu_count()
+
+    def empty_df_like(self, df):
+        # Our goal is to preserve the index of the input dataframe but to drop
+        # all its columns. Because to_frame() creates a column from the index,
+        # we need to drop it immediately following creation.
+        return df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
 
     def parallelize(self, data):
         return data.repartition(self.parallelism)
@@ -60,11 +69,13 @@ class DaskProcessor(DataFrameEngine):
         dataset_parquet_fp = os.path.join(cache_dir, f'{tag}.parquet')
 
         # Workaround: https://issues.apache.org/jira/browse/ARROW-1614
-        features = get_proc_features(config)
-        for name, feature in features.items():
+        features = get_combined_features(config)
+        for feature in features:
+            name = feature[NAME]
+            proc_column = feature[PROC_COLUMN]
             reshape = training_set_metadata[name].get('reshape')
             if reshape is not None:
-                dataset[name] = self.map_objects(dataset[name], lambda x: x.reshape(-1))
+                dataset[proc_column] = self.map_objects(dataset[proc_column], lambda x: x.reshape(-1))
 
         os.makedirs(dataset_parquet_fp, exist_ok=True)
         dataset.to_parquet(dataset_parquet_fp,

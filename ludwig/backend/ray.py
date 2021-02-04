@@ -23,7 +23,7 @@ from horovod.ray import RayExecutor
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME
-from ludwig.data.dataframe.dask import DaskProcessor
+from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.models.predictor import BasePredictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -137,7 +137,7 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     def __init__(self, horovod_kwargs=None):
         super().__init__()
-        self._processor = DaskProcessor()
+        self._df_engine = DaskEngine()
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
 
@@ -162,8 +162,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return RayPredictor(self._horovod_kwargs, executable_kwargs)
 
     @property
-    def processor(self):
-        return self._processor
+    def df_engine(self):
+        return self._df_engine
 
     @property
     def supports_multiprocessing(self):

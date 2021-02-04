@@ -248,6 +248,10 @@ def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     return b[:max_length]
 
 
+def get_combined_features(config):
+    return config['input_features'] + config['output_features']
+
+
 def get_proc_features(config):
     return get_proc_features_from_lists(config['input_features'], config['output_features'])
 
