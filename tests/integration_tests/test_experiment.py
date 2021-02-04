@@ -349,7 +349,6 @@ def test_experiment_image_dataset(data_format, process_in_memory):
     )
 
 
-@spawn
 def run_experiment_image_dataset(
         train_format, train_in_memory,
         test_format, test_in_memory
