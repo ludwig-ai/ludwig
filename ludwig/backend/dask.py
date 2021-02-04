@@ -17,7 +17,7 @@
 
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME
-from ludwig.data.processor.dask import DaskProcessor
+from ludwig.data.dataframe.dask import DaskProcessor
 
 
 class DaskBackend(LocalTrainingMixin, Backend):

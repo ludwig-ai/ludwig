@@ -23,7 +23,7 @@ from horovod.ray import RayExecutor
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME
-from ludwig.data.processor.dask import DaskProcessor
+from ludwig.data.dataframe.dask import DaskProcessor
 from ludwig.models.predictor import BasePredictor, RemotePredictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.tf_utils import initialize_tensorflow
