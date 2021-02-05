@@ -35,6 +35,8 @@ try:
     import uvicorn
     from fastapi import FastAPI
     from starlette.datastructures import UploadFile
+    from starlette.middleware import Middleware
+    from starlette.middleware.cors import CORSMiddleware
     from starlette.requests import Request
     from starlette.responses import JSONResponse
 except ImportError as e:
@@ -53,9 +55,11 @@ COULD_NOT_RUN_INFERENCE_ERROR = {
     "error": "Unexpected Error: could not run inference on model"}
 
 
-
-def server(model):
-    app = FastAPI()
+def server(model, allowed_origins=None):
+    middleware = [
+        Middleware(CORSMiddleware, allow_origins=allowed_origins)
+    ] if allowed_origins else None
+    app = FastAPI(middleware=middleware)
 
     input_features = {
         f[COLUMN] for f in model.config['input_features']
@@ -159,7 +163,8 @@ def convert_batch_input(form):
 def run_server(
         model_path: str,
         host: str,
-        port: int
+        port: int,
+        allowed_origins: list,
 ) -> None:
     """
     Loads a pre-trained model and serve it on an http server.
@@ -169,13 +174,14 @@ def run_server(
     :param model_path: (str) filepath to pre-trained model.
     :param host: (str, default: `0.0.0.0`) host ip address for the server to use.
     :param port: (int, default: `8000`) port number for the server to use.
+    :param allowed_origins: (list) list of origins allowed to make cross-origin requests.
 
     # Return
 
     :return: (`None`)
     """
     model = LudwigModel.load(model_path)
-    app = server(model)
+    app = server(model, allowed_origins)
     uvicorn.run(app, host=host, port=port)
 
 
@@ -222,6 +228,14 @@ def cli(sys_argv):
         default='0.0.0.0'
     )
 
+    parser.add_argument(
+        '-ao',
+        '--allowed_origins',
+        nargs='*',
+        help='A list of origins that should be permitted to make cross-origin requests. '
+             'Use "*" to allow any origin. See https://www.starlette.io/middleware/#corsmiddleware.',
+    )
+
     args = parser.parse_args(sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
@@ -233,7 +247,7 @@ def cli(sys_argv):
 
     print_ludwig('Serve', LUDWIG_VERSION)
 
-    run_server(args.model_path, args.host, args.port)
+    run_server(args.model_path, args.host, args.port, args.allowed_origins)
 
 
 if __name__ == '__main__':
