@@ -332,18 +332,21 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
     shutil.rmtree(image_dest_folder)
 
 
-IMAGE_DATA_FORMATS_TO_TEST = ['csv', 'df', 'dict', 'hdf5']
+IMAGE_DATA_FORMATS_TO_TEST = ['csv', 'df', 'hdf5']
 
 
-@pytest.mark.parametrize('process_in_memory', [True, False])
-@pytest.mark.parametrize('data_format', IMAGE_DATA_FORMATS_TO_TEST)
-def test_experiment_image_dataset(data_format, process_in_memory):
+@pytest.mark.parametrize('test_in_memory', [True, False])
+@pytest.mark.parametrize('test_format', IMAGE_DATA_FORMATS_TO_TEST)
+@pytest.mark.parametrize('train_in_memory', [True, False])
+@pytest.mark.parametrize('train_format', IMAGE_DATA_FORMATS_TO_TEST)
+def test_experiment_image_dataset(
+        train_format, train_in_memory,
+        test_format, test_in_memory
+):
     run_experiment_fn = run_experiment_image_dataset
-    if process_in_memory:
+    if train_in_memory or test_in_memory:
         run_experiment_fn = spawn(run_experiment_fn)
 
-    train_format = test_format = data_format
-    train_in_memory = test_in_memory = process_in_memory
     run_experiment_fn(
         train_format, train_in_memory, test_format, test_in_memory
     )
