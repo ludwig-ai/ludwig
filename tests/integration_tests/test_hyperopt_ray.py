@@ -187,7 +187,11 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
 
     # add hyperopt parameter space to the config
     config['hyperopt'] = hyperopt_configs
+    run_hyperopt(config, rel_path)
 
+
+@spawn
+def run_hyperopt(config, rel_path):
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,
