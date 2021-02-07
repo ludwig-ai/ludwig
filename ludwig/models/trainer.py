@@ -137,6 +137,7 @@ class Trainer(BaseTrainer):
             random_seed=default_random_seed,
             horovod=None,
             debug=False,
+            callbacks=None,
             **kwargs
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable
@@ -259,6 +260,7 @@ class Trainer(BaseTrainer):
         self.horovod = horovod
         self.debug = debug
         self.received_sigint = False
+        self.callbacks = callbacks or []
 
         if self.horovod:
             self.learning_rate *= self.horovod.size()
@@ -539,8 +541,13 @@ class Trainer(BaseTrainer):
                     disable=is_progressbar_disabled()
                 )
 
+            for callback in self.callbacks:
+                callback.on_epoch_start(self, progress_tracker)
+
             # training step loop
             while not batcher.last_batch():
+                for callback in self.callbacks:
+                    callback.on_batch_start(self, progress_tracker)
 
                 # Set learning rate for this batch
                 current_learning_rate = progress_tracker.learning_rate
@@ -630,6 +637,9 @@ class Trainer(BaseTrainer):
                     progress_bar.update(1)
                 first_batch = False
 
+                for callback in self.callbacks:
+                    callback.on_batch_end(self, progress_tracker)
+
             # ================ Post Training Epoch ================
             if self.is_coordinator():
                 progress_bar.close()
@@ -661,7 +671,13 @@ class Trainer(BaseTrainer):
                 step=progress_tracker.epoch,
             )
 
+            for callback in self.callbacks:
+                callback.on_epoch_end(self, progress_tracker)
+
             if validation_set is not None and len(validation_set) > 0:
+                for callback in self.callbacks:
+                    callback.on_validation_start(self, progress_tracker)
+
                 # eval metrics on validation set
                 self.evaluation(
                     model,
@@ -678,7 +694,13 @@ class Trainer(BaseTrainer):
                     step=progress_tracker.epoch,
                 )
 
+                for callback in self.callbacks:
+                    callback.on_validation_end(self, progress_tracker)
+
             if test_set is not None and len(test_set) > 0:
+                for callback in self.callbacks:
+                    callback.on_test_start(self, progress_tracker)
+
                 # eval metrics on test set
                 self.evaluation(
                     model,
@@ -694,6 +716,9 @@ class Trainer(BaseTrainer):
                     metrics=progress_tracker.test_metrics,
                     step=progress_tracker.epoch,
                 )
+
+                for callback in self.callbacks:
+                    callback.on_test_end(self, progress_tracker)
 
             elapsed_time = (time.time() - start_time) * 1000.0
 
