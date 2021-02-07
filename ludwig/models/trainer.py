@@ -134,10 +134,10 @@ class Trainer(BaseTrainer):
             skip_save_model=False,
             skip_save_progress=False,
             skip_save_log=False,
+            callbacks=None,
             random_seed=default_random_seed,
             horovod=None,
             debug=False,
-            callbacks=None,
             **kwargs
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable
@@ -224,6 +224,9 @@ class Trainer(BaseTrainer):
                is not needed turning it off can slightly increase the
                overall speed..
         :type skip_save_log: Boolean
+        :param callbacks: a list of `ludwig.callbacks.Callback` objects that
+               provide hooks into the Ludwig pipeline.
+        :type: list
         :param random_seed: Default initialization for the random seeds
         :type: Float
         """
