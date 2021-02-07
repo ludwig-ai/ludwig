@@ -670,7 +670,8 @@ class LudwigModel:
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
             split=split,
-            include_outputs=False
+            include_outputs=False,
+            backend=self.backend,
         )
 
         logger.debug('Predicting')
@@ -795,7 +796,8 @@ class LudwigModel:
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
             split=split,
-            include_outputs=True
+            include_outputs=True,
+            backend=self.backend,
         )
 
         logger.debug('Predicting')
