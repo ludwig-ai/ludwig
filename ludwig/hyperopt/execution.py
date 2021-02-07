@@ -745,6 +745,11 @@ class RayTuneExecutor(HyperoptExecutor):
         if isinstance(dataset, str) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
+        if gpus is not None:
+            raise ValueError("Parameter `gpus` is not supported when using Ray Tune. "
+                             "Configure GPU resources with Ray and set `gpu_resources_per_trial` in your "
+                             "hyperopt config.")
+
         hyperopt_dict = dict(
             config=config,
             dataset=dataset,

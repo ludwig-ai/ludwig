@@ -26,7 +26,6 @@ from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults, ACCURACY
-from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import spawn
@@ -147,9 +146,7 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(config,
-                              dataset=rel_path,
-                              gpus=get_available_gpus_cuda_string())
+    hyperopt_executor.execute(config, dataset=rel_path)
 
 
 @pytest.mark.parametrize('sampler', SAMPLERS)
