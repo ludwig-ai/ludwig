@@ -71,6 +71,10 @@ def category_grid_function(values, **kwargs):
     return values
 
 
+def identity(x):
+    return x
+
+
 grid_functions_registry = {
     'int': int_grid_function,
     'float': float_grid_function,
@@ -332,7 +336,7 @@ class RayTuneSampler(HyperoptSampler):
     ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
         self._check_ray_tune()
-        self.search_space = self._get_search_space(parameters)
+        self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
         self.scheduler = self._create_scheduler(scheduler)
         self.num_samples = num_samples
@@ -355,7 +359,12 @@ class RayTuneSampler(HyperoptSampler):
 
     def _get_search_space(self, parameters):
         config = {}
+        ctx = {}
         for param, values in parameters.items():
+            # Encode list and dict types as JSON encoded strings to
+            # workaround type limitations of the underlying frameworks
+            values = self.encode_values(param, values, ctx)
+
             param_search_type = values["space"].lower()
             if hasattr(tune, param_search_type):
                 param_search_space = getattr(tune, param_search_type)
@@ -373,7 +382,7 @@ class RayTuneSampler(HyperoptSampler):
                         raise ValueError(
                             "Parameter '{}' not defined for {}".format(arg, param))
             config[param] = param_search_space(**param_search_input_args)
-        return config
+        return config, ctx
 
     def sample(self) -> Dict[str, Any]:
         pass
@@ -387,6 +396,32 @@ class RayTuneSampler(HyperoptSampler):
 
     def finished(self) -> bool:
         pass
+
+    @staticmethod
+    def encode_values(param, values, ctx):
+        """JSON encodes any search spaces whose values are lists / dicts.
+
+        Only applies to grid search and choice options.  See here for details:
+
+        https://docs.ray.io/en/master/tune/api_docs/search_space.html#random-distributions-api
+        """
+        values = values.copy()
+        for key in ["values", "categories"]:
+            if key in values:
+                values[key] = [json.dumps(v) for v in values[key]]
+                ctx[param] = json.loads
+        return values
+
+    @staticmethod
+    def decode_values(config, ctx):
+        """Decode config values with the decode function in the context.
+
+        Uses the identity function if no encoding is needed.
+        """
+        return {
+            key: ctx.get(key, identity)(value)
+            for key, value in config.items()
+        }
 
 
 def get_build_hyperopt_sampler(strategy_type):

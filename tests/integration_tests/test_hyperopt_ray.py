@@ -55,10 +55,19 @@ HYPEROPT_CONFIG = {
         "utterance.bidirectional": {
             "space": "choice",
             "categories": [True, False]
+        },
+        "utterance.fc_layers": {
+            "space": "choice",
+            "categories": [
+                [{"fc_size": 512}, {"fc_size": 256}],
+                [{"fc_size": 512}],
+                [{"fc_size": 256}],
+            ]
         }
     },
     "goal": "minimize"
 }
+
 
 SAMPLERS = [
     {"type": "ray"},

@@ -683,6 +683,7 @@ class RayTuneExecutor(HyperoptExecutor):
         self.goal = hyperopt_sampler.goal
         self.search_alg_dict = hyperopt_sampler.search_alg_dict
         self.scheduler = hyperopt_sampler.scheduler
+        self.decode_ctx = hyperopt_sampler.decode_ctx
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
@@ -691,10 +692,13 @@ class RayTuneExecutor(HyperoptExecutor):
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
 
-    def _run_experiment(self, config, hyperopt_dict):
+    def _run_experiment(self, config, hyperopt_dict, decode_ctx):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
+
+        # Some config values may be JSON encoded as strings, so decode them here
+        config = RayTuneSampler.decode_values(config, decode_ctx)
 
         trial_id = tune.get_trial_id()
         modified_config = substitute_parameters(
@@ -804,6 +808,7 @@ class RayTuneExecutor(HyperoptExecutor):
             tune.with_parameters(
                 self._run_experiment,
                 hyperopt_dict=hyperopt_dict,
+                decode_ctx=self.decode_ctx,
             ),
             config=self.search_space,
             scheduler=self.scheduler,
