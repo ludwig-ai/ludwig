@@ -221,15 +221,23 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SoftmaxCrossEntropyMetric(
+        # todo: remove commented code
+        # self.eval_loss_function = SoftmaxCrossEntropyMetric(
+        #     num_classes=self.num_classes,
+        #     feature_loss=self.loss,
+        #     name='eval_loss'
+        # )
+        self.eval_loss_function = self.train_loss_function
+
+    def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
+        # todo: remove commented code
+        # self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
             num_classes=self.num_classes,
             feature_loss=self.loss,
             name='eval_loss'
         )
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = CategoryAccuracy(
             name='metric_accuracy'
         )
