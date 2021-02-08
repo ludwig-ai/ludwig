@@ -2029,7 +2029,7 @@ def compare_classifiers_multiclass_multimetric(
 
 
 def compare_classifiers_predictions(
-        predictions_per_model: List[list],
+        predictions_per_model: Union[List[list, pd.Series]],
         ground_truth: Union[pd.Series, np.ndarray],
         metadata: dict,
         output_feature_name: str,
@@ -2043,8 +2043,8 @@ def compare_classifiers_predictions(
 
     # Inputs
 
-    :param predictions_per_model: (List[list]) list containing the model
-        predictions for the specified output_feature_name.
+    :param predictions_per_model: (Union[List[list, pd.Series]]) list containing
+        the model predictions for the specified output_feature_name.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
     :param output_feature_name: (str) output feature name
@@ -2076,8 +2076,8 @@ def compare_classifiers_predictions(
         model_names_list[1] if model_names is not None and len(model_names) > 1
         else 'c2')
 
-    pred_c1 = predictions_per_model[0]
-    pred_c2 = predictions_per_model[1]
+    pred_c1 = np.array(predictions_per_model[0], dtype=int)
+    pred_c2 = np.array(predictions_per_model[1], dtype=int)
 
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit

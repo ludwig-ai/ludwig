@@ -744,7 +744,7 @@ class LudwigModel:
             collect_predictions: bool = False,
             collect_overall_stats: bool = False,
             output_directory: str = 'results',
-            return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+            return_type: Union[dict, pd.DataFrame] = pd.DataFrame,
             debug: bool = False,
             **kwargs
     ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
@@ -785,8 +785,8 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param return_type: (Union[str, dict, pandas.DataFrame], default: pandas.DataFrame) indicates
-            the format to of the returned predictions.
+        :param return_type: (Union[dict, pandas.DataFrame], default: pandas.DataFrame) indicates
+            the format of the returned predictions.
         :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan` checks.
 
