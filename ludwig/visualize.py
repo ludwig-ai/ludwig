@@ -2029,7 +2029,7 @@ def compare_classifiers_multiclass_multimetric(
 
 
 def compare_classifiers_predictions(
-        predictions_per_model: Union[List[list, pd.Series]],
+        predictions_per_model: List[Union[list, pd.Series]],
         ground_truth: Union[pd.Series, np.ndarray],
         metadata: dict,
         output_feature_name: str,
