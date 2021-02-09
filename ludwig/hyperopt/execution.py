@@ -6,6 +6,8 @@ import signal
 from abc import ABC, abstractmethod
 from typing import Union
 
+import numpy as np
+
 from ludwig.api import LudwigModel
 from ludwig.constants import *
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
@@ -20,6 +22,17 @@ try:
     from ray.tune.utils import wait_for_gpu
 except ImportError:
     ray = None
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        return json.JSONEncoder.default(self, obj)
 
 
 class HyperoptExecutor(ABC):
@@ -712,10 +725,10 @@ class RayTuneExecutor(HyperoptExecutor):
         metric_score = self.get_metric_score(train_stats, eval_stats)
 
         tune.report(
-            parameters=json.dumps(config),
+            parameters=json.dumps(config, cls=NumpyEncoder),
             metric_score=metric_score,
-            training_stats=json.dumps(train_stats),
-            eval_stats=json.dumps(eval_stats)
+            training_stats=json.dumps(train_stats, cls=NumpyEncoder),
+            eval_stats=json.dumps(eval_stats, cls=NumpyEncoder)
         )
 
     def execute(self,

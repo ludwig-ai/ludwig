@@ -674,9 +674,6 @@ class Trainer(BaseTrainer):
                 step=progress_tracker.epoch,
             )
 
-            for callback in self.callbacks:
-                callback.on_epoch_end(self, progress_tracker)
-
             if validation_set is not None and len(validation_set) > 0:
                 for callback in self.callbacks:
                     callback.on_validation_start(self, progress_tracker)
@@ -783,6 +780,9 @@ class Trainer(BaseTrainer):
                     )
                 contrib_command("train_epoch_end", progress_tracker)
                 logger.info('')
+
+            for callback in self.callbacks:
+                callback.on_epoch_end(self, progress_tracker)
 
         if train_summary_writer is not None:
             train_summary_writer.close()
