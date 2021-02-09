@@ -913,6 +913,7 @@ def run_experiment(
         gpu_memory_limit=None,
         allow_parallel_threads=True,
         backend=None,
+        callbacks=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -950,6 +951,7 @@ def run_experiment(
         output_directory=output_directory,
         skip_collect_predictions=True,
         skip_collect_overall_stats=False,
+        callbacks=callbacks,
         random_seed=random_seed,
         debug=debug,
     )
