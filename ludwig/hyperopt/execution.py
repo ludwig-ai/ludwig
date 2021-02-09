@@ -1,5 +1,6 @@
 import os
 import copy
+import json
 import multiprocessing
 import signal
 from abc import ABC, abstractmethod
@@ -710,8 +711,12 @@ class RayTuneExecutor(HyperoptExecutor):
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
         metric_score = self.get_metric_score(train_stats, eval_stats)
 
-        tune.report(parameters=str(config), metric_score=metric_score,
-                    training_stats=str(train_stats), eval_stats=str(eval_stats))
+        tune.report(
+            parameters=json.dumps(config),
+            metric_score=metric_score,
+            training_stats=json.dumps(train_stats),
+            eval_stats=json.dumps(eval_stats)
+        )
 
     def execute(self,
                 config,
