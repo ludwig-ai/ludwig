@@ -34,7 +34,9 @@ ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
+
 from ludwig.backend import Backend, initialize_backend
+from ludwig.callbacks import Callback
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
@@ -216,6 +218,7 @@ class LudwigModel:
             skip_save_log: bool = False,
             skip_save_processed_input: bool = False,
             output_directory: str = 'results',
+            callbacks: List[Callback] = None,
             random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
@@ -297,6 +300,9 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
+        :param callbacks: (list, default: `None`) a list of
+              `ludwig.callbacks.Callback` objects that provide hooks into the
+               Ludwig pipeline.
         :param random_seed: (int, default: `42`) a random seed that will be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -453,6 +459,7 @@ class LudwigModel:
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
+                callbacks=callbacks,
                 random_seed=random_seed,
                 debug=debug
             ) as trainer:
@@ -901,6 +908,7 @@ class LudwigModel:
             skip_collect_predictions: bool = False,
             skip_collect_overall_stats: bool = False,
             output_directory: str = 'results',
+            callbacks: List[Callback] = None,
             random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
@@ -994,6 +1002,9 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
+        :param callbacks: (list, default: `None`) a list of
+              `ludwig.callbacks.Callback` objects that provide hooks into the
+               Ludwig pipeline.
         :param random_seed: (int: default: 42) random seed used for weights
             initialization, splits and any other random function.
         :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -1034,6 +1045,7 @@ class LudwigModel:
             skip_save_processed_input=skip_save_processed_input,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
+            callbacks=callbacks,
             random_seed=random_seed,
             debug=debug,
         )
