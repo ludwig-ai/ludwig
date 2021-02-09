@@ -2043,7 +2043,7 @@ def compare_classifiers_predictions(
 
     # Inputs
 
-    :param predictions_per_model: (Union[List[list, pd.Series]]) list containing
+    :param predictions_per_model: (List[Union[list, pd.Series]]) list containing
         the model predictions for the specified output_feature_name.
     :param ground_truth: (Union[pd.Series, np.ndarray]) ground truth values
     :param metadata: (dict) feature metadata dictionary
