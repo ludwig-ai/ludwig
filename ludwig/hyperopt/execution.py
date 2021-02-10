@@ -9,6 +9,7 @@ from typing import Union
 import numpy as np
 
 from ludwig.api import LudwigModel
+from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
 from ludwig.modules.metric_modules import get_best_function
@@ -60,7 +61,7 @@ class HyperoptExecutor(ABC):
                         "best validation performance")
             return self.get_metric_score_from_eval_stats(eval_stats)
 
-    def get_metric_score_from_eval_stats(self, eval_stats) -> float:
+    def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
         if '.' in self.metric:
             metric_parts = self.metric.split('.')
             stats = eval_stats[self.output_feature]
@@ -721,9 +722,26 @@ class RayTuneExecutor(HyperoptExecutor):
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
 
-        train_stats, eval_stats = run_experiment(**hyperopt_dict)
-        metric_score = self.get_metric_score(train_stats, eval_stats)
+        tune_executor = self
 
+        class RayTuneReportCallback(Callback):
+            def on_epoch_end(self, trainer, progress_tracker):
+                train_stats, eval_stats = progress_tracker.train_metrics, progress_tracker.vali_metrics
+                stats = eval_stats or train_stats
+                metric_score = tune_executor.get_metric_score_from_eval_stats(stats)[-1]
+                tune.report(
+                    parameters=json.dumps(config, cls=NumpyEncoder),
+                    metric_score=metric_score,
+                    training_stats=json.dumps(train_stats, cls=NumpyEncoder),
+                    eval_stats=json.dumps(eval_stats, cls=NumpyEncoder)
+                )
+
+        train_stats, eval_stats = run_experiment(
+            **hyperopt_dict,
+            callbacks=[RayTuneReportCallback()],
+        )
+
+        metric_score = self.get_metric_score(train_stats, eval_stats)
         tune.report(
             parameters=json.dumps(config, cls=NumpyEncoder),
             metric_score=metric_score,
