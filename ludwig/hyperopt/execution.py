@@ -3,6 +3,7 @@ import copy
 import json
 import multiprocessing
 import signal
+import shutil
 from abc import ABC, abstractmethod
 from typing import Union
 
@@ -707,7 +708,7 @@ class RayTuneExecutor(HyperoptExecutor):
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
 
-    def _run_experiment(self, config, hyperopt_dict, decode_ctx):
+    def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
@@ -719,25 +720,32 @@ class RayTuneExecutor(HyperoptExecutor):
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config
         )
-        hyperopt_dict["config"] = modified_config
-        hyperopt_dict["experiment_name"] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
+
+        hyperopt_dict['config'] = modified_config
+        hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
 
         tune_executor = self
 
         class RayTuneReportCallback(Callback):
-            def on_epoch_end(self, trainer, progress_tracker):
-                train_stats, eval_stats = progress_tracker.train_metrics, progress_tracker.vali_metrics
-                stats = eval_stats or train_stats
-                metric_score = tune_executor.get_metric_score_from_eval_stats(stats)[-1]
-                tune.report(
-                    parameters=json.dumps(config, cls=NumpyEncoder),
-                    metric_score=metric_score,
-                    training_stats=json.dumps(train_stats, cls=NumpyEncoder),
-                    eval_stats=json.dumps(eval_stats, cls=NumpyEncoder)
-                )
+            def on_epoch_end(self, trainer, progress_tracker, save_path):
+                if trainer.is_coordinator():
+                    with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+                        checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                        shutil.copytree(save_path, checkpoint_model)
+
+                    train_stats, eval_stats = progress_tracker.train_metrics, progress_tracker.vali_metrics
+                    stats = eval_stats or train_stats
+                    metric_score = tune_executor.get_metric_score_from_eval_stats(stats)[-1]
+                    tune.report(
+                        parameters=json.dumps(config, cls=NumpyEncoder),
+                        metric_score=metric_score,
+                        training_stats=json.dumps(train_stats, cls=NumpyEncoder),
+                        eval_stats=json.dumps(eval_stats, cls=NumpyEncoder)
+                    )
 
         train_stats, eval_stats = run_experiment(
             **hyperopt_dict,
+            model_resume_path=checkpoint_dir,
             callbacks=[RayTuneReportCallback()],
         )
 
@@ -845,12 +853,11 @@ class RayTuneExecutor(HyperoptExecutor):
             "gpu": self.gpu_resources_per_trial or 0,
         }
 
+        def run_experiment_trial(config, checkpoint_dir=None):
+            return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx)
+
         analysis = tune.run(
-            tune.with_parameters(
-                self._run_experiment,
-                hyperopt_dict=hyperopt_dict,
-                decode_ctx=self.decode_ctx,
-            ),
+            run_experiment_trial,
             config=self.search_space,
             scheduler=self.scheduler,
             search_alg=search_alg,
@@ -933,7 +940,7 @@ def run_experiment(
         experiment_name="hyperopt",
         model_name="run",
         # model_load_path=None,
-        # model_resume_path=None,
+        model_resume_path=None,
         eval_split=VALIDATION,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
@@ -973,7 +980,7 @@ def run_experiment(
         experiment_name=experiment_name,
         model_name=model_name,
         # model_load_path=model_load_path,
-        # model_resume_path=model_resume_path,
+        model_resume_path=model_resume_path,
         eval_split=eval_split,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
