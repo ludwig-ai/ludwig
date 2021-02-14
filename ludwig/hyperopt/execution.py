@@ -868,6 +868,8 @@ class RayTuneExecutor(HyperoptExecutor):
             local_dir=output_directory,
             metric=metric,
             mode=mode,
+            trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
+            trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
         )
 
         hyperopt_results = analysis.results_df.sort_values(
