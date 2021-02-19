@@ -16,6 +16,7 @@
 # ==============================================================================
 import pandas as pd
 
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import BINARY
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS, \
@@ -28,8 +29,13 @@ def postprocess(
         output_features,
         training_set_metadata,
         output_directory='',
+        backend=LOCAL_BACKEND,
         skip_save_unprocessed_output=False,
 ):
+    if not backend.is_coordinator():
+        # Only save unprocessed output on the coordinator
+        skip_save_unprocessed_output = True
+
     postprocessed = {}
     for of_name, output_feature in output_features.items():
         postprocessed[of_name] = output_feature.postprocess_predictions(

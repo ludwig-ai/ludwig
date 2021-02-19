@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # coding=utf-8
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,21 +15,18 @@
 # limitations under the License.
 # ==============================================================================
 
-LUDWIG_VERSION = '0.4-dev0'
-
-MODEL_WEIGHTS_FILE_NAME = 'model_weights'
-MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'
-TRAIN_SET_METADATA_FILE_NAME = 'training_set_metadata.json'
-TRAINING_PROGRESS_TRACKER_FILE_NAME = 'training_progress.json'
-TRAINING_CHECKPOINTS_DIR_PATH = 'training_checkpoints'
-
-DISABLE_PROGRESSBAR = False
+from abc import ABC, abstractmethod
 
 
-def set_disable_progressbar(value):
-    global DISABLE_PROGRESSBAR
-    DISABLE_PROGRESSBAR = value
+class Dataset(ABC):
+    @abstractmethod
+    def __len__(self):
+        raise NotImplementedError()
 
-
-def is_progressbar_disabled():
-    return DISABLE_PROGRESSBAR
+    @abstractmethod
+    def initialize_batcher(self, batch_size=128,
+                           should_shuffle=True,
+                           seed=0,
+                           ignore_last=False,
+                           horovod=None):
+        raise NotImplementedError()

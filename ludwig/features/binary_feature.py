@@ -28,7 +28,6 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -304,12 +303,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         postprocessed = {}
         name = self.feature_name
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS].numpy()
             if 'bool2str' in metadata:

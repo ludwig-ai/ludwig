@@ -14,65 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import math
-
 import numpy as np
 
-from ludwig.data.sampler import DistributedSampler
+from ludwig.data.batcher.base import Batcher
 
 
-class Batcher(object):
-    def __init__(self, dataset, sampler,
-                 batch_size=128,
-                 ignore_last=False):
-        # store our dataset as well
-        self.dataset = dataset
-        self.sampler = sampler
-        self.sample_it = iter(self.sampler)
-
-        self.ignore_last = ignore_last
-        self.batch_size = batch_size
-        self.total_size = len(sampler)
-        self.steps_per_epoch = int(
-            math.ceil(self.total_size / self.batch_size))
-        self.index = 0
-        self.step = 0
-
-    def next_batch(self):
-        if self.last_batch():
-            raise StopIteration()
-
-        indices = []
-        for _ in range(self.batch_size):
-            try:
-                indices.append(next(self.sample_it))
-                self.index += 1
-            except StopIteration:
-                break
-
-        sub_batch = {}
-        for proc_column in self.dataset.features:
-            sub_batch[proc_column] = self.dataset.get(
-                proc_column,
-                indices
-            )
-
-        self.step += 1
-        return sub_batch
-
-    def last_batch(self):
-        return self.index >= self.total_size or (
-                self.ignore_last and
-                self.index + self.batch_size >= self.total_size)
-
-    def set_epoch(self, epoch):
-        self.index = 0
-        self.step = 0
-        self.sampler.set_epoch(epoch)
-        self.sample_it = iter(self.sampler)
-
-
-class BucketedBatcher(object):
+class BucketedBatcher(Batcher):
     def __init__(self, dataset, bucketing_field, batch_size=128, buckets=10,
                  should_shuffle=True, ignore_last=False,
                  should_trim=False, trim_side='right'):
@@ -117,8 +64,7 @@ class BucketedBatcher(object):
         if self.last_batch():
             if self.should_shuffle:
                 self.shuffle(self.buckets_idcs)
-            self.reset()
-            self.epoch += 1
+            self.set_epoch(self.epoch + 1)
 
         if self.ignore_last:
             idcs_below_size = self.indices + self.batch_size < self.bucket_sizes
@@ -157,9 +103,10 @@ class BucketedBatcher(object):
                        self.indices + self.batch_size < self.bucket_sizes
                    ))
 
-    def reset(self):
+    def set_epoch(self, epoch):
         self.indices = np.array([0] * len(self.buckets_idcs))
         self.step = 0
+        self.epoch = epoch
 
 
 # todo future: reintroduce the bucketed batcher
@@ -213,18 +160,3 @@ class BucketedBatcher(object):
 #             ignore_last=ignore_last
 #         )
 #     return batcher
-
-def initialize_batcher(dataset, batch_size=128,
-                       should_shuffle=True,
-                       seed=0,
-                       ignore_last=False,
-                       horovod=None):
-    sampler = DistributedSampler(len(dataset),
-                                 shuffle=should_shuffle,
-                                 seed=seed,
-                                 horovod=horovod)
-    batcher = Batcher(dataset,
-                      sampler,
-                      batch_size=batch_size,
-                      ignore_last=ignore_last)
-    return batcher

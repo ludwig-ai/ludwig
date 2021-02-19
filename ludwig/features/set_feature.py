@@ -29,7 +29,6 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import JaccardMetric
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
@@ -286,12 +285,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         postprocessed = {}
         name = self.feature_name
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS].numpy()
             if 'idx2str' in metadata:

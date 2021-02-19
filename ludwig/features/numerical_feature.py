@@ -32,7 +32,6 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import MSELoss, MAELoss
 from ludwig.modules.metric_modules import ErrorScore, MAEMetric, MSEMetric
 from ludwig.modules.metric_modules import R2Score
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
@@ -256,12 +255,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         postprocessed = {}
         name = self.feature_name
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
             # as needed convert predictions make to original value space
             numeric_transformer = get_from_registry(
