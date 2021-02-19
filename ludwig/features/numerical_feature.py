@@ -216,10 +216,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
-    # def update_metrics(self, targets, predictions):
-    #     for metric in self.metric_functions.values():
-    #         metric.update_state(targets, predictions[PREDICTIONS])
-
     @classmethod
     def get_output_dtype(cls):
         return tf.float32
