@@ -23,7 +23,7 @@ import pytest
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.backend import LOCAL_BACKEND
+from ludwig.backend import LOCAL_BACKEND, LocalBackend
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
@@ -31,6 +31,7 @@ from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
+
 from tests.conftest import delete_temporary_data
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
     HF_ENCODERS_SHORT, slow, create_data_set_to_use
@@ -56,6 +57,12 @@ from tests.integration_tests.utils import vector_feature
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
+
+
+class LocalTestBackend(LocalBackend):
+    @property
+    def supports_multiprocessing(self):
+        return False
 
 
 @pytest.mark.parametrize('encoder', ENCODERS)
@@ -332,7 +339,9 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
     shutil.rmtree(image_dest_folder)
 
 
-IMAGE_DATA_FORMATS_TO_TEST = ['csv', 'df', 'dict', 'hdf5']
+IMAGE_DATA_FORMATS_TO_TEST = ['csv', 'df', 'hdf5']
+
+
 @pytest.mark.parametrize('test_in_memory', [True, False])
 @pytest.mark.parametrize('test_format', IMAGE_DATA_FORMATS_TO_TEST)
 @pytest.mark.parametrize('train_in_memory', [True, False])
@@ -387,11 +396,13 @@ def test_experiment_image_dataset(
         = train_in_memory
     training_set_metadata = None
 
+    backend = LocalTestBackend()
     if train_format == 'hdf5':
         # hdf5 format
         train_set, _, _, training_set_metadata = preprocess_for_training(
             config,
-            dataset=train_data
+            dataset=train_data,
+            backend=backend,
         )
         train_dataset_to_use = train_set.data_hdf5_fp
     else:
@@ -400,6 +411,7 @@ def test_experiment_image_dataset(
     # define Ludwig model
     model = LudwigModel(
         config=config,
+        backend=backend,
     )
     model.train(
         dataset=train_dataset_to_use,

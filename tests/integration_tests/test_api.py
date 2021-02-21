@@ -16,6 +16,7 @@
 import os
 import shutil
 import tempfile
+from unittest import mock
 
 import numpy as np
 import pytest
@@ -433,3 +434,47 @@ def test_api_skip_parameters_evaluate(
             skip_collect_predictions=skip_collect_predictions,
             skip_collect_overall_stats=skip_collect_overall_stats,
         )
+
+
+def test_api_callbacks(csv_filename):
+    mock_callback = mock.Mock()
+
+    epochs = 2
+    batch_size = 8
+    num_examples = 32
+
+    with tempfile.TemporaryDirectory() as output_dir:
+        input_features = [sequence_feature(reduce_output='sum')]
+        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+
+        config = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'combiner': {'type': 'concat', 'fc_size': 14},
+            'training': {'epochs': epochs, 'batch_size': batch_size},
+        }
+        model = LudwigModel(config)
+
+        data_csv = generate_data(input_features, output_features,
+                                 os.path.join(output_dir, csv_filename),
+                                 num_examples=num_examples)
+        val_csv = shutil.copyfile(data_csv,
+                                  os.path.join(output_dir, 'validation.csv'))
+        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, 'test.csv'))
+
+        model.train(training_set=data_csv,
+                    validation_set=val_csv,
+                    test_set=test_csv,
+                    callbacks=[mock_callback])
+
+    assert mock_callback.on_epoch_start.call_count == epochs
+    assert mock_callback.on_epoch_end.call_count == epochs
+
+    assert mock_callback.on_validation_start.call_count == epochs
+    assert mock_callback.on_validation_end.call_count == epochs
+
+    assert mock_callback.on_test_start.call_count == epochs
+    assert mock_callback.on_test_end.call_count == epochs
+
+    assert mock_callback.on_batch_start.call_count == epochs * (num_examples / batch_size)
+    assert mock_callback.on_batch_end.call_count == epochs * (num_examples / batch_size)
