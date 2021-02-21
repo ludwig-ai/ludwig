@@ -24,7 +24,8 @@ from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
 from ludwig.modules.loss_modules import (BWCEWLoss, SequenceLoss,
                                          SigmoidCrossEntropyLoss,
-                                         SoftmaxCrossEntropyLoss)
+                                         SoftmaxCrossEntropyLoss,
+                                         SampledSoftmaxCrossEntropyLoss)
 from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
@@ -163,6 +164,26 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
 
     def update_state(self, y, y_hat):
         super().update_state(self.softmax_cross_entropy_function(y, y_hat))
+
+
+class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
+    def __init__(
+            self,
+            decoder_obj=None,
+            num_classes=0,
+            feature_loss=None,
+            name='sampled_softmax_cross_entropy_metric'
+    ):
+        super(SampledSoftmaxCrossEntropyMetric, self).__init__(name=name)
+
+        self.metric_function = SampledSoftmaxCrossEntropyLoss(
+            decoder_obj=decoder_obj,
+            num_classes=num_classes,
+            feature_loss=feature_loss
+        )
+
+    def update_state(self, y, y_hat):
+        super().update_state(self.metric_function(y, y_hat))
 
 
 class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
