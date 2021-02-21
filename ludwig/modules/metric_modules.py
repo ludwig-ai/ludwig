@@ -22,7 +22,8 @@ from tensorflow.python.keras.metrics import \
 
 from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
-from ludwig.modules.loss_modules import (BWCEWLoss, SequenceLoss,
+from ludwig.modules.loss_modules import (BWCEWLoss,
+                                         SequenceSoftmaxCrossEntropyLoss,
                                          SigmoidCrossEntropyLoss,
                                          SoftmaxCrossEntropyLoss,
                                          SampledSoftmaxCrossEntropyLoss)
@@ -205,7 +206,7 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
         super(SequenceLossMetric, self).__init__(name=name)
 
-        self.loss_function = SequenceLoss(from_logits=False)
+        self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
 
     def update_state(self, y, y_hat):
         loss = self.loss_function(y, y_hat)
@@ -240,7 +241,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
 class PerplexityMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
         super(PerplexityMetric, self).__init__(name=name)
-        self.loss_function = SequenceLoss(from_logits=False)
+        self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         loss = self.loss_function(y_true, y_pred)

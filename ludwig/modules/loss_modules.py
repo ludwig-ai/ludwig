@@ -158,9 +158,9 @@ class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
         return loss
 
 
-class SequenceLoss(tf.keras.losses.Loss):
+class SequenceSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(self, name=None, from_logits=True, **kwargs):
-        super(SequenceLoss, self).__init__(name=name)
+        super(SequenceSoftmaxCrossEntropyLoss, self).__init__(name=name)
         self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
             from_logits=from_logits,
             reduction='none'
