@@ -20,7 +20,8 @@ import numpy as np
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
-from ludwig.encoders.sequence_encoders import ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
+from ludwig.encoders.sequence_encoders import \
+    ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
