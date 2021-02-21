@@ -7,13 +7,12 @@ import shutil
 from abc import ABC, abstractmethod
 from typing import Union
 
-import numpy as np
-
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -24,17 +23,6 @@ try:
     from ray.tune.utils import wait_for_gpu
 except ImportError:
     ray = None
-
-
-class NumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.integer):
-            return int(obj)
-        return json.JSONEncoder.default(self, obj)
 
 
 class HyperoptExecutor(ABC):
