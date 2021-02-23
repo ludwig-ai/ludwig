@@ -25,7 +25,7 @@ from ludwig.encoders.sequence_encoders import \
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SequenceSampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import EditDistanceMetric, \
     SequenceAccuracyMetric
@@ -198,7 +198,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
+            self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
