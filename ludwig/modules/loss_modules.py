@@ -287,7 +287,7 @@ def mean_confidence_penalty(probabilities, num_classes):
     penalty = (max_entropy - entropy) / max_entropy
     return tf.reduce_mean(penalty)
 
-
+# sepcific for categorical feature
 def sampled_softmax_cross_entropy(
         labels,
         last_hidden,
@@ -301,19 +301,11 @@ def sampled_softmax_cross_entropy(
         unique=False,
         **kwargs
 ):
-    labels_shape = tf.shape(labels)
-    if len(labels_shape) == 1:
-        # categorical feature
-        labels = tf.cast(
-            tf.expand_dims(labels, -1),
-            tf.int64
-        )
-    elif len(labels_shape) == 2:
-        # sequence feature
-        labels = tf.cast(
-            tf.reshape(labels, [-1, 1]),
-            tf.int64
-        )
+    labels = tf.cast(
+        tf.expand_dims(labels, -1),
+        tf.int64
+    )
+
     sampled_values = sample_values_from_classes(labels, sampler, num_classes,
                                                 negative_samples, unique,
                                                 class_counts, distortion)
@@ -329,10 +321,11 @@ def sampled_softmax_cross_entropy(
     return train_loss
 
 
+# specific for sequence features
 def sequence_sampled_softmax_cross_entropy(targets,
                                            targets_sequence_length,
                                            eval_logits,
-                                           train_logits,
+                                           last_hidden,
                                            decoder_weights,
                                            decoder_biases,
                                            num_classes,
@@ -352,53 +345,71 @@ def sequence_sampled_softmax_cross_entropy(targets,
     # batch_max_seq_length = tf.shape(train_logits)[1]
     # unpadded_targets = targets[:, :batch_max_seq_length]
     # output_exp = tf.cast(tf.reshape(unpadded_targets, [-1, 1]), tf.int64)
-    output_exp = tf.cast(tf.reshape(targets, [-1, 1]), tf.int64)
-    sampled_values = sample_values_from_classes(output_exp, loss['sampler'],
-                                                num_classes,
-                                                loss['negative_samples'],
-                                                loss['unique'],
-                                                loss['class_counts'],
-                                                loss['distortion'])
-
-    def _sampled_loss(labels, logits):
-        labels = tf.cast(labels, tf.int64)
-        labels = tf.reshape(labels, [-1, 1])
-        logits = tf.cast(logits, tf.float32)
-
-        return tf.cast(
-            tf.nn.sampled_softmax_loss(weights=tf.transpose(decoder_weights),
-                                       biases=decoder_biases,
-                                       labels=labels,
-                                       inputs=logits,
-                                       num_sampled=loss['negative_samples'],
-                                       num_classes=num_classes,
-                                       sampled_values=sampled_values),
-            tf.float32)
-
-    targets_sequence_length = sequence_length_2D(tf.cast(targets, tf.int64))
-    train_loss = tfa.seq2seq.sequence_loss(
-        train_logits,
+    # output_exp = tf.cast(tf.reshape(targets, [-1, 1]), tf.int64)
+    sampled_values = sample_values_from_sequence(
         targets,
-        tf.sequence_mask(targets_sequence_length,
-                         batch_max_targets_sequence_length, dtype=tf.float32),
-        average_across_timesteps=True,
-        average_across_batch=False,
-        softmax_loss_function=_sampled_loss
+        loss['sampler'],
+        batch_max_targets_sequence_length,
+        # todo: confirm that this is correct use of num_true
+        num_classes,
+        loss['negative_samples'],
+        loss['unique'],
+        loss['class_counts'],
+        loss['distortion'])
+
+    dim = tf.shape(decoder_weights)[0]
+    sampled_loss = tf.nn.sampled_softmax_loss(
+        weights=tf.transpose(decoder_weights),
+        biases=decoder_biases,
+        labels=tf.cast(targets, tf.int64),
+        inputs=tf.reduce_sum(last_hidden, axis=1),
+        # todo:  need to work on the correct tensor, this is may not be right, dimensions are OK
+        num_true=tf.cast(batch_max_targets_sequence_length, tf.float32),
+        # todo: docstring says int32 but fails with int32
+        num_sampled=loss['negative_samples'],
+        num_classes=num_classes,
+        sampled_values=sampled_values
     )
 
-    # batch_max_seq_length_eval = tf.shape(eval_logits)[1]
-    # unpadded_targets_eval = targets[:, :batch_max_seq_length_eval]
+    # def _sampled_loss(labels, logits):
+    #     labels = tf.cast(labels, tf.int64)
+    #     labels = tf.reshape(labels, [-1, 1])
+    #     logits = tf.cast(logits, tf.float32)
+    #
+    #     return tf.cast(
+    #         tf.nn.sampled_softmax_loss(weights=tf.transpose(decoder_weights),
+    #                                    biases=decoder_biases,
+    #                                    labels=labels,
+    #                                    inputs=logits,
+    #                                    num_sampled=loss['negative_samples'],
+    #                                    num_classes=num_classes,
+    #                                    sampled_values=sampled_values),
+    #         tf.float32)
 
-    eval_loss = tfa.seq2seq.sequence_loss(
-        padded_eval_logits,
-        targets,
-        tf.sequence_mask(targets_sequence_length,
-                         batch_max_targets_sequence_length, dtype=tf.float32),
-        average_across_timesteps=True,
-        average_across_batch=False
-    )
+    # targets_sequence_length = sequence_length_2D(tf.cast(targets, tf.int64))
+    # train_loss = tfa.seq2seq.sequence_loss(
+    #     train_logits,
+    #     targets,
+    #     tf.sequence_mask(targets_sequence_length,
+    #                      batch_max_targets_sequence_length, dtype=tf.float32),
+    #     average_across_timesteps=True,
+    #     average_across_batch=False,
+    #     softmax_loss_function=_sampled_loss
+    # )
+    #
+    # # batch_max_seq_length_eval = tf.shape(eval_logits)[1]
+    # # unpadded_targets_eval = targets[:, :batch_max_seq_length_eval]
+    #
+    # eval_loss = tfa.seq2seq.sequence_loss(
+    #     padded_eval_logits,
+    #     targets,
+    #     tf.sequence_mask(targets_sequence_length,
+    #                      batch_max_targets_sequence_length, dtype=tf.float32),
+    #     average_across_timesteps=True,
+    #     average_across_batch=False
+    # )
 
-    return train_loss, eval_loss
+    return sampled_loss
 
 
 # todo: this is older version of code, to be cleaned out.
@@ -518,6 +529,8 @@ def weighted_sigmoid_cross_entropy(
         )
     return loss
 
+
+# used for categorical features
 def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
                                unique, class_counts, distortion):
     """returns sampled_values using the chosen sampler"""
@@ -543,6 +556,49 @@ def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
         sampled_values = tf.random.log_uniform_candidate_sampler(
             true_classes=labels,
             num_true=1,
+            num_sampled=negative_samples,
+            unique=unique,
+            range_max=num_classes
+        )
+    else:
+        raise ValueError('Unsupported sampler {}'.format(sampler))
+    return sampled_values
+
+
+# specific for sequence feature
+def sample_values_from_sequence(
+        labels,
+        sampler,
+        sequence_size,
+        num_classes,
+        negative_samples,
+        unique,
+        class_counts,
+        distortion
+):
+    """returns sampled_values using the chosen sampler"""
+    if sampler == 'fixed_unigram' or sampler == 'learned_unigram':
+        sampled_values = tf.random.fixed_unigram_candidate_sampler(
+            true_classes=labels,
+            num_true=sequence_size,
+            num_sampled=negative_samples,
+            unique=unique,
+            range_max=num_classes,
+            unigrams=class_counts,
+            distortion=distortion
+        )
+    elif sampler == 'uniform':
+        sampled_values = tf.random.uniform_candidate_sampler(
+            true_classes=labels,
+            num_true=sequence_size,
+            num_sampled=negative_samples,
+            unique=unique,
+            range_max=num_classes
+        )
+    elif sampler == 'log_uniform':
+        sampled_values = tf.random.log_uniform_candidate_sampler(
+            true_classes=labels,
+            num_true=sequence_size,
             num_sampled=negative_samples,
             unique=unique,
             range_max=num_classes
