@@ -572,7 +572,7 @@ def test_sequence_tagger(
         sequence_feature(
             max_len=10,
             encoder='rnn',
-            cell_type='lstm',
+            cell_type=enc_cell_type,
             reduce_output=None
         )
     ]
@@ -588,8 +588,31 @@ def test_sequence_tagger(
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # setup encoder specification
-    input_features[0]['cell_type'] = enc_cell_type
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_sequence_tagger_text(
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        text_feature(
+            max_len=10,
+            encoder='rnn',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            reduce_input=None
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
     # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path)
