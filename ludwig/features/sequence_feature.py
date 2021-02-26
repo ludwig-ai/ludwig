@@ -245,7 +245,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 training=training
             )
         else:
-            return inputs
+            return inputs, None
 
     def predictions(self, inputs, training=None):
         # Generator Decoder

@@ -357,12 +357,11 @@ def sequence_sampled_softmax_cross_entropy(targets,
         loss['class_counts'],
         loss['distortion'])
 
-    dim = tf.shape(decoder_weights)[0]
     sampled_loss = tf.nn.sampled_softmax_loss(
         weights=tf.transpose(decoder_weights),
         biases=decoder_biases,
         labels=tf.cast(targets, tf.int64),
-        inputs=tf.reduce_sum(last_hidden, axis=1),
+        inputs=last_hidden[0],
         # todo:  need to work on the correct tensor, this is may not be right, dimensions are OK
         num_true=tf.cast(batch_max_targets_sequence_length, tf.float32),
         # todo: docstring says int32 but fails with int32

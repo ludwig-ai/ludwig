@@ -269,7 +269,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 combiner_outputs['encoder_output_state']
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
-        logits = self.logits(logits_input, target=target, training=training)
+        logits, hidden = self.logits(logits_input, target=target,
+                                     training=training)
 
         # most of the cases the output of self.logits is a tensor
         # in some cases like for sequence features, it can be  tuple of
