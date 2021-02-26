@@ -13,19 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os.path
 
 import pytest
+
+import ray
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults, ACCURACY
-from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 
 logger = logging.getLogger(__name__)
@@ -51,29 +54,56 @@ HYPEROPT_CONFIG = {
         "utterance.bidirectional": {
             "space": "choice",
             "categories": [True, False]
+        },
+        "utterance.fc_layers": {
+            "space": "choice",
+            "categories": [
+                [{"fc_size": 512}, {"fc_size": 256}],
+                [{"fc_size": 512}],
+                [{"fc_size": 256}],
+            ]
         }
     },
     "goal": "minimize"
 }
 
+
 SAMPLERS = [
     {"type": "ray"},
     {"type": "ray", "num_samples": 2},
-    # {"type": "ray", "search_alg": {"type": "ax"}, "num_samples": 3},
+    {
+        "type": "ray",
+        "search_alg": {
+            "type": "bohb"
+        },
+        "scheduler": {
+            "type": "hb_bohb",
+            "time_attr": "training_iteration",
+            "max_t": 100,
+            "reduction_factor": 4,
+        },
+        "num_samples": 3
+    },
 ]
 
 EXECUTORS = [
     {"type": "ray"},
-    {"type": "ray", "num_workers": 4},
-    {"type": "ray", "num_workers": 4, "cpu_resources_per_trial": 1},
 ]
 
 
-@pytest.mark.parametrize('sampler', SAMPLERS)
-@pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename,
-                           validate_output_feature=False,
-                           validation_metric=None):
+@pytest.fixture
+def ray_start_4_cpus():
+    address_info = ray.init(num_cpus=4)
+    try:
+        yield address_info
+    finally:
+        ray.shutdown()
+
+
+@spawn
+def run_hyperopt_executor(sampler, executor, csv_filename,
+                          validate_output_feature=False,
+                          validation_metric=None):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -101,6 +131,10 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
+    if sampler.get("search_alg", {}).get("type", "") == 'bohb':
+        # bohb does not support grid_search search space
+        del parameters['utterance.cell_type']
+
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
@@ -112,20 +146,24 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(config,
-                              dataset=rel_path,
-                              gpus=get_available_gpus_cuda_string())
+    hyperopt_executor.execute(config, dataset=rel_path)
 
 
-def test_hyperopt_executor_with_metric(csv_filename):
-    test_hyperopt_executor({"type": "ray", "num_samples": 2},
-                           {"type": "ray"},
-                           csv_filename,
-                           validate_output_feature=True,
-                           validation_metric=ACCURACY)
+@pytest.mark.parametrize('sampler', SAMPLERS)
+@pytest.mark.parametrize('executor', EXECUTORS)
+def test_hyperopt_executor(sampler, executor, csv_filename, ray_start_4_cpus):
+    run_hyperopt_executor(sampler, executor, csv_filename)
 
 
-def test_hyperopt_run_hyperopt(csv_filename):
+def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
+    run_hyperopt_executor({"type": "ray", "num_samples": 2},
+                          {"type": "ray"},
+                          csv_filename,
+                          validate_output_feature=True,
+                          validation_metric=ACCURACY)
+
+
+def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
