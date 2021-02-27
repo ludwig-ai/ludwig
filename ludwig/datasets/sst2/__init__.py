@@ -54,3 +54,10 @@ class SST2(SST):
         elif sentiment > 0.6:  # positive
             return 1
         return -1  # neutral
+
+
+if __name__ == '__main__':
+    import shutil
+
+    shutil.rmtree(DEFAULT_CACHE_LOCATION + "/sst2_1.0", ignore_errors=True)
+    load()
