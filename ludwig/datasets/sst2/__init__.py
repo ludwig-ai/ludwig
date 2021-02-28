@@ -18,8 +18,9 @@ from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.sst2.sst_utils import SST
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = SST2(cache_dir=cache_dir)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
+         include_subtrees=False):
+    dataset = SST2(cache_dir=cache_dir, include_subtrees=include_subtrees)
     return dataset.load(split=split)
 
 
@@ -44,8 +45,11 @@ class SST2(SST):
     training data into a destination dataframe that can be use by Ludwig.
     """
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name='sst2', cache_dir=cache_dir)
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
+                 include_subtrees=False):
+        super().__init__(dataset_name='sst2', cache_dir=cache_dir,
+                         include_subtrees=include_subtrees,
+                         discard_neutral=True)
 
     def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]
@@ -54,10 +58,3 @@ class SST2(SST):
         elif sentiment > 0.6:  # positive
             return 1
         return -1  # neutral
-
-
-if __name__ == '__main__':
-    import shutil
-
-    shutil.rmtree(DEFAULT_CACHE_LOCATION + "/sst2_1.0", ignore_errors=True)
-    load()

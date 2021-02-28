@@ -43,9 +43,10 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
     """
 
     def __init__(self, dataset_name, cache_dir=DEFAULT_CACHE_LOCATION,
-                 include_subtrees=False):
+                 include_subtrees=False, discard_neutral=False):
         super().__init__(dataset_name=dataset_name, cache_dir=cache_dir)
         self.include_subtrees = include_subtrees
+        self.discard_neutral = discard_neutral
 
     @staticmethod
     @abstractmethod
@@ -57,6 +58,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             os.path.join(self.raw_dataset_path,
                          'stanfordSentimentTreebank/datasetSentences.txt'),
             sep=('\t'))
+        sentences_df['sentence'] = sentences_df['sentence'].apply(format_text)
 
         datasplit_df = pd.read_csv(
             os.path.join(self.raw_dataset_path,
@@ -84,9 +86,8 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                     except ValueError:
                         pass
 
-        sentences_df['sentence'] = sentences_df['sentence'].apply(
-            format_sentence
-        )
+        trees_pointers = None
+        trees_phrases = None
 
         if self.include_subtrees:
             trees_pointers = []
@@ -95,7 +96,9 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                 Lines = f.readlines()
                 for line in Lines:
                     if line:
-                        trees_pointers.append(line.split('|'))
+                        trees_pointers.append(
+                            [int(s.strip()) for s in line.split('|')]
+                        )
 
             trees_phrases = []
             with open(os.path.join(self.raw_dataset_path,
@@ -103,11 +106,9 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                 Lines = f.readlines()
                 for line in Lines:
                     if line:
-                        trees_phrases.append(line.split('|'))
-
-        else:
-            trees_pointers = None
-            trees_phrases = None
+                        trees_phrases.append(
+                            [s.strip() for s in line.split('|')]
+                        )
 
         splits = {
             'train': 1,
@@ -118,43 +119,45 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
         for split_name, split_id in splits.items():
             sentence_idcs = get_sentence_idcs_in_split(datasplit_df, split_id)
 
-            if self.include_subtrees:
+            if split_name == 'train' and self.include_subtrees:
                 phrases = []
                 for sentence_idx in sentence_idcs:
+                    # trees_pointers and trees_phrases are 0 indexed
+                    # while sentence_idx starts from 1
+                    # so we need to decrease sentence_idx value
+                    sentence_idx -= 1
                     subtrees = sentence_subtrees(sentence_idx, trees_pointers,
                                                  trees_phrases)
-                    phrases.extend([format_sentence(st) for st in subtrees])
+                    phrases.extend(subtrees)
             else:
                 phrases = get_sentences_with_idcs(sentences_df, sentence_idcs)
 
-            phrase_ids = [phrase2id[phrase] for phrase in phrases]
-
             pairs = []
-            for phrase, phrase_id in zip(phrases, phrase_ids):
-                label = self.get_sentiment_label(id2sent, phrase_id)
-                if label != -1:  # only include non-neutral samples
+            for phrase in phrases:
+                label = self.get_sentiment_label(id2sent, phrase2id[phrase])
+                if not self.discard_neutral or label != -1:
                     pairs.append([phrase, label])
 
             final_csv = pd.DataFrame(pairs)
-            final_csv.columns = ['text', 'label']
-            final_csv.to_csv(os.path.join(self.raw_dataset_path,
-                                          f'{split_name}.csv'),
-                             index=False)
+            final_csv.columns = ['sentence', 'label']
+            final_csv.to_csv(
+                os.path.join(self.raw_dataset_path, f'{split_name}.csv'),
+                index=False
+            )
 
         super(SST, self).process_downloaded_dataset()
 
 
-def format_sentence(sentence: str):
+def format_text(text: str):
     """
-    Formats raw sentences by decoding into utf-8 and replacing
-    -LRB- and -RRB- tokens with their matching characters
+    Formats text by decoding into utf-8 and
+    replaces -LRB- and -RRB- tokens present in SST with ( and )
     """
-    formatted_sent = ' '.join(
+    formatted_text = ' '.join(
         [w.encode('latin1').decode('utf-8')
-         for w in sentence.strip().split(' ')])
-    formatted_sent = formatted_sent.replace('-LRB-', '(')
-    formatted_sent = formatted_sent.replace('-RRB-', ')')
-    return formatted_sent
+         for w in text.strip().split(' ')]
+    )
+    return formatted_text.replace('-LRB-', '(').replace('-RRB-', ')')
 
 
 def get_sentence_idcs_in_split(datasplit: DataFrame, split_id: int):
@@ -193,75 +196,54 @@ def visit_postorder(node, visit_list):
 
 
 class SSTTree:
+    class Node:
+        def __init__(self, key, val=None):
+            self.left = None
+            self.right = None
+            self.key = key
+            self.val = val
+
+    def create_node(self, parent, i):
+        if self.nodes[i] is not None:
+            # already created
+            return
+        self.nodes[i] = self.Node(i)
+
+        if parent[i] == -1:
+            # is root
+            self.root = self.nodes[i]
+            return
+
+        if self.nodes[parent[i]] is None:
+            # parent not yet created
+            self.create_node(parent, parent[i])
+
+        # assign current node to parent
+        parent = self.nodes[parent[i]]
+        if parent.left is None:
+            parent.left = self.nodes[i]
+        else:
+            parent.right = self.nodes[i]
+
+    def create_tree(self, parents, tree_phrases):
+        n = len(parents)
+        self.nodes = [None for i in range(n)]
+        self.root = [None]
+        for i in range(n):
+            self.create_node(parents, i)
+        for i, phrase in enumerate(tree_phrases):
+            self.nodes[i].val = phrase
+        for node in self.nodes:
+            if node.val is None:
+                node.val = ' '.join((node.left.val, node.right.val))
 
     def __init__(self, tree_pointers, tree_phrases):
-        self.tree_pointers = [int(elem) - 1 for elem in tree_pointers]
-        self.tree_phrases = tree_phrases
-
-        self.nodes = []
-        phrases_cache = {}
-        children_cache = {}
-        for i, phrase in enumerate(self.tree_phrases):
-            pointer = int(self.tree_pointers[i])
-            self.nodes.append(Node(phrase))
-
-            phrases = phrases_cache.get(pointer, [])
-            phrases.append(phrase)
-            phrases_cache[pointer] = phrases
-
-            pointers = children_cache.get(pointer, [])
-            pointers.append(i)
-            children_cache[pointer] = pointers
-
-        num_leaves = len(self.nodes)
-
-        for i, pointer in enumerate(self.tree_pointers):
-            if i >= num_leaves:
-                phrase = ' '.join(phrases_cache[i])
-                new_node = Node(phrase)
-                children_pointers = children_cache[i]
-                new_node.left = self.nodes[children_pointers[0]]
-                new_node.right = self.nodes[children_pointers[1]]
-                self.nodes.append(new_node)
-
-                phrases = phrases_cache.get(pointer, [])
-                phrases.insert(0, phrase)
-                phrases_cache[pointer] = phrases
-
-                pointers = children_cache.get(pointer, [])
-                pointers.insert(0, i)
-                children_cache[pointer] = pointers
-
-        self.root = self.nodes[-1]
+        self.create_tree(
+            [int(elem) - 1 for elem in tree_pointers],
+            tree_phrases
+        )
 
     def subtrees(self):
         visit_list = []
         visit_postorder(self.root, visit_list)
         return visit_list
-
-
-class Node:
-    def __init__(self, key):
-        self.left = None
-        self.right = None
-        self.val = key
-
-
-if __name__ == '__main__':
-    stree = "6|6|5|5|7|7|0"
-    sostree = "Effective|but|too-tepid|biopic"
-
-    tree_pointers = stree.split("|")
-    tree_phrases = sostree.split("|")
-
-    tree = SSTTree(tree_pointers, tree_phrases)
-    print(tree.subtrees())
-
-    stree = "70|70|68|67|63|62|61|60|58|58|57|56|56|64|65|55|54|53|52|51|49|47|47|46|46|45|40|40|41|39|38|38|43|37|37|69|44|39|42|41|42|43|44|45|50|48|48|49|50|51|52|53|54|55|66|57|59|59|60|61|62|63|64|65|66|67|68|69|71|71|0"
-    sostree = "The|Rock|is|destined|to|be|the|21st|Century|'s|new|``|Conan|''|and|that|he|'s|going|to|make|a|splash|even|greater|than|Arnold|Schwarzenegger|,|Jean-Claud|Van|Damme|or|Steven|Segal|."
-
-    tree_pointers = stree.split("|")
-    tree_phrases = sostree.split("|")
-
-    tree = SSTTree(tree_pointers, tree_phrases)
-    print(tree.subtrees())
