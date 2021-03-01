@@ -31,6 +31,12 @@ from ludwig.constants import (CATEGORY, FLOAT, INT, MAXIMIZE, MINIMIZE, SPACE,
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import str2bool
 
+try:
+    from ray import tune
+    _HAS_RAY_TUNE = True
+except ImportError:
+    _HAS_RAY_TUNE = False
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +69,10 @@ def float_grid_function(low: float, high: float, steps=None, space='linear',
 
 def category_grid_function(values, **kwargs):
     return values
+
+
+def identity(x):
+    return x
 
 
 grid_functions_registry = {
@@ -315,29 +325,53 @@ class PySOTSampler(HyperoptSampler):
 
 
 class RayTuneSampler(HyperoptSampler):
-    def __init__(self, goal: str, parameters: Dict[str, Any], search_alg: dict = None, num_samples=1,
-                 **kwargs) -> None:
+    def __init__(
+            self,
+            goal: str,
+            parameters: Dict[str, Any],
+            search_alg: dict = None,
+            scheduler: dict = None,
+            num_samples=1,
+            **kwargs
+    ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
-        self.search_space = self._get_search_space(parameters)
+        self._check_ray_tune()
+        self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
+        self.scheduler = self._create_scheduler(scheduler)
         self.num_samples = num_samples
         self.goal = goal
 
+    def _check_ray_tune(self):
+        if not _HAS_RAY_TUNE:
+            raise ValueError(
+                "Requested Ray sampler but Ray Tune is not installed. Run `pip install ray[tune]`"
+            )
+
+    def _create_scheduler(self, scheduler_config):
+        if not scheduler_config:
+            return None
+
+        return tune.create_scheduler(
+            scheduler_config.get("type"),
+            **scheduler_config
+        )
+
     def _get_search_space(self, parameters):
-        try:
-            from ray import tune
-        except ImportError:
-            raise ImportError('ray module is not installed. To install '
-                              'it, please try running pip install ray[tune]'
-                              )
         config = {}
+        ctx = {}
         for param, values in parameters.items():
+            # Encode list and dict types as JSON encoded strings to
+            # workaround type limitations of the underlying frameworks
+            values = self.encode_values(param, values, ctx)
+
             param_search_type = values["space"].lower()
             if hasattr(tune, param_search_type):
                 param_search_space = getattr(tune, param_search_type)
             else:
                 raise ValueError(
-                    "'{}' method is not supported in the Ray Tune module".format(param_search_space))
+                    f"'{param_search_type}' is not a supported Ray Tune search space")
+
             param_search_input_args = {}
             param_search_space_sig = signature(param_search_space)
             for arg in param_search_space_sig.parameters.values():
@@ -348,7 +382,7 @@ class RayTuneSampler(HyperoptSampler):
                         raise ValueError(
                             "Parameter '{}' not defined for {}".format(arg, param))
             config[param] = param_search_space(**param_search_input_args)
-        return config
+        return config, ctx
 
     def sample(self) -> Dict[str, Any]:
         pass
@@ -362,6 +396,32 @@ class RayTuneSampler(HyperoptSampler):
 
     def finished(self) -> bool:
         pass
+
+    @staticmethod
+    def encode_values(param, values, ctx):
+        """JSON encodes any search spaces whose values are lists / dicts.
+
+        Only applies to grid search and choice options.  See here for details:
+
+        https://docs.ray.io/en/master/tune/api_docs/search_space.html#random-distributions-api
+        """
+        values = values.copy()
+        for key in ["values", "categories"]:
+            if key in values:
+                values[key] = [json.dumps(v) for v in values[key]]
+                ctx[param] = json.loads
+        return values
+
+    @staticmethod
+    def decode_values(config, ctx):
+        """Decode config values with the decode function in the context.
+
+        Uses the identity function if no encoding is needed.
+        """
+        return {
+            key: ctx.get(key, identity)(value)
+            for key, value in config.items()
+        }
 
 
 def get_build_hyperopt_sampler(strategy_type):
