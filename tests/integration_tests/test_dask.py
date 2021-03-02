@@ -150,6 +150,7 @@ def run_test_parquet(
             run_fn(config, data_parquet=dataset_parquet)
 
 
+@pytest.mark.backend
 def test_dask_tabular():
     input_features = [
         sequence_feature(reduce_output='sum'),
@@ -166,6 +167,7 @@ def test_dask_tabular():
     run_test_parquet(input_features, output_features)
 
 
+@pytest.mark.backend
 def test_dask_split():
     input_features = [
         numerical_feature(normalization='zscore'),
@@ -176,12 +178,14 @@ def test_dask_split():
     run_test_parquet(input_features, output_features, run_fn=run_split_api_experiment)
 
 
+@pytest.mark.backend
 def test_dask_timeseries():
     input_features = [timeseries_feature()]
     output_features = [numerical_feature()]
     run_test_parquet(input_features, output_features)
 
 
+@pytest.mark.backend
 def test_dask_audio():
     with tempfile.TemporaryDirectory() as tmpdir:
         audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
@@ -190,6 +194,7 @@ def test_dask_audio():
         run_test_parquet(input_features, output_features, num_examples=25)
 
 
+@pytest.mark.backend
 def test_dask_lazy_load_audio_error():
     with tempfile.TemporaryDirectory() as tmpdir:
         audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
@@ -205,6 +210,7 @@ def test_dask_lazy_load_audio_error():
         run_test_parquet(input_features, output_features, expect_error=True)
 
 
+@pytest.mark.backend
 def test_dask_image():
     with tempfile.TemporaryDirectory() as tmpdir:
         image_dest_folder = os.path.join(tmpdir, 'generated_images')
@@ -227,6 +233,7 @@ def test_dask_image():
         run_test_parquet(input_features, output_features, num_examples=50)
 
 
+@pytest.mark.backend
 def test_dask_lazy_load_image_error():
     with tempfile.TemporaryDirectory() as tmpdir:
         image_dest_folder = os.path.join(tmpdir, 'generated_images')
