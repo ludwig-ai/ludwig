@@ -49,6 +49,7 @@ class DaskEngine(DataFrameEngine):
         return data.repartition(self.parallelism)
 
     def persist(self, data):
+        # NOTE: https://github.com/ray-project/ray/issues/14227
         return data.persist()
 
     def compute(self, data):

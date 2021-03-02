@@ -75,6 +75,7 @@ class RayRemoteModel:
 
 class RayTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, trainer_kwargs):
+        # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         setting = RayExecutor.create_settings(timeout_s=30)
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
         self.executor.start(executable_cls=RemoteTrainer, executable_kwargs=trainer_kwargs)
@@ -148,7 +149,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             ray.init('auto', ignore_reinit_error=True)
         except ConnectionError:
             logger.info('Initializing new Ray cluster...')
-            ray.init()
+            ray.init(ignore_reinit_error=True)
         dask.config.set(scheduler=ray_dask_get)
 
     def initialize_tensorflow(self, **kwargs):
