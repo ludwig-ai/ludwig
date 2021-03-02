@@ -15,31 +15,26 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
-from ludwig.datasets.sst2.sst_utils import SST
+from ludwig.datasets.sst2 import SST
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
          include_subtrees=False, convert_parentheses=True):
-    dataset = SST2(cache_dir=cache_dir, include_subtrees=include_subtrees,
+    dataset = SST3(cache_dir=cache_dir, include_subtrees=include_subtrees,
                    convert_parentheses=convert_parentheses)
     return dataset.load(split=split)
 
 
-class SST2(SST):
-    """The SST2 dataset.
+class SST3(SST):
+    """The SST5 dataset.
 
     This dataset is constructed using the Stanford Sentiment Treebank Dataset.
-    This dataset contains binary labels (positive or negative) for each sample.
+    This dataset contains five labels (very negative, negative, neutral, 
+    positive, very positive) for each sample.
 
-    The original dataset specified 5 labels:
-    very negative, negative, neutral, positive, very positive with
-    the following cutoffs:
+    In the original dataset, the  5 labels: very negative, negative, neutral, positive, 
+    and very positive have the following cutoffs:
     [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
-
-    In the construction of this dataset, we remove all neutral phrases
-    and assign a negative label if the original rating falls
-    into the following range: [0, 0.4] and a positive label
-    if the original rating is between (0.6, 1.0].
 
     This class pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming
@@ -47,16 +42,18 @@ class SST2(SST):
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
-                 include_subtrees=False, convert_parentheses=True):
-        super().__init__(dataset_name='sst2', cache_dir=cache_dir,
+                 include_subtrees=False,
+                 convert_parentheses=True):
+        super().__init__(dataset_name='sst3', cache_dir=cache_dir,
                          include_subtrees=include_subtrees,
-                         discard_neutral=True,
                          convert_parentheses=convert_parentheses)
 
     def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]
-        if sentiment <= 0.4:  # negative
-            return 0
-        elif sentiment > 0.6:  # positive
-            return 1
-        return -1  # neutral
+        if sentiment <= 0.4:
+            return 'negative'
+        elif sentiment <= 0.6:
+            return 'neutral'
+        elif sentiment <= 1.0:
+            return 'positive'
+        return 'neutral'

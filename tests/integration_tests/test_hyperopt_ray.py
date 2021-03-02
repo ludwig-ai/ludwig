@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os.path
 
@@ -25,7 +26,6 @@ from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults, ACCURACY
-from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import spawn
@@ -54,21 +54,40 @@ HYPEROPT_CONFIG = {
         "utterance.bidirectional": {
             "space": "choice",
             "categories": [True, False]
+        },
+        "utterance.fc_layers": {
+            "space": "choice",
+            "categories": [
+                [{"fc_size": 512}, {"fc_size": 256}],
+                [{"fc_size": 512}],
+                [{"fc_size": 256}],
+            ]
         }
     },
     "goal": "minimize"
 }
 
+
 SAMPLERS = [
     {"type": "ray"},
     {"type": "ray", "num_samples": 2},
-    # {"type": "ray", "search_alg": {"type": "ax"}, "num_samples": 3},
+    {
+        "type": "ray",
+        "search_alg": {
+            "type": "bohb"
+        },
+        "scheduler": {
+            "type": "hb_bohb",
+            "time_attr": "training_iteration",
+            "max_t": 100,
+            "reduction_factor": 4,
+        },
+        "num_samples": 3
+    },
 ]
 
 EXECUTORS = [
     {"type": "ray"},
-    {"type": "ray", "num_workers": 4},
-    {"type": "ray", "num_workers": 4, "cpu_resources_per_trial": 1},
 ]
 
 
@@ -112,6 +131,10 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
+    if sampler.get("search_alg", {}).get("type", "") == 'bohb':
+        # bohb does not support grid_search search space
+        del parameters['utterance.cell_type']
+
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
@@ -123,9 +146,7 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(config,
-                              dataset=rel_path,
-                              gpus=get_available_gpus_cuda_string())
+    hyperopt_executor.execute(config, dataset=rel_path)
 
 
 @pytest.mark.parametrize('sampler', SAMPLERS)
