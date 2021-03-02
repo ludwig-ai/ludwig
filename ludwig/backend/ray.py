@@ -34,7 +34,16 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 logger = logging.getLogger(__name__)
 
 
+def get_dask_kwargs():
+    # TODO ray: select this more intelligently,
+    #  must be greather than or equal to number of Horovod workers
+    return dict(
+        parallelism=int(ray.cluster_resources()['CPU'])
+    )
+
+
 def get_horovod_kwargs():
+    # TODO ray: https://github.com/horovod/horovod/issues/2702
     resources = [node['Resources'] for node in ray.state.nodes()]
     use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
 
@@ -140,7 +149,7 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     def __init__(self, horovod_kwargs=None):
         super().__init__()
-        self._df_engine = DaskEngine()
+        self._df_engine = DaskEngine(**get_dask_kwargs())
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
 
