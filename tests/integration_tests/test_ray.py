@@ -24,24 +24,20 @@ import ray
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
-from ludwig.backend.ray import RayBackend
-from ludwig.utils.data_utils import read_parquet
+from ludwig.backend.ray import RayBackend, get_horovod_kwargs
 
 from tests.integration_tests.utils import create_data_set_to_use
-from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import h3_feature
-from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
-from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
 
 
@@ -85,6 +81,11 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
 
 def run_api_experiment(config, data_parquet):
     with ray_init():
+        # Sanity check that we get 4 slots over 1 host
+        kwargs = get_horovod_kwargs()
+        assert kwargs.get('num_hosts') == 1
+        assert kwargs.get('num_slots') == 4
+
         # Train on Parquet
         dask_backend = RayBackend()
         train_with_backend(dask_backend, config, dataset=data_parquet)
