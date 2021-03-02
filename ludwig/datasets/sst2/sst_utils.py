@@ -74,7 +74,8 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             for line in Lines:
                 if line:
                     split_line = line.split('|')
-                    phrase2id[split_line[0]] = int(split_line[1])
+                    phrase = convert_parentheses(split_line[0])
+                    phrase2id[phrase] = int(split_line[1])
 
         id2sent = {}
         with open(os.path.join(self.raw_dataset_path,
@@ -136,10 +137,11 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
 
             pairs = []
             for phrase in phrases:
+                phrase = convert_parentheses(phrase)
                 label = self.get_sentiment_label(id2sent, phrase2id[phrase])
                 if not self.discard_neutral or label != -1:
-                    if self.convert_parentheses:
-                        phrase = convert_parentheses(phrase)
+                    if not self.convert_parentheses:
+                        phrase = convert_parentheses_back(phrase)
                     pairs.append([phrase, label])
 
             final_csv = pd.DataFrame(pairs)
@@ -167,6 +169,13 @@ def convert_parentheses(text: str):
     Replaces -LRB- and -RRB- tokens present in SST with ( and )
     """
     return text.replace('-LRB-', '(').replace('-RRB-', ')')
+
+
+def convert_parentheses_back(text: str):
+    """
+    Replaces ( and ) tokens with -LRB- and -RRB-
+    """
+    return text.replace('(', '-LRB-').replace(')', '-RRB-')
 
 
 def get_sentence_idcs_in_split(datasplit: DataFrame, split_id: int):
