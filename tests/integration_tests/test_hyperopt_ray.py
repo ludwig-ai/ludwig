@@ -149,12 +149,14 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor.execute(config, dataset=rel_path)
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
 def test_hyperopt_executor(sampler, executor, csv_filename, ray_start_4_cpus):
     run_hyperopt_executor(sampler, executor, csv_filename)
 
 
+@pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
     run_hyperopt_executor({"type": "ray", "num_samples": 2},
                           {"type": "ray"},
@@ -163,6 +165,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
                           validation_metric=ACCURACY)
 
 
+@pytest.mark.distributed
 def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
