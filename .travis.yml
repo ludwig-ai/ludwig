@@ -6,14 +6,14 @@ jobs:
   include:
     - python: "3.6"
       env: TENSORFLOW=2.3.1 TEST_FILTER="not distributed"
-    - python: "3.7"
-      env: TENSORFLOW=2.4.0 TEST_FILTER="not distributed"
-    - python: "3.8"
-      env: TENSORFLOW=nightly TEST_FILTER="not distributed"
     - python: "3.6"
       env: TENSORFLOW=2.3.1 TEST_FILTER="distributed"
     - python: "3.7"
+      env: TENSORFLOW=2.4.0 TEST_FILTER="not distributed"
+    - python: "3.7"
       env: TENSORFLOW=2.4.0 TEST_FILTER="distributed"
+    - python: "3.8"
+      env: TENSORFLOW=nightly TEST_FILTER="not distributed"
     - python: "3.8"
       env: TENSORFLOW=nightly TEST_FILTER="distributed"
 before_install:
