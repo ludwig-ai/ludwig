@@ -43,10 +43,12 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
     """
 
     def __init__(self, dataset_name, cache_dir=DEFAULT_CACHE_LOCATION,
-                 include_subtrees=False, discard_neutral=False):
+                 include_subtrees=False, discard_neutral=False,
+                 convert_parentheses=True):
         super().__init__(dataset_name=dataset_name, cache_dir=cache_dir)
         self.include_subtrees = include_subtrees
         self.discard_neutral = discard_neutral
+        self.convert_parentheses = convert_parentheses
 
     @staticmethod
     @abstractmethod
@@ -136,6 +138,8 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             for phrase in phrases:
                 label = self.get_sentiment_label(id2sent, phrase2id[phrase])
                 if not self.discard_neutral or label != -1:
+                    if self.convert_parentheses:
+                        phrase = convert_parentheses(phrase)
                     pairs.append([phrase, label])
 
             final_csv = pd.DataFrame(pairs)
@@ -150,14 +154,19 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
 
 def format_text(text: str):
     """
-    Formats text by decoding into utf-8 and
-    replaces -LRB- and -RRB- tokens present in SST with ( and )
+    Formats text by decoding into utf-8
     """
-    formatted_text = ' '.join(
+    return ' '.join(
         [w.encode('latin1').decode('utf-8')
          for w in text.strip().split(' ')]
     )
-    return formatted_text.replace('-LRB-', '(').replace('-RRB-', ')')
+
+
+def convert_parentheses(text: str):
+    """
+    Replaces -LRB- and -RRB- tokens present in SST with ( and )
+    """
+    return text.replace('-LRB-', '(').replace('-RRB-', ')')
 
 
 def get_sentence_idcs_in_split(datasplit: DataFrame, split_id: int):

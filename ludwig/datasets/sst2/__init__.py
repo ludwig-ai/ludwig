@@ -19,8 +19,9 @@ from ludwig.datasets.sst2.sst_utils import SST
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
-         include_subtrees=False):
-    dataset = SST2(cache_dir=cache_dir, include_subtrees=include_subtrees)
+         include_subtrees=False, convert_parentheses=True):
+    dataset = SST2(cache_dir=cache_dir, include_subtrees=include_subtrees,
+                   convert_parentheses=convert_parentheses)
     return dataset.load(split=split)
 
 
@@ -46,10 +47,11 @@ class SST2(SST):
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
-                 include_subtrees=False):
+                 include_subtrees=False, convert_parentheses=True):
         super().__init__(dataset_name='sst2', cache_dir=cache_dir,
                          include_subtrees=include_subtrees,
-                         discard_neutral=True)
+                         discard_neutral=True,
+                         convert_parentheses=convert_parentheses)
 
     def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]
