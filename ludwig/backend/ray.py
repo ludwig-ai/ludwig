@@ -18,8 +18,10 @@
 import logging
 from collections import defaultdict
 
+import dask
 import ray
 from horovod.ray import RayExecutor
+from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME
@@ -147,6 +149,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         except ConnectionError:
             logger.info('Initializing new Ray cluster...')
             ray.init()
+        dask.config.set(scheduler=ray_dask_get)
 
     def initialize_tensorflow(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
