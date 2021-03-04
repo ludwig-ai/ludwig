@@ -78,7 +78,7 @@ SAMPLERS = [
 EXECUTORS = [
     {"type": "serial"},
     {"type": "parallel", "num_workers": 4},
-    {"type": "fiber", "num_workers": 4},
+    # {"type": "fiber", "num_workers": 4},
 ]
 
 
