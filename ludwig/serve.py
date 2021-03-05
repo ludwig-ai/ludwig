@@ -71,8 +71,15 @@ def server(model, allowed_origins=None):
 
     @app.post('/predict')
     async def predict(request: Request):
-        form = await request.form()
-        files, entry = convert_input(form)
+        try:
+            form = await request.form()
+            files, entry = convert_input(form)
+        except Exception as e:
+            logger.error("Failed to parse batch_predict form: {}".format(
+                str(e))
+            )
+            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
+                                    status_code=500)
 
         try:
             if (entry.keys() & input_features) != input_features:
@@ -94,12 +101,19 @@ def server(model, allowed_origins=None):
 
     @app.post('/batch_predict')
     async def batch_predict(request: Request):
-        form = await request.form()
-        files, data = convert_batch_input(form)
-        data_df = pd.DataFrame.from_records(data['data'],
-                                            index=data.get('index'),
-                                            columns=data['columns'])
-
+        try:
+            form = await request.form()
+            files, data = convert_batch_input(form)
+            data_df = pd.DataFrame.from_records(data['data'],
+                                                index=data.get('index'),
+                                                columns=data['columns'])
+        except Exception as e:
+            logger.error("Failed to parse batch_predict form: {}".format(
+                str(e))
+            )
+            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
+                                    status_code=500)
+        
         try:
             if (set(data_df.columns) & input_features) != input_features:
                 return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
