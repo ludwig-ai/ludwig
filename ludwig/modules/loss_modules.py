@@ -330,7 +330,8 @@ def sequence_sampled_softmax_cross_entropy(targets,
                                            decoder_biases,
                                            num_classes,
                                            **loss):
-    batch_max_targets_sequence_length = tf.shape(targets)[1]
+    batch_max_targets_sequence_length = sequence_length_2D(
+        tf.cast(targets, tf.int64))
     #
     # batch_max_train_logits_sequence_length = tf.shape(train_logits)[1]
     # difference_train = batch_max_targets_sequence_length - batch_max_train_logits_sequence_length
@@ -346,29 +347,35 @@ def sequence_sampled_softmax_cross_entropy(targets,
     # unpadded_targets = targets[:, :batch_max_seq_length]
     # output_exp = tf.cast(tf.reshape(unpadded_targets, [-1, 1]), tf.int64)
     # output_exp = tf.cast(tf.reshape(targets, [-1, 1]), tf.int64)
-    sampled_values = sample_values_from_sequence(
-        targets,
-        loss['sampler'],
-        batch_max_targets_sequence_length,
-        # todo: confirm that this is correct use of num_true
-        num_classes,
-        loss['negative_samples'],
-        loss['unique'],
-        loss['class_counts'],
-        loss['distortion'])
+    epoch_loss = 0.0
+    for t in range(tf.shape(targets)[1]):
+        targ = tf.reshape(targets[:, t], [-1, 1])
 
-    sampled_loss = tf.nn.sampled_softmax_loss(
-        weights=tf.transpose(decoder_weights),
-        biases=decoder_biases,
-        labels=tf.cast(targets, tf.int64),
-        inputs=last_hidden[0],
-        # todo:  need to work on the correct tensor, this is may not be right, dimensions are OK
-        num_true=tf.cast(batch_max_targets_sequence_length, tf.float32),
-        # todo: docstring says int32 but fails with int32
-        num_sampled=loss['negative_samples'],
-        num_classes=num_classes,
-        sampled_values=sampled_values
-    )
+        sampled_values = sample_values_from_sequence(
+            tf.cast(targ, tf.int64),
+            loss['sampler'],
+            1,  # num_true
+            num_classes,
+            loss['negative_samples'],
+            loss['unique'],
+            loss['class_counts'],
+            loss['distortion'])
+
+        sampled_loss = tf.nn.sampled_softmax_loss(
+            weights=tf.transpose(decoder_weights),
+            biases=decoder_biases,
+            labels=tf.cast(targ, tf.int64),
+            inputs=last_hidden[0],
+            # todo:  need to work on the correct tensor, this is may not be right, dimensions are OK
+            num_true=1,
+            # todo: docstring says int32 but fails with int32
+            num_sampled=loss['negative_samples'],
+            num_classes=num_classes,
+            sampled_values=sampled_values
+        )
+
+        batch_loss = tf.reduce_mean(sampled_loss)
+        epoch_loss += batch_loss
 
     # def _sampled_loss(labels, logits):
     #     labels = tf.cast(labels, tf.int64)
@@ -408,7 +415,8 @@ def sequence_sampled_softmax_cross_entropy(targets,
     #     average_across_batch=False
     # )
 
-    return sampled_loss
+    epoch_loss /= tf.cast(tf.shape(targets)[1], tf.float32)
+    return epoch_loss
 
 
 # todo: this is older version of code, to be cleaned out.
