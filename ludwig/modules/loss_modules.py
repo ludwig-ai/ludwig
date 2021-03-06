@@ -353,7 +353,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
         biases=decoder_biases,
         labels=tf.cast(targets, tf.int64),
         # todo: add code for inputs w/ and w/o attention
-        inputs=last_hidden.cell_state[0],  # last_hidden[0],
+        inputs=last_hidden,  # last_hidden[0],
         num_true=num_true,
         # tf.cast(tf.shape(targets)[1], tf.int32), #1, num_true
         num_sampled=loss['negative_samples'],

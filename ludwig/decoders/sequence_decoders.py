@@ -22,7 +22,7 @@ from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
     StackedRNNCells
 from tensorflow.keras.layers import Layer, Dense, Embedding
 from tensorflow.keras.layers import average
-from tensorflow_addons.seq2seq import AttentionWrapper
+from tensorflow_addons.seq2seq import AttentionWrapper, AttentionWrapperState
 from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
@@ -362,7 +362,14 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             [[0, 0], [0, 1], [0, 0]]
         )
 
-        return logits, final_state  # , outputs, final_state, generated_sequence_lengths
+        # support for sampled_softmax_cross_entropy loss calculation
+        # make visible last hidden tensor
+        if isinstance(final_state, AttentionWrapperState):
+            last_hidden = final_state.cell_state[0]
+        else:
+            last_hidden = final_state[0]
+
+        return logits, last_hidden  # , outputs, final_state, generated_sequence_lengths
 
     def decoder_beam_search(
             self,
@@ -466,7 +473,16 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-        return None, lengths, predictions, last_predictions, probabilities
+        # support for sampled_softmax_cross_entropy loss calculation
+        # make visible last hidden tensor
+        # for beam search assume beam 0 is best solution
+        if isinstance(decoder_state.cell_state, AttentionWrapperState):
+            last_hidden = decoder_state.cell_state.cell_state[0][:, 0, :]
+        else:
+            last_hidden = decoder_state.cell_state[0][:, 0, :]
+
+        return None, lengths, predictions, last_predictions, probabilities, \
+               last_hidden
 
     def decoder_greedy(
             self,
@@ -558,16 +574,15 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-        # mask logits
-        # mask = tf.sequence_mask(
-        #     lengths,
-        #     maxlen=tf.shape(logits)[1],
-        #     dtype=tf.float32
-        # )
-        # logits = logits * mask[:, :, tf.newaxis]
+        # support for sampled_softmax_cross_entropy loss calculation
+        # make visible last hidden tensor
+        if isinstance(decoder_state, AttentionWrapperState):
+            last_hidden = decoder_state.cell_state[0]
+        else:
+            last_hidden = decoder_state[0]
 
         return logits, lengths, predictions, last_predictions, probabilities, \
-               decoder_state
+               last_hidden
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
