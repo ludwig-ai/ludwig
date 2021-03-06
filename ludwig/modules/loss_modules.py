@@ -333,37 +333,39 @@ def sequence_sampled_softmax_cross_entropy(targets,
     batch_max_targets_sequence_length = sequence_length_2D(
         tf.cast(targets, tf.int64))
     # todo: test sampled sequence loss w/o manual looping
-    epoch_loss = 0.0
-    for t in range(tf.shape(targets)[1]):
-        targ = tf.reshape(targets[:, t], [-1, 1])
+    # epoch_loss = 0.0
+    # for t in range(tf.shape(targets)[1]):
+    #     targ = tf.reshape(targets[:, t], [-1, 1])
 
-        sampled_values = sample_values_from_sequence(
-            tf.cast(targ, tf.int64),
-            loss['sampler'],
-            1,  # num_true
-            num_classes,
-            loss['negative_samples'],
-            loss['unique'],
-            loss['class_counts'],
-            loss['distortion'])
+    num_true = np.int32(tf.shape(targets)[1])
+    sampled_values = sample_values_from_sequence(
+        tf.cast(targets, tf.int64),
+        loss['sampler'],
+        num_true,  # tf.cast(tf.shape(targets)[1], tf.int32),  # num_true
+        num_classes,
+        loss['negative_samples'],
+        loss['unique'],
+        loss['class_counts'],
+        loss['distortion'])
 
-        sampled_loss = tf.nn.sampled_softmax_loss(
-            weights=tf.transpose(decoder_weights),
-            biases=decoder_biases,
-            labels=tf.cast(targ, tf.int64),
-            # todo: add code for inputs w/ and w/o attention
-            inputs=last_hidden.cell_state[0],  # last_hidden[0],
-            num_true=1,
-            num_sampled=loss['negative_samples'],
-            num_classes=num_classes,
-            sampled_values=sampled_values
-        )
+    sampled_loss = tf.nn.sampled_softmax_loss(
+        weights=tf.transpose(decoder_weights),
+        biases=decoder_biases,
+        labels=tf.cast(targets, tf.int64),
+        # todo: add code for inputs w/ and w/o attention
+        inputs=last_hidden.cell_state[0],  # last_hidden[0],
+        num_true=num_true,
+        # tf.cast(tf.shape(targets)[1], tf.int32), #1, num_true
+        num_sampled=loss['negative_samples'],
+        num_classes=num_classes,
+        sampled_values=sampled_values
+    )
 
-        batch_loss = tf.reduce_mean(sampled_loss)
-        epoch_loss += batch_loss
+    # batch_loss = tf.reduce_mean(sampled_loss)
+    # epoch_loss += batch_loss
 
-    epoch_loss /= tf.cast(tf.shape(targets)[1], tf.float32)
-    return epoch_loss
+    # epoch_loss /= tf.cast(tf.shape(targets)[1], tf.float32)
+    return tf.reduce_mean(sampled_loss)
 
     # todo  clean out commented code
     # def _sampled_loss(labels, logits):
