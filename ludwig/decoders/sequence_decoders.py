@@ -495,7 +495,14 @@ class SequenceGeneratorDecoder(SequenceDecoder):
                 last_hidden = decoder_state.cell_state.cell_state[0][:, 0, :]
         else:
             # No Attention
-            last_hidden = decoder_state.cell_state[0][:, 0, :]
+            if self.cell_type == 'lstm':
+                last_hidden = [
+                    decoder_state.cell_state[0][0][:, 0, :],
+                    decoder_state.cell_state[0][1][:, 0, :]
+                ]
+            else:
+                # non-lstm cell_type
+                last_hidden = decoder_state.cell_state[0][:, 0, :]
 
         # account for LSTM cell_type
         # reduce to single tensor of shape[batch_size, state_size]
