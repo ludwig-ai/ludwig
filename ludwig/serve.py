@@ -74,10 +74,8 @@ def server(model, allowed_origins=None):
         try:
             form = await request.form()
             files, entry = convert_input(form)
-        except Exception as e:
-            logger.error("Failed to parse batch_predict form: {}".format(
-                str(e))
-            )
+        except Exception:
+            logger.exception("Failed to parse batch_predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
 
@@ -91,8 +89,8 @@ def server(model, allowed_origins=None):
                 )
                 resp = resp.to_dict('records')[0]
                 return JSONResponse(resp)
-            except Exception as e:
-                logger.error("Failed to run predict: {}".format(str(e)))
+            except Exception:
+                logger.exception("Failed to run predict")
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
@@ -107,10 +105,8 @@ def server(model, allowed_origins=None):
             data_df = pd.DataFrame.from_records(data['data'],
                                                 index=data.get('index'),
                                                 columns=data['columns'])
-        except Exception as e:
-            logger.error("Failed to parse batch_predict form: {}".format(
-                str(e))
-            )
+        except Exception:
+            logger.exception("Failed to parse batch_predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         
@@ -122,8 +118,8 @@ def server(model, allowed_origins=None):
                 resp, _ = model.predict(dataset=data_df)
                 resp = resp.to_dict('split')
                 return JSONResponse(resp)
-            except Exception as e:
-                logger.error("Failed to run batch_predict: {}".format(str(e)))
+            except Exception:
+                logger.exception("Failed to run batch_predict: {}")
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
