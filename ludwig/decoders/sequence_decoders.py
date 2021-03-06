@@ -161,7 +161,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
         encoder_end_state = self.prepare_encoder_output_state(inputs)
 
-        logits, last_hidden = self.decoder_teacher_forcing(
+        logits = self.decoder_teacher_forcing(
             input,
             target=target,
             encoder_end_state=encoder_end_state
@@ -169,7 +169,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
 
         # logits shape [b, s, c]
         # last_hidden shape todo: doc shape currently tuple
-        return logits, last_hidden
+        return logits
 
     def prepare_encoder_output_state(self, inputs):
 
