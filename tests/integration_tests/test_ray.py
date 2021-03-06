@@ -120,7 +120,7 @@ def run_test_parquet(
             run_fn(config, data_parquet=dataset_parquet)
 
 
-@pytest.mark.distributed
+@pytest.mark.ray
 def test_ray_tabular():
     input_features = [
         sequence_feature(reduce_output='sum'),
