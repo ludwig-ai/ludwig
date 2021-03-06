@@ -24,6 +24,7 @@ from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
 from ludwig.modules.loss_modules import (BWCEWLoss,
                                          SequenceSoftmaxCrossEntropyLoss,
+                                         SequenceSampledSoftmaxCrossEntropyLoss,
                                          SigmoidCrossEntropyLoss,
                                          SoftmaxCrossEntropyLoss,
                                          SampledSoftmaxCrossEntropyLoss)
@@ -207,6 +208,27 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
         super(SequenceLossMetric, self).__init__(name=name)
 
         self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
+
+    def update_state(self, y, y_hat):
+        loss = self.loss_function(y, y_hat)
+        super().update_state(loss)
+
+
+class SequenceSampledLossMetric(tf.keras.metrics.Mean):
+    def __init__(
+            self,
+            decoder_obj=None,
+            num_classes=0,
+            feature_loss=None,
+            name=None
+    ):
+        super(SequenceSampledLossMetric, self).__init__(name=name)
+
+        self.loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+            decoder_obj=decoder_obj,
+            num_classes=num_classes,
+            feature_loss=feature_loss
+        )
 
     def update_state(self, y, y_hat):
         loss = self.loss_function(y, y_hat)

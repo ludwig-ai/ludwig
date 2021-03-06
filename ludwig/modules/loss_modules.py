@@ -332,21 +332,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
                                            **loss):
     batch_max_targets_sequence_length = sequence_length_2D(
         tf.cast(targets, tf.int64))
-    #
-    # batch_max_train_logits_sequence_length = tf.shape(train_logits)[1]
-    # difference_train = batch_max_targets_sequence_length - batch_max_train_logits_sequence_length
-    # padded_train_logits = tf.pad(train_logits,
-    #                              [[0, 0], [0, difference_train], [0, 0]])
-
-    # batch_max_eval_logits_sequence_length = tf.shape(eval_logits)[1]
-    # difference_eval = batch_max_targets_sequence_length - batch_max_eval_logits_sequence_length
-    # padded_eval_logits = tf.pad(eval_logits,
-    #                             [[0, 0], [0, difference_eval], [0, 0]])
-
-    # batch_max_seq_length = tf.shape(train_logits)[1]
-    # unpadded_targets = targets[:, :batch_max_seq_length]
-    # output_exp = tf.cast(tf.reshape(unpadded_targets, [-1, 1]), tf.int64)
-    # output_exp = tf.cast(tf.reshape(targets, [-1, 1]), tf.int64)
+    # todo: test sampled sequence loss w/o manual looping
     epoch_loss = 0.0
     for t in range(tf.shape(targets)[1]):
         targ = tf.reshape(targets[:, t], [-1, 1])
@@ -365,10 +351,9 @@ def sequence_sampled_softmax_cross_entropy(targets,
             weights=tf.transpose(decoder_weights),
             biases=decoder_biases,
             labels=tf.cast(targ, tf.int64),
-            inputs=last_hidden[0],
-            # todo:  need to work on the correct tensor, this is may not be right, dimensions are OK
+            # todo: add code for inputs w/ and w/o attention
+            inputs=last_hidden.cell_state[0],  # last_hidden[0],
             num_true=1,
-            # todo: docstring says int32 but fails with int32
             num_sampled=loss['negative_samples'],
             num_classes=num_classes,
             sampled_values=sampled_values
@@ -377,6 +362,10 @@ def sequence_sampled_softmax_cross_entropy(targets,
         batch_loss = tf.reduce_mean(sampled_loss)
         epoch_loss += batch_loss
 
+    epoch_loss /= tf.cast(tf.shape(targets)[1], tf.float32)
+    return epoch_loss
+
+    # todo  clean out commented code
     # def _sampled_loss(labels, logits):
     #     labels = tf.cast(labels, tf.int64)
     #     labels = tf.reshape(labels, [-1, 1])
@@ -415,8 +404,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
     #     average_across_batch=False
     # )
 
-    epoch_loss /= tf.cast(tf.shape(targets)[1], tf.float32)
-    return epoch_loss
+
 
 
 # todo: this is older version of code, to be cleaned out.

@@ -566,7 +566,8 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # )
         # logits = logits * mask[:, :, tf.newaxis]
 
-        return logits, lengths, predictions, last_predictions, probabilities
+        return logits, lengths, predictions, last_predictions, probabilities, \
+               decoder_state
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
@@ -590,9 +591,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
                 training=training
             )
 
-        logits, lengths, preds, last_preds, probs = decoder_outputs
+        logits, lengths, preds, last_preds, probs, last_hidden = decoder_outputs
 
-        return logits, lengths, preds, last_preds, probs
+        return logits, lengths, preds, last_preds, probs, last_hidden
 
     def _predictions_eval(
             self,
@@ -600,14 +601,15 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             training=None
     ):
         decoder_outputs = self.call(inputs, training=training)
-        logits, lengths, preds, last_preds, probs = decoder_outputs
+        logits, lengths, preds, last_preds, probs, last_hidden = decoder_outputs
 
         return {
             PREDICTIONS: preds,
             LENGTHS: lengths,
             LAST_PREDICTIONS: last_preds,
             PROBABILITIES: probs,
-            LOGITS: logits
+            LOGITS: logits,
+            LAST_HIDDEN: last_hidden
         }
 
 

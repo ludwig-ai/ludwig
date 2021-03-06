@@ -31,7 +31,8 @@ from ludwig.modules.metric_modules import EditDistanceMetric, \
     SequenceAccuracyMetric
 from ludwig.modules.metric_modules import PerplexityMetric
 from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
-from ludwig.modules.metric_modules import SequenceLossMetric
+from ludwig.modules.metric_modules import SequenceLossMetric, \
+    SequenceSampledLossMetric
 from ludwig.modules.metric_modules import TokenAccuracyMetric
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -211,11 +212,18 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SequenceLossMetric()
+        self.eval_loss_function = self.train_loss_function
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
+        if self.loss[TYPE] == 'softmax_cross_entropy':
+            self.metric_functions[LOSS] = SequenceLossMetric()
+        else:
+            self.metric_functions[LOSS] = SequenceSampledLossMetric(
+                decoder_obj=self.decoder_obj,
+                num_classes=self.num_classes,
+                feature_loss=self.loss,
+            )
         self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
         self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
