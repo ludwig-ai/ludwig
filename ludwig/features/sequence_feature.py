@@ -212,18 +212,23 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        # If beam search is not used, then logits are available for loss calc
-        # if beam search is used, then loss calc is based on probabilities
-        if self.decoder_obj.beam_width > 1:
-            # w/ beam search, use probabilities because logits not provided
-            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-                from_logits=False
-            )
+        if self.decoder == 'generator':
+            # Generator Decoder
+            # If beam search is not used, then logits are available for loss calc
+            # if beam search is used, then loss calc is based on probabilities
+            if self.decoder_obj.beam_width > 1:
+                # w/ beam search, use probabilities because logits not provided
+                self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+                    from_logits=False
+                )
+            else:
+                # w/o beam search, use logits
+                self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+                    from_logits=True
+                )
         else:
-            # w/o beam search, use logits
-            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-                from_logits=True
-            )
+            # Tagger decoder
+            self.eval_loss_function = self.train_loss_function
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
