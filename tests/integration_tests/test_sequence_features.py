@@ -284,8 +284,8 @@ def test_sequence_decoders(
     num_classes = model.config['output_features'][0]['num_classes']
 
     # confirm output is what is expected
-    assert len(decoder_out) == 5
-    logits, lengths, preds, last_preds, probs = decoder_out
+    assert len(decoder_out) == 6
+    logits, lengths, preds, last_preds, probs, last_hidden = decoder_out
 
     # confirm shape and format of deocoder output
     if dec_beam_width > 1:
@@ -305,6 +305,9 @@ def test_sequence_decoders(
 
     assert isinstance(probs, tf.Tensor)
     assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
+
+    assert isinstance(last_hidden, tf.Tensor)
+    assert last_hidden.shape.as_list() == [batch_size, TEST_HIDDEN_SIZE]
 
 
 #
