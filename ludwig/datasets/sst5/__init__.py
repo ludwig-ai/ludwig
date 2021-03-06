@@ -42,10 +42,13 @@ class SST5(SST):
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
-                 include_subtrees=False, convert_parentheses=True):
+                 include_subtrees=False, 
+                 convert_parentheses=True,
+                 remove_duplicates=False):
         super().__init__(dataset_name='sst5', cache_dir=cache_dir,
                          include_subtrees=include_subtrees,
-                         convert_parentheses=convert_parentheses)
+                         convert_parentheses=convert_parentheses,
+                         remove_duplicates=False)
 
     def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]

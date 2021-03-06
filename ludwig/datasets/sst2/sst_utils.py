@@ -44,11 +44,12 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
 
     def __init__(self, dataset_name, cache_dir=DEFAULT_CACHE_LOCATION,
                  include_subtrees=False, discard_neutral=False,
-                 convert_parentheses=True):
+                 convert_parentheses=True, remove_duplicates=False):
         super().__init__(dataset_name=dataset_name, cache_dir=cache_dir)
         self.include_subtrees = include_subtrees
         self.discard_neutral = discard_neutral
         self.convert_parentheses = convert_parentheses
+        self.remove_duplicates = remove_duplicates
 
     @staticmethod
     @abstractmethod
@@ -59,7 +60,9 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
         sentences_df = pd.read_csv(
             os.path.join(self.raw_dataset_path,
                          'stanfordSentimentTreebank/datasetSentences.txt'),
-            sep=('\t'))
+            sep="\t",
+            )
+    
         sentences_df['sentence'] = sentences_df['sentence'].apply(format_text)
 
         datasplit_df = pd.read_csv(
@@ -74,7 +77,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
             for line in Lines:
                 if line:
                     split_line = line.split('|')
-                    phrase = convert_parentheses(split_line[0])
+                    phrase = split_line[0]
                     phrase2id[phrase] = int(split_line[1])
 
         id2sent = {}
@@ -122,6 +125,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
         for split_name, split_id in splits.items():
             sentence_idcs = get_sentence_idcs_in_split(datasplit_df, split_id)
 
+            pairs = []
             if split_name == 'train' and self.include_subtrees:
                 phrases = []
                 for sentence_idx in sentence_idcs:
@@ -131,21 +135,39 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                     sentence_idx -= 1
                     subtrees = sentence_subtrees(sentence_idx, trees_pointers,
                                                  trees_phrases)
-                    phrases.extend(subtrees)
+            
+                    sentence_idx += 1
+                    sentence_phrase = list(sentences_df[
+                        sentences_df['sentence_index'] == sentence_idx
+                    ]['sentence'])[0]
+
+                    sentence_phrase = convert_parentheses(sentence_phrase)
+                    label = self.get_sentiment_label(id2sent, phrase2id[sentence_phrase])
+                    # filter @ sentence level
+                    # For SST-2, check subtrees only if sentence is not neutral
+                    if not self.discard_neutral or label != -1:
+                        for phrase in subtrees:
+                            label = self.get_sentiment_label(id2sent, phrase2id[phrase])
+                            if not self.discard_neutral or label != -1:
+                                if not self.convert_parentheses:
+                                    phrase = convert_parentheses_back(phrase)
+                                    phrase = phrase.replace('\xa0', ' ')
+                                pairs.append([phrase, label])
             else:
                 phrases = get_sentences_with_idcs(sentences_df, sentence_idcs)
-
-            pairs = []
-            for phrase in phrases:
-                phrase = convert_parentheses(phrase)
-                label = self.get_sentiment_label(id2sent, phrase2id[phrase])
-                if not self.discard_neutral or label != -1:
-                    if not self.convert_parentheses:
-                        phrase = convert_parentheses_back(phrase)
-                    pairs.append([phrase, label])
+                for phrase in phrases:
+                    phrase = convert_parentheses(phrase)
+                    label = self.get_sentiment_label(id2sent, phrase2id[phrase])
+                    if not self.discard_neutral or label != -1:
+                        if not self.convert_parentheses:
+                            phrase = convert_parentheses_back(phrase)
+                            phrase = phrase.replace('\xa0', ' ')
+                        pairs.append([phrase, label])
 
             final_csv = pd.DataFrame(pairs)
             final_csv.columns = ['sentence', 'label']
+            if self.remove_duplicates:
+                final_csv = final_csv.drop_duplicates(subset=['sentence'])
             final_csv.to_csv(
                 os.path.join(self.raw_dataset_path, f'{split_name}.csv'),
                 index=False
