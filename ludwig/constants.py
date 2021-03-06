@@ -78,6 +78,7 @@ PREDICTION = 'prediction'
 LOGITS = 'logits'
 HIDDEN = 'hidden'
 LAST_HIDDEN = 'last_hidden'
+RNN_LAST_HIDDEN = 'rnn_last_hidden'
 
 SUM = 'sum'
 APPEND = 'append'

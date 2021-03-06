@@ -131,7 +131,7 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
         loss = sampled_softmax_cross_entropy(
             y,
-            y_pred[LAST_HIDDEN],
+            y_pred[RNN_LAST_HIDDEN],
             num_classes=self.num_classes,
             decoder_weights=decoder_weights,
             decoder_biases=decoder_biases,
@@ -164,7 +164,7 @@ class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
             y,  # targets
             None,  # placeholder target sequence length to be removed
             None,  # eval_logits  place holder
-            y_pred[LAST_HIDDEN],
+            y_pred[RNN_LAST_HIDDEN],
             decoder_weights=decoder_weights,
             decoder_biases=decoder_biases,
             num_classes=self.num_classes,

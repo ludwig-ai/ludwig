@@ -276,11 +276,14 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         # in some cases like for sequence features, it can be  tuple of
         # logits, predictions, scores
         # The first element will be the logits tensor
+        rnn_last_hidden = None
         if isinstance(logits, tuple):
-            hidden = logits[1]
+            rnn_last_hidden = logits[1]
             logits = logits[0]
         if not isinstance(logits, dict):
             logits = {'logits': logits}
+        if rnn_last_hidden is not None:
+            logits['rnn_last_hidden'] = rnn_last_hidden
 
         return {
             'last_hidden': hidden,
