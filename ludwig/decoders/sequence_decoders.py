@@ -369,7 +369,13 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         else:
             last_hidden = final_state[0]
 
-        return logits, last_hidden  # , outputs, final_state, generated_sequence_lengths
+        # account for LSTM cell_type
+        if self.cell_type == 'lstm':
+            last_hidden = tf.add(last_hidden[0], last_hidden[1])
+
+        # logits: shape[batch_size, seq_size, num_classes]
+        # last_hidden: shape[batch_size, state_size]
+        return logits, last_hidden
 
     def decoder_beam_search(
             self,
@@ -477,10 +483,30 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # make visible last hidden tensor
         # for beam search assume beam 0 is best solution
         if isinstance(decoder_state.cell_state, AttentionWrapperState):
-            last_hidden = decoder_state.cell_state.cell_state[0][:, 0, :]
+            # with Attention
+            if self.cell_type == 'lstm':
+                # lstm cell_type
+                last_hidden = [
+                    decoder_state.cell_state.cell_state[0][0][:, 0, :],
+                    decoder_state.cell_state.cell_state[0][1][:, 0, :],
+                ]
+            else:
+                # non-lstm cell type
+                last_hidden = decoder_state.cell_state.cell_state[0][:, 0, :]
         else:
+            # No Attention
             last_hidden = decoder_state.cell_state[0][:, 0, :]
 
+        # account for LSTM cell_type
+        # reduce to single tensor of shape[batch_size, state_size]
+        if self.cell_type == 'lstm':
+            last_hidden = tf.add(last_hidden[0], last_hidden[1])
+
+        # lengths: shape[batch_size]
+        # predictions: shape [batch_size, seq_size]
+        # last_predictions: shape[batch_size
+        # probabilities: shape[batch_size, seq_size, num_classes]
+        # last_hidden: shape[batch_size, state_size]
         return None, lengths, predictions, last_predictions, probabilities, \
                last_hidden
 
@@ -581,6 +607,16 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         else:
             last_hidden = decoder_state[0]
 
+        # account for LSTM cell_type
+        if self.cell_type == 'lstm':
+            last_hidden = tf.add(last_hidden[0], last_hidden[1])
+
+        # logits: shape [batch_size, seq_size, num_classes]
+        # lengths: shape[batch_size]
+        # predictions: shape [batch_size, seq_size]
+        # last_predictions: shape[batch_size
+        # probabilities: shape[batch_size, seq_size, num_classes]
+        # last_hidden: shape[batch_size, state_size]
         return logits, lengths, predictions, last_predictions, probabilities, \
                last_hidden
 
