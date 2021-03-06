@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 try:
     import matplotlib as mpl
 
-    if platform == "darwin":  # OS X
-        mpl.use('TkAgg')
+    # if platform == "darwin":  # OS X
+    #     mpl.use('TkAgg')
     import matplotlib.patches as patches
     import matplotlib.path as path
     import matplotlib.patheffects as PathEffects
