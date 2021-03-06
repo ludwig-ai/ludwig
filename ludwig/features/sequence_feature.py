@@ -212,7 +212,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        # self.eval_loss_function = self.train_loss_function
+        # If beam search is not used, then logits are available for loss calc
+        # if beam search is used, then loss calc is based on probabilities
         if self.decoder_obj.beam_width > 1:
             # w/ beam search, use probabilities because logits not provided
             self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
