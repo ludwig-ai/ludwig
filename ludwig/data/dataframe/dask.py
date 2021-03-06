@@ -36,8 +36,11 @@ def set_scheduler(scheduler):
 
 
 class DaskEngine(DataFrameEngine):
-    def __init__(self, parallelism=None):
-        self._parallelism = parallelism or multiprocessing.cpu_count()
+    def __init__(self):
+        self._parallelism = multiprocessing.cpu_count()
+
+    def set_parallelism(self, parallelism):
+        self._parallelism = parallelism
 
     def empty_df_like(self, df):
         # Our goal is to preserve the index of the input dataframe but to drop

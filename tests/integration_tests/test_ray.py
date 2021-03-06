@@ -16,7 +16,6 @@
 import os
 import shutil
 import tempfile
-from contextlib import contextmanager
 
 import dask.dataframe as dd
 import pytest
@@ -41,8 +40,8 @@ from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import vector_feature
 
 
-@contextmanager
-def ray_init():
+@pytest.fixture
+def ray_start_4_cpus():
     res = ray.init(num_cpus=4)
     try:
         yield res
@@ -80,18 +79,16 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
 
 
 def run_api_experiment(config, data_parquet):
-    with ray_init():
-        # Sanity check that we get 4 slots over 1 host
-        kwargs = get_horovod_kwargs()
-        assert kwargs.get('num_hosts') == 1
-        assert kwargs.get('num_slots') == 4
+    # Sanity check that we get 4 slots over 1 host
+    kwargs = get_horovod_kwargs()
+    assert kwargs.get('num_hosts') == 1
+    assert kwargs.get('num_slots') == 4
 
-        # Train on Parquet
-        dask_backend = RayBackend()
-        train_with_backend(dask_backend, config, dataset=data_parquet)
+    # Train on Parquet
+    dask_backend = RayBackend()
+    train_with_backend(dask_backend, config, dataset=data_parquet)
 
 
-@spawn
 def run_test_parquet(
     input_features,
     output_features,
@@ -120,8 +117,8 @@ def run_test_parquet(
             run_fn(config, data_parquet=dataset_parquet)
 
 
-@pytest.mark.ray
-def test_ray_tabular():
+@pytest.mark.distributed
+def test_ray_tabular(ray_start_4_cpus):
     input_features = [
         sequence_feature(reduce_output='sum'),
         numerical_feature(normalization='zscore'),

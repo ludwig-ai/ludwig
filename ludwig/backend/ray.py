@@ -149,7 +149,7 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     def __init__(self, horovod_kwargs=None):
         super().__init__()
-        self._df_engine = DaskEngine(**get_dask_kwargs())
+        self._df_engine = DaskEngine()
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
 
@@ -159,7 +159,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         except ConnectionError:
             logger.info('Initializing new Ray cluster...')
             ray.init(ignore_reinit_error=True)
+
         dask.config.set(scheduler=ray_dask_get)
+        self._df_engine.set_parallelism(**get_dask_kwargs())
 
     def initialize_tensorflow(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
