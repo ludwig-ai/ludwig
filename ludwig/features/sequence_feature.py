@@ -199,6 +199,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
+            # todo: need to confirm usage of sampled_softmax with Tagger decoder
             self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
@@ -212,23 +213,34 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        if self.decoder == 'generator':
-            # Generator Decoder
-            # If beam search is not used, then logits are available for loss calc
-            # if beam search is used, then loss calc is based on probabilities
-            if self.decoder_obj.beam_width > 1:
-                # w/ beam search, use probabilities because logits not provided
-                self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-                    from_logits=False
-                )
-            else:
-                # w/o beam search, use logits
-                self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-                    from_logits=True
-                )
+        # special handling for evaluation with Genertor decoder and beam search
+        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+            # beam search does not provide logits, need to use probabilities
+            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+                from_logits=False
+            )
         else:
-            # Tagger decoder
+            # all other cases
             self.eval_loss_function = self.train_loss_function
+
+        # todo: determine if this sequence is needed in conjuction with Tagger
+        # if self.decoder == 'generator':
+        #     # Generator Decoder
+        #     # If beam search is not used, then logits are available for loss calc
+        #     # if beam search is used, then loss calc is based on probabilities
+        #     if self.decoder_obj.beam_width > 1:
+        #         # w/ beam search, use probabilities because logits not provided
+        #         self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+        #             from_logits=False
+        #         )
+        #     else:
+        #         # w/o beam search, use logits
+        #         self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+        #             from_logits=True
+        #         )
+        # else:
+        #     # Tagger decoder
+        #     self.eval_loss_function = self.train_loss_function
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
