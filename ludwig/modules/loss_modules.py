@@ -110,6 +110,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         return loss
 
 
+# For Categorical Output Features
 class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,
@@ -141,32 +142,28 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         return loss
 
 
+# For Sequence Output Feature
 class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,
-            decoder_obj=None,
+            dense_layer=None,
             num_classes=0,
             feature_loss=None,
             name=None
     ):
         super(SequenceSampledSoftmaxCrossEntropyLoss, self).__init__(name=name)
 
-        self.decoder_obj = decoder_obj
         self.num_classes = num_classes
         self.feature_loss = feature_loss
+        self.dense_layer = dense_layer
 
     def call(self, y, y_pred):
-        # todo: find more robust method for extracting, not dependendent on offset
-        decoder_weights = self.decoder_obj.weights[1]
-        decoder_biases = self.decoder_obj.weights[2]
 
         loss = sequence_sampled_softmax_cross_entropy(
             y,  # targets
-            None,  # placeholder target sequence length to be removed
-            None,  # eval_logits  place holder
             y_pred[RNN_LAST_HIDDEN],
-            decoder_weights=decoder_weights,
-            decoder_biases=decoder_biases,
+            decoder_weights=self.dense_layer.weights[0],
+            decoder_biases=self.dense_layer.weights[1],
             num_classes=self.num_classes,
             **self.feature_loss
         )
@@ -323,25 +320,17 @@ def sampled_softmax_cross_entropy(
 
 # specific for sequence features
 def sequence_sampled_softmax_cross_entropy(targets,
-                                           targets_sequence_length,
-                                           eval_logits,
-                                           last_hidden,
+                                           rnn_last_hidden,
                                            decoder_weights,
                                            decoder_biases,
                                            num_classes,
                                            **loss):
-    batch_max_targets_sequence_length = sequence_length_2D(
-        tf.cast(targets, tf.int64))
-    # todo: test sampled sequence loss w/o manual looping
-    # epoch_loss = 0.0
-    # for t in range(tf.shape(targets)[1]):
-    #     targ = tf.reshape(targets[:, t], [-1, 1])
 
     num_true = np.int32(tf.shape(targets)[1])
     sampled_values = sample_values_from_sequence(
         tf.cast(targets, tf.int64),
         loss['sampler'],
-        num_true,  # tf.cast(tf.shape(targets)[1], tf.int32),  # num_true
+        num_true,
         num_classes,
         loss['negative_samples'],
         loss['unique'],
@@ -352,60 +341,14 @@ def sequence_sampled_softmax_cross_entropy(targets,
         weights=tf.transpose(decoder_weights),
         biases=decoder_biases,
         labels=tf.cast(targets, tf.int64),
-        # todo: add code for inputs w/ and w/o attention
-        inputs=last_hidden,  # last_hidden[0],
+        inputs=rnn_last_hidden,
         num_true=num_true,
-        # tf.cast(tf.shape(targets)[1], tf.int32), #1, num_true
         num_sampled=loss['negative_samples'],
         num_classes=num_classes,
         sampled_values=sampled_values
     )
 
-    # batch_loss = tf.reduce_mean(sampled_loss)
-    # epoch_loss += batch_loss
-
-    # epoch_loss /= tf.cast(tf.shape(targets)[1], tf.float32)
     return tf.reduce_mean(sampled_loss)
-
-    # todo  clean out commented code
-    # def _sampled_loss(labels, logits):
-    #     labels = tf.cast(labels, tf.int64)
-    #     labels = tf.reshape(labels, [-1, 1])
-    #     logits = tf.cast(logits, tf.float32)
-    #
-    #     return tf.cast(
-    #         tf.nn.sampled_softmax_loss(weights=tf.transpose(decoder_weights),
-    #                                    biases=decoder_biases,
-    #                                    labels=labels,
-    #                                    inputs=logits,
-    #                                    num_sampled=loss['negative_samples'],
-    #                                    num_classes=num_classes,
-    #                                    sampled_values=sampled_values),
-    #         tf.float32)
-
-    # targets_sequence_length = sequence_length_2D(tf.cast(targets, tf.int64))
-    # train_loss = tfa.seq2seq.sequence_loss(
-    #     train_logits,
-    #     targets,
-    #     tf.sequence_mask(targets_sequence_length,
-    #                      batch_max_targets_sequence_length, dtype=tf.float32),
-    #     average_across_timesteps=True,
-    #     average_across_batch=False,
-    #     softmax_loss_function=_sampled_loss
-    # )
-    #
-    # # batch_max_seq_length_eval = tf.shape(eval_logits)[1]
-    # # unpadded_targets_eval = targets[:, :batch_max_seq_length_eval]
-    #
-    # eval_loss = tfa.seq2seq.sequence_loss(
-    #     padded_eval_logits,
-    #     targets,
-    #     tf.sequence_mask(targets_sequence_length,
-    #                      batch_max_targets_sequence_length, dtype=tf.float32),
-    #     average_across_timesteps=True,
-    #     average_across_batch=False
-    # )
-
 
 # todo: this is older version of code, to be cleaned out.
 # def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,

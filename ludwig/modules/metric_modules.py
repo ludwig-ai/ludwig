@@ -217,7 +217,7 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
 class SequenceSampledLossMetric(tf.keras.metrics.Mean):
     def __init__(
             self,
-            decoder_obj=None,
+            dense_layer=None,
             num_classes=0,
             feature_loss=None,
             name=None
@@ -225,7 +225,7 @@ class SequenceSampledLossMetric(tf.keras.metrics.Mean):
         super(SequenceSampledLossMetric, self).__init__(name=name)
 
         self.loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-            decoder_obj=decoder_obj,
+            dense_layer=dense_layer,
             num_classes=num_classes,
             feature_loss=feature_loss
         )
