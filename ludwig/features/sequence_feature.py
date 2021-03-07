@@ -201,7 +201,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
             # todo: need to confirm usage of sampled_softmax with Tagger decoder
             self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-                dense_layer=self.decoder_obj.dense_layer,
+                dec_dense_layer=self.decoder_obj.dense_layer,
+                dec_num_layers=self.decoder_obj.num_layers,
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
                 name='train_loss'
@@ -248,7 +249,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             self.metric_functions[LOSS] = SequenceLossMetric()
         else:
             self.metric_functions[LOSS] = SequenceSampledLossMetric(
-                dense_layer=self.decoder_obj.dense_layer,
+                dec_dense_layer=self.decoder_obj.dense_layer,
+                dec_num_layers=self.decoder_obj.num_layers,
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
             )

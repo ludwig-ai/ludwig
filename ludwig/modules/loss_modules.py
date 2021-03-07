@@ -146,7 +146,8 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,
-            dense_layer=None,
+            dec_dense_layer=None,
+            dec_num_layers=None,
             num_classes=0,
             feature_loss=None,
             name=None
@@ -155,15 +156,21 @@ class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
         self.num_classes = num_classes
         self.feature_loss = feature_loss
-        self.dense_layer = dense_layer
+        self.dec_dense_layer = dec_dense_layer
+        self.dec_num_layers = dec_num_layers
 
     def call(self, y, y_pred):
+        dec_weights = tf.concat(
+            [self.dec_dense_layer.weights[0]] * self.dec_num_layers,
+            axis=0
+        )
+        dec_biases = self.dec_dense_layer.weights[1]
 
         loss = sequence_sampled_softmax_cross_entropy(
             y,  # targets
             y_pred[RNN_LAST_HIDDEN],
-            decoder_weights=self.dense_layer.weights[0],
-            decoder_biases=self.dense_layer.weights[1],
+            decoder_weights=dec_weights,
+            decoder_biases=dec_biases,
             num_classes=self.num_classes,
             **self.feature_loss
         )

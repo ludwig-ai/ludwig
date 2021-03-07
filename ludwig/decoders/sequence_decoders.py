@@ -367,7 +367,10 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         if isinstance(final_state, AttentionWrapperState):
             rnn_last_hidden = final_state.cell_state[0]
         else:
-            rnn_last_hidden = final_state[0]
+            if self.num_layers > 1:
+                rnn_last_hidden = tf.concat(final_state, axis=-1)
+            else:
+                rnn_last_hidden = final_state[0]
 
         # account for LSTM cell_type
         if self.cell_type == 'lstm':
@@ -613,7 +616,10 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         if isinstance(decoder_state, AttentionWrapperState):
             rnn_last_hidden = decoder_state.cell_state[0]
         else:
-            rnn_last_hidden = decoder_state[0]
+            if self.num_layers > 1:
+                rnn_last_hidden = tf.concat(decoder_state, axis=-1)
+            else:
+                rnn_last_hidden = decoder_state[0]
 
         # account for LSTM cell_type
         if self.cell_type == 'lstm':
