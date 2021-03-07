@@ -26,7 +26,8 @@ from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
-from ludwig.data.dataset import Dataset
+from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
@@ -52,7 +53,6 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      hash_dict, get_proc_features_from_lists)
@@ -1241,6 +1241,7 @@ def load_hdf5(
         split_data=True,
         shuffle_training=False
 ):
+    # TODO dask: this needs to work with DataFrames
     logger.info('Loading data from: {0}'.format(hdf5_file_path))
 
     def shuffle(df):
@@ -1493,7 +1494,7 @@ def _preprocess_file_for_training(
                 DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         # TODO dask: consolidate hdf5 cache with backend cache
-        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
+        if backend.is_coordinator() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
@@ -1556,7 +1557,7 @@ def _preprocess_file_for_training(
             SPLIT
         )
 
-        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
+        if backend.is_coordinator() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             logger.info('Writing preprocessed training set cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(
@@ -1767,7 +1768,7 @@ def preprocess_for_prediction(
     )
 
     # TODO dask: support postprocessing using Backend
-    dataset = Dataset(
+    dataset = PandasDataset(
         dataset,
         features,
         hdf5_fp

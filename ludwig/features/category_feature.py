@@ -30,7 +30,6 @@ from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import CategoryAccuracy
 from ludwig.modules.metric_modules import HitsAtKMetric
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -394,12 +393,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         postprocessed = {}
         name = self.feature_name
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
             preds = predictions[PREDICTIONS].numpy()
             if 'idx2str' in metadata:
