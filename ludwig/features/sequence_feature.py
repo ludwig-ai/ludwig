@@ -213,7 +213,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        # special handling for evaluation with Genertor decoder and beam search
+        # special handling for evaluation with Generator decoder and beam search
         if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
             # beam search does not provide logits, need to use probabilities
             self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
@@ -223,7 +223,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             # all other cases
             self.eval_loss_function = self.train_loss_function
 
-        # todo: determine if this sequence is needed in conjuction with Tagger
+        # todo: determine if this sequence is needed in conjunction with Tagger
         # if self.decoder == 'generator':
         #     # Generator Decoder
         #     # If beam search is not used, then logits are available for loss calc
