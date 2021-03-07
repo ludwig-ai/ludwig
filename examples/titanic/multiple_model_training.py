@@ -10,6 +10,7 @@ import shutil
 
 # ## Import required libraries
 from ludwig.api import LudwigModel
+from ludwig.datasets import titanic
 from ludwig.visualize import learning_curves
 
 # clean out old results
@@ -20,6 +21,7 @@ shutil.rmtree('./visualizations', ignore_errors=True)
 list_of_model_ids = ['model1', 'model2']
 list_of_train_stats = []
 
+training_set, _, _ = titanic.load(split=True)
 
 # ## Train models
 for model_id in list_of_model_ids:
@@ -30,9 +32,11 @@ for model_id in list_of_model_ids:
                         logging_level=logging.WARN)
 
     # initiate model training
-    train_stats, _, _ = model.train(dataset='./data/train.csv',
-                             experiment_name='multiple_experiment',
-                             model_name=model_id)
+    train_stats, _, _ = model.train(
+        dataset=training_set,
+        experiment_name='multiple_experiment',
+        model_name=model_id
+    )
 
     # save training stats for later use
     list_of_train_stats.append(train_stats)

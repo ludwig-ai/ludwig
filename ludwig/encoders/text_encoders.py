@@ -16,16 +16,29 @@
 # ==============================================================================
 import logging
 import sys
+from abc import ABC
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer
 
+from ludwig.encoders import sequence_encoders
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register
 from ludwig.modules.reduction_modules import SequenceReducer
 
 logger = logging.getLogger(__name__)
 
 
-class BERTEncoder(Layer):
+ENCODER_REGISTRY = Registry(sequence_encoders.ENCODER_REGISTRY)
+
+
+class TextEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register(name='bert')
+class BERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -81,7 +94,8 @@ class BERTEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class GPTEncoder(Layer):
+@register(name='gpt')
+class GPTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -132,7 +146,8 @@ class GPTEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class GPT2Encoder(Layer):
+@register(name='gpt2')
+class GPT2Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -183,7 +198,8 @@ class GPT2Encoder(Layer):
         return {'encoder_output': hidden}
 
 
-class TransformerXLEncoder(Layer):
+# @register(name='transformer_xl')
+class TransformerXLEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -229,7 +245,8 @@ class TransformerXLEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class XLNetEncoder(Layer):
+@register(name='xlnet')
+class XLNetEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -280,7 +297,8 @@ class XLNetEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class XLMEncoder(Layer):
+@register(name='xlm')
+class XLMEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -331,7 +349,8 @@ class XLMEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class RoBERTaEncoder(Layer):
+@register(name='roberta')
+class RoBERTaEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -386,7 +405,8 @@ class RoBERTaEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class DistilBERTEncoder(Layer):
+@register(name='distilbert')
+class DistilBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -436,7 +456,8 @@ class DistilBERTEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class CTRLEncoder(Layer):
+@register(name='ctrl')
+class CTRLEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -487,7 +508,8 @@ class CTRLEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class CamemBERTEncoder(Layer):
+@register(name='camembert')
+class CamemBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -542,7 +564,8 @@ class CamemBERTEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class ALBERTEncoder(Layer):
+@register(name='albert')
+class ALBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -597,7 +620,8 @@ class ALBERTEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class T5Encoder(Layer):
+@register(name='t5')
+class T5Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -649,7 +673,8 @@ class T5Encoder(Layer):
         return {'encoder_output': hidden}
 
 
-class XLMRoBERTaEncoder(Layer):
+@register(name='xlmroberta')
+class XLMRoBERTaEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -704,7 +729,8 @@ class XLMRoBERTaEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class FlauBERTEncoder(Layer):
+@register(name='flaubert')
+class FlauBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -755,7 +781,8 @@ class FlauBERTEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class ELECTRAEncoder(Layer):
+@register(name='electra')
+class ELECTRAEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -806,7 +833,8 @@ class ELECTRAEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class LongformerEncoder(Layer):
+@register(name='longformer')
+class LongformerEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -861,7 +889,8 @@ class LongformerEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class AutoTransformerEncoder(Layer):
+@register(name='auto_transformer')
+class AutoTransformerEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',

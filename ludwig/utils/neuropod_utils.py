@@ -69,15 +69,7 @@ def postprocess_for_neuropod(predicted, config):
                     1)
             postprocessed[feature_name + "_probabilities"] = \
                 predicted[feature_name][PROBABILITIES].astype('float64')
-        elif feature_type == SEQUENCE:
-            predictions = list(map(
-                lambda x: ' '.join(x),
-                predicted[feature_name][PREDICTIONS]
-            ))
-            postprocessed[feature_name + "_predictions"] = np.expand_dims(
-                np.array(predictions, dtype='str'), 1
-            )
-        elif feature_type == TEXT:
+        elif feature_type == SEQUENCE or feature_type == TEXT:
             predictions = list(map(
                 lambda x: ' '.join(x),
                 predicted[feature_name][PREDICTIONS]
@@ -224,13 +216,7 @@ def export_neuropod(
                     training_set_metadata[feature[NAME]]['vocab_size']
                 )
             })
-        elif feature_type == SEQUENCE:
-            output_spec.append({
-                "name": feature_name + '_predictions',
-                "dtype": "str",
-                "shape": (None, 1)
-            })
-        elif feature_type == TEXT:
+        elif feature_type == SEQUENCE or feature_type == TEXT:
             output_spec.append({
                 "name": feature_name + '_predictions',
                 "dtype": "str",
