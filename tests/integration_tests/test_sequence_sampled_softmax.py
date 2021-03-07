@@ -60,7 +60,8 @@ def generate_deterministic_sequence(num_records=200):
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'lstm'])
 @pytest.mark.parametrize('enc_encoder', ['rnn'])
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
-@pytest.mark.parametrize('dec_num_layers', [1, 3])
+@pytest.mark.parametrize('dec_num_layers',
+                         [1])  # todo: add test for num_layer > 1
 def test_sequence_generator(
         enc_encoder,
         enc_cell_type,
