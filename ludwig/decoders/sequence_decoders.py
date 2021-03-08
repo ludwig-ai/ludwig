@@ -294,6 +294,33 @@ class SequenceGeneratorDecoder(SequenceDecoder):
 
         return decoder_initial_state
 
+    def extract_decoder_end_state(
+            self,
+            decoder_end_state
+    ):
+        # support for sampled_softmax_cross_entropy loss calculation
+        # make visible last hidden tensor
+        if isinstance(decoder_end_state, AttentionWrapperState):
+            rnn_last_hidden = decoder_end_state.cell_state
+        else:
+            rnn_last_hidden = decoder_end_state
+
+        # account for LSTM cell_type
+        if self.cell_type == 'lstm':
+            list0 = []
+            list1 = []
+            for x in rnn_last_hidden:
+                list0.append(x[0])
+                list1.append(x[1])
+
+            t0 = tf.concat(list0, axis=-1)
+            t1 = tf.concat(list1, axis=-1)
+            rnn_last_hidden = tf.add(t0, t1)
+        else:
+            rnn_last_hidden = rnn_last_hidden[-1]
+
+        return rnn_last_hidden
+
     def decoder_teacher_forcing(
             self,
             encoder_output,
@@ -362,16 +389,8 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             [[0, 0], [0, 1], [0, 0]]
         )
 
-        # support for sampled_softmax_cross_entropy loss calculation
-        # make visible last hidden tensor
-        if isinstance(final_state, AttentionWrapperState):
-            rnn_last_hidden = tf.concat(final_state.cell_state, axis=-1)
-        else:
-            rnn_last_hidden = final_state[-1]
-
-        # account for LSTM cell_type
-        if self.cell_type == 'lstm':
-            rnn_last_hidden = tf.add(rnn_last_hidden[0], rnn_last_hidden[1])
+        # extract structures needed for sampled_softmax
+        rnn_last_hidden = self.extract_decoder_end_state(final_state)
 
         # logits: shape[batch_size, seq_size, num_classes]
         # rnn_last_hidden: shape[batch_size, state_size]
@@ -608,16 +627,8 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-        # support for sampled_softmax_cross_entropy loss calculation
-        # make visible last hidden tensor
-        if isinstance(decoder_state, AttentionWrapperState):
-            rnn_last_hidden = tf.concat(decoder_state.cell_state, axis=-1)
-        else:
-            rnn_last_hidden = decoder_state[-1]
-
-        # account for LSTM cell_type
-        if self.cell_type == 'lstm':
-            rnn_last_hidden = tf.add(rnn_last_hidden[0], rnn_last_hidden[1])
+        # extraction structures required for sampled softmax
+        rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
 
         # logits: shape [batch_size, seq_size, num_classes]
         # lengths: shape[batch_size]
