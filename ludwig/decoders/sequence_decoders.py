@@ -365,12 +365,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # support for sampled_softmax_cross_entropy loss calculation
         # make visible last hidden tensor
         if isinstance(final_state, AttentionWrapperState):
-            rnn_last_hidden = final_state.cell_state[0]
+            rnn_last_hidden = tf.concat(final_state.cell_state, axis=-1)
         else:
-            if self.num_layers > 1:
-                rnn_last_hidden = tf.concat(final_state, axis=-1)
-            else:
-                rnn_last_hidden = final_state[0]
+            rnn_last_hidden = final_state[-1]
 
         # account for LSTM cell_type
         if self.cell_type == 'lstm':
@@ -614,12 +611,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # support for sampled_softmax_cross_entropy loss calculation
         # make visible last hidden tensor
         if isinstance(decoder_state, AttentionWrapperState):
-            rnn_last_hidden = decoder_state.cell_state[0]
+            rnn_last_hidden = tf.concat(decoder_state.cell_state, axis=-1)
         else:
-            if self.num_layers > 1:
-                rnn_last_hidden = tf.concat(decoder_state, axis=-1)
-            else:
-                rnn_last_hidden = decoder_state[0]
+            rnn_last_hidden = decoder_state[-1]
 
         # account for LSTM cell_type
         if self.cell_type == 'lstm':
