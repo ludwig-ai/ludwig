@@ -305,19 +305,39 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         else:
             rnn_last_hidden = decoder_end_state
 
-        # account for LSTM cell_type
-        if self.cell_type == 'lstm':
-            list0 = []
-            list1 = []
-            for x in rnn_last_hidden:
+        # accumulate tensors in preparation for creating required data structure
+        list0 = []  # for all cell types
+        list1 = []  # only for lstm cell types
+        for x in rnn_last_hidden:
+            if isinstance(x, list):
+                # lstm cell type
                 list0.append(x[0])
                 list1.append(x[1])
+            else:
+                # rnn/gru cell type
+                list0.append(x)
 
+        # if self.dense_layer.weights[0] > self.state_size, then need to
+        # concatenate to create data structure for sampled_softmax
+        if tf.shape(self.dense_layer.weights[0])[0] > self.state_size:
             t0 = tf.concat(list0, axis=-1)
-            t1 = tf.concat(list1, axis=-1)
-            rnn_last_hidden = tf.add(t0, t1)
+            if len(list1) > 0:
+                # need to concatenate tensors for lstm
+                t1 = tf.concat(list1, axis=-1)
+                rnn_last_hidden = tf.add(t0, t1)
+            else:
+                # gru/rnn cell type
+                rnn_last_hidden = t0
         else:
-            rnn_last_hidden = rnn_last_hidden[-1]
+            # else just get final state
+            if len(list1) > 0:
+                # lstm cell type
+                t0 = list0[-1]
+                t1 = list1[-1]
+                rnn_last_hidden = tf.add(t0, t1)
+            else:
+                # gru/rnn cell type
+                rnn_last_hidden = list0[-1]
 
         return rnn_last_hidden
 
