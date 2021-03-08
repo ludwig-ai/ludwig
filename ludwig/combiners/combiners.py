@@ -24,6 +24,7 @@ from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.encoders.sequence_encoders import StackedTransformer
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
@@ -315,6 +316,142 @@ class SequenceCombiner(tf.keras.Model):
         return return_data
 
 
+class ComparatorCombiner(tf.keras.Model):
+    def __init__(
+            self,
+            entity_1: List[str],
+            entity_2: List[str],
+            fc_layers=None,
+            num_fc_layers=1,
+            fc_size=256,
+            use_bias=True,
+            weights_initializer="glorot_uniform",
+            bias_initializer="zeros",
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
+            norm=None,
+            norm_params=None,
+            activation="relu",
+            dropout=0,
+            **kwargs,
+    ):
+        super().__init__()
+        logger.debug(" {}".format(self.name))
+
+        self.fc_stack = None
+
+        # todo future: this may be redundant, check
+        if fc_layers is None and num_fc_layers is not None:
+            fc_layers = []
+            for i in range(num_fc_layers):
+                fc_layers.append({"fc_size": fc_size})
+
+        if fc_layers is not None:
+            logger.debug("  FCStack")
+            self.e1_fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout=dropout,
+            )
+            self.e2_fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout=dropout,
+            )
+
+        # todo: this should actually be the size of the last fc layer,
+        #  not just fc_size
+        # todo: set initializer and regularization
+        self.bilinear_weights = tf.random.normal([fc_size, fc_size],
+                                                 dtype=tf.float32)
+
+        self.entity_1 = entity_1
+        self.entity_2 = entity_2
+        self.required_inputs = set(entity_1 + entity_2)
+        self.fc_size = fc_size
+
+    def call(self, inputs, training=None, mask=None,
+             **kwargs):  # encoder outputs
+        assert (
+                inputs.keys() == self.required_inputs
+        ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
+
+        ############
+        # Entity 1 #
+        ############
+        e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
+
+        # ================ Concat ================
+        if len(e1_enc_outputs) > 1:
+            e1_hidden = concatenate(e1_enc_outputs, 1)
+        else:
+            e1_hidden = list(e1_enc_outputs)[0]
+
+        # ================ Fully Connected ================
+        e1_hidden = self.e1_fc_stack(e1_hidden, training=training, mask=mask)
+        ############
+        # Entity 2 #
+        ############
+        e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
+
+        # ================ Concat ================
+        if len(e2_enc_outputs) > 1:
+            e2_hidden = concatenate(e2_enc_outputs, 1)
+        else:
+            e2_hidden = list(e2_enc_outputs)[0]
+
+        # ================ Fully Connected ================
+        e2_hidden = self.e2_fc_stack(e2_hidden, training=training, mask=mask)
+
+        ###########
+        # Compare #
+        ###########
+        if e1_hidden.shape != e2_hidden.shape:
+            raise ValueError(
+                f"Mismatching shapes among dimensions! entity1 shape: {e1_hidden.shape.as_list()} entity2 shape: {e2_hidden.shape.as_list()}"
+            )
+
+        dot_product = tf.matmul(e1_hidden, tf.transpose(e2_hidden))
+        element_wise_mul = tf.math.multiply(e1_hidden, e2_hidden)
+        abs_diff = tf.abs(e1_hidden - e2_hidden)
+        bilinear_prod = tf.matmul(
+            e1_hidden,
+            tf.matmul(self.bilinear_weights, tf.transpose(e2_hidden))
+        )
+        hidden = concatenate(
+            [dot_product, element_wise_mul, abs_diff, bilinear_prod], 1
+        )
+
+        return {"combiner_output": hidden}
+
+
 def get_combiner_class(combiner_type):
     return get_from_registry(
         combiner_type,
@@ -325,7 +462,8 @@ def get_combiner_class(combiner_type):
 combiner_registry = {
     'concat': ConcatCombiner,
     'sequence_concat': SequenceConcatCombiner,
-    'sequence': SequenceCombiner
+    'sequence': SequenceCombiner,
+    "comparator": ComparatorCombiner,
 }
 
 sequence_encoder_registry = {
@@ -333,5 +471,6 @@ sequence_encoder_registry = {
     'parallel_cnn': ParallelCNN,
     'stacked_parallel_cnn': StackedParallelCNN,
     'rnn': StackedRNN,
-    'cnnrnn': StackedCNNRNN
+    'cnnrnn': StackedCNNRNN,
+    'transformer': StackedTransformer,
 }
