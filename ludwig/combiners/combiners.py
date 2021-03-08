@@ -25,7 +25,6 @@ from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
-from ludwig.encoders.sequence_encoders import StackedTransformer
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
@@ -464,7 +463,7 @@ combiner_registry = {
     'concat': ConcatCombiner,
     'sequence_concat': SequenceConcatCombiner,
     'sequence': SequenceCombiner,
-    "comparator": ComparatorCombiner,
+    'comparator': ComparatorCombiner,
 }
 
 sequence_encoder_registry = {
@@ -473,5 +472,6 @@ sequence_encoder_registry = {
     'stacked_parallel_cnn': StackedParallelCNN,
     'rnn': StackedRNN,
     'cnnrnn': StackedCNNRNN,
-    'transformer': StackedTransformer,
+    # todo: add transformer
+    # 'transformer': StackedTransformer,
 }
