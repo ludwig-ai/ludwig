@@ -242,17 +242,6 @@ class ImageFeatureMixin(object):
             PREPROCESSING]:
             num_processes = feature[PREPROCESSING]['num_processes']
 
-        # set_default_value(
-        #     feature[PREPROCESSING],
-        #     'in_memory',
-        #     preprocessing_parameters['in_memory']
-        # )
-        # set_default_value(
-        #     feature[PREPROCESSING],
-        #     'num_processes',
-        #     preprocessing_parameters['num_processes']
-        # )
-
         src_path = None
         if hasattr(input_df, 'src'):
             src_path = os.path.dirname(os.path.abspath(input_df.src))
@@ -294,7 +283,6 @@ class ImageFeatureMixin(object):
             user_specified_num_channels=user_specified_num_channels
         )
 
-        # if feature[PREPROCESSING]['in_memory']:
         if in_memory:
             # Number of processes to run in parallel for preprocessing
             metadata[feature[NAME]][PREPROCESSING][
