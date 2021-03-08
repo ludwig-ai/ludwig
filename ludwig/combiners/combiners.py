@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import List
 
 import tensorflow as tf
 from tensorflow.keras.layers import concatenate
