@@ -79,7 +79,6 @@ SAMPLERS = [
         "scheduler": {
             "type": "hb_bohb",
             "time_attr": "training_iteration",
-            "max_t": 100,
             "reduction_factor": 4,
         },
         "num_samples": 3
@@ -116,12 +115,17 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001}
+        "training": {"epochs": 2, "learning_rate": 0.001},
+        "hyperopt": {
+            **HYPEROPT_CONFIG,
+            "executor": executor,
+            "sampler": sampler,
+        },
     }
 
     config = merge_with_defaults(config)
 
-    hyperopt_config = HYPEROPT_CONFIG.copy()
+    hyperopt_config = config["hyperopt"]
 
     if validate_output_feature:
         hyperopt_config['output_feature'] = output_features[0]['name']
