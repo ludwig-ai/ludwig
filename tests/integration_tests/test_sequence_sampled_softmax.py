@@ -55,6 +55,9 @@ def generate_deterministic_sequence(num_records=200):
     return pd.DataFrame(train)
 
 
+# testing only a subset of options to reduce test run time
+# combinations selected to test are the major tensor structures/sizes expected
+# to be encountered: AttentionWrapperState, BeamSearchDecoderState, None
 @pytest.mark.parametrize('dec_attention', [None, 'luong'])
 @pytest.mark.parametrize('dec_cell_type', ['gru', 'lstm'])
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'lstm'])
@@ -111,8 +114,8 @@ def test_sequence_generator(
         'skip_save_processed_input': True,
         'skip_save_progress': True,
         'skip_save_unprocessed_output': True,
-        'skip_save_model': False,
-        'skip_save_log': False,
+        'skip_save_model': True,
+        'skip_save_log': True,
         'debug': False
     }
     # Generate test data
