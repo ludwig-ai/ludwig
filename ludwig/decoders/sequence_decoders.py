@@ -348,7 +348,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             else:
                 # gru/rnn cell type
                 result_tensor = t0
-
             return result_tensor
 
         def pick_last_tensor():
@@ -361,7 +360,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             else:
                 # gru/rnn cell type
                 result_tensor = list0[-1]
-
             return result_tensor
 
         # if self.dense_layer.weights[0] > self.state_size, then need to
