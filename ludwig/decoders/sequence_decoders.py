@@ -22,7 +22,8 @@ from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
     StackedRNNCells
 from tensorflow.keras.layers import Layer, Dense, Embedding
 from tensorflow.keras.layers import average
-from tensorflow_addons.seq2seq import AttentionWrapper, AttentionWrapperState
+from tensorflow_addons.seq2seq import AttentionWrapper, AttentionWrapperState, \
+    BeamSearchDecoderState
 from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
@@ -294,15 +295,23 @@ class SequenceGeneratorDecoder(SequenceDecoder):
 
         return decoder_initial_state
 
+    # method to extract rnn_last_hidden tensor required for sampled softmax
     def extract_decoder_end_state(
             self,
             decoder_end_state
     ):
         # support for sampled_softmax_cross_entropy loss calculation
         # make visible last hidden tensor
-        if isinstance(decoder_end_state, AttentionWrapperState):
+        if isinstance(decoder_end_state, BeamSearchDecoderState):
+            if isinstance(decoder_end_state.cell_state, AttentionWrapperState):
+                rnn_last_hidden = decoder_end_state.cell_state.cell_state
+            else:
+                rnn_last_hidden = decoder_end_state.cell_state
+        elif isinstance(decoder_end_state, AttentionWrapperState):
+            # with Attention
             rnn_last_hidden = decoder_end_state.cell_state
         else:
+            # No Attention/no Beam Search
             rnn_last_hidden = decoder_end_state
 
         # accumulate tensors in preparation for creating required data structure
@@ -311,11 +320,22 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         for x in rnn_last_hidden:
             if isinstance(x, list):
                 # lstm cell type
-                list0.append(x[0])
-                list1.append(x[1])
+                if x[0].ndim == 2:
+                    # no beam search
+                    list0.append(x[0])
+                    list1.append(x[1])
+                else:
+                    # beam search
+                    list0.append(x[0][:, 0, :])
+                    list1.append(x[1][:, 0, :])
             else:
-                # rnn/gru cell type
-                list0.append(x)
+                # gru/rnn cell type
+                if x.ndim == 2:
+                    # no beam search
+                    list0.append(x)
+                else:
+                    # beam search
+                    list0.append(x[:, 0, :])
 
         # if self.dense_layer.weights[0] > self.state_size, then need to
         # concatenate to create data structure for sampled_softmax
@@ -521,33 +541,34 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # support for sampled_softmax_cross_entropy loss calculation
         # make visible last hidden tensor
         # for beam search assume beam 0 is best solution
-        if isinstance(decoder_state.cell_state, AttentionWrapperState):
-            # with Attention
-            if self.cell_type == 'lstm':
-                # lstm cell_type
-                rnn_last_hidden = [
-                    decoder_state.cell_state.cell_state[0][0][:, 0, :],
-                    decoder_state.cell_state.cell_state[0][1][:, 0, :],
-                ]
-            else:
-                # non-lstm cell type
-                rnn_last_hidden = decoder_state.cell_state.cell_state[0][:, 0,
-                                  :]
-        else:
-            # No Attention
-            if self.cell_type == 'lstm':
-                rnn_last_hidden = [
-                    decoder_state.cell_state[0][0][:, 0, :],
-                    decoder_state.cell_state[0][1][:, 0, :]
-                ]
-            else:
-                # non-lstm cell_type
-                rnn_last_hidden = decoder_state.cell_state[0][:, 0, :]
-
-        # account for LSTM cell_type
-        # reduce to single tensor of shape[batch_size, state_size]
-        if self.cell_type == 'lstm':
-            rnn_last_hidden = tf.add(rnn_last_hidden[0], rnn_last_hidden[1])
+        rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
+        # if isinstance(decoder_state.cell_state, AttentionWrapperState):
+        #     # with Attention
+        #     if self.cell_type == 'lstm':
+        #         # lstm cell_type
+        #         rnn_last_hidden = [
+        #             decoder_state.cell_state.cell_state[0][0][:, 0, :],
+        #             decoder_state.cell_state.cell_state[0][1][:, 0, :],
+        #         ]
+        #     else:
+        #         # non-lstm cell type
+        #         rnn_last_hidden = decoder_state.cell_state.cell_state[0][:, 0,
+        #                           :]
+        # else:
+        #     # No Attention
+        #     if self.cell_type == 'lstm':
+        #         rnn_last_hidden = [
+        #             decoder_state.cell_state[0][0][:, 0, :],
+        #             decoder_state.cell_state[0][1][:, 0, :]
+        #         ]
+        #     else:
+        #         # non-lstm cell_type
+        #         rnn_last_hidden = decoder_state.cell_state[0][:, 0, :]
+        #
+        # # account for LSTM cell_type
+        # # reduce to single tensor of shape[batch_size, state_size]
+        # if self.cell_type == 'lstm':
+        #     rnn_last_hidden = tf.add(rnn_last_hidden[0], rnn_last_hidden[1])
 
         # lengths: shape[batch_size]
         # predictions: shape [batch_size, seq_size]

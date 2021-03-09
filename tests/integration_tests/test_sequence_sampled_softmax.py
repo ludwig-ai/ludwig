@@ -59,8 +59,8 @@ def generate_deterministic_sequence(num_records=200):
 @pytest.mark.parametrize('dec_cell_type', ['gru', 'lstm'])
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'lstm'])
 @pytest.mark.parametrize('enc_encoder', ['rnn'])
-@pytest.mark.parametrize('dec_beam_width', [1, 3])
-@pytest.mark.parametrize('dec_num_layers', [1, 3])
+@pytest.mark.parametrize('dec_beam_width', [1, 2])
+@pytest.mark.parametrize('dec_num_layers', [1, 2])
 def test_sequence_generator(
         enc_encoder,
         enc_cell_type,
@@ -101,7 +101,7 @@ def test_sequence_generator(
             'fc_size': 14
         },
         'training': {''
-                     'epochs': 3, 'early_stop': 25, 'batch_size': 80,
+                     'epochs': 2, 'early_stop': 5, 'batch_size': 80,
                      'optimizer': {'type': 'adam'},
                      'learning_rate': 0.001,
                      }
