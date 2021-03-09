@@ -307,7 +307,10 @@ def test_sequence_decoders(
     assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
 
     assert isinstance(rnn_last_hidden, tf.Tensor)
-    assert rnn_last_hidden.shape.as_list() == [batch_size, TEST_HIDDEN_SIZE]
+    # account for effect of No Attention and num_layers
+    multiplier = 1 if dec_attention is None else dec_num_layers
+    assert rnn_last_hidden.shape.as_list() == \
+           [batch_size, TEST_HIDDEN_SIZE * multiplier]
 
 
 #
