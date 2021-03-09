@@ -320,7 +320,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         for x in rnn_last_hidden:
             if isinstance(x, list):
                 # lstm cell type
-                if x[0].ndim == 2:
+                if len(x[0].shape) == 2:
                     # no beam search
                     list0.append(x[0])
                     list1.append(x[1])
@@ -330,7 +330,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
                     list1.append(x[1][:, 0, :])
             else:
                 # gru/rnn cell type
-                if x.ndim == 2:
+                if len(x.shape) == 2:
                     # no beam search
                     list0.append(x)
                 else:
