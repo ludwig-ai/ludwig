@@ -90,15 +90,14 @@ class RayRemoteTrainer(RemoteTrainer):
         results = super().train(*args, **kwargs)
         if results is not None:
             model, *stats = results
-            model = RayRemoteModel(model)
-            results = (model, *stats)
+            results = (model.get_weights(), *stats)
         return results
 
     def train_online(self, *args, **kwargs):
-        model = super().train_online(*args, **kwargs)
-        if model is not None:
-            model = RayRemoteModel(model)
-        return model
+        results = super().train_online(*args, **kwargs)
+        if results is not None:
+            results = results.get_weights()
+        return results
 
 
 class RayTrainer(BaseTrainer):
@@ -109,20 +108,24 @@ class RayTrainer(BaseTrainer):
         self.executor.start(executable_cls=RayRemoteTrainer, executable_kwargs=trainer_kwargs)
 
     def train(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
+        remote_model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda trainer: trainer.train(model.load(), *args, **kwargs)
+            lambda trainer: trainer.train(remote_model.load(), *args, **kwargs)
         )
 
-        model, *stats = results[0]
-        return (model.load(), *stats)
+        weights, *stats = results[0]
+        model.set_weights(weights)
+        return (model, *stats)
 
     def train_online(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
+        remote_model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda trainer: trainer.train_online(model.load(), *args, **kwargs)
+            lambda trainer: trainer.train_online(remote_model.load(), *args, **kwargs)
         )
-        return results[0].load()
+
+        weights = results[0]
+        model.set_weights(weights)
+        return model
 
     @property
     def validation_field(self):
