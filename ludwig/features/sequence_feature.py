@@ -232,31 +232,22 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             # all other cases
             self.eval_loss_function = self.train_loss_function
 
-        # todo: determine if this sequence is needed in conjunction with Tagger
-        # if self.decoder == 'generator':
-        #     # Generator Decoder
-        #     # If beam search is not used, then logits are available for loss calc
-        #     # if beam search is used, then loss calc is based on probabilities
-        #     if self.decoder_obj.beam_width > 1:
-        #         # w/ beam search, use probabilities because logits not provided
-        #         self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-        #             from_logits=False
-        #         )
-        #     else:
-        #         # w/o beam search, use logits
-        #         self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-        #             from_logits=True
-        #         )
-        # else:
-        #     # Tagger decoder
-        #     self.eval_loss_function = self.train_loss_function
-
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.metric_functions[LOSS] = SequenceLossMetric(from_logits=False)
+            if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+                # Generator Decoder w/ beam search
+                # beam search does not provide logits
+                self.metric_functions[LOSS] = SequenceLossMetric(
+                    from_logits=False)
+            else:
+                # Generator Decoder w/ no beam search and Tagger Decoder
+                self.metric_functions[LOSS] = SequenceLossMetric(
+                    from_logits=True)
         else:
+            # sampled cross entropy loss
             if self.decoder == 'generator':
+                # Generator Decoder
                 self.metric_functions[LOSS] = SequenceSampledLossMetric(
                     dec_dense_layer=self.decoder_obj.dense_layer,
                     dec_num_layers=self.decoder_obj.num_layers,
@@ -264,6 +255,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     feature_loss=self.loss,
                 )
             else:
+                # Tagger Decoder
                 self.metric_functions[LOSS] = SequenceSampledLossMetric(
                     dec_dense_layer=self.decoder_obj.projection_layer,
                     dec_num_layers=None,
