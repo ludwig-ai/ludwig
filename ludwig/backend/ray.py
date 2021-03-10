@@ -82,26 +82,47 @@ class RayRemoteModel:
         return obj
 
 
+class RayRemoteTrainer(RemoteTrainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def train(self, *args, **kwargs):
+        results = super().train(*args, **kwargs)
+        if results is not None:
+            model, *stats = results
+            model = RayRemoteModel(model)
+            results = (model, *stats)
+        return results
+
+    def train_online(self, *args, **kwargs):
+        model = super().train_online(*args, **kwargs)
+        if model is not None:
+            model = RayRemoteModel(model)
+        return model
+
+
 class RayTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, trainer_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         setting = RayExecutor.create_settings(timeout_s=30)
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RemoteTrainer, executable_kwargs=trainer_kwargs)
+        self.executor.start(executable_cls=RayRemoteTrainer, executable_kwargs=trainer_kwargs)
 
     def train(self, model, *args, **kwargs):
         model = RayRemoteModel(model)
         results = self.executor.execute(
             lambda trainer: trainer.train(model.load(), *args, **kwargs)
         )
-        return results[0]
+
+        model, *stats = results[0]
+        return (model.load(), *stats)
 
     def train_online(self, model, *args, **kwargs):
         model = RayRemoteModel(model)
         results = self.executor.execute(
             lambda trainer: trainer.train_online(model.load(), *args, **kwargs)
         )
-        return results[0]
+        return results[0].load()
 
     @property
     def validation_field(self):
