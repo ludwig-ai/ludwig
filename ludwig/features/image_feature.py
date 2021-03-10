@@ -233,16 +233,15 @@ class ImageFeatureMixin(object):
             preprocessing_parameters,
             backend
     ):
-        set_default_value(
-            feature[PREPROCESSING],
-            'in_memory',
-            preprocessing_parameters['in_memory']
-        )
-        set_default_value(
-            feature[PREPROCESSING],
-            'num_processes',
-            preprocessing_parameters['num_processes']
-        )
+        in_memory = preprocessing_parameters['in_memory']
+        if PREPROCESSING in feature and 'in_memory' in feature[PREPROCESSING]:
+            in_memory = feature[PREPROCESSING]['in_memory']
+
+        num_processes = preprocessing_parameters['num_processes']
+        if PREPROCESSING in feature and 'num_processes' in feature[
+            PREPROCESSING]:
+            num_processes = feature[PREPROCESSING]['num_processes']
+
         src_path = None
         if hasattr(input_df, 'src'):
             src_path = os.path.dirname(os.path.abspath(input_df.src))
@@ -284,9 +283,8 @@ class ImageFeatureMixin(object):
             user_specified_num_channels=user_specified_num_channels
         )
 
-        if feature[PREPROCESSING]['in_memory']:
+        if in_memory:
             # Number of processes to run in parallel for preprocessing
-            num_processes = feature[PREPROCESSING]['num_processes']
             metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
             metadata[feature[NAME]]['reshape'] = (height, width, num_channels)
@@ -294,7 +292,8 @@ class ImageFeatureMixin(object):
             # Split the dataset into pools only if we have an explicit request to use
             # multiple processes. In case we have multiple input images use the
             # standard code anyway.
-            if backend.supports_multiprocessing and (num_processes > 1 or num_images > 1):
+            if backend.supports_multiprocessing and (
+                    num_processes > 1 or num_images > 1):
                 all_file_paths = [get_abs_path(src_path, file_path)
                                   for file_path in input_df[feature[NAME]]]
 
