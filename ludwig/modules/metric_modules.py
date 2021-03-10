@@ -204,10 +204,11 @@ class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
 
 
 class SequenceLossMetric(tf.keras.metrics.Mean):
-    def __init__(self, name=None):
+    def __init__(self, from_logits=True, name=None):
         super(SequenceLossMetric, self).__init__(name=name)
 
-        self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
+        self.loss_function = SequenceSoftmaxCrossEntropyLoss(
+            from_logits=from_logits)
 
     def update_state(self, y, y_hat):
         loss = self.loss_function(y, y_hat)
