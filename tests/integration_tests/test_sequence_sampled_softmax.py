@@ -124,3 +124,45 @@ def test_sequence_generator(
 
     # run the experiment
     results = experiment_cli(dataset=df, **args)
+
+
+@pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
+@pytest.mark.parametrize('attention', [False, True])
+def test_sequence_tagger(
+        enc_cell_type,
+        attention,
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        sequence_feature(
+            max_len=10,
+            encoder='rnn',
+            cell_type=enc_cell_type,
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            attention=attention,
+            reduce_input=None,
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # setup sampled softmax loss
+    output_features[0].update(
+        {
+            'loss': {
+                'type': 'sampled_softmax_cross_entropy',
+                'negative_samples': 7
+            }
+        }
+    )
+
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path)

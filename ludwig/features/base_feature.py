@@ -273,9 +273,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                              training=training)
 
         # most of the cases the output of self.logits is a tensor
-        # in some cases like for sequence features, it can be  tuple of
-        # logits, predictions, scores
-        # The first element will be the logits tensor
+        # there are two special cases:
+        # sequence feature with Generator Decoder: 'logits' is a tuple of
+        #   logits, rnn_last_hidden
+        # sequence feature with Tagger Decoder: 'logits' is a dictionary with
+        #   these keys: logits, lengths, rnn_last_hidden
+        #
         rnn_last_hidden = None
         if isinstance(logits, tuple):
             rnn_last_hidden = logits[1]

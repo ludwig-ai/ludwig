@@ -199,14 +199,22 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            # todo: need to confirm usage of sampled_softmax with Tagger decoder
-            self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-                dec_dense_layer=self.decoder_obj.dense_layer,
-                dec_num_layers=self.decoder_obj.num_layers,
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            if self.decoder == 'generator':
+                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+                    dec_dense_layer=self.decoder_obj.dense_layer,
+                    dec_num_layers=self.decoder_obj.num_layers,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                    name='train_loss'
+                )
+            else:
+                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+                    dec_dense_layer=self.decoder_obj.projection_layer,
+                    dec_num_layers=None,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                    name='train_loss'
+                )
         else:
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
@@ -248,12 +256,20 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if self.loss[TYPE] == 'softmax_cross_entropy':
             self.metric_functions[LOSS] = SequenceLossMetric()
         else:
-            self.metric_functions[LOSS] = SequenceSampledLossMetric(
-                dec_dense_layer=self.decoder_obj.dense_layer,
-                dec_num_layers=self.decoder_obj.num_layers,
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-            )
+            if self.decoder == 'generator':
+                self.metric_functions[LOSS] = SequenceSampledLossMetric(
+                    dec_dense_layer=self.decoder_obj.dense_layer,
+                    dec_num_layers=self.decoder_obj.num_layers,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                )
+            else:
+                self.metric_functions[LOSS] = SequenceSampledLossMetric(
+                    dec_dense_layer=self.decoder_obj.projection_layer,
+                    dec_num_layers=None,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                )
         self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
         self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()

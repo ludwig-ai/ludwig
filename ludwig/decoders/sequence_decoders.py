@@ -693,9 +693,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
                 training=training
             )
 
-        logits, lengths, preds, last_preds, probs, last_hidden = decoder_outputs
+        logits, lengths, preds, last_preds, probs, rnn_last_hidden = decoder_outputs
 
-        return logits, lengths, preds, last_preds, probs, last_hidden
+        return logits, lengths, preds, last_preds, probs, rnn_last_hidden
 
     def _predictions_eval(
             self,
@@ -878,7 +878,8 @@ class SequenceTaggerDecoder(SequenceDecoder):
         return {
             LOGITS: logits,
             # logits shape [batch_size, sequence_length, num_classes]
-            LENGTHS: inputs[LENGTHS]
+            LENGTHS: inputs[LENGTHS],
+            'rnn_last_hidden': tf.reduce_mean(hidden, axis=1)
         }
 
     def _logits_training(
@@ -936,10 +937,19 @@ class SequenceTaggerDecoder(SequenceDecoder):
         )
         logits = logits * mask[:, :, tf.newaxis]
 
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # logits: shape [batch_size, seq_size, num_classes]
+        # lengths: shape[batch_size]
+        # predictions: shape [batch_size, seq_size]
+        # last_predictions: shape[batch_size]
+        # probabilities: shape[batch_size, seq_size, num_classes]
+        # rnn_last_hidden: shape[batch_size, state_size] or
+        #     with Attention shape[batch_size, state_size * num_layers]
         return {
             PREDICTIONS: predictions,
             LENGTHS: input_sequence_lengths,
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
-            LOGITS: logits
+            LOGITS: logits,
+            RNN_LAST_HIDDEN: outputs[RNN_LAST_HIDDEN]
         }
