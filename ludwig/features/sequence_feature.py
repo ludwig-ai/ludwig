@@ -254,7 +254,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.metric_functions[LOSS] = SequenceLossMetric()
+            self.metric_functions[LOSS] = SequenceLossMetric(from_logits=False)
         else:
             if self.decoder == 'generator':
                 self.metric_functions[LOSS] = SequenceSampledLossMetric(
