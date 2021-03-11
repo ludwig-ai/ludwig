@@ -327,7 +327,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
                                            num_classes,
                                            **loss):
 
-    num_true = np.int32(tf.shape(targets)[1])
+    num_true = targets.shape[1]
     sampled_values = sample_values_from_sequence(
         tf.cast(targets, tf.int64),
         loss['sampler'],
