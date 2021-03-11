@@ -71,8 +71,13 @@ def server(model, allowed_origins=None):
 
     @app.post('/predict')
     async def predict(request: Request):
-        form = await request.form()
-        files, entry = convert_input(form)
+        try:
+            form = await request.form()
+            files, entry = convert_input(form)
+        except Exception:
+            logger.exception("Failed to parse batch_predict form")
+            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
+                                    status_code=500)
 
         try:
             if (entry.keys() & input_features) != input_features:
@@ -84,8 +89,8 @@ def server(model, allowed_origins=None):
                 )
                 resp = resp.to_dict('records')[0]
                 return JSONResponse(resp)
-            except Exception as e:
-                logger.error("Failed to run predict: {}".format(str(e)))
+            except Exception:
+                logger.exception("Failed to run predict")
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
@@ -94,12 +99,17 @@ def server(model, allowed_origins=None):
 
     @app.post('/batch_predict')
     async def batch_predict(request: Request):
-        form = await request.form()
-        files, data = convert_batch_input(form)
-        data_df = pd.DataFrame.from_records(data['data'],
-                                            index=data.get('index'),
-                                            columns=data['columns'])
-
+        try:
+            form = await request.form()
+            files, data = convert_batch_input(form)
+            data_df = pd.DataFrame.from_records(data['data'],
+                                                index=data.get('index'),
+                                                columns=data['columns'])
+        except Exception:
+            logger.exception("Failed to parse batch_predict form")
+            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
+                                    status_code=500)
+        
         try:
             if (set(data_df.columns) & input_features) != input_features:
                 return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
@@ -108,8 +118,8 @@ def server(model, allowed_origins=None):
                 resp, _ = model.predict(dataset=data_df)
                 resp = resp.to_dict('split')
                 return JSONResponse(resp)
-            except Exception as e:
-                logger.error("Failed to run batch_predict: {}".format(str(e)))
+            except Exception:
+                logger.exception("Failed to run batch_predict: {}")
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:

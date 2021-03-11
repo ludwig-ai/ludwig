@@ -61,7 +61,7 @@ class BinaryFeatureMixin(object):
         distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
             raise ValueError(
-                f'Binary feature column expects 2 distinct values, '
+                f'Binary feature column {column.name} expects 2 distinct values, '
                 f'found: {distinct_values.values.tolist()}'
             )
 
