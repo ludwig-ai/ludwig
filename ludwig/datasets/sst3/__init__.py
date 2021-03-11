@@ -20,12 +20,12 @@ from ludwig.datasets.sst2 import SST
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
          include_subtrees=False, convert_parentheses=True):
-    dataset = SST5(cache_dir=cache_dir, include_subtrees=include_subtrees,
+    dataset = SST3(cache_dir=cache_dir, include_subtrees=include_subtrees,
                    convert_parentheses=convert_parentheses)
     return dataset.load(split=split)
 
 
-class SST5(SST):
+class SST3(SST):
     """The SST5 dataset.
 
     This dataset is constructed using the Stanford Sentiment Treebank Dataset.
@@ -42,24 +42,20 @@ class SST5(SST):
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
-                 include_subtrees=False, 
+                 include_subtrees=False,
                  convert_parentheses=True,
                  remove_duplicates=False):
-        super().__init__(dataset_name='sst5', cache_dir=cache_dir,
+        super().__init__(dataset_name='sst3', cache_dir=cache_dir,
                          include_subtrees=include_subtrees,
                          convert_parentheses=convert_parentheses,
                          remove_duplicates=False)
 
     def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]
-        if sentiment <= 0.2:
-            return 'very_negative'
-        elif sentiment <= 0.4:
+        if sentiment <= 0.4:
             return 'negative'
         elif sentiment <= 0.6:
             return 'neutral'
-        elif sentiment <= 0.8:
-            return 'positive'
         elif sentiment <= 1.0:
-            return 'very_positive'
+            return 'positive'
         return 'neutral'
