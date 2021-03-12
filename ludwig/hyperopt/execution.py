@@ -15,7 +15,7 @@ from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import (get_available_gpu_memory, 
-                                     get_from_registry
+                                     get_from_registry,
                                      hash_dict)
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
