@@ -81,6 +81,7 @@ def _prepare_data(csv_filename):
     return input_features, output_features, rel_path
 
 
+@pytest.mark.distributed
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Horovod is not supported on Windows")
 def test_horovod_implicit(csv_filename):
@@ -88,6 +89,7 @@ def test_horovod_implicit(csv_filename):
     _run_horovod(csv_filename)
 
 
+@pytest.mark.distributed
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Horovod is not supported on Windows")
 @pytest.mark.skipif(not _nccl_available(),

@@ -5,11 +5,17 @@ language: python
 jobs:
   include:
     - python: "3.6"
-      env: TENSORFLOW=2.3.1
+      env: TENSORFLOW=2.3.1 TEST_FILTER="not distributed"
+    - python: "3.6"
+      env: TENSORFLOW=2.3.1 TEST_FILTER="distributed"
     - python: "3.7"
-      env: TENSORFLOW=2.4.0
+      env: TENSORFLOW=2.4.0 TEST_FILTER="not distributed"
+    - python: "3.7"
+      env: TENSORFLOW=2.4.0 TEST_FILTER="distributed"
     - python: "3.8"
-      env: TENSORFLOW=nightly
+      env: TENSORFLOW=nightly TEST_FILTER="not distributed"
+    - python: "3.8"
+      env: TENSORFLOW=nightly TEST_FILTER="distributed"
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y cmake libsndfile1
@@ -28,4 +34,4 @@ install:
   - HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install --no-cache-dir '.[test]'
 script:
   - pip list
-  - pytest -v --timeout 300 tests
+  - pytest -v --timeout 300 --durations 10 -m "$TEST_FILTER" tests
