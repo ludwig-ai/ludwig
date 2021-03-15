@@ -46,6 +46,14 @@ jobs:
       run: |
         brew install libuv
 
+    - name: pip cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}-${{ hashFiles('requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}-
+
     - name: Install dependencies
       env:
         HOROVOD_WITH_TENSORFLOW: 1
@@ -67,6 +75,21 @@ jobs:
         pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
         pip install --no-cache-dir '.[test]'
         pip list
+      shell: bash
+
+    - name: Reinstall Horovod if necessary
+      env:
+        HOROVOD_WITH_TENSORFLOW: 1
+        HOROVOD_WITHOUT_MPI: 1
+        HOROVOD_WITHOUT_PYTORCH: 1
+        HOROVOD_WITHOUT_MXNET: 1
+      run: |
+        HOROVOD_BUILT=$(python -c "import horovod.tensorflow; horovod.tensorflow.nccl_built(); print('SUCCESS')" || true)
+        if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
+          pip uninstall -y horovod
+          pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+        fi
+        horovodrun --check-build
       shell: bash
 
     - name: Tests
