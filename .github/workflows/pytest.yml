@@ -72,7 +72,7 @@ jobs:
           pip install tensorflow==$TENSORFLOW
         fi
         pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
-        pip install --no-cache-dir '.[test]'
+        pip install '.[test]'
         pip list
       shell: bash
 
