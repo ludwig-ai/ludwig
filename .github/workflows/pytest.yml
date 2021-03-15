@@ -93,4 +93,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -v --timeout 300 tests
+        pytest -v --timeout 300 --durations 10 tests
