@@ -23,6 +23,8 @@ jobs:
             tensorflow-version: 2.4.0
           - python-version: 3.8
             tensorflow-version: nightly
+    env:
+      TENSORFLOW: ${{ matrix.tensorflow-version }}
 
     timeout-minutes: 50
     steps:
@@ -53,13 +55,13 @@ jobs:
         python --version
         pip --version
         python -m pip install -U pip
-        if [ ${{ matrix.tensorflow }} == "nightly" ]; then
+        if [ $TENSORFLOW == "nightly" ]; then
           cat requirements.txt | sed '/^tensorflow[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
           cat requirements_horovod.txt | sed 's/\[tensorflow\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
           pip install tf-nightly
           pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
         else
-          pip install tensorflow==${{ matrix.tensorflow }}
+          pip install tensorflow==$TENSORFLOW
         fi
         pip install --no-build-isolation ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
         pip install --no-cache-dir '.[test]'
