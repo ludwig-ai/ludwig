@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-18.04 ]
+        os: [ ubuntu-latest ]
         include:
           - python-version: 3.6
             tensorflow-version: 2.3.1
@@ -35,8 +35,8 @@ jobs:
     - name: Setup Linux
       if: runner.os == 'linux'
       run: |
-        apt-get update
-        apt-get install -y cmake libsndfile1
+        sudo apt-get update
+        sudo apt-get install -y cmake libsndfile1
 
     - name: Setup macOS
       if: runner.os == 'macOS'
