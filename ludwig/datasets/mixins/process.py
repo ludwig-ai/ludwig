@@ -36,7 +36,7 @@ class MultifileJoinProcessMixin:
     raw_dataset_path: str
     processed_dataset_path: str
 
-    def read_file(self, filetype, filename):
+    def read_file(self, filetype, filename, header):
         if filetype == 'json':
             file_df = pd.read_json(
                 os.path.join(self.raw_dataset_path, filename))
@@ -48,17 +48,21 @@ class MultifileJoinProcessMixin:
                 os.path.join(self.raw_dataset_path, filename))
         elif filetype == 'csv':
             file_df = pd.read_csv(
-                os.path.join(self.raw_dataset_path, filename))
+                os.path.join(self.raw_dataset_path, filename), header=header)
         else:
             raise ValueError(f'Unsupported file type: {filetype}')
         return file_df
 
-    def process_downloaded_dataset(self):
+    def process_downloaded_dataset(self, header=0):
+        """Processes dataset
+
+        :param header: indicates whether raw  data files contain headers
+        """
         downloaded_files = self.download_filenames
         filetype = self.download_file_type
         all_files = []
         for split_name, filename in downloaded_files.items():
-            file_df = self.read_file(filetype, filename)
+            file_df = self.read_file(filetype, filename, header)
             if split_name == 'train_file':
                 file_df['split'] = 0
             elif split_name == 'val_file':
