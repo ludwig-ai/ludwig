@@ -40,3 +40,13 @@ class EthosBinary(UncompressedFileDownloadMixin, IdentityProcessMixin,
                                    self.csv_filename)
         data_df = pd.read_csv(dataset_csv, sep=';')
         return data_df
+
+    def process_downloaded_dataset(self):
+        super(EthosBinary, self).process_downloaded_dataset()
+        # replace ; sperator to ,
+        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
+                                                self.csv_filename), split=";")
+        processed_df.to_csv(
+            os.path.join(self.processed_dataset_path, self.csv_filename),
+            index=False, split=","
+        )
