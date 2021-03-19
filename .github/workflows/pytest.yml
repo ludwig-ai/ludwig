@@ -29,7 +29,7 @@ jobs:
       TENSORFLOW: ${{ matrix.tensorflow-version }}
       MARKERS: ${{ matrix.test-markers }}
 
-    name: Test ${{ runner.os }}, Python ${{ matrix.python-version  }}, TensorFlow ${{ matrix.tensorflow-version }}, ${{ matrix.test-markers }}
+    name: Test ${{ matrix.os }}, Python ${{ matrix.python-version  }}, TensorFlow ${{ matrix.tensorflow-version }}, ${{ matrix.test-markers }}
 
     timeout-minutes: 70
     steps:
