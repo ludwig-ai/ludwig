@@ -97,4 +97,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -v --timeout 300 --durations 10 -m "$MARKERS" tests
+        pytest -v --timeout 360 --durations 10 -m "$MARKERS" tests
