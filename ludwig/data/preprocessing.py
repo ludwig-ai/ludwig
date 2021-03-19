@@ -17,13 +17,11 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from copy import copy
 
 import numpy as np
 import pandas as pd
 
 import ludwig
-from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -1681,7 +1679,8 @@ def preprocess_for_prediction(
         :returns: Dataset, Train set metadata
         """
     # TODO dask: support distributed backend for prediction
-    backend = LOCAL_BACKEND
+    if backend.df_engine != LOCAL_BACKEND.df_engine:
+        backend = LOCAL_BACKEND
 
     # Sanity Check to make sure some data source is provided
     if dataset is None:

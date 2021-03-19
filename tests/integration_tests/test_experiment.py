@@ -430,7 +430,8 @@ def test_experiment_image_dataset(
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
             model.config,
-            dataset=test_data
+            dataset=test_data,
+            backend=backend,
         )
         test_dataset_to_use = test_set.data_hdf5_fp
     else:
