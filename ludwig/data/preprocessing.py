@@ -1680,6 +1680,9 @@ def preprocess_for_prediction(
         :param split: the split of dataset to return
         :returns: Dataset, Train set metadata
         """
+    # TODO dask: support distributed backend for prediction
+    backend = LOCAL_BACKEND
+
     # Sanity Check to make sure some data source is provided
     if dataset is None:
         raise ValueError('No training data is provided!')

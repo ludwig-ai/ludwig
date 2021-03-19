@@ -1276,6 +1276,26 @@ class Trainer(BaseTrainer):
         return self.horovod.rank() == 0
 
 
+class RemoteTrainer(Trainer):
+    def __init__(
+        self,
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        **kwargs
+    ):
+        horovod = initialize_horovod()
+        initialize_tensorflow(gpus=gpus,
+                              gpu_memory_limit=gpu_memory_limit,
+                              allow_parallel_threads=allow_parallel_threads,
+                              horovod=horovod)
+        super().__init__(horovod=horovod, **kwargs)
+
+        # Only return results from rank 0 to reduce network overhead
+        self.train = return_first(self.train)
+        self.train_online = return_first(self.train_online)
+
+
 class ProgressTracker:
     def __init__(
             self,
