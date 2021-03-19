@@ -71,7 +71,10 @@ class DaskEngine(DataFrameEngine):
         tag = tag.lower()
         dataset_parquet_fp = os.path.join(cache_dir, f'{tag}.parquet')
 
-        # Workaround: https://issues.apache.org/jira/browse/ARROW-1614
+        # Workaround for https://issues.apache.org/jira/browse/ARROW-1614
+        # Currently, Arrow does not support storing multi-dimensional arrays / tensors.
+        # When we write a column of tensors to disk, we need to first flatten it into a
+        # 1D array, which we will then reshape back when we read the data at train time.
         features = get_combined_features(config)
         for feature in features:
             name = feature[NAME]

@@ -17,12 +17,10 @@ import os
 import shutil
 import tempfile
 
-import dask.dataframe as dd
 import pytest
 import ray
 import tensorflow as tf
 
-from ludwig.api import LudwigModel
 from ludwig.backend.ray import RayBackend, get_horovod_kwargs
 
 from tests.integration_tests.utils import create_data_set_to_use
@@ -35,8 +33,8 @@ from tests.integration_tests.utils import h3_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
-from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
+from tests.integration_tests.utils import train_with_backend
 from tests.integration_tests.utils import vector_feature
 
 
@@ -47,35 +45,6 @@ def ray_start_4_cpus():
         yield res
     finally:
         ray.shutdown()
-
-
-def train_with_backend(backend, config, dataset=None, training_set=None, validation_set=None, test_set=None):
-    model = LudwigModel(config, backend=backend)
-    output_dir = None
-
-    try:
-        _, _, output_dir = model.train(
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True
-        )
-
-        if dataset is None:
-            dataset = training_set
-
-        if isinstance(dataset, dd.DataFrame):
-            # For now, prediction must be done on Pandas DataFrame
-            dataset = dataset.compute()
-
-        model.predict(dataset=dataset)
-        return model.model.get_weights()
-    finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def run_api_experiment(config, data_parquet):

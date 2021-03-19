@@ -42,6 +42,8 @@ class ParquetDataset(Dataset):
         t = getattr(sample, feature_name)
         reshape_dim = self.reshape_features.get(feature_name)
         if reshape_dim is not None:
+            # When we read a 1D array from disk, we need to reshape it back to its
+            # full dimensions.
             t = tf.reshape(t, reshape_dim)
         return t
 
