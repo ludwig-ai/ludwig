@@ -17,6 +17,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         python-version: [ 3.6, 3.7, 3.8 ]
+        test-markers: [ "not distributed", "distributed" ]
         include:
           - python-version: 3.6
             tensorflow-version: 2.3.1
@@ -26,6 +27,9 @@ jobs:
             tensorflow-version: nightly
     env:
       TENSORFLOW: ${{ matrix.tensorflow-version }}
+      MARKERS: ${{ matrix.test-markers }}
+
+    name: py${{ matrix.python-version  }}, tf${{ matrix.tensorflow-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
     timeout-minutes: 70
     steps:
@@ -93,4 +97,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -v --timeout 300 --durations 10 tests
+        pytest -v --timeout 360 --durations 10 -m "$MARKERS" tests
