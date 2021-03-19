@@ -1678,10 +1678,6 @@ def preprocess_for_prediction(
         :param split: the split of dataset to return
         :returns: Dataset, Train set metadata
         """
-    # TODO dask: support distributed backend for prediction
-    if backend.df_engine != LOCAL_BACKEND.df_engine:
-        backend = LOCAL_BACKEND
-
     # Sanity Check to make sure some data source is provided
     if dataset is None:
         raise ValueError('No training data is provided!')
@@ -1713,8 +1709,6 @@ def preprocess_for_prediction(
     # if training_set_metadata is a string, assume it's a path to load the json
     if training_set_metadata and isinstance(training_set_metadata, str):
         training_set_metadata = load_metadata(training_set_metadata)
-
-    hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP, None)
 
     # setup
     output_features = []
@@ -1749,8 +1743,10 @@ def preprocess_for_prediction(
         backend
     )
     dataset, training_set_metadata, new_hdf5_fp = processed
+    training_set_metadata = training_set_metadata.copy()
+
     if new_hdf5_fp:
-        hdf5_fp = new_hdf5_fp
+        training_set_metadata[DATA_TRAIN_HDF5_FP] = new_hdf5_fp
 
     replace_text_feature_level(features, [dataset])
 
@@ -1766,16 +1762,16 @@ def preprocess_for_prediction(
         elif split == TEST:
             dataset = test_set
 
-    features = get_proc_features_from_lists(
-        config['input_features'],
-        output_features
-    )
+    config = {
+        **config,
+        'output_features': output_features,
+    }
 
-    # TODO dask: support postprocessing using Backend
-    dataset = PandasDataset(
+    dataset = backend.df_engine.create_dataset(
         dataset,
-        features,
-        hdf5_fp
+        split,
+        config,
+        training_set_metadata,
     )
 
     return dataset, training_set_metadata

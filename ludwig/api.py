@@ -25,6 +25,7 @@ import copy
 import logging
 import os
 import tempfile
+from functools import wraps
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -68,6 +69,14 @@ from ludwig.utils.misc_utils import (get_experiment_description,
 from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)
+
+
+def use_backend_cache(fn):
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        with self.create_cache_dir:
+            return fn(self, *args, **kwargs)
+    return wrapper
 
 
 class LudwigModel:
@@ -200,6 +209,7 @@ class LudwigModel:
         # online training state
         self._online_trainer = None
 
+    @use_backend_cache
     def train(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
@@ -362,181 +372,180 @@ class LudwigModel:
             description_fn, training_stats_fn, model_dir = get_file_names(
                 output_directory)
 
-        with self.backend.create_cache_dir():
-            if isinstance(training_set, Dataset) and training_set_metadata is not None:
-                preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
-            else:
-                # save description
-                if self.backend.is_coordinator():
-                    description = get_experiment_description(
-                        self.config,
-                        dataset=dataset,
-                        training_set=training_set,
-                        validation_set=validation_set,
-                        test_set=test_set,
-                        training_set_metadata=training_set_metadata,
-                        data_format=data_format,
-                        random_seed=random_seed
-                    )
-                    if not skip_save_training_description:
-                        save_json(description_fn, description)
-                    # print description
-                    logger.info('Experiment name: {}'.format(experiment_name))
-                    logger.info('Model name: {}'.format(model_name))
-                    logger.info('Output directory: {}'.format(output_directory))
-                    logger.info('\n')
-                    for key, value in description.items():
-                        logger.info('{}: {}'.format(key, pformat(value, indent=4)))
-                    logger.info('\n')
-
-                preprocessed_data = self.preprocess(
+        if isinstance(training_set, Dataset) and training_set_metadata is not None:
+            preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
+        else:
+            # save description
+            if self.backend.is_coordinator():
+                description = get_experiment_description(
+                    self.config,
                     dataset=dataset,
                     training_set=training_set,
                     validation_set=validation_set,
                     test_set=test_set,
                     training_set_metadata=training_set_metadata,
                     data_format=data_format,
-                    experiment_name=experiment_name,
-                    model_name=model_name,
-                    model_resume_path=model_resume_path,
-                    skip_save_training_description=skip_save_training_description,
-                    skip_save_training_statistics=skip_save_training_statistics,
-                    skip_save_model=skip_save_model,
-                    skip_save_progress=skip_save_progress,
-                    skip_save_log=skip_save_log,
-                    skip_save_processed_input=skip_save_processed_input,
-                    output_directory=output_directory,
-                    random_seed=random_seed,
-                    devbug=debug,
-                    **kwargs,
+                    random_seed=random_seed
                 )
-                (training_set,
-                 validation_set,
-                 test_set,
-                 training_set_metadata) = preprocessed_data
+                if not skip_save_training_description:
+                    save_json(description_fn, description)
+                # print description
+                logger.info('Experiment name: {}'.format(experiment_name))
+                logger.info('Model name: {}'.format(model_name))
+                logger.info('Output directory: {}'.format(output_directory))
+                logger.info('\n')
+                for key, value in description.items():
+                    logger.info('{}: {}'.format(key, pformat(value, indent=4)))
+                logger.info('\n')
 
-            self.training_set_metadata = training_set_metadata
-
-            if self.backend.is_coordinator():
-                logger.info('Training set: {0}'.format(len(training_set)))
-                if validation_set is not None:
-                    logger.info('Validation set: {0}'.format(len(validation_set)))
-                if test_set is not None:
-                    logger.info('Test set: {0}'.format(len(test_set)))
-                if not skip_save_model:
-                    # save train set metadata
-                    os.makedirs(model_dir, exist_ok=True)
-                    save_json(
-                        os.path.join(
-                            model_dir,
-                            TRAIN_SET_METADATA_FILE_NAME
-                        ),
-                        training_set_metadata
-                    )
-
-            contrib_command("train_init", experiment_directory=output_directory,
-                            experiment_name=experiment_name, model_name=model_name,
-                            output_directory=output_directory,
-                            resume=model_resume_path is not None)
-
-            # Build model if not provided
-            # if it was provided it means it was already loaded
-            if not self.model:
-                if self.backend.is_coordinator():
-                    print_boxed('MODEL', print_fun=logger.debug)
-                # update config with metadata properties
-                update_config_with_metadata(
-                    self.config,
-                    training_set_metadata
-                )
-                self.model = LudwigModel.create_model(self.config,
-                                                      random_seed=random_seed)
-
-            # init trainer
-            with self.backend.create_trainer(
-                **self.config[TRAINING],
-                resume=model_resume_path is not None,
+            preprocessed_data = self.preprocess(
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                data_format=data_format,
+                experiment_name=experiment_name,
+                model_name=model_name,
+                model_resume_path=model_resume_path,
+                skip_save_training_description=skip_save_training_description,
+                skip_save_training_statistics=skip_save_training_statistics,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
-                callbacks=callbacks,
+                skip_save_processed_input=skip_save_processed_input,
+                output_directory=output_directory,
                 random_seed=random_seed,
-                debug=debug
-            ) as trainer:
-                contrib_command("train_model", self.model, self.config,
-                                self.config_fp)
+                devbug=debug,
+                **kwargs,
+            )
+            (training_set,
+             validation_set,
+             test_set,
+             training_set_metadata) = preprocessed_data
 
-                # train model
-                if self.backend.is_coordinator():
-                    print_boxed('TRAINING')
-                    if not skip_save_model:
-                        self.save_config(model_dir)
+        self.training_set_metadata = training_set_metadata
 
-                train_stats = trainer.train(
-                    self.model,
-                    training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    save_path=model_dir,
+        if self.backend.is_coordinator():
+            logger.info('Training set: {0}'.format(len(training_set)))
+            if validation_set is not None:
+                logger.info('Validation set: {0}'.format(len(validation_set)))
+            if test_set is not None:
+                logger.info('Test set: {0}'.format(len(test_set)))
+            if not skip_save_model:
+                # save train set metadata
+                os.makedirs(model_dir, exist_ok=True)
+                save_json(
+                    os.path.join(
+                        model_dir,
+                        TRAIN_SET_METADATA_FILE_NAME
+                    ),
+                    training_set_metadata
                 )
 
-                self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
-                train_stats = {
-                    TRAINING: train_trainset_stats,
-                    VALIDATION: train_valiset_stats,
-                    TEST: train_testset_stats
-                }
+        contrib_command("train_init", experiment_directory=output_directory,
+                        experiment_name=experiment_name, model_name=model_name,
+                        output_directory=output_directory,
+                        resume=model_resume_path is not None)
 
-                # save training statistics
-                if self.backend.is_coordinator():
-                    if not skip_save_training_statistics:
-                        save_json(training_stats_fn, train_stats)
+        # Build model if not provided
+        # if it was provided it means it was already loaded
+        if not self.model:
+            if self.backend.is_coordinator():
+                print_boxed('MODEL', print_fun=logger.debug)
+            # update config with metadata properties
+            update_config_with_metadata(
+                self.config,
+                training_set_metadata
+            )
+            self.model = LudwigModel.create_model(self.config,
+                                                  random_seed=random_seed)
 
-                # grab the results of the model with highest validation test performance
-                validation_field = trainer.validation_field
-                validation_metric = trainer.validation_metric
-                validation_field_result = train_valiset_stats[validation_field]
+        # init trainer
+        with self.backend.create_trainer(
+            **self.config[TRAINING],
+            resume=model_resume_path is not None,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            callbacks=callbacks,
+            random_seed=random_seed,
+            debug=debug
+        ) as trainer:
+            contrib_command("train_model", self.model, self.config,
+                            self.config_fp)
 
-                best_function = get_best_function(validation_metric)
-                # results of the model with highest validation test performance
-                if self.backend.is_coordinator() and validation_set is not None:
-                    epoch_best_vali_metric, best_vali_metric = best_function(
-                        enumerate(validation_field_result[validation_metric]),
-                        key=lambda pair: pair[1]
-                    )
-                    logger.info(
-                        'Best validation model epoch: {0}'.format(
-                            epoch_best_vali_metric + 1)
-                    )
-                    logger.info(
-                        'Best validation model {0} on validation set {1}: {2}'.format(
-                            validation_metric, validation_field, best_vali_metric
-                        ))
-                    if test_set is not None:
-                        best_vali_metric_epoch_test_metric = train_testset_stats[
-                            validation_field][validation_metric][
-                            epoch_best_vali_metric]
-
-                        logger.info(
-                            'Best validation model {0} on test set {1}: {2}'.format(
-                                validation_metric,
-                                validation_field,
-                                best_vali_metric_epoch_test_metric
-                            )
-                        )
-                    logger.info(
-                        '\nFinished: {0}_{1}'.format(experiment_name, model_name))
-                    logger.info('Saved to: {0}'.format(output_directory))
-
-                contrib_command("train_save", output_directory)
-
-                self.training_set_metadata = training_set_metadata
-
+            # train model
+            if self.backend.is_coordinator():
+                print_boxed('TRAINING')
                 if not skip_save_model:
-                    # Load the best weights from saved checkpoint
-                    self.load_weights(model_dir)
+                    self.save_config(model_dir)
 
-                return train_stats, preprocessed_data, output_directory
+            train_stats = trainer.train(
+                self.model,
+                training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                save_path=model_dir,
+            )
+
+            self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+            train_stats = {
+                TRAINING: train_trainset_stats,
+                VALIDATION: train_valiset_stats,
+                TEST: train_testset_stats
+            }
+
+            # save training statistics
+            if self.backend.is_coordinator():
+                if not skip_save_training_statistics:
+                    save_json(training_stats_fn, train_stats)
+
+            # grab the results of the model with highest validation test performance
+            validation_field = trainer.validation_field
+            validation_metric = trainer.validation_metric
+            validation_field_result = train_valiset_stats[validation_field]
+
+            best_function = get_best_function(validation_metric)
+            # results of the model with highest validation test performance
+            if self.backend.is_coordinator() and validation_set is not None:
+                epoch_best_vali_metric, best_vali_metric = best_function(
+                    enumerate(validation_field_result[validation_metric]),
+                    key=lambda pair: pair[1]
+                )
+                logger.info(
+                    'Best validation model epoch: {0}'.format(
+                        epoch_best_vali_metric + 1)
+                )
+                logger.info(
+                    'Best validation model {0} on validation set {1}: {2}'.format(
+                        validation_metric, validation_field, best_vali_metric
+                    ))
+                if test_set is not None:
+                    best_vali_metric_epoch_test_metric = train_testset_stats[
+                        validation_field][validation_metric][
+                        epoch_best_vali_metric]
+
+                    logger.info(
+                        'Best validation model {0} on test set {1}: {2}'.format(
+                            validation_metric,
+                            validation_field,
+                            best_vali_metric_epoch_test_metric
+                        )
+                    )
+                logger.info(
+                    '\nFinished: {0}_{1}'.format(experiment_name, model_name))
+                logger.info('Saved to: {0}'.format(output_directory))
+
+            contrib_command("train_save", output_directory)
+
+            self.training_set_metadata = training_set_metadata
+
+            if not skip_save_model:
+                # Load the best weights from saved checkpoint
+                self.load_weights(model_dir)
+
+            return train_stats, preprocessed_data, output_directory
 
     def train_online(
             self,
@@ -612,6 +621,7 @@ class LudwigModel:
             training_dataset,
         )
 
+    @use_backend_cache
     def predict(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
@@ -726,6 +736,7 @@ class LudwigModel:
 
             return converted_postproc_predictions, output_directory
 
+    @use_backend_cache
     def evaluate(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
