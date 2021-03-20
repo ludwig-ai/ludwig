@@ -303,7 +303,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
         pass
 

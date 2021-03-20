@@ -14,13 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
+
+import numpy as np
 import pandas as pd
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import BINARY
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS, \
-    normalize_numpy
+    normalize_numpy, to_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -36,6 +39,12 @@ def postprocess(
         # Only save unprocessed output on the coordinator
         skip_save_unprocessed_output = True
 
+    if not skip_save_unprocessed_output:
+        npy_filename = os.path.join(output_directory, '{}.npy')
+        numpy_predictions = to_numpy_dataset(predictions)
+        for k, v in numpy_predictions.items():
+            np.save(npy_filename.format(k), v)
+
     postprocessed = {}
     for of_name, output_feature in output_features.items():
         df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
@@ -43,7 +52,7 @@ def postprocess(
             df,
             training_set_metadata[of_name],
             output_directory=output_directory,
-            skip_save_unprocessed_output=skip_save_unprocessed_output
+            backend=backend,
         )
     return postprocessed
 
