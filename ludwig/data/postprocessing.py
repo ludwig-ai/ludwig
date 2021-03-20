@@ -38,8 +38,9 @@ def postprocess(
 
     postprocessed = {}
     for of_name, output_feature in output_features.items():
+        df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
         postprocessed[of_name] = output_feature.postprocess_predictions(
-            predictions[of_name],
+            df,
             training_set_metadata[of_name],
             output_directory=output_directory,
             skip_save_unprocessed_output=skip_save_unprocessed_output

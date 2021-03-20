@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from pprint import pformat
 
 import tensorflow as tf
@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
-from ludwig.utils.data_utils import save_csv, save_json
+from ludwig.utils.data_utils import from_numpy_dataset, save_csv, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
@@ -103,7 +103,7 @@ class Predictor(BasePredictor):
                 disable=is_progressbar_disabled()
             )
 
-        predictions = {}
+        predictions = defaultdict(list)
         while not batcher.last_batch():
             batch = batcher.next_batch()
 
@@ -116,14 +116,10 @@ class Predictor(BasePredictor):
 
             # accumulate predictions from batch for each output feature
             for of_name, of_preds in preds.items():
-                if of_name not in predictions:
-                    predictions[of_name] = {}
                 for pred_name, pred_values in of_preds.items():
                     if pred_name not in EXCLUE_PRED_SET:
-                        if pred_name not in predictions[of_name]:
-                            predictions[of_name][pred_name] = [pred_values]
-                        else:
-                            predictions[of_name][pred_name].append(pred_values)
+                        key = f'{of_name}_{pred_name}'
+                        predictions[key].append(pred_values)
 
             if self.is_coordinator():
                 progress_bar.update(1)
@@ -132,12 +128,10 @@ class Predictor(BasePredictor):
             progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
-        for of_name, of_predictions in predictions.items():
-            for pred_name, pred_value_list in of_predictions.items():
-                predictions[of_name][pred_name] = tf.concat(pred_value_list,
-                                                            axis=0)
+        for key, pred_value_list in predictions.items():
+            predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
 
-        return predictions
+        return from_numpy_dataset(predictions)
 
     def batch_evaluation(
             self,

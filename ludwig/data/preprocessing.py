@@ -27,7 +27,6 @@ from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
 from ludwig.data.dataset.base import Dataset
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
@@ -52,10 +51,10 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      replace_file_extension, split_dataset_ttv)
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
-                                   default_random_seed, merge_with_defaults)
+                                   default_random_seed)
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
-                                     hash_dict, get_proc_features_from_lists)
+                                     hash_dict)
 
 logger = logging.getLogger(__name__)
 
@@ -1767,7 +1766,7 @@ def preprocess_for_prediction(
         'output_features': output_features,
     }
 
-    dataset = backend.df_engine.create_dataset(
+    dataset = backend.df_engine.create_inference_dataset(
         dataset,
         split,
         config,

@@ -53,6 +53,11 @@ class PandasEngine(DataFrameEngine):
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        return self.create_dataset(
+            dataset, tag, config, training_set_metadata
+        )
+
     @property
     def array_lib(self):
         return np

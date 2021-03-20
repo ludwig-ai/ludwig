@@ -51,6 +51,10 @@ class DataFrameEngine(ABC):
     def create_dataset(self, dataset, tag, config, training_set_metadata):
         raise NotImplementedError()
 
+    @abstractmethod
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def array_lib(self):

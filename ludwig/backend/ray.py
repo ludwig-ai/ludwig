@@ -16,18 +16,21 @@
 # ==============================================================================
 
 import logging
-from collections import defaultdict
+import uuid
+from collections import defaultdict, OrderedDict
 
 import dask
 import ray
 from horovod.ray import RayExecutor
+from ray import serve
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.models.predictor import BasePredictor, RemotePredictor
+from ludwig.models.predictor import BasePredictor, Predictor
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
+from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 
@@ -69,6 +72,20 @@ def get_horovod_kwargs():
         num_hosts=len(best_resources),
         use_gpu=use_gpu
     )
+
+
+class RayModelServer:
+    def __init__(self, remote_model, predictor_kwargs):
+        self.model = remote_model.load()
+        self.predictor = Predictor(**predictor_kwargs)
+
+    def batch_predict(self, dataset, *args, **kwargs):
+        return self.predictor.batch_predict(
+            self.model,
+            dataset,
+            *args,
+            **kwargs
+        )
 
 
 class RayRemoteModel:
@@ -139,35 +156,65 @@ class RayTrainer(BaseTrainer):
         self.executor.shutdown()
 
 
+@ray.remote
+class MetricCollector(object):
+    def __init__(self):
+        self.metrics = []
+
+    def add_metrics(self, metrics):
+        self.metrics.append(metrics)
+
+    def collect(self):
+        return sum_dicts(
+            self.metrics,
+            dict_type=OrderedDict
+        )
+
+
 class RayPredictor(BasePredictor):
     def __init__(self, horovod_kwargs, predictor_kwargs):
-        # TODO ray: investigate using Dask for prediction instead of Horovod
-        setting = RayExecutor.create_settings(timeout_s=30)
-        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RemotePredictor, executable_kwargs=predictor_kwargs)
+        self.predictor_kwargs = predictor_kwargs
+        self.actor_handles = []
 
-    def batch_predict(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
-        results = self.executor.execute(
-            lambda predictor: predictor.batch_predict(model.load(), *args, **kwargs)
-        )
-        return results[0]
+    def batch_predict(self, model, dataset, *args, **kwargs):
+        remote_model = RayRemoteModel(model)
+        predictor_kwargs = self.predictor_kwargs
 
-    def batch_evaluation(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
-        results = self.executor.execute(
-            lambda predictor: predictor.batch_evaluation(model.load(), *args, **kwargs)
-        )
-        return results[0]
+        def batch_predict_partition(dataset):
+            print('BATCH PREDICT PARTITION')
+            model = remote_model.load()
+            predictor = Predictor(**predictor_kwargs)
+            return predictor.batch_predict(model, dataset, *args, **kwargs)
+
+        print('RAY PREDICT')
+        return dataset.map_partitions(batch_predict_partition)
+
+    def batch_evaluation(self, model, dataset, *args, **kwargs):
+        metric_collector = MetricCollector.remote()
+        self.actor_handles.append(metric_collector)
+
+        remote_model = RayRemoteModel(model)
+        predictor_kwargs = self.predictor_kwargs
+
+        def batch_evaluate_partition(dataset):
+            model = remote_model.load()
+            predictor = Predictor(**predictor_kwargs)
+            metrics, predictions = predictor.batch_evaluation(
+                model, dataset, *args, **kwargs
+            )
+            ray.get(metric_collector.add_metrics.remote(metrics))
+            return predictions
+
+        predictions = dataset.map_partitions(batch_evaluate_partition)
+        metrics = ray.get(metric_collector.collect.remote())
+        return metrics, predictions
 
     def batch_collect_activations(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
-        return self.executor.execute_single(
-            lambda predictor: predictor.batch_collect_activations(model.load(), *args, **kwargs)
-        )
+        raise NotImplementedError()
 
     def shutdown(self):
-        self.executor.shutdown()
+        for handle in self.actor_handles:
+            ray.kill(handle)
 
 
 class RayBackend(RemoteTrainingMixin, Backend):

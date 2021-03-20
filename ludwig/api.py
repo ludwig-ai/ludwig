@@ -74,7 +74,7 @@ logger = logging.getLogger(__name__)
 def use_backend_cache(fn):
     @wraps(fn)
     def wrapper(self, *args, **kwargs):
-        with self.create_cache_dir:
+        with self.backend.create_cache_dir():
             return fn(self, *args, **kwargs)
     return wrapper
 
@@ -621,7 +621,6 @@ class LudwigModel:
             training_dataset,
         )
 
-    @use_backend_cache
     def predict(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
@@ -696,10 +695,13 @@ class LudwigModel:
             batch_size=batch_size,
             debug=debug
         ) as predictor:
+            print('BEFORE PREDICT')
             predictions = predictor.batch_predict(
                 self.model,
                 dataset,
             )
+            # predictions.compute()
+            print('AFTER PREDICT')
 
             if self.backend.is_coordinator():
                 # if we are skipping all saving,
@@ -736,7 +738,6 @@ class LudwigModel:
 
             return converted_postproc_predictions, output_directory
 
-    @use_backend_cache
     def evaluate(
             self,
             dataset: Union[str, dict, pd.DataFrame] = None,
@@ -1321,7 +1322,11 @@ class LudwigModel:
         # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         backend = initialize_backend(backend)
-        backend.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
+        backend.initialize_tensorflow(
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads
+        )
 
         config = backend.broadcast_return(
             lambda: load_json(os.path.join(

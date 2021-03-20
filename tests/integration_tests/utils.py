@@ -635,11 +635,6 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
         if dataset is None:
             dataset = training_set
 
-        import dask.dataframe as dd
-        if isinstance(dataset, dd.DataFrame):
-            # For now, prediction must be done on Pandas DataFrame
-            dataset = dataset.compute()
-
         model.predict(dataset=dataset)
         return model.model.get_weights()
     finally:

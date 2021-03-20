@@ -24,9 +24,10 @@ import dask.dataframe as dd
 
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.dataset.parquet import ParquetDataset
+from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
-from ludwig.utils.misc_utils import get_combined_features
+from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, DATA_TRAIN_HDF5_FP
+from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 
 TMP_COLUMN = '__TMP_COLUMN__'
 
@@ -96,6 +97,13 @@ class DaskEngine(DataFrameEngine):
             dataset_parquet_url,
             features,
             training_set_metadata
+        )
+
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        return PartitionedDataset(
+            dataset,
+            get_proc_features(config),
+            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
     @property

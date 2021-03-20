@@ -153,6 +153,7 @@ def test_api_intent_classification(csv_filename):
     for encoder in ENCODERS:
         input_features[0]['encoder'] = encoder
         run_api_experiment(input_features, output_features, data_csv=rel_path)
+        break
 
 
 def test_api_intent_classification_separated(csv_filename):
