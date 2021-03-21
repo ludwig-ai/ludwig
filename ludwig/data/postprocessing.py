@@ -45,16 +45,14 @@ def postprocess(
         for k, v in numpy_predictions.items():
             np.save(npy_filename.format(k), v)
 
-    postprocessed = {}
     for of_name, output_feature in output_features.items():
-        df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
-        postprocessed[of_name] = output_feature.postprocess_predictions(
-            df,
+        predictions = output_feature.postprocess_predictions(
+            predictions,
             training_set_metadata[of_name],
             output_directory=output_directory,
             backend=backend,
         )
-    return postprocessed
+    return predictions
 
 
 def convert_predictions(predictions, output_features, training_set_metadata,
@@ -83,6 +81,8 @@ def convert_to_df(
         output_features,
         training_set_metadata,
 ):
+    return predictions
+    
     data_for_df = {}
     for of_name, output_feature in output_features.items():
         output_feature_dict = predictions[of_name]

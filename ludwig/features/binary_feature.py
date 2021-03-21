@@ -306,7 +306,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         if name in metadata and 'bool2str' in metadata[name]:
             class_names = metadata[name]['bool2str']
 
-        predictions_col = f'{self.proc_column}_{PREDICTIONS}'
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
         if predictions_col in result and len(result[predictions_col]) > 0:
             if 'bool2str' in metadata:
                 result[predictions_col] = backend.df_engine.map_objects(
@@ -314,7 +314,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                     lambda pred: metadata['bool2str'][pred]
                 )
 
-        probabilities_col = f'{self.proc_column}_{PROBABILITIES}'
+        probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
         if probabilities_col in result and len(result[probabilities_col]) > 0:
             false_col = f'{probabilities_col}_{class_names[0]}'
             result[false_col] = backend.df_engine.map_objects(
@@ -325,7 +325,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             true_col = f'{probabilities_col}_{class_names[1]}'
             result[true_col] = result[probabilities_col]
 
-            prob_col = f'{self.proc_column}_{PROBABILITY}'
+            prob_col = f'{self.feature_name}_{PROBABILITY}'
             result[prob_col] = result[[false_col, true_col]].max(axis=1)
 
             del result[probabilities_col]

@@ -145,8 +145,22 @@ def run_api_experiment_separated_datasets(
 
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    from tests.integration_tests.utils import numerical_feature, sequence_feature
+    input_features = [sequence_feature(
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )]
+    output_features = [
+        # category_feature(vocab_size=2, reduce_input='sum')
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            attention=False,
+            reduce_input=None
+        )
+    ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
