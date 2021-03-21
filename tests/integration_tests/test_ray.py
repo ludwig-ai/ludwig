@@ -101,6 +101,30 @@ def test_ray_tabular(ray_start_4_cpus):
     output_features = [
         category_feature(vocab_size=2, reduce_input='sum'),
         binary_feature(),
-        # set_feature(max_len=3, vocab_size=5),
+        set_feature(max_len=3, vocab_size=5),
+        numerical_feature(normalization='zscore'),
+        vector_feature(),
+        text_feature(reduce_input=None, decoder='tagger'),
+    ]
+    run_test_parquet(input_features, output_features)
+
+
+@pytest.mark.distributed
+def test_ray_sequence(ray_start_4_cpus):
+    input_features = [
+        sequence_feature(
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            attention=False,
+            reduce_input=None
+        )
     ]
     run_test_parquet(input_features, output_features)

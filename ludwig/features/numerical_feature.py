@@ -220,6 +220,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     #     for metric in self.metric_functions.values():
     #         metric.update_state(targets, predictions[PREDICTIONS])
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.float32

@@ -304,10 +304,12 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
         prob_col = f'{self.feature_name}_{PROBABILITY}'
         if probabilities_col in result and len(result[probabilities_col]) > 0:
+            threshold = self.threshold
+
             def get_prob(prob_set):
                 return [
                     prob for prob in prob_set if
-                    prob >= self.threshold
+                    prob >= threshold
                 ]
 
             result[prob_col] = backend.df_engine.map_objects(

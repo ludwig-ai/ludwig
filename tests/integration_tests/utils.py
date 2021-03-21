@@ -637,7 +637,7 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
             dataset = training_set
 
         predictions, _ = model.predict(dataset=dataset)
-        print('PREDICTIONS', predictions.compute())
+        print('PREDICTIONS', backend.df_engine.compute(predictions))
         return model.model.get_weights()
     finally:
         # Remove results/intermediate data saved to disk
