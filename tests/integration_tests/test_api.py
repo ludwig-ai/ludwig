@@ -145,7 +145,7 @@ def run_api_experiment_separated_datasets(
 
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
-    from tests.integration_tests.utils import numerical_feature, sequence_feature
+    from tests.integration_tests.utils import numerical_feature, sequence_feature, text_feature
     input_features = [sequence_feature(
             max_len=10,
             encoder='rnn',
@@ -161,6 +161,9 @@ def test_api_intent_classification(csv_filename):
             reduce_input=None
         )
     ]
+
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [text_feature(reduce_input=None, decoder='tagger')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

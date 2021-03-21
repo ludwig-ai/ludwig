@@ -436,7 +436,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     seq_prob = row[probs_col]
                     length = row[lengths_col]
                     mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
-                    row[probability_col] = np.sum(np.log(seq_prob) * mask, axis=-1)
+                    row[probability_col] = np.sum(np.log(seq_prob) * mask, axis=-1)[0]
                     return row
 
                 # commenting probabilities out because usually it is huge:
