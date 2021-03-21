@@ -280,42 +280,37 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS].numpy()
-            if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = [
-                    [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
-                     if pred] for pred_set in preds
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result and len(result[predictions_col]) > 0:
+            def idx2str(pred_set):
+                return [
+                    metadata['idx2str'][i]
+                    for i, pred in enumerate(pred_set)
+                    if pred
                 ]
-            else:
-                postprocessed[PREDICTIONS] = preds
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PREDICTIONS), preds)
+            result[predictions_col] = backend.df_engine.map_objects(
+                result[predictions_col],
+                idx2str,
+            )
 
-            del result[PREDICTIONS]
+        probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
+        prob_col = f'{self.feature_name}_{PROBABILITY}'
+        if probabilities_col in result and len(result[probabilities_col]) > 0:
+            def get_prob(prob_set):
+                return [
+                    prob for prob in prob_set if
+                    prob >= self.threshold
+                ]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES].numpy()
-            prob = [[prob for prob in prob_set if
-                     prob >= self.threshold] for prob_set in
-                    probs]
-            postprocessed[PROBABILITIES] = probs
-            postprocessed[PROBABILITY] = prob
+            result[prob_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                get_prob,
+            )
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PROBABILITIES), probs)
-                np.save(npy_filename.format(name, PROBABILITY), probs)
-
-            del result[PROBABILITIES]
-
-        return postprocessed
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):

@@ -39,11 +39,9 @@ def postprocess(
         # Only save unprocessed output on the coordinator
         skip_save_unprocessed_output = True
 
+    saved_keys = set()
     if not skip_save_unprocessed_output:
-        npy_filename = os.path.join(output_directory, '{}.npy')
-        numpy_predictions = to_numpy_dataset(predictions)
-        for k, v in numpy_predictions.items():
-            np.save(npy_filename.format(k), v)
+        _save_as_numpy(predictions, output_directory, saved_keys)
 
     for of_name, output_feature in output_features.items():
         predictions = output_feature.postprocess_predictions(
@@ -52,7 +50,21 @@ def postprocess(
             output_directory=output_directory,
             backend=backend,
         )
+
+    # Save any new columns but do not save the original columns again
+    if not skip_save_unprocessed_output:
+        _save_as_numpy(predictions, output_directory, saved_keys)
+
     return predictions
+
+
+def _save_as_numpy(predictions, output_directory, saved_keys):
+    npy_filename = os.path.join(output_directory, '{}.npy')
+    numpy_predictions = to_numpy_dataset(predictions)
+    for k, v in numpy_predictions.items():
+        if k not in saved_keys:
+            np.save(npy_filename.format(k), v)
+            saved_keys.add(k)
 
 
 def convert_predictions(predictions, output_features, training_set_metadata,
