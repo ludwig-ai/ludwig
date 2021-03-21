@@ -636,7 +636,8 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
         if dataset is None:
             dataset = training_set
 
-        model.predict(dataset=dataset)
+        predictions, _ = model.predict(dataset=dataset)
+        print('PREDICTIONS', predictions.compute())
         return model.model.get_weights()
     finally:
         # Remove results/intermediate data saved to disk

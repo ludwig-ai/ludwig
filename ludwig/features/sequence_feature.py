@@ -250,6 +250,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         # Generator Decoder
         return self.decoder_obj._predictions_eval(inputs, training=training)
 
+    def get_prediction_set(self):
+        return self.decoder_obj.get_prediction_set()
+
     @classmethod
     def get_output_dtype(cls):
         return tf.int32

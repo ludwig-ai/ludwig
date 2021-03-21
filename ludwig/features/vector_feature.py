@@ -222,6 +222,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.float32

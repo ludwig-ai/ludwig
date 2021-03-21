@@ -187,7 +187,10 @@ class RayPredictor(BasePredictor):
             return predictor.batch_predict(model, dataset, *args, **kwargs)
 
         print('RAY PREDICT')
-        return dataset.map_partitions(batch_predict_partition)
+        return dataset.predict_partitions(
+            batch_predict_partition,
+            model.output_features
+        )
 
     def batch_evaluation(self, model, dataset, *args, **kwargs):
         metric_collector = MetricCollector.remote()

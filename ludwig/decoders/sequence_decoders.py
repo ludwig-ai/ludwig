@@ -607,6 +607,11 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             LOGITS: logits
         }
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
+        }
+
 
 # reconstruct probs from raw beam search output
 def extract_sequence_probabilities(decoder_output, beam_width, sequence_id=0):
@@ -835,4 +840,9 @@ class SequenceTaggerDecoder(SequenceDecoder):
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
             LOGITS: logits
+        }
+
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
         }

@@ -211,6 +211,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name='metric_accuracy')
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, PROBABILITIES, LOGITS
+        }
+
     # def update_metrics(self, targets, predictions):
     #     for metric, metric_fn in self.metric_functions.items():
     #         if metric == LOSS:

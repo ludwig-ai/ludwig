@@ -701,7 +701,8 @@ class LudwigModel:
                 dataset,
             )
             # predictions.compute()
-            print('AFTER PREDICT')
+            print(f'AFTER PREDICT: {predictions}')
+            # print(f'AFTER PREDICT COMPUTED: {predictions.compute()}')
 
             if self.backend.is_coordinator():
                 # if we are skipping all saving,

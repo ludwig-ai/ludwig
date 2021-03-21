@@ -212,6 +212,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[JACCARD] = JaccardMetric()
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, PROBABILITIES, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.bool

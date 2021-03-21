@@ -193,6 +193,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             LOGITS: logits
         }
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, PROBABILITIES, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.int64

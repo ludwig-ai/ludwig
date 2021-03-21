@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.data.dataset.pandas import PandasDataset
+from ludwig.models.predictor import EXCLUE_PRED_SET
 
 
 class PartitionedDataset(object):
@@ -23,10 +24,19 @@ class PartitionedDataset(object):
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
 
-    def map_partitions(self, fn):
-        print('MAP PARTITIONS')
+    def predict_partitions(self, fn, output_features):
+        output_columns = []
+        for of_name, feature in output_features.items():
+            for pred in feature.get_prediction_set():
+                if pred not in EXCLUE_PRED_SET:
+                    output_columns.append(f'{of_name}_{pred}')
+
         def wrapped(partition):
-            print('WRAPPED')
             dataset = PandasDataset(partition, self.features, self.data_hdf5_fp)
-            return fn(dataset)
-        return self.df.map_partitions(wrapped, meta=('data', 'object'))
+            predictions = fn(dataset)
+            ordered_predictions = predictions[output_columns]
+            return ordered_predictions
+
+        return self.df.map_partitions(
+            wrapped, meta=[(c, 'object') for c in output_columns]
+        )
