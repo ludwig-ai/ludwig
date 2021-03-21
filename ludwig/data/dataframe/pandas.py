@@ -40,7 +40,7 @@ class PandasEngine(DataFrameEngine):
     def from_pandas(self, df):
         return df
 
-    def map_objects(self, series, map_fn):
+    def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
 
     def reduce_objects(self, series, reduce_fn):

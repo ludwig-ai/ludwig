@@ -40,7 +40,7 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map_objects(self, series, map_fn):
+    def map_objects(self, series, map_fn, meta=None):
         raise NotImplementedError()
 
     @abstractmethod

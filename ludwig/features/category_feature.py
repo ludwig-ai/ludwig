@@ -395,7 +395,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             output_directory,
             backend,
     ):
-        print(f'POSTPROC: {predictions.columns}')
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
         if predictions_col in predictions and len(predictions[predictions_col]) > 0:
             if 'idx2str' in metadata:
@@ -405,7 +404,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 )
 
         probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
-        print(f'CHECK {probabilities_col}')
         if probabilities_col in predictions and len(
                 predictions[probabilities_col]) > 0:
             prob_col = f'{self.feature_name}_{PROBABILITY}'
@@ -413,13 +411,16 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             if 'idx2str' in metadata:
                 for i, label in enumerate(metadata['idx2str']):
                     key = f'{probabilities_col}_{label}'
+
+                    # Use default param to force a capture before the loop completes, see:
+                    # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
                     predictions[key] = backend.df_engine.map_objects(
                         predictions[probabilities_col],
-                        lambda prob: prob[i]
+                        lambda prob, i=i: prob[i],
                     )
 
         top_k_col = f'{self.feature_name}_predictions_top_k'
-        if (top_k_col in predictions and len(predictions[top_k_col])) > 0:
+        if top_k_col in predictions and len(predictions[top_k_col]) > 0:
             if 'idx2str' in metadata:
                 predictions[top_k_col] = backend.df_engine.map_objects(
                     predictions[top_k_col],

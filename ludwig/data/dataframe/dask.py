@@ -61,8 +61,9 @@ class DaskEngine(DataFrameEngine):
     def from_pandas(self, df):
         return dd.from_pandas(df, npartitions=self.parallelism)
 
-    def map_objects(self, series, map_fn):
-        return series.map(map_fn, meta=('data', 'object'))
+    def map_objects(self, series, map_fn, meta=None):
+        meta = meta or ('data', 'object')
+        return series.map(map_fn, meta=meta)
 
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]

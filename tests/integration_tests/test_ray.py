@@ -98,5 +98,9 @@ def test_ray_tabular(ray_start_4_cpus):
         h3_feature(),
         date_feature(),
     ]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+        binary_feature(),
+        # set_feature(max_len=3, vocab_size=5),
+    ]
     run_test_parquet(input_features, output_features)
