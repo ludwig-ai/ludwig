@@ -156,7 +156,7 @@ class Predictor(BasePredictor):
                 disable=is_progressbar_disabled()
             )
 
-        predictions = {}
+        predictions = defaultdict(list)
         while not batcher.last_batch():
             batch = batcher.next_batch()
 
@@ -174,15 +174,10 @@ class Predictor(BasePredictor):
             # accumulate predictions from batch for each output feature
             if collect_predictions:
                 for of_name, of_preds in preds.items():
-                    if of_name not in predictions:
-                        predictions[of_name] = {}
                     for pred_name, pred_values in of_preds.items():
-                        if pred_name not in EXCLUE_PRED_SET and pred_values is not None:
-                            if pred_name not in predictions[of_name]:
-                                predictions[of_name][pred_name] = [pred_values]
-                            else:
-                                predictions[of_name][pred_name].append(
-                                    pred_values)
+                        if pred_name not in EXCLUE_PRED_SET:
+                            key = f'{of_name}_{pred_name}'
+                            predictions[key].append(pred_values)
 
             if self.is_coordinator():
                 progress_bar.update(1)
@@ -192,17 +187,14 @@ class Predictor(BasePredictor):
 
         # consolidate predictions from each batch to a single tensor
         if collect_predictions:
-            for of_name, of_predictions in predictions.items():
-                for pred_name, pred_value_list in of_predictions.items():
-                    predictions[of_name][pred_name] = tf.concat(
-                        pred_value_list, axis=0
-                    )
+            for key, pred_value_list in predictions.items():
+                predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
 
         metrics = model.get_metrics()
         metrics = self.merge_workers_metrics(metrics)
         model.reset_metrics()
 
-        return metrics, predictions
+        return metrics, from_numpy_dataset(predictions)
 
     def batch_collect_activations(
             self,
@@ -325,8 +317,11 @@ def calculate_overall_stats(
         feature_metadata.update(
             training_set_metadata[output_feature.feature_name])
 
+        feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
+        feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1:])
+
         overall_stats[of_name] = output_feature.calculate_overall_stats(
-            predictions[of_name],  # predictions
+            feature_df,  # predictions
             dataset.get(output_feature.proc_column),  # target
             feature_metadata,  # output feature metadata
         )
@@ -336,18 +331,10 @@ def calculate_overall_stats(
 def save_prediction_outputs(
         postprocessed_output,
         output_directory,
-        skip_output_types=None
 ):
-    if skip_output_types is None:
-        skip_output_types = set()
-    csv_filename = os.path.join(output_directory, '{}_{}.csv')
-    for output_field, outputs in postprocessed_output.items():
-        for output_type, values in outputs.items():
-            if output_type not in skip_output_types:
-                save_csv(
-                    csv_filename.format(output_field, output_type),
-                    values
-                )
+    postprocessed_output.to_csv(
+        os.path.join(output_directory, 'predictions.csv')
+    )
 
 
 def save_evaluation_stats(test_stats, output_directory):
