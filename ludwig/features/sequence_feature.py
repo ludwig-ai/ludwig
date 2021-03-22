@@ -422,36 +422,36 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         if probs_col in result:
-            # probs should be shape [b, s, nc]
-            dim = len(result[probs_col].head(1)[0].shape) + 1
-            if dim == 3:
-                # get probability of token in that sequence position
-                result[probs_col] = backend.df_engine.map_objects(
-                    result[probs_col],
-                    lambda prob: np.amax(prob, axis=-1)
-                )
+            def token_prob(prob):
+                dim = len(prob.shape)
+                if dim != 2:
+                    # probs should be shape [s, nc]
+                    raise ValueError(
+                        f'Sequence probability array should be 2-dimensional '
+                        f'shape, instead shape is {dim}-dimensional ({prob.shape})'
+                    )
+                return np.amax(prob, axis=-1)
 
-                probability_col = f'{self.feature_name}_{PROBABILITY}'
+            # get probability of token in that sequence position
+            result[probs_col] = backend.df_engine.map_objects(
+                result[probs_col], token_prob
+            )
 
-                def compute_log_prob(row):
-                    # sum log probability for tokens up to sequence length
-                    # create mask only tokens for sequence length
-                    seq_prob = row[probs_col]
-                    length = row[lengths_col]
-                    mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
-                    return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
+            def compute_log_prob(row):
+                # sum log probability for tokens up to sequence length
+                # create mask only tokens for sequence length
+                seq_prob = row[probs_col]
+                length = row[lengths_col]
+                mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
+                return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                result[probability_col] = backend.df_engine.apply_objects(
-                    result, compute_log_prob
-                )
-            else:
-                raise ValueError(
-                    f'Sequence probability array should be 3-dimensional '
-                    f'shape, instead shape is {dim}-dimensional'
-                )
+            # commenting probabilities out because usually it is huge:
+            # dataset x length x classes
+            # todo: add a mechanism for letting the user decide to save it
+            probability_col = f'{self.feature_name}_{PROBABILITY}'
+            result[probability_col] = backend.df_engine.apply_objects(
+                result, compute_log_prob
+            )
 
         if lengths_col in result:
             del result[lengths_col]
