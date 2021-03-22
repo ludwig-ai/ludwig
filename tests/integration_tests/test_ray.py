@@ -91,7 +91,6 @@ def test_ray_tabular(ray_start_4_cpus):
         sequence_feature(reduce_output='sum'),
         numerical_feature(normalization='zscore'),
         set_feature(),
-        text_feature(),
         binary_feature(),
         bag_feature(),
         vector_feature(),
@@ -104,6 +103,16 @@ def test_ray_tabular(ray_start_4_cpus):
         set_feature(max_len=3, vocab_size=5),
         numerical_feature(normalization='zscore'),
         vector_feature(),
+    ]
+    run_test_parquet(input_features, output_features)
+
+
+@pytest.mark.distributed
+def test_ray_text(ray_start_4_cpus):
+    input_features = [
+        text_feature(),
+    ]
+    output_features = [
         text_feature(reduce_input=None, decoder='tagger'),
     ]
     run_test_parquet(input_features, output_features)

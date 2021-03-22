@@ -453,32 +453,27 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         prob_col = f'{self.feature_name}_{PROBABILITY}'
         if probs_col in result:
-            # TODO ray: calling `head()` here is very expensive, as it forces computation
-            #  of the predictions. We should get `persist()` working so we don't need to
-            #  compute it repeatedly.
-            prob = result[probs_col].head(1)[0]
-            if len(result[probs_col]) > 0 and isinstance(prob, Iterable):
-                def compute_prob(probs):
+            def compute_prob(probs):
+                if isinstance(probs, (list, tuple, np.ndarray)):
                     for i in range(len(probs)):
                         probs[i] = np.max(probs[i])
                     return np.prod(probs)
+                else:
+                    return np.prod(probs, axis=-1)
 
-                result[prob_col] = backend.df_engine.map_objects(
-                    result[probs_col],
-                    compute_prob,
-                )
-            else:
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                # result[probs_col] = backend.df_engine.map_objects(
-                #     result[probs_col],
-                #     lambda prob: np.amax(prob, axis=-1),
-                # )
-                result[prob_col] = backend.df_engine.map_objects(
-                    result[prob_col],
-                    lambda prob: np.prod(prob, axis=-1),
-                )
+
+            result[prob_col] = backend.df_engine.map_objects(
+                result[probs_col],
+                compute_prob,
+            )
+
+            # commenting probabilities out because usually it is huge:
+            # dataset x length x classes
+            # todo: add a mechanism for letting the user decide to save it
+            # result[probs_col] = backend.df_engine.map_objects(
+            #     result[probs_col],
+            #     lambda prob: np.amax(prob, axis=-1),
+            # )
 
         lengths_col = f'{self.feature_name}_{LENGTHS}'
         if lengths_col in result:
