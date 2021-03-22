@@ -30,6 +30,7 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
+from ludwig.data.dataset.partitioned import PartitionedDataset
 
 ludwig.contrib.contrib_import()
 import numpy as np
@@ -833,6 +834,13 @@ class LudwigModel:
 
             # calculate the overall metrics
             if collect_overall_stats:
+                # TODO ray: support calculating stats on partitioned datasets
+                if isinstance(dataset, PartitionedDataset):
+                    raise ValueError(
+                        'Cannot calculate overall stats on a partitioned dataset at this time. '
+                        'Set `calculate_overall_stats=False`.'
+                    )
+
                 overall_stats = calculate_overall_stats(
                     self.model.output_features,
                     predictions,

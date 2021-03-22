@@ -640,12 +640,9 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
         # print('PREDICTIONS', backend.df_engine.compute(predictions))
         _, predictions, _ = model.evaluate(
             dataset=dataset,
-            collect_predictions=True,
-            # collect_overall_stats=True
         )
 
-        print('EVAL PREDICTIONS', backend.df_engine.compute(predictions))
-        assert len(backend.df_engine.compute(predictions)) > 0
+        assert backend.df_engine.compute(predictions) is not None
 
         return model.model.get_weights()
     finally:

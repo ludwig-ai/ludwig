@@ -23,6 +23,9 @@ class PartitionedDataset(object):
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
 
+    def get(self, col):
+        return self.df[col]
+
     def map_dataset_partitions(self, fn, meta):
         def wrapped(partition):
             dataset = PandasDataset(partition, self.features, self.data_hdf5_fp)
