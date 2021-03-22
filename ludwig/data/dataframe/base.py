@@ -44,6 +44,10 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def apply_objects(self, series, map_fn, meta=None):
+        raise NotImplementedError()
+
+    @abstractmethod
     def reduce_objects(self, series, reduce_fn):
         raise NotImplementedError()
 

@@ -43,6 +43,9 @@ class PandasEngine(DataFrameEngine):
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
 
+    def apply_objects(self, df, apply_fn, meta=None):
+        return df.apply(apply_fn, axis=1)
+
     def reduce_objects(self, series, reduce_fn):
         return reduce_fn(series)
 

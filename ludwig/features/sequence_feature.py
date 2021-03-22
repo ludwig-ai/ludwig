@@ -397,14 +397,15 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 def idx2str(row):
                     pred = row[predictions_col]
                     length = row[lengths_col]
-                    row[predictions_col] = [
+                    return [
                         metadata['idx2str'][token]
                         if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
                         for token in [pred[i] for i in range(length)]
                     ]
-                    return row
 
-                result = result.apply(idx2str, axis=1)
+                result[predictions_col] = backend.df_engine.apply_objects(
+                    result, idx2str
+                )
 
         last_preds_col = f'{self.feature_name}_{LAST_PREDICTIONS}'
         if last_preds_col in result and len(result[last_preds_col]) > 0:
@@ -439,13 +440,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     seq_prob = row[probs_col]
                     length = row[lengths_col]
                     mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
-                    row[probability_col] = np.sum(np.log(seq_prob) * mask, axis=-1)[0]
-                    return row
+                    return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
                 # commenting probabilities out because usually it is huge:
                 # dataset x length x classes
                 # todo: add a mechanism for letting the user decide to save it
-                result = result.apply(compute_log_prob, axis=1)
+                result[probability_col] = backend.df_engine.apply_objects(
+                    result, compute_log_prob
+                )
             else:
                 raise ValueError(
                     f'Sequence probability array should be 3-dimensional '

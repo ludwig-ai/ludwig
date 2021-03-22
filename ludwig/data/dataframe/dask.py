@@ -65,6 +65,10 @@ class DaskEngine(DataFrameEngine):
         meta = meta or ('data', 'object')
         return series.map(map_fn, meta=meta)
 
+    def apply_objects(self, df, apply_fn, meta=None):
+        meta = meta or ('data', 'object')
+        return df.apply(apply_fn, axis=1, meta=meta)
+
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
