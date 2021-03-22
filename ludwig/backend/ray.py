@@ -27,6 +27,7 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME
 from ludwig.data.dataframe.dask import DaskEngine
+from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.models.predictor import BasePredictor, Predictor, EXCLUE_PRED_SET
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.misc_utils import sum_dicts
@@ -177,6 +178,8 @@ class RayPredictor(BasePredictor):
         self.actor_handles = []
 
     def batch_predict(self, model, dataset, *args, **kwargs):
+        self._check_dataset(dataset)
+
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
         output_columns = self._get_output_columns(model.output_features)
@@ -194,6 +197,8 @@ class RayPredictor(BasePredictor):
         )
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
+        self._check_dataset(dataset)
+
         metric_collector = MetricCollector.remote()
         self.actor_handles.append(metric_collector)
 
@@ -239,7 +244,16 @@ class RayPredictor(BasePredictor):
         return metrics, predictions
 
     def batch_collect_activations(self, model, *args, **kwargs):
-        raise NotImplementedError()
+        raise NotImplementedError(
+            'Ray backend does not support collecting activations at this time.'
+        )
+
+    def _check_dataset(self, dataset):
+        if not isinstance(dataset, PartitionedDataset):
+            raise RuntimeError(
+                f'Ray backend requires PartitionedDataset for inference, '
+                f'found: {type(dataset)}'
+            )
 
     def _get_output_columns(self, output_features):
         output_columns = []

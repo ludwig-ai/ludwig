@@ -636,13 +636,11 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
         if dataset is None:
             dataset = training_set
 
-        # predictions, _ = model.predict(dataset=dataset)
-        # print('PREDICTIONS', backend.df_engine.compute(predictions))
-        _, predictions, _ = model.evaluate(
-            dataset=dataset,
-        )
+        preds, _ = model.predict(dataset=dataset)
+        assert backend.df_engine.compute(preds) is not None
 
-        assert backend.df_engine.compute(predictions) is not None
+        _, eval_preds, _ = model.evaluate(dataset=dataset)
+        assert backend.df_engine.compute(eval_preds) is not None
 
         return model.model.get_weights()
     finally:
