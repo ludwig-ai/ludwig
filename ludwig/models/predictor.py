@@ -358,3 +358,12 @@ def print_evaluation_stats(test_stats):
                     else:
                         value_repr = pformat(result[metric], indent=2)
                     logger.info('{0}: {1}'.format(metric, value_repr))
+
+
+def get_output_columns(output_features):
+    output_columns = []
+    for of_name, feature in output_features.items():
+        for pred in feature.get_prediction_set():
+            if pred not in EXCLUE_PRED_SET:
+                output_columns.append(f'{of_name}_{pred}')
+    return output_columns

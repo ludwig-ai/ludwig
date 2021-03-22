@@ -696,14 +696,10 @@ class LudwigModel:
             batch_size=batch_size,
             debug=debug
         ) as predictor:
-            print('BEFORE PREDICT')
             predictions = predictor.batch_predict(
                 self.model,
                 dataset,
             )
-            # predictions.compute()
-            print(f'AFTER PREDICT: {predictions}')
-            # print(f'AFTER PREDICT COMPUTED: {predictions.compute()}')
 
             if self.backend.is_coordinator():
                 # if we are skipping all saving,

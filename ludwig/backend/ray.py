@@ -21,14 +21,14 @@ from collections import defaultdict, OrderedDict
 import dask
 import ray
 from horovod.ray import RayExecutor
-from ray.exceptions import RayTaskError, RayActorError
+from ray.exceptions import RayActorError
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataset.partitioned import PartitionedDataset
-from ludwig.models.predictor import BasePredictor, Predictor, EXCLUE_PRED_SET
+from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -72,20 +72,6 @@ def get_horovod_kwargs():
         num_hosts=len(best_resources),
         use_gpu=use_gpu
     )
-
-
-class RayModelServer:
-    def __init__(self, remote_model, predictor_kwargs):
-        self.model = remote_model.load()
-        self.predictor = Predictor(**predictor_kwargs)
-
-    def batch_predict(self, dataset, *args, **kwargs):
-        return self.predictor.batch_predict(
-            self.model,
-            dataset,
-            *args,
-            **kwargs
-        )
 
 
 class RayRemoteModel:
@@ -182,7 +168,7 @@ class RayPredictor(BasePredictor):
 
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
-        output_columns = self._get_output_columns(model.output_features)
+        output_columns = get_output_columns(model.output_features)
 
         def batch_predict_partition(dataset):
             model = remote_model.load()
@@ -207,7 +193,7 @@ class RayPredictor(BasePredictor):
 
         output_columns = []
         if collect_predictions:
-            output_columns = self._get_output_columns(model.output_features)
+            output_columns = get_output_columns(model.output_features)
 
         def batch_evaluate_partition(dataset):
             model = remote_model.load()
@@ -254,14 +240,6 @@ class RayPredictor(BasePredictor):
                 f'Ray backend requires PartitionedDataset for inference, '
                 f'found: {type(dataset)}'
             )
-
-    def _get_output_columns(self, output_features):
-        output_columns = []
-        for of_name, feature in output_features.items():
-            for pred in feature.get_prediction_set():
-                if pred not in EXCLUE_PRED_SET:
-                    output_columns.append(f'{of_name}_{pred}')
-        return output_columns
 
     def shutdown(self):
         for handle in self.actor_handles:
