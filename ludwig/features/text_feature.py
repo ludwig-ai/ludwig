@@ -422,7 +422,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         level_idx2str = '{}_{}'.format(self.level, 'idx2str')
 
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
-        if predictions_col in result and len(result[predictions_col]) > 0:
+        if predictions_col in result:
             if level_idx2str in metadata:
                 def idx2str(pred):
                     return [
@@ -438,7 +438,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 )
 
         last_preds_col = f'{self.feature_name}_{LAST_PREDICTIONS}'
-        if last_preds_col in result and len(result[last_preds_col]) > 0:
+        if last_preds_col in result:
             if level_idx2str in metadata:
                 def last_idx2str(last_pred):
                     if last_pred < len(metadata[level_idx2str]):
@@ -452,7 +452,10 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         prob_col = f'{self.feature_name}_{PROBABILITY}'
-        if probs_col in result and len(result[probs_col]) > 0:
+        if probs_col in result:
+            # TODO ray: calling `head()` here is very expensive, as it forces computation
+            #  of the predictions. We should get `persist()` working so we don't need to
+            #  compute it repeatedly.
             prob = result[probs_col].head(1)[0]
             if len(result[probs_col]) > 0 and isinstance(prob, Iterable):
                 def compute_prob(probs):

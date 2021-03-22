@@ -258,7 +258,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             backend,
     ):
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
-        if predictions_col in predictions and len(predictions[predictions_col]) > 0:
+        if predictions_col in predictions:
             # as needed convert predictions make to original value space
             numeric_transformer = get_from_registry(
                 metadata['preprocessing'].get('normalization', None),

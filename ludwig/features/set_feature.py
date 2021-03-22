@@ -288,7 +288,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             backend,
     ):
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
-        if predictions_col in result and len(result[predictions_col]) > 0:
+        if predictions_col in result:
             def idx2str(pred_set):
                 return [
                     metadata['idx2str'][i]
@@ -303,7 +303,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
         prob_col = f'{self.feature_name}_{PROBABILITY}'
-        if probabilities_col in result and len(result[probabilities_col]) > 0:
+        if probabilities_col in result:
             threshold = self.threshold
 
             def get_prob(prob_set):

@@ -312,7 +312,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             class_names = metadata[name]['bool2str']
 
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
-        if predictions_col in result and len(result[predictions_col]) > 0:
+        if predictions_col in result:
             if 'bool2str' in metadata:
                 result[predictions_col] = backend.df_engine.map_objects(
                     result[predictions_col],
@@ -320,7 +320,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 )
 
         probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
-        if probabilities_col in result and len(result[probabilities_col]) > 0:
+        if probabilities_col in result:
             false_col = f'{probabilities_col}_{class_names[0]}'
             result[false_col] = backend.df_engine.map_objects(
                 result[probabilities_col],

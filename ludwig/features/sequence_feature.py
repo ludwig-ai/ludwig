@@ -392,7 +392,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     ):
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
         lengths_col = f'{self.feature_name}_{LENGTHS}'
-        if predictions_col in result and len(result[predictions_col]) > 0:
+        if predictions_col in result:
             if 'idx2str' in metadata:
                 def idx2str(row):
                     pred = row[predictions_col]
@@ -408,7 +408,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 )
 
         last_preds_col = f'{self.feature_name}_{LAST_PREDICTIONS}'
-        if last_preds_col in result and len(result[last_preds_col]) > 0:
+        if last_preds_col in result:
             if 'idx2str' in metadata:
                 def last_idx2str(last_pred):
                     if last_pred < len(metadata['idx2str']):
@@ -421,7 +421,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 )
 
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
-        if probs_col in result and len(result[probs_col]) > 0:
+        if probs_col in result:
             # probs should be shape [b, s, nc]
             dim = len(result[probs_col].head(1)[0].shape) + 1
             if dim == 3:

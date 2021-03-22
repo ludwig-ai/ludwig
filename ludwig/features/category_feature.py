@@ -396,7 +396,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             backend,
     ):
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
-        if predictions_col in predictions and len(predictions[predictions_col]) > 0:
+        if predictions_col in predictions:
             if 'idx2str' in metadata:
                 predictions[predictions_col] = backend.df_engine.map_objects(
                     predictions[predictions_col],
@@ -404,8 +404,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 )
 
         probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
-        if probabilities_col in predictions and len(
-                predictions[probabilities_col]) > 0:
+        if probabilities_col in predictions:
             prob_col = f'{self.feature_name}_{PROBABILITY}'
             predictions[prob_col] = predictions[probabilities_col].map(max)
             if 'idx2str' in metadata:
@@ -420,7 +419,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     )
 
         top_k_col = f'{self.feature_name}_predictions_top_k'
-        if top_k_col in predictions and len(predictions[top_k_col]) > 0:
+        if top_k_col in predictions:
             if 'idx2str' in metadata:
                 predictions[top_k_col] = backend.df_engine.map_objects(
                     predictions[top_k_col],
