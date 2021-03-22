@@ -424,7 +424,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if probs_col in result and len(result[probs_col]) > 0:
             # probs should be shape [b, s, nc]
             dim = len(result[probs_col].head(1)[0].shape) + 1
-            print('SHAPE', dim)
             if dim == 3:
                 # get probability of token in that sequence position
                 result[probs_col] = backend.df_engine.map_objects(

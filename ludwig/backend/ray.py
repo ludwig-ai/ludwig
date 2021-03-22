@@ -16,19 +16,18 @@
 # ==============================================================================
 
 import logging
-import uuid
 from collections import defaultdict, OrderedDict
 
 import dask
 import ray
 from horovod.ray import RayExecutor
-from ray import serve
+from ray.exceptions import RayTaskError, RayActorError
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.models.predictor import BasePredictor, Predictor
+from ludwig.models.predictor import BasePredictor, Predictor, EXCLUE_PRED_SET
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -173,51 +172,87 @@ class MetricCollector(object):
 
 class RayPredictor(BasePredictor):
     def __init__(self, horovod_kwargs, predictor_kwargs):
+        # TODO ray: use horovod_kwargs to allocate GPU model replicas
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
 
     def batch_predict(self, model, dataset, *args, **kwargs):
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
+        output_columns = self._get_output_columns(model.output_features)
 
         def batch_predict_partition(dataset):
-            print('BATCH PREDICT PARTITION')
             model = remote_model.load()
             predictor = Predictor(**predictor_kwargs)
-            return predictor.batch_predict(model, dataset, *args, **kwargs)
+            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
+            ordered_predictions = predictions[output_columns]
+            return ordered_predictions
 
-        print('RAY PREDICT')
-        return dataset.predict_partitions(
+        return dataset.map_dataset_partitions(
             batch_predict_partition,
-            model.output_features
+            meta=[(c, 'object') for c in output_columns]
         )
 
-    def batch_evaluation(self, model, dataset, *args, **kwargs):
+    def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         metric_collector = MetricCollector.remote()
         self.actor_handles.append(metric_collector)
 
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
 
+        output_columns = []
+        if collect_predictions:
+            output_columns = self._get_output_columns(model.output_features)
+
         def batch_evaluate_partition(dataset):
             model = remote_model.load()
             predictor = Predictor(**predictor_kwargs)
             metrics, predictions = predictor.batch_evaluation(
-                model, dataset, *args, **kwargs
+                model, dataset, collect_predictions, **kwargs
             )
-            ray.get(metric_collector.add_metrics.remote(metrics))
+
+            try:
+                ray.get(metric_collector.add_metrics.remote(metrics))
+            except RayActorError:
+                # Metrics have already been computed, and now the Ray actor
+                # has been deleted, so ignore.
+                pass
+
+            if output_columns:
+                predictions = predictions[output_columns]
             return predictions
 
-        predictions = dataset.map_partitions(batch_evaluate_partition)
+        predictions = dataset.map_dataset_partitions(
+            batch_evaluate_partition,
+            meta=[(c, 'object') for c in output_columns]
+        )
+
+        # Force materialization of the dataframe. Otherwise we would not be able to
+        # obtain the metrics here.
+        # TODO ray: should get to work with `persist()` so we can reuse the DataFrame.
+        #  At the moment, this call is expensive as we may run predictions multiple times.
+        #  The problem for now is that `persist()` does not appear to return a normal Dask DF.
+        # predictions = predictions.persist()
+        _ = len(predictions)
+
         metrics = ray.get(metric_collector.collect.remote())
         return metrics, predictions
 
     def batch_collect_activations(self, model, *args, **kwargs):
         raise NotImplementedError()
 
+    def _get_output_columns(self, output_features):
+        output_columns = []
+        for of_name, feature in output_features.items():
+            for pred in feature.get_prediction_set():
+                if pred not in EXCLUE_PRED_SET:
+                    output_columns.append(f'{of_name}_{pred}')
+        return output_columns
+
     def shutdown(self):
         for handle in self.actor_handles:
             ray.kill(handle)
+        self.actor_handles.clear()
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
