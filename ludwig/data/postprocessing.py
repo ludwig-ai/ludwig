@@ -59,6 +59,9 @@ def postprocess(
 
 
 def _save_as_numpy(predictions, output_directory, saved_keys):
+    predictions = predictions[[
+        c for c in predictions.columns if c not in saved_keys
+    ]]
     npy_filename = os.path.join(output_directory, '{}.npy')
     numpy_predictions = to_numpy_dataset(predictions)
     for k, v in numpy_predictions.items():
