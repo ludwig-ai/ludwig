@@ -35,6 +35,7 @@ try:
     DASK_DF_FORMATS = {dd.core.DataFrame}
 except ImportError:
     DASK_DF_FORMATS = set()
+    dd = None
 
 from ludwig.constants import PREPROCESSING, SPLIT, PROC_COLUMN
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -585,7 +586,7 @@ def clear_data_cache():
 def figure_data_format_dataset(dataset):
     if isinstance(dataset, pd.DataFrame):
         return pd.DataFrame
-    elif isinstance(dataset, dd.core.DataFrame):
+    elif dd and isinstance(dataset, dd.core.DataFrame):
         return dd.core.DataFrame
     elif isinstance(dataset, dict):
         return dict
