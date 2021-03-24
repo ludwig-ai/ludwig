@@ -13,7 +13,11 @@ class GhostBatchNormalization(tf.keras.Model):
 
     def call(self, x, training: bool = None, alpha: float = 0.0):
         if training:
-            chunks = tf.split(x, self.virtual_divider)
+            num_or_size_splits = self.virtual_divider
+            if x.shape[0] % self.virtual_divider != 0:
+                q, r = divmod(x.shape[0], self.virtual_divider)
+                num_or_size_splits = [q] * self.virtual_divider + [r]
+            chunks = tf.split(x, num_or_size_splits)
             x = [self.bn(x, training=True) for x in chunks]
             return tf.concat(x, 0)
         return self.bn(x, training=False, alpha=alpha)

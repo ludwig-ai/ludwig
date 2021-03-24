@@ -51,7 +51,7 @@ class TabNet(tf.keras.Model):
         )
 
         kargs = {
-            "size": size,
+            "size": size + output_size,
             "num_total_blocks": num_total_blocks,
             "num_shared_blocks": num_shared_blocks,
             "bn_momentum": bn_momentum,
@@ -100,7 +100,7 @@ class TabNet(tf.keras.Model):
             # Attentive Transormer #
             ########################
             mask_values = self.attentive_transforms[step_i](
-                x, prior_scales, training=training, alpha=alpha
+                x[:, self.output_size :], prior_scales, training=training, alpha=alpha
             )
 
             # relaxation factor 1 forces the feature to be only used once
@@ -127,7 +127,7 @@ class TabNet(tf.keras.Model):
                 masked_features, training=training, alpha=alpha
             )
 
-            out = tf.keras.activations.relu(masked_features)
+            out = tf.keras.activations.relu(x[:, : self.output_size])
             out_accumulator += out
 
         final_output = self.final_projection(out_accumulator)
