@@ -36,7 +36,7 @@ class MultifileJoinProcessMixin:
     raw_dataset_path: str
     processed_dataset_path: str
 
-    def read_file(self, filetype, filename, header):
+    def read_file(self, filetype, filename, header=0):
         if filetype == 'json':
             file_df = pd.read_json(
                 os.path.join(self.raw_dataset_path, filename))
