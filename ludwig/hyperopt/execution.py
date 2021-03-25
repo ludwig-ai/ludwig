@@ -723,6 +723,9 @@ class RayTuneExecutor(HyperoptExecutor):
                 if trainer.is_coordinator():
                     with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
                         checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                        # shutil.copytree(save_path, checkpoint_model)
+                        # Note: A previous implementation used shutil.copytree() 
+                        # however, this copying method is non atomic
                         if not os.path.isdir(checkpoint_model):
                             copy_id = uuid.uuid4()
                             tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
