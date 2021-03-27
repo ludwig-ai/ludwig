@@ -28,12 +28,12 @@ from ludwig.modules.loss_modules import (BWCEWLoss, SequenceLoss,
 from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
-           MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
+           MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, ROOT_MEAN_SQUARED_ERROR,
            PERPLEXITY}
 
 max_metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
-min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
-               PERPLEXITY}
+min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
+               ROOT_MEAN_SQUARED_ERROR, LOSS, PERPLEXITY}
 
 
 class R2Score(tf.keras.metrics.Metric):

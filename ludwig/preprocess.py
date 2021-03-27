@@ -213,7 +213,7 @@ def cli(sys_argv):
         '-pc',
         '--preprocessing_config',
         type=yaml.safe_load,
-        help='preproceesing config. '
+        help='preprocessing config. '
              'Uses the same format of config, '
              'but ignores encoder specific parameters, '
              'decoder specific paramters, combiner and training parameters'

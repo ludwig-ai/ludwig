@@ -1079,6 +1079,10 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters,
                     feature[TYPE]
                 ]
 
+            # Handle time series format... TODO: cleaner way to do this?
+            if feature[TYPE] == 'timeseries':
+                preprocessing_parameters['column_major'] = global_preprocessing_parameters['column_major']
+
             # deal with encoders that have fixed preprocessing
             if 'encoder' in feature:
                 encoders_registry = get_from_registry(
@@ -1116,7 +1120,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters,
                 base_type_registry
             ).get_feature_meta
 
-            column = dataset_df[feature[NAME]]
+            column = dataset_df[feature[COLUMN]]
             if column.dtype == object:
                 column = column.astype(str)
 
@@ -1170,7 +1174,10 @@ def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
     elif missing_value_strategy == FILL_WITH_MODE:
         return dataset_df[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
-        if feature[TYPE] != NUMERICAL:
+        # We can compute mean of column-major timeseries (as the column mean)
+        # but not if the timeseries is an element of each row
+        if not (feature[TYPE] == NUMERICAL or (feature[TYPE] == TIMESERIES
+            and preprocessing_parameters['column_major'])):
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',

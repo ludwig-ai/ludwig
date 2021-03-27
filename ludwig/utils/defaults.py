@@ -31,11 +31,13 @@ default_random_seed = 42
 default_preprocessing_force_split = False
 default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
 default_preprocessing_stratify = None
+default_preprocessing_column_major = False
 
 default_preprocessing_parameters = {
     'force_split': default_preprocessing_force_split,
     'split_probabilities': default_preprocessing_split_probabilities,
-    'stratify': default_preprocessing_stratify
+    'stratify': default_preprocessing_stratify,
+    'column_major': default_preprocessing_column_major
 }
 default_preprocessing_parameters.update({
     name: base_type.preprocessing_defaults for name, base_type in
@@ -167,6 +169,11 @@ def _perform_sanity_checks(config):
             'There is an issue while reading the combiner section of the '
             'config. The parameters are expected to be read'
             'as a dictionary. Please check your config format.'
+        )
+
+    if 'column_major' in config.get('preprocessing', {}):
+        assert all(feature[TYPE] == 'timeseries' for feature in config['input_features']), (
+            'Only time series features can currently be handled for column-major datasets.'
         )
 
 
