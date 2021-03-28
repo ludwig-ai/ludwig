@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
+import dask.dataframe as dd
 
 import ludwig
 from ludwig.backend import LOCAL_BACKEND
@@ -1173,8 +1174,12 @@ def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
-        return dataset_df[feature[COLUMN]].mean()
-
+        if isinstance(dataset_df, pd.DataFrame):
+            return dataset_df[feature[COLUMN]].mean()
+        elif isinstance(dataset_df, dd.DataFrame):
+            return dataset_df[feature[COLUMN]].mean().compute()
+        else:
+            raise ValueError('Unsupported DataFrame type.')
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
 
