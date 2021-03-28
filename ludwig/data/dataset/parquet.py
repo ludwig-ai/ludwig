@@ -28,7 +28,6 @@ class ParquetDataset(Dataset):
     def __init__(self, url, features, training_set_metadata):
         self.url = url
         self.training_set_metadata = training_set_metadata
-
         with make_batch_reader(self.url) as reader:
             self.size = reader.dataset.metadata.num_rows
 
@@ -37,14 +36,23 @@ class ParquetDataset(Dataset):
             for feature in features
             if 'reshape' in training_set_metadata[feature[NAME]]
         }
+        self.features = {
+            feature[PROC_COLUMN]: list((-1, *training_set_metadata[feature[NAME]]))
+            for feature in features
+        }
+
+    # def get(self, feature_name, sample):
+    #     t = getattr(sample, feature_name)
+    #     reshape_dim = self.reshape_features.get(feature_name)
+    #     # reshape_dim = self.features.get(feature_name)
+    #     if reshape_dim is not None:
+    #         # When we read a 1D array from disk, we need to reshape it back to its
+    #         # full dimensions.
+    #         t = tf.reshape(t, reshape_dim)
+    #     return t
 
     def get(self, feature_name, sample):
         t = getattr(sample, feature_name)
-        reshape_dim = self.reshape_features.get(feature_name)
-        if reshape_dim is not None:
-            # When we read a 1D array from disk, we need to reshape it back to its
-            # full dimensions.
-            t = tf.reshape(t, reshape_dim)
         return t
 
     def __len__(self):
