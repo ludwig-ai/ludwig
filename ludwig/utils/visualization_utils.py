@@ -313,7 +313,7 @@ def radar_chart(
 
     # Set ticks to the number of properties (in radians)
     t = np.arange(0, 2 * np.pi, 2 * np.pi / num_classes)
-    ax.set_xticks(t, [])
+    ax.set_xticks(t)
     ax.set_xticklabels(np.arange(0, num_classes))
 
     # Set yticks from 0 to 10
