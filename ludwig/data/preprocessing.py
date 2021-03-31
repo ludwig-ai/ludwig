@@ -1030,6 +1030,9 @@ def build_dataset(
         split_probabilities=global_preprocessing_parameters[
             'split_probabilities'
         ],
+        splits_in_order=global_preprocessing_parameters[
+            'splits_in_order'
+        ],
         stratify=global_preprocessing_parameters['stratify'],
         backend=backend,
         random_seed=random_seed
@@ -1079,7 +1082,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters,
                     feature[TYPE]
                 ]
 
-            # Handle time series format... TODO: cleaner way to do this?
+            # Handle timeseries format... TODO: cleaner way to do this?
             if feature[TYPE] == 'timeseries':
                 preprocessing_parameters['column_major'] = global_preprocessing_parameters['column_major']
 
@@ -1214,6 +1217,7 @@ def get_split(
         dataset_df,
         force_split=False,
         split_probabilities=(0.7, 0.1, 0.2),
+        splits_in_order=False,
         stratify=None,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
@@ -1223,12 +1227,19 @@ def get_split(
     else:
         set_random_seed(random_seed)
 
-        if stratify is None or stratify not in dataset_df:
+        if splits_in_order:
+            # TODO: This should likely be the default for timeseries data
+            train_end = int(np.round(split_probabilities[0] * len(dataset_df)))
+            val_end = int(np.round((1-split_probabilities[-1]) * len(dataset_df)))
+            split = np.zeros(len(dataset_df), dtype=np.int8)
+            split[train_end:val_end] = 1
+            split[val_end:] = 2
+        elif stratify is None or stratify not in dataset_df:
             split = dataset_df.index.to_series().map(
                 lambda x: np.random.choice(3, 1, p=split_probabilities)
             ).astype(np.int8)
         else:
-            split = np.zeros(len(dataset_df))
+            split = np.zeros(len(dataset_df), dtype=np.int8)
             for val in dataset_df[stratify].unique():
                 # TODO dask: find a way to better parallelize this operation
                 idx_list = (

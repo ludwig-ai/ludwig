@@ -30,12 +30,14 @@ default_random_seed = 42
 
 default_preprocessing_force_split = False
 default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)
+default_preprocessing_splits_in_order = False
 default_preprocessing_stratify = None
 default_preprocessing_column_major = False
 
 default_preprocessing_parameters = {
     'force_split': default_preprocessing_force_split,
     'split_probabilities': default_preprocessing_split_probabilities,
+    'splits_in_order': default_preprocessing_splits_in_order,
     'stratify': default_preprocessing_stratify,
     'column_major': default_preprocessing_column_major
 }
