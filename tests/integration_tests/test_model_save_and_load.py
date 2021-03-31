@@ -12,7 +12,7 @@ from ludwig.utils.data_utils import split_dataset_ttv, read_csv
 from tests.integration_tests.utils import binary_feature, numerical_feature, \
     category_feature, sequence_feature, date_feature, h3_feature, \
     set_feature, generate_data, text_feature, vector_feature, bag_feature, \
-    image_feature, audio_feature, timeseries_feature
+    image_feature, audio_feature, timeseries_feature, LocalTestBackend
 
 
 def test_model_save_reload_api(csv_filename, tmp_path):
@@ -77,7 +77,8 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    ludwig_model1 = LudwigModel(config)
+    backend = LocalTestBackend()
+    ludwig_model1 = LudwigModel(config, backend=backend)
     _, _, output_dir = ludwig_model1.train(
         training_set=training_set,
         validation_set=validation_set,
@@ -121,11 +122,11 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     # Test saving and loading the model explicitly
     with tempfile.TemporaryDirectory() as tmpdir:
         ludwig_model1.save(tmpdir)
-        ludwig_model_loaded = LudwigModel.load(tmpdir)
+        ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
         check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(
-        os.path.join(output_dir, 'model')
+        os.path.join(output_dir, 'model'), backend=backend
     )
     check_model_equal(ludwig_model_exp)
