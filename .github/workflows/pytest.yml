@@ -31,7 +31,7 @@ jobs:
 
     name: py${{ matrix.python-version  }}, tf${{ matrix.tensorflow-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
-    timeout-minutes: 70
+    timeout-minutes: 50
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -97,4 +97,4 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -v --timeout 360 --durations 10 -m "$MARKERS" tests
+        pytest -v --timeout 300 --durations 10 -m "$MARKERS" tests
