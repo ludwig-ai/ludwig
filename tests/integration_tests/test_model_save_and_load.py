@@ -127,6 +127,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(
-        os.path.join(output_dir, 'model'), backend=backend
+        os.path.join(output_dir, 'model'),
+        backend=backend
     )
     check_model_equal(ludwig_model_exp)
