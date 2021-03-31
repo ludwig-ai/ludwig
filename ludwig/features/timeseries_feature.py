@@ -36,6 +36,7 @@ class TimeseriesFeatureMixin(object):
 
     preprocessing_defaults = {
         'timeseries_length_limit': 256,
+        'padding_value_strategy': FILL_WITH_CONST,
         'padding_value': 0,
         'padding': 'right',
         'tokenizer': 'space',
@@ -52,32 +53,45 @@ class TimeseriesFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        column = column.astype(str)
-        tokenizer = get_from_registry(
-            preprocessing_parameters['tokenizer'],
-            tokenizer_registry
-        )()
-        max_length = 0
-        for timeseries in column:
-            processed_line = tokenizer(timeseries)
-            max_length = max(max_length, len(processed_line))
-        max_length = min(
-            preprocessing_parameters['timeseries_length_limit'],
-            max_length
-        )
-        return_dict = {'max_timeseries_length': max_length}
-
         if preprocessing_parameters['column_major']:
             numeric_transformer = get_from_registry(
                 preprocessing_parameters.get('normalization', None),
                 numeric_transformation_registry
             )
-            return_dict = {**return_dict,
-                **numeric_transformer.fit_transform_params(column, backend)}
+            return_dict = \
+                numeric_transformer.fit_transform_params(column, backend)
+
+            if preprocessing_parameters['padding_value_strategy'] == FILL_WITH_MODE:
+                return_dict['computed_padding_value'] = column.value_counts().index[0]
+            elif preprocessing_parameters['padding_value_strategy'] == FILL_WITH_MEAN:
+                return_dict['computed_padding_value'] = column.mean()
+            elif preprocessing_parameters['padding_value_strategy'] == FILL_WITH_CONST:
+                return_dict['computed_padding_value'] = preprocessing_parameters['padding_value']
+
+        else:
+            if preprocessing_parameters['padding_value_strategy'] != FILL_WITH_CONST:
+                raise ValueError('Only constant padding supported for '
+                                 'tabular timeseries')
+
+            column = column.astype(str)
+            tokenizer = get_from_registry(
+                preprocessing_parameters['tokenizer'],
+                tokenizer_registry
+            )()
+            max_length = 0
+            for timeseries in column:
+                processed_line = tokenizer(timeseries)
+                max_length = max(max_length, len(processed_line))
+            max_length = min(
+                preprocessing_parameters['timeseries_length_limit'],
+                max_length
+            )
+            return_dict = {'max_timeseries_length': max_length}
+
         return return_dict
 
     @staticmethod
-    def build_matrix(
+    def _build_matrix(
             timeseries,
             tokenizer_name,
             length_limit,
@@ -127,7 +141,7 @@ class TimeseriesFeatureMixin(object):
         return backend.df_engine.map_objects(ts_vectors, pad)
 
     @staticmethod
-    def build_matrix_from_column(
+    def _build_matrix_from_column(
             timeseries,
             tokenizer_name,
             length_limit,
@@ -135,7 +149,6 @@ class TimeseriesFeatureMixin(object):
             padding,
             n_steps_ahead,
             undersample_ratio,
-            missing_value_strategy,
             backend
     ):
         max_length = len(timeseries)
@@ -160,10 +173,6 @@ class TimeseriesFeatureMixin(object):
             for i in range(len(timeseries))]
         ts_vectors = backend.df_engine.df_lib.Series(history)
 
-        # Duplication of logic - not ideal. Also, need error handling.
-        if missing_value_strategy == 'fill_with_mean':
-            padding_value = np.mean(ts_vals)
-
         def pad(vector):
             padded = np.full(
                 (max_length,),
@@ -186,18 +195,17 @@ class TimeseriesFeatureMixin(object):
         if p['n_steps_ahead'] > p['timeseries_length_limit']:
             raise ValueError('History window limit is less than time delay')
         if preprocessing_parameters['column_major']:
-            timeseries_data = (TimeseriesFeatureMixin.build_matrix_from_column(
+            timeseries_data = (TimeseriesFeatureMixin._build_matrix_from_column(
                 column,
                 preprocessing_parameters['tokenizer'],
                 preprocessing_parameters['timeseries_length_limit'],
-                preprocessing_parameters['padding_value'],
+                metadata['computed_padding_value'],
                 preprocessing_parameters['padding'],
                 preprocessing_parameters['n_steps_ahead'],
                 preprocessing_parameters['undersample_ratio'],
-                preprocessing_parameters['missing_value_strategy'],
                 backend))
         else:
-            timeseries_data = (TimeseriesFeatureMixin.build_matrix(
+            timeseries_data = (TimeseriesFeatureMixin._build_matrix(
                 column,
                 preprocessing_parameters['tokenizer'],
                 metadata['max_timeseries_length'],
@@ -271,10 +279,12 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
             *args,
             **kwargs
     ):
-        input_feature['max_sequence_length'] = feature_metadata[
-            'max_timeseries_length']
+        input_feature['max_sequence_length'] = feature_metadata.get(
+            'max_timeseries_length', 1)
         input_feature['embedding_size'] = 1
         input_feature['should_embed'] = False
+        input_feature['computed_padding_value'] = feature_metadata.get(
+            'computed_padding_value', 0)
 
     @staticmethod
     def populate_defaults(input_feature):
