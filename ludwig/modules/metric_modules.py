@@ -375,6 +375,58 @@ class JaccardMetric(tf.keras.metrics.Metric):
         return self.jaccard_total / self.N
 
 
+class MeanAbsolutePercentageErrorMetric(tf.keras.metrics.Metric):
+    def __init__(self, eps=0, name='mean_absolute_percentage_error_metric'):
+        super(MeanAbsolutePercentageErrorMetric, self).__init__(name=name)
+        self.sum_pct_error = self.add_weight(
+            'sum_pct_error', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.N = self.add_weight(
+            'N', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.eps = eps
+
+    def update_state(self, y, y_hat):
+        y = tf.cast(y, tf.float32)
+        y_hat = tf.cast(y_hat, tf.float32)
+        abs_errs = tf.abs(y - y_hat)
+        denominators = tf.abs(y) + self.eps
+        self.sum_pct_error.assign_add(100 * tf.reduce_sum(abs_errs / denominators))
+        self.N.assign_add(y.shape[0])
+
+    def result(self):
+        return self.sum_pct_error / self.N
+
+
+class WeightedMeanAbsolutePercentageErrorMetric(tf.keras.metrics.Metric):
+    def __init__(
+                self,
+                eps=0,
+                name='weighted_mean_absolute_percentage_error_metric'
+    ):
+        super().__init__(name=name)
+        self.sum_abs_error = self.add_weight(
+            'sum_abs_error', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.sum_abs_values = self.add_weight(
+            'sum_abs_values', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.eps = eps
+
+    def update_state(self, y, y_hat):
+        y = tf.cast(y, tf.float32)
+        y_hat = tf.cast(y_hat, tf.float32)
+        self.sum_abs_error.assign_add(tf.reduce_sum(tf.abs(y - y_hat)))
+        self.sum_abs_values.assign_add(tf.reduce_sum(tf.abs(y)))
+
+    def result(self):
+        return 100 * self.sum_abs_error / (self.sum_abs_values + self.eps)
+
+
 def get_improved_fun(metric):
     if metric in min_metrics:
         return lambda x, y: x < y

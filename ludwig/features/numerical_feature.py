@@ -31,10 +31,13 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.features.feature_transform_utils import numeric_transformation_registry
+from ludwig.features.feature_transform_utils import \
+    numeric_transformation_registry
 from ludwig.modules.loss_modules import MSELoss, MAELoss
 from ludwig.modules.metric_modules import ErrorScore, MAEMetric, MSEMetric
-from ludwig.modules.metric_modules import R2Score
+from ludwig.modules.metric_modules import R2Score, \
+    MeanAbsolutePercentageErrorMetric, \
+    WeightedMeanAbsolutePercentageErrorMetric
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
@@ -215,12 +218,19 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
             name='metric_mse'
         )
+        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = \
+            RootMeanSquaredErrorMetric(name='metric_rmse')
         self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
             name='metric_mae'
         )
-        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = \
-            RootMeanSquaredErrorMetric(name='metric_rmse')
         self.metric_functions[R2] = R2Score(name='metric_r2')
+        # TODO: The below metrics appear skewed when the data is already
+        # pre-normalized. Also, we may want options to only use a subset
+        # of metrics.
+        # self.metric_functions[MEAN_ABSOLUTE_PERCENTAGE_ERROR] = \
+        #     MeanAbsolutePercentageErrorMetric(name='metric_mape')
+        # self.metric_functions[WEIGHTED_MEAN_ABSOLUTE_PERCENTAGE_ERROR] = \
+        #     WeightedMeanAbsolutePercentageErrorMetric(name='metric_wmape')
 
     # def update_metrics(self, targets, predictions):
     #     for metric in self.metric_functions.values():
