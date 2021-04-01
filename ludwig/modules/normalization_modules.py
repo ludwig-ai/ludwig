@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-# from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/gbn.py
+# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/gbn.py
 class GhostBatchNormalization(tf.keras.Model):
     def __init__(
             self, virtual_divider: int = 1, momentum: float = 0.9,
@@ -31,7 +31,7 @@ class GhostBatchNormalization(tf.keras.Model):
         return self.bn.moving_variance
 
 
-# from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/gbn.py
+# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/gbn.py
 class BatchNormInferenceWeighting(tf.keras.layers.Layer):
     def __init__(self, momentum: float = 0.9, epsilon: float = None):
         super(BatchNormInferenceWeighting, self).__init__()

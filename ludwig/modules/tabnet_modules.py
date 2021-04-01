@@ -7,7 +7,7 @@ from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 
 
-# from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/model.py
+# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/model.py
 class TabNet(tf.keras.Model):
     def __init__(
             self,
@@ -137,7 +137,7 @@ class TabNet(tf.keras.Model):
         return final_output, masks
 
 
-# from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
+# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class FeatureBlock(tf.keras.Model):
     def __init__(
             self,
@@ -170,7 +170,7 @@ class FeatureBlock(tf.keras.Model):
         return hidden
 
 
-# from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
+# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class AttentiveTransformer(tf.keras.Model):
     def __init__(
             self,
@@ -192,7 +192,7 @@ class AttentiveTransformer(tf.keras.Model):
         return self.sparsemax(hidden * prior_scales)
 
 
-# from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
+# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class FeatureTransformer(tf.keras.Model):
     def __init__(
             self,
