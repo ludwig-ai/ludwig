@@ -38,8 +38,8 @@ from tests.integration_tests.utils import vector_feature
 
 
 @pytest.fixture
-def ray_start_4_cpus():
-    res = ray.init(num_cpus=4)
+def ray_start_2_cpus():
+    res = ray.init(num_cpus=2)
     try:
         yield res
     finally:
@@ -50,7 +50,7 @@ def run_api_experiment(config, data_parquet):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_horovod_kwargs()
     assert kwargs.get('num_hosts') == 1
-    assert kwargs.get('num_slots') == 4
+    assert kwargs.get('num_slots') == 2
 
     # Train on Parquet
     dask_backend = RayBackend()
@@ -86,7 +86,7 @@ def run_test_parquet(
 
 
 @pytest.mark.distributed
-def test_ray_tabular(ray_start_4_cpus):
+def test_ray_tabular(ray_start_2_cpus):
     input_features = [
         sequence_feature(reduce_output='sum'),
         numerical_feature(normalization='zscore'),
