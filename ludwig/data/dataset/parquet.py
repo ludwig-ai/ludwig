@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import math
+
 import tensorflow as tf
 
 from petastorm import make_batch_reader
@@ -27,6 +29,7 @@ from ludwig.data.dataset.base import Dataset
 class ParquetDataset(Dataset):
     def __init__(self, url, features, training_set_metadata):
         self.url = url
+        self.features = [feature[PROC_COLUMN] for feature in features]
         self.training_set_metadata = training_set_metadata
 
         with make_batch_reader(self.url) as reader:
@@ -76,7 +79,7 @@ class ParquetDataset(Dataset):
             dataset = dataset.shuffle(buffer_size)
         dataset = dataset.batch(batch_size)
 
-        steps_per_epoch = int(local_samples / batch_size)
+        steps_per_epoch = math.ceil(local_samples / batch_size)
 
         batcher = IterableBatcher(self,
                                   dataset,
