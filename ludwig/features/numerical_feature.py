@@ -50,8 +50,8 @@ class NumericalFeatureMixin(object):
     @staticmethod
     def cast_column(feature, dataset_df, backend):
         dataset_df[feature[COLUMN]] = backend.df_engine.df_lib.to_numeric(
-            dataset_df[feature[COLUMN]], errors='coerce', downcast='float'
-        )
+            dataset_df[feature[COLUMN]], errors='coerce'
+        ).astype(np.float32)
         return dataset_df
 
     @staticmethod

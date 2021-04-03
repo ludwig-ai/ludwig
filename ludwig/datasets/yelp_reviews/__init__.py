@@ -15,27 +15,38 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
+from ludwig.datasets.mixins.download import  TarDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import *
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
-    dataset = AGNews(cache_dir=cache_dir)
+    dataset = YelpReviews(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class AGNews(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
+class YelpReviews(TarDownloadMixin, MultifileJoinProcessMixin,
                  CSVLoadMixin, BaseDataset):
-    """The AGNews dataset"""
+    """
+        The Yelp Reviews dataset
+        Details:
+            1,569,264 samples from the Yelp Dataset Challenge 2015. \
+            This full dataset has 130,000 training samples and 10,000 \
+            testing samples in each star. 
+        Dataset source: 
+            Character-level Convolutional Networks for Text Classification
+            Xiang Zhang et al., 2015
+    """
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="agnews", cache_dir=cache_dir)
+        super().__init__(dataset_name="yelp_reviews", cache_dir=cache_dir)
 
-    def read_file(self, filetype, filename, header=0):
-        file_df = pd.read_csv(
-                os.path.join(self.raw_dataset_path, filename))
-        # class_index : number between 1-4 where 
-        # 1-World, 2-Sports, 3-Business, 4-Science/Tech
-        file_df.columns = ['class_index', 'title', 'description']
-        return file_df
+    def process_downloaded_dataset(self):
+        super(YelpReviews, self).process_downloaded_dataset(header=None)
+        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
+                                                self.csv_filename))
+        processed_df.columns = ['label', 'text', 'split']
+        processed_df.to_csv(
+            os.path.join(self.processed_dataset_path, self.csv_filename),
+            index=False
+        )
 
 
     
