@@ -188,14 +188,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
-        if self.loss[TYPE] == 'softmax_cross_entropy':
-            return {
-                PREDICTIONS: predictions,
-                PROBABILITIES: probabilities,
-                LOGITS: logits
-            }
-        else:
-            # sampled_softmax_cross_entropy loss
+        if self.loss[TYPE] == 'sampled_softmax_cross_entropy':
             return {
                 PREDICTIONS: predictions,
                 PROBABILITIES: probabilities,
@@ -203,6 +196,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
                 # required for evaluation loss computation
                 LAST_HIDDEN: inputs[LAST_HIDDEN]
+            }
+        else:
+            # softmax_cross_entropy loss
+            return {
+                PREDICTIONS: predictions,
+                PROBABILITIES: probabilities,
+                LOGITS: logits
             }
 
     @classmethod
@@ -245,15 +245,16 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         self.metric_functions = {}  # needed to shadow class variable
         # todo: remove commented code
         # self.metric_functions[LOSS] = self.eval_loss_function
-        if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
+        if self.loss[TYPE] == 'sampled_softmax_cross_entropy':
+            self.metric_functions[LOSS] = SampledSoftmaxCrossEntropyMetric(
+                decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
                 name='eval_loss'
             )
         else:
-            self.metric_functions[LOSS] = SampledSoftmaxCrossEntropyMetric(
-                decoder_obj=self.decoder_obj,
+            # softmax_cross_entropy loss
+            self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
                 name='eval_loss'
