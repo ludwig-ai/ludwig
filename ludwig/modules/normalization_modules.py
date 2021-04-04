@@ -59,10 +59,10 @@ class BatchNormInferenceWeighting(tf.keras.layers.Layer):
             name="moving_mean_of_squares"
         )
 
-    def _update_moving(self, var, value):
+    def update_moving(self, var, value):
         var.assign(var * self.momentum + (1 - self.momentum) * value)
 
-    def _apply_normalization(self, x, mean, variance):
+    def apply_normalization(self, x, mean, variance):
         return self.gamma * (x - mean) / tf.sqrt(
             variance + self.epsilon) + self.beta
 
@@ -72,15 +72,15 @@ class BatchNormInferenceWeighting(tf.keras.layers.Layer):
 
         if training:
             # update moving stats
-            self._update_moving(self.moving_mean, mean)
-            self._update_moving(self.moving_mean_of_squares, mean_of_squares)
+            self.update_moving(self.moving_mean, mean)
+            self.update_moving(self.moving_mean_of_squares, mean_of_squares)
 
             variance = mean_of_squares - tf.pow(mean, 2)
-            x = self._apply_normalization(x, mean, variance)
+            x = self.apply_normalization(x, mean, variance)
         else:
             mean = alpha * mean + (1 - alpha) * self.moving_mean
             variance = (alpha * mean_of_squares + (1 - alpha) *
                         self.moving_mean_of_squares) - tf.pow(mean, 2)
-            x = self._apply_normalization(x, mean, variance)
+            x = self.apply_normalization(x, mean, variance)
 
         return x
