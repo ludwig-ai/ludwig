@@ -43,22 +43,26 @@ class BatchNormInferenceWeighting(tf.keras.layers.Layer):
 
         self.gamma = tf.Variable(
             initial_value=tf.ones((channels,), tf.float32), trainable=True,
+            name="gamma"
         )
         self.beta = tf.Variable(
             initial_value=tf.zeros((channels,), tf.float32), trainable=True,
+            name="beta"
         )
 
         self.moving_mean = tf.Variable(
             initial_value=tf.zeros((channels,), tf.float32), trainable=False,
+            name="moving_mean"
         )
         self.moving_mean_of_squares = tf.Variable(
             initial_value=tf.zeros((channels,), tf.float32), trainable=False,
+            name="moving_mean_of_squares"
         )
 
-    def __update_moving(self, var, value):
+    def _update_moving(self, var, value):
         var.assign(var * self.momentum + (1 - self.momentum) * value)
 
-    def __apply_normalization(self, x, mean, variance):
+    def _apply_normalization(self, x, mean, variance):
         return self.gamma * (x - mean) / tf.sqrt(
             variance + self.epsilon) + self.beta
 
@@ -68,15 +72,15 @@ class BatchNormInferenceWeighting(tf.keras.layers.Layer):
 
         if training:
             # update moving stats
-            self.__update_moving(self.moving_mean, mean)
-            self.__update_moving(self.moving_mean_of_squares, mean_of_squares)
+            self._update_moving(self.moving_mean, mean)
+            self._update_moving(self.moving_mean_of_squares, mean_of_squares)
 
             variance = mean_of_squares - tf.pow(mean, 2)
-            x = self.__apply_normalization(x, mean, variance)
+            x = self._apply_normalization(x, mean, variance)
         else:
             mean = alpha * mean + (1 - alpha) * self.moving_mean
             variance = (alpha * mean_of_squares + (1 - alpha) *
                         self.moving_mean_of_squares) - tf.pow(mean, 2)
-            x = self.__apply_normalization(x, mean, variance)
+            x = self._apply_normalization(x, mean, variance)
 
         return x
