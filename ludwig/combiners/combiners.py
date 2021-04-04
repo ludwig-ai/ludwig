@@ -320,15 +320,17 @@ class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features,
-            size: int,
-            output_size: int,
-            num_steps: int = 1,
+            size: int,  # N_a in the paper
+            output_size: int,  # N_d in the paper
+            num_steps: int = 1,  # N_steps in the paper
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
-            relaxation_factor: float = 1.5,
+            relaxation_factor: float = 1.5,  # gamma in the paper
             bn_epsilon: float = 1e-5,
-            bn_momentum: float = 0.7,
+            bn_momentum: float = 0.7,  # m_B in the paper
             bn_virtual_divider: int = 1,
+            # factor to multiply batch_size B to get B_v from the paper
+            sparsity: float = 1e-5,  # lambda_sparse in the paper
             dropout=0,
             **kwargs
     ):
@@ -347,6 +349,7 @@ class TabNetCombiner(tf.keras.Model):
             bn_epsilon=bn_epsilon,
             bn_momentum=bn_momentum,
             bn_virtual_divider=bn_virtual_divider,
+            sparsity=sparsity
         )
 
         if dropout > 0:

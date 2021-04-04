@@ -83,7 +83,7 @@ class TabNet(tf.keras.Model):
             alpha: float = 0.0
     ) -> Tuple[tf.Tensor, List[tf.Tensor]]:
         batch_size = tf.shape(features)[0]
-        out_accumulator = tf.zeros((batch_size, self.size))
+        out_accumulator = tf.zeros((batch_size, self.output_size))
         prior_scales = tf.ones((batch_size, self.num_features))
         masks = []
         total_entropy = 0.0
