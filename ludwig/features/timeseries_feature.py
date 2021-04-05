@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import logging
 
 import numpy as np
@@ -296,6 +297,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
             }
         )
 
+    TimeseriesPassthroughEncoder = functools.partial(
+            SequencePassthroughEncoder, expanded_dim=2)
     encoder_registry = {
         'stacked_cnn': StackedCNN,
         'parallel_cnn': ParallelCNN,
@@ -303,9 +306,9 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         'rnn': StackedRNN,
         'cnnrnn': StackedCNNRNN,
         'transformer': StackedTransformer,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
+        'passthrough': TimeseriesPassthroughEncoder,
+        'null': TimeseriesPassthroughEncoder,
+        'none': TimeseriesPassthroughEncoder,
+        'None': TimeseriesPassthroughEncoder,
+        None: TimeseriesPassthroughEncoder
     }

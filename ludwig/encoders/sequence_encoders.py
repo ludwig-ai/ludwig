@@ -49,6 +49,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
     def __init__(
             self,
             reduce_output=None,
+            expanded_dim=3,
             **kwargs
     ):
         """
@@ -60,6 +61,9 @@ class SequencePassthroughEncoder(SequenceEncoder):
                    first dimension) and `None` or `null` (which does not reduce
                    and returns the full tensor).
             :type reduce_output: str
+            :param expanded_dim: defines how many dimensions the input sequence
+                   should be expanded to
+            :type expanded_dim: int
         """
         super(SequencePassthroughEncoder, self).__init__()
         logger.debug(' {}'.format(self.name))
@@ -68,6 +72,9 @@ class SequencePassthroughEncoder(SequenceEncoder):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
+        if expanded_dim > 3 or expanded_dim < 2:
+            raise ValueError('expanded_dim should be 2 or 3')
+        self.expanded_dim = expanded_dim
 
     def call(
             self,
@@ -84,7 +91,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
             :type is_training: Tensor
         """
         input_sequence = tf.cast(input_sequence, tf.float32)
-        while len(input_sequence.shape) < 3:
+        while len(input_sequence.shape) < self.expanded_dim:
             input_sequence = tf.expand_dims(
                 input_sequence, -1
             )
