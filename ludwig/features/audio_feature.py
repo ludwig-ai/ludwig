@@ -85,7 +85,8 @@ class AudioFeatureMixin(object):
         return {
             'feature_dim': feature_dim,
             'sampling_rate_in_hz': sampling_rate_in_hz,
-            'max_length': max_length
+            'max_length': max_length,
+            'reshape': (max_length, feature_dim)
         }
 
     @staticmethod

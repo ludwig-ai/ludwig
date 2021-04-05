@@ -23,10 +23,10 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
@@ -45,6 +45,7 @@ def preprocess_cli(
         data_format: str = None,
         random_seed: int = default_random_seed,
         logging_level: int = logging.INFO,
+        backend: Union[Backend, str] = None,
         debug: bool = False,
         **kwargs
 ) -> None:
@@ -130,7 +131,8 @@ def preprocess_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
-    :param use_horovod: (bool, default: `None`) flag for using horovod.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+        of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -208,7 +210,7 @@ def cli(sys_argv):
     # ----------------
     preprocessing_def = parser.add_mutually_exclusive_group(required=True)
     preprocessing_def.add_argument(
-        '-pd',
+        '-pc',
         '--preprocessing_config',
         type=yaml.safe_load,
         help='preproceesing config. '
@@ -239,6 +241,13 @@ def cli(sys_argv):
              'initialization and training set shuffling'
     )
     parser.add_argument(
+        "-b",
+        "--backend",
+        help='specifies backend to use for parallel / distributed execution, '
+             'defaults to local execution or Horovod if called using horovodrun',
+        choices=ALL_BACKENDS,
+    )
+    parser.add_argument(
         '-dbg',
         '--debug',
         action='store_true',
@@ -261,7 +270,8 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.preprocess')
 
-    if is_on_master():
+    args.backend = initialize_backend(args.backend)
+    if args.backend.is_coordinator():
         print_ludwig('Preprocess', LUDWIG_VERSION)
 
     preprocess_cli(**vars(args))

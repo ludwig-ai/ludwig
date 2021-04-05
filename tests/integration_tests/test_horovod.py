@@ -83,8 +83,9 @@ def _prepare_data(csv_filename):
 
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Horovod is not supported on Windows")
+@pytest.mark.distributed
 def test_horovod_implicit(csv_filename):
-    """Test Horovod running without `use_horovod=True`."""
+    """Test Horovod running without `backend='horovod'`."""
     _run_horovod(csv_filename)
 
 
@@ -94,6 +95,7 @@ def test_horovod_implicit(csv_filename):
                     reason="test requires Horovod with NCCL support")
 @pytest.mark.skipif(not tf.test.is_gpu_available(cuda_only=True),
                     reason="test requires multi-GPU machine")
+@pytest.mark.distributed
 def test_horovod_gpu_memory_limit(csv_filename):
     """Test Horovod with explicit GPU memory limit set."""
     ludwig_kwargs = dict(

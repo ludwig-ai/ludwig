@@ -31,6 +31,7 @@ from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
+
 from tests.conftest import delete_temporary_data
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
     HF_ENCODERS_SHORT, slow, create_data_set_to_use
@@ -52,6 +53,8 @@ from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
+from tests.integration_tests.utils import LocalTestBackend
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -332,7 +335,9 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
     shutil.rmtree(image_dest_folder)
 
 
-IMAGE_DATA_FORMATS_TO_TEST = ['csv', 'df', 'dict', 'hdf5']
+IMAGE_DATA_FORMATS_TO_TEST = ['csv', 'df', 'hdf5']
+
+
 @pytest.mark.parametrize('test_in_memory', [True, False])
 @pytest.mark.parametrize('test_format', IMAGE_DATA_FORMATS_TO_TEST)
 @pytest.mark.parametrize('train_in_memory', [True, False])
@@ -387,11 +392,13 @@ def test_experiment_image_dataset(
         = train_in_memory
     training_set_metadata = None
 
+    backend = LocalTestBackend()
     if train_format == 'hdf5':
         # hdf5 format
         train_set, _, _, training_set_metadata = preprocess_for_training(
             config,
-            dataset=train_data
+            dataset=train_data,
+            backend=backend,
         )
         train_dataset_to_use = train_set.data_hdf5_fp
     else:
@@ -400,6 +407,7 @@ def test_experiment_image_dataset(
     # define Ludwig model
     model = LudwigModel(
         config=config,
+        backend=backend,
     )
     model.train(
         dataset=train_dataset_to_use,
@@ -418,7 +426,8 @@ def test_experiment_image_dataset(
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
             model.config,
-            dataset=test_data
+            dataset=test_data,
+            backend=backend,
         )
         test_dataset_to_use = test_set.data_hdf5_fp
     else:
@@ -560,7 +569,7 @@ def test_sequence_tagger(
         sequence_feature(
             max_len=10,
             encoder='rnn',
-            cell_type='lstm',
+            cell_type=enc_cell_type,
             reduce_output=None
         )
     ]
@@ -576,8 +585,31 @@ def test_sequence_tagger(
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # setup encoder specification
-    input_features[0]['cell_type'] = enc_cell_type
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_sequence_tagger_text(
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        text_feature(
+            max_len=10,
+            encoder='rnn',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            reduce_input=None
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
     # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path)

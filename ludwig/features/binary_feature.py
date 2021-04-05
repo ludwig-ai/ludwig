@@ -23,13 +23,11 @@ from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
+from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -63,7 +61,7 @@ class BinaryFeatureMixin(object):
         distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
             raise ValueError(
-                f'Binary feature column expects 2 distinct values, '
+                f'Binary feature column {column.name} expects 2 distinct values, '
                 f'found: {distinct_values.values.tolist()}'
             )
 
@@ -144,14 +142,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'dense': DenseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
@@ -312,12 +303,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         postprocessed = {}
         name = self.feature_name
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS].numpy()
             if 'bool2str' in metadata:

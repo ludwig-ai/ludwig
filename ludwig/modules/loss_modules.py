@@ -405,7 +405,7 @@ def weighted_sigmoid_cross_entropy(
 def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
                                unique, class_counts, distortion):
     """returns sampled_values using the chosen sampler"""
-    if sampler == 'fixed_unigram':
+    if sampler == 'fixed_unigram' or sampler == 'learned_unigram':
         sampled_values = tf.random.fixed_unigram_candidate_sampler(
             true_classes=labels,
             num_true=1,
@@ -430,16 +430,6 @@ def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
             num_sampled=negative_samples,
             unique=unique,
             range_max=num_classes
-        )
-    elif sampler == 'learned_unigram':
-        sampled_values = tf.random.fixed_unigram_candidate_sampler(
-            true_classes=labels,
-            num_true=1,
-            num_sampled=negative_samples,
-            unique=unique,
-            range_max=num_classes,
-            unigrams=class_counts,
-            distortion=distortion
         )
     else:
         raise ValueError('Unsupported sampler {}'.format(sampler))

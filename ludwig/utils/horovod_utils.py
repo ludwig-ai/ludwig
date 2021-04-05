@@ -23,19 +23,15 @@ try:
 except (ModuleNotFoundError, ImportError):
     _HVD = None
 
-ON_MASTER = True
 
-
-def configure_horovod(use_horovod):
-    set_on_master(use_horovod)
-    return _HVD if should_use_horovod(use_horovod) else None
-
-
-def should_use_horovod(use_horovod):
-    """Returns True if user did not specify explicitly and running with `horovodrun`."""
-    if use_horovod is None:
-        return has_horovodrun()
-    return use_horovod
+def initialize_horovod():
+    if not _HVD:
+        raise ValueError("Horovod backend specified, "
+                         "but cannot import `horovod.tensorflow`. "
+                         "Install Horovod following the instructions at: "
+                         "https://github.com/horovod/horovod")
+    _HVD.init()
+    return _HVD
 
 
 def has_horovodrun():
@@ -43,32 +39,12 @@ def has_horovodrun():
     return 'OMPI_COMM_WORLD_RANK' in os.environ or 'HOROVOD_RANK' in os.environ
 
 
-def broadcast_return(fn, horovod):
-    """Returns the result of calling `fn` on master, broadcasted to all other ranks.
+def return_first(fn):
+    """Wraps function so results are only returned by the first (coordinator) rank.
 
-    Specifically, `fn` is only executed on master, but its result is returned by every
-    rank by broadcasting the return value from master.
+    The purpose of this function is to reduce network overhead.
     """
-    result = fn() if is_on_master() else None
-    if horovod:
-        name = f'broadcast_return_{int(time.time())}'
-        result = _HVD.broadcast_object(result, name=name)
-    return result
-
-
-def set_on_master(use_horovod):
-    global ON_MASTER
-    if should_use_horovod(use_horovod):
-        if not _HVD:
-            raise ValueError("use_horovod parameter specified, "
-                             "but cannot import horovod.tensorflow. "
-                             "Install horovod following the instructions at: "
-                             " https://github.com/horovod/horovod")
-        _HVD.init()
-        ON_MASTER = _HVD.rank() == 0
-    else:
-        ON_MASTER = True
-
-
-def is_on_master():
-    return ON_MASTER
+    def wrapped(*args, **kwargs):
+        res = fn(*args, **kwargs)
+        return res if _HVD.rank() == 0 else None
+    return wrapped

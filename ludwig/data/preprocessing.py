@@ -26,7 +26,8 @@ from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
-from ludwig.data.dataset import Dataset
+from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
@@ -51,8 +52,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      replace_file_extension, split_dataset_ttv)
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
-                                   default_random_seed)
-from ludwig.utils.horovod_utils import is_on_master
+                                   default_random_seed, merge_with_defaults)
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      hash_dict, get_proc_features_from_lists)
@@ -1095,7 +1095,8 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters,
             fill_value = precompute_fill_value(
                 dataset_df,
                 feature,
-                preprocessing_parameters
+                preprocessing_parameters,
+                backend
             )
             if fill_value is not None:
                 preprocessing_parameters = {
@@ -1161,7 +1162,7 @@ def build_data(input_df, features, training_set_metadata, backend):
     return proc_df
 
 
-def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
+def precompute_fill_value(dataset_df, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
@@ -1173,8 +1174,7 @@ def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
-        return dataset_df[feature[COLUMN]].mean()
-
+        return backend.df_engine.compute(dataset_df[feature[COLUMN]].mean())
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
 
@@ -1241,6 +1241,7 @@ def load_hdf5(
         split_data=True,
         shuffle_training=False
 ):
+    # TODO dask: this needs to work with DataFrames
     logger.info('Loading data from: {0}'.format(hdf5_file_path))
 
     def shuffle(df):
@@ -1493,7 +1494,7 @@ def _preprocess_file_for_training(
                 DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         # TODO dask: consolidate hdf5 cache with backend cache
-        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
+        if backend.is_coordinator() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
@@ -1556,7 +1557,7 @@ def _preprocess_file_for_training(
             SPLIT
         )
 
-        if is_on_master() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
+        if backend.is_coordinator() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
             logger.info('Writing preprocessed training set cache')
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(
@@ -1677,6 +1678,10 @@ def preprocess_for_prediction(
         :param split: the split of dataset to return
         :returns: Dataset, Train set metadata
         """
+    # TODO dask: support distributed backend for prediction
+    if backend.df_engine != LOCAL_BACKEND.df_engine:
+        backend = LOCAL_BACKEND
+
     # Sanity Check to make sure some data source is provided
     if dataset is None:
         raise ValueError('No training data is provided!')
@@ -1767,7 +1772,7 @@ def preprocess_for_prediction(
     )
 
     # TODO dask: support postprocessing using Backend
-    dataset = Dataset(
+    dataset = PandasDataset(
         dataset,
         features,
         hdf5_fp

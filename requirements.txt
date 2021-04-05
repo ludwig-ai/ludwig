@@ -1,5 +1,5 @@
 Cython>=0.25
-h5py>=2.6,<2.11.0
+h5py>=2.6,!=3.0.0
 numpy>=1.15
 pandas>=0.19,<1.1.5
 scipy>=0.18
@@ -12,6 +12,7 @@ PyYAML>=3.12
 absl-py
 kaggle
 requests
+tables
 
 # new data format support
 xlwt            # excel
