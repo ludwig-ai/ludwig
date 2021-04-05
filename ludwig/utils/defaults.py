@@ -173,7 +173,7 @@ def _perform_sanity_checks(config):
             'as a dictionary. Please check your config format.'
         )
 
-    if 'column_major' in config.get('preprocessing', {}):
+    if config.get('preprocessing', {}).get('column_major', False):
         assert all(feature[TYPE] == 'timeseries' for feature in config['input_features']), (
             'Only time series features can currently be handled for column-major datasets.'
         )
