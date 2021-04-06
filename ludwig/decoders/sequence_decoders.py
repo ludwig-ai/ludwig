@@ -318,12 +318,12 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         list0 = []  # for all cell types rnn, gru, lstm
         for x in rnn_last_hidden:
             if isinstance(x, list):
-                # lstm cell: we only keep the output state for lstm
+                # lstm cell: keep the output state, discard intermal/memory cell
                 if len(x[0].shape) == 2:
                     # no beam search
                     list0.append(x[0])
                 else:
-                    # beam search
+                    # beam search - pick from best position
                     list0.append(x[0][:, 0, :])
             else:
                 # gru/rnn cell type
@@ -331,7 +331,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
                     # no beam search
                     list0.append(x)
                 else:
-                    # beam search
+                    # beam search - pick from best position
                     list0.append(x[:, 0, :])
 
         # helper functions to create final form of rnn_last hidden
