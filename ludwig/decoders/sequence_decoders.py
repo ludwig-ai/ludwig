@@ -315,19 +315,16 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             rnn_last_hidden = decoder_end_state
 
         # accumulate tensors in preparation for creating required data structure
-        list0 = []  # for all cell types
-        list1 = []  # only for lstm cell types
+        list0 = []  # for all cell types rnn, gru, lstm
         for x in rnn_last_hidden:
             if isinstance(x, list):
-                # lstm cell type
+                # lstm cell: we only keep the output state for lstm
                 if len(x[0].shape) == 2:
                     # no beam search
                     list0.append(x[0])
-                    list1.append(x[1])
                 else:
                     # beam search
                     list0.append(x[0][:, 0, :])
-                    list1.append(x[1][:, 0, :])
             else:
                 # gru/rnn cell type
                 if len(x.shape) == 2:
@@ -340,27 +337,11 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # helper functions to create final form of rnn_last hidden
         def concatenate_tensors():
             # concatenate tensors to match decoder weights size
-            t0 = tf.concat(list0, axis=-1)
-            if len(list1) > 0:
-                # need to concatenate tensors for lstm
-                t1 = tf.concat(list1, axis=-1)
-                result_tensor = tf.add(t0, t1)
-            else:
-                # gru/rnn cell type
-                result_tensor = t0
-            return result_tensor
+            return tf.concat(list0, axis=-1)
 
         def pick_last_tensor():
             # else just get final state
-            if len(list1) > 0:
-                # lstm cell type
-                t0 = list0[-1]
-                t1 = list1[-1]
-                result_tensor = tf.add(t0, t1)
-            else:
-                # gru/rnn cell type
-                result_tensor = list0[-1]
-            return result_tensor
+            return list0[-1]
 
         # if self.dense_layer.weights[0] > self.state_size, then need to
         # concatenate to create data structure for sampled_softmax
