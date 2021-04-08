@@ -22,7 +22,7 @@ from tensorflow.keras.layers import Dense
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register, register_default
-from ludwig.modules.attention_modules import TrasformerStack
+from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D
 from ludwig.modules.embedding_modules import EmbedSequence, \
@@ -2042,7 +2042,7 @@ class StackedTransformer(SequenceEncoder):
             self.should_project = True
 
         logger.debug('  TransformerStack')
-        self.transformer_stack = TrasformerStack(
+        self.transformer_stack = TransformerStack(
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,

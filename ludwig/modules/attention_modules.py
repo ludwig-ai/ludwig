@@ -118,7 +118,7 @@ class TransformerBlock(Layer):
         return self.layernorm2(ln1_output + fc_output)
 
 
-class TrasformerStack(Layer):
+class TransformerStack(Layer):
     def __init__(
             self,
             hidden_size=256,
@@ -128,7 +128,7 @@ class TrasformerStack(Layer):
             dropout=0.1,
             **kwargs
     ):
-        super(TrasformerStack, self).__init__()
+        super(TransformerStack, self).__init__()
         self.supports_masking = True
 
         self.layers = []
