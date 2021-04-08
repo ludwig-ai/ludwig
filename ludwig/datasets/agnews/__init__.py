@@ -29,7 +29,7 @@ class AGNews(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="agnews", cache_dir=cache_dir)
 
-    def read_file(self, filetype, filename):
+    def read_file(self, filetype, filename, header=0):
         file_df = pd.read_csv(
                 os.path.join(self.raw_dataset_path, filename))
         # class_index : number between 1-4 where 

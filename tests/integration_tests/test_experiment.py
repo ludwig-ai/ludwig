@@ -23,7 +23,7 @@ import pytest
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.backend import LOCAL_BACKEND, LocalBackend
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
@@ -53,16 +53,12 @@ from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
+from tests.integration_tests.utils import LocalTestBackend
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
-
-
-class LocalTestBackend(LocalBackend):
-    @property
-    def supports_multiprocessing(self):
-        return False
 
 
 @pytest.mark.parametrize('encoder', ENCODERS)

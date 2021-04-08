@@ -35,8 +35,14 @@ class EthosBinary(UncompressedFileDownloadMixin, IdentityProcessMixin,
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="ethos_binary", cache_dir=cache_dir)
 
-    def load_processed_dataset(self, split):
-        dataset_csv = os.path.join(self.processed_dataset_path,
-                                   self.csv_filename)
-        data_df = pd.read_csv(dataset_csv, sep=';')
-        return data_df
+    def process_downloaded_dataset(self):
+        super(EthosBinary, self).process_downloaded_dataset()
+        # replace ; sperator to ,
+        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
+                                                self.csv_filename), sep=";")
+        # convert float labels (0.0, 1.0) to binary labels
+        processed_df['isHate'] = processed_df['isHate'].astype(int) 
+        processed_df.to_csv(
+            os.path.join(self.processed_dataset_path, self.csv_filename),
+            index=False, sep=","
+        )

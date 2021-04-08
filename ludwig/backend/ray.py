@@ -31,7 +31,7 @@ from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.misc_utils import sum_dicts
-from ludwig.utils.tf_utils import initialize_tensorflow
+from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 
 logger = logging.getLogger(__name__)
@@ -76,12 +76,14 @@ def get_horovod_kwargs():
 
 class RayRemoteModel:
     def __init__(self, model):
+        buf = save_weights_to_buffer(model)
         self.cls, self.args, state = list(model.__reduce__())
-        self.state = ray.put(state)
+        self.state = ray.put(buf)
 
     def load(self):
         obj = self.cls(*self.args)
-        obj.__setstate__(ray.get(self.state))
+        buf = ray.get(self.state)
+        load_weights_from_buffer(obj, buf)
         return obj
 
 
@@ -93,13 +95,13 @@ class RayRemoteTrainer(RemoteTrainer):
         results = super().train(*args, **kwargs)
         if results is not None:
             model, *stats = results
-            results = (model.get_weights(), *stats)
+            results = (save_weights_to_buffer(model), *stats)
         return results
 
     def train_online(self, *args, **kwargs):
         results = super().train_online(*args, **kwargs)
         if results is not None:
-            results = results.get_weights()
+            results = save_weights_to_buffer(results)
         return results
 
 
@@ -117,7 +119,7 @@ class RayTrainer(BaseTrainer):
         )
 
         weights, *stats = results[0]
-        model.set_weights(weights)
+        load_weights_from_buffer(model, weights)
         return (model, *stats)
 
     def train_online(self, model, *args, **kwargs):
@@ -127,7 +129,7 @@ class RayTrainer(BaseTrainer):
         )
 
         weights = results[0]
-        model.set_weights(weights)
+        load_weights_from_buffer(model, weights)
         return model
 
     @property

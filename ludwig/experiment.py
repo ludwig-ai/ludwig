@@ -24,7 +24,7 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel, kfold_cross_validate
-from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
+from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
@@ -198,7 +198,14 @@ def experiment_cli(
                                 config_file)
 
     if model_load_path:
-        model = LudwigModel.load(model_load_path)
+        model = LudwigModel.load(
+            model_load_path,
+            logging_level=logging_level,
+            backend=backend,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+        )
     else:
         model = LudwigModel(
             config=config,

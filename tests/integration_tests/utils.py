@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
+from ludwig.backend import LocalBackend
 from ludwig.constants import VECTOR, COLUMN, NAME, PROC_COLUMN
 from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
@@ -61,6 +62,12 @@ HF_ENCODERS = [
     'electra',
     'mt5'
 ]
+
+
+class LocalTestBackend(LocalBackend):
+    @property
+    def supports_multiprocessing(self):
+        return False
 
 
 def parse_flag_from_env(key, default=False):
