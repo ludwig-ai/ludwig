@@ -333,7 +333,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             prob_col = f'{self.feature_name}_{PROBABILITY}'
             result[prob_col] = result[[false_col, true_col]].max(axis=1)
 
-            del result[probabilities_col]
+            result[probabilities_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                lambda prob: [1 - prob, prob]
+            )
 
         return result
 
