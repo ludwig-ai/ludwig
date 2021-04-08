@@ -103,8 +103,6 @@ def convert_to_dict(
 
             feature_dict[subgroup] = values
         output[of_name] = feature_dict
-    for k in output.keys():
-        print(f'OUTPUT {k} {output[k].keys()}')
     return output
 
 

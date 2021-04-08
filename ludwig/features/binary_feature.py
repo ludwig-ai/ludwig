@@ -305,11 +305,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             output_directory,
             backend,
     ):
-        name = self.feature_name
-
         class_names = ['False', 'True']
-        if name in metadata and 'bool2str' in metadata[name]:
-            class_names = metadata[name]['bool2str']
+        if 'bool2str' in metadata:
+            class_names = metadata['bool2str']
 
         predictions_col = f'{self.feature_name}_{PREDICTIONS}'
         if predictions_col in result:

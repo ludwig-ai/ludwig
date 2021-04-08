@@ -407,6 +407,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         if probabilities_col in predictions:
             prob_col = f'{self.feature_name}_{PROBABILITY}'
             predictions[prob_col] = predictions[probabilities_col].map(max)
+            predictions[probabilities_col] = backend.df_engine.map_objects(
+                predictions[probabilities_col],
+                lambda pred: pred.tolist()
+            )
             if 'idx2str' in metadata:
                 for i, label in enumerate(metadata['idx2str']):
                     key = f'{probabilities_col}_{label}'
