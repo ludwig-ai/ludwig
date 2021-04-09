@@ -29,6 +29,9 @@ class DaskRemoteModel:
 
     def load(self):
         obj = self.cls(*self.args)
+        # TODO(travis): get_connected_model is needed here because TF will not init
+        #  all weights until the graph has been traversed
+        obj.get_connected_model()
         obj.__setstate__(self.state)
         return obj
 
