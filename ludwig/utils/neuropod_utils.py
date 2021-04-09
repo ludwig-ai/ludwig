@@ -6,6 +6,7 @@ import numpy as np
 
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
+from ludwig.backend import LOCAL_BACKEND, LocalBackend
 from ludwig.constants import (BINARY, CATEGORY, NUMERICAL, PREDICTIONS,
                               PROBABILITIES, PROBABILITY, SEQUENCE, SET, TEXT,
                               TYPE, VECTOR, NAME)
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class LudwigNeuropodModelWrapper:
-    def __init__(self, data_root):
-        self.ludwig_model = LudwigModel.load(data_root)
+    def __init__(self, data_root, backend):
+        self.ludwig_model = LudwigModel.load(data_root, backend=backend)
 
     def __call__(self, **kwargs):
         data_dict = kwargs
@@ -36,7 +37,15 @@ class LudwigNeuropodModelWrapper:
 
 
 def get_model(data_root):
-    return LudwigNeuropodModelWrapper(data_root)
+    return LudwigNeuropodModelWrapper(data_root, backend=LOCAL_BACKEND)
+
+
+def get_test_model(data_root):
+    class LocalTestBackend(LocalBackend):
+        @property
+        def supports_multiprocessing(self):
+            return False
+    return LudwigNeuropodModelWrapper(data_root, backend=LocalTestBackend())
 
 
 def postprocess_for_neuropod(predicted, config):
@@ -108,6 +117,7 @@ def export_neuropod(
         ludwig_model_path,
         neuropod_path,
         neuropod_model_name="ludwig_model",
+        entrypoint='get_model',
 ):
     try:
         from neuropod.backends.python.packager import create_python_neuropod
@@ -281,7 +291,7 @@ def export_neuropod(
             ],
         }],
         entrypoint_package="ludwig.utils.neuropod_utils",
-        entrypoint="get_model",
+        entrypoint=entrypoint,
         skip_virtualenv=True,
         input_spec=input_spec,
         output_spec=output_spec
