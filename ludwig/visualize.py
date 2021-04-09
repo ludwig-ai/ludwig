@@ -596,6 +596,7 @@ def compare_classifiers_predictions_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -651,6 +652,7 @@ def compare_classifiers_predictions_distribution_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -706,6 +708,7 @@ def confidence_thresholding_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -762,6 +765,7 @@ def confidence_thresholding_data_vs_acc_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -818,6 +822,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -872,6 +877,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -937,6 +943,7 @@ def confidence_thresholding_2thresholds_2d_cli(
         [ground_truth0, ground_truth1],
         metadata,
         threshold_output_feature_names,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -1001,6 +1008,7 @@ def confidence_thresholding_2thresholds_3d_cli(
         [ground_truth0, ground_truth1],
         metadata,
         threshold_output_feature_names,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -1057,6 +1065,7 @@ def binary_threshold_vs_metric_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
