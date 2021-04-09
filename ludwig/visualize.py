@@ -530,6 +530,7 @@ def compare_classifiers_performance_changing_k_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
