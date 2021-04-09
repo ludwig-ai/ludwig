@@ -423,8 +423,7 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    prediction = os.path.join(exp_dir_name, '{}_predictions.npy').format(
-        output_feature_name)
+    prediction = f'{output_feature_name}_predictions'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -561,8 +560,7 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -628,8 +626,7 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -760,8 +757,7 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    prediction = os.path.join(exp_dir_name, '{}_predictions.npy').format(
-        output_feature_name)
+    prediction = f'{output_feature_name}_predictions'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -898,8 +894,7 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    prediction = os.path.join(exp_dir_name, '{}_predictions.npy').format(
-        output_feature_name)
+    prediction = f'{output_feature_name}_predictions'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -965,8 +960,7 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1034,8 +1028,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1103,8 +1096,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1174,8 +1166,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1256,12 +1247,8 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
     treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name,
                                                              output_feature=1)
-    probability1 = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        treshhold_output_feature_name1
-    )
-    probability2 = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        treshhold_output_feature_name2
-    )
+    probability1 = f'{treshhold_output_feature_name1}_probabilities'
+    probability2 = f'{treshhold_output_feature_name2}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1338,12 +1325,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
     treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name,
                                                              output_feature=1)
-    probability1 = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        treshhold_output_feature_name1
-    )
-    probability2 = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        treshhold_output_feature_name2
-    )
+    probability1 = f'{treshhold_output_feature_name1}_probabilities'
+    probability2 = f'{treshhold_output_feature_name2}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1416,8 +1399,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1487,8 +1469,7 @@ def test_visualization_roc_curves_output_saved(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1614,8 +1595,7 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1685,8 +1665,7 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
