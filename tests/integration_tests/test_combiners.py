@@ -219,6 +219,7 @@ def test_sequence_combiner(
         combiner_shape[-1] == default_fc_size
 
 
+@pytest.mark.skip('https://github.com/ludwig-ai/ludwig/issues/1147')
 def test_tabnet_combiner(encoder_outputs):
     # clean out unneeded encoder outputs
     encoder_outputs = {}
