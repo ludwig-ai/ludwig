@@ -301,7 +301,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             decoder_end_state
     ):
         # support for sampled_softmax_cross_entropy loss calculation
-        # make visible last hidden tensor
+        # make visible last  hidden tensor
         if isinstance(decoder_end_state, BeamSearchDecoderState):
             if isinstance(decoder_end_state.cell_state, AttentionWrapperState):
                 rnn_last_hidden = decoder_end_state.cell_state.cell_state
