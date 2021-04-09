@@ -16,23 +16,37 @@
 # ==============================================================================
 import functools
 import logging
+import os
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.metrics import \
+    MeanAbsoluteError as MeanAbsoluteErrorMetric
+from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
+from tensorflow.keras.metrics import \
+    RootMeanSquaredError as RootMeanSquaredErrorMetric
 
 from ludwig.constants import *
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, StackedCNNRNN, SequencePassthroughEncoder, \
     StackedTransformer
+from ludwig.decoders.generic_decoders import Projector
+from ludwig.features.base_feature import OutputFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.feature_transform_utils import numeric_transformation_registry
-from ludwig.utils.misc_utils import get_from_registry, set_default_values
+from ludwig.modules.loss_modules import MSELoss, MAELoss
+from ludwig.modules.metric_modules import ErrorScore, MAEMetric, MSEMetric
+from ludwig.modules.metric_modules import R2Score, \
+    MeanAbsolutePercentageErrorMetric, \
+    WeightedMeanAbsolutePercentageErrorMetric
+from ludwig.utils.misc_utils import get_from_registry, set_default_value, \
+    set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
 
 logger = logging.getLogger(__name__)
 
 
-class TimeseriesFeatureMixin(object):
+class TimeseriesFeatureMixin:
     type = TIMESERIES
 
     preprocessing_defaults = {
@@ -63,16 +77,27 @@ class TimeseriesFeatureMixin(object):
                 numeric_transformer.fit_transform_params(column, backend)
 
             if preprocessing_parameters['padding_value_strategy'] == FILL_WITH_MODE:
-                return_dict['computed_padding_value'] = column.value_counts().index[0]
-            elif preprocessing_parameters['padding_value_strategy'] == FILL_WITH_MEAN:
+                return_dict['computed_padding_value'] = \
+                    column.value_counts().index[0]
+            elif preprocessing_parameters['padding_value_strategy'] == \
+                    FILL_WITH_MEAN:
                 return_dict['computed_padding_value'] = column.mean()
-            elif preprocessing_parameters['padding_value_strategy'] == FILL_WITH_CONST:
-                return_dict['computed_padding_value'] = preprocessing_parameters['padding_value']
+            elif preprocessing_parameters['padding_value_strategy'] == \
+                    FILL_WITH_CONST:
+                return_dict['computed_padding_value'] = \
+                    preprocessing_parameters['padding_value']
+            return_dict['max_timeseries_length'] = \
+                    preprocessing_parameters['timeseries_length_limit']
 
         else:
             if preprocessing_parameters['padding_value_strategy'] != FILL_WITH_CONST:
                 raise ValueError('Only constant padding supported for '
                                  'tabular timeseries')
+
+            if preprocessing_parameters.get('normalization'):
+                raise ValueError(
+                    'Normalization is currently unsupported for '
+                    'non-column-major time series')
 
             column = column.astype(str)
             tokenizer = get_from_registry(
@@ -144,7 +169,7 @@ class TimeseriesFeatureMixin(object):
     @staticmethod
     def _build_matrix_from_column(
             timeseries,
-            tokenizer_name,
+            is_input,
             length_limit,
             padding_value,
             padding,
@@ -155,24 +180,38 @@ class TimeseriesFeatureMixin(object):
         max_length = len(timeseries)
         if max_length < length_limit:
             logger.debug(
-                'max length of {0}: {1} < limit: {2}'.format(
-                    tokenizer_name,
+                'max length: {1} < limit: {2}'.format(
                     max_length,
                     length_limit
                 )
             )
         max_length = length_limit
-        # For the history, we want the most recent point to be n_steps_ahead
-        # back, and then take every undersample_ratio points until reaching
-        # the max length
-        last_index = lambda i: max(0, i - n_steps_ahead)
+
         ts_vals = timeseries.values.astype(np.float32)
-        # Iff zeros are appended on the right, put most recent values first
-        rev = 1 if padding == 'right' else -1
-        history = [np.zeros(0, dtype=np.float32) if i < n_steps_ahead else \
-            ts_vals[last_index(i)::-undersample_ratio][:length_limit][::rev] \
-            for i in range(len(timeseries))]
-        ts_vectors = backend.df_engine.df_lib.Series(history)
+        if is_input:
+            # For the history, we want the most recent point to be n_steps_ahead
+            # back, and then take every undersample_ratio points until reaching
+            # the max length.
+            last_index = lambda i: max(0, i - n_steps_ahead)
+            # Iff zeros are appended on the right, put most recent values first.
+            rev = 1 if padding == 'right' else -1
+            history = [np.zeros(0, dtype=np.float32) if i < n_steps_ahead else \
+                ts_vals[last_index(i)::-undersample_ratio][:length_limit][::rev] \
+                for i in range(len(timeseries))]
+            ts_vectors = backend.df_engine.df_lib.Series(history)
+        else:
+            if padding != 'right':
+                # For the output timeseries "label", time is assumed to
+                # increase from left to right, so padded values should be
+                # on the right.
+                raise ValueError(
+                    'Padding should be "right" for output timeseries'
+                )
+            # If we are predicting multiple steps from an output timeseries,
+            # we append the appropriate future datapoints to the current one.
+            future = [ts_vals[i::undersample_ratio][:length_limit] \
+                      for i in range(len(timeseries))]
+            ts_vectors = backend.df_engine.df_lib.Series(future)
 
         def pad(vector):
             padded = np.full(
@@ -184,21 +223,22 @@ class TimeseriesFeatureMixin(object):
             if padding == 'right':
                 padded[:limit] = vector[:limit]
             else:  # if padding == 'left'
-                padded[max_length - limit:] = vector[:limit]
+                padded[(max_length - limit):] = vector[:limit]
             return padded
 
         return backend.df_engine.map_objects(ts_vectors, pad)
 
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters, backend):
+    def feature_data(column, metadata, preprocessing_parameters, is_input,
+                     backend):
         p = preprocessing_parameters
         if p['n_steps_ahead'] > p['timeseries_length_limit']:
             raise ValueError('History window limit is less than time delay')
         if preprocessing_parameters['column_major']:
             timeseries_data = (TimeseriesFeatureMixin._build_matrix_from_column(
                 column,
-                preprocessing_parameters['tokenizer'],
+                is_input,
                 preprocessing_parameters['timeseries_length_limit'],
                 metadata['computed_padding_value'],
                 preprocessing_parameters['padding'],
@@ -231,12 +271,16 @@ class TimeseriesFeatureMixin(object):
             input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
             preprocessing_parameters,
+            feature['is_input'],
             backend
         )
 
+        normalization_type = \
+            preprocessing_parameters.get('normalization', None)
+
         # normalize data as required
         numeric_transformer = get_from_registry(
-            preprocessing_parameters.get('normalization', None),
+            normalization_type,
             numeric_transformation_registry
         )(**metadata[feature[NAME]])
 
@@ -307,8 +351,169 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         'cnnrnn': StackedCNNRNN,
         'transformer': StackedTransformer,
         'passthrough': TimeseriesPassthroughEncoder,
+        'ar': TimeseriesPassthroughEncoder,
         'null': TimeseriesPassthroughEncoder,
         'none': TimeseriesPassthroughEncoder,
         'None': TimeseriesPassthroughEncoder,
         None: TimeseriesPassthroughEncoder
+    }
+
+
+class TimeseriesOutputFeature(TimeseriesFeatureMixin, OutputFeature):
+    decoder = 'projector'
+    loss = {TYPE: MEAN_SQUARED_ERROR}
+    metric_functions = {LOSS: None, MEAN_SQUARED_ERROR: None,
+                        MEAN_ABSOLUTE_ERROR: None, R2: None,
+                        ROOT_MEAN_SQUARED_ERROR: None}
+    default_validation_metric = MEAN_SQUARED_ERROR
+
+    def __init__(self, feature):
+        super().__init__(feature)
+        self.overwrite_defaults(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
+        self._setup_loss()
+        self._setup_metrics()
+
+    def logits(
+            self,
+            inputs,  # hidden
+            **kwargs
+    ):
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
+
+    def predictions(
+            self,
+            inputs,  # logits
+            **kwargs
+    ):
+        logits = inputs[LOGITS]
+        predictions = logits
+
+        return {PREDICTIONS: predictions, LOGITS: logits}
+
+    def _setup_loss(self):
+        if self.loss[TYPE] == 'mean_squared_error':
+            self.train_loss_function = MSELoss()
+            self.eval_loss_function = MSEMetric(name='eval_loss')
+        elif self.loss[TYPE] == 'mean_absolute_error':
+            self.train_loss_function = MAELoss()
+            self.eval_loss_function = MAEMetric(name='eval_loss')
+        else:
+            raise ValueError(
+                'Unsupported loss type {}'.format(self.loss[TYPE])
+            )
+
+    def _setup_metrics(self):
+        self.metric_functions = {}
+        self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[ERROR] = ErrorScore(name='metric_error')
+        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
+            name='metric_mse'
+        )
+        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = \
+            RootMeanSquaredErrorMetric(name='metric_rmse')
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
+            name='metric_mae'
+        )
+        self.metric_functions[R2] = R2Score(name='metric_r2')
+        # TODO: The below metrics appear skewed when the data is already
+        # pre-normalized. Also, we may want options to only use a subset
+        # of metrics.
+        # self.metric_functions[MEAN_ABSOLUTE_PERCENTAGE_ERROR] = \
+        #     MeanAbsolutePercentageErrorMetric(name='metric_mape')
+        # self.metric_functions[WEIGHTED_MEAN_ABSOLUTE_PERCENTAGE_ERROR] = \
+        #     WeightedMeanAbsolutePercentageErrorMetric(name='metric_wmape')
+
+    @classmethod
+    def get_output_dtype(cls):
+        return tf.float32
+
+    def get_output_shape(self):
+        return self.vector_size
+
+    @staticmethod
+    def update_config_with_metadata(
+            output_feature,
+            feature_metadata,
+            *args,
+            **kwargs
+    ):
+        output_feature['vector_size'] = feature_metadata['max_timeseries_length']
+
+    @staticmethod
+    def calculate_overall_stats(
+            predictions,
+            targets,
+            metadata
+    ):
+        # no overall stats, just return empty dictionary
+        return {}
+
+    def postprocess_predictions(
+            self,
+            predictions,
+            metadata,
+            output_directory,
+            skip_save_unprocessed_output=False
+    ):
+        postprocessed = {}
+        name = self.feature_name
+
+        npy_filename = os.path.join(output_directory, '{}_{}.npy')
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            # as needed convert predictions make to original value space
+            numeric_transformer = get_from_registry(
+                metadata['preprocessing'].get('normalization', None),
+                numeric_transformation_registry
+            )(**metadata)
+            postprocessed[PREDICTIONS] = \
+                numeric_transformer.inverse_transform(
+                    predictions[PREDICTIONS].numpy()
+                )
+
+            if not skip_save_unprocessed_output:
+                np.save(
+                    npy_filename.format(name, PREDICTIONS),
+                    predictions[PREDICTIONS]
+                )
+            del predictions[PREDICTIONS]
+
+        if PROBABILITIES in predictions and len(
+                predictions[PROBABILITIES]) > 0:
+            postprocessed[PROBABILITIES] = predictions[PROBABILITIES].numpy()
+            if not skip_save_unprocessed_output:
+                np.save(
+                    npy_filename.format(name, PROBABILITIES),
+                    predictions[PROBABILITIES]
+                )
+            del predictions[PROBABILITIES]
+
+        return postprocessed
+
+    @staticmethod
+    def populate_defaults(output_feature):
+        set_default_value(
+            output_feature,
+            LOSS,
+            {TYPE: 'mean_squared_error', 'weight': 1}
+        )
+        set_default_value(output_feature[LOSS], TYPE, 'mean_squared_error')
+        set_default_value(output_feature[LOSS], 'weight', 1)
+
+        set_default_values(
+            output_feature,
+            {
+                'dependencies': [],
+                'reduce_input': SUM,
+                'reduce_dependencies': SUM
+            }
+        )
+
+    decoder_registry = {
+        'projector': Projector,
+        'null': Projector,
+        'none': Projector,
+        'None': Projector,
+        None: Projector
     }

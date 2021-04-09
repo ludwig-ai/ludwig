@@ -443,6 +443,18 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     return array
 
 
+def add_io_flags(config):
+    """
+    For each feature in the config dict, add whether it is an input or
+    output feature in its subdictionary.
+    :param config: configuration dict
+    """
+    for feature in config['input_features']:
+        feature['is_input'] = True
+    for feature in config['output_features']:
+        feature['is_input'] = False
+
+
 def replace_file_extension(file_path, extension):
     """
     Return a file path for a file with same name but different format.

@@ -76,7 +76,7 @@ class R2Score(tf.keras.metrics.Metric):
         self.sum_y_hat.assign_add(tf.reduce_sum(y_hat))
         self.sum_y_hat_squared.assign_add(tf.reduce_sum(y_hat ** 2))
         self.sum_y_y_hat.assign_add(tf.reduce_sum(y * y_hat))
-        self.N.assign_add(y.shape[0])
+        self.N.assign_add(tf.reshape(y, [-1]).shape[0])
 
     def result(self):
         y_bar = self.sum_y / self.N
@@ -103,7 +103,7 @@ class ErrorScore(tf.keras.metrics.Metric):
         y = tf.cast(y, tf.float32)
         y_hat = tf.cast(y_hat, tf.float32)
         self.sum_error.assign_add(tf.reduce_sum(y - y_hat))
-        self.N.assign_add(y.shape[0])
+        self.N.assign_add(tf.reshape(y, [-1]).shape[0])
 
     def result(self):
         return self.sum_error / self.N
@@ -394,7 +394,7 @@ class MeanAbsolutePercentageErrorMetric(tf.keras.metrics.Metric):
         abs_errs = tf.abs(y - y_hat)
         denominators = tf.abs(y) + self.eps
         self.sum_pct_error.assign_add(100 * tf.reduce_sum(abs_errs / denominators))
-        self.N.assign_add(y.shape[0])
+        self.N.assign_add(tf.reshape(y, [-1]).shape[0])
 
     def result(self):
         return self.sum_pct_error / self.N

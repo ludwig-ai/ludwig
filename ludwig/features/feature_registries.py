@@ -33,7 +33,7 @@ from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, \
 from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, \
     TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, \
-    TimeseriesInputFeature
+    TimeseriesInputFeature, TimeseriesOutputFeature
 from ludwig.features.vector_feature import VectorFeatureMixin, \
     VectorInputFeature, VectorOutputFeature
 from ludwig.utils.misc_utils import get_from_registry
@@ -75,6 +75,7 @@ output_type_registry = {
     SEQUENCE: SequenceOutputFeature,
     SET: SetOutputFeature,
     TEXT: TextOutputFeature,
+    TIMESERIES: TimeseriesOutputFeature,
     VECTOR: VectorOutputFeature
 }
 

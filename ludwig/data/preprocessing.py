@@ -44,7 +44,8 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      JSONL_FORMATS, ORC_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
                                      SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
-                                     TSV_FORMATS, figure_data_format,
+                                     TSV_FORMATS, add_io_flags,
+                                     figure_data_format,
                                      file_exists_with_diff_extension,
                                      override_in_memory_flag, read_csv,
                                      read_excel, read_feather, read_fwf,
@@ -1314,6 +1315,7 @@ def preprocess_for_training(
         training_set_metadata = load_metadata(training_set_metadata)
 
     # setup
+    add_io_flags(config)
     features = (config['input_features'] +
                 config['output_features'])
 
@@ -1733,6 +1735,7 @@ def preprocess_for_prediction(
     hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP, None)
 
     # setup
+    add_io_flags(config)
     output_features = []
     if include_outputs:
         output_features += config['output_features']
