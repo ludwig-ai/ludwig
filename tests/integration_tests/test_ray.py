@@ -39,7 +39,7 @@ from tests.integration_tests.utils import vector_feature
 
 @pytest.fixture
 def ray_start_2_cpus():
-    res = ray.init(num_cpus=2)
+    res = ray.init(num_cpus=2, include_dashboard=False)
     try:
         yield res
     finally:
