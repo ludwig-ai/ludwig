@@ -28,7 +28,7 @@ from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, set_feature, vector_feature, \
     image_feature, \
-    audio_feature, timeseries_feature, date_feature, h3_feature, bag_feature
+    audio_feature, timeseries_feature, date_feature, h3_feature, bag_feature, LocalTestBackend
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -81,7 +81,7 @@ def test_neuropod(csv_filename):
             'output_features': output_features,
             'training': {'epochs': 2}
         }
-        ludwig_model = LudwigModel(config)
+        ludwig_model = LudwigModel(config, backend=LocalTestBackend())
         ludwig_model.train(
             dataset=data_csv_path,
             skip_save_training_description=True,
@@ -107,7 +107,9 @@ def test_neuropod(csv_filename):
         ################
         neuropod_path = os.path.join(dir_path, 'neuropod')
         shutil.rmtree(neuropod_path, ignore_errors=True)
-        export_neuropod(ludwigmodel_path, neuropod_path=neuropod_path)
+        export_neuropod(
+            ludwigmodel_path, neuropod_path=neuropod_path, entrypoint='get_test_model'
+        )
 
         ########################
         # predict using neuropod
