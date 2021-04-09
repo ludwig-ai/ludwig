@@ -354,8 +354,7 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.npy').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'

@@ -226,8 +226,9 @@ def _get_cols_from_predictions(output_directory, cols):
     column_shapes = load_json(shapes_fname)
 
     predictions_fname = os.path.join(output_directory, 'predictions.parquet')
-    pred_df = to_numpy_dataset(pd.read_parquet(predictions_fname))
+    pred_df = pd.read_parquet(predictions_fname)
     pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
+    pred_df = to_numpy_dataset(pred_df)
 
     results_per_model = [
         pred_df[c] for c in cols
