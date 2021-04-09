@@ -108,7 +108,7 @@ def test_ray_tabular(ray_start_2_cpus):
 
 
 @pytest.mark.distributed
-def test_ray_text(ray_start_4_cpus):
+def test_ray_text(ray_start_2_cpus):
     input_features = [
         text_feature(),
     ]
@@ -119,7 +119,7 @@ def test_ray_text(ray_start_4_cpus):
 
 
 @pytest.mark.distributed
-def test_ray_sequence(ray_start_4_cpus):
+def test_ray_sequence(ray_start_2_cpus):
     input_features = [
         sequence_feature(
             max_len=10,

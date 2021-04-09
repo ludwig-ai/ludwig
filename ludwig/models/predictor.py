@@ -332,8 +332,8 @@ def save_prediction_outputs(
         postprocessed_output,
         output_directory,
 ):
-    postprocessed_output.to_csv(
-        os.path.join(output_directory, 'predictions.csv')
+    postprocessed_output.to_parquet(
+        os.path.join(output_directory, 'predictions.parquet')
     )
 
 

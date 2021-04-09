@@ -31,7 +31,7 @@ from sklearn.metrics import brier_score_loss
 from ludwig.constants import *
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
-from ludwig.utils.data_utils import load_from_file, load_json, load_array
+from ludwig.utils.data_utils import load_from_file, load_json, load_array, to_numpy_dataset
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.data_utils import CACHEABLE_FORMATS, \
     figure_data_format_dataset, external_data_reader_registry
@@ -289,8 +289,8 @@ def compare_classifiers_performance_from_prob_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
+    :param probabilities: (Union[str, List[str]]) list of probability columns to visualize
+        from the prediction results
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -319,9 +319,11 @@ def compare_classifiers_performance_from_prob_cli(
         split_file=split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
-    )
+    predictions_fname = os.path.join(output_directory, 'predictions.parquet')
+    predictions = to_numpy_dataset(pd.read_parquet(predictions_fname))
+    probabilities_per_model = [
+        predictions[p] for p in probabilities
+    ]
 
     compare_classifiers_performance_from_prob(
         probabilities_per_model,

@@ -283,8 +283,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, '{}_probabilities.csv').format(
-        output_feature_name)
+    probability = f'{output_feature_name}_probabilities'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = get_split_path(csv_filename)
@@ -309,6 +308,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
                     'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+    print(test_cmd_pdf)
 
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
