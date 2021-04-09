@@ -485,8 +485,7 @@ def run_api_experiment(input_features, output_features, data_csv):
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-        predictions, _ = model.predict(dataset=data_csv)
-        print(predictions)
+        model.predict(dataset=data_csv)
 
         model_dir = os.path.join(output_dir, 'model')
         loaded_model = LudwigModel.load(model_dir)
