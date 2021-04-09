@@ -43,7 +43,7 @@ class GoEmotions(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
         return file_df
 
     def process_downloaded_dataset(self):
-        super(GoEmotions, self).process_downloaded_dataset()
+        super().process_downloaded_dataset()
         # format emotion ids to be a set of emotion ids vs. string
         processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
                                                 self.csv_filename))

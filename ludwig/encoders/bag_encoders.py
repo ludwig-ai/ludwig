@@ -62,7 +62,7 @@ class BagEmbedWeightedEncoder(BagEncoder):
             dropout=0.0,
             **kwargs
     ):
-        super(BagEmbedWeightedEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  EmbedWeighted')

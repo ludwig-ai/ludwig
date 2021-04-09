@@ -37,7 +37,7 @@ class TabNet(tf.keras.Model):
             bn_momentum (float, optional): Batch normalization, momentum. Defaults to 0.7.
             bn_virtual_divider (int, optional): Batch normalization. Full batch will be divided by this.
         """
-        super(TabNet, self).__init__()
+        super().__init__()
         self.num_features = num_features
         self.size = size
         self.output_size = output_size
@@ -148,7 +148,7 @@ class FeatureBlock(tf.keras.Model):
             shared_fc_layer: tf.keras.layers.Layer = None,
             epsilon: float = 1e-5,
     ):
-        super(FeatureBlock, self).__init__()
+        super().__init__()
         self.apply_glu = apply_glu
         self.size = size
         units = size * 2 if apply_glu else size
@@ -178,7 +178,7 @@ class AttentiveTransformer(tf.keras.Model):
             bn_momentum: float = 0.9,
             bn_virtual_divider: int = 32,
     ):
-        super(AttentiveTransformer, self).__init__()
+        super().__init__()
         self.feature_block = FeatureBlock(
             size,
             bn_momentum=bn_momentum,
@@ -203,7 +203,7 @@ class FeatureTransformer(tf.keras.Model):
             bn_momentum: float = 0.9,
             bn_virtual_divider: int = 1,
     ):
-        super(FeatureTransformer, self).__init__()
+        super().__init__()
         self.num_total_blocks = num_total_blocks
         self.num_shared_blocks = num_shared_blocks
 

@@ -7,7 +7,7 @@ class GhostBatchNormalization(tf.keras.Model):
             self, virtual_divider: int = 1, momentum: float = 0.9,
             epsilon: float = 1e-5
     ):
-        super(GhostBatchNormalization, self).__init__()
+        super().__init__()
         self.virtual_divider = virtual_divider
         self.bn = BatchNormInferenceWeighting(momentum=momentum)
 
@@ -34,7 +34,7 @@ class GhostBatchNormalization(tf.keras.Model):
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/gbn.py
 class BatchNormInferenceWeighting(tf.keras.layers.Layer):
     def __init__(self, momentum: float = 0.9, epsilon: float = None):
-        super(BatchNormInferenceWeighting, self).__init__()
+        super().__init__()
         self.momentum = momentum
         self.epsilon = tf.keras.backend.epsilon() if epsilon is None else epsilon
 
