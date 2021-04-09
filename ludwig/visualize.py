@@ -1113,6 +1113,7 @@ def roc_curves_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -1194,6 +1195,7 @@ def calibration_1_vs_all_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -1250,6 +1252,7 @@ def calibration_multiclass_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
