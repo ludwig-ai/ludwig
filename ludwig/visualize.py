@@ -28,10 +28,12 @@ from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
-from ludwig.utils.data_utils import load_from_file, load_json, load_array, to_numpy_dataset
+from ludwig.utils.data_utils import load_from_file, load_json, load_array, \
+    to_numpy_dataset, unflatten_df
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.data_utils import CACHEABLE_FORMATS, \
     figure_data_format_dataset, external_data_reader_registry
@@ -220,8 +222,13 @@ def _extract_ground_truth_values(
 
 
 def _get_cols_from_predictions(output_directory, cols):
+    shapes_fname = os.path.join(output_directory, 'predictions.shapes.json')
+    column_shapes = load_json(shapes_fname)
+
     predictions_fname = os.path.join(output_directory, 'predictions.parquet')
     pred_df = to_numpy_dataset(pd.read_parquet(predictions_fname))
+    pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
+
     results_per_model = [
         pred_df[c] for c in cols
     ]

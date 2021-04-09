@@ -339,6 +339,10 @@ def save_prediction_outputs(
     postprocessed_output.to_parquet(
         os.path.join(output_directory, 'predictions.parquet')
     )
+    save_json(
+        os.path.join(output_directory, 'predictions.shapes.json'),
+        column_shapes
+    )
 
 
 def save_evaluation_stats(test_stats, output_directory):
