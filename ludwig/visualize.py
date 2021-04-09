@@ -221,15 +221,29 @@ def _extract_ground_truth_values(
     return gt
 
 
-def _get_cols_from_predictions(output_directory, cols):
+def _get_cols_from_predictions(output_directory, cols, metadata):
     shapes_fname = os.path.join(output_directory, 'predictions.shapes.json')
     column_shapes = load_json(shapes_fname)
 
     predictions_fname = os.path.join(output_directory, 'predictions.parquet')
     pred_df = pd.read_parquet(predictions_fname)
     pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
-    pred_df = to_numpy_dataset(pred_df)
 
+    # Convert categorical features back to numerical indices
+    processed = set()
+    suffix = '_predictions'
+    for c in cols:
+        if c not in processed and c.endswith(suffix):
+            feature_name = c[:-len(suffix)]
+            feature_metadata = metadata[feature_name]
+            if 'str2idx' in feature_metadata:
+                print(pred_df[c])
+                pred_df[c] = pred_df[c].map(
+                    lambda x: feature_metadata['str2idx'][x]
+                )
+            processed.add(c)
+
+    pred_df = to_numpy_dataset(pred_df)
     results_per_model = [
         pred_df[c] for c in cols
     ]
@@ -337,7 +351,7 @@ def compare_classifiers_performance_from_prob_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
 
     compare_classifiers_performance_from_prob(
@@ -394,7 +408,7 @@ def compare_classifiers_performance_from_pred_cli(
     )
 
     predictions_per_model = _get_cols_from_predictions(
-        output_directory, predictions
+        output_directory, predictions, metadata
     )
 
     compare_classifiers_performance_from_pred(
@@ -451,7 +465,7 @@ def compare_classifiers_performance_subset_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
 
     compare_classifiers_performance_subset(
@@ -509,7 +523,7 @@ def compare_classifiers_performance_changing_k_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     compare_classifiers_performance_changing_k(
         probabilities_per_model,
@@ -588,7 +602,7 @@ def compare_classifiers_predictions_cli(
     )
 
     predictions_per_model = _get_cols_from_predictions(
-        output_directory, predictions
+        output_directory, predictions, metadata
     )
 
     compare_classifiers_predictions(
@@ -645,7 +659,7 @@ def compare_classifiers_predictions_distribution_cli(
     )
 
     predictions_per_model = _get_cols_from_predictions(
-        output_directory, predictions
+        output_directory, predictions, metadata
     )
     compare_classifiers_predictions_distribution(
         predictions_per_model,
@@ -701,7 +715,7 @@ def confidence_thresholding_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     confidence_thresholding(
         probabilities_per_model,
@@ -758,7 +772,7 @@ def confidence_thresholding_data_vs_acc_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     confidence_thresholding_data_vs_acc(
         probabilities_per_model,
@@ -815,7 +829,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     confidence_thresholding_data_vs_acc_subset(
         probabilities_per_model,
@@ -870,7 +884,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     confidence_thresholding_data_vs_acc_subset_per_class(
         probabilities_per_model,
@@ -935,7 +949,7 @@ def confidence_thresholding_2thresholds_2d_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
 
     confidence_thresholding_2thresholds_2d(
@@ -1001,7 +1015,7 @@ def confidence_thresholding_2thresholds_3d_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     confidence_thresholding_2thresholds_3d(
         probabilities_per_model,
@@ -1058,7 +1072,7 @@ def binary_threshold_vs_metric_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     binary_threshold_vs_metric(
         probabilities_per_model,
@@ -1115,7 +1129,7 @@ def roc_curves_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     roc_curves(
         probabilities_per_model,
@@ -1197,7 +1211,7 @@ def calibration_1_vs_all_cli(
     ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     calibration_1_vs_all(
         probabilities_per_model,
@@ -1254,7 +1268,7 @@ def calibration_multiclass_cli(
     )
 
     probabilities_per_model = _get_cols_from_predictions(
-        output_directory, probabilities
+        output_directory, probabilities, metadata
     )
     calibration_multiclass(
         probabilities_per_model,
