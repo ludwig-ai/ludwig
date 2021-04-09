@@ -23,7 +23,7 @@ import pytest
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.backend import LOCAL_BACKEND, LocalBackend
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
@@ -53,16 +53,12 @@ from tests.integration_tests.utils import spawn
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
+from tests.integration_tests.utils import LocalTestBackend
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
-
-
-class LocalTestBackend(LocalBackend):
-    @property
-    def supports_multiprocessing(self):
-        return False
 
 
 @pytest.mark.parametrize('encoder', ENCODERS)
@@ -430,7 +426,8 @@ def test_experiment_image_dataset(
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
             model.config,
-            dataset=test_data
+            dataset=test_data,
+            backend=backend,
         )
         test_dataset_to_use = test_set.data_hdf5_fp
     else:
@@ -572,7 +569,7 @@ def test_sequence_tagger(
         sequence_feature(
             max_len=10,
             encoder='rnn',
-            cell_type='lstm',
+            cell_type=enc_cell_type,
             reduce_output=None
         )
     ]
@@ -588,8 +585,31 @@ def test_sequence_tagger(
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # setup encoder specification
-    input_features[0]['cell_type'] = enc_cell_type
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
+def test_sequence_tagger_text(
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        text_feature(
+            max_len=10,
+            encoder='rnn',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            reduce_input=None
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
     # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path)

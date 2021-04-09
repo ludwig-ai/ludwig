@@ -47,7 +47,6 @@ default_combiner_type = 'concat'
 default_training_params = {
     'optimizer': {TYPE: 'adam'},
     'epochs': 100,
-    'regularizer': 'l2',
     'regularization_lambda': 0,
     'learning_rate': 0.001,
     'batch_size': 128,
@@ -182,10 +181,45 @@ def _set_proc_column(config: dict) -> None:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
 
+def _merge_hyperopt_with_training(config: dict) -> None:
+    if 'hyperopt' not in config or TRAINING not in config:
+        return
+
+    scheduler = config['hyperopt'].get('sampler', {}).get('scheduler')
+    if not scheduler:
+        return
+
+    # Disable early stopping when using a scheduler. We achieve this by setting the parameter
+    # to -1, which ensures the condition to apply early stopping is never met.
+    training = config[TRAINING]
+    early_stop = training.get('early_stop')
+    if early_stop is not None and early_stop != -1:
+        raise ValueError(
+            'Cannot set training parameter `early_stop` when using a hyperopt scheduler. '
+            'Unset this parameter in your config.'
+        )
+    training['early_stop'] = -1
+
+    # At most one of max_t and epochs may be specified by the user, and we set them to be equal to
+    # ensure that Ludwig does not stop training before the scheduler has finished the trial.
+    max_t = scheduler.get('max_t')
+    epochs = training.get('epochs')
+    if max_t is not None and epochs is not None and max_t != epochs:
+        raise ValueError(
+            'Cannot set training parameter `epochs` when using a hyperopt scheduler with `max_t`. '
+            'Unset one of these parameters in your config.'
+        )
+    elif max_t is not None:
+        training['epochs'] = max_t
+    elif epochs is not None:
+        scheduler['max_t'] = epochs
+
+
 def merge_with_defaults(config):
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)
+    _merge_hyperopt_with_training(config)
 
     # ===== Preprocessing =====
     config['preprocessing'] = merge_dict(

@@ -449,6 +449,7 @@ class Trainer(BaseTrainer):
                     )
                 )
 
+        tf.config.experimental_run_functions_eagerly(True)
         if self.debug and self.is_coordinator():
             # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
             debug_path = os.path.join(
@@ -460,6 +461,7 @@ class Trainer(BaseTrainer):
                 circular_buffer_size=-1,
             )
             tf.config.experimental_run_functions_eagerly(True)
+            # tf.debugging.enable_check_numerics()
 
         # ================ Resume logic ================
         if self.resume:
@@ -676,7 +678,8 @@ class Trainer(BaseTrainer):
 
             if validation_set is not None and len(validation_set) > 0:
                 for callback in self.callbacks:
-                    callback.on_validation_start(self, progress_tracker, save_path)
+                    callback.on_validation_start(self, progress_tracker,
+                                                 save_path)
 
                 # eval metrics on validation set
                 self.evaluation(
@@ -695,7 +698,8 @@ class Trainer(BaseTrainer):
                 )
 
                 for callback in self.callbacks:
-                    callback.on_validation_end(self, progress_tracker, save_path)
+                    callback.on_validation_end(self, progress_tracker,
+                                               save_path)
 
             if test_set is not None and len(test_set) > 0:
                 for callback in self.callbacks:
@@ -1274,6 +1278,26 @@ class Trainer(BaseTrainer):
         if not self.horovod:
             return True
         return self.horovod.rank() == 0
+
+
+class RemoteTrainer(Trainer):
+    def __init__(
+            self,
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            **kwargs
+    ):
+        horovod = initialize_horovod()
+        initialize_tensorflow(gpus=gpus,
+                              gpu_memory_limit=gpu_memory_limit,
+                              allow_parallel_threads=allow_parallel_threads,
+                              horovod=horovod)
+        super().__init__(horovod=horovod, **kwargs)
+
+        # Only return results from rank 0 to reduce network overhead
+        self.train = return_first(self.train)
+        self.train_online = return_first(self.train_online)
 
 
 class ProgressTracker:

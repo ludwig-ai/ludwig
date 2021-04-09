@@ -299,6 +299,26 @@ class Predictor(BasePredictor):
         return self._horovod.rank() == 0
 
 
+class RemotePredictor(Predictor):
+    def __init__(
+        self,
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        **kwargs
+    ):
+        horovod = initialize_horovod()
+        initialize_tensorflow(gpus=gpus,
+                              gpu_memory_limit=gpu_memory_limit,
+                              allow_parallel_threads=allow_parallel_threads,
+                              horovod=horovod)
+        super().__init__(horovod=horovod, **kwargs)
+
+        # Only return results from rank 0 to reduce network overhead
+        self.batch_predict = return_first(self.batch_predict)
+        self.batch_evaluation = return_first(self.batch_evaluation)
+
+
 def calculate_overall_stats(
         output_features,
         predictions,

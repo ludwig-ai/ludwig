@@ -1,4 +1,5 @@
 import os
+import uuid
 import copy
 import json
 import multiprocessing
@@ -14,13 +15,16 @@ from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
+from ludwig.utils.misc_utils import (get_available_gpu_memory, 
+                                     get_from_registry,
+                                     hash_dict)
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 try:
     import ray
     from ray import tune
     from ray.tune.utils import wait_for_gpu
+    from ray.tune import register_trainable
 except ImportError:
     ray = None
 
@@ -719,7 +723,17 @@ class RayTuneExecutor(HyperoptExecutor):
                 if trainer.is_coordinator():
                     with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
                         checkpoint_model = os.path.join(checkpoint_dir, 'model')
-                        shutil.copytree(save_path, checkpoint_model)
+                        # shutil.copytree(save_path, checkpoint_model)
+                        # Note: A previous implementation used shutil.copytree() 
+                        # however, this copying method is non atomic
+                        if not os.path.isdir(checkpoint_model):
+                            copy_id = uuid.uuid4()
+                            tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                            shutil.copytree(save_path, tmp_dst)
+                            try:
+                                os.rename(tmp_dst, checkpoint_model)
+                            except:
+                                shutil.rmtree(tmp_dst)
 
                     train_stats, eval_stats = progress_tracker.train_metrics, progress_tracker.vali_metrics
                     stats = eval_stats or train_stats
@@ -844,8 +858,13 @@ class RayTuneExecutor(HyperoptExecutor):
         def run_experiment_trial(config, checkpoint_dir=None):
             return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx)
 
+        register_trainable(
+            f"trainable_func_f{hash_dict(config)}", 
+            run_experiment_trial
+        )
+
         analysis = tune.run(
-            run_experiment_trial,
+            f"trainable_func_f{hash_dict(config)}",
             config=self.search_space,
             scheduler=self.scheduler,
             search_alg=search_alg,

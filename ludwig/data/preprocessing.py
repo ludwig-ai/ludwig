@@ -17,13 +17,11 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from copy import copy
 
 import numpy as np
 import pandas as pd
 
 import ludwig
-from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -1097,7 +1095,8 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters,
             fill_value = precompute_fill_value(
                 dataset_df,
                 feature,
-                preprocessing_parameters
+                preprocessing_parameters,
+                backend
             )
             if fill_value is not None:
                 preprocessing_parameters = {
@@ -1163,7 +1162,7 @@ def build_data(input_df, features, training_set_metadata, backend):
     return proc_df
 
 
-def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
+def precompute_fill_value(dataset_df, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
@@ -1175,8 +1174,7 @@ def precompute_fill_value(dataset_df, feature, preprocessing_parameters):
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
-        return dataset_df[feature[COLUMN]].mean()
-
+        return backend.df_engine.compute(dataset_df[feature[COLUMN]].mean())
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
 
@@ -1680,6 +1678,10 @@ def preprocess_for_prediction(
         :param split: the split of dataset to return
         :returns: Dataset, Train set metadata
         """
+    # TODO dask: support distributed backend for prediction
+    if backend.df_engine != LOCAL_BACKEND.df_engine:
+        backend = LOCAL_BACKEND
+
     # Sanity Check to make sure some data source is provided
     if dataset is None:
         raise ValueError('No training data is provided!')

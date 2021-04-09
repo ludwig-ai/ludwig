@@ -252,11 +252,12 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             inputs_mask = tf.not_equal(inputs, self.pad_idx)
         else:
             inputs_mask = None
-
+        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
 
+        encoder_output[LENGTHS] = lengths
         return encoder_output
 
     @classmethod

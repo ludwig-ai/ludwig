@@ -79,7 +79,6 @@ SAMPLERS = [
         "scheduler": {
             "type": "hb_bohb",
             "time_attr": "training_iteration",
-            "max_t": 100,
             "reduction_factor": 4,
         },
         "num_samples": 3
@@ -116,12 +115,17 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 2, "learning_rate": 0.001}
+        "training": {"epochs": 2, "learning_rate": 0.001},
+        "hyperopt": {
+            **HYPEROPT_CONFIG,
+            "executor": executor,
+            "sampler": sampler,
+        },
     }
 
     config = merge_with_defaults(config)
 
-    hyperopt_config = HYPEROPT_CONFIG.copy()
+    hyperopt_config = config["hyperopt"]
 
     if validate_output_feature:
         hyperopt_config['output_feature'] = output_features[0]['name']
@@ -149,12 +153,14 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor.execute(config, dataset=rel_path)
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
 def test_hyperopt_executor(sampler, executor, csv_filename, ray_start_4_cpus):
     run_hyperopt_executor(sampler, executor, csv_filename)
 
 
+@pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
     run_hyperopt_executor({"type": "ray", "num_samples": 2},
                           {"type": "ray"},
@@ -163,6 +169,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
                           validation_metric=ACCURACY)
 
 
+@pytest.mark.distributed
 def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
@@ -208,7 +215,11 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
 
     # add hyperopt parameter space to the config
     config['hyperopt'] = hyperopt_configs
+    run_hyperopt(config, rel_path)
 
+
+@spawn
+def run_hyperopt(config, rel_path):
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,

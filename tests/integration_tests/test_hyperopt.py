@@ -82,11 +82,16 @@ EXECUTORS = [
 ]
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
 def test_hyperopt_executor(sampler, executor, csv_filename,
                            validate_output_feature=False,
                            validation_metric=None):
+    if executor['type'] == 'fiber' and sampler['type'] == 'grid':
+        # This test is very slow and doesn't give us additional converage
+        pytest.skip('Skipping Fiber grid search')
+
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -130,6 +135,7 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
                               gpus=get_available_gpus_cuda_string())
 
 
+@pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename):
     test_hyperopt_executor({"type": "random", "num_samples": 2},
                            {"type": "serial"},
@@ -137,6 +143,8 @@ def test_hyperopt_executor_with_metric(csv_filename):
                            validate_output_feature=True,
                            validation_metric=ACCURACY)
 
+
+@pytest.mark.distributed
 @pytest.mark.parametrize('samplers', SAMPLERS)
 def test_hyperopt_run_hyperopt(csv_filename, samplers):
     input_features = [
@@ -219,6 +227,8 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
             os.path.join('results_hyperopt', 'hyperopt_statistics.json')
         )
 
+
+@pytest.mark.distributed
 def test_hyperopt_executor_get_metric_score():
     executor = EXECUTORS[0]
     output_feature = "of_name"

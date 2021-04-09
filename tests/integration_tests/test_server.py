@@ -27,6 +27,8 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import text_feature
+from tests.integration_tests.utils import LocalTestBackend
+
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +57,7 @@ def train_model(input_features, output_features, data_csv):
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=LocalTestBackend())
     _, _, output_dir = model.train(
         dataset=data_csv,
         skip_save_processed_input=True,
