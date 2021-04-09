@@ -720,8 +720,11 @@ class LudwigModel:
 
             if self.backend.is_coordinator():
                 if not skip_save_predictions:
-                    save_prediction_outputs(postproc_predictions,
-                                            output_directory)
+                    save_prediction_outputs(
+                        postproc_predictions,
+                        output_directory,
+                        self.backend
+                    )
 
                     logger.info('Saved to: {0}'.format(output_directory))
 
@@ -873,7 +876,11 @@ class LudwigModel:
                         and not skip_save_predictions
                 )
                 if should_save_predictions:
-                    save_prediction_outputs(postproc_predictions, output_directory)
+                    save_prediction_outputs(
+                        postproc_predictions,
+                        output_directory,
+                        self.backend
+                    )
 
                 print_evaluation_stats(eval_stats)
                 if not skip_save_eval_stats:

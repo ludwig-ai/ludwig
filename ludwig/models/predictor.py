@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
-from ludwig.utils.data_utils import from_numpy_dataset, save_csv, save_json
+from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
@@ -331,7 +331,11 @@ def calculate_overall_stats(
 def save_prediction_outputs(
         postprocessed_output,
         output_directory,
+        backend,
 ):
+    postprocessed_output, column_shapes = flatten_df(
+        postprocessed_output, backend
+    )
     postprocessed_output.to_parquet(
         os.path.join(output_directory, 'predictions.parquet')
     )
