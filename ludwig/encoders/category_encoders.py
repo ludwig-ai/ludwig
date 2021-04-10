@@ -18,9 +18,9 @@ import logging
 from abc import ABC
 
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register, DEFAULT_KEYS
 from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.modules.embedding_modules import Embed
+from ludwig.utils.registry import Registry, register, DEFAULT_KEYS
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +66,7 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
             embedding_initializer=embedding_initializer,
             embedding_regularizer=embedding_regularizer
         )
+        self.embedding_size = self.embed.embedding_size
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -110,6 +111,7 @@ class CategoricalSparseEncoder(CategoricalEncoder):
             embedding_initializer=embedding_initializer,
             embedding_regularizer=embedding_regularizer
         )
+        self.embedding_size = self.embed.embedding_size
 
     def call(self, inputs, training=None, mask=None):
         """
