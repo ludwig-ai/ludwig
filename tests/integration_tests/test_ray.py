@@ -39,11 +39,17 @@ from tests.integration_tests.utils import vector_feature
 
 @pytest.fixture
 def ray_start_2_cpus():
-    res = ray.init(num_cpus=2, include_dashboard=False)
-    try:
-        yield res
-    finally:
-        ray.shutdown()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        res = ray.init(
+            num_cpus=2,
+            include_dashboard=False,
+            object_store_memory=150 * 1024 * 1024,
+            _temp_dir=tmpdir,
+        )
+        try:
+            yield res
+        finally:
+            ray.shutdown()
 
 
 def run_api_experiment(config, data_parquet):
