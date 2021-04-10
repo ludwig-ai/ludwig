@@ -51,7 +51,7 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
             self.clipnorm = clipnorm
             self.clipvalue = clipvalue
             self.horovod = horovod
-            super().__init__(**kwargs)
+            super(self.__class__, self).__init__(**kwargs)
 
         def minimize_with_tape(self, tape, loss, variables):
             if self.horovod:
