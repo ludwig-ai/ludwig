@@ -17,8 +17,8 @@ class TabNet(tf.keras.Model):
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             relaxation_factor: float = 1.5,
-            bn_epsilon: float = 1e-5,
             bn_momentum: float = 0.7,
+            bn_epsilon: float = 1e-5,
             bn_virtual_bs: int = None,
             sparsity: float = 1e-5,
     ):
@@ -71,7 +71,8 @@ class TabNet(tf.keras.Model):
                 )
             )
             self.attentive_transforms.append(
-                AttentiveTransformer(num_features, bn_momentum, bn_virtual_bs)
+                AttentiveTransformer(num_features, bn_momentum, bn_epsilon,
+                                     bn_virtual_bs)
             )
         self.final_projection = tf.keras.layers.Dense(self.output_size)
 
