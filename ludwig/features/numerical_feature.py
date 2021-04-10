@@ -258,8 +258,25 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             targets,
             metadata
     ):
-        # no overall stats, just return empty dictionary
-        return {}
+        overall_stats = {}
+        numeric_transformer = get_from_registry(
+            metadata['preprocessing'].get('normalization', None),
+            numeric_transformation_registry
+        )(**metadata)
+        preds_postprocessed = \
+            numeric_transformer.inverse_transform(
+                predictions[PREDICTIONS].numpy()
+            )
+        targets_postprocessed = \
+            numeric_transformer.inverse_transform(targets)
+        MAPE = MeanAbsolutePercentageErrorMetric()
+        WMAPE = WeightedMeanAbsolutePercentageErrorMetric()
+        MAPE.update_state(targets_postprocessed, preds_postprocessed)
+        WMAPE.update_state(targets_postprocessed, preds_postprocessed)
+        overall_stats['mean_absolute_percentage_error'] = MAPE.result().numpy()
+        overall_stats['weighted_mean_absolute_percentage_error'] = \
+            WMAPE.result().numpy()
+        return overall_stats
 
     def postprocess_predictions(
             self,
