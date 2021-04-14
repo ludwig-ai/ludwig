@@ -19,7 +19,7 @@ class KaggleDownloadMixin:
     raw_temp_path: str
     name: str
     kaggle_username: str
-    kaggle_api_key: str
+    kaggle_key: str
 
     def download_raw_dataset(self):
         """
@@ -28,7 +28,7 @@ class KaggleDownloadMixin:
         kaggle.json file we lookup the passed in username and the api key and
         perform authentication.
         """
-        with self.update_env(KAGGLE_USERNAME=self.kaggle_username, KAGGLE_API_KEY=self.kaggle_api_key):
+        with self.update_env(KAGGLE_USERNAME=self.kaggle_username, KAGGLE_KEY=self.kaggle_key):
             # Call authenticate explicitly to pick up new credentials if necessary
             api = create_kaggle_client()
             api.authenticate()
@@ -37,8 +37,8 @@ class KaggleDownloadMixin:
         # Download all files for a competition
         api.competition_download_files(self.competition_name, path=self.raw_temp_path)
 
-        titanic_zip = os.path.join(self.raw_temp_path, self.archive_filename)
-        with ZipFile(titanic_zip, 'r') as z:
+        competition_zipfile = os.path.join(self.raw_temp_path, self.archive_filename)
+        with ZipFile(competition_zipfile, 'r') as z:
             z.extractall(self.raw_temp_path)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
 
@@ -60,4 +60,3 @@ class KaggleDownloadMixin:
     @property
     def archive_filename(self):
         return self.config["archive_filename"]
-

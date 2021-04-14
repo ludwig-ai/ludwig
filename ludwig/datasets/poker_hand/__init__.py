@@ -17,7 +17,7 @@
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import *
+from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     dataset = PokerHand(cache_dir=cache_dir)
@@ -47,3 +47,4 @@ class PokerHand(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False
         )
+        

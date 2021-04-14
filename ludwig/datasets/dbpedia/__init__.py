@@ -46,6 +46,3 @@ class DBPedia(TarDownloadMixin, MultifileJoinProcessMixin,
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False
         )
-
-
-    
