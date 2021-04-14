@@ -1,8 +1,0 @@
-version: 1.0
-competition: rossmann-store-sales
-archive_filename: rossmann-store-sales.zip
-split_filenames:
-  train_file: train.csv
-  test_file: test.csv
-download_file_type: csv
-csv_filename: rossmann_store_sales.csv
