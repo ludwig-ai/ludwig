@@ -52,7 +52,6 @@ class RossmannStoreSales(KaggleDownloadMixin, MultifileJoinProcessMixin,
 
     def load_processed_dataset(self, split) -> Union[pd.DataFrame,
                                                      Tuple[pd.DataFrame,
-                                                           pd.DataFrame,
                                                            pd.DataFrame]]:
         
         train_df, test_df = super().load_processed_dataset(split=split)
@@ -62,5 +61,4 @@ class RossmannStoreSales(KaggleDownloadMixin, MultifileJoinProcessMixin,
 
         test_set = test_df[test_df[SPLIT] == 2]
         test_set = test_set.dropna(axis=1)
-        return training_set, test_set
-        
+        return training_set, test_set        

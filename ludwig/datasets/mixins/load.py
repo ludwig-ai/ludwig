@@ -48,7 +48,6 @@ class CSVLoadMixin:
                 training_set = data_df[data_df[SPLIT] == 0]
                 val_set = data_df[data_df[SPLIT] == 1]
                 test_set = data_df[data_df[SPLIT] == 2]
-
                 if val_set.shape[0] == 0:
                     return training_set, test_set
                 elif test_set.shape[0] == 0:

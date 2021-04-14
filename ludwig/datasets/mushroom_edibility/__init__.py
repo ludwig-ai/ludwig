@@ -22,29 +22,33 @@ from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 
-
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
-    dataset = PokerHand(cache_dir=cache_dir)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
+    dataset = MushroomEdibility(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class PokerHand(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
+class MushroomEdibility(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
             CSVLoadMixin, BaseDataset):
     """
-    The Poker Hand dataset
+    The Mushroom Edibility dataset
 
     Additional Details:
 
-    http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand.names
+    http://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.names
     """
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="poker_hand", cache_dir=cache_dir)
+        super().__init__(dataset_name="mushroom_edibility", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         super().process_downloaded_dataset(header=None)
         processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
                                                 self.csv_filename))
         columns = [
-        "S1", "C1", "S2", "C2", "S3", "C3", "S4", "C4", "S5", "C5", "hand", "split"
+            "class", "cap-shape", "cap-surface", "cap-color", "bruises?", "odor",
+            "gill-attachment", "gill-spacing", "gill-size", "gill-color",
+            "stalk-shape", "stalk-root", "stalk-surface-above-ring",
+            "stalk-surface-below-ring", "stalk-color-above-ring",
+            "stalk-color-below-ring", "veil-type", "veil-color", "ring-number",
+            "ring-type", "spore-print-color", "population", "habitat", "split"
         ]
         processed_df.columns = columns
         processed_df.to_csv(
