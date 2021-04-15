@@ -26,6 +26,9 @@ from ludwig.modules.loss_modules import (BWCEWLoss, SequenceLoss,
                                          SigmoidCrossEntropyLoss,
                                          SoftmaxCrossEntropyLoss)
 from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
+from abc import abstractmethod
+
+import torch
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
@@ -34,6 +37,28 @@ metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
 max_metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
 min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
                PERPLEXITY}
+
+class LudwigMetric:
+    def __init__(self, name):
+        self.variables = []
+        self.name = name
+
+    def reset_states(self, *args, **kwargs):
+        for var in variables:
+            var = 0
+
+    def add_tensor(self, size=1, name=None, dtype=None):
+        tensor = torch.zeros(size, dtype=dtype)
+        self.variables.append(tensor)
+        return tensor
+
+    @abstractmethod
+    def update_state(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def result(self):
+        pass
 
 
 class R2Score(tf.keras.metrics.Metric):
@@ -87,9 +112,10 @@ class R2Score(tf.keras.metrics.Metric):
         return 1.0 - res_ss / tot_ss
 
 
-class ErrorScore(tf.keras.metrics.Metric):
+class ErrorScore(LudwigMetric)#(tf.keras.metrics.Metric):
     def __init__(self, name='error_score'):
         super(ErrorScore, self).__init__(name=name)
+        '''
         self.sum_error = self.add_weight(
             'sum_error', initializer='zeros',
             dtype=tf.float32
@@ -98,12 +124,27 @@ class ErrorScore(tf.keras.metrics.Metric):
             'N', initializer='zeros',
             dtype=tf.float32
         )
+        '''
+        self.sum_error = self.add_tensor(
+            'sum_error',
+            dtype=torch.float32
+        )
+        self.N = self.add_tensor(
+            'N',
+            dtype=torch.float32
+        )
 
     def update_state(self, y, y_hat):
+        '''
         y = tf.cast(y, tf.float32)
         y_hat = tf.cast(y_hat, tf.float32)
         self.sum_error.assign_add(tf.reduce_sum(y - y_hat))
         self.N.assign_add(y.shape[0])
+        '''
+        y = y.type(torch.float32)
+        y_hat = y_hat.type(torch.float32)
+        self.sum_error += torch.sum(y - y_hat)
+        self.N += y.shape[0]
 
     def result(self):
         return self.sum_error / self.N
@@ -314,7 +355,7 @@ class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
             sample_weight=sample_weight
         )
 
-
+'''
 class MAEMetric(MeanAbsoluteErrorMetric):
     def __init__(self, **kwargs):
         super(MAEMetric, self).__init__(**kwargs)
@@ -323,8 +364,23 @@ class MAEMetric(MeanAbsoluteErrorMetric):
         super().update_state(
             y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
+'''
+class MAEMetric(LudwigMetric):
+    def __init__(self, name="MAE"):
+        super(MAEMetric, self).__init__(name=name)
+        self.absolute_error = self.add_tensor('absolute_error', dtype=torch.float32)
+        self.N = self.add_tensor('N', dtype=tf.float32)
 
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = y_true.type(torch.float32)
+        y_hat = y_hat.type(torch.float32)
+        self.absolute_error += torch.abs(y_true - y_abs)
+        self.N += y_true.shape[0]
 
+    def result(self):
+        return self.absolute_error / self.N
+
+'''
 class MSEMetric(MeanSquaredErrorMetric):
     def __init__(self, **kwargs):
         super(MSEMetric, self).__init__(**kwargs)
@@ -333,6 +389,21 @@ class MSEMetric(MeanSquaredErrorMetric):
         super().update_state(
             y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
+'''
+class MSEMetric(LudwigMetric):
+    def __init__(self, name='MSE'):
+        super(MSEMetric, self).__init__(name=name)
+        self.square_error = self.add_tensor('square_error', dtype=torch.float32)
+        self.N = self.add_tensor('N', dtype=tf.float32)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = y_true.type(torch.float32)
+        y_hat = y_hat.type(torch.float32)
+        self.square_error += (y_true - y_abs) ** 2
+        self.N += y_true.shape[0]
+
+    def result(self):
+        return self.square_error / self.N
 
 
 class JaccardMetric(tf.keras.metrics.Metric):

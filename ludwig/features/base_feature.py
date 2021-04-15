@@ -19,6 +19,8 @@ from typing import Dict
 
 import tensorflow as tf
 
+from torch.nn import Module
+
 from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
@@ -69,7 +71,7 @@ class BaseFeature(object):
                     setattr(self, k, feature[k])
 
 
-class InputFeature(BaseFeature, tf.keras.Model, ABC):
+class InputFeature(BaseFeature, Module, ABC):
     """Parent class for all input features."""
 
     def __init__(self, *args, **kwargs):
@@ -117,7 +119,7 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
         )
 
 
-class OutputFeature(BaseFeature, tf.keras.Model, ABC):
+class OutputFeature(BaseFeature, Module, ABC):
     """Parent class for all output features."""
 
     train_loss_function = None

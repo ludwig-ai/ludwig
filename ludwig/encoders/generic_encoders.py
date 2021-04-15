@@ -18,12 +18,14 @@ import logging
 
 from tensorflow.keras.layers import Layer
 
+from torch.nn import Module
+
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-class PassthroughEncoder(Layer):
+class PassthroughEncoder(Module):
 
     def __init__(
             self,
@@ -32,7 +34,7 @@ class PassthroughEncoder(Layer):
         super(PassthroughEncoder, self).__init__()
         logger.debug(' {}'.format(self.name))
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
@@ -40,10 +42,11 @@ class PassthroughEncoder(Layer):
         return {'encoder_output': inputs}
 
 
-class DenseEncoder(Layer):
+class DenseEncoder(Module):
 
     def __init__(
             self,
+            input_size,
             layers=None,
             num_layers=1,
             fc_size=256,
@@ -66,6 +69,7 @@ class DenseEncoder(Layer):
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
+            first_layer_input_size=input_size,
             layers=layers,
             num_layers=num_layers,
             default_fc_size=fc_size,
@@ -83,7 +87,7 @@ class DenseEncoder(Layer):
             default_dropout=dropout,
         )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32

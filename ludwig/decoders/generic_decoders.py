@@ -24,17 +24,23 @@ from tensorflow.keras.layers import Layer
 
 from ludwig.constants import LOSS, TYPE
 
+from ludwig.utils.torch_utils import (LudwigModule, initializers, activations)
+
 logger = logging.getLogger(__name__)
 
 
-class Regressor(Layer):
+class Regressor(LudwigModule):
 
     def __init__(
             self,
+            input_size,
             use_bias=True,
-            kernel_initializer='glorot_uniform',
+            #kernel_initializer='glorot_uniform',
+            #bias_initializer='zeros',
+            weights_initializer=='xavier_uniform',
             bias_initializer='zeros',
-            kernel_regularizer=None,
+            #kernel_regularizer=None,
+            weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
             **kwargs
@@ -42,7 +48,10 @@ class Regressor(Layer):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        logger.debug('  Dense')
+        #logger.debug('  Dense')
+        logger.debug('  Linear')
+
+        '''
         self.dense = Dense(
             1,
             use_bias=use_bias,
@@ -52,9 +61,28 @@ class Regressor(Layer):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
+        '''
+        self.dense = Linear(
+                in_features=input_size,
+                out_features=1,
+                bias=use_bias
+        )
+        weights_initializer = initializers[weights_initializer]
+        weights_initializer(self.dense.weight)
 
-    def call(self, inputs, **kwargs):
-        return tf.squeeze(self.dense(inputs), axis=-1)
+        bias_initializer = initializers[bias_initializer]
+        bias_initializer(self.dense.bias)
+
+        if weights_regularizer:
+            self.add_loss(lambda: reg_loss(fc.weight, weights_regularizer))
+        if bias_regularizer:
+            self.add_loss(lambda: reg_loss(fc.bias, bias_regularizer))
+        if activity_regularizer:
+            # Handle in forward call
+            self.add_loss(lambda: self.activation_loss)
+
+    def forward(self, inputs, **kwargs):
+        return torch.squeeze(self.dense(inputs), axis=-1)
 
 
 class Projector(Layer):

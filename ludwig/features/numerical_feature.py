@@ -91,6 +91,8 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     encoder = 'passthrough'
 
     def __init__(self, feature, encoder_obj=None):
+        # Required for certain encoders, maybe pass into initialize_encoder
+        feature['input_size'] = self.get_input_shape()
         super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
@@ -98,12 +100,13 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
+    def forward(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
         assert len(inputs.shape) == 1
 
-        inputs_exp = inputs[:, tf.newaxis]
+        #inputs_exp = inputs[:, tf.newaxis]
+        inputs_exp = inputs[:, None]
         inputs_encoded = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )
@@ -112,10 +115,11 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
     @classmethod
     def get_input_dtype(cls):
-        return tf.float32
+        return torch.float32
 
     def get_input_shape(self):
-        return ()
+        #return ()
+        return 1
 
     @staticmethod
     def update_config_with_metadata(
@@ -149,6 +153,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     clip = None
 
     def __init__(self, feature):
+        feature['input_size'] = self.get_output_shape()
         super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
@@ -173,11 +178,19 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
+                '''
                 predictions = tf.clip_by_value(
                     predictions,
                     self.clip[0],
                     self.clip[1]
                 )
+                '''
+                predictions = torch.clamp(
+                    predictions,
+                    self.clip[0],
+                    self.clip[1]
+                )
+
                 logger.debug(
                     '  clipped_predictions: {0}'.format(predictions)
                 )
@@ -222,10 +235,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.float32
+        return torch.float32
 
     def get_output_shape(self):
-        return ()
+        #return ()
+        return 1
 
     @staticmethod
     def update_config_with_metadata(
