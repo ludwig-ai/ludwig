@@ -423,7 +423,8 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         )
 
         # extract structures needed for sampled_softmax
-        rnn_last_hidden = self.extract_decoder_end_state(final_state)
+        # rnn_last_hidden = self.extract_decoder_end_state(final_state)
+        rnn_last_hidden = outputs.rnn_output
 
         # EXPECTED SIZE OF RETURNED TENSORS
         # logits: shape[batch_size, seq_size, num_classes]
