@@ -19,7 +19,7 @@ import os
 import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import GZipDownloadMixin
+from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
@@ -29,8 +29,14 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
     return dataset.load(split=split)
 
 
-class Higgs(GZipDownloadMixin, CSVLoadMixin, BaseDataset):
+class Higgs(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
     """The Higgs Boson dataset.
+
+    This is a classification problem to distinguish between a signal process
+    which produces Higgs bosons and a background process which does not.
+
+	More info:
+	https://archive.ics.uci.edu/ml/datasets/HIGGS
     """
 
     raw_dataset_path: str
@@ -63,8 +69,7 @@ class Higgs(GZipDownloadMixin, CSVLoadMixin, BaseDataset):
         else:
             df['split'] = [0] * 10500000 + [2] * 500000
 
-        os.makedirs(self.processed_dataset_path, exist_ok=True)
-        df.to_csv(
-            os.path.join(self.processed_dataset_path, self.csv_filename),
-            index=False
-        )
+        os.makedirs(self.processed_temp_path, exist_ok=True)
+        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
+                  index=False)
+        os.rename(self.processed_temp_path, self.processed_dataset_path)
