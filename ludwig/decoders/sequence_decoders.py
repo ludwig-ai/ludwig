@@ -399,12 +399,30 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             output_layer=self.dense_layer
         )
 
-        # BasicDecoderOutput
-        outputs, final_state, generated_sequence_lengths = decoder(
-            decoder_emb_inp,
-            initial_state=decoder_initial_state,
-            sequence_length=target_sequence_length_with_eos
+        # # BasicDecoderOutput
+        # outputs, final_state, generated_sequence_lengths = decoder(
+        #     decoder_emb_inp,
+        #     initial_state=decoder_initial_state,
+        #     sequence_length=target_sequence_length_with_eos
+        # )
+
+        # todo: testing with dynamic decode for sampled_softmax
+        # initialize training decoder
+        decoder_embedding_matrix = self.decoder_embedding.weights[0]
+        outputs, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
+            decoder=decoder,
+            output_time_major=False,
+            impute_finished=False,
+            maximum_iterations=tf.reduce_max(target_sequence_length_with_eos),
+            decoder_init_input=decoder_embedding_matrix,
+            decoder_init_kwargs=dict(
+            #     start_tokens=start_tokens,
+            #     end_token=end_token,
+                initial_state=decoder_initial_state,
+            ),
         )
+
+
 
         logits = outputs.rnn_output
         # mask = tf.sequence_mask(
