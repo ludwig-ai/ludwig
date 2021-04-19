@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
+
 import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
@@ -40,17 +42,19 @@ class Higgs(GZipDownloadMixin, CSVLoadMixin, BaseDataset):
         self.add_validation_set = add_validation_set
 
     def process_downloaded_dataset(self):
-        df = pd.read_csv(self.raw_dataset_path, header=None)
+        df = pd.read_csv(
+            os.path.join(self.raw_dataset_path, 'HIGGS.csv.gz'),
+            header=None
+        )
 
         df.columns = [
             "label", "lepton_pT", "lepton_eta", "lepton_phi",
-            "missing_energy_magnitude", "missing_energy_phi", "jet_1_pt",
-            "jet_1_eta",
-            "jet_1_phi", "jet_1_b-tag", "jet_2_pt", "jet_2_eta", "jet_2_phi",
-            "jet_2_b-tag", "jet_3_pt", "jet_3_eta", "jet_3_phi", "jet_3_b-tag",
-            "jet_4_pt", "jet_4_eta", "jet_4_phi", "jet_4_b-tag", "m_jj",
-            "m_jjj",
-            "m_lv", "m_jlv", "m_bb", "m_wbb", "m_wwbb"
+            "missing_energy_magnitude", "missing_energy_phi",
+            "jet_1_pt", "jet_1_eta", "jet_1_phi", "jet_1_b-tag",
+            "jet_2_pt", "jet_2_eta", "jet_2_phi", "jet_2_b-tag",
+            "jet_3_pt", "jet_3_eta", "jet_3_phi", "jet_3_b-tag",
+            "jet_4_pt", "jet_4_eta", "jet_4_phi", "jet_4_b-tag",
+            "m_jj", "m_jjj", "m_lv", "m_jlv", "m_bb", "m_wbb", "m_wwbb"
         ]
 
         df['label'] = df['label'].astype('int32')
@@ -59,8 +63,8 @@ class Higgs(GZipDownloadMixin, CSVLoadMixin, BaseDataset):
         else:
             df['split'] = [0] * 10500000 + [2] * 500000
 
-        df.to_csv(self.processed_dataset_path, index=False)
-
-
-if __name__ == '__main__':
-    load()
+        os.makedirs(self.processed_dataset_path, exist_ok=True)
+        df.to_csv(
+            os.path.join(self.processed_dataset_path, self.csv_filename),
+            index=False
+        )
