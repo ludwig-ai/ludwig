@@ -357,21 +357,21 @@ def sequence_sampled_softmax_cross_entropy_old(targets,
 #                                            class_biases, loss,
 #                                            num_classes):
 def sequence_sampled_softmax_cross_entropy(targets,
-                                               rnn_last_hidden,
-                                               decoder_weights,
-                                               decoder_biases,
-                                               num_classes,
-                                               **loss):
+                                           train_logits,
+                                           decoder_weights,
+                                           decoder_biases,
+                                           num_classes,
+                                           **loss):
     batch_max_targets_sequence_length = tf.shape(targets)[1]
     targets_sequence_length = sequence_length_2D(tf.cast(targets, tf.int64))
 
-    batch_max_train_logits_sequence_length = tf.shape(rnn_last_hidden)[1]
+    batch_max_train_logits_sequence_length = tf.shape(train_logits)[1]
 
 
     logits_pad_len = tf.maximum(0, batch_max_targets_sequence_length - batch_max_train_logits_sequence_length)
     targets_pad_len = tf.maximum(0, batch_max_train_logits_sequence_length - batch_max_targets_sequence_length)
 
-    padded_logits = tf.pad(rnn_last_hidden,
+    padded_logits = tf.pad(train_logits,
                            [[0, 0], [0, logits_pad_len], [0, 0]])
     padded_targets = tf.pad(targets, [[0, 0], [0, targets_pad_len]])
 
@@ -414,7 +414,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
         padded_logits,
         padded_targets,
         tf.sequence_mask(targets_sequence_length,
-                         batch_max_targets_sequence_length, dtype=tf.float32),
+                         tf.shape(padded_targets)[1], dtype=tf.float32),
         average_across_timesteps=True,
         average_across_batch=False,
         softmax_loss_function=_sampled_loss
