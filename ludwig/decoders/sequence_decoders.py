@@ -409,7 +409,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             sequence_length=target_sequence_length_with_eos
         )
 
-        logits = outputs.rnn_output
+        eval_logits = outputs.rnn_output
         # mask = tf.sequence_mask(
         #    generated_sequence_lengths,
         #    maxlen=tf.shape(logits)[1],
@@ -420,19 +420,18 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # append a trailing 0, useful for
         # those datapoints that reach maximum length
         # and don't have a eos at the end
-        logits = tf.pad(
-            logits,
+        eval_logits = tf.pad(
+            eval_logits,
             [[0, 0], [0, 1], [0, 0]]
         )
 
-        # extract structures needed for sampled_softmax
-        rnn_last_hidden = outputs.projection_input
+        # extract tensor needed for sampled_softmax
+        train_logits = outputs.projection_input
 
         # EXPECTED SIZE OF RETURNED TENSORS
-        # logits: shape[batch_size, seq_size, num_classes]
-        # rnn_last_hidden: shape[batch_size, state_size] or
-        #     with Attention shape[batch_size, state_size * num_layers]
-        return logits, rnn_last_hidden
+        # eval_logits: shape[batch_size, seq_size, num_classes] used for evaluation
+        # train_logits: shape[batch_size, seq_size, state_size] for sampled softmax
+        return eval_logits, train_logits
 
     def decoder_beam_search(
             self,
@@ -536,18 +535,12 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-        # support for sampled_softmax_cross_entropy loss calculation
-        # make visible last hidden tensor
-        # for beam search assume beam 0 is best solution
-        # rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
 
         # EXPECTED SIZE OF RETURNED TENSORS
         # lengths: shape[batch_size]
         # predictions: shape [batch_size, seq_size]
         # last_predictions: shape[batch_size
         # probabilities: shape[batch_size, seq_size, num_classes]
-        # rnn_last_hidden: shape[batch_size, state_size] or
-        #     with Attention shape[batch_size, state_size * num_layers]
         return None, lengths, predictions, last_predictions, probabilities
 
     def decoder_greedy(
@@ -640,18 +633,12 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-        # todo cleanup
-        # extraction structures required for sampled softmax
-        # rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
-
         # EXPECTED SIZE OF RETURNED TENSORS
         # logits: shape [batch_size, seq_size, num_classes]
         # lengths: shape[batch_size]
         # predictions: shape [batch_size, seq_size]
         # last_predictions: shape[batch_size
         # probabilities: shape[batch_size, seq_size, num_classes]
-        # rnn_last_hidden: shape[batch_size, state_size] or
-        #     with Attention shape[batch_size, state_size * num_layers]
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
