@@ -169,8 +169,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             encoder_end_state=encoder_end_state
         )
 
-        # logits shape [b, s, c]
-        # last_hidden shape todo: doc shape currently tuple
+        # logits is tuple containing two tensor:
+        #   eval_logits: suitable for use with softmax_crossentropy loss
+        #   train_logits: suitable for use with sampled_softmax
         return logits
 
     def prepare_encoder_output_state(self, inputs):
