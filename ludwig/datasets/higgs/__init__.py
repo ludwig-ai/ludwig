@@ -20,7 +20,7 @@ import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.datasets.mixins.load import ParquetLoadMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
@@ -29,7 +29,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
     return dataset.load(split=split)
 
 
-class Higgs(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
+class Higgs(UncompressedFileDownloadMixin, ParquetLoadMixin, BaseDataset):
     """The Higgs Boson dataset.
 
     This is a classification problem to distinguish between a signal process
@@ -70,6 +70,8 @@ class Higgs(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
             df['split'] = [0] * 10500000 + [2] * 500000
 
         os.makedirs(self.processed_temp_path, exist_ok=True)
-        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
-                  index=False)
+        df.to_parquet(os.path.join(self.processed_temp_path, self.parquet_filename),
+                      engine='pyarrow',
+                      row_group_size=50000,
+                      index=False)
         os.rename(self.processed_temp_path, self.processed_dataset_path)
