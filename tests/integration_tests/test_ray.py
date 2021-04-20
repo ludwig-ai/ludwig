@@ -61,7 +61,7 @@ def run_api_experiment(config, data_parquet):
 
     # Train on Parquet
     dask_backend = RayBackend()
-    train_with_backend(dask_backend, config, dataset=data_parquet)
+    train_with_backend(dask_backend, config, dataset=data_parquet, evaluate=False)
 
 
 @spawn

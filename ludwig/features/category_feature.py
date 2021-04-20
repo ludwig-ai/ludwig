@@ -427,7 +427,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             if 'idx2str' in metadata:
                 predictions[top_k_col] = backend.df_engine.map_objects(
                     predictions[top_k_col],
-                    lambda pred: metadata['idx2str'][pred]
+                    lambda pred_top_k: [
+                        metadata['idx2str'][pred] for pred in pred_top_k
+                    ]
                 )
 
         return predictions

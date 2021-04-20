@@ -144,21 +144,6 @@ class RayTrainer(BaseTrainer):
         self.executor.shutdown()
 
 
-@ray.remote
-class MetricCollector(object):
-    def __init__(self):
-        self.metrics = []
-
-    def add_metrics(self, metrics):
-        self.metrics.append(metrics)
-
-    def collect(self):
-        return sum_dicts(
-            self.metrics,
-            dict_type=OrderedDict
-        )
-
-
 class RayPredictor(BasePredictor):
     def __init__(self, horovod_kwargs, predictor_kwargs):
         # TODO ray: use horovod_kwargs to allocate GPU model replicas
@@ -185,51 +170,9 @@ class RayPredictor(BasePredictor):
         )
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
-        self._check_dataset(dataset)
-
-        metric_collector = MetricCollector.remote()
-        self.actor_handles.append(metric_collector)
-
-        remote_model = RayRemoteModel(model)
-        predictor_kwargs = self.predictor_kwargs
-
-        output_columns = []
-        if collect_predictions:
-            output_columns = get_output_columns(model.output_features)
-
-        def batch_evaluate_partition(dataset):
-            model = remote_model.load()
-            predictor = Predictor(**predictor_kwargs)
-            metrics, predictions = predictor.batch_evaluation(
-                model, dataset, collect_predictions, **kwargs
-            )
-
-            try:
-                ray.get(metric_collector.add_metrics.remote(metrics))
-            except RayActorError:
-                # Metrics have already been computed, and now the Ray actor
-                # has been deleted, so ignore.
-                pass
-
-            if output_columns:
-                predictions = predictions[output_columns]
-            return predictions
-
-        predictions = dataset.map_dataset_partitions(
-            batch_evaluate_partition,
-            meta=[(c, 'object') for c in output_columns]
+        raise NotImplementedError(
+            'Ray backend does not support batch evaluation at this time.'
         )
-
-        # Force materialization of the dataframe. Otherwise we would not be able to
-        # obtain the metrics here.
-        # TODO ray: should get to work with `persist()` so we can reuse the DataFrame.
-        #  At the moment, this call is expensive as we may run predictions multiple times.
-        #  The problem for now is that `persist()` does not appear to return a normal Dask DF.
-        # predictions = predictions.persist()
-        _ = len(predictions)
-
-        metrics = ray.get(metric_collector.collect.remote())
-        return metrics, predictions
 
     def batch_collect_activations(self, model, *args, **kwargs):
         raise NotImplementedError(
