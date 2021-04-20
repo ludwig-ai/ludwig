@@ -351,11 +351,7 @@ def sequence_sampled_softmax_cross_entropy_old(targets,
 
     return tf.reduce_mean(sampled_loss)
 
-# def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
-#                                            eval_logits, train_logits,
-#                                            class_weights,
-#                                            class_biases, loss,
-#                                            num_classes):
+
 def sequence_sampled_softmax_cross_entropy(targets,
                                            train_logits,
                                            decoder_weights,
@@ -364,9 +360,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
                                            **loss):
     batch_max_targets_sequence_length = tf.shape(targets)[1]
     targets_sequence_length = sequence_length_2D(tf.cast(targets, tf.int64))
-
     batch_max_train_logits_sequence_length = tf.shape(train_logits)[1]
-
 
     logits_pad_len = tf.maximum(0, batch_max_targets_sequence_length - batch_max_train_logits_sequence_length)
     targets_pad_len = tf.maximum(0, batch_max_train_logits_sequence_length - batch_max_targets_sequence_length)
@@ -375,18 +369,6 @@ def sequence_sampled_softmax_cross_entropy(targets,
                            [[0, 0], [0, logits_pad_len], [0, 0]])
     padded_targets = tf.pad(targets, [[0, 0], [0, targets_pad_len]])
 
-    # difference_train = batch_max_targets_sequence_length - batch_max_train_logits_sequence_length
-    # padded_train_logits = tf.pad(rnn_last_hidden,
-    #                              [[0, 0], [0, difference_train], [0, 0]])
-
-    # batch_max_eval_logits_sequence_length = tf.shape(eval_logits)[1]
-    # difference_eval = batch_max_targets_sequence_length - batch_max_eval_logits_sequence_length
-    # padded_eval_logits = tf.pad(eval_logits,
-    #                             [[0, 0], [0, difference_eval], [0, 0]])
-
-    # batch_max_seq_length = tf.shape(train_logits)[1]
-    # unpadded_targets = targets[:, :batch_max_seq_length]
-    # output_exp = tf.cast(tf.reshape(unpadded_targets, [-1, 1]), tf.int64)
     output_exp = tf.cast(tf.reshape(padded_targets, [-1, 1]), tf.int64)
     sampled_values = sample_values_from_classes(output_exp, loss['sampler'],
                                                 num_classes,
@@ -420,19 +402,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
         softmax_loss_function=_sampled_loss
     )
 
-    # batch_max_seq_length_eval = tf.shape(eval_logits)[1]
-    # unpadded_targets_eval = targets[:, :batch_max_seq_length_eval]
-
-    # eval_loss = tfa.seq2seq.sequence_loss(
-    #     padded_eval_logits,
-    #     targets,
-    #     tf.sequence_mask(targets_sequence_length,
-    #                      batch_max_targets_sequence_length, dtype=tf.float32),
-    #     average_across_timesteps=True,
-    #     average_across_batch=False
-    # )
-
-    return train_loss #, eval_loss
+    return train_loss
 
 
 
