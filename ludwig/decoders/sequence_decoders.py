@@ -849,7 +849,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
             LOGITS: logits,
             # logits shape [batch_size, sequence_length, num_classes]
             LENGTHS: inputs[LENGTHS],
-            'rnn_last_hidden': hidden
+            PROJECTION_INPUT: hidden
         }
 
     def _logits_training(
@@ -908,18 +908,17 @@ class SequenceTaggerDecoder(SequenceDecoder):
         logits = logits * mask[:, :, tf.newaxis]
 
         # EXPECTED SIZE OF RETURNED TENSORS
-        # logits: shape [batch_size, seq_size, num_classes]
-        # lengths: shape[batch_size]
-        # predictions: shape [batch_size, seq_size]
-        # last_predictions: shape[batch_size]
-        # probabilities: shape[batch_size, seq_size, num_classes]
-        # rnn_last_hidden: shape[batch_size, state_size] or
-        #     with Attention shape[batch_size, state_size * num_layers]
+        # LOGITS: shape [batch_size, seq_size, num_classes]
+        # LENGTHS: shape[batch_size]
+        # PREDICTIONS: shape [batch_size, seq_size]
+        # LAST_PREDICTIONS: shape[batch_size]
+        # PROBABILITIES: shape[batch_size, seq_size, num_classes]
+        # PROJECTION_INPUT: shape[batch_size, seq_size, state_size]
         return {
             PREDICTIONS: predictions,
             LENGTHS: input_sequence_lengths,
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
             LOGITS: logits,
-            RNN_LAST_HIDDEN: outputs[RNN_LAST_HIDDEN]
+            PROJECTION_INPUT: outputs[PROJECTION_INPUT]
         }

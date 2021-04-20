@@ -162,7 +162,7 @@ class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
         loss = sequence_sampled_softmax_cross_entropy(
             y,  # targets
-            y_pred[RNN_LAST_HIDDEN],
+            y_pred[PROJECTION_INPUT],
             decoder_weights=self.dec_dense_layer.weights[0],
             decoder_biases=self.dec_dense_layer.weights[1],
             num_classes=self.num_classes,

@@ -275,18 +275,18 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         # most of the cases the output of self.logits is a tensor
         # there are two special cases:
         # sequence feature with Generator Decoder: 'logits' is a tuple of
-        #   logits, rnn_last_hidden
+        #   logits, projection_input
         # sequence feature with Tagger Decoder: 'logits' is a dictionary with
-        #   these keys: logits, lengths, rnn_last_hidden
+        #   these keys: logits, lengths, projection_input
         #
-        rnn_last_hidden = None
+        projection_input = None
         if isinstance(logits, tuple):
-            rnn_last_hidden = logits[1]
+            projection_input = logits[1]
             logits = logits[0]
         if not isinstance(logits, dict):
             logits = {'logits': logits}
-        if rnn_last_hidden is not None:
-            logits['rnn_last_hidden'] = rnn_last_hidden
+        if projection_input is not None:
+            logits[PROJECTION_INPUT] = projection_input
 
         return {
             'last_hidden': hidden,
