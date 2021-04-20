@@ -849,7 +849,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
             LOGITS: logits,
             # logits shape [batch_size, sequence_length, num_classes]
             LENGTHS: inputs[LENGTHS],
-            'rnn_last_hidden': tf.reduce_mean(hidden, axis=1)
+            'rnn_last_hidden': hidden
         }
 
     def _logits_training(
