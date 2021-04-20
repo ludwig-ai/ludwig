@@ -319,39 +319,6 @@ def sampled_softmax_cross_entropy(
     return train_loss
 
 
-# specific for sequence features
-def sequence_sampled_softmax_cross_entropy_old(targets,
-                                           rnn_last_hidden,
-                                           decoder_weights,
-                                           decoder_biases,
-                                           num_classes,
-                                           **loss):
-
-    num_true = targets.shape[1]
-    sampled_values = sample_values_from_sequence(
-        tf.cast(targets, tf.int64),
-        loss['sampler'],
-        num_true,
-        num_classes,
-        loss['negative_samples'],
-        loss['unique'],
-        loss['class_counts'],
-        loss['distortion'])
-
-    sampled_loss = tf.nn.sampled_softmax_loss(
-        weights=tf.transpose(decoder_weights),
-        biases=decoder_biases,
-        labels=tf.cast(targets, tf.int64),
-        inputs=rnn_last_hidden,
-        num_true=num_true,
-        num_sampled=loss['negative_samples'],
-        num_classes=num_classes,
-        sampled_values=sampled_values
-    )
-
-    return tf.reduce_mean(sampled_loss)
-
-
 def sequence_sampled_softmax_cross_entropy(targets,
                                            train_logits,
                                            decoder_weights,
