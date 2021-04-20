@@ -31,6 +31,7 @@ from ludwig.constants import *
 from ludwig.decoders.base import Decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.recurrent_modules import BasicDecoder
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry, register
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
@@ -295,64 +296,65 @@ class SequenceGeneratorDecoder(SequenceDecoder):
 
         return decoder_initial_state
 
-    # method to extract rnn_last_hidden tensor required for sampled softmax
-    def extract_decoder_end_state(
-            self,
-            decoder_end_state
-    ):
-        # support for sampled_softmax_cross_entropy loss calculation
-        # make visible last  hidden tensor
-        if isinstance(decoder_end_state, BeamSearchDecoderState):
-            if isinstance(decoder_end_state.cell_state, AttentionWrapperState):
-                rnn_last_hidden = decoder_end_state.cell_state.cell_state
-            else:
-                rnn_last_hidden = decoder_end_state.cell_state
-        elif isinstance(decoder_end_state, AttentionWrapperState):
-            # with Attention
-            rnn_last_hidden = decoder_end_state.cell_state
-        else:
-            # No Attention/no Beam Search
-            rnn_last_hidden = decoder_end_state
-
-        # accumulate tensors in preparation for creating required data structure
-        list0 = []  # for all cell types rnn, gru, lstm
-        for x in rnn_last_hidden:
-            if isinstance(x, list):
-                # lstm cell: keep the output state, discard intermal/memory cell
-                if len(x[0].shape) == 2:
-                    # no beam search
-                    list0.append(x[0])
-                else:
-                    # beam search - pick from best position
-                    list0.append(x[0][:, 0, :])
-            else:
-                # gru/rnn cell type
-                if len(x.shape) == 2:
-                    # no beam search
-                    list0.append(x)
-                else:
-                    # beam search - pick from best position
-                    list0.append(x[:, 0, :])
-
-        # helper functions to create final form of rnn_last hidden
-        def concatenate_tensors():
-            # concatenate tensors to match decoder weights size
-            return tf.concat(list0, axis=-1)
-
-        def pick_last_tensor():
-            # else just get final state
-            return list0[-1]
-
-        # if self.dense_layer.weights[0] > self.state_size, then need to
-        # concatenate to create data structure for sampled_softmax
-        dense_layer_size = tf.shape(self.dense_layer.weights[0])[0]
-        rnn_last_hidden = tf.cond(
-            tf.greater(dense_layer_size, self.state_size),
-            concatenate_tensors,
-            pick_last_tensor
-        )
-
-        return rnn_last_hidden
+    # todo cleanup this code after confirming sampled_softmax works
+    # # method to extract rnn_last_hidden tensor required for sampled softmax
+    # def extract_decoder_end_state(
+    #         self,
+    #         decoder_end_state
+    # ):
+    #     # support for sampled_softmax_cross_entropy loss calculation
+    #     # make visible last  hidden tensor
+    #     if isinstance(decoder_end_state, BeamSearchDecoderState):
+    #         if isinstance(decoder_end_state.cell_state, AttentionWrapperState):
+    #             rnn_last_hidden = decoder_end_state.cell_state.cell_state
+    #         else:
+    #             rnn_last_hidden = decoder_end_state.cell_state
+    #     elif isinstance(decoder_end_state, AttentionWrapperState):
+    #         # with Attention
+    #         rnn_last_hidden = decoder_end_state.cell_state
+    #     else:
+    #         # No Attention/no Beam Search
+    #         rnn_last_hidden = decoder_end_state
+    #
+    #     # accumulate tensors in preparation for creating required data structure
+    #     list0 = []  # for all cell types rnn, gru, lstm
+    #     for x in rnn_last_hidden:
+    #         if isinstance(x, list):
+    #             # lstm cell: keep the output state, discard intermal/memory cell
+    #             if len(x[0].shape) == 2:
+    #                 # no beam search
+    #                 list0.append(x[0])
+    #             else:
+    #                 # beam search - pick from best position
+    #                 list0.append(x[0][:, 0, :])
+    #         else:
+    #             # gru/rnn cell type
+    #             if len(x.shape) == 2:
+    #                 # no beam search
+    #                 list0.append(x)
+    #             else:
+    #                 # beam search - pick from best position
+    #                 list0.append(x[:, 0, :])
+    #
+    #     # helper functions to create final form of rnn_last hidden
+    #     def concatenate_tensors():
+    #         # concatenate tensors to match decoder weights size
+    #         return tf.concat(list0, axis=-1)
+    #
+    #     def pick_last_tensor():
+    #         # else just get final state
+    #         return list0[-1]
+    #
+    #     # if self.dense_layer.weights[0] > self.state_size, then need to
+    #     # concatenate to create data structure for sampled_softmax
+    #     dense_layer_size = tf.shape(self.dense_layer.weights[0])[0]
+    #     rnn_last_hidden = tf.cond(
+    #         tf.greater(dense_layer_size, self.state_size),
+    #         concatenate_tensors,
+    #         pick_last_tensor
+    #     )
+    #
+    #     return rnn_last_hidden
 
     def decoder_teacher_forcing(
             self,
@@ -393,36 +395,19 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             dtype=tf.float32
         )
 
-        decoder = tfa.seq2seq.BasicDecoder(
+        # use Ludwig custom BasicDecoder
+        decoder = BasicDecoder(
             self.decoder_rnncell,
             sampler=self.sampler,
             output_layer=self.dense_layer
         )
 
-        # # BasicDecoderOutput
-        # outputs, final_state, generated_sequence_lengths = decoder(
-        #     decoder_emb_inp,
-        #     initial_state=decoder_initial_state,
-        #     sequence_length=target_sequence_length_with_eos
-        # )
-
-        # todo: testing with dynamic decode for sampled_softmax
-        # initialize training decoder
-        decoder_embedding_matrix = self.decoder_embedding.weights[0]
-        outputs, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
-            decoder=decoder,
-            output_time_major=False,
-            impute_finished=False,
-            maximum_iterations=tf.reduce_max(target_sequence_length_with_eos),
-            decoder_init_input=decoder_embedding_matrix,
-            decoder_init_kwargs=dict(
-            #     start_tokens=start_tokens,
-            #     end_token=end_token,
-                initial_state=decoder_initial_state,
-            ),
+        # BasicDecoderOutput
+        outputs, final_state, generated_sequence_lengths = decoder(
+            decoder_emb_inp,
+            initial_state=decoder_initial_state,
+            sequence_length=target_sequence_length_with_eos
         )
-
-
 
         logits = outputs.rnn_output
         # mask = tf.sequence_mask(
@@ -441,8 +426,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         )
 
         # extract structures needed for sampled_softmax
-        # rnn_last_hidden = self.extract_decoder_end_state(final_state)
-        rnn_last_hidden = outputs.rnn_output
+        rnn_last_hidden = outputs.projection_input
 
         # EXPECTED SIZE OF RETURNED TENSORS
         # logits: shape[batch_size, seq_size, num_classes]
@@ -555,7 +539,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # support for sampled_softmax_cross_entropy loss calculation
         # make visible last hidden tensor
         # for beam search assume beam 0 is best solution
-        rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
+        # rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
 
         # EXPECTED SIZE OF RETURNED TENSORS
         # lengths: shape[batch_size]
@@ -564,8 +548,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # probabilities: shape[batch_size, seq_size, num_classes]
         # rnn_last_hidden: shape[batch_size, state_size] or
         #     with Attention shape[batch_size, state_size * num_layers]
-        return None, lengths, predictions, last_predictions, probabilities, \
-               rnn_last_hidden
+        return None, lengths, predictions, last_predictions, probabilities
 
     def decoder_greedy(
             self,
@@ -657,8 +640,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
+        # todo cleanup
         # extraction structures required for sampled softmax
-        rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
+        # rnn_last_hidden = self.extract_decoder_end_state(decoder_state)
 
         # EXPECTED SIZE OF RETURNED TENSORS
         # logits: shape [batch_size, seq_size, num_classes]
@@ -668,8 +652,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # probabilities: shape[batch_size, seq_size, num_classes]
         # rnn_last_hidden: shape[batch_size, state_size] or
         #     with Attention shape[batch_size, state_size * num_layers]
-        return logits, lengths, predictions, last_predictions, probabilities, \
-               rnn_last_hidden
+        return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
@@ -693,9 +676,9 @@ class SequenceGeneratorDecoder(SequenceDecoder):
                 training=training
             )
 
-        logits, lengths, preds, last_preds, probs, rnn_last_hidden = decoder_outputs
+        logits, lengths, preds, last_preds, probs = decoder_outputs
 
-        return logits, lengths, preds, last_preds, probs, rnn_last_hidden
+        return logits, lengths, preds, last_preds, probs
 
     def _predictions_eval(
             self,
@@ -703,15 +686,14 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             training=None
     ):
         decoder_outputs = self.call(inputs, training=training)
-        logits, lengths, preds, last_preds, probs, rnn_last_hidden = decoder_outputs
+        logits, lengths, preds, last_preds, probs = decoder_outputs
 
         return {
             PREDICTIONS: preds,
             LENGTHS: lengths,
             LAST_PREDICTIONS: last_preds,
             PROBABILITIES: probs,
-            LOGITS: logits,
-            RNN_LAST_HIDDEN: rnn_last_hidden
+            LOGITS: logits
         }
 
 
