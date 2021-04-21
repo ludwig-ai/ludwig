@@ -225,27 +225,28 @@ def _extract_ground_truth_values(
     return gt
 
 
-def _get_cols_from_predictions(predictions_paths, col, metadata):
+def _get_cols_from_predictions(predictions_paths, cols, metadata):
     results_per_model = []
-    for predictions_path in predictions_paths:
-        shapes_fname = replace_file_extension(predictions_path, 'shapes.json')
-        column_shapes = load_json(shapes_fname)
+    for col in cols:
+        for predictions_path in predictions_paths:
+            shapes_fname = replace_file_extension(predictions_path, 'shapes.json')
+            column_shapes = load_json(shapes_fname)
 
-        pred_df = pd.read_parquet(predictions_path)
-        pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
+            pred_df = pd.read_parquet(predictions_path)
+            pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
 
-        # Convert categorical features back to numerical indices
-        if col.endswith(_PREDICTIONS_SUFFIX):
-            feature_name = col[:-len(_PREDICTIONS_SUFFIX)]
-            feature_metadata = metadata[feature_name]
-            if 'str2idx' in feature_metadata:
-                print(pred_df[col])
-                pred_df[col] = pred_df[col].map(
-                    lambda x: feature_metadata['str2idx'][x]
-                )
+            # Convert categorical features back to numerical indices
+            if col.endswith(_PREDICTIONS_SUFFIX):
+                feature_name = col[:-len(_PREDICTIONS_SUFFIX)]
+                feature_metadata = metadata[feature_name]
+                if 'str2idx' in feature_metadata:
+                    print(pred_df[col])
+                    pred_df[col] = pred_df[col].map(
+                        lambda x: feature_metadata['str2idx'][x]
+                    )
 
-        pred_df = to_numpy_dataset(pred_df)
-        results_per_model.append(pred_df[col])
+            pred_df = to_numpy_dataset(pred_df)
+            results_per_model.append(pred_df[col])
 
     return results_per_model
 
@@ -352,7 +353,7 @@ def compare_classifiers_performance_from_prob_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
 
     compare_classifiers_performance_from_prob(
@@ -411,7 +412,7 @@ def compare_classifiers_performance_from_pred_cli(
 
     col = f'{output_feature_name}{_PREDICTIONS_SUFFIX}'
     predictions_per_model = _get_cols_from_predictions(
-        predictions, col, metadata
+        predictions, [col], metadata
     )
 
     compare_classifiers_performance_from_pred(
@@ -469,7 +470,7 @@ def compare_classifiers_performance_subset_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
 
     compare_classifiers_performance_subset(
@@ -528,7 +529,7 @@ def compare_classifiers_performance_changing_k_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     compare_classifiers_performance_changing_k(
         probabilities_per_model,
@@ -610,7 +611,7 @@ def compare_classifiers_predictions_cli(
 
     col = f'{output_feature_name}{_PREDICTIONS_SUFFIX}'
     predictions_per_model = _get_cols_from_predictions(
-        predictions, col, metadata
+        predictions, [col], metadata
     )
 
     compare_classifiers_predictions(
@@ -669,7 +670,7 @@ def compare_classifiers_predictions_distribution_cli(
 
     col = f'{output_feature_name}{_PREDICTIONS_SUFFIX}'
     predictions_per_model = _get_cols_from_predictions(
-        predictions, col, metadata
+        predictions, [col], metadata
     )
     compare_classifiers_predictions_distribution(
         predictions_per_model,
@@ -726,7 +727,7 @@ def confidence_thresholding_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     confidence_thresholding(
         probabilities_per_model,
@@ -784,7 +785,7 @@ def confidence_thresholding_data_vs_acc_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     confidence_thresholding_data_vs_acc(
         probabilities_per_model,
@@ -842,7 +843,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     confidence_thresholding_data_vs_acc_subset(
         probabilities_per_model,
@@ -898,7 +899,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     confidence_thresholding_data_vs_acc_subset_per_class(
         probabilities_per_model,
@@ -917,7 +918,6 @@ def confidence_thresholding_2thresholds_2d_cli(
         split_file: str,
         ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
-        output_feature_name: str,
         output_directory: str,
         **kwargs: dict
 ) -> None:
@@ -937,7 +937,6 @@ def confidence_thresholding_2thresholds_2d_cli(
         created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
-    :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
          results.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -964,9 +963,12 @@ def confidence_thresholding_2thresholds_2d_cli(
         split_file
     )
 
-    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    cols = [
+        f'{feature_name}{_PROBABILITIES_SUFFIX}'
+        for feature_name in threshold_output_feature_names
+    ]
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, cols, metadata
     )
 
     confidence_thresholding_2thresholds_2d(
@@ -986,7 +988,6 @@ def confidence_thresholding_2thresholds_3d_cli(
         split_file: str,
         ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
-        output_feature_name: str,
         output_directory: str,
         **kwargs: dict
 ) -> None:
@@ -1006,7 +1007,6 @@ def confidence_thresholding_2thresholds_3d_cli(
         created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
-    :param output_feature_name: (str) name of the output feature to visualize.
     :param output_directory: (str) name of output directory containing training
          results.
     :param kwargs: (dict) parameters for the requested visualizations.
@@ -1033,9 +1033,12 @@ def confidence_thresholding_2thresholds_3d_cli(
         split_file
     )
 
-    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    cols = [
+        f'{feature_name}{_PROBABILITIES_SUFFIX}'
+        for feature_name in threshold_output_feature_names
+    ]
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, cols, metadata
     )
     confidence_thresholding_2thresholds_3d(
         probabilities_per_model,
@@ -1093,7 +1096,7 @@ def binary_threshold_vs_metric_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     binary_threshold_vs_metric(
         probabilities_per_model,
@@ -1151,7 +1154,7 @@ def roc_curves_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     roc_curves(
         probabilities_per_model,
@@ -1234,7 +1237,7 @@ def calibration_1_vs_all_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     calibration_1_vs_all(
         probabilities_per_model,
@@ -1292,7 +1295,7 @@ def calibration_multiclass_cli(
 
     col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
     probabilities_per_model = _get_cols_from_predictions(
-        probabilities, col, metadata
+        probabilities, [col], metadata
     )
     calibration_multiclass(
         probabilities_per_model,

@@ -1246,8 +1246,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
     treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name,
                                                              output_feature=1)
-    probability1 = f'{treshhold_output_feature_name1}_probabilities'
-    probability2 = f'{treshhold_output_feature_name2}_probabilities'
+    probability = os.path.join(exp_dir_name, 'predictions.parquet')
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1263,8 +1262,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
                     '--ground_truth_metadata',
                     exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
-                    probability1,
-                    probability2,
+                    probability,
                     '--threshold_output_feature_names',
                     treshhold_output_feature_name1,
                     treshhold_output_feature_name2,
@@ -1324,8 +1322,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
     treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name,
                                                              output_feature=1)
-    probability1 = f'{treshhold_output_feature_name1}_probabilities'
-    probability2 = f'{treshhold_output_feature_name2}_probabilities'
+    probability = os.path.join(exp_dir_name, 'predictions.parquet')
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = experiment_source_data_name + '.split.csv'
@@ -1341,8 +1338,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
                     '--ground_truth_metadata',
                     exp_dir_name + '/model/training_set_metadata.json',
                     '--probabilities',
-                    probability1,
-                    probability2,
+                    probability,
                     '--threshold_output_feature_names',
                     treshhold_output_feature_name1,
                     treshhold_output_feature_name2,
