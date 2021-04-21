@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM tensorflow/tensorflow:2.4.1
+FROM tensorflow/tensorflow:2.4.1-gpu
 
 RUN apt-get -y update && apt-get -y install \
     git \
@@ -22,7 +22,8 @@ RUN apt-get -y update && apt-get -y install \
 WORKDIR /ludwig
 
 COPY . .
-RUN HOROVOD_WITH_TENSORFLOW=1 \
+RUN HOROVOD_GPU_OPERATIONS=NCCL \
+    HOROVOD_WITH_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_PYTORCH=1 \
     HOROVOD_WITHOUT_MXNET=1 \
