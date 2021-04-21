@@ -112,49 +112,6 @@ def convert_to_df(
         training_set_metadata,
 ):
     return predictions
-    
-    data_for_df = {}
-    for of_name, output_feature in output_features.items():
-        output_feature_dict = predictions[of_name]
-        for key_val in output_feature_dict.items():
-            output_subgroup_name, output_type_value = key_val
-            if (hasattr(output_type_value, 'shape') and
-                len(output_type_value.shape)) > 1:
-                if output_feature.type in SEQUENCE_TYPES:
-                    data_for_df[
-                        '{}_{}'.format(of_name, output_subgroup_name)
-                    ] = output_type_value.tolist()
-                else:
-                    for i, value in enumerate(output_type_value.T):
-                        if (of_name in training_set_metadata and
-                                'idx2str' in training_set_metadata[of_name]):
-                            class_name = training_set_metadata[of_name][
-                                'idx2str'][i]
-                        elif output_feature.type == BINARY:
-                            if (of_name in training_set_metadata and
-                                    'bool2str' in training_set_metadata[of_name]):
-                                class_name = training_set_metadata[of_name][
-                                    'bool2str'][i]
-                            else:
-                                class_name = 'True' if i == 1 else 'False'
-                        else:
-                            class_name = str(i)
-                        data_for_df[
-                            '{}_{}_{}'.format(
-                                of_name,
-                                output_subgroup_name,
-                                class_name
-                            )
-                        ] = normalize_numpy(value)
-            else:
-                data_for_df[
-                    '{}_{}'.format(
-                        of_name,
-                        output_subgroup_name
-                    )
-                ] = normalize_numpy(output_type_value)
-    output_df = pd.DataFrame(data_for_df)
-    return output_df
 
 
 conversion_registry = {
