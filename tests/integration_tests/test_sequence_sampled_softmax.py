@@ -58,6 +58,8 @@ def generate_deterministic_sequence(num_records=200):
 # testing only a subset of options to reduce test run time
 # combinations selected to test are the major tensor structures/sizes expected
 # to be encountered: AttentionWrapperState, BeamSearchDecoderState, None
+@pytest.mark.parametrize('loss_sampler',
+                         ['fixed_unigram', 'log_uniform', 'uniform'])
 @pytest.mark.parametrize('dec_attention', [None, 'luong'])
 @pytest.mark.parametrize('dec_cell_type', ['gru', 'lstm'])
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'lstm'])
@@ -71,6 +73,7 @@ def test_sequence_generator(
         dec_attention,
         dec_beam_width,
         dec_num_layers,
+        loss_sampler,
         generate_deterministic_sequence
 ):
     # Define input and output features
@@ -91,8 +94,7 @@ def test_sequence_generator(
             'loss': {
                 'type': 'sampled_softmax_cross_entropy',
                 'negative_samples': 10,
-                # 'unique': False,
-                # 'sampler': 'uniform'
+                'sampler': loss_sampler
             }
         }
     ]
