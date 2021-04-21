@@ -14,10 +14,7 @@ FROM tensorflow/tensorflow:2.4.1
 RUN apt-get -y update && apt-get -y install \
     git \
     libsndfile1 \
-    cmake \
-    libcudnn7=7.6.5.32-1+cuda10.1 \
-    libnccl2=2.7.8-1+cuda10.1 \
-    libnccl-dev=2.7.8-1+cuda10.1
+    cmake
 
 WORKDIR /ludwig
 

@@ -19,7 +19,7 @@ jobs:
           - ludwig
           - ludwig-gpu
           - ludwig-ray
-    name: docker {{ docker-image }}
+    name: docker ${{ docker-image }}
     steps:
       -
         name: Checkout
