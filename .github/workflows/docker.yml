@@ -34,6 +34,4 @@ jobs:
           context: .
           file: ./docker/ludwig-ray/Dockerfile
           push: true
-          tags:
-            - ludwigai/ludwig-ray:latest
-            - ludwigai/ludwig-ray:${SHORT_SHA}
+          tags: ludwigai/ludwig-ray:latest,ludwigai/ludwig-ray:${SHORT_SHA}
