@@ -12,13 +12,14 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-      strategy:
-        fail-fast: false
-        matrix:
-          docker-image:
-            - ludwig
-            - ludwig-gpu
-            - ludwig-ray
+    strategy:
+      fail-fast: false
+      matrix:
+        docker-image:
+          - ludwig
+          - ludwig-gpu
+          - ludwig-ray
+    name: docker {{ docker-image }}
     steps:
       -
         name: Checkout
