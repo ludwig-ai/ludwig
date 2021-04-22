@@ -227,14 +227,14 @@ def _extract_ground_truth_values(
 
 def _get_cols_from_predictions(predictions_paths, cols, metadata):
     results_per_model = []
-    for col in cols:
-        for predictions_path in predictions_paths:
-            shapes_fname = replace_file_extension(predictions_path, 'shapes.json')
-            column_shapes = load_json(shapes_fname)
+    for predictions_path in predictions_paths:
+        shapes_fname = replace_file_extension(predictions_path, 'shapes.json')
+        column_shapes = load_json(shapes_fname)
 
-            pred_df = pd.read_parquet(predictions_path)
-            pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
+        pred_df = pd.read_parquet(predictions_path)
+        pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
 
+        for col in cols:
             # Convert categorical features back to numerical indices
             if col.endswith(_PREDICTIONS_SUFFIX):
                 feature_name = col[:-len(_PREDICTIONS_SUFFIX)]
