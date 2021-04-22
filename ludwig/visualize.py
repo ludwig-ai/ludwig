@@ -240,7 +240,6 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
                 feature_name = col[:-len(_PREDICTIONS_SUFFIX)]
                 feature_metadata = metadata[feature_name]
                 if 'str2idx' in feature_metadata:
-                    print(pred_df[col])
                     pred_df[col] = pred_df[col].map(
                         lambda x: feature_metadata['str2idx'][x]
                     )
