@@ -4,6 +4,23 @@ from torch.nn.init import (uniform_, normal_, constant_, zeros_, eye_, dirac_,
         xavier_uniform_, xavier_normal_, kaiming_uniform_, kaiming_normal, orthogonal_, sparse_)
 from torch.nn import (ELU, LeakyReLU, LogSigmoid, ReLU, Sigmoid, Tanh, Softmax)
 
+def sequence_length_3D(sequence):
+    used = torch.sign(torch.max(torch.abs(sequence), dim=2))
+    length = torch.sum(used, 1)
+    length = length.type(torch.int32)
+    return length
+
+def sequence_mask(lengths, maxlen=None, dtype=torch.bool):
+    if maxlen is None:
+        maxlen = lengths.max()
+    row_vector = torch.arange(0, maxlen, 1)
+    matrix = torch.unsqueeze(lengths, dim=-1)
+    mask = row_vector < matrix
+
+    mask.type(dtype)
+    return mask
+
+
 initializers = {
         "uniform": uniform_,
         "normal": normal_,

@@ -26,7 +26,10 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+#from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -350,17 +353,31 @@ class OutputFeature(BaseFeature, Module, ABC):
                     else:
                         # matrix vector -> tile concat
                         sequence_max_length = hidden.shape[1]
+                        '''
                         multipliers = tf.concat(
                             [[1], [sequence_max_length], [1]],
                             0
                         )
+                        '''
+                        multipliers = torch.cat(
+                            [[1], [sequence_max_length], [1]],
+                            dim=0
+                        )
+
+                        '''
                         tiled_representation = tf.tile(
                             tf.expand_dims(dependency_final_hidden, 1),
+                            multipliers
+                        )
+                        '''
+                        tiled_representation = torch.tile(
+                            torch.unsqueeze(dependency_final_hidden, 1),
                             multipliers
                         )
 
                         # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
+                        '''
                         mask = tf.sequence_mask(
                             sequence_length,
                             sequence_max_length
@@ -368,6 +385,15 @@ class OutputFeature(BaseFeature, Module, ABC):
                         tiled_representation = tf.multiply(
                             tiled_representation,
                             tf.cast(mask[:, :, tf.newaxis], dtype=tf.float32)
+                        )
+                        '''
+                        mask = sequence_mask(
+                            sequence_length,
+                            sequence_max_length
+                        )
+                        tiled_representation = torch.mul(
+                            tiled_representation,
+                            mask[:, :, np.newaxis].type(torch.float32)
                         )
 
                         dependencies_hidden.append(tiled_representation)
@@ -418,9 +444,15 @@ class OutputFeature(BaseFeature, Module, ABC):
 
         # flatten inputs
         if len(original_feature_hidden.shape) > 2:
+            '''
             feature_hidden = tf.reshape(
                 feature_hidden,
                 [-1, feature_hidden.shape[-1]]
+            )
+            '''
+            feature_hidden = torch.reshape(
+                feature_hidden,
+                (-1, list(feature_hidden.shape)[-1])
             )
 
         # pass it through fc_stack
@@ -434,9 +466,15 @@ class OutputFeature(BaseFeature, Module, ABC):
         # reshape back to original first and second dimension
         if len(original_feature_hidden.shape) > 2:
             sequence_length = original_feature_hidden.shape[1]
+            '''
             feature_hidden = tf.reshape(
                 feature_hidden,
                 [-1, sequence_length, feature_hidden_size]
+            )
+            '''
+            feature_hidden = torch.reshape(
+                feature_hidden,
+                (-1, sequence_length, feature_hidden_size)
             )
 
         return feature_hidden

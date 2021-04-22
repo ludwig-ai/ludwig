@@ -82,7 +82,11 @@ class Regressor(LudwigModule):
             self.add_loss(lambda: self.activation_loss)
 
     def forward(self, inputs, **kwargs):
-        return torch.squeeze(self.dense(inputs), axis=-1)
+        batch_size = inputs.shape[0]
+        output = torch.squeeze(self.dense(inputs), axis=-1)
+        self.activation_loss = reg_loss(output, self.activity_regularizer)/batch_size
+
+        return output
 
 
 class Projector(Layer):
