@@ -244,8 +244,8 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
                         lambda x: feature_metadata['str2idx'][x]
                     )
 
-            pred_df = to_numpy_dataset(pred_df)
-            results_per_model.append(pred_df[col])
+        pred_df = to_numpy_dataset(pred_df)
+        results_per_model += [pred_df[col] for col in cols]
 
     return results_per_model
 
