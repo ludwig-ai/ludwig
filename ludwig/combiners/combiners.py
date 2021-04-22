@@ -20,6 +20,9 @@ from typing import List
 import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
+import torch
+from torch.nn import Module
+
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
@@ -34,7 +37,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class ConcatCombiner(tf.keras.Model):
+class ConcatCombiner(Module):
     def __init__(
             self,
             input_features=None,
@@ -70,6 +73,7 @@ class ConcatCombiner(tf.keras.Model):
         if fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                first_layer_input_size=self.get_input_shape(input_features),
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -90,7 +94,7 @@ class ConcatCombiner(tf.keras.Model):
         if input_features and len(input_features) == 1 and fc_layers is None:
             self.supports_masking = True
 
-    def call(
+    def forward(
             self,
             inputs,  # encoder outputs
             training=None,
@@ -100,7 +104,7 @@ class ConcatCombiner(tf.keras.Model):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
         # ================ Concat ================
         if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, 1)
+            hidden = torch.cat(encoder_outputs, 1)
         else:
             hidden = list(encoder_outputs)[0]
 
@@ -120,6 +124,11 @@ class ConcatCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
+
+    def get_input_shape(input_features):
+        shapes = [input_features[k].get_input_shape() for k in input_features]
+        return sum(shapes)
+
 
 
 class SequenceConcatCombiner(tf.keras.Model):
