@@ -22,7 +22,7 @@ import ludwig.contrib
 ludwig.contrib.contrib_import()
 
 
-class CLI(object):
+class CLI:
     """CLI describes a command line interface for interacting with Ludwig, there
     are several different functions that can be performed. These functions are:
     - experiment - run an experiment using ludwig

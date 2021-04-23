@@ -37,7 +37,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class TextFeatureMixin(object):
+class TextFeatureMixin:
     type = TEXT
 
     preprocessing_defaults = {

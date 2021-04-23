@@ -51,7 +51,7 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
             embedding_regularizer=None,
             **kwargs
     ):
-        super(CategoricalEmbedEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  Embed')
@@ -96,7 +96,7 @@ class CategoricalSparseEncoder(CategoricalEncoder):
             embedding_regularizer=None,
             **kwargs
     ):
-        super(CategoricalSparseEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  Embed')
