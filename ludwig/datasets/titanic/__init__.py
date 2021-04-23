@@ -21,11 +21,11 @@ from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_api_key=None):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
     dataset = Titanic(
         cache_dir=cache_dir,
         kaggle_username=kaggle_username,
-        kaggle_api_key=kaggle_api_key
+        kaggle_key=kaggle_key
     )
     return dataset.load(split=split)
 
@@ -41,9 +41,9 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     def __init__(self,
                  cache_dir=DEFAULT_CACHE_LOCATION,
                  kaggle_username=None,
-                 kaggle_api_key=None):
+                 kaggle_key=None):
         self.kaggle_username = kaggle_username
-        self.kaggle_api_key = kaggle_api_key
+        self.kaggle_key = kaggle_key
         self.is_kaggle_competition = True
         super().__init__(dataset_name='titanic', cache_dir=cache_dir)
 
