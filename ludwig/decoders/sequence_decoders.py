@@ -78,7 +78,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             reduce_input='sum',
             **kwargs
     ):
-        super(SequenceGeneratorDecoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.cell_type = cell_type
@@ -720,7 +720,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
             is_timeseries=False,
             **kwargs
     ):
-        super(SequenceTaggerDecoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.attention = attention

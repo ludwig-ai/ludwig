@@ -41,7 +41,7 @@ from ludwig.utils.misc_utils import set_default_values
 logger = logging.getLogger(__name__)
 
 
-class AudioFeatureMixin(object):
+class AudioFeatureMixin:
     type = AUDIO
 
     preprocessing_defaults = {

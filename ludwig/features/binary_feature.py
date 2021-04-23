@@ -40,7 +40,7 @@ from ludwig.utils import strings_utils
 logger = logging.getLogger(__name__)
 
 
-class BinaryFeatureMixin(object):
+class BinaryFeatureMixin:
     type = BINARY
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,

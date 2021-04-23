@@ -36,7 +36,7 @@ from ludwig.utils.misc_utils import set_default_value
 logger = logging.getLogger(__name__)
 
 
-class ImageFeatureMixin(object):
+class ImageFeatureMixin:
     type = IMAGE
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,

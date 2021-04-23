@@ -43,7 +43,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class SequenceFeatureMixin(object):
+class SequenceFeatureMixin:
     type = SEQUENCE
 
     preprocessing_defaults = {

@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 DATE_VECTOR_LENGTH = 9
 
 
-class DateFeatureMixin(object):
+class DateFeatureMixin:
     type = DATE
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,

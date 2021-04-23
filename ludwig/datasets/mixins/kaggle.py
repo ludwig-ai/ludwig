@@ -13,13 +13,14 @@ class KaggleDownloadMixin:
     """A mixin to abstract away the details of the kaggle API which includes
     the ability to authenticate against the kaggle API, list the various datasets
     and finally download the dataset, we derive from ZipDownloadMixin to take
-    advantage of extracting contents from the titanic zip file"""
+    advantage of extracting contents from the archive zip file"""
     config: dict
     raw_dataset_path: str
     raw_temp_path: str
     name: str
     kaggle_username: str
     kaggle_key: str
+    is_kaggle_competition: bool
 
     def download_raw_dataset(self):
         """
@@ -34,14 +35,17 @@ class KaggleDownloadMixin:
             api.authenticate()
         os.makedirs(self.raw_temp_path, exist_ok=True)
 
-        # Download all files for a competition
-        api.competition_download_files(self.competition_name, path=self.raw_temp_path)
+        if self.is_kaggle_competition:
+            download_func = api.competition_download_files
+        else:
+            download_func = api.dataset_download_files
+        # Download all files for a competition/dataset
+        download_func(self.competition_name, path=self.raw_temp_path)
 
-        competition_zipfile = os.path.join(self.raw_temp_path, self.archive_filename)
-        with ZipFile(competition_zipfile, 'r') as z:
+        archive_zip = os.path.join(self.raw_temp_path, self.archive_filename)
+        with ZipFile(archive_zip, 'r') as z:
             z.extractall(self.raw_temp_path)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
-
 
     @contextmanager
     def update_env(self, **kwargs):
