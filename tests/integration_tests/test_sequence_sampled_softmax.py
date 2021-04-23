@@ -59,7 +59,8 @@ def generate_deterministic_sequence(num_records=200):
 # combinations selected to test are the major tensor structures/sizes expected
 # to be encountered: AttentionWrapperState, BeamSearchDecoderState, None
 @pytest.mark.parametrize('loss_sampler',
-                         ['fixed_unigram', 'log_uniform', 'uniform'])
+                         ['learned_unigram', 'fixed_unigram',
+                          'log_uniform', 'uniform'])
 @pytest.mark.parametrize('dec_attention', [None, 'luong'])
 @pytest.mark.parametrize('dec_cell_type', ['gru', 'lstm'])
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'lstm'])

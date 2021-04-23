@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import collections
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -21,6 +22,9 @@ from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
 from ludwig.constants import *
 from ludwig.constants import LOGITS
 from ludwig.utils.tf_utils import sequence_length_2D
+
+# used for Lplace smoothing for candidate samplers
+EPSILON = 1.e-10
 
 
 class MSELoss(MeanSquaredError):
@@ -285,7 +289,8 @@ def mean_confidence_penalty(probabilities, num_classes):
     penalty = (max_entropy - entropy) / max_entropy
     return tf.reduce_mean(penalty)
 
-# sepcific for categorical feature
+
+# For categorical feature
 def sampled_softmax_cross_entropy(
         labels,
         last_hidden,
@@ -319,6 +324,17 @@ def sampled_softmax_cross_entropy(
     return train_loss
 
 
+# custom class to support Laplace smoothing of Fixed Unigram candidate sampler
+# Required because of zeros returned in the true_expected_count for
+# <PAD> and <UNK> tokens in loss['class_counts'] list
+class FixedUnigramCandidateSampler(
+    collections.namedtuple('FixedUnigramCandidateSampler',
+                           ('sampled_candidates', 'true_expected_count',
+                            'sampled_expected_count'))):
+    pass
+
+
+# For sequence feature
 def sequence_sampled_softmax_cross_entropy(targets,
                                            train_logits,
                                            decoder_weights,
@@ -343,6 +359,16 @@ def sequence_sampled_softmax_cross_entropy(targets,
                                                 loss['unique'],
                                                 loss['class_counts'],
                                                 loss['distortion'])
+
+    if loss['sampler'] in {'fixed_unigram', 'learned_unigram'}:
+        # regenerate sampled_values structure for specified samplers
+        # to handle any zero values in true_expected_count tensor
+        sampled_values = FixedUnigramCandidateSampler(
+            sampled_values.sampled_candidates,
+            # add smoothing constant EPSILON to handle any zero values
+            tf.add(sampled_values.true_expected_count, EPSILON),
+            sampled_values.sampled_expected_count
+        )
 
     def _sampled_loss(labels, logits):
         labels = tf.cast(labels, tf.int64)
@@ -370,8 +396,6 @@ def sequence_sampled_softmax_cross_entropy(targets,
     )
 
     return train_loss
-
-
 
 
 def weighted_softmax_cross_entropy(
