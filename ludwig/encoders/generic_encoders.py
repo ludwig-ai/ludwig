@@ -29,7 +29,7 @@ class PassthroughEncoder(Layer):
             self,
             **kwargs
     ):
-        super(PassthroughEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
     def call(self, inputs, training=None, mask=None):
@@ -61,7 +61,7 @@ class DenseEncoder(Layer):
             dropout=0,
             **kwargs
     ):
-        super(DenseEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  FCStack')

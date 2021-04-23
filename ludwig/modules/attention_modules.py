@@ -39,7 +39,7 @@ class FeedForwardAttentionReducer(Layer):
 
 class MultiHeadSelfAttention(Layer):
     def __init__(self, hidden_size, num_heads=8):
-        super(MultiHeadSelfAttention, self).__init__()
+        super().__init__()
         self.embedding_size = hidden_size
         self.num_heads = num_heads
         if hidden_size % num_heads != 0:
@@ -99,7 +99,7 @@ class MultiHeadSelfAttention(Layer):
 
 class TransformerBlock(Layer):
     def __init__(self, hidden_size, num_heads, fc_size, dropout=0.1):
-        super(TransformerBlock, self).__init__()
+        super().__init__()
         self.self_attention = MultiHeadSelfAttention(hidden_size, num_heads)
         self.dropout1 = Dropout(dropout)
         self.layernorm1 = LayerNormalization(epsilon=1e-6)
@@ -118,7 +118,7 @@ class TransformerBlock(Layer):
         return self.layernorm2(ln1_output + fc_output)
 
 
-class TrasformerStack(Layer):
+class TransformerStack(Layer):
     def __init__(
             self,
             hidden_size=256,
@@ -128,7 +128,7 @@ class TrasformerStack(Layer):
             dropout=0.1,
             **kwargs
     ):
-        super(TrasformerStack, self).__init__()
+        super().__init__()
         self.supports_masking = True
 
         self.layers = []

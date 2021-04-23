@@ -29,7 +29,7 @@ EPSILON = 1.e-10
 
 class MSELoss(MeanSquaredError):
     def __init__(self, **kwargs):
-        super(MSELoss, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
         logits = y_pred[LOGITS]
@@ -39,7 +39,7 @@ class MSELoss(MeanSquaredError):
 
 class MAELoss(MeanAbsoluteError):
     def __init__(self, **kwargs):
-        super(MAELoss, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
         logits = y_pred[LOGITS]
@@ -54,7 +54,7 @@ class BWCEWLoss(tf.keras.losses.Loss):
             robust_lambda=0,
             confidence_penalty=0
     ):
-        super(BWCEWLoss, self).__init__()
+        super().__init__()
 
         self.positive_class_weight = positive_class_weight
         self.robust_lambda = robust_lambda
@@ -95,7 +95,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
             feature_loss=None,
             name=None
     ):
-        super(SoftmaxCrossEntropyLoss, self).__init__(name=name)
+        super().__init__(name=name)
         self.num_classes = num_classes
         self.feature_loss = feature_loss
 
@@ -123,7 +123,7 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
             feature_loss=None,
             name=None
     ):
-        super(SampledSoftmaxCrossEntropyLoss, self).__init__(name=name)
+        super().__init__(name=name)
 
         self.decoder_obj = decoder_obj
         self.num_classes = num_classes
@@ -182,7 +182,7 @@ class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
             feature_loss=None,
             name=None
     ):
-        super(SigmoidCrossEntropyLoss, self).__init__(name=name)
+        super().__init__(name=name)
         self.feature_loss = feature_loss
 
     def call(self, y, y_pred):
@@ -196,7 +196,7 @@ class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
 
 class SequenceSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(self, name=None, from_logits=True, **kwargs):
-        super(SequenceSoftmaxCrossEntropyLoss, self).__init__(name=name)
+        super().__init__(name=name)
         self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
             from_logits=from_logits,
             reduction='none'

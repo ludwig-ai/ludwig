@@ -29,7 +29,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class BaseFeature(object):
+class BaseFeature:
     """Base class for all features.
 
     Note that this class is not-cooperative (does not forward kwargs), so when constructing

@@ -41,7 +41,7 @@ min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
 
 class R2Score(tf.keras.metrics.Metric):
     def __init__(self, name='r2_score'):
-        super(R2Score, self).__init__(name=name)
+        super().__init__(name=name)
         self.sum_y = self.add_weight(
             'sum_y', initializer='zeros',
             dtype=tf.float32
@@ -92,7 +92,7 @@ class R2Score(tf.keras.metrics.Metric):
 
 class ErrorScore(tf.keras.metrics.Metric):
     def __init__(self, name='error_score'):
-        super(ErrorScore, self).__init__(name=name)
+        super().__init__(name=name)
         self.sum_error = self.add_weight(
             'sum_error', initializer='zeros',
             dtype=tf.float32
@@ -124,7 +124,7 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
             confidence_penalty=0,
             name='binary_cross_entropy_weighted_loss_metric'
     ):
-        super(BWCEWLMetric, self).__init__(name=name)
+        super().__init__(name=name)
 
         self.bwcew_loss_function = BWCEWLoss(
             positive_class_weight=positive_class_weight,
@@ -157,7 +157,7 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
             feature_loss=None,
             name='softmax_cross_entropy_metric'
     ):
-        super(SoftmaxCrossEntropyMetric, self).__init__(name=name)
+        super().__init__(name=name)
 
         self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(
             num_classes=num_classes,
@@ -194,7 +194,7 @@ class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
             feature_loss=None,
             name='sigmoid_cross_entropy_metric'
     ):
-        super(SigmoidCrossEntropyMetric, self).__init__(name=name)
+        super().__init__(name=name)
         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(
             feature_loss
         )
@@ -205,7 +205,7 @@ class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
 
 class SequenceLossMetric(tf.keras.metrics.Mean):
     def __init__(self, from_logits=True, name=None):
-        super(SequenceLossMetric, self).__init__(name=name)
+        super().__init__(name=name)
 
         self.loss_function = SequenceSoftmaxCrossEntropyLoss(
             from_logits=from_logits)
@@ -244,7 +244,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     """
 
     def __init__(self, name=None):
-        super(SequenceLastAccuracyMetric, self).__init__(name=name)
+        super().__init__(name=name)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         y_true = tf.cast(y_true, dtype=tf.int64)
@@ -265,7 +265,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
 
 class PerplexityMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
-        super(PerplexityMetric, self).__init__(name=name)
+        super().__init__(name=name)
         self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
@@ -279,7 +279,7 @@ class PerplexityMetric(tf.keras.metrics.Mean):
 
 class EditDistanceMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
-        super(EditDistanceMetric, self).__init__(name=name)
+        super().__init__(name=name)
 
     def update_state(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
@@ -300,7 +300,7 @@ class EditDistanceMetric(tf.keras.metrics.Mean):
 
 class TokenAccuracyMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
-        super(TokenAccuracyMetric, self).__init__(name=name)
+        super().__init__(name=name)
 
     def update_state(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
@@ -320,7 +320,7 @@ class TokenAccuracyMetric(tf.keras.metrics.Mean):
 
 class SequenceAccuracyMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
-        super(SequenceAccuracyMetric, self).__init__(name=name)
+        super().__init__(name=name)
 
     def update_state(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
@@ -339,7 +339,7 @@ class SequenceAccuracyMetric(tf.keras.metrics.Mean):
 
 class CategoryAccuracy(tf.keras.metrics.Accuracy):
     def __init__(self, name=None):
-        super(CategoryAccuracy, self).__init__(name=name)
+        super().__init__(name=name)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         # make sure y_true is tf.int64
@@ -352,7 +352,7 @@ class CategoryAccuracy(tf.keras.metrics.Accuracy):
 
 class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
     def __init__(self, k=3, name=None):
-        super(HitsAtKMetric, self).__init__(k=k, name=name)
+        super().__init__(k=k, name=name)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
@@ -364,7 +364,7 @@ class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
 
 class MAEMetric(MeanAbsoluteErrorMetric):
     def __init__(self, **kwargs):
-        super(MAEMetric, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
@@ -374,7 +374,7 @@ class MAEMetric(MeanAbsoluteErrorMetric):
 
 class MSEMetric(MeanSquaredErrorMetric):
     def __init__(self, **kwargs):
-        super(MSEMetric, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
@@ -384,7 +384,7 @@ class MSEMetric(MeanSquaredErrorMetric):
 
 class JaccardMetric(tf.keras.metrics.Metric):
     def __init__(self, name=None):
-        super(JaccardMetric, self).__init__(name=name)
+        super().__init__(name=name)
         self.jaccard_total = self.add_weight(
             'jaccard_numerator', initializer='zeros', dtype=tf.float32
         )

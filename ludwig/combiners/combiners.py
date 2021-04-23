@@ -20,6 +20,7 @@ from typing import List
 import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
+from ludwig.constants import TYPE, CATEGORY, NUMERICAL, BINARY
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
@@ -27,6 +28,7 @@ from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
@@ -316,6 +318,94 @@ class SequenceCombiner(tf.keras.Model):
         return return_data
 
 
+class TabNetCombiner(tf.keras.Model):
+    def __init__(
+            self,
+            input_features,
+            size: int,  # N_a in the paper
+            output_size: int,  # N_d in the paper
+            num_steps: int = 1,  # N_steps in the paper
+            num_total_blocks: int = 4,
+            num_shared_blocks: int = 2,
+            relaxation_factor: float = 1.5,  # gamma in the paper
+            bn_epsilon: float = 1e-5,
+            bn_momentum: float = 0.7,  # m_B in the paper
+            bn_virtual_bs: int = None,  # B_v from the paper
+            sparsity: float = 1e-5,  # lambda_sparse in the paper
+            dropout=0,
+            **kwargs
+    ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        # todo this assumes each input feature outputs size 1
+        #  or 1hot for categorical
+        feature_sizes = []
+        for feature in input_features.values():
+            if feature.type == NUMERICAL or feature.type == BINARY:
+                feature_sizes.append(1)
+            elif feature.type == CATEGORY:
+                feature_sizes.append(feature.encoder_obj.embedding_size)
+            else:
+                raise ValueError(
+                    "TabNet does not currently support {} features, "
+                    "it only supports binary, numerical and category".format(
+                        feature[TYPE]
+                    )
+                )
+
+        self.tabnet = TabNet(
+            num_features=sum(feature_sizes),
+            size=size,
+            output_size=output_size,
+            num_steps=num_steps,
+            num_total_blocks=num_total_blocks,
+            num_shared_blocks=num_shared_blocks,
+            relaxation_factor=relaxation_factor,
+            bn_epsilon=bn_epsilon,
+            bn_momentum=bn_momentum,
+            bn_virtual_bs=bn_virtual_bs,
+            sparsity=sparsity
+        )
+
+        if dropout > 0:
+            self.dropout = tf.keras.layers.Dropout(dropout)
+        else:
+            self.dropout = None
+
+    def call(
+            self,
+            inputs,  # encoder outputs
+            training=None,
+            mask=None,
+            **kwargs
+    ):
+        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+
+        # ================ Concat ================
+        if len(encoder_outputs) > 1:
+            hidden = concatenate(encoder_outputs, 1)
+        else:
+            hidden = list(encoder_outputs)[0]
+
+        # ================ TabNet ================
+        hidden, masks = self.tabnet(
+            hidden,
+            training=training,
+        )
+        if self.dropout:
+            hidden = self.dropout(hidden, training=training)
+
+        return_data = {'combiner_output': hidden, 'attention_masks': masks}
+
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
+
+        return return_data
+
+
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
             self,
@@ -463,6 +553,7 @@ combiner_registry = {
     'concat': ConcatCombiner,
     'sequence_concat': SequenceConcatCombiner,
     'sequence': SequenceCombiner,
+    'tabnet': TabNetCombiner,
     'comparator': ComparatorCombiner,
 }
 

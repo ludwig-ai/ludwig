@@ -45,4 +45,5 @@ class AmesHousing(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, 
                  kaggle_api_key=None):
         self.kaggle_username = kaggle_username
         self.kaggle_api_key = kaggle_api_key
+        self.is_kaggle_competition = True
         super().__init__(dataset_name='ames_housing', cache_dir=cache_dir)

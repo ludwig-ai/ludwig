@@ -57,7 +57,7 @@ class RecurrentStack(Layer):
             recurrent_dropout=0.0,
             **kwargs
     ):
-        super(RecurrentStack, self).__init__()
+        super().__init__()
         self.supports_masking = True
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)

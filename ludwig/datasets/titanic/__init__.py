@@ -44,6 +44,7 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
                  kaggle_api_key=None):
         self.kaggle_username = kaggle_username
         self.kaggle_api_key = kaggle_api_key
+        self.is_kaggle_competition = True
         super().__init__(dataset_name='titanic', cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):

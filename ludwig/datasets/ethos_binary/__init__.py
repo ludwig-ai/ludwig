@@ -36,7 +36,7 @@ class EthosBinary(UncompressedFileDownloadMixin, IdentityProcessMixin,
         super().__init__(dataset_name="ethos_binary", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
-        super(EthosBinary, self).process_downloaded_dataset()
+        super().process_downloaded_dataset()
         # replace ; sperator to ,
         processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
                                                 self.csv_filename), sep=";")

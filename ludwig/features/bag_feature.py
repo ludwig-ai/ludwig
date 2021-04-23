@@ -30,7 +30,7 @@ from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 logger = logging.getLogger(__name__)
 
 
-class BagFeatureMixin(object):
+class BagFeatureMixin:
     type = BAG
 
     preprocessing_defaults = {

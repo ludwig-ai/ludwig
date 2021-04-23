@@ -39,7 +39,7 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 
-class NumericalFeatureMixin(object):
+class NumericalFeatureMixin:
     type = NUMERICAL
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,

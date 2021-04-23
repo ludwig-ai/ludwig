@@ -42,7 +42,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class CategoryFeatureMixin(object):
+class CategoryFeatureMixin:
     type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
