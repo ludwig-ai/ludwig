@@ -90,8 +90,3 @@ class AdultCensusIncome(UncompressedFileDownloadMixin, CSVLoadMixin,
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
                   index=False)
         os.rename(self.processed_temp_path, self.processed_dataset_path)
-
-
-if __name__ == '__main__':
-    df = load()
-    print(df.head())
