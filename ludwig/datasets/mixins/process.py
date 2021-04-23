@@ -45,11 +45,8 @@ class MultifileJoinProcessMixin:
                 os.path.join(self.raw_dataset_path, filename), lines=True)
         elif filetype == 'tsv':
             file_df = pd.read_table(
-                os.path.join(self.raw_dataset_path, filename))
-        elif filetype == 'data':
-            file_df = pd.read_csv(
-                os.path.join(self.raw_dataset_path, filename), header=header)        
-        elif filetype == 'csv':
+                os.path.join(self.raw_dataset_path, filename))        
+        elif filetype == 'csv' or filetype == 'data':
             file_df = pd.read_csv(
                 os.path.join(self.raw_dataset_path, filename), header=header)
         else:

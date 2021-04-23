@@ -6,4 +6,4 @@ split_filenames:
   train_file: sarcos_inv.mat
   test_file: sarcos_inv_test.mat
 download_file_type: mat
-csv_filename: poker_hand.csv
+csv_filename: sarcos.csv
