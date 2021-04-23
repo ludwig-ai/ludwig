@@ -297,66 +297,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
 
         return decoder_initial_state
 
-    # todo cleanup this code after confirming sampled_softmax works
-    # # method to extract rnn_last_hidden tensor required for sampled softmax
-    # def extract_decoder_end_state(
-    #         self,
-    #         decoder_end_state
-    # ):
-    #     # support for sampled_softmax_cross_entropy loss calculation
-    #     # make visible last  hidden tensor
-    #     if isinstance(decoder_end_state, BeamSearchDecoderState):
-    #         if isinstance(decoder_end_state.cell_state, AttentionWrapperState):
-    #             rnn_last_hidden = decoder_end_state.cell_state.cell_state
-    #         else:
-    #             rnn_last_hidden = decoder_end_state.cell_state
-    #     elif isinstance(decoder_end_state, AttentionWrapperState):
-    #         # with Attention
-    #         rnn_last_hidden = decoder_end_state.cell_state
-    #     else:
-    #         # No Attention/no Beam Search
-    #         rnn_last_hidden = decoder_end_state
-    #
-    #     # accumulate tensors in preparation for creating required data structure
-    #     list0 = []  # for all cell types rnn, gru, lstm
-    #     for x in rnn_last_hidden:
-    #         if isinstance(x, list):
-    #             # lstm cell: keep the output state, discard intermal/memory cell
-    #             if len(x[0].shape) == 2:
-    #                 # no beam search
-    #                 list0.append(x[0])
-    #             else:
-    #                 # beam search - pick from best position
-    #                 list0.append(x[0][:, 0, :])
-    #         else:
-    #             # gru/rnn cell type
-    #             if len(x.shape) == 2:
-    #                 # no beam search
-    #                 list0.append(x)
-    #             else:
-    #                 # beam search - pick from best position
-    #                 list0.append(x[:, 0, :])
-    #
-    #     # helper functions to create final form of rnn_last hidden
-    #     def concatenate_tensors():
-    #         # concatenate tensors to match decoder weights size
-    #         return tf.concat(list0, axis=-1)
-    #
-    #     def pick_last_tensor():
-    #         # else just get final state
-    #         return list0[-1]
-    #
-    #     # if self.dense_layer.weights[0] > self.state_size, then need to
-    #     # concatenate to create data structure for sampled_softmax
-    #     dense_layer_size = tf.shape(self.dense_layer.weights[0])[0]
-    #     rnn_last_hidden = tf.cond(
-    #         tf.greater(dense_layer_size, self.state_size),
-    #         concatenate_tensors,
-    #         pick_last_tensor
-    #     )
-    #
-    #     return rnn_last_hidden
-
     def decoder_teacher_forcing(
             self,
             encoder_output,

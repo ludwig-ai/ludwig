@@ -135,8 +135,6 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
     @property
     def output_dtype(self):
         dtype = self._cell_dtype
-        # todo: clean up
-        # dtype = nest.flatten(self._initial_state)[0].dtype
         return BasicDecoderOutput(
             tf.nest.map_structure(lambda _: dtype, self._rnn_output_size()),
             self.sampler.sample_ids_dtype,
