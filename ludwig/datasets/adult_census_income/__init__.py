@@ -81,8 +81,8 @@ class AdultCensusIncome(UncompressedFileDownloadMixin, CSVLoadMixin,
         train_df.columns = columns
         test_df.columns = columns
 
-        train_df['split'] = [0] * len(train_df)
-        test_df['split'] = [2] * len(test_df)
+        train_df['split'] = 0
+        test_df['split'] = 2
 
         df = pd.concat([train_df, test_df])
 
