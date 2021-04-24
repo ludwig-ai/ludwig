@@ -160,7 +160,6 @@ class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         self.num_classes = num_classes
         self.feature_loss = feature_loss
         self.dec_dense_layer = dec_dense_layer
-        self.dec_num_layers = dec_num_layers
 
     def call(self, y, y_pred):
 
