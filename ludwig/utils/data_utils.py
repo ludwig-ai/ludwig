@@ -238,6 +238,7 @@ def save_hdf5(data_fp, data):
     mode = 'w'
     if os.path.isfile(data_fp):
         mode = 'r+'
+    print('SAVE', mode)
 
     numpy_dataset = to_numpy_dataset(data)
     with open_h5(data_fp, mode) as h5_file:
