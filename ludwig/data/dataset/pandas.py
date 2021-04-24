@@ -22,6 +22,7 @@ from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.sampler import DistributedSampler
 from ludwig.utils.data_utils import to_numpy_dataset
+from ludwig.utils.fs_utils import open_h5
 
 
 class PandasDataset(Dataset):
@@ -49,7 +50,7 @@ class PandasDataset(Dataset):
         indices[1, :] = np.arange(len(sub_batch))
         indices = indices[:, np.argsort(indices[0])]
 
-        with h5py.File(self.data_hdf5_fp, 'r') as h5_file:
+        with open_h5(self.data_hdf5_fp, 'r') as h5_file:
             im_data = h5_file[proc_column + '_data'][indices[0, :], :, :]
         indices[2, :] = np.arange(len(sub_batch))
         indices = indices[:, np.argsort(indices[1])]

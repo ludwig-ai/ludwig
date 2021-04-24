@@ -13,6 +13,7 @@ absl-py
 kaggle
 requests
 tables
+fsspec
 
 # new data format support
 xlwt            # excel

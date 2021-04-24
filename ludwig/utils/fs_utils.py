@@ -19,6 +19,7 @@ import contextlib
 import tempfile
 
 import fsspec
+import h5py
 from fsspec.core import split_protocol
 
 
@@ -58,3 +59,17 @@ def prepare_output_directory(url):
     else:
         # Just use the output directory directly if using a local filesystem
         yield url
+
+
+@contextlib.contextmanager
+def open_file(url, *args, **kwargs):
+    of = fsspec.open(url, *args, **kwargs)
+    with of as f:
+        yield f
+
+
+@contextlib.contextmanager
+def open_h5(url, *args, **kwargs):
+    with open_file(url, *args, **kwargs) as fh:
+        with h5py.File(fh) as f:
+            yield f

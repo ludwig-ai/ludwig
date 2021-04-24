@@ -29,7 +29,7 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
-from ludwig.utils.fs_utils import prepare_output_directory
+from ludwig.utils.fs_utils import prepare_output_directory, open_file
 
 ludwig.contrib.contrib_import()
 import numpy as np
@@ -173,7 +173,7 @@ class LudwigModel:
         """
         # check if config is a path or a dict
         if isinstance(config, str):  # assume path
-            with open(config, 'r') as def_file:
+            with open_file(config, 'r') as def_file:
                 config_dict = yaml.safe_load(def_file)
             self.config_fp = config
         else:
@@ -1628,7 +1628,7 @@ def kfold_cross_validate(
 
     # if config is a path, convert to dictionary
     if isinstance(config, str):  # assume path
-        with open(config, 'r') as def_file:
+        with open_file(config, 'r') as def_file:
             config = yaml.safe_load(def_file)
 
     # check for k_fold

@@ -28,6 +28,7 @@ from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.fs_utils import open_h5
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
@@ -326,7 +327,7 @@ class ImageFeatureMixin(object):
             if os.path.isfile(data_fp):
                 mode = 'r+'
 
-            with h5py.File(data_fp, mode) as h5_file:
+            with open_h5(data_fp, mode) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
                     feature[PROC_COLUMN] + '_data',
