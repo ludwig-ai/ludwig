@@ -25,9 +25,11 @@ import h5py
 from fsspec.core import split_protocol
 
 
-def get_fs_mode(mode):
+def get_binary_mode(mode):
     if mode == 'r':
         return 'rb'
+    elif mode == 'r+':
+        return 'rb+'
     elif mode == 'w':
         return 'wb'
     return mode
@@ -97,6 +99,6 @@ def open_file(url, *args, **kwargs):
 
 @contextlib.contextmanager
 def open_h5(url, mode):
-    with open_file(url, get_fs_mode(mode)) as fh:
+    with open_file(url, get_binary_mode(mode)) as fh:
         with h5py.File(fh, mode) as f:
             yield f

@@ -26,7 +26,7 @@ import re
 
 import numpy as np
 import pandas as pd
-from ludwig.utils.fs_utils import open_h5, open_file
+from ludwig.utils.fs_utils import open_h5, open_file, path_exists
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
@@ -236,9 +236,8 @@ def from_numpy_dataset(dataset):
 
 def save_hdf5(data_fp, data):
     mode = 'w'
-    if os.path.isfile(data_fp):
+    if path_exists(data_fp):
         mode = 'r+'
-    print('SAVE', mode)
 
     numpy_dataset = to_numpy_dataset(data)
     with open_h5(data_fp, mode) as h5_file:
