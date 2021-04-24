@@ -16,6 +16,8 @@
 # ==============================================================================
 
 import contextlib
+import os
+import pathlib
 import tempfile
 
 import fsspec
@@ -37,6 +39,23 @@ def find_non_existing_dir_by_adding_suffix(directory_name):
         curr_directory_name = directory_name + '_' + str(suffix)
         suffix += 1
     return curr_directory_name
+
+
+def path_exists(url):
+    fs, path = get_fs_and_path(url)
+    return fs.exists(path)
+
+
+def makedirs(url, exist_ok=False):
+    fs, path = get_fs_and_path(url)
+    return fs.makedirs(path, exist_ok=exist_ok)
+
+
+def to_url(path):
+    protocol, _ = split_protocol(path)
+    if protocol is not None:
+        return path
+    return pathlib.Path(os.path.abspath(path)).as_uri()
 
 
 @contextlib.contextmanager

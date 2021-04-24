@@ -29,7 +29,7 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
-from ludwig.utils.fs_utils import prepare_output_directory, open_file
+from ludwig.utils.fs_utils import prepare_output_directory, open_file, path_exists, makedirs
 
 ludwig.contrib.contrib_import()
 import numpy as np
@@ -324,7 +324,7 @@ class LudwigModel:
         """
         # setup directories and file names
         if model_resume_path is not None:
-            if os.path.exists(model_resume_path):
+            if path_exists(model_resume_path):
                 output_directory = model_resume_path
             else:
                 if self.backend.is_coordinator():
@@ -359,8 +359,7 @@ class LudwigModel:
             description_fn = training_stats_fn = model_dir = None
             if self.backend.is_coordinator():
                 if should_create_output_directory:
-                    if not os.path.exists(output_directory):
-                        os.makedirs(output_directory, exist_ok=True)
+                    makedirs(output_directory, exist_ok=True)
                 description_fn, training_stats_fn, model_dir = get_file_names(
                     output_directory)
 
@@ -700,7 +699,7 @@ class LudwigModel:
                         skip_save_unprocessed_output and skip_save_predictions
                 )
                 if should_create_exp_dir:
-                    os.makedirs(output_directory, exist_ok=True)
+                    makedirs(output_directory, exist_ok=True)
 
             logger.debug('Postprocessing')
             postproc_predictions = postprocess(
@@ -844,7 +843,7 @@ class LudwigModel:
                         skip_save_eval_stats
                 )
                 if should_create_exp_dir:
-                    os.makedirs(output_directory, exist_ok=True)
+                    makedirs(output_directory, exist_ok=True)
 
             if collect_predictions:
                 logger.debug('Postprocessing')

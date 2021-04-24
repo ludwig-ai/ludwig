@@ -15,7 +15,7 @@ from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, \
     print_hyperopt_results, save_hyperopt_stats
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import open_file
+from ludwig.utils.fs_utils import open_file, makedirs
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
@@ -301,8 +301,7 @@ def hyperopt(
         print_hyperopt_results(hyperopt_results)
 
         if not skip_save_hyperopt_statistics:
-            if not os.path.exists(output_directory):
-                os.makedirs(output_directory)
+            makedirs(output_directory, exist_ok=True)
 
             hyperopt_stats = {
                 'hyperopt_config': hyperopt_config,

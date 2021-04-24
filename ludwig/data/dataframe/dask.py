@@ -26,6 +26,7 @@ from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
+from ludwig.utils.fs_utils import makedirs, to_url
 from ludwig.utils.misc_utils import get_combined_features
 
 TMP_COLUMN = '__TMP_COLUMN__'
@@ -83,13 +84,13 @@ class DaskEngine(DataFrameEngine):
             if reshape is not None:
                 dataset[proc_column] = self.map_objects(dataset[proc_column], lambda x: x.reshape(-1))
 
-        os.makedirs(dataset_parquet_fp, exist_ok=True)
+        makedirs(dataset_parquet_fp, exist_ok=True)
         dataset.to_parquet(dataset_parquet_fp,
                            engine='pyarrow',
                            write_index=False,
                            schema='infer')
 
-        dataset_parquet_url = 'file://' + os.path.abspath(dataset_parquet_fp)
+        dataset_parquet_url = to_url(dataset_parquet_fp)
         training_set_metadata[DATASET_SPLIT_URL.format(tag)] = dataset_parquet_url
 
         return ParquetDataset(

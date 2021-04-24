@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
+from ludwig.utils.fs_utils import makedirs
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 
@@ -49,7 +50,7 @@ class CacheMixin:
         prev_cache_dir = self._cache_dir
         try:
             if self._cache_dir:
-                os.makedirs(self._cache_dir, exist_ok=True)
+                makedirs(self._cache_dir, exist_ok=True)
                 yield self._cache_dir
             else:
                 with tempfile.TemporaryDirectory() as tmpdir:
