@@ -11,6 +11,7 @@ on:
 
 jobs:
   docker:
+    if: ${{ github.repository_owner == 'ludwig-ai' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

@@ -86,4 +86,3 @@ class ParquetLoadMixin:
     @property
     def parquet_filename(self):
         return self.config["parquet_filename"]
-

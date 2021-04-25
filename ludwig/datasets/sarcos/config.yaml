@@ -1,0 +1,9 @@
+version: 1.0
+download_urls:
+  - "http://www.gaussianprocess.org/gpml/data/sarcos_inv.mat"
+  - "http://www.gaussianprocess.org/gpml/data/sarcos_inv_test.mat"
+split_filenames:
+  train_file: sarcos_inv.mat
+  test_file: sarcos_inv_test.mat
+download_file_type: mat
+csv_filename: sarcos.csv
