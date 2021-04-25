@@ -21,8 +21,8 @@ from ludwig.data.dataframe.dask import DaskEngine
 
 
 class DaskBackend(LocalTrainingMixin, Backend):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._df_engine = DaskEngine()
 
     def initialize(self):

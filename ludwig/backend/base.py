@@ -22,6 +22,7 @@ import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
+from ludwig.constants import HDF5
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
@@ -149,8 +150,9 @@ class RemoteTrainingMixin:
 
 
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, intermediate_format=HDF5, **kwargs):
+        super().__init__(**kwargs)
+        self.intermediate_format = intermediate_format
 
     def initialize(self):
         pass

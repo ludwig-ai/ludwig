@@ -6,11 +6,13 @@ import pytest
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.backend import initialize_backend
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
 
 
+@pytest.mark.parametrize('intermediate_format', ['hdf5', 'parquet'])
 @pytest.mark.parametrize('fs_protocol', ['file'])
-def test_remote_training_set(tmpdir, fs_protocol):
+def test_remote_training_set(tmpdir, fs_protocol, intermediate_format):
     with tempfile.TemporaryDirectory() as outdir:
         output_directory = f'{fs_protocol}://{outdir}'
 
@@ -39,7 +41,13 @@ def test_remote_training_set(tmpdir, fs_protocol):
             yaml.dump(config, f)
         config_path = f'{fs_protocol}://{config_path}'
 
-        model = LudwigModel(config_path)
+        backend_config = {
+            'name': 'local',
+            'intermediate_format': intermediate_format
+        }
+        backend = initialize_backend(**backend_config)
+
+        model = LudwigModel(config_path, backend=backend)
         _, _, output_directory = model.train(
             training_set=data_csv,
             validation_set=val_csv,

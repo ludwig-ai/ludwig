@@ -25,8 +25,8 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 
 
 class HorovodBackend(LocalPreprocessingMixin, Backend):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._horovod = None
 
     def initialize(self):
