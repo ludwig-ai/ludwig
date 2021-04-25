@@ -355,6 +355,7 @@ class LudwigModel:
                 skip_save_processed_input
         )
 
+        output_url = output_directory
         with upload_output_directory(output_directory) as output_directory:
             description_fn = training_stats_fn = model_dir = None
             if self.backend.is_coordinator():
@@ -537,7 +538,7 @@ class LudwigModel:
                         # Load the best weights from saved checkpoint
                         self.load_weights(model_dir)
 
-                    return train_stats, preprocessed_data, output_directory
+                    return train_stats, preprocessed_data, output_url
 
     def train_online(
             self,

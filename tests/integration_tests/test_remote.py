@@ -1,7 +1,9 @@
 import os
 import shutil
+import tempfile
 
 import pytest
+import yaml
 
 from ludwig.api import LudwigModel
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
@@ -9,6 +11,9 @@ from tests.integration_tests.utils import sequence_feature, category_feature, ge
 
 @pytest.mark.parametrize('fs_protocol', ['file'])
 def test_remote_training_set(tmpdir, fs_protocol):
+    with tempfile.TemporaryDirectory() as outdir:
+        output_directory = f'{fs_protocol}://{outdir}'
+
         input_features = [sequence_feature(reduce_output='sum')]
         output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
@@ -27,13 +32,25 @@ def test_remote_training_set(tmpdir, fs_protocol):
             'output_features': output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
-        model = LudwigModel(config)
-        model.train(training_set=data_csv,
-                    validation_set=val_csv,
-                    test_set=test_csv)
-        model.predict(dataset=test_csv)
+
+        config_path = os.path.join(tmpdir, 'config.yaml')
+        with open(config_path, 'w') as f:
+            yaml.dump(config, f)
+        config_path = f'{fs_protocol}://{config_path}'
+
+        model = LudwigModel(config_path)
+        _, _, output_directory = model.train(
+            training_set=data_csv,
+            validation_set=val_csv,
+            test_set=test_csv,
+            output_directory=output_directory
+        )
+        model.predict(dataset=test_csv,
+                      output_directory=output_directory)
 
         # Train again, this time the HDF5 cache will be used
+        # Resume from the remote output directory
         model.train(training_set=data_csv,
                     validation_set=val_csv,
-                    test_set=test_csv)
+                    test_set=test_csv,
+                    model_resume_path=output_directory)

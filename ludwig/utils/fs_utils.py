@@ -84,11 +84,14 @@ def upload_output_directory(url):
         # To avoid extra network load, write all output files locally at runtime,
         # then upload to the remote fs at the end.
         with tempfile.TemporaryDirectory() as tmpdir:
+            fs, remote_path = get_fs_and_path(url)
+            if path_exists(url):
+                fs.get(url, tmpdir + '/', recursive=True)
+
             # Write to temp directory locally
             yield tmpdir
 
             # Upload to remote when finished
-            fs, remote_path = get_fs_and_path(url)
             fs.put(tmpdir, remote_path, recursive=True)
     else:
         # Just use the output directory directly if using a local filesystem
