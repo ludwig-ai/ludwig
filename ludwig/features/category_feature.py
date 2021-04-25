@@ -168,7 +168,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     ):
         hidden = inputs[HIDDEN]
 
-        # return
+        # EXPECTED SHAPES FOR RETURNED TENSORS
         # logits: shape [batch_size, num_classes]
         # hidden: shape [batch_size, size of final fully connected layer]
         return self.decoder_obj(hidden), hidden
@@ -192,6 +192,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
+        # EXPECTED SHAPE OF RETURNED TENSORS
+        # predictions: [batch_size]
+        # probabilities: [batch_size, num_classes]
+        # logits: [batch_size, num_classes]
         return {
             PREDICTIONS: predictions,
             PROBABILITIES: probabilities,

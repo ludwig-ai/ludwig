@@ -20,10 +20,9 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
     StackedRNNCells
-from tensorflow.keras.layers import Layer, Dense, Embedding
+from tensorflow.keras.layers import Dense, Embedding
 from tensorflow.keras.layers import average
-from tensorflow_addons.seq2seq import AttentionWrapper, AttentionWrapperState, \
-    BeamSearchDecoderState
+from tensorflow_addons.seq2seq import AttentionWrapper
 from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
@@ -170,8 +169,8 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         )
 
         # logits is tuple containing two tensor:
-        #   eval_logits: suitable for use with softmax_crossentropy loss
-        #   train_logits: suitable for use with sampled_softmax
+        #   logits: suitable for use with softmax_crossentropy loss
+        #   projection_input: suitable for use with sampled_softmax
         return logits
 
     def prepare_encoder_output_state(self, inputs):
@@ -350,7 +349,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             sequence_length=target_sequence_length_with_eos
         )
 
-        eval_logits = outputs.rnn_output
+        logits = outputs.rnn_output
         # mask = tf.sequence_mask(
         #    generated_sequence_lengths,
         #    maxlen=tf.shape(logits)[1],
@@ -361,18 +360,15 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # append a trailing 0, useful for
         # those datapoints that reach maximum length
         # and don't have a eos at the end
-        eval_logits = tf.pad(
-            eval_logits,
+        logits = tf.pad(
+            logits,
             [[0, 0], [0, 1], [0, 0]]
         )
 
-        # extract tensor needed for sampled_softmax
-        train_logits = outputs.projection_input
-
         # EXPECTED SIZE OF RETURNED TENSORS
-        # eval_logits: shape[batch_size, seq_size, num_classes] used for evaluation
-        # train_logits: shape[batch_size, seq_size, state_size] for sampled softmax
-        return eval_logits, train_logits
+        # logits: shape[batch_size, seq_size, num_classes] used for evaluation
+        # projection_input: shape[batch_size, seq_size, state_size] for sampled softmax
+        return logits, outputs.projection_input
 
     def decoder_beam_search(
             self,

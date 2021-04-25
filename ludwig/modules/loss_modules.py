@@ -23,7 +23,7 @@ from ludwig.constants import *
 from ludwig.constants import LOGITS
 from ludwig.utils.tf_utils import sequence_length_2D
 
-# used for Lplace smoothing for candidate samplers
+# used for Laplace smoothing for candidate samplers
 EPSILON = 1.e-10
 
 
