@@ -273,7 +273,9 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                              training=training)
 
         # most of the cases the output of self.logits is a tensor
-        # there are two special cases:
+        # there are three special cases:
+        # categorical feature: logits is a tuple of
+        #   logits, projection_input
         # sequence feature with Generator Decoder: 'logits' is a tuple of
         #   logits, projection_input
         # sequence feature with Tagger Decoder: 'logits' is a dictionary with

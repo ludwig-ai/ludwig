@@ -167,7 +167,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             **kwargs
     ):
         hidden = inputs[HIDDEN]
-        return self.decoder_obj(hidden)
+
+        # return
+        # logits: shape [batch_size, num_classes]
+        # hidden: shape [batch_size, size of final fully connected layer]
+        return self.decoder_obj(hidden), hidden
 
     def predictions(
             self,
@@ -188,22 +192,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
-        if self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            return {
-                PREDICTIONS: predictions,
-                PROBABILITIES: probabilities,
-                LOGITS: logits,
-
-                # required for evaluation loss computation
-                LAST_HIDDEN: inputs[LAST_HIDDEN]
-            }
-        else:
-            # softmax_cross_entropy loss
-            return {
-                PREDICTIONS: predictions,
-                PROBABILITIES: probabilities,
-                LOGITS: logits
-            }
+        return {
+            PREDICTIONS: predictions,
+            PROBABILITIES: probabilities,
+            LOGITS: logits
+        }
 
     @classmethod
     def get_output_dtype(cls):
@@ -233,32 +226,19 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        # todo: remove commented code
-        # self.eval_loss_function = SoftmaxCrossEntropyMetric(
-        #     num_classes=self.num_classes,
-        #     feature_loss=self.loss,
-        #     name='eval_loss'
-        # )
-        self.eval_loss_function = self.train_loss_function
+        self.eval_loss_function = SoftmaxCrossEntropyLoss(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='eval_loss')
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        # todo: remove commented code
-        # self.metric_functions[LOSS] = self.eval_loss_function
-        if self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.metric_functions[LOSS] = SampledSoftmaxCrossEntropyMetric(
-                decoder_obj=self.decoder_obj,
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='eval_loss'
-            )
-        else:
-            # softmax_cross_entropy loss
-            self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='eval_loss'
-            )
+        # softmax_cross_entropy loss metric
+        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='eval_loss'
+        )
         self.metric_functions[ACCURACY] = CategoryAccuracy(
             name='metric_accuracy'
         )
