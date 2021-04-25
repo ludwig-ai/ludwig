@@ -163,3 +163,35 @@ class UncompressedFileDownloadMixin:
     @property
     def download_url(self):
         return self.config["download_urls"]
+
+
+class ZipandUncompressedFileDownloadMixin:
+    """Downloads the zip file and label file containing the training data and extracts the contents."""
+
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
+
+    def download_raw_dataset(self):
+        """
+        Download the raw dataset files and store in the cache location.
+        """
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+        for url in self.download_urls:
+            filename = url.split('/')[-1]
+            if filename.endswith('zip'):
+                with urlopen(url) as zipresp:
+                    with ZipFile(BytesIO(zipresp.read())) as zfile:
+                        zfile.extractall(self.raw_temp_path)
+            elif filename.endswith('labels'):
+                urllib.request.urlretrieve(url,
+                                           os.path.join(self.raw_temp_path, filename))
+            elif filename.endswith('txt'):
+                urllib.request.urlretrieve(url,
+                                           os.path.join(self.raw_temp_path, filename))
+        shutil.move(self.raw_temp_path, self.raw_dataset_path)
+            
+    @property
+    def download_urls(self):
+        return self.config["download_urls"]
+    
