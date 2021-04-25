@@ -29,7 +29,7 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
-from ludwig.utils.fs_utils import prepare_output_directory, open_file, path_exists, makedirs
+from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
 
 ludwig.contrib.contrib_import()
 import numpy as np
@@ -355,7 +355,7 @@ class LudwigModel:
                 skip_save_processed_input
         )
 
-        with prepare_output_directory(output_directory) as output_directory:
+        with upload_output_directory(output_directory) as output_directory:
             description_fn = training_stats_fn = model_dir = None
             if self.backend.is_coordinator():
                 if should_create_output_directory:

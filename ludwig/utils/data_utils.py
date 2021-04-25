@@ -26,7 +26,7 @@ import re
 
 import numpy as np
 import pandas as pd
-from ludwig.utils.fs_utils import open_h5, open_file, path_exists
+from ludwig.utils.fs_utils import open_file, download_h5, upload_h5
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
@@ -235,19 +235,15 @@ def from_numpy_dataset(dataset):
 
 
 def save_hdf5(data_fp, data):
-    mode = 'w'
-    if path_exists(data_fp):
-        mode = 'r+'
-
     numpy_dataset = to_numpy_dataset(data)
-    with open_h5(data_fp, mode) as h5_file:
+    with upload_h5(data_fp) as h5_file:
         h5_file.create_dataset(HDF5_COLUMNS_KEY, data=np.array(data.columns.values, dtype='S'))
         for column in data.columns:
             h5_file.create_dataset(column, data=numpy_dataset[column])
 
 
 def load_hdf5(data_fp):
-    with open_h5(data_fp, 'r') as hdf5_data:
+    with download_h5(data_fp) as hdf5_data:
         columns = [s.decode('utf-8') for s in hdf5_data[HDF5_COLUMNS_KEY][()].tolist()]
 
         numpy_dataset = {}

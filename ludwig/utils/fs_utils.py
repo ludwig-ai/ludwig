@@ -69,7 +69,7 @@ def to_url(path):
 
 
 @contextlib.contextmanager
-def prepare_output_directory(url):
+def upload_output_directory(url):
     if url is None:
         yield None
         return
@@ -98,7 +98,30 @@ def open_file(url, *args, **kwargs):
 
 
 @contextlib.contextmanager
-def open_h5(url, mode):
-    with open_file(url, get_binary_mode(mode)) as fh:
-        with h5py.File(fh, mode) as f:
+def download_h5(url):
+    local_path = fsspec.open_local(url)
+    with h5py.File(local_path, 'r') as f:
+        yield f
+
+
+@contextlib.contextmanager
+def upload_h5(url):
+    mode = 'w'
+    if path_exists(url):
+        mode = 'r+'
+
+    protocol, _ = split_protocol(url)
+    if protocol is not None:
+        fs = fsspec.filesystem(protocol)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            local_fname = os.path.join(tmpdir, 'file.h5')
+            if mode == 'r+':
+                fs.get(url, local_fname)
+
+            with h5py.File(url, mode) as f:
+                yield f
+
+            fs.put(local_fname, url, recursive=True)
+    else:
+        with h5py.File(url, mode) as f:
             yield f
