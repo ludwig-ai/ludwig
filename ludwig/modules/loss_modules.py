@@ -359,7 +359,7 @@ def sequence_sampled_softmax_cross_entropy(targets,
                                                 loss['class_counts'],
                                                 loss['distortion'])
 
-    if loss['sampler'] in {'fixed_unigram', 'learned_unigram'}:
+    if loss['sampler'] == 'fixed_unigram':
         # regenerate sampled_values structure for specified samplers
         # to handle any zero values in true_expected_count tensor
         sampled_values = FixedUnigramCandidateSampler(
@@ -446,11 +446,11 @@ def weighted_sigmoid_cross_entropy(
     return loss
 
 
-# used for categorical features
+# used for categorical and sequence features
 def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
                                unique, class_counts, distortion):
     """returns sampled_values using the chosen sampler"""
-    if sampler == 'fixed_unigram' or sampler == 'learned_unigram':
+    if sampler == 'fixed_unigram':
         sampled_values = tf.random.fixed_unigram_candidate_sampler(
             true_classes=labels,
             num_true=1,
@@ -476,45 +476,10 @@ def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
             unique=unique,
             range_max=num_classes
         )
-    else:
-        raise ValueError('Unsupported sampler {}'.format(sampler))
-    return sampled_values
-
-
-# specific for sequence feature
-def sample_values_from_sequence(
-        labels,
-        sampler,
-        sequence_size,
-        num_classes,
-        negative_samples,
-        unique,
-        class_counts,
-        distortion
-):
-    """returns sampled_values using the chosen sampler"""
-    if sampler == 'fixed_unigram' or sampler == 'learned_unigram':
-        sampled_values = tf.random.fixed_unigram_candidate_sampler(
+    elif sampler == 'learned_unigram':
+        sampled_values = tf.random.learned_unigram_candidate_sampler(
             true_classes=labels,
-            num_true=sequence_size,
-            num_sampled=negative_samples,
-            unique=unique,
-            range_max=num_classes,
-            unigrams=class_counts,
-            distortion=distortion
-        )
-    elif sampler == 'uniform':
-        sampled_values = tf.random.uniform_candidate_sampler(
-            true_classes=labels,
-            num_true=sequence_size,
-            num_sampled=negative_samples,
-            unique=unique,
-            range_max=num_classes
-        )
-    elif sampler == 'log_uniform':
-        sampled_values = tf.random.log_uniform_candidate_sampler(
-            true_classes=labels,
-            num_true=sequence_size,
+            num_true=1,
             num_sampled=negative_samples,
             unique=unique,
             range_max=num_classes
