@@ -53,6 +53,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed, merge_with_defaults)
+from ludwig.utils.fs_utils import get_modified_timestamp
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      hash_dict, get_proc_features_from_lists)
@@ -1803,7 +1804,7 @@ def replace_text_feature_level(features, datasets):
 def calculate_checksum(original_dataset, config):
     info = {}
     info['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
-    info['dataset_modification_date'] = os.path.getmtime(original_dataset)
+    info['dataset_modification_date'] = get_modified_timestamp(original_dataset)
     info['global_preprocessing'] = config['preprocessing']
     features = config.get('input_features', []) + \
                config.get('output_features', []) + \

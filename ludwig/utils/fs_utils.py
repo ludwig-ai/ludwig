@@ -61,6 +61,11 @@ def makedirs(url, exist_ok=False):
     return fs.makedirs(path, exist_ok=exist_ok)
 
 
+def get_modified_timestamp(url):
+    fs, path = get_fs_and_path(url)
+    return fs.modified(path).timestamp()
+
+
 def to_url(path):
     protocol, _ = split_protocol(path)
     if protocol is not None:
@@ -106,22 +111,15 @@ def download_h5(url):
 
 @contextlib.contextmanager
 def upload_h5(url):
-    mode = 'w'
-    if path_exists(url):
-        mode = 'r+'
-
     protocol, _ = split_protocol(url)
     if protocol is not None:
         fs = fsspec.filesystem(protocol)
         with tempfile.TemporaryDirectory() as tmpdir:
             local_fname = os.path.join(tmpdir, 'file.h5')
-            if mode == 'r+':
-                fs.get(url, local_fname)
-
-            with h5py.File(url, mode) as f:
+            with h5py.File(local_fname, 'w') as f:
                 yield f
-
             fs.put(local_fname, url, recursive=True)
     else:
+        mode = 'r+' if path_exists(url) else 'w'
         with h5py.File(url, mode) as f:
             yield f
