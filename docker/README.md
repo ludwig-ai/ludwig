@@ -31,8 +31,11 @@ from the project's `master` branch.
 
 ## Running Containers
 
-Following are examples using the `ludwigai/ludwig:master` image to run
-the `ludwig cli` command or running a Python program using the Ludwig api.
+Examples of using the `ludwigai/ludwig:master` image to:
+
+* run the `ludwig cli` command or
+* run Python program containing Ludwig api or
+* view Ludwig results with Tensorboard
 
 For purposes of the examples assume this host directory structure
 
@@ -85,3 +88,25 @@ docker run  -v ${parent_path}/data:/data  \
 
 Ludwig results can be found in host
 directory `/top/level/directory/path/src/results`
+
+### View Ludwig Tensorboard results
+
+```
+# set shell variable to parent directory
+parent_path=/top/level/directory/path
+
+# invoke docker run command to execute Tensorboard 
+# map host directory ${parent_path}/src to container /src directory
+# set up mapping from localhost port 6006 to container port 6006
+# change default entrypoint from ludwig to tensorboard
+# --logdir container location of tenorboard logs /src/results/<experiment_name>_<model_name>/model/logs
+# --bind_all Tensorboard serves on all public container interfaces
+docker run  -v ${parent_path}/src:/src \
+    -p 6006:6006 \
+    --entrypoint tensorboard \
+    ludwigai/ludwig:master \
+      --logdir /src/results/experiment_run/model/logs \
+      --bind_all
+```
+
+Point browser to `http://localhost:6006` to see Tensorboard dashboard.
