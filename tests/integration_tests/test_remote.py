@@ -31,6 +31,7 @@ def test_remote_training_set(tmpdir, fs_protocol):
             'input_features': input_features,
             'output_features': output_features,
             'combiner': {'type': 'concat', 'fc_size': 14},
+            'training': {'epochs': 2},
         }
 
         config_path = os.path.join(tmpdir, 'config.yaml')
