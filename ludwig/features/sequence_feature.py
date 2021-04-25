@@ -234,7 +234,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        # if self.loss[TYPE] == 'softmax_cross_entropy':
         if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
             # Generator Decoder w/ beam search
             # beam search does not provide logits
@@ -244,24 +243,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             # Generator Decoder w/ no beam search and Tagger Decoder
             self.metric_functions[LOSS] = SequenceLossMetric(
                 from_logits=True)
-        # else:
-        #     # sampled cross entropy loss
-        #     if self.decoder == 'generator':
-        #         # Generator Decoder
-        #         self.metric_functions[LOSS] = SequenceSampledLossMetric(
-        #             dec_dense_layer=self.decoder_obj.dense_layer,
-        #             dec_num_layers=self.decoder_obj.num_layers,
-        #             num_classes=self.num_classes,
-        #             feature_loss=self.loss,
-        #         )
-        #     else:
-        #         # Tagger Decoder
-        #         self.metric_functions[LOSS] = SequenceSampledLossMetric(
-        #             dec_dense_layer=self.decoder_obj.projection_layer,
-        #             dec_num_layers=None,
-        #             num_classes=self.num_classes,
-        #             feature_loss=self.loss,
-        #         )
+
         self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
         self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
