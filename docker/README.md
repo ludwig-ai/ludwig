@@ -31,8 +31,11 @@ from the project's `master` branch.
 
 ## Running Containers
 
-Following are examples using the `ludwigai/ludwig:master` image to run
-the `ludwig cli` command or running a Python program using the Ludwig api.
+Examples of using the `ludwigai/ludwig:master` image to:
+
+* run the `ludwig cli` command or
+* run Python program containing Ludwig api or
+* view Ludwig results with Tensorboard
 
 For purposes of the examples assume this host directory structure
 
