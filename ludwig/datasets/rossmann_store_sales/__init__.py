@@ -36,13 +36,13 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
 
 
 class RossmannStoreSales(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
-    """The Titanic dataset.
+    """The Rossmann Store Sales dataset.
 
     This pulls in an array of mixins for different types of functionality
     which belongs in the workflow for ingesting and transforming training data into a destination
     dataframe that can fit into Ludwig's training API.
 
-    Using the time split from the vatboost benchmark
+    Using the time split from the catboost benchmark
     https://github.com/catboost/benchmarks/tree/master/kaggle/rossmann-store-sales
     that is used in the TabNet paper,
     because the test set does not contain sales ground truth
