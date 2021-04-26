@@ -14,3 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+from ludwig.data.dataset.pandas import PandasDataset
+from ludwig.data.dataset.parquet import ParquetDataset
+
+dataset_registry = {
+    'parquet': ParquetDataset,
+    'hdf5': PandasDataset,
+    None: PandasDataset,
+}
+
+
+def create_dataset_manager(backend, data_format, **kwargs):
+    return dataset_registry.get(data_format)(backend, **kwargs)

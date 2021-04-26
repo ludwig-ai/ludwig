@@ -61,6 +61,11 @@ def makedirs(url, exist_ok=False):
     return fs.makedirs(path, exist_ok=exist_ok)
 
 
+def delete(url, recursive=False):
+    fs, path = get_fs_and_path(url)
+    return fs.delete(path, recursive=recursive)
+
+
 def get_modified_timestamp(url):
     fs, path = get_fs_and_path(url)
     return fs.modified(path).timestamp()

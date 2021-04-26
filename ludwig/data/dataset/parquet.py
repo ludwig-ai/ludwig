@@ -24,6 +24,8 @@ from petastorm.tf_utils import make_petastorm_dataset
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
+from ludwig.utils.fs_utils import to_url, makedirs
+from ludwig.utils.misc_utils import get_combined_features
 
 
 class ParquetDataset(Dataset):
@@ -86,3 +88,54 @@ class ParquetDataset(Dataset):
                                   steps_per_epoch,
                                   ignore_last=ignore_last)
         return batcher
+
+
+class ParquetDatasetManager(object):
+    def __init__(self, backend):
+        self.backend = backend
+
+    def create(self, dataset, config, training_set_metadata):
+        features = get_combined_features(config)
+        return ParquetDataset(
+            dataset,
+            features,
+            training_set_metadata
+        )
+
+    def save(self, cache_path, dataset, config, training_set_metadata):
+        dataset_parquet_fp = cache_path
+
+        # Workaround for https://issues.apache.org/jira/browse/ARROW-1614
+        # Currently, Arrow does not support storing multi-dimensional arrays / tensors.
+        # When we write a column of tensors to disk, we need to first flatten it into a
+        # 1D array, which we will then reshape back when we read the data at train time.
+        features = get_combined_features(config)
+        for feature in features:
+            name = feature[NAME]
+            proc_column = feature[PROC_COLUMN]
+            reshape = training_set_metadata[name].get('reshape')
+            if reshape is not None:
+                dataset[proc_column] = self.backend.map_objects(
+                    dataset[proc_column],
+                    lambda x: x.reshape(-1)
+                )
+
+        makedirs(dataset_parquet_fp, exist_ok=True)
+        dataset.to_parquet(dataset_parquet_fp,
+                           engine='pyarrow',
+                           write_index=False,
+                           schema='infer')
+
+        dataset_parquet_url = to_url(dataset_parquet_fp)
+        return ParquetDataset(
+            dataset_parquet_url,
+            features,
+            training_set_metadata
+        )
+
+    def can_cache(self, input_fname, config, skip_save_processed_input):
+        return input_fname is not None and self.backend.is_coordinator()
+
+    @property
+    def data_format(self):
+        return 'hdf5'

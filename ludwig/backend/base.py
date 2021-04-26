@@ -104,6 +104,11 @@ class Backend(CacheMixin, ABC):
     def check_lazy_load_supported(self, feature):
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def dataset_factory(self):
+        raise NotImplementedError()
+
 
 class LocalPreprocessingMixin:
     @property
