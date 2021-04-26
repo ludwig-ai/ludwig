@@ -123,8 +123,7 @@ class ParquetDatasetManager(object):
         makedirs(dataset_parquet_fp, exist_ok=True)
         dataset.to_parquet(dataset_parquet_fp,
                            engine='pyarrow',
-                           write_index=False,
-                           schema='infer')
+                           write_index=False)
         return dataset_parquet_fp
 
     def can_cache(self, input_fname, config, skip_save_processed_input):
