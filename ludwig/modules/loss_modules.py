@@ -16,30 +16,43 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
+#from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
+from torch.nn import (MSELoss, L1Loss)
 
 from ludwig.constants import *
 from ludwig.constants import LOGITS
 from ludwig.utils.tf_utils import sequence_length_2D
 
 
-class MSELoss(MeanSquaredError):
+class MSELoss(MSELoss):
     def __init__(self, **kwargs):
         super(MSELoss, self).__init__(**kwargs)
 
+    '''
+    def call__(self, y_true, y_pred, sample_weight=None):
+        logits = y_pred[LOGITS]
+        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        return loss
+    '''
+    def forward(self, input, target):
+        logits = input[LOGITS]
+        loss = super().forward(logits, target)
+        return loss
+
+
+class MAELoss(L1Loss):
+    def __init__(self, **kwargs):
+        super(MAELoss, self).__init__(**kwargs)
+
+    '''
     def __call__(self, y_true, y_pred, sample_weight=None):
         logits = y_pred[LOGITS]
         loss = super().__call__(y_true, logits, sample_weight=sample_weight)
         return loss
-
-
-class MAELoss(MeanAbsoluteError):
-    def __init__(self, **kwargs):
-        super(MAELoss, self).__init__(**kwargs)
-
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        logits = y_pred[LOGITS]
-        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+    '''
+    def forward(self, input, target):
+        logits = input[LOGITS]
+        loss = super().forward(logits, target)
         return loss
 
 
