@@ -25,16 +25,6 @@ import h5py
 from fsspec.core import split_protocol
 
 
-def get_binary_mode(mode):
-    if mode == 'r':
-        return 'rb'
-    elif mode == 'r+':
-        return 'rb+'
-    elif mode == 'w':
-        return 'wb'
-    return mode
-
-
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
     fs = fsspec.filesystem(protocol)
