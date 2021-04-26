@@ -67,6 +67,14 @@ class DaskEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
+    def to_parquet(self, df, path):
+        df.to_parquet(
+            path,
+            engine='pyarrow',
+            write_index=False,
+            schema='infer',
+        )
+
     @property
     def array_lib(self):
         return da
@@ -74,10 +82,6 @@ class DaskEngine(DataFrameEngine):
     @property
     def df_lib(self):
         return dd
-
-    @property
-    def use_hdf5_cache(self):
-        return False
 
     @property
     def parallelism(self):

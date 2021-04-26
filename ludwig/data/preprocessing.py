@@ -1422,6 +1422,13 @@ def preprocess_for_training(
             backend=backend,
             random_seed=random_seed
         )
+        training_set, test_set, validation_set, training_set_metadata = processed
+
+        replace_text_feature_level(
+            features,
+            [training_set, validation_set, test_set]
+        )
+        processed = (training_set, test_set, validation_set, training_set_metadata)
 
         # cache the dataset
         processed = backend.cache.put_dataset(
@@ -1431,11 +1438,6 @@ def preprocess_for_training(
 
     if CHECKSUM not in training_set_metadata and checksum is not None:
         training_set_metadata[CHECKSUM] = checksum
-
-    replace_text_feature_level(
-        features,
-        [training_set, validation_set, test_set]
-    )
 
     training_dataset = backend.dataset_manager.create(
         training_set,

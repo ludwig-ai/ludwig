@@ -24,12 +24,13 @@ from petastorm.tf_utils import make_petastorm_dataset
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
+from ludwig.utils.fs_utils import to_url
 from ludwig.utils.misc_utils import get_combined_features
 
 
 class ParquetDataset(Dataset):
     def __init__(self, url, features, training_set_metadata):
-        self.url = url
+        self.url = to_url(url)
         self.features = [feature[PROC_COLUMN] for feature in features]
         self.training_set_metadata = training_set_metadata
 
@@ -119,9 +120,7 @@ class ParquetDatasetManager(object):
                     lambda x: x.reshape(-1)
                 )
 
-        # makedirs(dataset_parquet_fp, exist_ok=True)
-        dataset.to_parquet(dataset_parquet_fp,
-                           engine='pyarrow')
+        self.backend.df_engine.to_parquet(dataset, dataset_parquet_fp)
         return dataset_parquet_fp
 
     def can_cache(self, input_fname, config, skip_save_processed_input):

@@ -26,7 +26,7 @@ class CacheManager(object):
 
         logger.info('Writing preprocessed training set cache')
         training_set = self.save(
-            self.get_cache_path(input_fname, key),
+            self.get_cache_path(input_fname, key, 'train'),
             training_set,
             config,
             training_set_metadata,
@@ -69,7 +69,7 @@ class CacheManager(object):
                 training_set_metadata_fp
             )
 
-            dataset_fp = self.get_cache_path(input_fname, key)
+            dataset_fp = self.get_cache_path(input_fname, key, 'train')
             test_fp = self.get_cache_path(input_fname, key, 'test')
             val_fp = self.get_cache_path(input_fname, key, 'val')
             valid = key == cache_training_set_metadata.get(CHECKSUM) and path_exists(dataset_fp)
