@@ -103,7 +103,7 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
         self.add_state("sum_y_y_hat", default=torch.tensor(0, dtype=torch.float32))
         self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update(self, y, y_hat):
+    def update(self, y_hat, y):
         '''
         y = tf.cast(y, dtype=tf.float32)
         y_hat = tf.cast(y_hat, dtype=tf.float32)
@@ -149,7 +149,7 @@ class ErrorScore(Metric)#(tf.keras.metrics.Metric):
         self.add_state("sum_error", default=torch.tensor(0, dtype=torch.float32))
         self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update(self, y, y_hat):
+    def update(self, y_hat, y):
         '''
         y = tf.cast(y, tf.float32)
         y_hat = tf.cast(y_hat, tf.float32)

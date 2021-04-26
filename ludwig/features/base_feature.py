@@ -224,9 +224,11 @@ class OutputFeature(BaseFeature, Module, ABC):
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS or metric == HITS_AT_K:
-                metric_fn.update_state(targets, predictions)
+                #metric_fn.update_state(targets, predictions)
+                metric_fn.update_state(predictions, targets)
             else:
-                metric_fn.update_state(targets, predictions[PREDICTIONS])
+                #metric_fn.update_state(targets, predictions[PREDICTIONS])
+                metric_fn.update_state(predictions[PREDICTIONS], targets)
 
     def get_metrics(self):
         metric_vals = {}
