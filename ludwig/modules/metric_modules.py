@@ -29,6 +29,7 @@ from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 from abc import abstractmethod
 
 import torch
+from torchmetrics import (MeanAbsoluteError, MeanSquaredError, Metric)
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
@@ -61,9 +62,11 @@ class LudwigMetric:
         pass
 
 
-class R2Score(tf.keras.metrics.Metric):
+class R2Score(Metric):#(tf.keras.metrics.Metric):
     def __init__(self, name='r2_score'):
-        super(R2Score, self).__init__(name=name)
+        #super(R2Score, self).__init__(name=name)
+        super(R2Score, self).__init__()
+        '''
         self.sum_y = self.add_weight(
             'sum_y', initializer='zeros',
             dtype=tf.float32
@@ -92,8 +95,16 @@ class R2Score(tf.keras.metrics.Metric):
             'N', initializer='zeros',
             dtype=tf.float32
         )
+        '''
+        self.add_state("sum_y", default=torch.tensor(0, dtype=torch.float32))
+        self.add_state("sum_y_squared", default=torch.tensor(0, dtype=torch.float32))
+        self.add_state("sum_y_hat", default=torch.tensor(0, dtype=torch.float32))
+        self.add_state("sum_y_hat_squared", default=torch.tensor(0, dtype=torch.float32))
+        self.add_state("sum_y_y_hat", default=torch.tensor(0, dtype=torch.float32))
+        self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update_state(self, y, y_hat):
+    def update(self, y, y_hat):
+        '''
         y = tf.cast(y, dtype=tf.float32)
         y_hat = tf.cast(y_hat, dtype=tf.float32)
         self.sum_y.assign_add(tf.reduce_sum(y))
@@ -102,8 +113,17 @@ class R2Score(tf.keras.metrics.Metric):
         self.sum_y_hat_squared.assign_add(tf.reduce_sum(y_hat ** 2))
         self.sum_y_y_hat.assign_add(tf.reduce_sum(y * y_hat))
         self.N.assign_add(y.shape[0])
+        '''
+        y = y.type(torch.float32)
+        y_hat = y_hat.type(torch.float32)
+        self.sum_y += torch.sum(y)
+        self.sum_y_squared += torch.sum(y**2)
+        self.sum_y_hat += torch.sum(y_hat)
+        self.sum_y_hat_squared += torch.sum(y_hat ** 2)
+        self.sum_y_y_hat += torch.sum(y * y_hat)
+        self.N += y.shape[0]
 
-    def result(self):
+    def compute(self):
         y_bar = self.sum_y / self.N
         tot_ss = self.sum_y_squared - 2.0 * y_bar * self.sum_y \
                  + self.N * y_bar ** 2
@@ -112,9 +132,10 @@ class R2Score(tf.keras.metrics.Metric):
         return 1.0 - res_ss / tot_ss
 
 
-class ErrorScore(LudwigMetric)#(tf.keras.metrics.Metric):
+class ErrorScore(Metric)#(tf.keras.metrics.Metric):
     def __init__(self, name='error_score'):
-        super(ErrorScore, self).__init__(name=name)
+        #super(ErrorScore, self).__init__(name=name)
+        super(ErrorScore, self).__init__()
         '''
         self.sum_error = self.add_weight(
             'sum_error', initializer='zeros',
@@ -125,16 +146,10 @@ class ErrorScore(LudwigMetric)#(tf.keras.metrics.Metric):
             dtype=tf.float32
         )
         '''
-        self.sum_error = self.add_tensor(
-            'sum_error',
-            dtype=torch.float32
-        )
-        self.N = self.add_tensor(
-            'N',
-            dtype=torch.float32
-        )
+        self.add_state("sum_error", default=torch.tensor(0, dtype=torch.float32))
+        self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update_state(self, y, y_hat):
+    def update(self, y, y_hat):
         '''
         y = tf.cast(y, tf.float32)
         y_hat = tf.cast(y_hat, tf.float32)
@@ -146,7 +161,7 @@ class ErrorScore(LudwigMetric)#(tf.keras.metrics.Metric):
         self.sum_error += torch.sum(y - y_hat)
         self.N += y.shape[0]
 
-    def result(self):
+    def compute(self):
         return self.sum_error / self.N
 
 
@@ -364,7 +379,6 @@ class MAEMetric(MeanAbsoluteErrorMetric):
         super().update_state(
             y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
-'''
 class MAEMetric(LudwigMetric):
     def __init__(self, name="MAE"):
         super(MAEMetric, self).__init__(name=name)
@@ -379,6 +393,15 @@ class MAEMetric(LudwigMetric):
 
     def result(self):
         return self.absolute_error / self.N
+'''
+class MAEMetric(MeanAbsoluteError):
+    def __init__(self, name="MAE", **kwargs):
+        super(MAEMetric, self).__init__(**kwargs)
+
+    def update(self, preds, target):
+        super().update_state(
+            preds[PREDICTIONS], target
+        )
 
 '''
 class MSEMetric(MeanSquaredErrorMetric):
@@ -389,7 +412,6 @@ class MSEMetric(MeanSquaredErrorMetric):
         super().update_state(
             y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
-'''
 class MSEMetric(LudwigMetric):
     def __init__(self, name='MSE'):
         super(MSEMetric, self).__init__(name=name)
@@ -404,6 +426,15 @@ class MSEMetric(LudwigMetric):
 
     def result(self):
         return self.square_error / self.N
+'''
+class MSEMetric(MeanSquaredError):
+    def __init__(self, name="MSE", **kwargs):
+        super(MSEMetric, self).__init__(**kwargs)
+
+    def update(self, preds, target):
+        super().update(
+            preds[PREDICTIONS], target
+        )
 
 
 class JaccardMetric(tf.keras.metrics.Metric):
