@@ -16,11 +16,13 @@
 # ==============================================================================
 import os
 from typing import Tuple
+from zipfile import ZipFile
 
 import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import ZipandUncompressedFileDownloadMixin
+from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
+from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 from ludwig.constants import SPLIT
 
@@ -29,8 +31,8 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     dataset = KDDAppetency(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class KDDAppetency(ZipandUncompressedFileDownloadMixin, MultifileJoinProcessMixin,
-                   BaseDataset):
+class KDDAppetency(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
+                   CSVLoadMixin, BaseDataset):
     """
     The KDD Cup 2009 Appetency dataset
 
@@ -42,9 +44,10 @@ class KDDAppetency(ZipandUncompressedFileDownloadMixin, MultifileJoinProcessMixi
         super().__init__(dataset_name="kdd_appetency", cache_dir=cache_dir)
 
     def read_file(self, filetype, filename, header=0):
-        if filetype == 'data':
-            file_df = pd.read_csv(
-                os.path.join(self.raw_dataset_path, filename), header=header, sep='\t')
+        if filetype == 'zip':
+            zip_file = ZipFile(os.path.join(self.raw_dataset_path, filename))
+            file_df = pd.read_csv(zip_file.open(
+                os.path.splitext(filename)[0])), header=header, sep='\t')
         elif filetype == 'labels':
             file_df = -pd.read_csv(
                 os.path.join(self.raw_dataset_path, filename), header=None)[0]
@@ -59,7 +62,7 @@ class KDDAppetency(ZipandUncompressedFileDownloadMixin, MultifileJoinProcessMixi
                                                 self.csv_filename))
         
         train_df = unprocessed_df[unprocessed_df[SPLIT] == 0]
-        self.test_df = unprocessed_df[unprocessed_df[SPLIT] == 2]
+        test_df = unprocessed_df[unprocessed_df[SPLIT] == 2]
         
         categorical_features = { 190, 191, 192, 193, 194, 195, 196, 197, 198,
                                 199, 200, 201, 202, 203, 204, 205, 206, 207,
@@ -86,26 +89,33 @@ class KDDAppetency(ZipandUncompressedFileDownloadMixin, MultifileJoinProcessMixi
         processed_val_df['target'] = target.iloc[val_idx[0]]
         processed_val_df['split'] = 1
         
-        self.data_df = pd.concat([processed_train_df, processed_val_df])
-
+        data_df = pd.concat([processed_train_df, processed_val_df, test_df])
+        
+        data_df.to_csv(
+            os.path.join(self.processed_dataset_path, self.csv_filename),
+            index=False
+        )
+        
     def load_processed_dataset(self, split) -> Tuple[pd.DataFrame,
-                                                     pd.DataFrame,
-                                                     pd.DataFrame]:
+                                                    pd.DataFrame,
+                                                    pd.DataFrame]:
+        
+        dataset_csv = os.path.join(self.processed_dataset_path,
+                                   self.csv_filename)
+        data_df = pd.read_csv(dataset_csv)
         if split:
-            if SPLIT in self.data_df:
-                training_set = self.data_df[self.data_df[SPLIT] == 0]
-                val_set = self.data_df[self.data_df[SPLIT] == 1]
-            if SPLIT in self.test_df:
-                test_set = self.test_df[self.test_df[SPLIT] == 2]
-            return training_set, test_set, val_set
-        else:
-            raise ValueError("The dataset does not have splits, "
-                             "load with `split=False`")
-
+            if SPLIT in data_df:
+                training_set = data_df[data_df[SPLIT] == 0]
+                val_set = data_df[data_df[SPLIT] == 1]
+                test_set = data_df[data_df[SPLIT] == 2].drop(['target'])
+                return training_set, test_set, val_set
+            else:
+                raise ValueError("The dataset does not have splits, "
+                            "load with `split=False`")
 
 def process_categorical_features(df, categorical_features):
     for i in categorical_features:
-        df.iloc[:, i].fillna("?", inplace=True) 
+        df.iloc[:, i].fillna("", inplace=True) 
         df.iloc[:, i].apply(lambda x: to_float_str(x))
     return df
 
@@ -118,15 +128,6 @@ def to_float_str(element):
 
 
 def process_numerical_features(df, categorical_features):
-    columns_to_impute = []
-    for i, column in enumerate(df.columns):
-        if i not in categorical_features and pd.isnull(df[column]).any():
-            columns_to_impute.append(column)
-            
-    for column_name in columns_to_impute:
-        df[column_name + "_imputed"] = pd.isnull(df[column_name]).astype(float)
-        df[column_name].fillna(0, inplace=True)
-
     for i, column in enumerate(df.columns):
         if i not in categorical_features:
             df[column].astype(float, copy=False)
