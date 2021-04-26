@@ -1,13 +1,13 @@
 import ludwig
 from ludwig.constants import NAME, TYPE, PREPROCESSING
-from ludwig.utils.fs_utils import get_modified_timestamp
+from ludwig.utils.fs_utils import checksum
 from ludwig.utils.misc_utils import hash_dict
 
 
 def calculate_checksum(original_dataset, config):
     info = {}
     info['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
-    info['dataset_modification_date'] = get_modified_timestamp(original_dataset)
+    info['dataset_checksum'] = checksum(original_dataset)
     info['global_preprocessing'] = config['preprocessing']
     features = config.get('input_features', []) + \
                config.get('output_features', []) + \

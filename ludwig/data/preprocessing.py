@@ -53,7 +53,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed, merge_with_defaults)
-from ludwig.utils.fs_utils import get_modified_timestamp, delete, path_exists
+from ludwig.utils.fs_utils import delete, path_exists
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      hash_dict, get_proc_features_from_lists)
@@ -1364,7 +1364,6 @@ def preprocess_for_training(
     input_fname = None
     if data_format in CACHEABLE_FORMATS:
         input_fname = dataset or training_set
-        dataset = None
 
         checksum = backend.cache.get_cache_key(input_fname, config)
         cache_results = backend.cache.get_dataset(input_fname, config)
@@ -1379,6 +1378,7 @@ def preprocess_for_training(
                 config['data_hdf5_fp'] = training_set
                 data_format = backend.cache.file_format
                 cached = True
+                dataset = None
             else:
                 logger.info(
                     "Found hdf5 and meta.json with the same filename "

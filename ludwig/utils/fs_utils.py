@@ -66,9 +66,9 @@ def delete(url, recursive=False):
     return fs.delete(path, recursive=recursive)
 
 
-def get_modified_timestamp(url):
+def checksum(url):
     fs, path = get_fs_and_path(url)
-    return fs.modified(path).timestamp()
+    return fs.checksum(path)
 
 
 def to_url(path):
