@@ -125,13 +125,7 @@ class ParquetDatasetManager(object):
                            engine='pyarrow',
                            write_index=False,
                            schema='infer')
-
-        dataset_parquet_url = to_url(dataset_parquet_fp)
-        return ParquetDataset(
-            dataset_parquet_url,
-            features,
-            training_set_metadata
-        )
+        return dataset_parquet_fp
 
     def can_cache(self, input_fname, config, skip_save_processed_input):
         return input_fname is not None and self.backend.is_coordinator()

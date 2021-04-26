@@ -80,7 +80,7 @@ class CacheManager(object):
     def get_cache_key(self, input_fname, config):
         if input_fname is None:
             # TODO(travis): could try hashing the in-memory dataset, but this is tricky for Dask
-            return str(uuid.uuid4())
+            return str(uuid.uuid1())
         return calculate_checksum(input_fname, config)
 
     def get_cache_path(self, input_fname, key, tag=None, ext=None):

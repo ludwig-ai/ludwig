@@ -92,6 +92,7 @@ class PandasDatasetManager(object):
 
     def save(self, cache_path, dataset, config, training_set_metadata):
         data_utils.save_hdf5(cache_path, dataset)
+        return dataset
 
     def can_cache(self, input_fname, config, skip_save_processed_input):
         return input_fname is not None and \

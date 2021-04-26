@@ -1515,10 +1515,6 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        if backend.cache_enabled:
-            training_set_metadata[
-                DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
-
         # TODO dask: consolidate hdf5 cache with backend cache
         if backend.is_coordinator() and not skip_save_processed_input:
             # save split values for use by visualization routines
@@ -1573,10 +1569,6 @@ def _preprocess_file_for_training(
             backend=backend,
             random_seed=random_seed
         )
-
-        if backend.cache_enabled:
-            training_set_metadata[
-                DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
@@ -1673,10 +1665,6 @@ def _preprocess_df_for_training(
         random_seed=random_seed,
         backend=backend
     )
-
-    if backend.cache_enabled:
-        training_set_metadata[
-            DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
     training_set, test_set, validation_set = split_dataset_ttv(
         dataset,
