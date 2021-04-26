@@ -28,20 +28,20 @@ from ludwig.constants import SPLIT
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
-    dataset = KDDAppetency(cache_dir=cache_dir)
+    dataset = KDDChurn(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class KDDAppetency(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
+class KDDChurn(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
                    CSVLoadMixin, BaseDataset):
     """
-    The KDD Cup 2009 Appetency dataset
+    The KDD Cup 2009 Churn dataset
 
     Additional Details:
 
     https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
     """
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, label=None):
-        super().__init__(dataset_name="kdd_appetency", cache_dir=cache_dir)
+        super().__init__(dataset_name="kdd_churn", cache_dir=cache_dir)
 
     def read_file(self, filetype, filename, header=0):
         if filetype == 'zip':
@@ -74,13 +74,13 @@ class KDDAppetency(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
         train_df = process_numerical_features(train_df, categorical_features)
         
         target = self.read_file('labels', os.path.join(self.raw_dataset_path,
-                                                       'orange_small_train_appetency.labels'))
+                                                       'orange_small_train_churn.labels'))
         
         train_idx = self.read_file('txt', os.path.join(self.raw_dataset_path,
-                                                       'stratified_train_idx_appetency.txt'))
+                                                       'stratified_train_idx_churn.txt'))
         
         val_idx = self.read_file('txt', os.path.join(self.raw_dataset_path,
-                                                       'stratified_test_idx_appetency.txt'))
+                                                       'stratified_test_idx_churn.txt'))
         
         processed_train_df = train_df.iloc[train_idx[0]].copy()
         processed_train_df['target'] = target.iloc[train_idx[0]]
