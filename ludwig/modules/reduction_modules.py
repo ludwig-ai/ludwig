@@ -18,14 +18,17 @@ import logging
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
+from torch.nn import Module
+
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+#from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
 
-class SequenceReducer(Layer):
+class SequenceReducer(Module):
 
     def __init__(self, reduce_mode=None):
         super().__init__()
@@ -42,12 +45,14 @@ class SequenceReducer(Layer):
         return self._reduce_obj(inputs, training=training, mask=mask)
 
 
-class ReduceLast(Layer):
+class ReduceLast(Module):
 
-    def call(self, inputs, training=None, mask=None):
-        batch_size = tf.shape(inputs)[0]
+    def forward(self, inputs, training=None, mask=None):
+        #batch_size = tf.shape(inputs)[0]
+        batch_size = inputs.shape[0]
         sequence_length = sequence_length_3D(inputs)
         # gather the correct outputs from the the RNN outputs (the outputs after sequence_length are all 0s)
+        '''
         gathered = tf.gather_nd(
             inputs,
             tf.stack(
@@ -55,36 +60,51 @@ class ReduceLast(Layer):
                 axis=1
             )
         )
+        '''
+        gathered = SOME_FUNC_HERE(
+            inputs,
+            torch.stack(
+                [torch.range(batch_size), torch.maximum(sequence_length - 1, 0)]
+                dim=1
+            )
+        )
         return gathered
 
 
-class ReduceSum(Layer):
+class ReduceSum(Module):
 
-    def call(self, inputs, training=None, mask=None):
-        return tf.reduce_sum(inputs, axis=1)
-
-
-class ReduceMean(Layer):
-
-    def call(self, inputs, training=None, mask=None):
-        return tf.reduce_mean(inputs, axis=1)
+    def forward(self, inputs, training=None, mask=None):
+        #return tf.reduce_sum(inputs, axis=1)
+        return torch.sum(inputs, dim=1)
 
 
-class ReduceMax(Layer):
+class ReduceMean(Module):
 
-    def call(self, inputs, training=None, mask=None):
-        return tf.reduce_max(inputs, axis=1)
+    def forward(self, inputs, training=None, mask=None):
+        #return tf.reduce_mean(inputs, axis=1)
+        return torch.mean(inputs, dim=1)
 
 
-class ReduceConcat(Layer):
+class ReduceMax(Module):
+
+    def forward(self, inputs, training=None, mask=None):
+        #return tf.reduce_max(inputs, axis=1)
+        return torch.max(inputs, dim=1)
+
+
+class ReduceConcat(Module):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.reduce_last = ReduceLast()
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
+        '''
         if (inputs.shape.as_list()[-2] is None or
                 inputs.shape.as_list()[-1] is None):
+        '''
+        if (list(inputs.shape)[-2] is None or
+                list(inputs.shape.as_list()[-1] is None):
             # this the case of outputs coming from rnn encoders
             logger.warning('  WARNING: '
                            'The sequence length dimension is undefined '
@@ -94,15 +114,22 @@ class ReduceConcat(Layer):
                            'Last will be used instead.')
             return self.reduce_last(inputs)
         else:
+        '''
             return tf.reshape(
                 inputs,
                 [-1, inputs.shape[-2] * inputs.shape[-1]]
             )
+        '''
+            return torch.reshape(
+                inputs,
+                (-1, inputs.shape[-2] * inputs.shape[-1])
+            )
 
 
-class ReduceNone(Layer):
 
-    def call(self, inputs, training=None, mask=None):
+class ReduceNone(Module):
+
+    def forward(self, inputs, training=None, mask=None):
         return inputs
 
 
