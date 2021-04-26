@@ -24,7 +24,6 @@ from petastorm.tf_utils import make_petastorm_dataset
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
-from ludwig.utils.fs_utils import to_url, makedirs
 from ludwig.utils.misc_utils import get_combined_features
 
 
@@ -35,7 +34,7 @@ class ParquetDataset(Dataset):
         self.training_set_metadata = training_set_metadata
 
         with make_batch_reader(self.url) as reader:
-            self.size = reader.dataset.metadata.num_rows
+            self.size = sum(piece.get_metadata().num_rows for piece in reader.dataset.pieces)
 
         self.reshape_features = {
             feature[PROC_COLUMN]: list((-1, *training_set_metadata[feature[NAME]]['reshape']))
@@ -70,7 +69,7 @@ class ParquetDataset(Dataset):
                                    shard_count=shard_count,
                                    num_epochs=None)
 
-        total_samples = reader.dataset.metadata.num_rows
+        total_samples = self.size
         local_samples = int(total_samples / shard_count) if shard_count else total_samples
 
         dataset = make_petastorm_dataset(reader)
@@ -120,10 +119,9 @@ class ParquetDatasetManager(object):
                     lambda x: x.reshape(-1)
                 )
 
-        makedirs(dataset_parquet_fp, exist_ok=True)
+        # makedirs(dataset_parquet_fp, exist_ok=True)
         dataset.to_parquet(dataset_parquet_fp,
-                           engine='pyarrow',
-                           write_index=False)
+                           engine='pyarrow')
         return dataset_parquet_fp
 
     def can_cache(self, input_fname, config, skip_save_processed_input):
@@ -131,4 +129,4 @@ class ParquetDatasetManager(object):
 
     @property
     def data_format(self):
-        return 'hdf5'
+        return 'parquet'

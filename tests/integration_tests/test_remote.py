@@ -57,7 +57,7 @@ def test_remote_training_set(tmpdir, fs_protocol, data_format):
         model.predict(dataset=test_csv,
                       output_directory=output_directory)
 
-        # Train again, this time the HDF5 cache will be used
+        # Train again, this time the cache will be used
         # Resume from the remote output directory
         model.train(training_set=data_csv,
                     validation_set=val_csv,

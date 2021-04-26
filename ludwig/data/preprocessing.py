@@ -1515,26 +1515,10 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        # TODO dask: consolidate hdf5 cache with backend cache
         if backend.is_coordinator() and not skip_save_processed_input:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
-
-            # logger.info('Writing preprocessed dataset cache')
-            # data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-            # data_utils.save_hdf5(data_hdf5_fp, data)
-            #
-            # logger.info('Writing train set metadata')
-            # training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
-            # training_set_metadata[CHECKSUM] = calculate_checksum(
-            #     dataset,
-            #     {'features': features, PREPROCESSING: preprocessing_params}
-            # )
-            # training_set_metadata_fp = replace_file_extension(dataset,
-            #                                                   'meta.json')
-            # data_utils.save_json(training_set_metadata_fp,
-            #                      training_set_metadata)
 
         # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
         training_data, test_data, validation_data = split_dataset_ttv(
@@ -1574,51 +1558,6 @@ def _preprocess_file_for_training(
             data,
             SPLIT
         )
-
-        # if backend.is_coordinator() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
-        #     logger.info('Writing preprocessed training set cache')
-        #     data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
-        #     data_utils.save_hdf5(
-        #         data_train_hdf5_fp,
-        #         training_data,
-        #     )
-        #
-        #     if validation_set is not None:
-        #         logger.info('Writing preprocessed validation set cache')
-        #         data_validation_hdf5_fp = replace_file_extension(
-        #             validation_set,
-        #             'hdf5'
-        #         )
-        #         data_utils.save_hdf5(
-        #             data_validation_hdf5_fp,
-        #             validation_data,
-        #         )
-        #
-        #     if test_set is not None:
-        #         logger.info('Writing preprocessed test set cache')
-        #         data_test_hdf5_fp = replace_file_extension(
-        #             test_set,
-        #             'hdf5'
-        #         )
-        #         data_utils.save_hdf5(
-        #             data_test_hdf5_fp,
-        #             test_data,
-        #         )
-        #
-        #     logger.info('Writing train set metadata')
-        #     training_set_metadata[DATA_TRAIN_HDF5_FP] = data_train_hdf5_fp
-        #     training_set_metadata[CHECKSUM] = calculate_checksum(
-        #         training_set,
-        #         {'features': features, PREPROCESSING: preprocessing_params}
-        #     )
-        #     training_set_metadata_fp = replace_file_extension(
-        #         training_set,
-        #         'meta.json'
-        #     )
-        #     data_utils.save_json(
-        #         training_set_metadata_fp,
-        #         training_set_metadata,
-        #     )
 
     else:
         raise ValueError('either data or data_train have to be not None')

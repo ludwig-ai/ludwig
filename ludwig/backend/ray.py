@@ -173,8 +173,8 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, horovod_kwargs=None):
-        super().__init__()
+    def __init__(self, horovod_kwargs=None, data_format='parquet', **kwargs):
+        super().__init__(data_format=data_format, **kwargs)
         self._df_engine = DaskEngine()
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}

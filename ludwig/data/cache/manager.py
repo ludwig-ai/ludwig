@@ -24,12 +24,6 @@ class CacheManager(object):
         key = self.get_cache_key(input_fname, config)
         training_set, test_set, validation_set, training_set_metadata = processed
 
-        logger.info('Writing train set metadata')
-        data_utils.save_json(
-            self.get_cache_path(input_fname, key, 'meta', 'json'),
-            training_set_metadata
-        )
-
         logger.info('Writing preprocessed training set cache')
         training_set = self.save(
             self.get_cache_path(input_fname, key),
@@ -55,6 +49,12 @@ class CacheManager(object):
                 config,
                 training_set_metadata,
             )
+
+        logger.info('Writing train set metadata')
+        data_utils.save_json(
+            self.get_cache_path(input_fname, key, 'meta', 'json'),
+            training_set_metadata
+        )
 
         return training_set, test_set, validation_set, training_set_metadata
 
