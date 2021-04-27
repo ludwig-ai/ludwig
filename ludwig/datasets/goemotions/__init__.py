@@ -20,7 +20,7 @@ from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = GoEmotions(cache_dir=cache_dir)
     return dataset.load(split=split)
 
