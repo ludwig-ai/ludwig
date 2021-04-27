@@ -65,7 +65,7 @@ class KDDAppetency(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
                 "orange_small_train_appetency.labels"
             ),
             header=None
-        )[0].apply(lambda x: True if x == 1 else False).astype(bool)
+        )[0].astype(str).apply(lambda x: "true" if x == '1' else "false")
 
         train_idcs = pd.read_csv(
             os.path.join(
