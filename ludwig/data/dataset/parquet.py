@@ -124,7 +124,7 @@ class ParquetDatasetManager(object):
         return dataset_parquet_fp
 
     def can_cache(self, input_fname, config, skip_save_processed_input):
-        return input_fname is not None and self.backend.is_coordinator()
+        return self.backend.is_coordinator()
 
     @property
     def data_format(self):

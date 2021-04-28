@@ -21,8 +21,11 @@ class CacheManager(object):
         if not self.can_cache(input_fname, config, skip_save_processed_input):
             return processed
 
-        key = self.get_cache_key(input_fname, config)
         training_set, test_set, validation_set, training_set_metadata = processed
+        key = training_set_metadata.get(CHECKSUM)
+        if not key:
+            key = self.get_cache_key(input_fname, config)
+            training_set_metadata[CHECKSUM] = key
 
         logger.info('Writing preprocessed training set cache')
         training_set = self.save(
