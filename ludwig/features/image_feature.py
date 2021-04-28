@@ -321,7 +321,9 @@ class ImageFeatureMixin(object):
             all_file_paths = [get_abs_path(src_path, file_path)
                               for file_path in input_df[feature[NAME]]]
 
-            data_fp = os.path.splitext(input_df.src)[0] + '.hdf5'
+            data_fp = backend.cache.get_cache_path(
+                input_df.src, metadata.get(CHECKSUM), TRAINING
+            )
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(

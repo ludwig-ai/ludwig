@@ -3,7 +3,7 @@ import os
 import uuid
 from pathlib import Path
 
-from ludwig.constants import CHECKSUM
+from ludwig.constants import CHECKSUM, TRAINING, TEST, VALIDATION
 from ludwig.data.cache.util import calculate_checksum
 from ludwig.utils import data_utils
 from ludwig.utils.fs_utils import path_exists
@@ -26,28 +26,31 @@ class CacheManager(object):
 
         logger.info('Writing preprocessed training set cache')
         training_set = self.save(
-            self.get_cache_path(input_fname, key, 'train'),
+            self.get_cache_path(input_fname, key, TRAINING),
             training_set,
             config,
             training_set_metadata,
+            TRAINING,
         )
 
         if test_set is not None:
             logger.info('Writing preprocessed test set cache')
             test_set = self.save(
-                self.get_cache_path(input_fname, key, 'test'),
+                self.get_cache_path(input_fname, key, TEST),
                 test_set,
                 config,
                 training_set_metadata,
+                TEST,
             )
 
         if validation_set is not None:
             logger.info('Writing preprocessed validation set cache')
             validation_set = self.save(
-                self.get_cache_path(input_fname, key, 'val'),
+                self.get_cache_path(input_fname, key, VALIDATION),
                 validation_set,
                 config,
                 training_set_metadata,
+                VALIDATION,
             )
 
         logger.info('Writing train set metadata')
@@ -69,9 +72,9 @@ class CacheManager(object):
                 training_set_metadata_fp
             )
 
-            dataset_fp = self.get_cache_path(input_fname, key, 'train')
-            test_fp = self.get_cache_path(input_fname, key, 'test')
-            val_fp = self.get_cache_path(input_fname, key, 'val')
+            dataset_fp = self.get_cache_path(input_fname, key, TRAINING)
+            test_fp = self.get_cache_path(input_fname, key, TEST)
+            val_fp = self.get_cache_path(input_fname, key, VALIDATION)
             valid = key == cache_training_set_metadata.get(CHECKSUM) and path_exists(dataset_fp)
             return valid, cache_training_set_metadata, dataset_fp, test_fp, val_fp
 
@@ -98,8 +101,8 @@ class CacheManager(object):
             return '.'
         return self._cache_dir
 
-    def save(self, cache_path, dataset, config, training_set_metadata):
-        return self._dataset_manager.save(cache_path, dataset, config, training_set_metadata)
+    def save(self, cache_path, dataset, config, training_set_metadata, tag):
+        return self._dataset_manager.save(cache_path, dataset, config, training_set_metadata, tag)
 
     def can_cache(self, input_fname, config, skip_save_processed_input):
         return self._dataset_manager.can_cache(input_fname, config, skip_save_processed_input)

@@ -131,7 +131,7 @@ class DictPreprocessor(DataFormatPreprocessor):
         df_engine = backend.df_engine
         if dataset is not None:
             dataset = df_engine.from_pandas(pd.DataFrame(dataset))
-        if training_set_metadata is not None:
+        if training_set is not None:
             training_set = df_engine.from_pandas(pd.DataFrame(training_set))
         if validation_set is not None:
             validation_set = df_engine.from_pandas(
@@ -1066,13 +1066,13 @@ def build_dataset(
         backend
     )
 
-    if metadata is None:
-        metadata = build_metadata(
-            dataset_df,
-            features,
-            global_preprocessing_parameters,
-            backend
-        )
+    metadata = build_metadata(
+        metadata,
+        dataset_df,
+        features,
+        global_preprocessing_parameters,
+        backend
+    )
 
     dataset = build_data(
         dataset_df,
@@ -1114,12 +1114,13 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
     return dataset_df
 
 
-def build_metadata(dataset_df, features, global_preprocessing_parameters,
-                   backend):
-    metadata = {}
+def build_metadata(
+        metadata, dataset_df, features, global_preprocessing_parameters, backend
+):
     proc_feature_to_metadata = {}
-
     for feature in features:
+        if feature[NAME] in metadata:
+            continue
 
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -1349,6 +1350,7 @@ def preprocess_for_training(
         )
 
     # if training_set_metadata is a string, assume it's a path to load the json
+    training_set_metadata = training_set_metadata or {}
     if training_set_metadata and isinstance(training_set_metadata, str):
         training_set_metadata = load_metadata(training_set_metadata)
 
@@ -1389,6 +1391,10 @@ def preprocess_for_training(
                 for fname in fnames:
                     if path_exists(fname):
                         delete(fname)
+
+    if CHECKSUM not in training_set_metadata:
+        checksum = checksum or backend.cache.get_cache_key(input_fname, config)
+        training_set_metadata[CHECKSUM] = checksum
 
     data_format_processor = get_from_registry(
         data_format,
@@ -1435,9 +1441,6 @@ def preprocess_for_training(
             input_fname, config, processed, skip_save_processed_input
         )
         training_set, test_set, validation_set, training_set_metadata = processed
-
-    if CHECKSUM not in training_set_metadata and checksum is not None:
-        training_set_metadata[CHECKSUM] = checksum
 
     training_dataset = backend.dataset_manager.create(
         training_set,

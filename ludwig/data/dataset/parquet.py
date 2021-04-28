@@ -102,7 +102,7 @@ class ParquetDatasetManager(object):
             training_set_metadata
         )
 
-    def save(self, cache_path, dataset, config, training_set_metadata):
+    def save(self, cache_path, dataset, config, training_set_metadata, tag):
         dataset_parquet_fp = cache_path
 
         # Workaround for https://issues.apache.org/jira/browse/ARROW-1614
