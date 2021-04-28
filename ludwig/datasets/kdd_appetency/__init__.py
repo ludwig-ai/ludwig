@@ -14,15 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
-from zipfile import ZipFile
-
-import pandas as pd
-
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
+from ludwig.datasets.kdd_dataset import KDDCup2009Dataset
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
@@ -30,8 +23,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
-class KDDAppetency(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
-                   CSVLoadMixin, BaseDataset):
+class KDDAppetency(KDDCup2009Dataset):
     """
     The KDD Cup 2009 Appetency dataset
 
@@ -41,85 +33,8 @@ class KDDAppetency(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="kdd_appetency", cache_dir=cache_dir)
+        super().__init__(task_name="appetency", cache_dir=cache_dir)
 
-    def process_downloaded_dataset(self, header=0):
-        zip_file = ZipFile(
-            os.path.join(self.raw_dataset_path, "orange_small_train.data.zip")
-        )
-        train_df = pd.read_csv(zip_file.open("orange_small_train.data"),
-                               sep='\t')
-
-        zip_file = ZipFile(
-            os.path.join(self.raw_dataset_path, "orange_small_test.data.zip")
-        )
-        test_df = pd.read_csv(zip_file.open("orange_small_test.data"),
-                              sep='\t')
-
-        train_df = process_categorical_features(train_df, categorical_features)
-        train_df = process_numerical_features(train_df, categorical_features)
-
-        targets = pd.read_csv(
-            os.path.join(
-                self.raw_dataset_path,
-                "orange_small_train_appetency.labels"
-            ),
-            header=None
-        )[0].astype(str).apply(lambda x: "true" if x == '1' else "false")
-
-        train_idcs = pd.read_csv(
-            os.path.join(
-                self.raw_dataset_path,
-                "stratified_train_idx_appetency.txt"
-            ),
-            header=None
-        )[0]
-
-        val_idcs = pd.read_csv(
-            os.path.join(
-                self.raw_dataset_path,
-                "stratified_test_idx_appetency.txt"
-            ),
-            header=None
-        )[0]
-
-        processed_train_df = train_df.iloc[train_idcs].copy()
-        processed_train_df['target'] = targets.iloc[train_idcs]
-        processed_train_df['split'] = 0
-
-        processed_val_df = train_df.iloc[val_idcs].copy()
-        processed_val_df['target'] = targets.iloc[val_idcs]
-        processed_val_df['split'] = 1
-
-        test_df['target'] = ''
-        test_df['split'] = 2
-
-        df = pd.concat([processed_train_df, processed_val_df, test_df])
-
-        os.makedirs(self.processed_temp_path, exist_ok=True)
-        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
-                  index=False)
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
-
-
-def process_categorical_features(df, categorical_features):
-    for i in categorical_features:
-        df.iloc[:, i].fillna("", inplace=True)
-    return df
-
-
-def process_numerical_features(df, categorical_features):
-    for i, column in enumerate(df.columns):
-        if i not in categorical_features:
-            df[column].astype(float, copy=False)
-    return df
-
-
-categorical_features = {190, 191, 192, 193, 194, 195, 196, 197, 198,
-                        199, 200, 201, 202, 203, 204, 205, 206, 207,
-                        209, 210, 211, 212, 213, 214, 215, 216, 217,
-                        218, 219, 220, 221, 222, 223, 224, 225, 226,
-                        227, 228}
 
 if __name__ == "__main__":
     df = load()
