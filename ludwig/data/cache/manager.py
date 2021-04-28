@@ -101,12 +101,10 @@ class CacheManager(object):
             return str(uuid.uuid1())
         return calculate_checksum(input_fname, config)
 
-    def get_cache_path(self, input_fname, key, tag=None, ext=None):
-        tag = tag or Path(input_fname).stem
+    def get_cache_path(self, input_fname, key, tag, ext=None):
+        stem = key if self._cache_dir is not None else Path(input_fname).stem
         ext = ext or self.data_format
-        cache_fname = f'{key}.{tag}.{ext}'
-        if self._cache_dir is None:
-            cache_fname = f'{tag}.{ext}'
+        cache_fname = f'{stem}.{tag}.{ext}'
         return os.path.join(self.get_cache_directory(input_fname), cache_fname)
 
     def get_cache_directory(self, input_fname):

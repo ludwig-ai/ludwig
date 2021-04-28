@@ -18,7 +18,7 @@ from ludwig.features.numerical_feature import numeric_transformation_registry
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
-from tests.integration_tests.utils import category_feature, generate_data
+from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend
 
 RANDOM_SEED = 42
 NUMBER_OBSERVATIONS = 500
@@ -397,20 +397,21 @@ def test_cache_checksum(csv_filename, tmp_path):
         'training': {'epochs': 2}
     }
 
+    backend = LocalTestBackend()
+    cache_fname = replace_file_extension(source_dataset, 'training.hdf5')
+
     # conduct initial training
     output_directory = os.path.join(tmp_path, 'results')
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=backend)
     _, _, train_output_directory1 = \
         model.train(dataset=source_dataset, output_directory=output_directory)
-    first_training_timestamp = \
-        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+    first_training_timestamp = os.path.getmtime(cache_fname)
 
     # conduct second training, should not force recreating hdf5
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=backend)
     _, _, train_output_directory2 = \
         model.train(dataset=source_dataset, output_directory=output_directory)
-    current_training_timestamp = \
-        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+    current_training_timestamp = os.path.getmtime(cache_fname)
 
     # time stamps should be the same
     assert first_training_timestamp == current_training_timestamp
@@ -418,11 +419,10 @@ def test_cache_checksum(csv_filename, tmp_path):
     # force recreating cache file by changing checksum
     prior_training_timestamp = current_training_timestamp
     config['preprocessing']['text']['most_common_word'] = 2000
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=backend)
     _, _, train_output_directory3 = \
         model.train(dataset=source_dataset, output_directory=output_directory)
-    current_training_timestamp = \
-        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+    current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamp should differ
     assert prior_training_timestamp < current_training_timestamp
@@ -430,11 +430,10 @@ def test_cache_checksum(csv_filename, tmp_path):
     # force recreating cache by updating modification time of source dataset
     prior_training_timestamp = current_training_timestamp
     os.utime(source_dataset)
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=backend)
     _, _, train_output_directory4 = \
         model.train(dataset=source_dataset, output_directory=output_directory)
-    current_training_timestamp = \
-        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+    current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different
     assert prior_training_timestamp < current_training_timestamp
@@ -444,11 +443,10 @@ def test_cache_checksum(csv_filename, tmp_path):
     input_features = config['input_features'].copy()
     input_features[0]['preprocessing'] = {'lowercase': True}
     config['input_features'] = input_features
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=backend)
     _, _, train_output_directory5 = \
         model.train(dataset=source_dataset, output_directory=output_directory)
-    current_training_timestamp = \
-        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+    current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different
     assert prior_training_timestamp < current_training_timestamp
@@ -459,11 +457,10 @@ def test_cache_checksum(csv_filename, tmp_path):
     source_dataset = generate_data(input_features, output_features,
                                    source_dataset)
     config['input_features'] = input_features
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=backend)
     _, _, train_output_directory5 = \
         model.train(dataset=source_dataset, output_directory=output_directory)
-    current_training_timestamp = \
-        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+    current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different
     assert prior_training_timestamp < current_training_timestamp
@@ -471,11 +468,10 @@ def test_cache_checksum(csv_filename, tmp_path):
     # force change in Ludwig version
     prior_training_timestamp = current_training_timestamp
     global_vars.LUDWIG_VERSION = 'new_version'
-    model = LudwigModel(config)
+    model = LudwigModel(config, backend=backend)
     _, _, train_output_directory5 = \
         model.train(dataset=source_dataset, output_directory=output_directory)
-    current_training_timestamp = \
-        os.path.getmtime(replace_file_extension(source_dataset, 'hdf5'))
+    current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different
     assert prior_training_timestamp < current_training_timestamp
