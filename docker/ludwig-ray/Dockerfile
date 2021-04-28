@@ -13,9 +13,6 @@ FROM rayproject/ray:nightly
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	wget \
-	build-essential \
-	libc6-dev \
-	libc-dev-bin \
 	git \
 	curl \
 	libsndfile1 \
