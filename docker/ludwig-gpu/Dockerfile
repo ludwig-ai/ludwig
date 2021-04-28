@@ -12,7 +12,6 @@
 FROM tensorflow/tensorflow:2.4.1-gpu
 
 RUN apt-get -y update && apt-get -y install \
-    build-essential \
     git \
     libsndfile1 \
     cmake \
