@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import math
 
 import tensorflow as tf
@@ -55,6 +56,7 @@ class ParquetDataset(Dataset):
     def __len__(self):
         return self.size
 
+    @contextlib.contextmanager
     def initialize_batcher(self,
                            batch_size=128,
                            should_shuffle=True,
@@ -65,29 +67,28 @@ class ParquetDataset(Dataset):
         if horovod:
             cur_shard, shard_count = horovod.rank(), horovod.size()
 
-        reader = make_batch_reader(self.url,
-                                   cur_shard=cur_shard,
-                                   shard_count=shard_count,
-                                   num_epochs=None)
+        with make_batch_reader(self.url,
+                               cur_shard=cur_shard,
+                               shard_count=shard_count,
+                               num_epochs=None) as reader:
+            total_samples = self.size
+            local_samples = int(total_samples / shard_count) if shard_count else total_samples
 
-        total_samples = self.size
-        local_samples = int(total_samples / shard_count) if shard_count else total_samples
+            dataset = make_petastorm_dataset(reader)
+            dataset = dataset.unbatch()
+            if should_shuffle:
+                rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
+                buffer_size = min(rows_per_piece, local_samples)
+                dataset = dataset.shuffle(buffer_size)
+            dataset = dataset.batch(batch_size)
 
-        dataset = make_petastorm_dataset(reader)
-        dataset = dataset.unbatch()
-        if should_shuffle:
-            rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
-            buffer_size = min(rows_per_piece, local_samples)
-            dataset = dataset.shuffle(buffer_size)
-        dataset = dataset.batch(batch_size)
+            steps_per_epoch = math.ceil(local_samples / batch_size)
 
-        steps_per_epoch = math.ceil(local_samples / batch_size)
-
-        batcher = IterableBatcher(self,
-                                  dataset,
-                                  steps_per_epoch,
-                                  ignore_last=ignore_last)
-        return batcher
+            batcher = IterableBatcher(self,
+                                      dataset,
+                                      steps_per_epoch,
+                                      ignore_last=ignore_last)
+            yield batcher
 
 
 class ParquetDatasetManager(object):

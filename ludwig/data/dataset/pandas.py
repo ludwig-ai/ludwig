@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
+
 import numpy as np
 
 from ludwig.constants import PREPROCESSING, TRAINING
@@ -63,6 +65,7 @@ class PandasDataset(Dataset):
     def __len__(self):
         return self.size
 
+    @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
                            seed=0,
@@ -76,7 +79,7 @@ class PandasDataset(Dataset):
                                       sampler,
                                       batch_size=batch_size,
                                       ignore_last=ignore_last)
-        return batcher
+        yield batcher
 
 
 class PandasDatasetManager(object):
