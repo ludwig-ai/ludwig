@@ -6,8 +6,7 @@ from pathlib import Path
 from ludwig.constants import CHECKSUM, TRAINING, TEST, VALIDATION
 from ludwig.data.cache.util import calculate_checksum
 from ludwig.utils import data_utils
-from ludwig.utils.fs_utils import path_exists
-
+from ludwig.utils.fs_utils import path_exists, delete
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +81,19 @@ class CacheManager(object):
             return valid, cache_training_set_metadata, dataset_fp, test_fp, val_fp
 
         return None
+
+    def delete_dataset(self, input_fname, config):
+        key = self.get_cache_key(input_fname, config)
+        fnames = [
+            self.get_cache_path(input_fname, key, 'meta', 'json'),
+            self.get_cache_path(input_fname, key, TRAINING),
+            self.get_cache_path(input_fname, key, TEST),
+            self.get_cache_path(input_fname, key, VALIDATION),
+        ]
+
+        for fname in fnames:
+            if path_exists(fname):
+                delete(fname)
 
     def get_cache_key(self, input_fname, config):
         if input_fname is None:

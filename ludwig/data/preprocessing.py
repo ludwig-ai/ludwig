@@ -1370,15 +1370,15 @@ def preprocess_for_training(
         checksum = backend.cache.get_cache_key(input_fname, config)
         cache_results = backend.cache.get_dataset(input_fname, config)
         if cache_results is not None:
-            valid, *fnames = cache_results
+            valid, *cache_values = cache_results
             if valid:
                 logger.info(
                     'Found hdf5 and meta.json with the same filename '
                     'of the dataset, using them instead'
                 )
-                training_set_metadata, training_set, test_set, validation_set = cache_results
+                training_set_metadata, training_set, test_set, validation_set = cache_values
                 config['data_hdf5_fp'] = training_set
-                data_format = backend.cache.file_format
+                data_format = backend.cache.data_format
                 cached = True
                 dataset = None
             else:
@@ -1388,9 +1388,7 @@ def preprocess_for_training(
                     "if saving of processed input is not skipped "
                     "they will be overridden"
                 )
-                for fname in fnames:
-                    if path_exists(fname):
-                        delete(fname)
+                backend.cache.delete_dataset(input_fname, config)
 
     if CHECKSUM not in training_set_metadata:
         checksum = checksum or backend.cache.get_cache_key(input_fname, config)
