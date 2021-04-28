@@ -115,7 +115,7 @@ class ParquetDatasetManager(object):
             proc_column = feature[PROC_COLUMN]
             reshape = training_set_metadata[name].get('reshape')
             if reshape is not None:
-                dataset[proc_column] = self.backend.map_objects(
+                dataset[proc_column] = self.backend.df_engine.map_objects(
                     dataset[proc_column],
                     lambda x: x.reshape(-1)
                 )
