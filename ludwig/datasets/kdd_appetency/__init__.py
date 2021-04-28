@@ -34,8 +34,3 @@ class KDDAppetency(KDDCup2009Dataset):
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(task_name="appetency", cache_dir=cache_dir)
-
-
-if __name__ == "__main__":
-    df = load()
-    print(df)
