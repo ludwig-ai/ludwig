@@ -520,6 +520,8 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
+        test_set = test_set if path_exists(test_set) else None
+        validation_set = validation_set if path_exists(validation_set) else None
         return training_set, test_set, validation_set, training_set_metadata
 
 
