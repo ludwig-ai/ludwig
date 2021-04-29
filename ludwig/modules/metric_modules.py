@@ -22,9 +22,12 @@ from tensorflow.python.keras.metrics import \
 
 from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
-from ludwig.modules.loss_modules import (BWCEWLoss, SequenceLoss,
+from ludwig.modules.loss_modules import (BWCEWLoss,
+                                         SequenceSoftmaxCrossEntropyLoss,
+                                         SequenceSampledSoftmaxCrossEntropyLoss,
                                          SigmoidCrossEntropyLoss,
-                                         SoftmaxCrossEntropyLoss)
+                                         SoftmaxCrossEntropyLoss,
+                                         SampledSoftmaxCrossEntropyLoss)
 from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
@@ -165,6 +168,26 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
         super().update_state(self.softmax_cross_entropy_function(y, y_hat))
 
 
+class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
+    def __init__(
+            self,
+            decoder_obj=None,
+            num_classes=0,
+            feature_loss=None,
+            name='sampled_softmax_cross_entropy_metric'
+    ):
+        super(SampledSoftmaxCrossEntropyMetric, self).__init__(name=name)
+
+        self.metric_function = SampledSoftmaxCrossEntropyLoss(
+            decoder_obj=decoder_obj,
+            num_classes=num_classes,
+            feature_loss=feature_loss
+        )
+
+    def update_state(self, y, y_hat):
+        super().update_state(self.metric_function(y, y_hat))
+
+
 class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
     def __init__(
             self,
@@ -181,10 +204,34 @@ class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
 
 
 class SequenceLossMetric(tf.keras.metrics.Mean):
-    def __init__(self, name=None):
+    def __init__(self, from_logits=True, name=None):
         super().__init__(name=name)
 
-        self.loss_function = SequenceLoss(from_logits=False)
+        self.loss_function = SequenceSoftmaxCrossEntropyLoss(
+            from_logits=from_logits)
+
+    def update_state(self, y, y_hat):
+        loss = self.loss_function(y, y_hat)
+        super().update_state(loss)
+
+
+class SequenceSampledLossMetric(tf.keras.metrics.Mean):
+    def __init__(
+            self,
+            dec_dense_layer=None,
+            dec_num_layers=None,
+            num_classes=0,
+            feature_loss=None,
+            name=None
+    ):
+        super(SequenceSampledLossMetric, self).__init__(name=name)
+
+        self.loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+            dec_dense_layer=dec_dense_layer,
+            dec_num_layers=dec_num_layers,
+            num_classes=num_classes,
+            feature_loss=feature_loss
+        )
 
     def update_state(self, y, y_hat):
         loss = self.loss_function(y, y_hat)
@@ -219,7 +266,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
 class PerplexityMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
         super().__init__(name=name)
-        self.loss_function = SequenceLoss(from_logits=False)
+        self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         loss = self.loss_function(y_true, y_pred)
