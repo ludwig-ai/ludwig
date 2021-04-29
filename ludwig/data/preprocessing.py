@@ -15,13 +15,11 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
 
-import ludwig
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -33,7 +31,6 @@ from ludwig.features.feature_registries import (base_type_registry,
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
-                                     DATA_PROCESSED_CACHE_DIR,
                                      DATA_TRAIN_HDF5_FP,
                                      DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
@@ -43,20 +40,19 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
                                      SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
                                      TSV_FORMATS, figure_data_format,
-                                     file_exists_with_diff_extension,
                                      override_in_memory_flag, read_csv,
                                      read_excel, read_feather, read_fwf,
                                      read_html, read_json, read_jsonl,
                                      read_orc, read_parquet, read_pickle,
                                      read_sas, read_spss, read_stata, read_tsv,
-                                     replace_file_extension, split_dataset_ttv)
+                                     split_dataset_ttv)
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
-                                   default_random_seed, merge_with_defaults)
-from ludwig.utils.fs_utils import delete, path_exists
+                                   default_random_seed)
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
-                                     hash_dict, get_proc_features_from_lists)
+                                     get_proc_features_from_lists)
 
 logger = logging.getLogger(__name__)
 
@@ -1375,7 +1371,7 @@ def preprocess_for_training(
             valid, *cache_values = cache_results
             if valid:
                 logger.info(
-                    'Found hdf5 and meta.json with the same filename '
+                    'Found cached dataset and meta.json with the same filename '
                     'of the dataset, using them instead'
                 )
                 training_set_metadata, training_set, test_set, validation_set = cache_values
@@ -1385,7 +1381,7 @@ def preprocess_for_training(
                 dataset = None
             else:
                 logger.info(
-                    "Found hdf5 and meta.json with the same filename "
+                    "Found cached dataset and meta.json with the same filename "
                     "of the dataset, but checksum don't match, "
                     "if saving of processed input is not skipped "
                     "they will be overridden"
@@ -1680,49 +1676,72 @@ def preprocess_for_prediction(
         output_features += config['output_features']
     features = config['input_features'] + output_features
 
-    # in case data_format is one fo the cacheable formats,
-    # check if there's a cached hdf5 file with hte same name,
-    # and in case move on with the hdf5 branch
-    if data_format in CACHEABLE_FORMATS:
-        if (file_exists_with_diff_extension(dataset, 'hdf5') and
-                file_exists_with_diff_extension(dataset, 'meta.json')):
-            logger.info(
-                'Found hdf5 and meta.json with the same filename '
-                'of the input file, using them instead'
-            )
-            dataset = replace_file_extension(dataset, 'hdf5')
-            config['data_hdf5_fp'] = dataset
-            data_format = 'hdf5'
+    # Check the cache for an already preprocessed dataset. This only
+    # applies to scenarios where the user wishes to predict on a split
+    # of the full dataset, where we preprocess the whole dataset together
+    # during training. If the user wishes to predict on the full dataset,
+    # it is assumed they are predicting on unseen data. This is done
+    # because the cached data is stored in its split form, and would be
+    # expensive to recombine, requiring further caching.
+    cached = False
+    training_set, test_set, validation_set = None
+    if data_format in CACHEABLE_FORMATS and split != FULL:
+        cache_results = backend.cache.get_dataset(dataset, config)
+        if cache_results is not None:
+            valid, *cache_values = cache_results
+            if valid:
+                logger.info(
+                    'Found cached dataset and meta.json with the same filename '
+                    'of the input file, using them instead'
+                )
+                training_set_metadata, training_set, test_set, validation_set = cache_values
+                config['data_hdf5_fp'] = training_set
+                data_format = backend.cache.data_format
+                cached = True
 
     data_format_processor = get_from_registry(
         data_format,
         data_format_preprocessor_registry
     )
 
-    processed = data_format_processor.preprocess_for_prediction(
-        dataset,
-        features,
-        preprocessing_params,
-        training_set_metadata,
-        backend
-    )
-    dataset, training_set_metadata, new_hdf5_fp = processed
-    if new_hdf5_fp:
-        hdf5_fp = new_hdf5_fp
-
-    replace_text_feature_level(features, [dataset])
-
-    if split != FULL:
-        training_set, test_set, validation_set = split_dataset_ttv(
-            dataset,
-            SPLIT
+    if cached:
+        processed = data_format_processor.prepare_processed_data(
+            features,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            preprocessing_params=preprocessing_params,
+            backend=backend,
         )
-        if split == TRAINING:
-            dataset = training_set
-        elif split == VALIDATION:
-            dataset = validation_set
-        elif split == TEST:
-            dataset = test_set
+        training_set, test_set, validation_set, training_set_metadata = processed
+    else:
+        processed = data_format_processor.preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata,
+            backend
+        )
+        dataset, training_set_metadata, new_hdf5_fp = processed
+        if new_hdf5_fp:
+            hdf5_fp = new_hdf5_fp
+
+        replace_text_feature_level(features, [dataset])
+
+        if split != FULL:
+            training_set, test_set, validation_set = split_dataset_ttv(
+                dataset,
+                SPLIT
+            )
+
+    if split == TRAINING:
+        dataset = training_set
+    elif split == VALIDATION:
+        dataset = validation_set
+    elif split == TEST:
+        dataset = test_set
 
     features = get_proc_features_from_lists(
         config['input_features'],
