@@ -39,7 +39,7 @@ class FCLayer(Layer):
             activation='relu',
             dropout=0,
     ):
-        super(FCLayer, self).__init__()
+        super().__init__()
 
         self.layers = []
 
@@ -100,7 +100,7 @@ class FCStack(Layer):
             default_dropout=0,
             **kwargs
     ):
-        super(FCStack, self).__init__()
+        super().__init__()
 
         if layers is None:
             self.layers = []
@@ -162,7 +162,7 @@ class FCStack(Layer):
             self,
             input_shape,
     ):
-        super(FCStack, self).build(input_shape)
+        super().build(input_shape)
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs

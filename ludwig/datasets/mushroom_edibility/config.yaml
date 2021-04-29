@@ -1,0 +1,7 @@
+version: 1.0
+download_urls:
+  - "http://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+split_filenames:
+  train_file: agaricus-lepiota.data
+download_file_type: data
+csv_filename: mushroom_edibility.csv

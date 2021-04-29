@@ -83,7 +83,7 @@ class Stacked2DCNN(ImageEncoder):
             fc_dropout=0,
             **kwargs
     ):
-        super(Stacked2DCNN, self).__init__()
+        super().__init__()
 
         logger.debug(' {}'.format(self.name))
 
@@ -183,7 +183,7 @@ class ResNetEncoder(ImageEncoder):
             dropout=0,
             **kwargs
     ):
-        super(ResNetEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if resnet_size < 50:

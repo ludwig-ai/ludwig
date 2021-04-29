@@ -22,11 +22,11 @@ from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_api_key=None):
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
     dataset = AmesHousing(
         cache_dir=cache_dir,
         kaggle_username=kaggle_username,
-        kaggle_api_key=kaggle_api_key
+        kaggle_key=kaggle_key
     )
     return dataset.load(split=split)
 
@@ -42,7 +42,8 @@ class AmesHousing(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, 
     def __init__(self,
                  cache_dir=DEFAULT_CACHE_LOCATION,
                  kaggle_username=None,
-                 kaggle_api_key=None):
+                 kaggle_key=None):
         self.kaggle_username = kaggle_username
-        self.kaggle_api_key = kaggle_api_key
+        self.kaggle_key = kaggle_key
+        self.is_kaggle_competition = True
         super().__init__(dataset_name='ames_housing', cache_dir=cache_dir)

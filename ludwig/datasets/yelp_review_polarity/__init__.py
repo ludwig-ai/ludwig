@@ -39,7 +39,7 @@ class YelpPolarity(TarDownloadMixin, MultifileJoinProcessMixin,
         super().__init__(dataset_name="yelp_polarity", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
-        super(YelpPolarity, self).process_downloaded_dataset(header=None)
+        super().process_downloaded_dataset(header=None)
         processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
                                                 self.csv_filename))
         processed_df.columns = ['label', 'text', 'split']

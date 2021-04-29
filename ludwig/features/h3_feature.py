@@ -32,7 +32,7 @@ H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 H3_PADDING_VALUE = 7
 
 
-class H3FeatureMixin(object):
+class H3FeatureMixin:
     type = H3
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,

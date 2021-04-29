@@ -39,7 +39,7 @@ from ludwig.utils.misc_utils import set_default_value
 logger = logging.getLogger(__name__)
 
 
-class VectorFeatureMixin(object):
+class VectorFeatureMixin:
     type = VECTOR
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,

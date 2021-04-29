@@ -109,7 +109,7 @@ class DateEmbed(DateEncoder):
             :type dropout: float
 
         """
-        super(DateEmbed, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  year FCStack')
@@ -379,7 +379,7 @@ class DateWave(DateEncoder):
                    returning the encoder output.
             :type dropout: float
         """
-        super(DateWave, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  year FCStack')

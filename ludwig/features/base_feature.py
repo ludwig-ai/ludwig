@@ -29,7 +29,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class BaseFeature(object):
+class BaseFeature:
     """Base class for all features.
 
     Note that this class is not-cooperative (does not forward kwargs), so when constructing
@@ -274,16 +274,26 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 combiner_outputs['encoder_output_state']
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
-        logits = self.logits(logits_input, target=target, training=training)
+        logits = self.logits(logits_input, target=target,
+                             training=training)
 
         # most of the cases the output of self.logits is a tensor
-        # in some cases like for sequence features, it can be  tuple of
-        # logits, predictions, scores
-        # The first element will be the logits tensor
+        # there are three special cases:
+        # categorical feature: logits is a tuple of
+        #   logits, projection_input
+        # sequence feature with Generator Decoder: 'logits' is a tuple of
+        #   logits, projection_input
+        # sequence feature with Tagger Decoder: 'logits' is a dictionary with
+        #   these keys: logits, lengths, projection_input
+        #
+        projection_input = None
         if isinstance(logits, tuple):
+            projection_input = logits[1]
             logits = logits[0]
         if not isinstance(logits, dict):
             logits = {'logits': logits}
+        if projection_input is not None:
+            logits[PROJECTION_INPUT] = projection_input
 
         return {
             'last_hidden': hidden,
