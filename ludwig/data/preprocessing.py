@@ -1684,7 +1684,7 @@ def preprocess_for_prediction(
     # because the cached data is stored in its split form, and would be
     # expensive to recombine, requiring further caching.
     cached = False
-    training_set, test_set, validation_set = None
+    training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
         cache_results = backend.cache.get_dataset(dataset, config)
         if cache_results is not None:
