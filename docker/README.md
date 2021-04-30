@@ -21,6 +21,8 @@ from the project's `master` branch.
 * `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of TF 2.x
 * `ludwigai/ludwig-ray` Ludwig packaged with TF2.x
   and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
+* `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of TF2.x
+  and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
 
 ## Image Tags
 
