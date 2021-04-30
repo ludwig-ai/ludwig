@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray-ml:nightly
+FROM rayproject/ray:nightly-gpu
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
