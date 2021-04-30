@@ -29,7 +29,8 @@ from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import CategoryAccuracy
 from ludwig.modules.metric_modules import HitsAtKMetric
-from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
+    SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -41,7 +42,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class CategoryFeatureMixin(object):
+class CategoryFeatureMixin:
     type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
@@ -166,7 +167,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             **kwargs
     ):
         hidden = inputs[HIDDEN]
-        return self.decoder_obj(hidden)
+
+        # EXPECTED SHAPES FOR RETURNED TENSORS
+        # logits: shape [batch_size, num_classes]
+        # hidden: shape [batch_size, size of final fully connected layer]
+        return self.decoder_obj(hidden), hidden
 
     def predictions(
             self,
@@ -187,6 +192,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
+        # EXPECTED SHAPE OF RETURNED TENSORS
+        # predictions: [batch_size]
+        # probabilities: [batch_size, num_classes]
+        # logits: [batch_size, num_classes]
         return {
             PREDICTIONS: predictions,
             PROBABILITIES: probabilities,
@@ -221,15 +230,19 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SoftmaxCrossEntropyMetric(
+        self.eval_loss_function = SoftmaxCrossEntropyLoss(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='eval_loss')
+
+    def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
+        # softmax_cross_entropy loss metric
+        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
             num_classes=self.num_classes,
             feature_loss=self.loss,
             name='eval_loss'
         )
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = CategoryAccuracy(
             name='metric_accuracy'
         )

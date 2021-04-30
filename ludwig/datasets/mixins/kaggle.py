@@ -13,13 +13,14 @@ class KaggleDownloadMixin:
     """A mixin to abstract away the details of the kaggle API which includes
     the ability to authenticate against the kaggle API, list the various datasets
     and finally download the dataset, we derive from ZipDownloadMixin to take
-    advantage of extracting contents from the titanic zip file"""
+    advantage of extracting contents from the archive zip file"""
     config: dict
     raw_dataset_path: str
     raw_temp_path: str
     name: str
     kaggle_username: str
-    kaggle_api_key: str
+    kaggle_key: str
+    is_kaggle_competition: bool
 
     def download_raw_dataset(self):
         """
@@ -28,20 +29,23 @@ class KaggleDownloadMixin:
         kaggle.json file we lookup the passed in username and the api key and
         perform authentication.
         """
-        with self.update_env(KAGGLE_USERNAME=self.kaggle_username, KAGGLE_API_KEY=self.kaggle_api_key):
+        with self.update_env(KAGGLE_USERNAME=self.kaggle_username, KAGGLE_KEY=self.kaggle_key):
             # Call authenticate explicitly to pick up new credentials if necessary
             api = create_kaggle_client()
             api.authenticate()
         os.makedirs(self.raw_temp_path, exist_ok=True)
 
-        # Download all files for a competition
-        api.competition_download_files(self.competition_name, path=self.raw_temp_path)
+        if self.is_kaggle_competition:
+            download_func = api.competition_download_files
+        else:
+            download_func = api.dataset_download_files
+        # Download all files for a competition/dataset
+        download_func(self.competition_name, path=self.raw_temp_path)
 
-        titanic_zip = os.path.join(self.raw_temp_path, self.archive_filename)
-        with ZipFile(titanic_zip, 'r') as z:
+        archive_zip = os.path.join(self.raw_temp_path, self.archive_filename)
+        with ZipFile(archive_zip, 'r') as z:
             z.extractall(self.raw_temp_path)
         os.rename(self.raw_temp_path, self.raw_dataset_path)
-
 
     @contextmanager
     def update_env(self, **kwargs):
@@ -60,4 +64,3 @@ class KaggleDownloadMixin:
     @property
     def archive_filename(self):
         return self.config["archive_filename"]
-

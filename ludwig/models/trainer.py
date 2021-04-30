@@ -449,7 +449,6 @@ class Trainer(BaseTrainer):
                     )
                 )
 
-        tf.config.experimental_run_functions_eagerly(True)
         if self.debug and self.is_coordinator():
             # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
             debug_path = os.path.join(

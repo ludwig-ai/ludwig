@@ -19,9 +19,11 @@ from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import *
 
+
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     dataset = AGNews(cache_dir=cache_dir)
     return dataset.load(split=split)
+
 
 class AGNews(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
                  CSVLoadMixin, BaseDataset):

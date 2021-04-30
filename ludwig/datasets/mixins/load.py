@@ -23,6 +23,21 @@ import pandas as pd
 from ludwig.constants import SPLIT
 
 
+def _split(data_df, split):
+    if SPLIT in data_df:
+        data_df[SPLIT] = pd.to_numeric(data_df[SPLIT])
+    if split:
+        if SPLIT in data_df:
+            training_set = data_df[data_df[SPLIT] == 0]
+            val_set = data_df[data_df[SPLIT] == 1]
+            test_set = data_df[data_df[SPLIT] == 2]
+            return training_set, test_set, val_set
+        else:
+            raise ValueError("The dataset does not have splits, "
+                             "load with `split=False`")
+    return data_df
+
+
 class CSVLoadMixin:
     """Reads a CSV file into a Pandas DataFrame."""
 
@@ -41,20 +56,33 @@ class CSVLoadMixin:
         dataset_csv = os.path.join(self.processed_dataset_path,
                                    self.csv_filename)
         data_df = pd.read_csv(dataset_csv)
-        if SPLIT in data_df:
-            data_df[SPLIT] = pd.to_numeric(data_df[SPLIT])
-        if split:
-            if SPLIT in data_df:
-                training_set = data_df[data_df[SPLIT] == 0]
-                val_set = data_df[data_df[SPLIT] == 1]
-                test_set = data_df[data_df[SPLIT] == 2]
-                return training_set, test_set, val_set
-            else:
-                raise ValueError("The dataset does not have splits, "
-                                 "load with `split=False`")
-        return data_df
+        return _split(data_df, split)
 
     @property
     def csv_filename(self):
         return self.config["csv_filename"]
 
+
+class ParquetLoadMixin:
+    """Reads a Parquet file into a Pandas DataFrame."""
+
+    config: dict
+    processed_dataset_path: str
+
+    def load_processed_dataset(self, split) -> Union[pd.DataFrame,
+                                                     Tuple[pd.DataFrame,
+                                                           pd.DataFrame,
+                                                           pd.DataFrame]]:
+        """Loads the processed Parquet into a dataframe.
+
+        :param split: Splits along 'split' column if present
+        :returns: A pandas dataframe
+        """
+        dataset_path = os.path.join(self.processed_dataset_path,
+                                    self.parquet_filename)
+        data_df = pd.read_parquet(dataset_path)
+        return _split(data_df, split)
+
+    @property
+    def parquet_filename(self):
+        return self.config["parquet_filename"]

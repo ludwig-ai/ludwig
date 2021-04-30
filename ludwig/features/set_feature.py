@@ -35,7 +35,7 @@ from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 logger = logging.getLogger(__name__)
 
 
-class SetFeatureMixin(object):
+class SetFeatureMixin:
     type = SET
     preprocessing_defaults = {
         'tokenizer': 'space',

@@ -17,8 +17,8 @@ class TabNet(tf.keras.Model):
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             relaxation_factor: float = 1.5,
-            bn_epsilon: float = 1e-5,
             bn_momentum: float = 0.7,
+            bn_epsilon: float = 1e-5,
             bn_virtual_bs: int = None,
             sparsity: float = 1e-5,
     ):
@@ -36,7 +36,7 @@ class TabNet(tf.keras.Model):
             bn_momentum (float, optional): Batch normalization, momentum. Defaults to 0.7.
             bn_virtual_bs (int, optional): Virtual batch ize for ghost batch norm..
         """
-        super(TabNet, self).__init__()
+        super().__init__()
         self.num_features = num_features
         self.size = size
         self.output_size = output_size
@@ -71,7 +71,8 @@ class TabNet(tf.keras.Model):
                 )
             )
             self.attentive_transforms.append(
-                AttentiveTransformer(num_features, bn_momentum, bn_virtual_bs)
+                AttentiveTransformer(num_features, bn_momentum, bn_epsilon,
+                                     bn_virtual_bs)
             )
         self.final_projection = tf.keras.layers.Dense(self.output_size)
 
@@ -145,7 +146,7 @@ class FeatureBlock(tf.keras.Model):
             bn_virtual_bs: int = None,
             shared_fc_layer: tf.keras.layers.Layer = None,
     ):
-        super(FeatureBlock, self).__init__()
+        super().__init__()
         self.apply_glu = apply_glu
         self.size = size
         units = size * 2 if apply_glu else size
@@ -178,7 +179,7 @@ class AttentiveTransformer(tf.keras.Model):
             bn_epsilon: float = 1e-5,
             bn_virtual_bs: int = None,
     ):
-        super(AttentiveTransformer, self).__init__()
+        super().__init__()
         self.feature_block = FeatureBlock(
             size,
             bn_momentum=bn_momentum,
@@ -221,7 +222,7 @@ class FeatureTransformer(tf.keras.Model):
             bn_epsilon: float = 1e-5,
             bn_virtual_bs: int = None,
     ):
-        super(FeatureTransformer, self).__init__()
+        super().__init__()
         self.num_total_blocks = num_total_blocks
         self.num_shared_blocks = num_shared_blocks
 

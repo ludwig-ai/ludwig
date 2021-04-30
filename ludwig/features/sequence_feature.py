@@ -20,17 +20,19 @@ import numpy as np
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
-from ludwig.encoders.sequence_encoders import ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
+from ludwig.encoders.sequence_encoders import \
+    ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-from ludwig.modules.loss_modules import SequenceLoss
+from ludwig.modules.loss_modules import SequenceSampledSoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import EditDistanceMetric, \
     SequenceAccuracyMetric
 from ludwig.modules.metric_modules import PerplexityMetric
 from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
-from ludwig.modules.metric_modules import SequenceLossMetric
+from ludwig.modules.metric_modules import SequenceLossMetric, \
+    SequenceSampledLossMetric
 from ludwig.modules.metric_modules import TokenAccuracyMetric
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -43,7 +45,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class SequenceFeatureMixin(object):
+class SequenceFeatureMixin:
     type = SEQUENCE
 
     preprocessing_defaults = {
@@ -195,14 +197,24 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def _setup_loss(self):
         if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SequenceLoss()
+            self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
-                decoder_obj=self.decoder_obj,
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            if self.decoder == 'generator':
+                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+                    dec_dense_layer=self.decoder_obj.dense_layer,
+                    dec_num_layers=self.decoder_obj.num_layers,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                    name='train_loss'
+                )
+            else:
+                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+                    dec_dense_layer=self.decoder_obj.projection_layer,
+                    dec_num_layers=None,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                    name='train_loss'
+                )
         else:
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
@@ -210,11 +222,28 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SequenceLossMetric()
+        # special handling for evaluation with Generator decoder and beam search
+        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+            # beam search does not provide logits, need to use probabilities
+            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+                from_logits=False
+            )
+        else:
+            # all other cases
+            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss()
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
+        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+            # Generator Decoder w/ beam search
+            # beam search does not provide logits
+            self.metric_functions[LOSS] = SequenceLossMetric(
+                from_logits=False)
+        else:
+            # Generator Decoder w/ no beam search and Tagger Decoder
+            self.metric_functions[LOSS] = SequenceLossMetric(
+                from_logits=True)
+
         self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
         self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()

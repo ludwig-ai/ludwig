@@ -39,7 +39,7 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 
-class NumericalFeatureMixin(object):
+class NumericalFeatureMixin:
     type = NUMERICAL
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
@@ -195,18 +195,21 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def _setup_loss(self):
         if self.loss[TYPE] == 'mean_squared_error':
             self.train_loss_function = MSELoss()
-            self.eval_loss_function = MSEMetric(name='eval_loss')
         elif self.loss[TYPE] == 'mean_absolute_error':
             self.train_loss_function = MAELoss()
-            self.eval_loss_function = MAEMetric(name='eval_loss')
         else:
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss[TYPE])
             )
 
+        self.eval_loss_function = self.train_loss_function
+
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
+        if self.loss[TYPE] == 'mean_squared_error':
+            self.metric_functions[LOSS] = MSEMetric(name='eval_loss')
+        else:
+            self.metric_functions[LOSS] = MAEMetric(name='eval_loss')
         self.metric_functions[ERROR] = ErrorScore(name='metric_error')
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
             name='metric_mse'
@@ -215,10 +218,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             name='metric_mae'
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
-
-    # def update_metrics(self, targets, predictions):
-    #     for metric in self.metric_functions.values():
-    #         metric.update_state(targets, predictions[PREDICTIONS])
 
     @classmethod
     def get_output_dtype(cls):
