@@ -40,7 +40,7 @@ from ludwig.utils import strings_utils
 logger = logging.getLogger(__name__)
 
 
-class BinaryFeatureMixin(object):
+class BinaryFeatureMixin:
     type = BINARY
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
@@ -198,16 +198,16 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             robust_lambda=self.loss['robust_lambda'],
             confidence_penalty=self.loss['confidence_penalty']
         )
-        self.eval_loss_function = BWCEWLMetric(
+        self.eval_loss_function = self.train_loss_function
+
+    def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
+        self.metric_functions[LOSS] = BWCEWLMetric(
             positive_class_weight=self.loss['positive_class_weight'],
             robust_lambda=self.loss['robust_lambda'],
             confidence_penalty=self.loss['confidence_penalty'],
             name='eval_loss'
         )
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name='metric_accuracy')
 

@@ -78,6 +78,7 @@ PREDICTION = 'prediction'
 LOGITS = 'logits'
 HIDDEN = 'hidden'
 LAST_HIDDEN = 'last_hidden'
+PROJECTION_INPUT = 'projection_input'
 
 SUM = 'sum'
 APPEND = 'append'

@@ -1,0 +1,8 @@
+version: 1.0
+download_urls:
+  - "https://kdd.org/cupfiles/KDDCupData/2009/orange_small_train.data.zip"
+  - "https://kdd.org/cupfiles/KDDCupData/2009/orange_small_test.data.zip"  
+  - "https://kdd.org/cupfiles/KDDCupData/2009/orange_small_train_appetency.labels"
+  - "https://raw.githubusercontent.com/catboost/benchmarks/master/quality_benchmarks/prepare_appetency_churn_upselling/appetency/stratified_train_idx_appetency.txt"
+  - "https://raw.githubusercontent.com/catboost/benchmarks/master/quality_benchmarks/prepare_appetency_churn_upselling/appetency/stratified_test_idx_appetency.txt"
+csv_filename: kdd_appetency.csv

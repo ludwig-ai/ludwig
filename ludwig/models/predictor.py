@@ -8,7 +8,7 @@ from pprint import pformat
 import tensorflow as tf
 from tqdm import tqdm
 
-from ludwig.constants import COMBINED, LOGITS
+from ludwig.constants import COMBINED, LOGITS, LAST_HIDDEN
 from ludwig.globals import is_progressbar_disabled
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
@@ -16,8 +16,7 @@ from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.tf_utils import initialize_tensorflow
 
-
-EXCLUE_PRED_SET = {LOGITS}
+EXCLUE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
 
 logger = logging.getLogger(__name__)

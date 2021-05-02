@@ -20,6 +20,7 @@ from typing import List
 import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
+from ludwig.constants import TYPE, CATEGORY, NUMERICAL, BINARY
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
@@ -337,9 +338,24 @@ class TabNetCombiner(tf.keras.Model):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        # todo this assumes each input feature outputs size 1
+        #  or 1hot for categorical
+        feature_sizes = []
+        for feature in input_features.values():
+            if feature.type == NUMERICAL or feature.type == BINARY:
+                feature_sizes.append(1)
+            elif feature.type == CATEGORY:
+                feature_sizes.append(feature.encoder_obj.embedding_size)
+            else:
+                raise ValueError(
+                    "TabNet does not currently support {} features, "
+                    "it only supports binary, numerical and category".format(
+                        feature[TYPE]
+                    )
+                )
+
         self.tabnet = TabNet(
-            # todo this assumes each input feature outputs size 1
-            num_features=len(input_features),
+            num_features=sum(feature_sizes),
             size=size,
             output_size=output_size,
             num_steps=num_steps,

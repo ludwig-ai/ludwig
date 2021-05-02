@@ -11,6 +11,7 @@ on:
 
 jobs:
   docker:
+    if: ${{ github.repository_owner == 'ludwig-ai' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -19,6 +20,7 @@ jobs:
           - ludwig
           - ludwig-gpu
           - ludwig-ray
+          - ludwig-ray-gpu
     name: docker ${{ matrix.docker-image }}
     steps:
       -

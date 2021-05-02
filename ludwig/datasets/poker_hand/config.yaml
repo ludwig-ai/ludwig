@@ -1,0 +1,9 @@
+version: 1.0
+download_urls:
+  - "http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data"
+  - "http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data"
+split_filenames:
+  train_file: poker-hand-training-true.data
+  test_file: poker-hand-testing.data
+download_file_type: data
+csv_filename: poker_hand.csv

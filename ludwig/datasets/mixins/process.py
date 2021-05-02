@@ -45,8 +45,8 @@ class MultifileJoinProcessMixin:
                 os.path.join(self.raw_dataset_path, filename), lines=True)
         elif filetype == 'tsv':
             file_df = pd.read_table(
-                os.path.join(self.raw_dataset_path, filename))
-        elif filetype == 'csv':
+                os.path.join(self.raw_dataset_path, filename))        
+        elif filetype == 'csv' or filetype == 'data':
             file_df = pd.read_csv(
                 os.path.join(self.raw_dataset_path, filename), header=header)
         else:
@@ -56,7 +56,7 @@ class MultifileJoinProcessMixin:
     def process_downloaded_dataset(self, header=0):
         """Processes dataset
 
-        :param header: indicates whether raw  data files contain headers
+        :param header: indicates whether raw data files contain headers
         """
         downloaded_files = self.download_filenames
         filetype = self.download_file_type
