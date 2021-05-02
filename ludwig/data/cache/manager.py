@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import uuid
 from pathlib import Path
 
@@ -9,6 +10,11 @@ from ludwig.utils import data_utils
 from ludwig.utils.fs_utils import path_exists, delete
 
 logger = logging.getLogger(__name__)
+
+
+def alphanum(v):
+    """Filters a string to only its alphanumeric characters."""
+    return re.sub(r'\W+', '', v)
 
 
 class CacheManager(object):
@@ -102,7 +108,9 @@ class CacheManager(object):
         return calculate_checksum(input_fname, config)
 
     def get_cache_path(self, input_fname, key, tag, ext=None):
-        stem = key if self._cache_dir is not None or input_fname is None else Path(input_fname).stem
+        stem = alphanum(key) \
+            if self._cache_dir is not None or input_fname is None \
+            else Path(input_fname).stem
         ext = ext or self.data_format
         cache_fname = f'{stem}.{tag}.{ext}'
         return os.path.join(self.get_cache_directory(input_fname), cache_fname)
