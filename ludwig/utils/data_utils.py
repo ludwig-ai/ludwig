@@ -400,6 +400,8 @@ def split_dataset_ttv(dataset, split):
 
 def split_dataset(dataset, split, value_to_split=0):
     split_df = dataset[dataset[split] == value_to_split]
+    if len(split_df) == 0:
+        return None
     return split_df.reset_index()
 
 
