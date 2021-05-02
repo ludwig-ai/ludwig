@@ -1,3 +1,3 @@
 dask[dataframe]<2021.3.1  # https://github.com/ray-project/ray/issues/14992
-petastorm>=0.9.7
+petastorm>=0.10.0
 pyarrow>=2.0.0
