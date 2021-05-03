@@ -18,7 +18,7 @@ class TabNet(tf.keras.Model):
             num_shared_blocks: int = 2,
             relaxation_factor: float = 1.5,
             bn_momentum: float = 0.7,
-            bn_epsilon: float = 1e-5,
+            bn_epsilon: float = 1e-3,
             bn_virtual_bs: int = None,
             sparsity: float = 1e-5,
     ):
@@ -106,13 +106,18 @@ class TabNet(tf.keras.Model):
 
             # entropy is used to penalize the amount of sparsity
             # in feature selection
-            total_entropy = tf.reduce_mean(
+            # total_entropy = tf.reduce_mean(
+            #     tf.reduce_sum(
+            #         tf.multiply(mask_values,
+            #                     tf.math.log(mask_values + 1e-15)),
+            #         axis=1,
+            #     )
+            # )
+            total_entropy += tf.reduce_mean(
                 tf.reduce_sum(
-                    tf.multiply(mask_values,
-                                tf.math.log(mask_values + 1e-15)),
-                    axis=1,
-                )
-            )
+                    -mask_values * tf.math.log(mask_values + 0.00001),
+                    axis=1)
+            ) / self.num_steps
 
             masks.append(tf.expand_dims(tf.expand_dims(mask_values, 0), 3))
 
@@ -142,7 +147,7 @@ class FeatureBlock(tf.keras.Model):
             size: int,
             apply_glu: bool = True,
             bn_momentum: float = 0.9,
-            bn_epsilon: float = 1e-5,
+            bn_epsilon: float = 1e-3,
             bn_virtual_bs: int = None,
             shared_fc_layer: tf.keras.layers.Layer = None,
     ):
@@ -176,7 +181,7 @@ class AttentiveTransformer(tf.keras.Model):
             self,
             size: int,
             bn_momentum: float = 0.9,
-            bn_epsilon: float = 1e-5,
+            bn_epsilon: float = 1e-3,
             bn_virtual_bs: int = None,
     ):
         super().__init__()
@@ -219,7 +224,7 @@ class FeatureTransformer(tf.keras.Model):
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             bn_momentum: float = 0.9,
-            bn_epsilon: float = 1e-5,
+            bn_epsilon: float = 1e-3,
             bn_virtual_bs: int = None,
     ):
         super().__init__()
