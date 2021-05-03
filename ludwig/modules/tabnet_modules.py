@@ -135,7 +135,7 @@ class TabNet(tf.keras.Model):
 
         final_output = self.final_projection(out_accumulator)
 
-        self.add_loss(-self.sparsity * total_entropy / self.num_steps)
+        self.add_loss(self.sparsity * total_entropy)
 
         return final_output, masks
 
