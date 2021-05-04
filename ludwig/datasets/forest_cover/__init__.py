@@ -17,14 +17,17 @@
 import os
 
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = ForestCover(cache_dir=cache_dir)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
+         use_tabnet_split=False):
+    dataset = ForestCover(cache_dir=cache_dir,
+                          use_tabnet_split=use_tabnet_split)
     return dataset.load(split=split)
 
 
@@ -40,8 +43,10 @@ class ForestCover(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
     raw_dataset_path: str
     processed_dataset_path: str
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
+                 use_tabnet_split=False):
         super().__init__(dataset_name="forest_cover", cache_dir=cache_dir)
+        self.use_tabnet_split = use_tabnet_split
 
     def process_downloaded_dataset(self):
         df = pd.read_csv(
@@ -117,10 +122,22 @@ class ForestCover(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
         df = df.drop(columns=wa_cols)
         df["Wilderness_Area"] = wa_vals
 
-        # first 11340 records used for training data subset
-        # next 3780 records used for validation data subset
-        # last 565892 records used for testing data subset
-        df['split'] = [0] * 11340 + [1] * 3780 + [2] * 565892
+        if not self.use_tabnet_split:
+            # first 11340 records used for training data subset
+            # next 3780 records used for validation data subset
+            # last 565892 records used for testing data subset
+            df['split'] = [0] * 11340 + [1] * 3780 + [2] * 565892
+        else:
+            # Split used in the tabNet paper
+            # https://github.com/google-research/google-research/blob/master/tabnet/download_prepare_covertype.py
+            train_val_indices, test_indices = train_test_split(
+                range(len(df)), test_size=0.2, random_state=0)
+            train_indices, val_indices = train_test_split(
+                train_val_indices, test_size=0.2 / 0.6, random_state=0)
+
+            df["split"] = 0
+            df.loc[val_indices, "split"] = 1
+            df.loc[test_indices, "split"] = 2
 
         os.makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
