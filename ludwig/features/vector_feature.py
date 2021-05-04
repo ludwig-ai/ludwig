@@ -222,6 +222,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.float32
@@ -252,22 +257,15 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PREDICTIONS),
-                    postprocessed[PREDICTIONS]
-                )
-            del result[PREDICTIONS]
-
-        return postprocessed
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result:
+            result[predictions_col] = backend.df_engine.map_objects(
+                result[predictions_col],
+                lambda pred: pred.tolist()
+            )
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):

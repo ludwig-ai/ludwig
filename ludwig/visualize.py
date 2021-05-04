@@ -28,16 +28,22 @@ from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 
+from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.utils import visualization_utils
-from ludwig.utils.data_utils import load_from_file, load_json, load_array
+from ludwig.utils.data_utils import load_from_file, load_json, load_array, \
+    to_numpy_dataset, unflatten_df, replace_file_extension
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.data_utils import CACHEABLE_FORMATS, \
     figure_data_format_dataset, external_data_reader_registry
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
+
+
+_PREDICTIONS_SUFFIX = '_predictions'
+_PROBABILITIES_SUFFIX = '_probabilities'
 
 
 def validate_conf_treshholds_and_probabilities_2d_3d(
@@ -219,6 +225,31 @@ def _extract_ground_truth_values(
     return gt
 
 
+def _get_cols_from_predictions(predictions_paths, cols, metadata):
+    results_per_model = []
+    for predictions_path in predictions_paths:
+        shapes_fname = replace_file_extension(predictions_path, 'shapes.json')
+        column_shapes = load_json(shapes_fname)
+
+        pred_df = pd.read_parquet(predictions_path)
+        pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
+
+        for col in cols:
+            # Convert categorical features back to numerical indices
+            if col.endswith(_PREDICTIONS_SUFFIX):
+                feature_name = col[:-len(_PREDICTIONS_SUFFIX)]
+                feature_metadata = metadata[feature_name]
+                if 'str2idx' in feature_metadata:
+                    pred_df[col] = pred_df[col].map(
+                        lambda x: feature_metadata['str2idx'][x]
+                    )
+
+        pred_df = to_numpy_dataset(pred_df)
+        results_per_model += [pred_df[col] for col in cols]
+
+    return results_per_model
+
+
 def generate_filename_template_path(output_dir, filename_template):
     """Ensure path to template file can be constructed given an output dir.
 
@@ -289,8 +320,8 @@ def compare_classifiers_performance_from_prob_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -319,8 +350,9 @@ def compare_classifiers_performance_from_prob_cli(
         split_file=split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
 
     compare_classifiers_performance_from_prob(
@@ -347,7 +379,8 @@ def compare_classifiers_performance_from_pred_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) path to experiment predictions file.
+    :param predictions: (List[str]) list of prediction results file names
+        to extract predictions from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -376,8 +409,9 @@ def compare_classifiers_performance_from_pred_cli(
         split_file
     )
 
-    predictions_per_model = load_data_for_viz(
-        'load_from_file', predictions, dtype=str
+    col = f'{output_feature_name}{_PREDICTIONS_SUFFIX}'
+    predictions_per_model = _get_cols_from_predictions(
+        predictions, [col], metadata
     )
 
     compare_classifiers_performance_from_pred(
@@ -404,8 +438,8 @@ def compare_classifiers_performance_subset_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -433,8 +467,9 @@ def compare_classifiers_performance_subset_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
 
     compare_classifiers_performance_subset(
@@ -454,14 +489,15 @@ def compare_classifiers_performance_changing_k_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_changing_k.
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -471,6 +507,8 @@ def compare_classifiers_performance_changing_k_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -488,14 +526,16 @@ def compare_classifiers_performance_changing_k_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     compare_classifiers_performance_changing_k(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -532,13 +572,15 @@ def compare_classifiers_predictions_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_predictions
 
     # Inputs
 
-    :param predictions: (List[str]) path to experiment predictions file.
+    :param predictions: (List[str]) list of prediction results file names
+        to extract predictions from.
     :param ground_truth: (str) path to grpound truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -547,6 +589,8 @@ def compare_classifiers_predictions_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -564,8 +608,9 @@ def compare_classifiers_predictions_cli(
         split_file
     )
 
-    predictions_per_model = load_data_for_viz(
-        'load_from_file', predictions, dtype=str
+    col = f'{output_feature_name}{_PREDICTIONS_SUFFIX}'
+    predictions_per_model = _get_cols_from_predictions(
+        predictions, [col], metadata
     )
 
     compare_classifiers_predictions(
@@ -573,6 +618,7 @@ def compare_classifiers_predictions_cli(
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -584,6 +630,7 @@ def compare_classifiers_predictions_distribution_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
@@ -591,7 +638,8 @@ def compare_classifiers_predictions_distribution_cli(
 
     # Inputs
 
-    :param predictions: (List[str]) path to experiment predictions file.
+    :param predictions: (List[str]) list of prediction results file names
+        to extract predictions from.
     :param ground_truth: (str) path to grpound truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -600,6 +648,8 @@ def compare_classifiers_predictions_distribution_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -617,14 +667,16 @@ def compare_classifiers_predictions_distribution_cli(
         split_file
     )
 
-    predictions_per_model = load_data_for_viz(
-        'load_from_file', predictions, dtype=str
+    col = f'{output_feature_name}{_PREDICTIONS_SUFFIX}'
+    predictions_per_model = _get_cols_from_predictions(
+        predictions, [col], metadata
     )
     compare_classifiers_predictions_distribution(
         predictions_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -636,14 +688,15 @@ def confidence_thresholding_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by confidence_thresholding.
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -652,6 +705,8 @@ def confidence_thresholding_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -669,14 +724,16 @@ def confidence_thresholding_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     confidence_thresholding(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -688,6 +745,7 @@ def confidence_thresholding_data_vs_acc_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
@@ -695,8 +753,8 @@ def confidence_thresholding_data_vs_acc_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -705,6 +763,8 @@ def confidence_thresholding_data_vs_acc_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -722,14 +782,16 @@ def confidence_thresholding_data_vs_acc_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     confidence_thresholding_data_vs_acc(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -741,6 +803,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
@@ -748,8 +811,8 @@ def confidence_thresholding_data_vs_acc_subset_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -758,6 +821,8 @@ def confidence_thresholding_data_vs_acc_subset_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -775,14 +840,16 @@ def confidence_thresholding_data_vs_acc_subset_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     confidence_thresholding_data_vs_acc_subset(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -794,14 +861,15 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         ground_truth_split: int,
         split_file: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by compare_classifiers_multiclass
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_metadata: (str) path to ground truth metadata file.
     :param ground_truth_split: (str) type of ground truth split -
@@ -809,6 +877,8 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         2 for `'test'` split.
     :param split_file: (str, None) file path to csv file containing split values
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -826,14 +896,16 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     confidence_thresholding_data_vs_acc_subset_per_class(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -845,6 +917,7 @@ def confidence_thresholding_2thresholds_2d_cli(
         split_file: str,
         ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
@@ -852,8 +925,8 @@ def confidence_thresholding_2thresholds_2d_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -863,6 +936,8 @@ def confidence_thresholding_2thresholds_2d_cli(
         created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -887,14 +962,20 @@ def confidence_thresholding_2thresholds_2d_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    cols = [
+        f'{feature_name}{_PROBABILITIES_SUFFIX}'
+        for feature_name in threshold_output_feature_names
+    ]
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, cols, metadata
     )
+
     confidence_thresholding_2thresholds_2d(
         probabilities_per_model,
         [ground_truth0, ground_truth1],
         metadata,
         threshold_output_feature_names,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -906,6 +987,7 @@ def confidence_thresholding_2thresholds_3d_cli(
         split_file: str,
         ground_truth_metadata: str,
         threshold_output_feature_names: List[str],
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by
@@ -913,8 +995,8 @@ def confidence_thresholding_2thresholds_3d_cli(
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -924,6 +1006,8 @@ def confidence_thresholding_2thresholds_3d_cli(
         created during training.
     :param threshold_output_feature_names: (List[str]) name of the output
         feature to visualizes.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -948,14 +1032,19 @@ def confidence_thresholding_2thresholds_3d_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    cols = [
+        f'{feature_name}{_PROBABILITIES_SUFFIX}'
+        for feature_name in threshold_output_feature_names
+    ]
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, cols, metadata
     )
     confidence_thresholding_2thresholds_3d(
         probabilities_per_model,
         [ground_truth0, ground_truth1],
         metadata,
         threshold_output_feature_names,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -967,14 +1056,15 @@ def binary_threshold_vs_metric_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by binary_threshold_vs_metric_cli.
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -983,6 +1073,8 @@ def binary_threshold_vs_metric_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -1001,14 +1093,16 @@ def binary_threshold_vs_metric_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     binary_threshold_vs_metric(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -1020,14 +1114,15 @@ def roc_curves_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by roc_curves_cli.
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file.
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file.
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -1036,6 +1131,8 @@ def roc_curves_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -1054,14 +1151,16 @@ def roc_curves_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     roc_curves(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -1095,14 +1194,15 @@ def calibration_1_vs_all_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by calibration_1_vs_all_cli.
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -1111,6 +1211,8 @@ def calibration_1_vs_all_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -1132,14 +1234,16 @@ def calibration_1_vs_all_cli(
     vfunc = np.vectorize(_encode_categorical_feature)
     ground_truth = vfunc(ground_truth, feature_metadata['str2idx'])
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     calibration_1_vs_all(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 
@@ -1151,14 +1255,15 @@ def calibration_multiclass_cli(
         split_file: str,
         ground_truth_metadata: str,
         output_feature_name: str,
+        output_directory: str,
         **kwargs: dict
 ) -> None:
     """Load model data from files to be shown by calibration_multiclass_cli.
 
     # Inputs
 
-    :param probabilities: (Union[str, List[str]]) path to experiment
-        probabilities file
+    :param probabilities: (Union[str, List[str]]) list of prediction results file names
+        to extract probabilities from.
     :param ground_truth: (str) path to ground truth file
     :param ground_truth_split: (str) type of ground truth split -
         `0` for training split, `1` for validation split or
@@ -1167,6 +1272,8 @@ def calibration_multiclass_cli(
     :param ground_truth_metadata: (str) file path to feature metadata json file
         created during training.
     :param output_feature_name: (str) name of the output feature to visualize.
+    :param output_directory: (str) name of output directory containing training
+         results.
     :param kwargs: (dict) parameters for the requested visualizations.
 
     # Return
@@ -1185,14 +1292,16 @@ def calibration_multiclass_cli(
         split_file
     )
 
-    probabilities_per_model = load_data_for_viz(
-        'load_from_file', probabilities, dtype=float
+    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+    probabilities_per_model = _get_cols_from_predictions(
+        probabilities, [col], metadata
     )
     calibration_multiclass(
         probabilities_per_model,
         ground_truth,
         metadata,
         output_feature_name,
+        output_directory=output_directory,
         **kwargs
     )
 

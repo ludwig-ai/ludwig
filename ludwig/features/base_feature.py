@@ -184,6 +184,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                               dtype=self.get_output_dtype(),
                               name=self.name + '_input')
 
+    @abstractmethod
+    def get_prediction_set(self):
+        """Returns the set of prediction columns returned by this feature."""
+        pass
+
     @classmethod
     @abstractmethod
     def get_output_dtype(cls):
@@ -309,7 +314,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
         pass
 

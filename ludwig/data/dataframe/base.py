@@ -40,7 +40,11 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map_objects(self, series, map_fn):
+    def map_objects(self, series, map_fn, meta=None):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def apply_objects(self, series, map_fn, meta=None):
         raise NotImplementedError()
 
     @abstractmethod
@@ -49,6 +53,10 @@ class DataFrameEngine(ABC):
 
     @abstractmethod
     def create_dataset(self, dataset, tag, config, training_set_metadata):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
         raise NotImplementedError()
 
     @property

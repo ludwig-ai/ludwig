@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import os
 import tempfile
 
@@ -22,7 +23,7 @@ import tensorflow as tf
 
 from ludwig.backend.ray import RayBackend, get_horovod_kwargs
 
-from tests.integration_tests.utils import create_data_set_to_use
+from tests.integration_tests.utils import create_data_set_to_use, spawn
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
@@ -37,13 +38,19 @@ from tests.integration_tests.utils import train_with_backend
 from tests.integration_tests.utils import vector_feature
 
 
-@pytest.fixture
+@contextlib.contextmanager
 def ray_start_2_cpus():
-    res = ray.init(num_cpus=2)
-    try:
-        yield res
-    finally:
-        ray.shutdown()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        res = ray.init(
+            num_cpus=2,
+            include_dashboard=False,
+            object_store_memory=150 * 1024 * 1024,
+            _temp_dir=tmpdir,
+        )
+        try:
+            yield res
+        finally:
+            ray.shutdown()
 
 
 def run_api_experiment(config, data_parquet):
@@ -54,9 +61,10 @@ def run_api_experiment(config, data_parquet):
 
     # Train on Parquet
     dask_backend = RayBackend()
-    train_with_backend(dask_backend, config, dataset=data_parquet)
+    train_with_backend(dask_backend, config, dataset=data_parquet, evaluate=False)
 
 
+@spawn
 def run_test_parquet(
     input_features,
     output_features,
@@ -65,38 +73,75 @@ def run_test_parquet(
     expect_error=False
 ):
     tf.config.experimental_run_functions_eagerly(True)
+    with ray_start_2_cpus():
+        config = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'combiner': {'type': 'concat', 'fc_size': 14},
+            'training': {'epochs': 2, 'batch_size': 8}
+        }
 
-    config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 2, 'batch_size': 8}
-    }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_filename = os.path.join(tmpdir, 'dataset.csv')
+            dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
+            dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        csv_filename = os.path.join(tmpdir, 'dataset.csv')
-        dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
-        dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
-
-        if expect_error:
-            with pytest.raises(ValueError):
+            if expect_error:
+                with pytest.raises(ValueError):
+                    run_fn(config, data_parquet=dataset_parquet)
+            else:
                 run_fn(config, data_parquet=dataset_parquet)
-        else:
-            run_fn(config, data_parquet=dataset_parquet)
 
 
 @pytest.mark.distributed
-def test_ray_tabular(ray_start_2_cpus):
+def test_ray_tabular():
     input_features = [
         sequence_feature(reduce_output='sum'),
         numerical_feature(normalization='zscore'),
         set_feature(),
-        text_feature(),
         binary_feature(),
         bag_feature(),
         vector_feature(),
         h3_feature(),
         date_feature(),
     ]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+        binary_feature(),
+        set_feature(max_len=3, vocab_size=5),
+        numerical_feature(normalization='zscore'),
+        vector_feature(),
+    ]
+    run_test_parquet(input_features, output_features)
+
+
+@pytest.mark.distributed
+def test_ray_text():
+    input_features = [
+        text_feature(),
+    ]
+    output_features = [
+        text_feature(reduce_input=None, decoder='tagger'),
+    ]
+    run_test_parquet(input_features, output_features)
+
+
+@pytest.mark.distributed
+def test_ray_sequence():
+    input_features = [
+        sequence_feature(
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            attention=False,
+            reduce_input=None
+        )
+    ]
     run_test_parquet(input_features, output_features)

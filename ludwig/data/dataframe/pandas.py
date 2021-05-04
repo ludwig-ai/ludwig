@@ -40,8 +40,11 @@ class PandasEngine(DataFrameEngine):
     def from_pandas(self, df):
         return df
 
-    def map_objects(self, series, map_fn):
+    def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
+
+    def apply_objects(self, df, apply_fn, meta=None):
+        return df.apply(apply_fn, axis=1)
 
     def reduce_objects(self, series, reduce_fn):
         return reduce_fn(series)
@@ -51,6 +54,11 @@ class PandasEngine(DataFrameEngine):
             dataset,
             get_proc_features(config),
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+        )
+
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        return self.create_dataset(
+            dataset, tag, config, training_set_metadata
         )
 
     @property
