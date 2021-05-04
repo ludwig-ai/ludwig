@@ -257,8 +257,8 @@ class FeatureTransformer(tf.keras.Model):
     ) -> tf.Tensor:
         hidden = self.blocks[0](inputs, training=training)
         for n in range(1, self.num_total_blocks):
-            hidden = (hidden * tf.sqrt(0.5) +
-                      self.blocks[n](hidden, training=training))
+            hidden = (self.blocks[n](hidden, training=training) +
+                      hidden) * tf.sqrt(0.5)
         return hidden
 
     @property
