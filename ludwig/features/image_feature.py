@@ -156,8 +156,8 @@ class ImageFeatureMixin:
 
     @staticmethod
     def _finalize_preprocessing_parameters(
-            preprocessing_parameters,
-            first_image_path
+            preprocessing_parameters: dict,
+            first_img_source: Union[str, 'numpy.array']
     ):
         """
         Helper method to determine the height, width and number of channels for
@@ -178,7 +178,10 @@ class ImageFeatureMixin:
             )
             sys.exit(-1)
 
-        first_image = imread(first_image_path)
+        if isinstance(first_img_source, str):
+            first_image = imread(first_img_source)
+        else:
+            first_image = first_img_source
         first_img_height = first_image.shape[0]
         first_img_width = first_image.shape[1]
         first_img_num_channels = num_channels_in_image(first_image)
@@ -255,12 +258,23 @@ class ImageFeatureMixin:
             raise ValueError('There are no images in the dataset provided.')
 
         first_img_source = next(iter(input_df[feature[COLUMN]]))
+        # todo: turn this into debug level when development is done
+        logger.info(
+            'Detected image feature type is {}'.format(type(first_img_source))
+        )
 
-        if src_path is None \
-                and not os.path.isabs(first_img_source):
-            raise ValueError('Image file paths must be absolute')
+        if not isinstance(first_img_source, str) \
+                and not isinstance(first_img_source, np.ndarray):
+            raise ValueError(
+                'Invalid image feature data type.  Detected type is {}, '
+                'expect either string for file path or numpy array.'
+                    .format(type(first_img_source))
+            )
 
-        first_img_source = get_abs_path(src_path, first_img_source)
+        if isinstance(first_img_source, str):
+            if src_path is None and not os.path.isabs(first_img_source):
+                raise ValueError('Image file paths must be absolute')
+            first_img_source = get_abs_path(src_path, first_img_source)
 
         (
             should_resize,
