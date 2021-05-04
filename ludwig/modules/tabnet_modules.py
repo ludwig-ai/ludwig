@@ -6,7 +6,6 @@ from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 
 
-# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/model.py
 class TabNet(tf.keras.Model):
     def __init__(
             self,
@@ -57,7 +56,8 @@ class TabNet(tf.keras.Model):
             "bn_virtual_bs": bn_virtual_bs,
         }
 
-        # first feature transformer block is built first to get the shared blocks
+        # first feature transformer block is built first
+        # to get the shared blocks
         self.feature_transforms: List[FeatureTransformer] = [
             FeatureTransformer(**kargs)
         ]
@@ -106,13 +106,6 @@ class TabNet(tf.keras.Model):
 
             # entropy is used to penalize the amount of sparsity
             # in feature selection
-            # total_entropy = tf.reduce_mean(
-            #     tf.reduce_sum(
-            #         tf.multiply(mask_values,
-            #                     tf.math.log(mask_values + 1e-15)),
-            #         axis=1,
-            #     )
-            # )
             total_entropy += tf.reduce_mean(
                 tf.reduce_sum(
                     -mask_values * tf.math.log(mask_values + 0.00001),
@@ -140,7 +133,6 @@ class TabNet(tf.keras.Model):
         return final_output, masks
 
 
-# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class FeatureBlock(tf.keras.Model):
     def __init__(
             self,
@@ -175,7 +167,6 @@ class FeatureBlock(tf.keras.Model):
         return hidden
 
 
-# adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class AttentiveTransformer(tf.keras.Model):
     def __init__(
             self,
@@ -197,6 +188,7 @@ class AttentiveTransformer(tf.keras.Model):
 
     def call(self, inputs, prior_scales, training=None, **kwargs):
         hidden = self.feature_block(inputs, training=training)
+        hidden = hidden * prior_scales
 
         # removing the mean to try to avoid numerical instability
         # https://github.com/tensorflow/addons/issues/2314
@@ -208,7 +200,7 @@ class AttentiveTransformer(tf.keras.Model):
         # to zero.
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
 
-        hidden = hidden * prior_scales
+        # added to avoid NaNs in the sparsemax
         hidden = tf.clip_by_value(hidden,
                                   clip_value_min=-1.0e+6,
                                   clip_value_max=1.0e+6)
