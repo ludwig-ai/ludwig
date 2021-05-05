@@ -281,10 +281,11 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
 
-
+@pytest.mark.parametrize('in_memory', [True, False])
 @pytest.mark.parametrize('image_source', ['file', 'ndarray'])
 @pytest.mark.parametrize('num_channels', [1, 3])
-def test_basic_image_feature(num_channels, image_source, csv_filename):
+def test_basic_image_feature(num_channels, image_source, in_memory,
+                             csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
@@ -293,10 +294,10 @@ def test_basic_image_feature(num_channels, image_source, csv_filename):
             folder=image_dest_folder,
             encoder='stacked_cnn',
             preprocessing={
-                'in_memory': True,
+                'in_memory': in_memory,
                 'height': 12,
                 'width': 12,
-                'num_channels': 3,
+                'num_channels': num_channels,
                 'num_processes': 5
             },
             fc_size=16,
