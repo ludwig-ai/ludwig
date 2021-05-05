@@ -20,6 +20,8 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
 	tzdata \
 	rsync \
     build-essential \
+    libc-dev \
+    g++ \
 	vim
 
 WORKDIR /ludwig
