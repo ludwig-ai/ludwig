@@ -281,11 +281,13 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
 
+
+@pytest.mark.parametrize('skip_save_processed_input', [True, False])
 @pytest.mark.parametrize('in_memory', [True, False])
 @pytest.mark.parametrize('image_source', ['file', 'ndarray'])
 @pytest.mark.parametrize('num_channels', [1, 3])
 def test_basic_image_feature(num_channels, image_source, in_memory,
-                             csv_filename):
+                             skip_save_processed_input, csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
@@ -316,7 +318,7 @@ def test_basic_image_feature(num_channels, image_source, in_memory,
             input_features,
             output_features,
             dataset=rel_path,
-            skip_save_processed_input=True
+            skip_save_processed_input=skip_save_processed_input
         )
     else:
         # import image from file and store in dataframe as ndarrays
@@ -329,7 +331,7 @@ def test_basic_image_feature(num_channels, image_source, in_memory,
             input_features,
             output_features,
             dataset=df,
-            skip_save_processed_input=True
+            skip_save_processed_input=skip_save_processed_input
         )
 
     # Delete the temporary data created
