@@ -16,14 +16,19 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, LocalTrainingMixin
-from ludwig.constants import NAME
+from ludwig.constants import NAME, PARQUET
 from ludwig.data.dataframe.dask import DaskEngine
 
 
 class DaskBackend(LocalTrainingMixin, Backend):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, data_format=PARQUET, **kwargs):
+        super().__init__(data_format=data_format, **kwargs)
         self._df_engine = DaskEngine()
+        if data_format != PARQUET:
+            raise ValueError(
+                f'Data format {data_format} is not supported when using the Dask backend. '
+                f'Try setting to `parquet`.'
+            )
 
     def initialize(self):
         pass

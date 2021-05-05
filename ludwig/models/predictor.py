@@ -86,49 +86,49 @@ class Predictor(BasePredictor):
             dataset,
             dataset_name=None
     ):
-        batcher = dataset.initialize_batcher(
+        with dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False,
             horovod=self._horovod
-        )
+        ) as batcher:
 
-        progress_bar = None
-        if self.is_coordinator():
-            progress_bar = tqdm(
-                desc='Prediction' if dataset_name is None
-                else 'Prediction {0: <5.5}'.format(dataset_name),
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled()
-            )
+            progress_bar = None
+            if self.is_coordinator():
+                progress_bar = tqdm(
+                    desc='Prediction' if dataset_name is None
+                    else 'Prediction {0: <5.5}'.format(dataset_name),
+                    total=batcher.steps_per_epoch,
+                    file=sys.stdout,
+                    disable=is_progressbar_disabled()
+                )
 
-        predictions = {}
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
+            predictions = {}
+            while not batcher.last_batch():
+                batch = batcher.next_batch()
 
-            inputs = {
-                i_feat.feature_name: batch[i_feat.proc_column]
-                for i_feat in model.input_features.values()
-            }
+                inputs = {
+                    i_feat.feature_name: batch[i_feat.proc_column]
+                    for i_feat in model.input_features.values()
+                }
 
-            preds = model.predict_step(inputs)
+                preds = model.predict_step(inputs)
 
-            # accumulate predictions from batch for each output feature
-            for of_name, of_preds in preds.items():
-                if of_name not in predictions:
-                    predictions[of_name] = {}
-                for pred_name, pred_values in of_preds.items():
-                    if pred_name not in EXCLUE_PRED_SET:
-                        if pred_name not in predictions[of_name]:
-                            predictions[of_name][pred_name] = [pred_values]
-                        else:
-                            predictions[of_name][pred_name].append(pred_values)
+                # accumulate predictions from batch for each output feature
+                for of_name, of_preds in preds.items():
+                    if of_name not in predictions:
+                        predictions[of_name] = {}
+                    for pred_name, pred_values in of_preds.items():
+                        if pred_name not in EXCLUE_PRED_SET:
+                            if pred_name not in predictions[of_name]:
+                                predictions[of_name][pred_name] = [pred_values]
+                            else:
+                                predictions[of_name][pred_name].append(pred_values)
+
+                if self.is_coordinator():
+                    progress_bar.update(1)
 
             if self.is_coordinator():
-                progress_bar.update(1)
-
-        if self.is_coordinator():
-            progress_bar.close()
+                progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
         for of_name, of_predictions in predictions.items():
@@ -145,55 +145,55 @@ class Predictor(BasePredictor):
             collect_predictions=False,
             dataset_name=None
     ):
-        batcher = dataset.initialize_batcher(
+        with dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False,
             horovod=self._horovod
-        )
+        ) as batcher:
 
-        progress_bar = None
-        if self.is_coordinator():
-            progress_bar = tqdm(
-                desc='Evaluation' if dataset_name is None
-                else 'Evaluation {0: <5.5}'.format(dataset_name),
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled()
-            )
+            progress_bar = None
+            if self.is_coordinator():
+                progress_bar = tqdm(
+                    desc='Evaluation' if dataset_name is None
+                    else 'Evaluation {0: <5.5}'.format(dataset_name),
+                    total=batcher.steps_per_epoch,
+                    file=sys.stdout,
+                    disable=is_progressbar_disabled()
+                )
 
-        predictions = {}
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
+            predictions = {}
+            while not batcher.last_batch():
+                batch = batcher.next_batch()
 
-            inputs = {
-                i_feat.feature_name: batch[i_feat.proc_column]
-                for i_feat in model.input_features.values()
-            }
-            targets = {
-                o_feat.feature_name: batch[o_feat.proc_column]
-                for o_feat in model.output_features.values()
-            }
+                inputs = {
+                    i_feat.feature_name: batch[i_feat.proc_column]
+                    for i_feat in model.input_features.values()
+                }
+                targets = {
+                    o_feat.feature_name: batch[o_feat.proc_column]
+                    for o_feat in model.output_features.values()
+                }
 
-            preds = model.evaluation_step(inputs, targets)
+                preds = model.evaluation_step(inputs, targets)
 
-            # accumulate predictions from batch for each output feature
-            if collect_predictions:
-                for of_name, of_preds in preds.items():
-                    if of_name not in predictions:
-                        predictions[of_name] = {}
-                    for pred_name, pred_values in of_preds.items():
-                        if pred_name not in EXCLUE_PRED_SET and pred_values is not None:
-                            if pred_name not in predictions[of_name]:
-                                predictions[of_name][pred_name] = [pred_values]
-                            else:
-                                predictions[of_name][pred_name].append(
-                                    pred_values)
+                # accumulate predictions from batch for each output feature
+                if collect_predictions:
+                    for of_name, of_preds in preds.items():
+                        if of_name not in predictions:
+                            predictions[of_name] = {}
+                        for pred_name, pred_values in of_preds.items():
+                            if pred_name not in EXCLUE_PRED_SET and pred_values is not None:
+                                if pred_name not in predictions[of_name]:
+                                    predictions[of_name][pred_name] = [pred_values]
+                                else:
+                                    predictions[of_name][pred_name].append(
+                                        pred_values)
+
+                if self.is_coordinator():
+                    progress_bar.update(1)
 
             if self.is_coordinator():
-                progress_bar.update(1)
-
-        if self.is_coordinator():
-            progress_bar.close()
+                progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
         if collect_predictions:
@@ -232,48 +232,48 @@ class Predictor(BasePredictor):
         activation_model = tf.keras.Model(inputs=keras_model_inputs,
                                           outputs=output_nodes)
 
-        batcher = dataset.initialize_batcher(
+        with dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False
-        )
+        ) as batcher:
 
-        progress_bar = tqdm(
-            desc='Collecting Tensors',
-            total=batcher.steps_per_epoch,
-            file=sys.stdout,
-            disable=is_progressbar_disabled()
-        )
+            progress_bar = tqdm(
+                desc='Collecting Tensors',
+                total=batcher.steps_per_epoch,
+                file=sys.stdout,
+                disable=is_progressbar_disabled()
+            )
 
-        collected_tensors = []
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
+            collected_tensors = []
+            while not batcher.last_batch():
+                batch = batcher.next_batch()
 
-            inputs = {
-                i_feat.feature_name: batch[i_feat.proc_column]
-                for i_feat in model.input_features.values()
-            }
-            outputs = activation_model(inputs)
+                inputs = {
+                    i_feat.feature_name: batch[i_feat.proc_column]
+                    for i_feat in model.input_features.values()
+                }
+                outputs = activation_model(inputs)
 
-            for layer_name, output in outputs.items():
-                if isinstance(output, tuple):
-                    output = list(output)
+                for layer_name, output in outputs.items():
+                    if isinstance(output, tuple):
+                        output = list(output)
 
-                if isinstance(output, tf.Tensor):
-                    output = [('', output)]
-                elif isinstance(output, dict):
-                    output = [(f'_{key}', tensor)
-                              for key, tensor in output.items()]
-                elif isinstance(output, list):
-                    output = [(f'_{idx}', tensor)
-                              for idx, tensor in enumerate(output)]
+                    if isinstance(output, tf.Tensor):
+                        output = [('', output)]
+                    elif isinstance(output, dict):
+                        output = [(f'_{key}', tensor)
+                                  for key, tensor in output.items()]
+                    elif isinstance(output, list):
+                        output = [(f'_{idx}', tensor)
+                                  for idx, tensor in enumerate(output)]
 
-                for suffix, tensor in output:
-                    full_name = f'{layer_name}{suffix}'
-                    collected_tensors.append((full_name, tensor))
+                    for suffix, tensor in output:
+                        full_name = f'{layer_name}{suffix}'
+                        collected_tensors.append((full_name, tensor))
 
-            progress_bar.update(1)
+                progress_bar.update(1)
 
-        progress_bar.close()
+            progress_bar.close()
 
         return collected_tensors
 

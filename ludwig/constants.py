@@ -108,3 +108,6 @@ PROC_COLUMN = 'proc_column'
 
 CHECKSUM = 'checksum'
 
+HDF5 = 'hdf5'
+PARQUET = 'parquet'
+
