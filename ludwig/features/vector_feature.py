@@ -67,17 +67,24 @@ class VectorFeatureMixin:
     ):
         """
                 Expects all the vectors to be of the same size. The vectors need to be
-                whitespace delimited strings. Missing values are not handled.
+                whitespace delimited strings or a numpy array of type float32. 
+                Missing values are not handled.
                 """
         if len(input_df) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
         # Convert the string of features into a numpy array
         try:
-            proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
-                input_df[feature[COLUMN]],
-                lambda x: np.array(x.split(), dtype=np.float32)
-            )
+            if (
+                isinstance(input_df[feature[COLUMN]].iloc[0], np.ndarray) and
+                input_df[feature[COLUMN]].iloc[0].dtype == np.float32
+            ):
+                proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]]
+            else: 
+                proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+                    input_df[feature[COLUMN]],
+                    lambda x: np.array(x.split(), dtype=np.float32)
+                )
         except ValueError:
             logger.error(
                 'Unable to read the vector data. Make sure that all the vectors'
