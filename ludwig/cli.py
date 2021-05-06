@@ -56,6 +56,7 @@ Available sub-commands:
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
    export_savedmodel     Exports Ludwig models to SavedModel
+   export_tflite         Exports Ludwig models to TensorFlow Lite
    export_neuropod       Exports Ludwig models to Neuropod
    preprocess            Preprocess data and saves it into HDF5 and JSON format
    synthesize_dataset    Creates synthetic data for tesing purposes
@@ -125,6 +126,11 @@ Available sub-commands:
         from ludwig import export
         ludwig.contrib.contrib_command("export_savedmodel", *sys.argv)
         export.cli_export_savedmodel(sys.argv[2:])
+
+    def export_tflite(self):
+        from ludwig import export
+        ludwig.contrib.contrib_command("export_tflite", *sys.argv)
+        export.cli_export_tflite(sys.argv[2:])
 
     def export_neuropod(self):
         from ludwig import export
