@@ -1381,7 +1381,11 @@ def preprocess_for_training(
                     'Found cached dataset and meta.json with the same filename '
                     'of the dataset, using them instead'
                 )
-                training_set_metadata, training_set, test_set, validation_set = cache_values
+                training_set_metadata, training_set, maybe_test_set, maybe_validation_set = cache_values
+                if validation_set:
+                    validation_set = maybe_validation_set
+                if test_set:
+                    test_set = maybe_test_set
                 config['data_hdf5_fp'] = training_set
                 data_format = backend.cache.data_format
                 cached = True
