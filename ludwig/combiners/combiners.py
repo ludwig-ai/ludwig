@@ -54,11 +54,13 @@ class ConcatCombiner(tf.keras.Model):
             norm_params=None,
             activation='relu',
             dropout=0,
+            flatten_inputs= False,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        self.flatten_inputs = flatten_inputs
         self.fc_stack = None
 
         # todo future: this may be redundant, check
@@ -99,9 +101,16 @@ class ConcatCombiner(tf.keras.Model):
             **kwargs
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+
+        if self.flatten_inputs:
+            batch_size = tf.shape(encoder_outputs[0])[0]
+            encoder_outputs = [
+                tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            ]
+
         # ================ Concat ================
         if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, 1)
+            hidden = concatenate(encoder_outputs, -1)
         else:
             hidden = list(encoder_outputs)[0]
 
@@ -321,7 +330,6 @@ class SequenceCombiner(tf.keras.Model):
 class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features,
             size: int,  # N_a in the paper
             output_size: int,  # N_d in the paper
             num_steps: int = 1,  # N_steps in the paper
@@ -364,16 +372,18 @@ class TabNetCombiner(tf.keras.Model):
             **kwargs
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+
+        # ================ Flatten ================
         batch_size = tf.shape(encoder_outputs[0])[0]
-        flatten_encoder_outputs = [
+        encoder_outputs = [
             tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
         ]
 
         # ================ Concat ================
-        if len(flatten_encoder_outputs) > 1:
-            hidden = concatenate(flatten_encoder_outputs, 1)
+        if len(encoder_outputs) > 1:
+            hidden = concatenate(encoder_outputs, 1)
         else:
-            hidden = list(flatten_encoder_outputs)[0]
+            hidden = list(encoder_outputs)[0]
 
         # ================ TabNet ================
         hidden, aggregated_mask, masks = self.tabnet(
