@@ -37,6 +37,7 @@ class Regressor(Layer):
             kernel_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
+            activation=None,
             **kwargs
     ):
         super().__init__()
@@ -50,7 +51,8 @@ class Regressor(Layer):
             bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer,
             bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            activity_regularizer=activity_regularizer,
+            activation=activation
         )
 
     def call(self, inputs, **kwargs):

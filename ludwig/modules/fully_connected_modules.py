@@ -17,6 +17,7 @@ import logging
 
 from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
                                      Dropout, Layer, LayerNormalization)
+import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,20 @@ class FCLayer(Layer):
             dropout=0,
     ):
         super().__init__()
+
+        self.fc_size = fc_size
+        self.use_bias = use_bias
+        self.weights_initializer = weights_initializer
+        self.bias_initializer = bias_initializer
+        self.weights_regularizer = weights_regularizer
+        self.bias_regularizer = bias_regularizer
+        self.activity_regularizer = activity_regularizer
+        # self.weights_constraint = weights_constraint
+        # self.bias_constraint = bias_constraint
+        self.norm = norm
+        self.norm_params = norm_params
+        self.activation = activation
+        self.dropout = dropout
 
         self.layers = []
 
@@ -98,6 +113,7 @@ class FCStack(Layer):
             default_norm_params=None,
             default_activation='relu',
             default_dropout=0,
+            residual=False,
             **kwargs
     ):
         super().__init__()
@@ -157,15 +173,23 @@ class FCStack(Layer):
                     dropout=layer['dropout'],
                 )
             )
+        self.residual = residual
 
     def build(
             self,
             input_shape,
     ):
         super().build(input_shape)
+        self.input_size = input_shape[-1]
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
+        prev_layer_fc_size = self.input_size
         for layer in self.stack:
-            hidden = layer(hidden, training=training)
+            out = layer(hidden, training=training)
+            if self.residual and layer.fc_size == prev_layer_fc_size:
+                hidden = hidden + out
+            else:
+                hidden = out
+            prev_layer_fc_size = layer.fc_size
         return hidden
