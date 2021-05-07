@@ -338,24 +338,7 @@ class TabNetCombiner(tf.keras.Model):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        # todo this assumes each input feature outputs size 1
-        #  or 1hot for categorical
-        feature_sizes = []
-        for feature in input_features.values():
-            if feature.type == NUMERICAL or feature.type == BINARY:
-                feature_sizes.append(1)
-            elif feature.type == CATEGORY:
-                feature_sizes.append(feature.encoder_obj.embedding_size)
-            else:
-                raise ValueError(
-                    "TabNet does not currently support {} features, "
-                    "it only supports binary, numerical and category".format(
-                        feature[TYPE]
-                    )
-                )
-
         self.tabnet = TabNet(
-            num_features=sum(feature_sizes),
             size=size,
             output_size=output_size,
             num_steps=num_steps,
@@ -381,22 +364,28 @@ class TabNetCombiner(tf.keras.Model):
             **kwargs
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+        batch_size = tf.shape(encoder_outputs[0])[0]
+        flatten_encoder_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+        ]
 
         # ================ Concat ================
-        if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, 1)
+        if len(flatten_encoder_outputs) > 1:
+            hidden = concatenate(flatten_encoder_outputs, 1)
         else:
-            hidden = list(encoder_outputs)[0]
+            hidden = list(flatten_encoder_outputs)[0]
 
         # ================ TabNet ================
-        hidden, masks = self.tabnet(
+        hidden, aggregated_mask, masks = self.tabnet(
             hidden,
             training=training,
         )
         if self.dropout:
             hidden = self.dropout(hidden, training=training)
 
-        return_data = {'combiner_output': hidden, 'attention_masks': masks}
+        return_data = {'combiner_output': hidden,
+                       'aggregated_attention_masks': aggregated_mask,
+                       'attention_masks': masks}
 
         if len(inputs) == 1:
             for key, value in [d for d in inputs.values()][0].items():
