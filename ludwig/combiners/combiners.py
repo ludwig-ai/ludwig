@@ -54,7 +54,8 @@ class ConcatCombiner(tf.keras.Model):
             norm_params=None,
             activation='relu',
             dropout=0,
-            flatten_inputs= False,
+            flatten_inputs=False,
+            residual=False,
             **kwargs
     ):
         super().__init__()
@@ -88,6 +89,7 @@ class ConcatCombiner(tf.keras.Model):
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
+                residual=residual,
             )
 
         if input_features and len(input_features) == 1 and fc_layers is None:
@@ -396,6 +398,44 @@ class TabNetCombiner(tf.keras.Model):
         return_data = {'combiner_output': hidden,
                        'aggregated_attention_masks': aggregated_mask,
                        'attention_masks': masks}
+
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
+
+        return return_data
+
+    def call(
+            self,
+            inputs,  # encoder outputs
+            training=None,
+            mask=None,
+            **kwargs
+    ):
+        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+
+        if self.flatten_inputs:
+            batch_size = tf.shape(encoder_outputs[0])[0]
+            encoder_outputs = [
+                tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            ]
+
+        # ================ Concat ================
+        if len(encoder_outputs) > 1:
+            hidden = concatenate(encoder_outputs, -1)
+        else:
+            hidden = list(encoder_outputs)[0]
+
+        # ================ Fully Connected ================
+        if self.fc_stack is not None:
+            hidden = self.fc_stack(
+                hidden,
+                training=training,
+                mask=mask
+            )
+
+        return_data = {'combiner_output': hidden}
 
         if len(inputs) == 1:
             for key, value in [d for d in inputs.values()][0].items():
