@@ -1173,7 +1173,7 @@ def build_metadata(
                 base_type_registry
             ).get_feature_meta
 
-            column = dataset_df[feature[NAME]]
+            column = dataset_df[feature[COLUMN]]
             if column.dtype == object:
                 column = column.astype(str)
 
@@ -1184,6 +1184,13 @@ def build_metadata(
             )
 
             metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+
+            proc_feature_to_metadata[feature[PROC_COLUMN]] = metadata[
+                feature[NAME]
+            ]
+        else:
+            metadata[feature[NAME]] = proc_feature_to_metadata[
+                feature[PROC_COLUMN]]
 
     return metadata
 
