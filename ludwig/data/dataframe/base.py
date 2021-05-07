@@ -48,7 +48,7 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def create_dataset(self, dataset, tag, config, training_set_metadata):
+    def to_parquet(self, df, path):
         raise NotImplementedError()
 
     @property
@@ -59,9 +59,4 @@ class DataFrameEngine(ABC):
     @property
     @abstractmethod
     def df_lib(self):
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def use_hdf5_cache(self):
         raise NotImplementedError()

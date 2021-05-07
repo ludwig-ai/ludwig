@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import math
 
 import tensorflow as tf
@@ -24,16 +25,18 @@ from petastorm.tf_utils import make_petastorm_dataset
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
+from ludwig.utils.fs_utils import to_url
+from ludwig.utils.misc_utils import get_combined_features
 
 
 class ParquetDataset(Dataset):
     def __init__(self, url, features, training_set_metadata):
-        self.url = url
+        self.url = to_url(url)
         self.features = [feature[PROC_COLUMN] for feature in features]
         self.training_set_metadata = training_set_metadata
 
         with make_batch_reader(self.url) as reader:
-            self.size = reader.dataset.metadata.num_rows
+            self.size = sum(piece.get_metadata().num_rows for piece in reader.dataset.pieces)
 
         self.reshape_features = {
             feature[PROC_COLUMN]: list((-1, *training_set_metadata[feature[NAME]]['reshape']))
@@ -53,6 +56,7 @@ class ParquetDataset(Dataset):
     def __len__(self):
         return self.size
 
+    @contextlib.contextmanager
     def initialize_batcher(self,
                            batch_size=128,
                            should_shuffle=True,
@@ -63,26 +67,66 @@ class ParquetDataset(Dataset):
         if horovod:
             cur_shard, shard_count = horovod.rank(), horovod.size()
 
-        reader = make_batch_reader(self.url,
-                                   cur_shard=cur_shard,
-                                   shard_count=shard_count,
-                                   num_epochs=None)
+        with make_batch_reader(self.url,
+                               cur_shard=cur_shard,
+                               shard_count=shard_count,
+                               num_epochs=None) as reader:
+            total_samples = self.size
+            local_samples = int(total_samples / shard_count) if shard_count else total_samples
 
-        total_samples = reader.dataset.metadata.num_rows
-        local_samples = int(total_samples / shard_count) if shard_count else total_samples
+            dataset = make_petastorm_dataset(reader)
+            dataset = dataset.unbatch()
+            if should_shuffle:
+                rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
+                buffer_size = min(rows_per_piece, local_samples)
+                dataset = dataset.shuffle(buffer_size)
+            dataset = dataset.batch(batch_size)
 
-        dataset = make_petastorm_dataset(reader)
-        dataset = dataset.unbatch()
-        if should_shuffle:
-            rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
-            buffer_size = min(rows_per_piece, local_samples)
-            dataset = dataset.shuffle(buffer_size)
-        dataset = dataset.batch(batch_size)
+            steps_per_epoch = math.ceil(local_samples / batch_size)
 
-        steps_per_epoch = math.ceil(local_samples / batch_size)
+            batcher = IterableBatcher(self,
+                                      dataset,
+                                      steps_per_epoch,
+                                      ignore_last=ignore_last)
+            yield batcher
 
-        batcher = IterableBatcher(self,
-                                  dataset,
-                                  steps_per_epoch,
-                                  ignore_last=ignore_last)
-        return batcher
+
+class ParquetDatasetManager(object):
+    def __init__(self, backend):
+        self.backend = backend
+
+    def create(self, dataset, config, training_set_metadata):
+        features = get_combined_features(config)
+        return ParquetDataset(
+            dataset,
+            features,
+            training_set_metadata
+        )
+
+    def save(self, cache_path, dataset, config, training_set_metadata, tag):
+        dataset_parquet_fp = cache_path
+
+        # Workaround for https://issues.apache.org/jira/browse/ARROW-1614
+        # Currently, Arrow does not support storing multi-dimensional arrays / tensors.
+        # When we write a column of tensors to disk, we need to first flatten it into a
+        # 1D array, which we will then reshape back when we read the data at train time.
+        features = get_combined_features(config)
+        for feature in features:
+            name = feature[NAME]
+            proc_column = feature[PROC_COLUMN]
+            reshape = training_set_metadata[name].get('reshape')
+            if reshape is not None:
+                dataset[proc_column] = self.backend.df_engine.map_objects(
+                    dataset[proc_column],
+                    lambda x: x.reshape(-1)
+                )
+
+        self.backend.df_engine.to_parquet(dataset, dataset_parquet_fp)
+        return dataset_parquet_fp
+
+    def can_cache(self, input_fname, config, skip_save_processed_input):
+        return self.backend.is_coordinator()
+
+    @property
+    def data_format(self):
+        return 'parquet'

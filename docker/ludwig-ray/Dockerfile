@@ -12,7 +12,7 @@
 FROM rayproject/ray:nightly
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
-	build-essential \
+    build-essential \
 	wget \
 	git \
 	curl \

@@ -15,13 +15,11 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
 
-import ludwig
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -33,7 +31,6 @@ from ludwig.features.feature_registries import (base_type_registry,
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
-                                     DATA_PROCESSED_CACHE_DIR,
                                      DATA_TRAIN_HDF5_FP,
                                      DATAFRAME_FORMATS,
                                      DICT_FORMATS, EXCEL_FORMATS,
@@ -43,19 +40,19 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
                                      SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
                                      TSV_FORMATS, figure_data_format,
-                                     file_exists_with_diff_extension,
                                      override_in_memory_flag, read_csv,
                                      read_excel, read_feather, read_fwf,
                                      read_html, read_json, read_jsonl,
                                      read_orc, read_parquet, read_pickle,
                                      read_sas, read_spss, read_stata, read_tsv,
-                                     replace_file_extension, split_dataset_ttv)
+                                     split_dataset_ttv)
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
-                                   default_random_seed, merge_with_defaults)
+                                   default_random_seed)
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
-                                     hash_dict, get_proc_features_from_lists)
+                                     get_proc_features_from_lists)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +86,22 @@ class DataFormatPreprocessor(ABC):
     ):
         pass
 
+    @staticmethod
+    @abstractmethod
+    def prepare_processed_data(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
+            random_seed=default_random_seed
+    ):
+        pass
+
 
 class DictPreprocessor(DataFormatPreprocessor):
     @staticmethod
@@ -114,7 +127,7 @@ class DictPreprocessor(DataFormatPreprocessor):
         df_engine = backend.df_engine
         if dataset is not None:
             dataset = df_engine.from_pandas(pd.DataFrame(dataset))
-        if training_set_metadata is not None:
+        if training_set is not None:
             training_set = df_engine.from_pandas(pd.DataFrame(training_set))
         if validation_set is not None:
             validation_set = df_engine.from_pandas(
@@ -489,6 +502,23 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             backend=backend
         )
         return dataset, training_set_metadata, None
+
+    @staticmethod
+    def prepare_processed_data(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
+            random_seed=default_random_seed
+    ):
+        test_set = test_set if path_exists(test_set) else None
+        validation_set = validation_set if path_exists(validation_set) else None
+        return training_set, test_set, validation_set, training_set_metadata
 
 
 class PicklePreprocessor(DataFormatPreprocessor):
@@ -889,6 +919,50 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
+        return HDF5Preprocessor.prepare_processed_data(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            training_set_metadata,
+            skip_save_processed_input,
+            preprocessing_params,
+            backend,
+            random_seed
+        )
+
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata,
+            backend
+    ):
+        hdf5_fp = dataset
+        dataset = load_hdf5(
+            dataset,
+            features,
+            split_data=False,
+            shuffle_training=False
+        )
+        return dataset, training_set_metadata, hdf5_fp
+
+    @staticmethod
+    def prepare_processed_data(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
+            random_seed=default_random_seed
+    ):
         if dataset is None and training_set is None:
             raise ValueError(
                 'One of `dataset` or `training_set` must be not None')
@@ -945,23 +1019,6 @@ class HDF5Preprocessor(DataFormatPreprocessor):
 
         return training_set, test_set, validation_set, training_set_metadata
 
-    @staticmethod
-    def preprocess_for_prediction(
-            dataset,
-            features,
-            preprocessing_params,
-            training_set_metadata,
-            backend
-    ):
-        hdf5_fp = dataset
-        dataset = load_hdf5(
-            dataset,
-            features,
-            split_data=False,
-            shuffle_training=False
-        )
-        return dataset, training_set_metadata, hdf5_fp
-
 
 data_format_preprocessor_registry = {
     **{fmt: DictPreprocessor for fmt in DICT_FORMATS},
@@ -1007,13 +1064,13 @@ def build_dataset(
         backend
     )
 
-    if metadata is None:
-        metadata = build_metadata(
-            dataset_df,
-            features,
-            global_preprocessing_parameters,
-            backend
-        )
+    metadata = build_metadata(
+        metadata,
+        dataset_df,
+        features,
+        global_preprocessing_parameters,
+        backend
+    )
 
     dataset = build_data(
         dataset_df,
@@ -1055,12 +1112,13 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
     return dataset_df
 
 
-def build_metadata(dataset_df, features, global_preprocessing_parameters,
-                   backend):
-    metadata = {}
+def build_metadata(
+        metadata, dataset_df, features, global_preprocessing_parameters, backend
+):
     proc_feature_to_metadata = {}
-
     for feature in features:
+        if feature[NAME] in metadata:
+            continue
 
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -1290,6 +1348,7 @@ def preprocess_for_training(
         )
 
     # if training_set_metadata is a string, assume it's a path to load the json
+    training_set_metadata = training_set_metadata or {}
     if training_set_metadata and isinstance(training_set_metadata, str):
         training_set_metadata = load_metadata(training_set_metadata)
 
@@ -1300,135 +1359,103 @@ def preprocess_for_training(
     # in case data_format is one of the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
+    cached = False
     checksum = None
+    input_fname = None
     if data_format in CACHEABLE_FORMATS:
-        if dataset:
-            if (file_exists_with_diff_extension(dataset, 'hdf5') and
-                    file_exists_with_diff_extension(dataset, 'meta.json')):
-                training_set_metadata_fp = replace_file_extension(dataset,
-                                                                  'meta.json')
-                dataset_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-                cache_training_set_metadata = data_utils.load_json(
-                    training_set_metadata_fp)
+        input_fname = dataset or training_set
 
-                checksum = calculate_checksum(dataset, config)
-                cache_checksum = cache_training_set_metadata.get(CHECKSUM,
-                                                                 None)
-
-                if checksum == cache_checksum:
-                    logger.info(
-                        'Found hdf5 and meta.json with the same filename '
-                        'of the dataset, using them instead'
-                    )
-                    dataset = dataset_hdf5_fp
-                    training_set_metadata = cache_training_set_metadata
-                    config['data_hdf5_fp'] = dataset
-                    data_format = 'hdf5'
-                else:
-                    logger.info(
-                        "Found hdf5 and meta.json with the same filename "
-                        "of the dataset, but checksum don't match, "
-                        "if saving of processed input is not skipped "
-                        "they will be overridden"
-                    )
-                    os.remove(dataset_hdf5_fp)
-                    os.remove(training_set_metadata_fp)
-
-        elif training_set:
-            if (file_exists_with_diff_extension(training_set, 'hdf5') and
-                    file_exists_with_diff_extension(training_set,
-                                                    'meta.json')):
-                training_set_metadata_fp = replace_file_extension(training_set,
-                                                                  'meta.json')
-                training_set_hdf5_fp = replace_file_extension(training_set,
-                                                              'hdf5')
-                validation_set_hdf5_fp = replace_file_extension(validation_set,
-                                                                'hdf5')
-                test_set_hdf5_fp = replace_file_extension(test_set, 'hdf5')
-
-                cache_training_set_metadata = data_utils.load_json(
-                    training_set_metadata_fp
+        checksum = backend.cache.get_cache_key(input_fname, config)
+        cache_results = backend.cache.get_dataset(input_fname, config)
+        if cache_results is not None:
+            valid, *cache_values = cache_results
+            if valid:
+                logger.info(
+                    'Found cached dataset and meta.json with the same filename '
+                    'of the dataset, using them instead'
                 )
+                training_set_metadata, training_set, test_set, validation_set = cache_values
+                config['data_hdf5_fp'] = training_set
+                data_format = backend.cache.data_format
+                cached = True
+                dataset = None
+            else:
+                logger.info(
+                    "Found cached dataset and meta.json with the same filename "
+                    "of the dataset, but checksum don't match, "
+                    "if saving of processed input is not skipped "
+                    "they will be overridden"
+                )
+                backend.cache.delete_dataset(input_fname, config)
 
-                # should we add also validation and test set
-                # to the checksum calculation? maybe it's redundant
-                checksum = calculate_checksum(training_set, config)
-                cache_checksum = cache_training_set_metadata.get(CHECKSUM,
-                                                                 None)
-
-                if checksum == cache_checksum:
-                    logger.info(
-                        'Found hdf5 and meta.json with the same filename '
-                        'of the dataset, using them instead'
-                    )
-                    training_set = training_set_hdf5_fp
-                    validation_set = validation_set_hdf5_fp
-                    test_set = test_set_hdf5_fp
-                    training_set_metadata = cache_training_set_metadata
-                    config['data_hdf5_fp'] = training_set
-                    data_format = 'hdf5'
-                else:
-                    logger.info(
-                        "Found hdf5 and meta.json with the same filename "
-                        "of the dataset, but checksum don't match, "
-                        "if saving of processed input is not skipped "
-                        "they will be overridden"
-                    )
-                    os.remove(replace_file_extension(training_set, 'hdf5'))
-                    os.remove(training_set_metadata_fp)
-                    if os.path.exists(validation_set_hdf5_fp):
-                        os.remove(validation_set_hdf5_fp)
-                    if os.path.exists(test_set_hdf5_fp):
-                        os.remove(test_set_hdf5_fp)
+    if CHECKSUM not in training_set_metadata:
+        checksum = checksum or backend.cache.get_cache_key(input_fname, config)
+        training_set_metadata[CHECKSUM] = checksum
 
     data_format_processor = get_from_registry(
         data_format,
         data_format_preprocessor_registry
     )
-    processed = data_format_processor.preprocess_for_training(
-        features,
-        dataset=dataset,
-        training_set=training_set,
-        validation_set=validation_set,
-        test_set=test_set,
-        training_set_metadata=training_set_metadata,
-        skip_save_processed_input=skip_save_processed_input,
-        preprocessing_params=preprocessing_params,
-        backend=backend,
-        random_seed=random_seed
-    )
-    training_set, test_set, validation_set, training_set_metadata = processed
 
-    if CHECKSUM not in training_set_metadata and checksum is not None:
-        training_set_metadata[CHECKSUM] = checksum
+    if cached:
+        processed = data_format_processor.prepare_processed_data(
+            features,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            backend=backend,
+            random_seed=random_seed
+        )
+        training_set, test_set, validation_set, training_set_metadata = processed
+    else:
+        processed = data_format_processor.preprocess_for_training(
+            features,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            backend=backend,
+            random_seed=random_seed
+        )
+        training_set, test_set, validation_set, training_set_metadata = processed
 
-    replace_text_feature_level(
-        features,
-        [training_set, validation_set, test_set]
-    )
+        replace_text_feature_level(
+            features,
+            [training_set, validation_set, test_set]
+        )
+        processed = (training_set, test_set, validation_set, training_set_metadata)
 
-    df_engine = backend.df_engine
-    training_dataset = df_engine.create_dataset(
+        # cache the dataset
+        processed = backend.cache.put_dataset(
+            input_fname, config, processed, skip_save_processed_input
+        )
+        training_set, test_set, validation_set, training_set_metadata = processed
+
+    training_dataset = backend.dataset_manager.create(
         training_set,
-        TRAINING,
         config,
         training_set_metadata
     )
 
     validation_dataset = None
     if validation_set is not None:
-        validation_dataset = df_engine.create_dataset(
+        validation_dataset = backend.dataset_manager.create(
             validation_set,
-            VALIDATION,
             config,
             training_set_metadata
         )
 
     test_dataset = None
     if test_set is not None:
-        test_dataset = df_engine.create_dataset(
+        test_dataset = backend.dataset_manager.create(
             test_set,
-            TEST,
             config,
             training_set_metadata
         )
@@ -1457,10 +1484,10 @@ def _preprocess_file_for_training(
     """
     Method to pre-process csv data
     :param features: list of all features (input + output)
-    :param dataset: path to the csv data
-    :param training_set:  training csv data
-    :param validation_set: validation csv data
-    :param test_set: test csv data
+    :param dataset: path to the data
+    :param training_set:  training data
+    :param validation_set: validation data
+    :param test_set: test data
     :param training_set_metadata: train set metadata
     :param skip_save_processed_input: if False, the pre-processed data is saved
     as .hdf5 files in the same location as the csvs with the same names.
@@ -1472,7 +1499,7 @@ def _preprocess_file_for_training(
         # Use data and ignore _train, _validation and _test.
         # Also ignore data and train set metadata needs preprocessing
         logger.info(
-            'Using full raw csv, no hdf5 and json file '
+            'Using full raw dataset, no hdf5 and json file '
             'with the same name have been found'
         )
         logger.info('Building dataset (it may take a while)')
@@ -1489,30 +1516,10 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        if backend.cache_enabled:
-            training_set_metadata[
-                DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
-
-        # TODO dask: consolidate hdf5 cache with backend cache
-        if backend.is_coordinator() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
+        if backend.is_coordinator() and not skip_save_processed_input:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
-
-            logger.info('Writing preprocessed dataset cache')
-            data_hdf5_fp = replace_file_extension(dataset, 'hdf5')
-            data_utils.save_hdf5(data_hdf5_fp, data)
-
-            logger.info('Writing train set metadata')
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = data_hdf5_fp
-            training_set_metadata[CHECKSUM] = calculate_checksum(
-                dataset,
-                {'features': features, PREPROCESSING: preprocessing_params}
-            )
-            training_set_metadata_fp = replace_file_extension(dataset,
-                                                              'meta.json')
-            data_utils.save_json(training_set_metadata_fp,
-                                 training_set_metadata)
 
         # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
         training_data, test_data, validation_data = split_dataset_ttv(
@@ -1548,59 +1555,10 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        if backend.cache_enabled:
-            training_set_metadata[
-                DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
-
         training_data, test_data, validation_data = split_dataset_ttv(
             data,
             SPLIT
         )
-
-        if backend.is_coordinator() and not skip_save_processed_input and backend.df_engine.use_hdf5_cache:
-            logger.info('Writing preprocessed training set cache')
-            data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
-            data_utils.save_hdf5(
-                data_train_hdf5_fp,
-                training_data,
-            )
-
-            if validation_set is not None:
-                logger.info('Writing preprocessed validation set cache')
-                data_validation_hdf5_fp = replace_file_extension(
-                    validation_set,
-                    'hdf5'
-                )
-                data_utils.save_hdf5(
-                    data_validation_hdf5_fp,
-                    validation_data,
-                )
-
-            if test_set is not None:
-                logger.info('Writing preprocessed test set cache')
-                data_test_hdf5_fp = replace_file_extension(
-                    test_set,
-                    'hdf5'
-                )
-                data_utils.save_hdf5(
-                    data_test_hdf5_fp,
-                    test_data,
-                )
-
-            logger.info('Writing train set metadata')
-            training_set_metadata[DATA_TRAIN_HDF5_FP] = data_train_hdf5_fp
-            training_set_metadata[CHECKSUM] = calculate_checksum(
-                training_set,
-                {'features': features, PREPROCESSING: preprocessing_params}
-            )
-            training_set_metadata_fp = replace_file_extension(
-                training_set,
-                'meta.json'
-            )
-            data_utils.save_json(
-                training_set_metadata_fp,
-                training_set_metadata,
-            )
 
     else:
         raise ValueError('either data or data_train have to be not None')
@@ -1647,10 +1605,6 @@ def _preprocess_df_for_training(
         random_seed=random_seed,
         backend=backend
     )
-
-    if backend.cache_enabled:
-        training_set_metadata[
-            DATA_PROCESSED_CACHE_DIR] = backend.create_cache_entry()
 
     training_set, test_set, validation_set = split_dataset_ttv(
         dataset,
@@ -1722,49 +1676,72 @@ def preprocess_for_prediction(
         output_features += config['output_features']
     features = config['input_features'] + output_features
 
-    # in case data_format is one fo the cacheable formats,
-    # check if there's a cached hdf5 file with hte same name,
-    # and in case move on with the hdf5 branch
-    if data_format in CACHEABLE_FORMATS:
-        if (file_exists_with_diff_extension(dataset, 'hdf5') and
-                file_exists_with_diff_extension(dataset, 'meta.json')):
-            logger.info(
-                'Found hdf5 and meta.json with the same filename '
-                'of the input file, using them instead'
-            )
-            dataset = replace_file_extension(dataset, 'hdf5')
-            config['data_hdf5_fp'] = dataset
-            data_format = 'hdf5'
+    # Check the cache for an already preprocessed dataset. This only
+    # applies to scenarios where the user wishes to predict on a split
+    # of the full dataset, where we preprocess the whole dataset together
+    # during training. If the user wishes to predict on the full dataset,
+    # it is assumed they are predicting on unseen data. This is done
+    # because the cached data is stored in its split form, and would be
+    # expensive to recombine, requiring further caching.
+    cached = False
+    training_set = test_set = validation_set = None
+    if data_format in CACHEABLE_FORMATS and split != FULL:
+        cache_results = backend.cache.get_dataset(dataset, config)
+        if cache_results is not None:
+            valid, *cache_values = cache_results
+            if valid:
+                logger.info(
+                    'Found cached dataset and meta.json with the same filename '
+                    'of the input file, using them instead'
+                )
+                training_set_metadata, training_set, test_set, validation_set = cache_values
+                config['data_hdf5_fp'] = training_set
+                data_format = backend.cache.data_format
+                cached = True
 
     data_format_processor = get_from_registry(
         data_format,
         data_format_preprocessor_registry
     )
 
-    processed = data_format_processor.preprocess_for_prediction(
-        dataset,
-        features,
-        preprocessing_params,
-        training_set_metadata,
-        backend
-    )
-    dataset, training_set_metadata, new_hdf5_fp = processed
-    if new_hdf5_fp:
-        hdf5_fp = new_hdf5_fp
-
-    replace_text_feature_level(features, [dataset])
-
-    if split != FULL:
-        training_set, test_set, validation_set = split_dataset_ttv(
-            dataset,
-            SPLIT
+    if cached:
+        processed = data_format_processor.prepare_processed_data(
+            features,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            preprocessing_params=preprocessing_params,
+            backend=backend,
         )
-        if split == TRAINING:
-            dataset = training_set
-        elif split == VALIDATION:
-            dataset = validation_set
-        elif split == TEST:
-            dataset = test_set
+        training_set, test_set, validation_set, training_set_metadata = processed
+    else:
+        processed = data_format_processor.preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata,
+            backend
+        )
+        dataset, training_set_metadata, new_hdf5_fp = processed
+        if new_hdf5_fp:
+            hdf5_fp = new_hdf5_fp
+
+        replace_text_feature_level(features, [dataset])
+
+        if split != FULL:
+            training_set, test_set, validation_set = split_dataset_ttv(
+                dataset,
+                SPLIT
+            )
+
+    if split == TRAINING:
+        dataset = training_set
+    elif split == VALIDATION:
+        dataset = validation_set
+    elif split == TEST:
+        dataset = test_set
 
     features = get_proc_features_from_lists(
         config['input_features'],
@@ -1798,19 +1775,3 @@ def replace_text_feature_level(features, datasets):
                             level)
                         if name_level in dataset:
                             del dataset[name_level]
-
-
-def calculate_checksum(original_dataset, config):
-    info = {}
-    info['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
-    info['dataset_modification_date'] = os.path.getmtime(original_dataset)
-    info['global_preprocessing'] = config['preprocessing']
-    features = config.get('input_features', []) + \
-               config.get('output_features', []) + \
-               config.get('features', [])
-    info['feature_names'] = [feature[NAME] for feature in features]
-    info['feature_types'] = [feature[TYPE] for feature in features]
-    info['feature_preprocessing'] = [feature.get(PREPROCESSING, {})
-                                     for feature in features]
-    hash = hash_dict(info, max_length=None)
-    return hash.decode('ascii')

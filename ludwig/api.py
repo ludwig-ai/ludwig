@@ -29,6 +29,7 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
+from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
 
 ludwig.contrib.contrib_import()
 import numpy as np
@@ -172,7 +173,7 @@ class LudwigModel:
         """
         # check if config is a path or a dict
         if isinstance(config, str):  # assume path
-            with open(config, 'r') as def_file:
+            with open_file(config, 'r') as def_file:
                 config_dict = yaml.safe_load(def_file)
             self.config_fp = config
         else:
@@ -323,7 +324,7 @@ class LudwigModel:
         """
         # setup directories and file names
         if model_resume_path is not None:
-            if os.path.exists(model_resume_path):
+            if path_exists(model_resume_path):
                 output_directory = model_resume_path
             else:
                 if self.backend.is_coordinator():
@@ -354,15 +355,15 @@ class LudwigModel:
                 skip_save_processed_input
         )
 
-        description_fn = training_stats_fn = model_dir = None
-        if self.backend.is_coordinator():
-            if should_create_output_directory:
-                if not os.path.exists(output_directory):
-                    os.makedirs(output_directory, exist_ok=True)
-            description_fn, training_stats_fn, model_dir = get_file_names(
-                output_directory)
+        output_url = output_directory
+        with upload_output_directory(output_directory) as output_directory:
+            description_fn = training_stats_fn = model_dir = None
+            if self.backend.is_coordinator():
+                if should_create_output_directory:
+                    makedirs(output_directory, exist_ok=True)
+                description_fn, training_stats_fn, model_dir = get_file_names(
+                    output_directory)
 
-        with self.backend.create_cache_dir():
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
                 preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
             else:
@@ -536,7 +537,7 @@ class LudwigModel:
                     # Load the best weights from saved checkpoint
                     self.load_weights(model_dir)
 
-                return train_stats, preprocessed_data, output_directory
+                return train_stats, preprocessed_data, output_url
 
     def train_online(
             self,
@@ -698,7 +699,7 @@ class LudwigModel:
                         skip_save_unprocessed_output and skip_save_predictions
                 )
                 if should_create_exp_dir:
-                    os.makedirs(output_directory, exist_ok=True)
+                    makedirs(output_directory, exist_ok=True)
 
             logger.debug('Postprocessing')
             postproc_predictions = postprocess(
@@ -842,7 +843,7 @@ class LudwigModel:
                         skip_save_eval_stats
                 )
                 if should_create_exp_dir:
-                    os.makedirs(output_directory, exist_ok=True)
+                    makedirs(output_directory, exist_ok=True)
 
             if collect_predictions:
                 logger.debug('Postprocessing')
@@ -1626,7 +1627,7 @@ def kfold_cross_validate(
 
     # if config is a path, convert to dictionary
     if isinstance(config, str):  # assume path
-        with open(config, 'r') as def_file:
+        with open_file(config, 'r') as def_file:
             config = yaml.safe_load(def_file)
 
     # check for k_fold
