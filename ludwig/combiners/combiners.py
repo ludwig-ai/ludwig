@@ -406,44 +406,6 @@ class TabNetCombiner(tf.keras.Model):
 
         return return_data
 
-    def call(
-            self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
-        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
-
-        if self.flatten_inputs:
-            batch_size = tf.shape(encoder_outputs[0])[0]
-            encoder_outputs = [
-                tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
-            ]
-
-        # ================ Concat ================
-        if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, -1)
-        else:
-            hidden = list(encoder_outputs)[0]
-
-        # ================ Fully Connected ================
-        if self.fc_stack is not None:
-            hidden = self.fc_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
-
-        return_data = {'combiner_output': hidden}
-
-        if len(inputs) == 1:
-            for key, value in [d for d in inputs.values()][0].items():
-                if key != 'encoder_output':
-                    return_data[key] = value
-
-        return return_data
-
 
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
