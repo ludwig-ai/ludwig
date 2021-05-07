@@ -1173,7 +1173,7 @@ def build_metadata(
                 base_type_registry
             ).get_feature_meta
 
-            column = dataset_df[feature[NAME]]
+            column = dataset_df[feature[COLUMN]]
             if column.dtype == object:
                 column = column.astype(str)
 
@@ -1184,6 +1184,13 @@ def build_metadata(
             )
 
             metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+
+            proc_feature_to_metadata[feature[PROC_COLUMN]] = metadata[
+                feature[NAME]
+            ]
+        else:
+            metadata[feature[NAME]] = proc_feature_to_metadata[
+                feature[PROC_COLUMN]]
 
     return metadata
 
@@ -1374,7 +1381,11 @@ def preprocess_for_training(
                     'Found cached dataset and meta.json with the same filename '
                     'of the dataset, using them instead'
                 )
-                training_set_metadata, training_set, test_set, validation_set = cache_values
+                training_set_metadata, training_set, maybe_test_set, maybe_validation_set = cache_values
+                if validation_set:
+                    validation_set = maybe_validation_set
+                if test_set:
+                    test_set = maybe_test_set
                 config['data_hdf5_fp'] = training_set
                 data_format = backend.cache.data_format
                 cached = True
