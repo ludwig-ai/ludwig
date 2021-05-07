@@ -16,6 +16,7 @@
 import logging
 import os
 import shutil
+import sys
 import uuid
 from collections import namedtuple
 
@@ -314,12 +315,17 @@ def test_basic_image_feature(num_channels, image_source, in_memory,
 
     if image_source == 'file':
         # use images from file
-        run_experiment(
-            input_features,
-            output_features,
-            dataset=rel_path,
-            skip_save_processed_input=skip_save_processed_input
-        )
+        if not in_memory and skip_save_processed_input:
+            # Bypass if in_memory=False and skip_save_processesed_input=True
+            pass
+        else:
+            # run for other combinations.
+            run_experiment(
+                input_features,
+                output_features,
+                dataset=rel_path,
+                skip_save_processed_input=skip_save_processed_input
+            )
     else:
         # import image from file and store in dataframe as ndarrays
         df = pd.read_csv(rel_path)
