@@ -21,7 +21,6 @@ from functools import partial
 from multiprocessing import Pool
 from typing import Union
 
-import h5py
 import numpy as np
 import tensorflow as tf
 
@@ -29,6 +28,7 @@ from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.fs_utils import upload_h5
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
@@ -353,12 +353,10 @@ class ImageFeatureMixin:
                               if isinstance(img_store, str) else img_store
                               for img_store in input_df[feature[COLUMN]]]
 
-            data_fp = os.path.splitext(input_df.src)[0] + '.hdf5'
-            mode = 'w'
-            if os.path.isfile(data_fp):
-                mode = 'r+'
-
-            with h5py.File(data_fp, mode) as h5_file:
+            data_fp = backend.cache.get_cache_path(
+                input_df.src, metadata.get(CHECKSUM), TRAINING
+            )
+            with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
                     feature[PROC_COLUMN] + '_data',

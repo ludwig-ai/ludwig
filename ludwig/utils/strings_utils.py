@@ -23,6 +23,7 @@ from collections import Counter
 import numpy as np
 
 from ludwig.data.dataframe.pandas import PANDAS
+from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
@@ -78,7 +79,7 @@ def match_replace(string_to_match, list_regex):
 
 
 def load_vocabulary(vocab_file):
-    with open(vocab_file, 'r', encoding='utf-8') as f:
+    with open_file(vocab_file, 'r', encoding='utf-8') as f:
         vocabulary = []
         for line in f:
             line = line.strip()

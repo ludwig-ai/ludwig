@@ -29,23 +29,23 @@ RAY = 'ray'
 ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
 
 
-def get_local_backend():
-    return LOCAL_BACKEND
+def get_local_backend(**kwargs):
+    return LocalBackend(**kwargs)
 
 
-def create_dask_backend():
+def create_dask_backend(**kwargs):
     from ludwig.backend.dask import DaskBackend
-    return DaskBackend()
+    return DaskBackend(**kwargs)
 
 
-def create_horovod_backend():
+def create_horovod_backend(**kwargs):
     from ludwig.backend.horovod import HorovodBackend
-    return HorovodBackend()
+    return HorovodBackend(**kwargs)
 
 
-def create_ray_backend():
+def create_ray_backend(**kwargs):
     from ludwig.backend.ray import RayBackend
-    return RayBackend()
+    return RayBackend(**kwargs)
 
 
 backend_registry = {
@@ -57,17 +57,17 @@ backend_registry = {
 }
 
 
-def create_backend(backend):
-    if isinstance(backend, Backend):
-        return backend
+def create_backend(name, **kwargs):
+    if isinstance(name, Backend):
+        return name
 
-    if backend is None and has_horovodrun():
-        backend = HOROVOD
+    if name is None and has_horovodrun():
+        name = HOROVOD
 
-    return backend_registry[backend]()
+    return backend_registry[name](**kwargs)
 
 
-def initialize_backend(backend):
-    backend = create_backend(backend)
+def initialize_backend(name, **kwargs):
+    backend = create_backend(name, **kwargs)
     backend.initialize()
     return backend

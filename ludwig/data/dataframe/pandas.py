@@ -46,12 +46,8 @@ class PandasEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return reduce_fn(series)
 
-    def create_dataset(self, dataset, tag, config, training_set_metadata):
-        return PandasDataset(
-            dataset,
-            get_proc_features(config),
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-        )
+    def to_parquet(self, df, path):
+        df.to_parquet(path, engine='pyarrow')
 
     @property
     def array_lib(self):
@@ -60,10 +56,6 @@ class PandasEngine(DataFrameEngine):
     @property
     def df_lib(self):
         return pd
-
-    @property
-    def use_hdf5_cache(self):
-        return True
 
 
 PANDAS = PandasEngine()
