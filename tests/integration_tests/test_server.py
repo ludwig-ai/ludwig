@@ -19,6 +19,9 @@ import os
 import shutil
 import sys
 
+import pytest
+from skimage.io import imread
+
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from ludwig.utils.data_utils import read_csv
@@ -113,7 +116,8 @@ def convert_to_batch_form(data_df):
     return files
 
 
-def test_server_integration(csv_filename):
+@pytest.mark.parametrize('img_source', ['file'])
+def test_server_integration(img_source, csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
@@ -148,6 +152,8 @@ def test_server_integration(csv_filename):
     assert response.status_code == 200
 
     response = client.post('/predict')
+    # expect the HTTP 400 error code for this situation
+    assert response.status_code == 400
     assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
     data_df = read_csv(rel_path)
