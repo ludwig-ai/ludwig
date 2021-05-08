@@ -317,6 +317,10 @@ def test_basic_image_feature(num_channels, image_source, in_memory,
         # use images from file
         if not in_memory and skip_save_processed_input:
             # Bypass if in_memory=False and skip_save_processesed_input=True
+            # with these combinations image encoding fails with invalid data
+            # type.  Although images are cached in hdf5, backend dataset
+            # manager returns index of the image arrays in the hdf5 cache not
+            # the actual ndarrays stored in the hdf5 cache.
             pass
         else:
             # run for other combinations.
