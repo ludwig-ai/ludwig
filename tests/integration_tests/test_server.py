@@ -156,6 +156,7 @@ def test_server_integration(csv_filename):
     first_entry = data_df.T.to_dict()[0]
     data, files = convert_to_form(first_entry)
     server_response = client.post('/predict', data=data, files=files)
+    assert server_response.status_code == 200
     server_response = server_response.json()
 
     server_response_keys = sorted(list(server_response.keys()))
@@ -171,6 +172,7 @@ def test_server_integration(csv_filename):
     assert len(data_df) > 1
     files = convert_to_batch_form(data_df)
     server_response = client.post('/batch_predict', files=files)
+    assert server_response.status_code == 200
     server_response = server_response.json()
 
     server_response_keys = sorted(server_response['columns'])
