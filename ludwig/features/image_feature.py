@@ -315,7 +315,7 @@ class ImageFeatureMixin:
                     num_processes > 1 or num_images > 1):
                 all_img_stores = [get_abs_path(src_path, img_store)
                                   if isinstance(img_store, str) else img_store
-                                  for img_store in input_df[feature[NAME]]]
+                                  for img_store in input_df[feature[COLUMN]]]
 
                 with Pool(num_processes) as pool:
                     logger.debug(
@@ -333,18 +333,25 @@ class ImageFeatureMixin:
                     'No process pool initialized. Using internal process for preprocessing images'
                 )
 
+                # helper function for handling single image
+                def _get_processed_image(img_store):
+                    if isinstance(img_store, str):
+                        return read_image_and_resize(
+                            get_abs_path(src_path, img_store)
+                        )
+                    else:
+                        return read_image_and_resize(img_store)
+
                 proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                     input_df[feature[COLUMN]],
-                    lambda img_store: read_image_and_resize(
-                        get_abs_path(src_path, img_store))
-                    if isinstance(img_store, str) else img_store
+                    _get_processed_image
                 )
         else:
             backend.check_lazy_load_supported(feature)
 
             all_img_stores = [get_abs_path(src_path, img_store)
                               if isinstance(img_store, str) else img_store
-                              for img_store in input_df[feature[NAME]]]
+                              for img_store in input_df[feature[COLUMN]]]
 
             data_fp = os.path.splitext(input_df.src)[0] + '.hdf5'
             mode = 'w'
