@@ -89,7 +89,8 @@ class SetFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         proc_df[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),

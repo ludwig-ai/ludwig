@@ -315,21 +315,12 @@ def test_basic_image_feature(num_channels, image_source, in_memory,
 
     if image_source == 'file':
         # use images from file
-        if not in_memory and skip_save_processed_input:
-            # Bypass if in_memory=False and skip_save_processesed_input=True
-            # with these combinations image encoding fails with invalid data
-            # type.  Although images are cached in hdf5, backend dataset
-            # manager returns index of the image arrays in the hdf5 cache not
-            # the actual ndarrays stored in the hdf5 cache.
-            pass
-        else:
-            # run for other combinations.
-            run_experiment(
-                input_features,
-                output_features,
-                dataset=rel_path,
-                skip_save_processed_input=skip_save_processed_input
-            )
+        run_experiment(
+            input_features,
+            output_features,
+            dataset=rel_path,
+            skip_save_processed_input=skip_save_processed_input
+        )
     else:
         # import image from file and store in dataframe as ndarrays
         df = pd.read_csv(rel_path)

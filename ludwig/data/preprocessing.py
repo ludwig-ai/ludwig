@@ -1048,6 +1048,7 @@ def build_dataset(
         metadata=None,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
+        skip_save_processed_input=False
 ):
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
@@ -1076,7 +1077,8 @@ def build_dataset(
         dataset_df,
         features,
         metadata,
-        backend
+        backend,
+        skip_save_processed_input
     )
 
     dataset[SPLIT] = get_split(
@@ -1188,7 +1190,13 @@ def build_metadata(
     return metadata
 
 
-def build_data(input_df, features, training_set_metadata, backend):
+def build_data(
+        input_df,
+        features,
+        training_set_metadata,
+        backend,
+        skip_save_processed_input
+):
     proc_df = backend.df_engine.empty_df_like(input_df)
     for feature in features:
 
@@ -1214,7 +1222,8 @@ def build_data(input_df, features, training_set_metadata, backend):
                 proc_df,
                 training_set_metadata,
                 preprocessing_parameters,
-                backend
+                backend,
+                skip_save_processed_input
             )
 
     return proc_df
@@ -1513,7 +1522,8 @@ def _preprocess_file_for_training(
             preprocessing_params,
             metadata=training_set_metadata,
             backend=backend,
-            random_seed=random_seed
+            random_seed=random_seed,
+            skip_save_processed_input=skip_save_processed_input
         )
 
         if backend.is_coordinator() and not skip_save_processed_input:

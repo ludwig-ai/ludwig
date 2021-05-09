@@ -238,7 +238,8 @@ class ImageFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         in_memory = preprocessing_parameters['in_memory']
         if PREPROCESSING in feature and 'in_memory' in feature[PREPROCESSING]:
@@ -302,7 +303,7 @@ class ImageFeatureMixin:
             user_specified_num_channels=user_specified_num_channels
         )
 
-        if in_memory:
+        if in_memory or skip_save_processed_input:
             # Number of processes to run in parallel for preprocessing
             metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes

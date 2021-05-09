@@ -215,7 +215,8 @@ class TextFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),

@@ -70,7 +70,8 @@ class H3FeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         column = input_df[feature[COLUMN]]
         if column.dtype == object:
