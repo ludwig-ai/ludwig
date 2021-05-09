@@ -22,12 +22,14 @@ import sys
 import tempfile
 
 import pandas as pd
+import numpy as np
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.data_utils import is_ludwig_ndarray_string, string2ndarray
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +149,9 @@ def convert_input(form):
     for k, v in form.multi_items():
         if type(v) == UploadFile:
             new_input[k] = _write_file(v, files)
+        elif is_ludwig_ndarray_string(v):
+            # desearlize ludwig specific form for numpy ndarray
+            new_input[k] = string2ndarray(v)
         else:
             new_input[k] = v
 
@@ -166,6 +171,9 @@ def convert_batch_input(form):
         for i in range(len(row)):
             if row[i] in file_index:
                 row[i] = file_index[row[i]]
+            elif is_ludwig_ndarray_string(row[i]):
+                # found ludwig custom ndarray string, convert to ndarray
+                row[i] = string2ndarray(row[i])
 
     return files, data
 

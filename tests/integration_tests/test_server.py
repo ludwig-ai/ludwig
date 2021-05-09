@@ -19,12 +19,13 @@ import os
 import shutil
 import sys
 
+import numpy as np
 import pytest
 from skimage.io import imread
 
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
-from ludwig.utils.data_utils import read_csv
+from ludwig.utils.data_utils import read_csv, ndarray2string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
@@ -99,13 +100,24 @@ def convert_to_form(entry):
             file = open(v, 'rb')
             files.append((k, (v, file.read(), 'image/jpeg')))
             file.close()
+        elif isinstance(v, np.ndarray):
+            # serialize ludwig specific format for numpy ndarray
+            data[k] = ndarray2string(v)
         else:
             data[k] = v
     return data, files
 
 
 def convert_to_batch_form(data_df):
-    data = data_df.to_dict(orient='split')
+    # make copy so we don't affect source data
+    _data_df = data_df.copy()
+
+    # convert any ndarray columns to ludwig custom ndarray string format
+    for c in _data_df.columns:
+        if isinstance(_data_df[c][0], np.ndarray):
+            _data_df[c] = _data_df[c].apply(ndarray2string)
+
+    data = _data_df.to_dict(orient='split')
     files = {
         'dataset': (None, json.dumps(data), 'application/json'),
     }
@@ -116,7 +128,7 @@ def convert_to_batch_form(data_df):
     return files
 
 
-@pytest.mark.parametrize('img_source', ['file'])
+@pytest.mark.parametrize('img_source', ['file', 'ndarray'])
 def test_server_integration(img_source, csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
@@ -157,6 +169,11 @@ def test_server_integration(img_source, csv_filename):
     assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
     data_df = read_csv(rel_path)
+    if img_source == 'ndarray':
+        # convert image files to ndarrays into the dataframe
+        image_feature_name = input_features[0]['name']
+        data_df[image_feature_name] = data_df[image_feature_name].apply(
+            lambda x: imread(x))
 
     # One-off prediction
     first_entry = data_df.T.to_dict()[0]
