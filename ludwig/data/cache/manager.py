@@ -25,6 +25,9 @@ class CacheManager(object):
     def put_dataset(self, dataset, training_set, validation_set, test_set,
                     config, processed, skip_save_processed_input):
         input_fname = dataset or training_set
+        if not input_fname:
+            raise ValueError("At least one among dataset and training_set "
+                             "must have a value")
         if not self.can_cache(input_fname, config, skip_save_processed_input):
             return processed
 
@@ -73,9 +76,16 @@ class CacheManager(object):
 
         return training_df, test_df, validation_df, training_set_metadata
 
-    def get_dataset_path(self, dataset, training_set, validation_set, test_set,
-                         config):
+    def get_dataset_path(self,
+                         config,
+                         dataset=None,
+                         training_set=None,
+                         validation_set=None,
+                         test_set=None):
         input_fname = dataset or training_set
+        if not input_fname:
+            raise ValueError("At least one among dataset and training_set "
+                             "must have a value")
         key = self.get_cache_key(input_fname, config)
         training_set_metadata_fp = self.get_cache_path(
             input_fname, key, 'meta', 'json'
@@ -151,10 +161,12 @@ class CacheManager(object):
         return self._cache_dir
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
-        return self._dataset_manager.save(cache_path, dataset, config, training_set_metadata, tag)
+        return self._dataset_manager.save(cache_path, dataset, config,
+                                          training_set_metadata, tag)
 
     def can_cache(self, input_fname, config, skip_save_processed_input):
-        return self._dataset_manager.can_cache(input_fname, config, skip_save_processed_input)
+        return self._dataset_manager.can_cache(input_fname, config,
+                                               skip_save_processed_input)
 
     @property
     def data_format(self):

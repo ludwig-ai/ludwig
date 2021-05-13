@@ -1374,9 +1374,11 @@ def preprocess_for_training(
         input_fname = dataset or training_set
 
         checksum = backend.cache.get_cache_key(input_fname, config)
-        cache_results = backend.cache.get_dataset_path(
-            dataset, training_set, validation_set, test_set, config
-        )
+        cache_results = backend.cache.get_dataset_path(config,
+                                                       dataset,
+                                                       training_set,
+                                                       validation_set,
+                                                       test_set)
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:
@@ -1697,7 +1699,7 @@ def preprocess_for_prediction(
     cached = False
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
-        cache_results = backend.cache.get_dataset_path(dataset, config)
+        cache_results = backend.cache.get_dataset_path(config, dataset)
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:

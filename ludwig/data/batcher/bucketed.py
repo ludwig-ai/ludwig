@@ -31,7 +31,7 @@ class BucketedBatcher(Batcher):
         # store our dataset as well
         self.dataset = dataset
 
-        field = dataset.get_dataset_path()[bucketing_field]
+        field = dataset.get_dataset_path(, [bucketing_field]
         field_lengths = np.apply_along_axis(lambda x: np.sign(x).sum(), 1,
                                             field)
         sorted_idcs = np.argsort(field_lengths)
@@ -39,16 +39,16 @@ class BucketedBatcher(Batcher):
         datapoints_per_bucket = len(field) // buckets
         for b in range(buckets):
             start = datapoints_per_bucket * b
-            end = datapoints_per_bucket * (b + 1) if b < buckets - 1 else len(
-                sorted_idcs)
-            self.buckets_idcs.append(sorted_idcs[start:end])
+        end = datapoints_per_bucket * (b + 1) if b < buckets - 1 else len(
+            sorted_idcs)
+        self.buckets_idcs.append(sorted_idcs[start:end])
 
         if should_shuffle:
             self.shuffle(self.buckets_idcs)
 
         self.ignore_last = ignore_last
         self.batch_size = batch_size
-        self.total_size = min(map(len, dataset.get_dataset_path().values()))
+        self.total_size = min(map(len, dataset.get_dataset_path(,.values()))
         self.bucket_sizes = np.array([x for x in map(len, self.buckets_idcs)])
         self.steps_per_epoch = int(
             np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size))))
@@ -78,7 +78,7 @@ class BucketedBatcher(Batcher):
                         self.indices[i]:self.indices[i] + self.batch_size]
 
         sub_batch = {}
-        for key in self.dataset.get_dataset_path():
+        for key in self.dataset.get_dataset_path(,:
             if key == self.bucketing_field and self.should_trim:
                 selected_samples = self.dataset.get(key, selected_idcs)
                 max_length = np.sign(selected_samples).sum(axis=1).max()
