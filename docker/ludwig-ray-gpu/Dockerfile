@@ -9,23 +9,24 @@
 #   model serving
 #
 
-FROM rayproject/ray:nightly
+FROM rayproject/ray:nightly-gpu
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
-	wget \
-	git \
-	curl \
-	libsndfile1 \
-	cmake \
-	tzdata \
-	rsync \
-	vim
+    wget \
+    git \
+    curl \
+    libsndfile1 \
+    cmake \
+    tzdata \
+    rsync \
+    vim
 
 WORKDIR /ludwig
 
 COPY . .
-RUN HOROVOD_WITH_TENSORFLOW=1 \
+RUN HOROVOD_GPU_OPERATIONS=NCCL \
+    HOROVOD_WITH_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_PYTORCH=1 \
     HOROVOD_WITHOUT_MXNET=1 \

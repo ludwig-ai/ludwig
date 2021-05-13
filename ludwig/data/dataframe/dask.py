@@ -27,6 +27,7 @@ from ludwig.data.dataset.parquet import ParquetDataset
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, DATA_TRAIN_HDF5_FP
+from ludwig.utils.fs_utils import makedirs, to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 
 TMP_COLUMN = '__TMP_COLUMN__'
@@ -72,36 +73,12 @@ class DaskEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
-    def create_dataset(self, dataset, tag, config, training_set_metadata):
-        cache_dir = training_set_metadata.get(DATA_PROCESSED_CACHE_DIR)
-        tag = tag.lower()
-        dataset_parquet_fp = os.path.join(cache_dir, f'{tag}.parquet')
-
-        # Workaround for https://issues.apache.org/jira/browse/ARROW-1614
-        # Currently, Arrow does not support storing multi-dimensional arrays / tensors.
-        # When we write a column of tensors to disk, we need to first flatten it into a
-        # 1D array, which we will then reshape back when we read the data at train time.
-        features = get_combined_features(config)
-        for feature in features:
-            name = feature[NAME]
-            proc_column = feature[PROC_COLUMN]
-            reshape = training_set_metadata[name].get('reshape')
-            if reshape is not None:
-                dataset[proc_column] = self.map_objects(dataset[proc_column], lambda x: x.reshape(-1))
-
-        os.makedirs(dataset_parquet_fp, exist_ok=True)
-        dataset.to_parquet(dataset_parquet_fp,
-                           engine='pyarrow',
-                           write_index=False,
-                           schema='infer')
-
-        dataset_parquet_url = 'file://' + os.path.abspath(dataset_parquet_fp)
-        training_set_metadata[DATASET_SPLIT_URL.format(tag)] = dataset_parquet_url
-
-        return ParquetDataset(
-            dataset_parquet_url,
-            features,
-            training_set_metadata
+    def to_parquet(self, df, path):
+        df.to_parquet(
+            path,
+            engine='pyarrow',
+            write_index=False,
+            schema='infer',
         )
 
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
@@ -118,10 +95,6 @@ class DaskEngine(DataFrameEngine):
     @property
     def df_lib(self):
         return dd
-
-    @property
-    def use_hdf5_cache(self):
-        return False
 
     @property
     def parallelism(self):

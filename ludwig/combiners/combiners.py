@@ -328,7 +328,7 @@ class TabNetCombiner(tf.keras.Model):
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             relaxation_factor: float = 1.5,  # gamma in the paper
-            bn_epsilon: float = 1e-5,
+            bn_epsilon: float = 1e-3,
             bn_momentum: float = 0.7,  # m_B in the paper
             bn_virtual_bs: int = None,  # B_v from the paper
             sparsity: float = 1e-5,  # lambda_sparse in the paper

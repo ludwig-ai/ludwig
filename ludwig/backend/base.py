@@ -15,53 +15,29 @@
 # limitations under the License.
 # ==============================================================================
 
-import os
-import tempfile
-import uuid
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
+from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
+from ludwig.data.dataset import create_dataset_manager
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 
-class CacheMixin:
-    _cache_dir: str
+class Backend(ABC):
+    def __init__(self, cache_dir=None, data_format=None):
+        self._dataset_manager = create_dataset_manager(self, data_format)
+        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
 
     @property
-    def cache_enabled(self):
-        return self._cache_dir is not None
-
-    def create_cache_entry(self):
-        return os.path.join(self.cache_dir, str(uuid.uuid1()))
+    def cache(self):
+        return self._cache_manager
 
     @property
-    def cache_dir(self):
-        if not self._cache_dir:
-            raise ValueError('Cache directory not available, try calling `with backend.create_cache_dir()`.')
-        return self._cache_dir
-
-    @contextmanager
-    def create_cache_dir(self):
-        prev_cache_dir = self._cache_dir
-        try:
-            if self._cache_dir:
-                os.makedirs(self._cache_dir, exist_ok=True)
-                yield self._cache_dir
-            else:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    self._cache_dir = tmpdir
-                    yield tmpdir
-        finally:
-            self._cache_dir = prev_cache_dir
-
-
-class Backend(CacheMixin, ABC):
-    def __init__(self, cache_dir=None):
-        self._cache_dir = cache_dir
+    def dataset_manager(self):
+        return self._dataset_manager
 
     @abstractmethod
     def initialize(self):
@@ -148,8 +124,8 @@ class RemoteTrainingMixin:
 
 
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def initialize(self):
         pass

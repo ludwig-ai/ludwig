@@ -368,7 +368,10 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         # EXPECTED SIZE OF RETURNED TENSORS
         # logits: shape[batch_size, seq_size, num_classes] used for evaluation
         # projection_input: shape[batch_size, seq_size, state_size] for sampled softmax
-        return logits, outputs.projection_input
+        return {
+            LOGITS: logits,
+            PROJECTION_INPUT: outputs.projection_input
+        }
 
     def decoder_beam_search(
             self,

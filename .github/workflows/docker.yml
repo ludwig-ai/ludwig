@@ -20,6 +20,7 @@ jobs:
           - ludwig
           - ludwig-gpu
           - ludwig-ray
+          - ludwig-ray-gpu
     name: docker ${{ matrix.docker-image }}
     steps:
       -
