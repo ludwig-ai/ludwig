@@ -22,40 +22,44 @@ class CacheManager(object):
         self._dataset_manager = dataset_manager
         self._cache_dir = cache_dir
 
-    def put_dataset(self, input_fname, config, processed, skip_save_processed_input):
+    def put_dataset(self, dataset, training_set, validation_set, test_set,
+                    config, processed, skip_save_processed_input):
+        input_fname = dataset or training_set
         if not self.can_cache(input_fname, config, skip_save_processed_input):
             return processed
 
-        training_set, test_set, validation_set, training_set_metadata = processed
+        training_df, test_df, validation_df, training_set_metadata = processed
         key = training_set_metadata.get(CHECKSUM)
         if not key:
             key = self.get_cache_key(input_fname, config)
             training_set_metadata[CHECKSUM] = key
 
         logger.info('Writing preprocessed training set cache')
-        training_set = self.save(
+        training_df = self.save(
             self.get_cache_path(input_fname, key, TRAINING),
-            training_set,
+            training_df,
             config,
             training_set_metadata,
             TRAINING,
         )
 
-        if test_set is not None:
+        if test_df is not None:
             logger.info('Writing preprocessed test set cache')
-            test_set = self.save(
-                self.get_cache_path(input_fname, key, TEST),
-                test_set,
+            test_fname = test_set or dataset
+            test_df = self.save(
+                self.get_cache_path(test_fname, key, TEST),
+                test_df,
                 config,
                 training_set_metadata,
                 TEST,
             )
 
-        if validation_set is not None:
+        if validation_df is not None:
             logger.info('Writing preprocessed validation set cache')
-            validation_set = self.save(
-                self.get_cache_path(input_fname, key, VALIDATION),
-                validation_set,
+            vali_fname = validation_set or dataset
+            validation_df = self.save(
+                self.get_cache_path(vali_fname, key, VALIDATION),
+                validation_df,
                 config,
                 training_set_metadata,
                 VALIDATION,
@@ -67,9 +71,11 @@ class CacheManager(object):
             training_set_metadata
         )
 
-        return training_set, test_set, validation_set, training_set_metadata
+        return training_df, test_df, validation_df, training_set_metadata
 
-    def get_dataset(self, input_fname, config):
+    def get_dataset_path(self, dataset, training_set, validation_set, test_set,
+                         config):
+        input_fname = dataset or training_set
         key = self.get_cache_key(input_fname, config)
         training_set_metadata_fp = self.get_cache_path(
             input_fname, key, 'meta', 'json'
@@ -81,20 +87,42 @@ class CacheManager(object):
             )
 
             dataset_fp = self.get_cache_path(input_fname, key, TRAINING)
-            test_fp = self.get_cache_path(input_fname, key, TEST)
-            val_fp = self.get_cache_path(input_fname, key, VALIDATION)
-            valid = key == cache_training_set_metadata.get(CHECKSUM) and path_exists(dataset_fp)
+            valid = (key == cache_training_set_metadata.get(CHECKSUM)
+                     and path_exists(dataset_fp))
+
+            val_fp = None
+            if dataset:
+                val_fp = self.get_cache_path(input_fname, key, VALIDATION)
+            elif validation_set:
+                val_fp = self.get_cache_path(validation_set, key, VALIDATION)
+            if val_fp and not path_exists(val_fp):
+                val_fp = None
+                valid = False
+
+            test_fp = None
+            if dataset:
+                test_fp = self.get_cache_path(input_fname, key, TEST)
+            elif test_set:
+                test_fp = self.get_cache_path(test_set, key, TEST)
+            if test_fp and not path_exists(test_fp):
+                test_fp = None
+                valid = False
+
             return valid, cache_training_set_metadata, dataset_fp, test_fp, val_fp
 
         return None
 
-    def delete_dataset(self, input_fname, config):
+    def delete_dataset(self, dataset, training_set, validation_set, test_set,
+                       config):
+        input_fname = dataset or training_set
         key = self.get_cache_key(input_fname, config)
         fnames = [
             self.get_cache_path(input_fname, key, 'meta', 'json'),
             self.get_cache_path(input_fname, key, TRAINING),
             self.get_cache_path(input_fname, key, TEST),
             self.get_cache_path(input_fname, key, VALIDATION),
+            self.get_cache_path(test_set, key, TEST),
+            self.get_cache_path(validation_set, key, VALIDATION),
         ]
 
         for fname in fnames:

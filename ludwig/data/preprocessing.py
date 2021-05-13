@@ -1369,11 +1369,14 @@ def preprocess_for_training(
     cached = False
     checksum = None
     input_fname = None
+    datasets_paths = [dataset, training_set, validation_set, test_set]
     if data_format in CACHEABLE_FORMATS:
         input_fname = dataset or training_set
 
         checksum = backend.cache.get_cache_key(input_fname, config)
-        cache_results = backend.cache.get_dataset(input_fname, config)
+        cache_results = backend.cache.get_dataset_path(
+            dataset, training_set, validation_set, test_set, config
+        )
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:
@@ -1381,11 +1384,7 @@ def preprocess_for_training(
                     'Found cached dataset and meta.json with the same filename '
                     'of the dataset, using them instead'
                 )
-                training_set_metadata, training_set, maybe_test_set, maybe_validation_set = cache_values
-                if validation_set:
-                    validation_set = maybe_validation_set
-                if test_set:
-                    test_set = maybe_test_set
+                training_set_metadata, training_set, test_set, validation_set = cache_values
                 config['data_hdf5_fp'] = training_set
                 data_format = backend.cache.data_format
                 cached = True
@@ -1397,7 +1396,8 @@ def preprocess_for_training(
                     "if saving of processed input is not skipped "
                     "they will be overridden"
                 )
-                backend.cache.delete_dataset(input_fname, config)
+                backend.cache.delete_dataset(dataset, training_set,
+                                             validation_set, test_set, config)
 
     if CHECKSUM not in training_set_metadata:
         checksum = checksum or backend.cache.get_cache_key(input_fname, config)
@@ -1445,7 +1445,7 @@ def preprocess_for_training(
 
         # cache the dataset
         processed = backend.cache.put_dataset(
-            input_fname, config, processed, skip_save_processed_input
+            *datasets_paths, config, processed, skip_save_processed_input
         )
         training_set, test_set, validation_set, training_set_metadata = processed
 
@@ -1697,7 +1697,7 @@ def preprocess_for_prediction(
     cached = False
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
-        cache_results = backend.cache.get_dataset(dataset, config)
+        cache_results = backend.cache.get_dataset_path(dataset, config)
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:

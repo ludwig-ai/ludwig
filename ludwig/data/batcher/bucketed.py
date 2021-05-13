@@ -31,7 +31,7 @@ class BucketedBatcher(Batcher):
         # store our dataset as well
         self.dataset = dataset
 
-        field = dataset.get_dataset()[bucketing_field]
+        field = dataset.get_dataset_path()[bucketing_field]
         field_lengths = np.apply_along_axis(lambda x: np.sign(x).sum(), 1,
                                             field)
         sorted_idcs = np.argsort(field_lengths)
@@ -48,7 +48,7 @@ class BucketedBatcher(Batcher):
 
         self.ignore_last = ignore_last
         self.batch_size = batch_size
-        self.total_size = min(map(len, dataset.get_dataset().values()))
+        self.total_size = min(map(len, dataset.get_dataset_path().values()))
         self.bucket_sizes = np.array([x for x in map(len, self.buckets_idcs)])
         self.steps_per_epoch = int(
             np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size))))
@@ -78,7 +78,7 @@ class BucketedBatcher(Batcher):
                         self.indices[i]:self.indices[i] + self.batch_size]
 
         sub_batch = {}
-        for key in self.dataset.get_dataset():
+        for key in self.dataset.get_dataset_path():
             if key == self.bucketing_field and self.should_trim:
                 selected_samples = self.dataset.get(key, selected_idcs)
                 max_length = np.sign(selected_samples).sum(axis=1).max()
