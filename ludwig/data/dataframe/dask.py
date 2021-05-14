@@ -92,3 +92,7 @@ class DaskEngine(DataFrameEngine):
     @property
     def parallelism(self):
         return self._parallelism
+
+    @property
+    def partitioned(self):
+        return True

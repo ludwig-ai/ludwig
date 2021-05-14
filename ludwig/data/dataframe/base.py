@@ -64,3 +64,8 @@ class DataFrameEngine(ABC):
     @abstractmethod
     def df_lib(self):
         raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def partitioned(self):
+        raise NotImplementedError()

@@ -18,6 +18,7 @@ import contextlib
 import math
 
 import tensorflow as tf
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 
@@ -106,11 +107,18 @@ class ParquetDatasetManager(object):
         )
 
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
-        return PartitionedDataset(
-            dataset,
-            get_proc_features(config),
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-        )
+        if self.backend.df_engine.partitioned:
+            return PartitionedDataset(
+                dataset,
+                get_proc_features(config),
+                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            )
+        else:
+            return PandasDataset(
+                dataset,
+                get_proc_features(config),
+                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            )
 
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
         dataset_parquet_fp = cache_path

@@ -57,5 +57,9 @@ class PandasEngine(DataFrameEngine):
     def df_lib(self):
         return pd
 
+    @property
+    def partitioned(self):
+        return False
+
 
 PANDAS = PandasEngine()
