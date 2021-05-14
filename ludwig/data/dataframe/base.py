@@ -40,7 +40,11 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map_objects(self, series, map_fn):
+    def map_objects(self, series, map_fn, meta=None):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def apply_objects(self, series, map_fn, meta=None):
         raise NotImplementedError()
 
     @abstractmethod
@@ -59,4 +63,9 @@ class DataFrameEngine(ABC):
     @property
     @abstractmethod
     def df_lib(self):
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def partitioned(self):
         raise NotImplementedError()

@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
+from collections.abc import Iterable
 
 import numpy as np
 import tensorflow as tf
@@ -416,82 +416,70 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
-        postprocessed = {}
-        name = self.feature_name
         level_idx2str = '{}_{}'.format(self.level, 'idx2str')
 
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS].numpy()
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result:
             if level_idx2str in metadata:
-                postprocessed[PREDICTIONS] = [
-                    [metadata[level_idx2str][token]
-                     if token < len(
-                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
-                     for token in pred]
-                    for pred in preds
-                ]
-            else:
-                postprocessed[PREDICTIONS] = preds
+                def idx2str(pred):
+                    return [
+                        metadata[level_idx2str][token]
+                        if token < len(metadata[level_idx2str])
+                        else UNKNOWN_SYMBOL
+                        for token in pred
+                    ]
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PREDICTIONS), preds)
+                result[predictions_col] = backend.df_engine.map_objects(
+                    result[predictions_col],
+                    idx2str
+                )
 
-            del result[PREDICTIONS]
-
-        if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS].numpy()
+        last_preds_col = f'{self.feature_name}_{LAST_PREDICTIONS}'
+        if last_preds_col in result:
             if level_idx2str in metadata:
-                postprocessed[LAST_PREDICTIONS] = [
-                    metadata[level_idx2str][last_pred]
-                    if last_pred < len(
-                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
-                    for last_pred in last_preds
-                ]
-            else:
-                postprocessed[LAST_PREDICTIONS] = last_preds
+                def last_idx2str(last_pred):
+                    if last_pred < len(metadata[level_idx2str]):
+                        return metadata[level_idx2str][last_pred]
+                    return UNKNOWN_SYMBOL
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS),
-                        last_preds)
+                result[last_preds_col] = backend.df_engine.map_objects(
+                    result[last_preds_col],
+                    last_idx2str
+                )
 
-            del result[LAST_PREDICTIONS]
-
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES]
-            if probs is not None:
-                probs = probs.numpy()
-
-                if len(probs) > 0 and isinstance(probs[0], list):
-                    prob = []
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        prob_col = f'{self.feature_name}_{PROBABILITY}'
+        if probs_col in result:
+            def compute_prob(probs):
+                if isinstance(probs, (list, tuple, np.ndarray)):
                     for i in range(len(probs)):
-                        for j in range(len(probs[i])):
-                            probs[i][j] = np.max(probs[i][j])
-                        prob.append(np.prod(probs[i]))
+                        probs[i] = np.max(probs[i])
+                    return np.prod(probs)
                 else:
-                    probs = np.amax(probs, axis=-1)
-                    prob = np.prod(probs, axis=-1)
+                    return np.prod(probs, axis=-1)
 
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                # postprocessed[PROBABILITIES] = probs
-                postprocessed[PROBABILITY] = prob
 
-                if not skip_save_unprocessed_output:
-                    # commenting probabilities out, see comment above
-                    # np.save(npy_filename.format(name, PROBABILITIES), probs)
-                    np.save(npy_filename.format(name, PROBABILITY), prob)
+            result[prob_col] = backend.df_engine.map_objects(
+                result[probs_col],
+                compute_prob,
+            )
 
-            del result[PROBABILITIES]
+            # commenting probabilities out because usually it is huge:
+            # dataset x length x classes
+            # todo: add a mechanism for letting the user decide to save it
+            # result[probs_col] = backend.df_engine.map_objects(
+            #     result[probs_col],
+            #     lambda prob: np.amax(prob, axis=-1),
+            # )
 
-        if LENGTHS in result:
-            del result[LENGTHS]
+        lengths_col = f'{self.feature_name}_{LENGTHS}'
+        if lengths_col in result:
+            del result[lengths_col]
 
-        return postprocessed
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):
