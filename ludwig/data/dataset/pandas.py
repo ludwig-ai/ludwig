@@ -93,6 +93,11 @@ class PandasDatasetManager(object):
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        return self.create(
+            dataset, config, training_set_metadata
+        )
+
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
         data_utils.save_hdf5(cache_path, dataset)
         if tag == TRAINING:

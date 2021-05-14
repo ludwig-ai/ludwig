@@ -18,10 +18,7 @@
 import numpy as np
 import pandas as pd
 
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
-from ludwig.utils.misc_utils import get_proc_features
 
 
 class PandasEngine(DataFrameEngine):
@@ -51,11 +48,6 @@ class PandasEngine(DataFrameEngine):
 
     def to_parquet(self, df, path):
         df.to_parquet(path, engine='pyarrow')
-
-    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
-        return self.create_dataset(
-            dataset, tag, config, training_set_metadata
-        )
 
     @property
     def array_lib(self):

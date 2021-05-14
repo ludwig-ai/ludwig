@@ -81,13 +81,6 @@ class DaskEngine(DataFrameEngine):
             schema='infer',
         )
 
-    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
-        return PartitionedDataset(
-            dataset,
-            get_proc_features(config),
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-        )
-
     @property
     def array_lib(self):
         return da

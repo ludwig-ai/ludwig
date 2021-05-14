@@ -1743,7 +1743,7 @@ def preprocess_for_prediction(
         'output_features': output_features,
     }
 
-    dataset = backend.df_engine.create_inference_dataset(
+    dataset = backend.dataset_manager.create_inference_dataset(
         dataset,
         split,
         config,
