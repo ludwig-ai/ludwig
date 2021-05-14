@@ -102,9 +102,9 @@ class Predictor(BasePredictor):
                     disable=is_progressbar_disabled()
                 )
 
-        predictions = defaultdict(list)
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
+            predictions = defaultdict(list)
+            while not batcher.last_batch():
+                batch = batcher.next_batch()
 
                 inputs = {
                     i_feat.feature_name: batch[i_feat.proc_column]
@@ -113,12 +113,12 @@ class Predictor(BasePredictor):
 
                 preds = model.predict_step(inputs)
 
-            # accumulate predictions from batch for each output feature
-            for of_name, of_preds in preds.items():
-                for pred_name, pred_values in of_preds.items():
-                    if pred_name not in EXCLUE_PRED_SET:
-                        key = f'{of_name}_{pred_name}'
-                        predictions[key].append(pred_values)
+                # accumulate predictions from batch for each output feature
+                for of_name, of_preds in preds.items():
+                    for pred_name, pred_values in of_preds.items():
+                        if pred_name not in EXCLUE_PRED_SET:
+                            key = f'{of_name}_{pred_name}'
+                            predictions[key].append(pred_values)
 
                 if self.is_coordinator():
                     progress_bar.update(1)
@@ -155,9 +155,9 @@ class Predictor(BasePredictor):
                     disable=is_progressbar_disabled()
                 )
 
-        predictions = defaultdict(list)
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
+            predictions = defaultdict(list)
+            while not batcher.last_batch():
+                batch = batcher.next_batch()
 
                 inputs = {
                     i_feat.feature_name: batch[i_feat.proc_column]
@@ -170,13 +170,13 @@ class Predictor(BasePredictor):
 
                 preds = model.evaluation_step(inputs, targets)
 
-            # accumulate predictions from batch for each output feature
-            if collect_predictions:
-                for of_name, of_preds in preds.items():
-                    for pred_name, pred_values in of_preds.items():
-                        if pred_name not in EXCLUE_PRED_SET:
-                            key = f'{of_name}_{pred_name}'
-                            predictions[key].append(pred_values)
+                # accumulate predictions from batch for each output feature
+                if collect_predictions:
+                    for of_name, of_preds in preds.items():
+                        for pred_name, pred_values in of_preds.items():
+                            if pred_name not in EXCLUE_PRED_SET:
+                                key = f'{of_name}_{pred_name}'
+                                predictions[key].append(pred_values)
 
                 if self.is_coordinator():
                     progress_bar.update(1)
