@@ -76,12 +76,12 @@ def server(model, allowed_origins=None):
         try:
             form = await request.form()
             if len(form.multi_items()) == 0:
-                logger.exception("Failed to parse batch_predict form")
+                logger.exception("Failed to parse predict form")
                 return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
                                     status_code=400)
             data_df, files = deserialize_request(form)
         except Exception:
-            logger.exception("Failed to parse batch_predict form")
+            logger.exception("Failed to parse predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
 

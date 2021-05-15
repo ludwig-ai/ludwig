@@ -135,7 +135,6 @@ def deserialize_request(form: 'multi-part form') -> tuple:
     files = []
     file_index = {}
     for k, v in form.multi_items():
-        print(k)
         if type(v) == UploadFile:
             file_index[v.filename] = _write_file(v, files)
 

@@ -59,7 +59,7 @@ class ImageFeatureMixin:
 
     @staticmethod
     def _read_image_and_resize(
-            img_source: Union[str, 'numpy.array'],
+            img_entry: Union[str, 'numpy.array'],
             img_width: int,
             img_height: int,
             should_resize: bool,
@@ -97,10 +97,10 @@ class ImageFeatureMixin:
             )
             sys.exit(-1)
 
-        if isinstance(img_source, str):
-            img = imread(img_source)
+        if isinstance(img_entry, str):
+            img = imread(img_entry)
         else:
-            img = img_source
+            img = img_entry
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
             img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -157,7 +157,7 @@ class ImageFeatureMixin:
     @staticmethod
     def _finalize_preprocessing_parameters(
             preprocessing_parameters: dict,
-            first_img_source: Union[str, 'numpy.array']
+            first_img_entry: Union[str, 'numpy.array']
     ):
         """
         Helper method to determine the height, width and number of channels for
@@ -178,10 +178,10 @@ class ImageFeatureMixin:
             )
             sys.exit(-1)
 
-        if isinstance(first_img_source, str):
-            first_image = imread(first_img_source)
+        if isinstance(first_img_entry, str):
+            first_image = imread(first_img_entry)
         else:
-            first_image = first_img_source
+            first_image = first_img_entry
         first_img_height = first_image.shape[0]
         first_img_width = first_image.shape[1]
         first_img_num_channels = num_channels_in_image(first_image)
@@ -258,24 +258,24 @@ class ImageFeatureMixin:
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_img_source = next(iter(input_df[feature[COLUMN]]))
+        first_img_entry = next(iter(input_df[feature[COLUMN]]))
         # todo: turn this into debug level when development is done
         logger.info(
-            'Detected image feature type is {}'.format(type(first_img_source))
+            'Detected image feature type is {}'.format(type(first_img_entry))
         )
 
-        if not isinstance(first_img_source, str) \
-                and not isinstance(first_img_source, np.ndarray):
+        if not isinstance(first_img_entry, str) \
+                and not isinstance(first_img_entry, np.ndarray):
             raise ValueError(
                 'Invalid image feature data type.  Detected type is {}, '
                 'expect either string for file path or numpy array.'
-                    .format(type(first_img_source))
+                    .format(type(first_img_entry))
             )
 
-        if isinstance(first_img_source, str):
-            if src_path is None and not os.path.isabs(first_img_source):
+        if isinstance(first_img_entry, str):
+            if src_path is None and not os.path.isabs(first_img_entry):
                 raise ValueError('Image file paths must be absolute')
-            first_img_source = get_abs_path(src_path, first_img_source)
+            first_img_source = get_abs_path(src_path, first_img_entry)
 
         (
             should_resize,
@@ -285,7 +285,7 @@ class ImageFeatureMixin:
             user_specified_num_channels,
             first_image
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_img_source
+            preprocessing_parameters, first_img_entry
         )
 
         metadata[feature[NAME]][PREPROCESSING]['height'] = height
@@ -314,9 +314,9 @@ class ImageFeatureMixin:
             # standard code anyway.
             if backend.supports_multiprocessing and (
                     num_processes > 1 or num_images > 1):
-                all_img_stores = [get_abs_path(src_path, img_store)
-                                  if isinstance(img_store, str) else img_store
-                                  for img_store in input_df[feature[COLUMN]]]
+                all_img_entries = [get_abs_path(src_path, img_entry)
+                                   if isinstance(img_entry, str) else img_entry
+                                   for img_entry in input_df[feature[COLUMN]]]
 
                 with Pool(num_processes) as pool:
                     logger.debug(
@@ -325,7 +325,7 @@ class ImageFeatureMixin:
                         )
                     )
                     proc_df[feature[PROC_COLUMN]] = pool.map(
-                        read_image_and_resize, all_img_stores
+                        read_image_and_resize, all_img_entries
                     )
             else:
                 # If we're not running multiple processes and we are only processing one
@@ -350,9 +350,9 @@ class ImageFeatureMixin:
         else:
             backend.check_lazy_load_supported(feature)
 
-            all_img_stores = [get_abs_path(src_path, img_store)
-                              if isinstance(img_store, str) else img_store
-                              for img_store in input_df[feature[COLUMN]]]
+            all_img_entries = [get_abs_path(src_path, img_entry)
+                               if isinstance(img_entry, str) else img_entry
+                               for img_entry in input_df[feature[COLUMN]]]
 
             data_fp = backend.cache.get_cache_path(
                 input_df.src, metadata.get(CHECKSUM), TRAINING
@@ -364,9 +364,9 @@ class ImageFeatureMixin:
                     (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
-                for i, img_store in enumerate(all_img_stores):
+                for i, img_entry in enumerate(all_img_entries):
                     image_dataset[i, :height, :width, :] = (
-                        read_image_and_resize(img_store)
+                        read_image_and_resize(img_entry)
                     )
                 h5_file.flush()
 
