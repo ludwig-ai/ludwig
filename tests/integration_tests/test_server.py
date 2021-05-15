@@ -19,20 +19,20 @@ import os
 import shutil
 import sys
 
-import numpy as np
+import pandas as pd
 import pytest
 from skimage.io import imread
 
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
-from ludwig.utils.data_utils import read_csv, ndarray2string
+from ludwig.utils.data_utils import read_csv
+from ludwig.utils.server_utils import serialize_payload
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import LocalTestBackend
-
 
 logger = logging.getLogger(__name__)
 
@@ -92,40 +92,41 @@ def output_keys_for(output_features):
     return keys
 
 
-def convert_to_form(entry):
-    data = {}
-    files = []
-    for k, v in entry.items():
-        if type(v) == str and os.path.exists(v):
-            file = open(v, 'rb')
-            files.append((k, (v, file.read(), 'image/jpeg')))
-            file.close()
-        elif isinstance(v, np.ndarray):
-            # serialize ludwig specific format for numpy ndarray
-            data[k] = ndarray2string(v)
-        else:
-            data[k] = v
-    return data, files
+# todo clean up at end of PR 1174
+# def convert_to_form(entry):
+#     data = {}
+#     files = []
+#     for k, v in entry.items():
+#         if type(v) == str and os.path.exists(v):
+#             file = open(v, 'rb')
+#             files.append((k, (v, file.read(), 'image/jpeg')))
+#             file.close()
+#         elif isinstance(v, np.ndarray):
+#             # serialize ludwig specific format for numpy ndarray
+#             data[k] = ndarray2string(v)
+#         else:
+#             data[k] = v
+#     return data, files
 
-
-def convert_to_batch_form(data_df):
-    # make copy so we don't affect source data
-    _data_df = data_df.copy()
-
-    # convert any ndarray columns to ludwig custom ndarray string format
-    for c in _data_df.columns:
-        if isinstance(_data_df[c][0], np.ndarray):
-            _data_df[c] = _data_df[c].apply(ndarray2string)
-
-    data = _data_df.to_dict(orient='split')
-    files = {
-        'dataset': (None, json.dumps(data), 'application/json'),
-    }
-    for row in data['data']:
-        for v in row:
-            if type(v) == str and os.path.exists(v) and v not in files:
-                files[v] = (v, open(v, 'rb'), 'application/octet-stream')
-    return files
+# todo clean up at end of PR 1174
+# def convert_to_batch_form(data_df):
+#     # make copy so we don't affect source data
+#     _data_df = data_df.copy()
+#
+#     # convert any ndarray columns to ludwig custom ndarray string format
+#     for c in _data_df.columns:
+#         if isinstance(_data_df[c][0], np.ndarray):
+#             _data_df[c] = _data_df[c].apply(ndarray2string)
+#
+#     data = _data_df.to_dict(orient='split')
+#     files = {
+#         'dataset': (None, json.dumps(data), 'application/json'),
+#     }
+#     for row in data['data']:
+#         for v in row:
+#             if type(v) == str and os.path.exists(v) and v not in files:
+#                 files[v] = (v, open(v, 'rb'), 'application/octet-stream')
+#     return files
 
 
 @pytest.mark.parametrize('img_source', ['file', 'ndarray'])
@@ -176,9 +177,19 @@ def test_server_integration(img_source, csv_filename):
             lambda x: imread(x))
 
     # One-off prediction
-    first_entry = data_df.T.to_dict()[0]
-    data, files = convert_to_form(first_entry)
-    server_response = client.post('/predict', data=data, files=files)
+    payload_dict, payload_files = serialize_payload(data_df.loc[0])
+    if payload_files:
+        server_response = client.post(
+            '/predict',
+            data={'payload': json.dumps(payload_dict)},
+            files=payload_files
+        )
+    else:
+        server_response = client.post(
+            '/predict',
+            data={'payload': json.dumps(payload_dict)}
+        )
+
     assert server_response.status_code == 200
     server_response = server_response.json()
 
@@ -186,15 +197,25 @@ def test_server_integration(img_source, csv_filename):
     assert server_response_keys == sorted(output_keys_for(output_features))
 
     model_output, _ = model.predict(
-        dataset=[first_entry], data_format=dict
+        dataset=pd.DataFrame(data_df.loc[0]).T
     )
     model_output = model_output.to_dict('records')[0]
     assert model_output == server_response
 
     # Batch prediction
     assert len(data_df) > 1
-    files = convert_to_batch_form(data_df)
-    server_response = client.post('/batch_predict', files=files)
+    payload_dict, payload_files = serialize_payload(data_df)
+    if payload_files:
+        server_response = client.post(
+            '/batch_predict',
+            data={'payload': json.dumps(payload_dict)},
+            files=payload_files
+        )
+    else:
+        server_response = client.post(
+            '/batch_predict',
+            data={'payload': json.dumps(payload_dict)}
+        )
     assert server_response.status_code == 200
     server_response = server_response.json()
 

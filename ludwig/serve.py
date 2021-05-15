@@ -29,7 +29,7 @@ from ludwig.constants import COLUMN
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
-from ludwig.utils.data_utils import is_ludwig_ndarray_string, string2ndarray
+from ludwig.utils.server_utils import deserialize_request, deserialize_payload
 
 logger = logging.getLogger(__name__)
 
@@ -75,19 +75,23 @@ def server(model, allowed_origins=None):
     async def predict(request: Request):
         try:
             form = await request.form()
-            files, entry = convert_input(form)
+            if len(form.multi_items()) == 0:
+                logger.exception("Failed to parse batch_predict form")
+                return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
+                                    status_code=400)
+            data_df, files = deserialize_request(form)
         except Exception:
             logger.exception("Failed to parse batch_predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
 
         try:
-            if (entry.keys() & input_features) != input_features:
+            if not set(input_features) <= set(data_df.columns):
                 return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
                                     status_code=400)
             try:
                 resp, _ = model.predict(
-                    dataset=[entry], data_format=dict
+                    dataset=data_df
                 )
                 resp = resp.to_dict('records')[0]
                 return JSONResponse(resp)
@@ -103,10 +107,7 @@ def server(model, allowed_origins=None):
     async def batch_predict(request: Request):
         try:
             form = await request.form()
-            files, data = convert_batch_input(form)
-            data_df = pd.DataFrame.from_records(data['data'],
-                                                index=data.get('index'),
-                                                columns=data['columns'])
+            data_df, files = deserialize_request(form)
         except Exception:
             logger.exception("Failed to parse batch_predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
@@ -131,51 +132,52 @@ def server(model, allowed_origins=None):
     return app
 
 
-def _write_file(v, files):
-    # Convert UploadFile to a NamedTemporaryFile to ensure it's on the disk
-    suffix = os.path.splitext(v.filename)[1]
-    named_file = tempfile.NamedTemporaryFile(
-        delete=False, suffix=suffix)
-    files.append(named_file)
-    named_file.write(v.file.read())
-    named_file.close()
-    return named_file.name
-
-
-def convert_input(form):
-    """Returns a new input and a list of files to be cleaned up"""
-    new_input = {}
-    files = []
-    for k, v in form.multi_items():
-        if type(v) == UploadFile:
-            new_input[k] = _write_file(v, files)
-        elif is_ludwig_ndarray_string(v):
-            # desearlize ludwig specific form for numpy ndarray
-            new_input[k] = string2ndarray(v)
-        else:
-            new_input[k] = v
-
-    return files, new_input
-
-
-def convert_batch_input(form):
-    """Returns a new input and a list of files to be cleaned up"""
-    files = []
-    file_index = {}
-    for k, v in form.multi_items():
-        if type(v) == UploadFile:
-            file_index[v.filename] = _write_file(v, files)
-
-    data = json.loads(form['dataset'])
-    for row in data['data']:
-        for i in range(len(row)):
-            if row[i] in file_index:
-                row[i] = file_index[row[i]]
-            elif is_ludwig_ndarray_string(row[i]):
-                # found ludwig custom ndarray string, convert to ndarray
-                row[i] = string2ndarray(row[i])
-
-    return files, data
+# todo cleanup at end of PR 1174
+# def _write_file(v, files):
+#     # Convert UploadFile to a NamedTemporaryFile to ensure it's on the disk
+#     suffix = os.path.splitext(v.filename)[1]
+#     named_file = tempfile.NamedTemporaryFile(
+#         delete=False, suffix=suffix)
+#     files.append(named_file)
+#     named_file.write(v.file.read())
+#     named_file.close()
+#     return named_file.name
+#
+#
+# def convert_input(form):
+#     """Returns a new input and a list of files to be cleaned up"""
+#     new_input = {}
+#     files = []
+#     for k, v in form.multi_items():
+#         if type(v) == UploadFile:
+#             new_input[k] = _write_file(v, files)
+#         elif is_ludwig_ndarray_string(v):
+#             # desearlize ludwig specific form for numpy ndarray
+#             new_input[k] = string2ndarray(v)
+#         else:
+#             new_input[k] = v
+#
+#     return files, new_input
+#
+#
+# def convert_batch_input(form):
+#     """Returns a new input and a list of files to be cleaned up"""
+#     files = []
+#     file_index = {}
+#     for k, v in form.multi_items():
+#         if type(v) == UploadFile:
+#             file_index[v.filename] = _write_file(v, files)
+#
+#     data = json.loads(form['dataset'])
+#     for row in data['data']:
+#         for i in range(len(row)):
+#             if row[i] in file_index:
+#                 row[i] = file_index[row[i]]
+#             elif is_ludwig_ndarray_string(row[i]):
+#                 # found ludwig custom ndarray string, convert to ndarray
+#                 row[i] = string2ndarray(row[i])
+#
+#     return files, data
 
 
 def run_server(
