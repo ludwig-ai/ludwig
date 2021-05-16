@@ -11,8 +11,9 @@ from starlette.datastructures import UploadFile
 
 def serialize_payload(data_source: Union[pd.DataFrame, pd.Series]) -> tuple:
     """
-    Generates dictionary to be sent via REST API for Ludwig prediction service.
-    Keys found in the dictionary:
+    Generates two dictionaries to be sent via REST API for Ludwig prediction
+    service.
+    First dictionary created is payload_dict. Keys found in payload_dict:
     raw_data: this is json string created by pandas to_json() method
     source_type: indicates if the data_source is either a pandas dataframe or
         pandas series.  This is needed to know how to rebuild the structure.
@@ -24,10 +25,17 @@ def serialize_payload(data_source: Union[pd.DataFrame, pd.Series]) -> tuple:
         ndarray.  This value is used to set the correct dtype when rebuilding
         the entry.
 
-    Args:
-        data_source: input features to predictions
+    Second dictionary created is called payload_files, this contains information
+    and content for files to be sent to the server.  NOTE: if no files are to be
+    sent, this will be an empty dictionary.
+    Entries in this dictionary:
+    Key: file path string for file to be sent to server
+    Value: tuple(file path string, byte encodex file content, 'application/octet-stream')
 
-    Returns: dictionary
+    Args:
+        data_source: input features to be sent to Ludwig server
+
+    Returns: tuple(payload_dict, payload_files)
 
     """
     payload_dict = {}
