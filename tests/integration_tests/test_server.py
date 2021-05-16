@@ -92,43 +92,6 @@ def output_keys_for(output_features):
     return keys
 
 
-# todo clean up at end of PR 1174
-# def convert_to_form(entry):
-#     data = {}
-#     files = []
-#     for k, v in entry.items():
-#         if type(v) == str and os.path.exists(v):
-#             file = open(v, 'rb')
-#             files.append((k, (v, file.read(), 'image/jpeg')))
-#             file.close()
-#         elif isinstance(v, np.ndarray):
-#             # serialize ludwig specific format for numpy ndarray
-#             data[k] = ndarray2string(v)
-#         else:
-#             data[k] = v
-#     return data, files
-
-# todo clean up at end of PR 1174
-# def convert_to_batch_form(data_df):
-#     # make copy so we don't affect source data
-#     _data_df = data_df.copy()
-#
-#     # convert any ndarray columns to ludwig custom ndarray string format
-#     for c in _data_df.columns:
-#         if isinstance(_data_df[c][0], np.ndarray):
-#             _data_df[c] = _data_df[c].apply(ndarray2string)
-#
-#     data = _data_df.to_dict(orient='split')
-#     files = {
-#         'dataset': (None, json.dumps(data), 'application/json'),
-#     }
-#     for row in data['data']:
-#         for v in row:
-#             if type(v) == str and os.path.exists(v) and v not in files:
-#                 files[v] = (v, open(v, 'rb'), 'application/octet-stream')
-#     return files
-
-
 @pytest.mark.parametrize('img_source', ['file', 'ndarray'])
 def test_server_integration(img_source, csv_filename):
     # Image Inputs

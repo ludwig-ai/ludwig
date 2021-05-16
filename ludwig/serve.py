@@ -132,54 +132,6 @@ def server(model, allowed_origins=None):
     return app
 
 
-# todo cleanup at end of PR 1174
-# def _write_file(v, files):
-#     # Convert UploadFile to a NamedTemporaryFile to ensure it's on the disk
-#     suffix = os.path.splitext(v.filename)[1]
-#     named_file = tempfile.NamedTemporaryFile(
-#         delete=False, suffix=suffix)
-#     files.append(named_file)
-#     named_file.write(v.file.read())
-#     named_file.close()
-#     return named_file.name
-#
-#
-# def convert_input(form):
-#     """Returns a new input and a list of files to be cleaned up"""
-#     new_input = {}
-#     files = []
-#     for k, v in form.multi_items():
-#         if type(v) == UploadFile:
-#             new_input[k] = _write_file(v, files)
-#         elif is_ludwig_ndarray_string(v):
-#             # desearlize ludwig specific form for numpy ndarray
-#             new_input[k] = string2ndarray(v)
-#         else:
-#             new_input[k] = v
-#
-#     return files, new_input
-#
-#
-# def convert_batch_input(form):
-#     """Returns a new input and a list of files to be cleaned up"""
-#     files = []
-#     file_index = {}
-#     for k, v in form.multi_items():
-#         if type(v) == UploadFile:
-#             file_index[v.filename] = _write_file(v, files)
-#
-#     data = json.loads(form['dataset'])
-#     for row in data['data']:
-#         for i in range(len(row)):
-#             if row[i] in file_index:
-#                 row[i] = file_index[row[i]]
-#             elif is_ludwig_ndarray_string(row[i]):
-#                 # found ludwig custom ndarray string, convert to ndarray
-#                 row[i] = string2ndarray(row[i])
-#
-#     return files, data
-
-
 def run_server(
         model_path: str,
         host: str,

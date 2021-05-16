@@ -259,8 +259,7 @@ class ImageFeatureMixin:
             raise ValueError('There are no images in the dataset provided.')
 
         first_img_entry = next(iter(input_df[feature[COLUMN]]))
-        # todo: turn this into debug level when development is done
-        logger.info(
+        logger.debug(
             'Detected image feature type is {}'.format(type(first_img_entry))
         )
 
