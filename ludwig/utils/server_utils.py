@@ -30,7 +30,8 @@ def serialize_payload(data_source: Union[pd.DataFrame, pd.Series]) -> tuple:
     sent, this will be an empty dictionary.
     Entries in this dictionary:
     Key: file path string for file to be sent to server
-    Value: tuple(file path string, byte encodex file content, 'application/octet-stream')
+    Value: tuple(file path string, byte encoded file content,
+                 'application/octet-stream')
 
     Args:
         data_source: input features to be sent to Ludwig server
