@@ -80,6 +80,7 @@ def output_keys_for(output_features):
         if feature['type'] == 'category':
             keys.append("{}_predictions".format(name))
             keys.append("{}_probability".format(name))
+            keys.append("{}_probabilities".format(name))
             keys.append("{}_probabilities_<UNK>".format(name))
             for category in feature['idx2str']:
                 keys.append(

@@ -212,6 +212,36 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
                   indent=indent)
 
 
+def flatten_df(df, backend):
+    # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
+    column_shapes = {}
+    for c in df.columns:
+        df = backend.df_engine.persist(df)
+        shape = backend.df_engine.compute(backend.df_engine.map_objects(
+            df[c],
+            lambda x: np.array(x).shape,
+        ).max())
+
+        if len(shape) > 1:
+            column_shapes[c] = shape
+            df[c] = backend.df_engine.map_objects(
+                df[c],
+                lambda x: np.array(x).reshape(-1)
+            )
+    return df, column_shapes
+
+
+def unflatten_df(df, column_shapes, backend):
+    for c in df.columns:
+        shape = column_shapes.get(c)
+        if shape:
+            df[c] = backend.df_engine.map_objects(
+                df[c],
+                lambda x: np.array(x).reshape(shape)
+            )
+    return df
+
+
 def to_numpy_dataset(df):
     dataset = {}
     for col in df.columns:

@@ -220,6 +220,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.float32
@@ -250,41 +255,21 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             predictions,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in predictions:
             # as needed convert predictions make to original value space
             numeric_transformer = get_from_registry(
                 metadata['preprocessing'].get('normalization', None),
                 numeric_transformation_registry
             )(**metadata)
-            postprocessed[PREDICTIONS] = \
-                numeric_transformer.inverse_transform(
-                    predictions[PREDICTIONS].numpy()
-                )
+            predictions[predictions_col] = backend.df_engine.map_objects(
+                predictions[predictions_col],
+                lambda pred: numeric_transformer.inverse_transform(pred)
+            )
 
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PREDICTIONS),
-                    predictions[PREDICTIONS]
-                )
-            del predictions[PREDICTIONS]
-
-        if PROBABILITIES in predictions and len(
-                predictions[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = predictions[PROBABILITIES].numpy()
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PROBABILITIES),
-                    predictions[PROBABILITIES]
-                )
-            del predictions[PROBABILITIES]
-
-        return postprocessed
+        return predictions
 
     @staticmethod
     def populate_defaults(output_feature):

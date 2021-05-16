@@ -280,6 +280,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         # Generator Decoder
         return self.decoder_obj._predictions_eval(inputs, training=training)
 
+    def get_prediction_set(self):
+        return self.decoder_obj.get_prediction_set()
+
     @classmethod
     def get_output_dtype(cls):
         return tf.int32
@@ -415,85 +418,75 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS].numpy()
-            lengths = result[LENGTHS].numpy()
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        lengths_col = f'{self.feature_name}_{LENGTHS}'
+        if predictions_col in result:
             if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = [
-                    [metadata['idx2str'][token]
-                     if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
-                     for token in [pred[i] for i in range(length)]]
-                    for pred, length in
-                    [(preds[j], lengths[j]) for j in range(len(preds))]
-                ]
-            else:
-                postprocessed[PREDICTIONS] = preds
+                def idx2str(row):
+                    pred = row[predictions_col]
+                    length = row[lengths_col]
+                    return [
+                        metadata['idx2str'][token]
+                        if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
+                        for token in [pred[i] for i in range(length)]
+                    ]
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PREDICTIONS), preds)
+                result[predictions_col] = backend.df_engine.apply_objects(
+                    result, idx2str
+                )
 
-            del result[PREDICTIONS]
-
-        if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS].numpy()
+        last_preds_col = f'{self.feature_name}_{LAST_PREDICTIONS}'
+        if last_preds_col in result:
             if 'idx2str' in metadata:
-                postprocessed[LAST_PREDICTIONS] = [
-                    metadata['idx2str'][last_pred]
-                    if last_pred < len(metadata['idx2str']) else UNKNOWN_SYMBOL
-                    for last_pred in last_preds
-                ]
-            else:
-                postprocessed[LAST_PREDICTIONS] = last_preds
+                def last_idx2str(last_pred):
+                    if last_pred < len(metadata['idx2str']):
+                        return metadata['idx2str'][last_pred]
+                    return UNKNOWN_SYMBOL
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS),
-                        last_preds)
+                result[last_preds_col] = backend.df_engine.map_objects(
+                    result[last_preds_col],
+                    last_idx2str
+                )
 
-            del result[LAST_PREDICTIONS]
-
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES].numpy()
-            if probs is not None:
-
-                # probs should be shape [b, s, nc]
-                if len(probs.shape) == 3:
-                    # get probability of token in that sequence position
-                    seq_probs = np.amax(probs, axis=-1)
-
-                    # sum log probability for tokens up to sequence length
-                    # create mask only tokens for sequence length
-                    mask = np.arange(seq_probs.shape[-1]) \
-                           < np.array(result[LENGTHS]).reshape(-1, 1)
-                    log_prob = np.sum(np.log(seq_probs) * mask, axis=-1)
-
-                    # commenting probabilities out because usually it is huge:
-                    # dataset x length x classes
-                    # todo: add a mechanism for letting the user decide to save it
-                    postprocessed[PROBABILITIES] = seq_probs
-                    postprocessed[PROBABILITY] = log_prob
-                else:
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        if probs_col in result:
+            def token_prob(prob):
+                dim = len(prob.shape)
+                if dim != 2:
+                    # probs should be shape [s, nc]
                     raise ValueError(
-                        'Sequence probability array should be 3-dimensional '
-                        'shape, instead shape is {:d}-dimensional'
-                            .format(len(probs.shape))
+                        f'Sequence probability array should be 2-dimensional '
+                        f'shape, instead shape is {dim}-dimensional ({prob.shape})'
                     )
+                return np.amax(prob, axis=-1)
 
-                if not skip_save_unprocessed_output:
-                    np.save(npy_filename.format(name, PROBABILITIES), seq_probs)
-                    np.save(npy_filename.format(name, PROBABILITY), log_prob)
+            # get probability of token in that sequence position
+            result[probs_col] = backend.df_engine.map_objects(
+                result[probs_col], token_prob
+            )
 
-            del result[PROBABILITIES]
+            def compute_log_prob(row):
+                # sum log probability for tokens up to sequence length
+                # create mask only tokens for sequence length
+                seq_prob = row[probs_col]
+                length = row[lengths_col]
+                mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
+                return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
-        if LENGTHS in result:
-            del result[LENGTHS]
+            # commenting probabilities out because usually it is huge:
+            # dataset x length x classes
+            # todo: add a mechanism for letting the user decide to save it
+            probability_col = f'{self.feature_name}_{PROBABILITY}'
+            result[probability_col] = backend.df_engine.apply_objects(
+                result, compute_log_prob
+            )
 
-        return postprocessed
+        if lengths_col in result:
+            del result[lengths_col]
+
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):
