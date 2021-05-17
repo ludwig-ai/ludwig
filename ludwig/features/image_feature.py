@@ -68,7 +68,7 @@ class ImageFeatureMixin:
             user_specified_num_channels: int
     ):
         """
-        :param img_source Union[str, 'numpy.array']: if str file path to the
+        :param img_entry Union[str, 'numpy.array']: if str file path to the
                 image else numpy.array of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
@@ -274,7 +274,7 @@ class ImageFeatureMixin:
         if isinstance(first_img_entry, str):
             if src_path is None and not os.path.isabs(first_img_entry):
                 raise ValueError('Image file paths must be absolute')
-            first_img_source = get_abs_path(src_path, first_img_entry)
+            first_img_entry = get_abs_path(src_path, first_img_entry)
 
         (
             should_resize,
