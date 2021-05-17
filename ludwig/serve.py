@@ -22,14 +22,13 @@ import sys
 import tempfile
 
 import pandas as pd
-import numpy as np
+from imageio import imread
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
-from ludwig.utils.server_utils import deserialize_request, deserialize_payload
 
 logger = logging.getLogger(__name__)
 
@@ -75,61 +74,88 @@ def server(model, allowed_origins=None):
     async def predict(request: Request):
         try:
             form = await request.form()
-            if len(form.multi_items()) == 0:
-                logger.exception("Failed to parse predict form")
-                return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
-                                    status_code=400)
-            data_df, files = deserialize_request(form)
+            entry = convert_input(form)
         except Exception:
             logger.exception("Failed to parse predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
-                                    status_code=500)
+                                status_code=500)
 
+        if (entry.keys() & input_features) != input_features:
+            return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
+                                status_code=400)
         try:
-            if not set(input_features) <= set(data_df.columns):
-                return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
-                                    status_code=400)
-            try:
-                resp, _ = model.predict(
-                    dataset=data_df
-                )
-                resp = resp.to_dict('records')[0]
-                return JSONResponse(resp)
-            except Exception:
-                logger.exception("Failed to run predict")
-                return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
-                                    status_code=500)
-        finally:
-            for f in files:
-                os.remove(f.name)
+            resp, _ = model.predict(
+                dataset=[entry], data_format=dict
+            )
+            resp = resp.to_dict('records')[0]
+            return JSONResponse(resp)
+        except Exception:
+            logger.exception("Failed to run predict")
+            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
+                                status_code=500)
 
     @app.post('/batch_predict')
     async def batch_predict(request: Request):
         try:
             form = await request.form()
-            data_df, files = deserialize_request(form)
+            data = convert_batch_input(form)
+            data_df = pd.DataFrame.from_records(data['data'],
+                                                index=data.get('index'),
+                                                columns=data['columns'])
         except Exception:
             logger.exception("Failed to parse batch_predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
-                                    status_code=500)
-        
+                                status_code=500)
+
+        if (set(data_df.columns) & input_features) != input_features:
+            return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
+                                status_code=400)
         try:
-            if (set(data_df.columns) & input_features) != input_features:
-                return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
-                                    status_code=400)
-            try:
-                resp, _ = model.predict(dataset=data_df)
-                resp = resp.to_dict('split')
-                return JSONResponse(resp)
-            except Exception:
-                logger.exception("Failed to run batch_predict: {}")
-                return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
-                                    status_code=500)
-        finally:
-            for f in files:
-                os.remove(f.name)
+            resp, _ = model.predict(dataset=data_df)
+            resp = resp.to_dict('split')
+            return JSONResponse(resp)
+        except Exception:
+            logger.exception("Failed to run batch_predict: {}")
+            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
+                                status_code=500)
 
     return app
+
+
+def _read_image_buffer(v):
+    # get image format type, e.g., 'jpg', 'png', etc.
+    image_type_suffix = os.path.splitext(v.filename)[1][1:]
+
+    # read in file buffer to obtain ndarray of image
+    return imread(v.file.read(), image_type_suffix)
+
+
+def convert_input(form):
+    """Returns a new input and a list of files to be cleaned up"""
+    new_input = {}
+    for k, v in form.multi_items():
+        if type(v) == UploadFile:
+            new_input[k] = _read_image_buffer(v)
+        else:
+            new_input[k] = v
+
+    return new_input
+
+
+def convert_batch_input(form):
+    """Returns a new input and a list of files to be cleaned up"""
+    file_index = {}
+    for k, v in form.multi_items():
+        if type(v) == UploadFile:
+            file_index[v.filename] = _read_image_buffer(v)
+
+    data = json.loads(form['dataset'])
+    for row in data['data']:
+        for i in range(len(row)):
+            if row[i] in file_index:
+                row[i] = file_index[row[i]]
+
+    return data
 
 
 def run_server(

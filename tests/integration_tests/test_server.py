@@ -19,14 +19,9 @@ import os
 import shutil
 import sys
 
-import pandas as pd
-import pytest
-from skimage.io import imread
-
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from ludwig.utils.data_utils import read_csv
-from ludwig.utils.server_utils import serialize_payload
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
@@ -93,8 +88,32 @@ def output_keys_for(output_features):
     return keys
 
 
-@pytest.mark.parametrize('img_source', ['file', 'ndarray'])
-def test_server_integration(img_source, csv_filename):
+def convert_to_form(entry):
+    data = {}
+    files = []
+    for k, v in entry.items():
+        if type(v) == str and os.path.exists(v):
+            file = open(v, 'rb')
+            files.append((k, (v, file.read(), 'image/jpeg')))
+            file.close()
+        else:
+            data[k] = v
+    return data, files
+
+
+def convert_to_batch_form(data_df):
+    data = data_df.to_dict(orient='split')
+    files = {
+        'dataset': (None, json.dumps(data), 'application/json'),
+    }
+    for row in data['data']:
+        for v in row:
+            if type(v) == str and os.path.exists(v) and v not in files:
+                files[v] = (v, open(v, 'rb'), 'application/octet-stream')
+    return files
+
+
+def test_server_integration(csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
@@ -134,26 +153,11 @@ def test_server_integration(img_source, csv_filename):
     assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
     data_df = read_csv(rel_path)
-    if img_source == 'ndarray':
-        # convert image files to ndarrays into the dataframe
-        image_feature_name = input_features[0]['name']
-        data_df[image_feature_name] = data_df[image_feature_name].apply(
-            lambda x: imread(x))
 
     # One-off prediction
-    payload_dict, payload_files = serialize_payload(data_df.loc[0])
-    if payload_files:
-        server_response = client.post(
-            '/predict',
-            data={'payload': json.dumps(payload_dict)},
-            files=payload_files
-        )
-    else:
-        server_response = client.post(
-            '/predict',
-            data={'payload': json.dumps(payload_dict)}
-        )
-
+    first_entry = data_df.T.to_dict()[0]
+    data, files = convert_to_form(first_entry)
+    server_response = client.post('/predict', data=data, files=files)
     assert server_response.status_code == 200
     server_response = server_response.json()
 
@@ -161,25 +165,15 @@ def test_server_integration(img_source, csv_filename):
     assert server_response_keys == sorted(output_keys_for(output_features))
 
     model_output, _ = model.predict(
-        dataset=pd.DataFrame(data_df.loc[0]).T
+        dataset=[first_entry], data_format=dict
     )
     model_output = model_output.to_dict('records')[0]
     assert model_output == server_response
 
     # Batch prediction
     assert len(data_df) > 1
-    payload_dict, payload_files = serialize_payload(data_df)
-    if payload_files:
-        server_response = client.post(
-            '/batch_predict',
-            data={'payload': json.dumps(payload_dict)},
-            files=payload_files
-        )
-    else:
-        server_response = client.post(
-            '/batch_predict',
-            data={'payload': json.dumps(payload_dict)}
-        )
+    files = convert_to_batch_form(data_df)
+    server_response = client.post('/batch_predict', files=files)
     assert server_response.status_code == 200
     server_response = server_response.json()
 
