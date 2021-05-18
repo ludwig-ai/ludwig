@@ -302,6 +302,10 @@ class ImageFeatureMixin:
             user_specified_num_channels=user_specified_num_channels
         )
 
+        # check to see if the active backend can support lazy loading of
+        # image features from the hdf5 cache.
+        backend.check_lazy_load_supported(feature)
+
         if in_memory or skip_save_processed_input:
             # Number of processes to run in parallel for preprocessing
             metadata[feature[NAME]][PREPROCESSING][
@@ -347,7 +351,6 @@ class ImageFeatureMixin:
                     _get_processed_image
                 )
         else:
-            backend.check_lazy_load_supported(feature)
 
             all_img_entries = [get_abs_path(src_path, img_entry)
                                if isinstance(img_entry, str) else img_entry

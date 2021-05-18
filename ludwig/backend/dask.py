@@ -16,7 +16,7 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, LocalTrainingMixin
-from ludwig.constants import NAME, PARQUET
+from ludwig.constants import NAME, PARQUET, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
@@ -105,5 +105,7 @@ class DaskBackend(LocalTrainingMixin, Backend):
         return False
 
     def check_lazy_load_supported(self, feature):
-        raise ValueError(f'DaskBackend does not support lazy loading of data files at train time. '
-                         f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
+        if not feature[PREPROCESSING]['in_memory']:
+            raise ValueError(
+                f'DaskBackend does not support lazy loading of data files at train time. '
+                f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
