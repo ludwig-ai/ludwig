@@ -18,6 +18,7 @@ import logging
 import os
 import shutil
 import sys
+import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
@@ -190,7 +191,8 @@ def test_server_integration_with_images(csv_filename):
     shutil.rmtree(image_dest_folder, ignore_errors=True)
 
 
-def test_server_integration_with_audio(csv_filename):
+@pytest.mark.parametrize('batch_size', ['single_record', 'multiple_records'])
+def test_server_integration_with_audio(batch_size, csv_filename):
     # Audio Inputs
     audio_dest_folder = os.path.join(os.getcwd(), 'generated_audio')
 
@@ -223,38 +225,38 @@ def test_server_integration_with_audio(csv_filename):
 
     data_df = read_csv(rel_path)
 
-    # todo awaiting resolution of ZeroDivision exception with single record
-    # # One-off prediction
-    # first_entry = data_df.T.to_dict()[0]
-    # data, files = convert_to_form(first_entry)
-    # server_response = client.post('/predict', data=data, files=files)
-    # assert server_response.status_code == 200
-    # server_response = server_response.json()
-    #
-    # server_response_keys = sorted(list(server_response.keys()))
-    # assert server_response_keys == sorted(output_keys_for(output_features))
-    #
-    # model_output, _ = model.predict(
-    #     dataset=[first_entry], data_format=dict
-    # )
-    # model_output = model_output.to_dict('records')[0]
-    # assert model_output == server_response
+    if batch_size == 'multiple_records':
+        # Batch prediction
+        assert len(data_df) > 1
+        files = convert_to_batch_form(data_df)
+        server_response = client.post('/batch_predict', files=files)
+        assert server_response.status_code == 200
+        server_response = server_response.json()
 
-    # Batch prediction
-    assert len(data_df) > 1
-    files = convert_to_batch_form(data_df)
-    server_response = client.post('/batch_predict', files=files)
-    assert server_response.status_code == 200
-    server_response = server_response.json()
+        server_response_keys = sorted(server_response['columns'])
+        assert server_response_keys == sorted(output_keys_for(output_features))
+        assert len(data_df) == len(server_response['data'])
 
-    server_response_keys = sorted(server_response['columns'])
-    assert server_response_keys == sorted(output_keys_for(output_features))
-    assert len(data_df) == len(server_response['data'])
+        model_output, _ = model.predict(dataset=data_df)
+        model_output = model_output.to_dict('split')
+        assert model_output == server_response
+    else:
+        # One-off prediction
+        first_entry = data_df.T.to_dict()[0]
+        data, files = convert_to_form(first_entry)
+        server_response = client.post('/predict', data=data, files=files)
+        assert server_response.status_code == 200
+        server_response = server_response.json()
 
-    model_output, _ = model.predict(dataset=data_df)
-    model_output = model_output.to_dict('split')
-    assert model_output == server_response
+        server_response_keys = sorted(list(server_response.keys()))
+        assert server_response_keys == sorted(output_keys_for(output_features))
+
+        model_output, _ = model.predict(
+            dataset=[first_entry], data_format=dict
+        )
+        model_output = model_output.to_dict('records')[0]
+        assert model_output == server_response
 
     # Cleanup
-    # shutil.rmtree(output_dir, ignore_errors=True)
-    # shutil.rmtree(audio_dest_folder, ignore_errors=True)
+    shutil.rmtree(output_dir, ignore_errors=True)
+    shutil.rmtree(audio_dest_folder, ignore_errors=True)
