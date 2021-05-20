@@ -191,8 +191,8 @@ def test_server_integration_with_images(csv_filename):
     shutil.rmtree(image_dest_folder, ignore_errors=True)
 
 
-@pytest.mark.parametrize('batch_size', ['single_record', 'multiple_records'])
-def test_server_integration_with_audio(batch_size, csv_filename):
+@pytest.mark.parametrize('single_record', [False, True])
+def test_server_integration_with_audio(single_record, csv_filename):
     # Audio Inputs
     audio_dest_folder = os.path.join(os.getcwd(), 'generated_audio')
 
@@ -225,23 +225,8 @@ def test_server_integration_with_audio(batch_size, csv_filename):
 
     data_df = read_csv(rel_path)
 
-    if batch_size == 'multiple_records':
-        # Batch prediction
-        assert len(data_df) > 1
-        files = convert_to_batch_form(data_df)
-        server_response = client.post('/batch_predict', files=files)
-        assert server_response.status_code == 200
-        server_response = server_response.json()
-
-        server_response_keys = sorted(server_response['columns'])
-        assert server_response_keys == sorted(output_keys_for(output_features))
-        assert len(data_df) == len(server_response['data'])
-
-        model_output, _ = model.predict(dataset=data_df)
-        model_output = model_output.to_dict('split')
-        assert model_output == server_response
-    else:
-        # One-off prediction
+    if single_record:
+        # Single record prediction
         first_entry = data_df.T.to_dict()[0]
         data, files = convert_to_form(first_entry)
         server_response = client.post('/predict', data=data, files=files)
@@ -255,6 +240,21 @@ def test_server_integration_with_audio(batch_size, csv_filename):
             dataset=[first_entry], data_format=dict
         )
         model_output = model_output.to_dict('records')[0]
+        assert model_output == server_response
+    else:
+        # Batch prediction
+        assert len(data_df) > 1
+        files = convert_to_batch_form(data_df)
+        server_response = client.post('/batch_predict', files=files)
+        assert server_response.status_code == 200
+        server_response = server_response.json()
+
+        server_response_keys = sorted(server_response['columns'])
+        assert server_response_keys == sorted(output_keys_for(output_features))
+        assert len(data_df) == len(server_response['data'])
+
+        model_output, _ = model.predict(dataset=data_df)
+        model_output = model_output.to_dict('split')
         assert model_output == server_response
 
     # Cleanup
