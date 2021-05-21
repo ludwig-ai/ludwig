@@ -70,7 +70,7 @@ jobs:
         if [ $TENSORFLOW == "nightly" ]; then
           cat requirements.txt | sed '/^tensorflow[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
           cat requirements_horovod.txt | sed 's/\[tensorflow\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
-          pip install tf-nightly
+          pip install tf-nightly==2.6.0.dev20210519  # pin tensorflow: https://github.com/tensorflow/tensorflow/issues/49467
           pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
         else
           pip install tensorflow==$TENSORFLOW
