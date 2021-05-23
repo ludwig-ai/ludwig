@@ -17,6 +17,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 #from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
+import torch
 from torch.nn import (MSELoss, L1Loss)
 
 from ludwig.constants import *
@@ -24,9 +25,9 @@ from ludwig.constants import LOGITS
 from ludwig.utils.tf_utils import sequence_length_2D
 
 
-class MSELoss(MSELoss):
+class MSELoss(torch.nn.MSELoss):
     def __init__(self, **kwargs):
-        super(MSELoss, self).__init__(**kwargs)
+        super(torch.nn.MSELoss, self).__init__(**kwargs)
 
     '''
     def call__(self, y_true, y_pred, sample_weight=None):

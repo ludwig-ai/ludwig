@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pprint import pformat
 
-import tensorflow as tf
+#import tensorflow as tf
+import torch
 from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS
@@ -14,7 +15,7 @@ from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
-from ludwig.utils.tf_utils import initialize_tensorflow
+#from ludwig.utils.tf_utils import initialize_tensorflow
 
 
 EXCLUE_PRED_SET = {LOGITS}
@@ -134,8 +135,12 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         for of_name, of_predictions in predictions.items():
             for pred_name, pred_value_list in of_predictions.items():
+                '''
                 predictions[of_name][pred_name] = tf.concat(pred_value_list,
                                                             axis=0)
+                '''
+                predictions[of_name][pred_name] = torch.cat(pred_value_list,
+                                                            dim=0)
 
         return predictions
 
@@ -200,8 +205,13 @@ class Predictor(BasePredictor):
         if collect_predictions:
             for of_name, of_predictions in predictions.items():
                 for pred_name, pred_value_list in of_predictions.items():
+                    '''
                     predictions[of_name][pred_name] = tf.concat(
                         pred_value_list, axis=0
+                    )
+                    '''
+                    predictions[of_name][pred_name] = torch.cat(
+                        pred_value_list, dim=0
                     )
 
         metrics = model.get_metrics()
@@ -220,6 +230,7 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError('BucketedBatcher is not supported yet')
 
+        '''
         # Build static graph for the trained model
         tf.keras.backend.reset_uids()
         keras_model_inputs = model.get_model_inputs(training=False)
@@ -232,6 +243,8 @@ class Predictor(BasePredictor):
                         for layer_name in layer_names}
         activation_model = tf.keras.Model(inputs=keras_model_inputs,
                                           outputs=output_nodes)
+        '''
+        activation_model = model
 
         batcher = dataset.initialize_batcher(
             self._batch_size,
@@ -259,7 +272,8 @@ class Predictor(BasePredictor):
                 if isinstance(output, tuple):
                     output = list(output)
 
-                if isinstance(output, tf.Tensor):
+                #if isinstance(output, tf.Tensor):
+                if isinstance(output, torch.Tensor):
                     output = [('', output)]
                 elif isinstance(output, dict):
                     output = [(f'_{key}', tensor)
@@ -297,7 +311,6 @@ class Predictor(BasePredictor):
         if not self._horovod:
             return True
         return self._horovod.rank() == 0
-
 
 class RemotePredictor(Predictor):
     def __init__(

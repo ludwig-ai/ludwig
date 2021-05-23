@@ -2,7 +2,7 @@ import copy
 import logging
 from collections import OrderedDict
 
-import tensorflow as tf
+#import tensorflow as tf
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import *
@@ -12,10 +12,13 @@ from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 
+from torch.nn import Module
+import torchmetrics
+
 logger = logging.getLogger(__name__)
 
 
-class ECD(tf.keras.Model):
+class ECD(Module):
 
     def __init__(
             self,
@@ -33,7 +36,8 @@ class ECD(tf.keras.Model):
         self._random_seed = random_seed
 
         if random_seed is not None:
-            tf.random.set_seed(random_seed)
+            #tf.random.set_seed(random_seed)
+            torch.random.manual_seed(random_seed)
 
         super().__init__()
 
@@ -57,7 +61,8 @@ class ECD(tf.keras.Model):
         )
 
         # ================ Combined loss metric ================
-        self.eval_loss_metric = tf.keras.metrics.Mean()
+        #self.eval_loss_metric = tf.keras.metrics.Mean()
+        self.eval_loss_metric = torchmetrics.average.AverageMeter()
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
@@ -80,10 +85,12 @@ class ECD(tf.keras.Model):
         }
         return inputs, targets
 
+'''
     def get_connected_model(self, training=True, inputs=None):
         inputs = inputs or self.get_model_inputs(training)
         outputs = self.call(inputs)
         return tf.keras.Model(inputs=inputs, outputs=outputs)
+'''
 
     def save_savedmodel(self, save_path):
         keras_model = self.get_connected_model(training=False)
@@ -176,14 +183,14 @@ class ECD(tf.keras.Model):
 
         return predictions
 
-    @tf.function
+    #@tf.function
     def train_step(self, optimizer, inputs, targets,
                    regularization_lambda=0.0):
-        with tf.GradientTape() as tape:
-            model_outputs = self((inputs, targets), training=True)
-            loss, all_losses = self.train_loss(
-                targets, model_outputs, regularization_lambda
-            )
+        #with tf.GradientTape() as tape:
+        model_outputs = self((inputs, targets), training=True)
+        loss, all_losses = self.train_loss(
+            targets, model_outputs, regularization_lambda
+        )
         optimizer.minimize_with_tape(
             tape, loss, self.trainable_variables
         )
@@ -191,13 +198,13 @@ class ECD(tf.keras.Model):
         # optimizer.apply_gradients(zip(grads, model.trainable_weights))
         return loss, all_losses
 
-    @tf.function
+    #@tf.function
     def evaluation_step(self, inputs, targets):
         predictions = self.predictions(inputs, output_features=None)
         self.update_metrics(targets, predictions)
         return predictions
 
-    @tf.function
+    #@tf.function
     def predict_step(self, inputs):
         return self.predictions(inputs, output_features=None)
 
@@ -253,17 +260,26 @@ class ECD(tf.keras.Model):
     ):
         def recurse_weights(model, prefix=None):
             results = []
-            for layer in model.layers:
-                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
-                if isinstance(layer, tf.keras.Model):
-                    results += recurse_weights(layer, layer_prefix)
-                else:
-                    results += [(f'{layer_prefix}/{w.name}', w) for w in
-                                layer.weights]
+            #for layer in model.layers:
+            for name, layer in model.named_children():
+                #layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
+                layer_prefix = f'{prefix}/{name}' if prefix else name
+                #if isinstance(layer, tf.keras.Model):
+                if isinstance(layer, Module):
+                    if list(layer.children()):
+                        results += recurse_weights(layer, layer_prefix)
+                    else:
+                        '''
+                        results += [(f'{layer_prefix}/{w.name}', w) for w in
+                                    layer.weights]
+                        '''
+                        results += [(f'{layer_prefix}/{w_name}', w) for w_name, w in
+                                    layer.named_parameters()]
             return results
 
-        connected_model = self.get_connected_model()
-        weights = recurse_weights(connected_model)
+        #connected_model = self.get_connected_model()
+        #weights = recurse_weights(connected_model)
+        weights = recurse_weights(self)
         if tensor_names:
             # Check for bad tensor names
             weight_set = set(name for name, w in weights)

@@ -19,9 +19,12 @@ import os
 
 import numpy as np
 import tensorflow as tf
+'''
 from tensorflow.keras.metrics import \
     MeanAbsoluteError as MeanAbsoluteErrorMetric
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
+'''
+from torchmetrics import (MeanAbsoluteError, MeanSquaredError)
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
@@ -221,12 +224,16 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ERROR] = ErrorScore(name='metric_error')
+        '''
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
             name='metric_mse'
         )
         self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
             name='metric_mae'
         )
+        '''
+        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredError()
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteError()
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
     # def update_metrics(self, targets, predictions):
