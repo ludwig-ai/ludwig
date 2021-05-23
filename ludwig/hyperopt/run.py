@@ -142,7 +142,8 @@ def hyperopt(
 
     # Return
 
-    :return: (List[dict]) The results for the hyperparameter optimization
+    :return: (List[dict]) List of results for each trial, ordered by
+        descending performance on the target metric.
     """
     backend = initialize_backend(backend)
 
