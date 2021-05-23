@@ -63,7 +63,8 @@ class VectorFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         """
                 Expects all the vectors to be of the same size. The vectors need to be

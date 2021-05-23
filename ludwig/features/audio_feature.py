@@ -284,7 +284,8 @@ class AudioFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         set_default_value(
             feature['preprocessing'],

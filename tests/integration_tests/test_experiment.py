@@ -16,11 +16,15 @@
 import logging
 import os
 import shutil
+import sys
 import uuid
 from collections import namedtuple
 
+import pandas as pd
 import pytest
 import yaml
+
+from skimage.io import imread
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
@@ -279,6 +283,62 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+@pytest.mark.parametrize('skip_save_processed_input', [True, False])
+@pytest.mark.parametrize('in_memory', [True, False])
+@pytest.mark.parametrize('image_source', ['file', 'ndarray'])
+@pytest.mark.parametrize('num_channels', [1, 3])
+def test_basic_image_feature(num_channels, image_source, in_memory,
+                             skip_save_processed_input, csv_filename):
+    # Image Inputs
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder='stacked_cnn',
+            preprocessing={
+                'in_memory': in_memory,
+                'height': 12,
+                'width': 12,
+                'num_channels': num_channels,
+                'num_processes': 5
+            },
+            fc_size=16,
+            num_filters=8
+        )
+    ]
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum')
+    ]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    if image_source == 'file':
+        # use images from file
+        run_experiment(
+            input_features,
+            output_features,
+            dataset=rel_path,
+            skip_save_processed_input=skip_save_processed_input
+        )
+    else:
+        # import image from file and store in dataframe as ndarrays
+        df = pd.read_csv(rel_path)
+        image_feature_name = input_features[0]['name']
+        df[image_feature_name] = df[image_feature_name].apply(
+            lambda x: imread(x))
+
+        run_experiment(
+            input_features,
+            output_features,
+            dataset=df,
+            skip_save_processed_input=skip_save_processed_input
+        )
+
+    # Delete the temporary data created
+    shutil.rmtree(image_dest_folder, ignore_errors=True)
+
+
 ImageParms = namedtuple(
     'ImageTestParms',
     'image_encoder in_memory_flag skip_save_processed_input'
@@ -336,7 +396,6 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
 
 
 IMAGE_DATA_FORMATS_TO_TEST = ['csv', 'df', 'hdf5']
-
 
 @pytest.mark.parametrize('test_in_memory', [True, False])
 @pytest.mark.parametrize('test_format', IMAGE_DATA_FORMATS_TO_TEST)

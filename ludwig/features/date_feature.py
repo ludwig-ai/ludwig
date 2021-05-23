@@ -103,7 +103,8 @@ class DateFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         datetime_format = preprocessing_parameters['datetime_format']
         proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(

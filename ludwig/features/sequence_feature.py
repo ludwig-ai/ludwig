@@ -114,7 +114,8 @@ class SequenceFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         sequence_data = SequenceInputFeature.feature_data(
             input_df[feature[COLUMN]].astype(str),
