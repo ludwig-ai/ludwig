@@ -37,24 +37,43 @@ class HyperoptExecutor(ABC):
         self.metric = metric
         self.split = split
 
+    def _has_metric(self, stats, split):
+        if split not in stats:
+            return False
+
+        split_stats = stats[split]
+        if self.output_feature not in split_stats:
+            return False
+
+        output_stats = split_stats[self.output_feature]
+        if self.metric not in output_stats:
+            return False
+
+        metric_stats = output_stats[self.metric]
+        return len(metric_stats) > 0
+
     def get_metric_score(self, train_stats, eval_stats) -> float:
         if (train_stats is not None and
-                self.split in train_stats and
-                VALIDATION in train_stats and  # needed otherwise can-t figure
-                # out the best epoch
-                self.output_feature in train_stats[self.split] and
-                self.metric in train_stats[self.split][self.output_feature]):
+                self._has_metric(train_stats, self.split) and
+                self._has_metric(train_stats, VALIDATION)):
             logger.info("Returning metric score from training statistics")
             return self.get_metric_score_from_train_stats(train_stats)
-        else:
+        elif eval_stats is not None:
             logger.info("Returning metric score from eval statistics. "
                         "If skip_save_model is True, eval statistics "
                         "are calculated using the model at the last epoch "
                         "rather than the model at the epoch with "
                         "best validation performance")
             return self.get_metric_score_from_eval_stats(eval_stats)
+        elif train_stats is not None:
+            logger.info("Returning metric score from training split statistics, "
+                        "as no validation / eval sets were given")
+            return self.get_metric_score_from_train_stats(train_stats, TRAINING, TRAINING)
+        else:
+            raise RuntimeError("Unable to obtain metric score from missing training statistics")
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
+        print(f'EVAL_STATS: {eval_stats}')
         if '.' in self.metric:
             metric_parts = self.metric.split('.')
             stats = eval_stats[self.output_feature]
@@ -76,10 +95,13 @@ class HyperoptExecutor(ABC):
             return stats
         return eval_stats[self.output_feature][self.metric]
 
-    def get_metric_score_from_train_stats(self, train_stats) -> float:
+    def get_metric_score_from_train_stats(self, train_stats, select_split=None, returned_split=None) -> float:
+        select_split = select_split or VALIDATION
+        returned_split = returned_split or self.split
+
         # grab the results of the model with highest validation test performance
-        train_valiset_stats = train_stats[VALIDATION]
-        train_evalset_stats = train_stats[self.split]
+        train_valiset_stats = train_stats[select_split]
+        train_evalset_stats = train_stats[returned_split]
 
         validation_field_result = train_valiset_stats[self.output_feature]
         best_function = get_best_function(self.metric)
