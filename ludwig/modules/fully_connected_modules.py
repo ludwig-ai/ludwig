@@ -189,7 +189,7 @@ class FCStack(LudwigModule):
         for i, layer in enumerate(self.layers):
             self.stack.append(
                 FCLayer(
-                    input_size=layer['input_size']
+                    input_size=layer['input_size'],
                     fc_size=layer['fc_size'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],

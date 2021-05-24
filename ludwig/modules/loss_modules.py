@@ -16,7 +16,7 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-#from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
+from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
 import torch
 from torch.nn import (MSELoss, L1Loss)
 

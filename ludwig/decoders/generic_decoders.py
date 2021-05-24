@@ -37,7 +37,7 @@ class Regressor(LudwigModule):
             use_bias=True,
             #kernel_initializer='glorot_uniform',
             #bias_initializer='zeros',
-            weights_initializer=='xavier_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             #kernel_regularizer=None,
             weights_regularizer=None,

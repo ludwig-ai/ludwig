@@ -64,7 +64,7 @@ class ReduceLast(Module):
         gathered = SOME_FUNC_HERE(
             inputs,
             torch.stack(
-                [torch.range(batch_size), torch.maximum(sequence_length - 1, 0)]
+                [torch.range(batch_size), torch.maximum(sequence_length - 1, 0)],
                 dim=1
             )
         )
@@ -104,7 +104,7 @@ class ReduceConcat(Module):
                 inputs.shape.as_list()[-1] is None):
         '''
         if (list(inputs.shape)[-2] is None or
-                list(inputs.shape.as_list()[-1] is None):
+                list(inputs.shape.as_list()[-1] is None)):
             # this the case of outputs coming from rnn encoders
             logger.warning('  WARNING: '
                            'The sequence length dimension is undefined '
@@ -114,12 +114,12 @@ class ReduceConcat(Module):
                            'Last will be used instead.')
             return self.reduce_last(inputs)
         else:
-        '''
+            '''
             return tf.reshape(
                 inputs,
                 [-1, inputs.shape[-2] * inputs.shape[-1]]
             )
-        '''
+            '''
             return torch.reshape(
                 inputs,
                 (-1, inputs.shape[-2] * inputs.shape[-1])

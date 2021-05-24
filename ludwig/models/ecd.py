@@ -12,6 +12,7 @@ from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 
+import torch
 from torch.nn import Module
 import torchmetrics
 
@@ -85,12 +86,12 @@ class ECD(Module):
         }
         return inputs, targets
 
-'''
+    '''
     def get_connected_model(self, training=True, inputs=None):
         inputs = inputs or self.get_model_inputs(training)
         outputs = self.call(inputs)
         return tf.keras.Model(inputs=inputs, outputs=outputs)
-'''
+    '''
 
     def save_savedmodel(self, save_path):
         keras_model = self.get_connected_model(training=False)

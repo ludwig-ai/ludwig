@@ -1,7 +1,7 @@
 from torch.nn import Module
 import torch
-from torch.nn.init import (uniform_, normal_, constant_, zeros_, eye_, dirac_,
-        xavier_uniform_, xavier_normal_, kaiming_uniform_, kaiming_normal, orthogonal_, sparse_)
+from torch.nn.init import (uniform_, normal_, constant_, ones_,  zeros_, eye_, dirac_,
+        xavier_uniform_, xavier_normal_, kaiming_uniform_, kaiming_normal_, orthogonal_, sparse_)
 from torch.nn import (ELU, LeakyReLU, LogSigmoid, ReLU, Sigmoid, Tanh, Softmax)
 
 def sequence_length_3D(sequence):
@@ -43,7 +43,7 @@ activations = {
         "logSigmoid": LogSigmoid,
         "relu": ReLU,
         "sigmoid": Sigmoid,
-        "tanh": Tanh
+        "tanh": Tanh,
         "softmax": Softmax
 }
 

@@ -25,7 +25,7 @@ from ludwig.constants import PREDICTIONS
 from ludwig.modules.loss_modules import (BWCEWLoss, SequenceLoss,
                                          SigmoidCrossEntropyLoss,
                                          SoftmaxCrossEntropyLoss)
-from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
+#from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 from abc import abstractmethod
 
 import torch
@@ -132,7 +132,8 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
         return 1.0 - res_ss / tot_ss
 
 
-class ErrorScore(Metric)#(tf.keras.metrics.Metric):
+class ErrorScore(Metric):
+#(tf.keras.metrics.Metric)
     def __init__(self, name='error_score'):
         #super(ErrorScore, self).__init__(name=name)
         super(ErrorScore, self).__init__()
