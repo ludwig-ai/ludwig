@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, List
 
 from dataclasses_json import dataclass_json
 
@@ -15,10 +15,10 @@ except ImportError:
 @dataclass_json
 @dataclass
 class TrialResults:
-    parameters: Dict[str, Any]
+    parameters: dict
     metric_score: float
-    training_stats: Dict
-    eval_stats: Dict
+    training_stats: dict
+    eval_stats: dict
 
 
 @dataclass

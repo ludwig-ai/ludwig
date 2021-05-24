@@ -13,6 +13,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
+from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
@@ -920,8 +921,9 @@ class RayTuneExecutor(HyperoptExecutor):
         )
 
         ordered_trials = [
-            TrialResults(**kwargs)
-            for kwargs in ordered_trials.to_dict(orient="records")
+            TrialResults.from_dict(
+                load_json_values(kwargs)
+            ) for kwargs in ordered_trials.to_dict(orient="records")
         ]
 
         return RayTuneResults(

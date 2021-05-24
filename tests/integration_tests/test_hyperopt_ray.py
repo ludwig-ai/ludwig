@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import logging
 import os.path
 
@@ -25,7 +24,7 @@ from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
-from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
+from ludwig.hyperopt.run import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults, ACCURACY
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
