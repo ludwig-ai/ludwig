@@ -27,7 +27,9 @@ import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
-import tensorflow as tf
+#import tensorflow as tf
+import torch
+from torch.utils.tensorboard import SummaryWriter
 from tabulate import tabulate
 from tqdm import tqdm
 
@@ -49,7 +51,7 @@ from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed, exponential_decay
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.tf_utils import initialize_tensorflow
+#from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
@@ -286,14 +288,15 @@ class Trainer(BaseTrainer):
         if not summary_writer:
             return
 
-        with summary_writer.as_default():
-            for feature_name, output_feature in metrics.items():
-                for metric in output_feature:
-                    metric_tag = "{}/epoch_{}".format(
-                        feature_name, metric
-                    )
-                    metric_val = output_feature[metric][-1]
-                    tf.summary.scalar(metric_tag, metric_val, step=step)
+        #with summary_writer.as_default():
+        for feature_name, output_feature in metrics.items():
+            for metric in output_feature:
+                metric_tag = "{}/epoch_{}".format(
+                    feature_name, metric
+                )
+                metric_val = output_feature[metric][-1]
+                #tf.summary.scalar(metric_tag, metric_val, step=step)
+                summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
         summary_writer.flush()
 
     @classmethod
@@ -308,19 +311,25 @@ class Trainer(BaseTrainer):
         if not train_summary_writer:
             return
 
-        with train_summary_writer.as_default():
-            # combined loss
-            loss_tag = "{}/step_training_loss".format("combined")
-            tf.summary.scalar(loss_tag, combined_loss, step=step)
+        #with train_summary_writer.as_default():
+        # combined loss
+        loss_tag = "{}/step_training_loss".format("combined")
+        #tf.summary.scalar(loss_tag, combined_loss, step=step)
+        train_summary_writer.add_scalar(loss_tag, combined_loss, global_step=step)
 
-            # all other losses
-            for feature_name, loss in all_losses.items():
-                loss_tag = "{}/step_training_loss".format(feature_name)
-                tf.summary.scalar(loss_tag, loss, step=step)
+        # all other losses
+        for feature_name, loss in all_losses.items():
+            loss_tag = "{}/step_training_loss".format(feature_name)
+            #tf.summary.scalar(loss_tag, loss, step=step)
+            train_summary_writer.add_scalar(loss_tag, loss, global_step=step)
 
-            if learning_rate:
-                tf.summary.scalar("combined/step_learning_rate",
-                                  learning_rate, step=step)
+        if learning_rate:
+            '''
+            tf.summary.scalar("combined/step_learning_rate",
+                              learning_rate, step=step)
+            '''
+            train_summary_writer.add_scalar("combined/step_learning_rate",
+                              learning_rate, global_step=step)
 
         train_summary_writer.flush()
 
@@ -417,6 +426,7 @@ class Trainer(BaseTrainer):
             )
 
         # ====== Setup session =======
+        '''
         checkpoint = checkpoint_manager = None
         if self.is_coordinator():
             checkpoint = tf.train.Checkpoint(
@@ -426,24 +436,46 @@ class Trainer(BaseTrainer):
             checkpoint_manager = tf.train.CheckpointManager(
                 checkpoint, training_checkpoints_path, max_to_keep=1
             )
+        '''
 
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
         if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
+            '''
             train_summary_writer = tf.summary.create_file_writer(
                 os.path.join(
                     tensorboard_log_dir, TRAINING
                 )
             )
+            '''
+            train_summary_writer = SummaryWriter(
+                os.path.join(
+                    tensorboard_log_dir, TRAINING
+                )
+            )
             if validation_set is not None and validation_set.size > 0:
+                '''
                 validation_summary_writer = tf.summary.create_file_writer(
                     os.path.join(
                         tensorboard_log_dir, VALIDATION
                     )
                 )
+                '''
+                validation_summary_writer = SummaryWriter(
+                    os.path.join(
+                        tensorboard_log_dir, VALIDATION
+                    )
+                )
             if test_set is not None and test_set.size > 0:
+                '''
                 test_summary_writer = tf.summary.create_file_writer(
+                    os.path.join(
+                        tensorboard_log_dir, TEST
+                    )
+                )
+                '''
+                test_summary_writer = SummaryWriter(
                     os.path.join(
                         tensorboard_log_dir, TEST
                     )
@@ -468,9 +500,12 @@ class Trainer(BaseTrainer):
                 training_progress_tracker_path
             )
             if self.is_coordinator():
+                model, self.optimizer = self.resume_weights_and_optimzier(training_checkpoints_path)
+                '''
                 self.resume_weights_and_optimzier(
                     training_checkpoints_path, checkpoint
                 )
+                '''
         else:
             (
                 train_metrics,
@@ -774,7 +809,10 @@ class Trainer(BaseTrainer):
             # ========== Save training progress ==========
             if self.is_coordinator():
                 if not self.skip_save_progress:
-                    checkpoint_manager.save()
+                    #checkpoint_manager.save()
+                    torch.save(model, os.path.join(training_checkpoints_path, 'model.pt'))
+                    torch.save(self.optimizer, os.path.join(training_checkpoints_path, 'optimizer.pt'))
+
                     progress_tracker.save(
                         os.path.join(
                             save_path,
@@ -1103,12 +1141,22 @@ class Trainer(BaseTrainer):
 
     def resume_weights_and_optimzier(
             self,
+            model_weights_progress_path
+    ):
+        model = torch.load(os.path.join(model_weights_progress_path, 'model.pt'))
+        optimizer = torch.load(os.path.join(model_weights_progress_path, 'optimizer.pt'))
+        return model, optimizer
+
+    '''
+    def resume_weights_and_optimzier(
+            self,
             model_weights_progress_path,
             checkpoint
     ):
         checkpoint.restore(
             tf.train.latest_checkpoint(model_weights_progress_path)
         )
+    '''
 
     def reduce_learning_rate(
             self,
