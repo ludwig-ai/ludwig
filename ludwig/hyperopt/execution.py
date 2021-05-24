@@ -38,19 +38,30 @@ class HyperoptExecutor(ABC):
         self.split = split
 
     def _has_metric(self, stats, split):
-        if split not in stats:
+        if split is not None:
+            if split not in stats:
+                return False
+
+            stats = stats[split]
+            if self.output_feature not in stats:
+                return False
+
+        stats = stats[self.output_feature]
+        if self.metric not in stats:
             return False
 
-        split_stats = stats[split]
-        if self.output_feature not in split_stats:
-            return False
-
-        output_stats = split_stats[self.output_feature]
-        if self.metric not in output_stats:
-            return False
-
-        metric_stats = output_stats[self.metric]
+        metric_stats = stats[self.metric]
         return len(metric_stats) > 0
+
+    def _has_eval_metric(self, stats):
+        if stats is None:
+            return False
+
+        for metric_part in self.metric.split('.'):
+            if not isinstance(stats, dict) or metric_part not in stats:
+                return False
+            stats = stats[metric_part]
+        return len(stats) > 0
 
     def get_metric_score(self, train_stats, eval_stats) -> float:
         if (train_stats is not None and
@@ -58,19 +69,19 @@ class HyperoptExecutor(ABC):
                 self._has_metric(train_stats, VALIDATION)):
             logger.info("Returning metric score from training statistics")
             return self.get_metric_score_from_train_stats(train_stats)
-        elif eval_stats is not None:
+        elif self._has_eval_metric(eval_stats):
             logger.info("Returning metric score from eval statistics. "
                         "If skip_save_model is True, eval statistics "
                         "are calculated using the model at the last epoch "
                         "rather than the model at the epoch with "
                         "best validation performance")
             return self.get_metric_score_from_eval_stats(eval_stats)
-        elif train_stats is not None:
+        elif self._has_metric(train_stats, TRAINING):
             logger.info("Returning metric score from training split statistics, "
                         "as no validation / eval sets were given")
             return self.get_metric_score_from_train_stats(train_stats, TRAINING, TRAINING)
         else:
-            raise RuntimeError("Unable to obtain metric score from missing training statistics")
+            raise RuntimeError("Unable to obtain metric score from missing training / eval statistics")
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
         print(f'EVAL_STATS: {eval_stats}')
@@ -757,14 +768,19 @@ class RayTuneExecutor(HyperoptExecutor):
                             except:
                                 shutil.rmtree(tmp_dst)
 
-                    train_stats, eval_stats = progress_tracker.train_metrics, progress_tracker.vali_metrics
-                    stats = eval_stats or train_stats
-                    metric_score = tune_executor.get_metric_score_from_eval_stats(stats)[-1]
+                    train_stats = {
+                        TRAINING: progress_tracker.train_metrics,
+                        VALIDATION: progress_tracker.vali_metrics,
+                        TEST: progress_tracker.test_metrics,
+                    }
+                    metric_scores = tune_executor.get_metric_score(train_stats, eval_stats=None)
+
+                    metric_score = metric_scores[-1] if isinstance(metric_scores, list) else metric_scores
                     tune.report(
                         parameters=json.dumps(config, cls=NumpyEncoder),
                         metric_score=metric_score,
-                        training_stats=json.dumps(train_stats, cls=NumpyEncoder),
-                        eval_stats=json.dumps(eval_stats, cls=NumpyEncoder)
+                        training_stats=json.dumps(train_stats[TRAINING], cls=NumpyEncoder),
+                        eval_stats=json.dumps(train_stats[VALIDATION], cls=NumpyEncoder)
                     )
 
         train_stats, eval_stats = run_experiment(
