@@ -89,7 +89,6 @@ class HyperoptExecutor(ABC):
             raise RuntimeError("Unable to obtain metric score from missing training / eval statistics")
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
-        print(f'EVAL_STATS: {eval_stats}')
         stats = eval_stats[self.output_feature]
         for metric_part in self.metric.split('.'):
             if isinstance(stats, dict):
