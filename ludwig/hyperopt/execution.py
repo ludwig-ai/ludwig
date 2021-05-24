@@ -11,6 +11,7 @@ from typing import Union
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import *
+from ludwig.hyperopt.results import TrialResults
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
@@ -130,7 +131,7 @@ class HyperoptExecutor(ABC):
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
-            hyperopt_results, key=lambda hp_res: hp_res["metric_score"],
+            hyperopt_results, key=lambda hp_res: hp_res.metric_score,
             reverse=self.hyperopt_sampler.goal == MAXIMIZE
         )
 
@@ -258,14 +259,12 @@ class SerialExecutor(HyperoptExecutor):
                 metric_score = self.get_metric_score(train_stats, eval_stats)
                 metric_scores.append(metric_score)
 
-                hyperopt_results.append(
-                    {
-                        "parameters": parameters,
-                        "metric_score": metric_score,
-                        "training_stats": train_stats,
-                        "eval_stats": eval_stats,
-                    }
-                )
+                hyperopt_results.append(TrialResults(
+                    parameters=parameters,
+                    metric_score=metric_score,
+                    training_stats=train_stats,
+                    eval_stats=eval_stats,
+                ))
             trials += len(sampled_parameters)
 
             self.hyperopt_sampler.update_batch(
@@ -302,19 +301,19 @@ class ParallelExecutor(HyperoptExecutor):
     def init_worker():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    def _run_experiment(self, hyperopt_dict):
+    def _run_experiment(self, hyperopt_dict: dict) -> TrialResults:
         parameters = hyperopt_dict["parameters"]
         train_stats, eval_stats = run_experiment(**hyperopt_dict)
         metric_score = self.get_metric_score(train_stats, eval_stats)
 
-        return {
-            "parameters": parameters,
-            "metric_score": metric_score,
-            "training_stats": train_stats,
-            "eval_stats": eval_stats,
-        }
+        return TrialResults(
+            parameters=parameters,
+            metric_score=metric_score,
+            training_stats=train_stats,
+            eval_stats=eval_stats,
+        )
 
-    def _run_experiment_gpu(self, hyperopt_dict):
+    def _run_experiment_gpu(self, hyperopt_dict: dict) -> TrialResults:
         gpu_id_meta = self.queue.get()
         try:
             parameters = hyperopt_dict['parameters']
@@ -324,12 +323,12 @@ class ParallelExecutor(HyperoptExecutor):
             metric_score = self.get_metric_score(train_stats, eval_stats)
         finally:
             self.queue.put(gpu_id_meta)
-        return {
-            "parameters": parameters,
-            "metric_score": metric_score,
-            "training_stats": train_stats,
-            "eval_stats": eval_stats,
-        }
+        return TrialResults(
+            parameters=parameters,
+            metric_score=metric_score,
+            training_stats=train_stats,
+            eval_stats=eval_stats,
+        )
 
     def execute(
             self,
@@ -674,14 +673,12 @@ class FiberExecutor(HyperoptExecutor):
                 metric_score = self.get_metric_score(train_stats, eval_stats)
                 metric_scores.append(metric_score)
 
-                hyperopt_results.append(
-                    {
-                        "parameters": parameters,
-                        "metric_score": metric_score,
-                        "training_stats": train_stats,
-                        "eval_stats": eval_stats,
-                    }
-                )
+                hyperopt_results.append(TrialResults(
+                    parameters=parameters,
+                    metric_score=metric_score,
+                    training_stats=train_stats,
+                    eval_stats=eval_stats,
+                ))
 
             self.hyperopt_sampler.update_batch(
                 zip(sampled_parameters, metric_scores))
@@ -917,12 +914,17 @@ class RayTuneExecutor(HyperoptExecutor):
             trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
         )
 
-        hyperopt_results = analysis.results_df.sort_values(
+        ordered_trials = analysis.results_df.sort_values(
             "metric_score",
             ascending=self.goal != MAXIMIZE
         )
 
-        return hyperopt_results.to_dict(orient="records")
+        ordered_trials = [
+            TrialResults(**kwargs)
+            for kwargs in ordered_trials.to_dict(orient="records")
+        ]
+
+        return ordered_trials
 
 
 def get_build_hyperopt_executor(executor_type):
