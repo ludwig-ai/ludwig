@@ -14,10 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import io
+import os
+import shutil
+import tempfile
 import multiprocessing
 import warnings
+import zipfile
 
 import tensorflow as tf
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 
 _TF_INIT_PARAMS = None
 
@@ -139,3 +145,21 @@ def get_available_gpus_cuda_string():
     if len(gpus) == 0:
         return None
     return ','.join(gpus)
+
+
+def save_weights_to_buffer(model):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        weights_path = os.path.join(tmpdir, MODEL_WEIGHTS_FILE_NAME)
+        model.save_weights(weights_path)
+        with tempfile.TemporaryDirectory() as zipdir:
+            shutil.make_archive(os.path.join(zipdir, MODEL_WEIGHTS_FILE_NAME), 'zip', tmpdir)
+            with open(os.path.join(zipdir, f'{MODEL_WEIGHTS_FILE_NAME}.zip'), 'rb') as f:
+                return f.read()
+
+
+def load_weights_from_buffer(model, buf):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with zipfile.ZipFile(io.BytesIO(buf)) as zip_ref:
+            zip_ref.extractall(tmpdir)
+        weights_path = os.path.join(tmpdir, MODEL_WEIGHTS_FILE_NAME)
+        model.load_weights(weights_path)

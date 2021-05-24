@@ -6,12 +6,13 @@ import pandas as pd
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
+from ludwig.constants import SPLIT
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import split_dataset_ttv, read_csv
 from tests.integration_tests.utils import binary_feature, numerical_feature, \
     category_feature, sequence_feature, date_feature, h3_feature, \
     set_feature, generate_data, text_feature, vector_feature, bag_feature, \
-    image_feature, audio_feature, timeseries_feature
+    image_feature, audio_feature, timeseries_feature, LocalTestBackend
 
 
 def test_model_save_reload_api(csv_filename, tmp_path):
@@ -62,9 +63,10 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     }
 
     data_df = read_csv(data_csv_path)
+    data_df[SPLIT] = get_split(data_df)
     training_set, test_set, validation_set = split_dataset_ttv(
         data_df,
-        get_split(data_df)
+        SPLIT
     )
     training_set = pd.DataFrame(training_set)
     validation_set = pd.DataFrame(validation_set)
@@ -75,7 +77,8 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    ludwig_model1 = LudwigModel(config)
+    backend = LocalTestBackend()
+    ludwig_model1 = LudwigModel(config, backend=backend)
     _, _, output_dir = ludwig_model1.train(
         training_set=training_set,
         validation_set=validation_set,
@@ -91,7 +94,7 @@ def test_model_save_reload_api(csv_filename, tmp_path):
         assert set(preds_1.keys()) == set(preds_2.keys())
         for key in preds_1:
             assert preds_1[key].dtype == preds_2[key].dtype, key
-            assert list(preds_1[key]) == list(preds_2[key]), key
+            assert np.all(a == b for a, b in zip(preds_1[key], preds_2[key])), key
             # assert preds_2[key].dtype == preds_3[key].dtype, key
             # assert list(preds_2[key]) == list(preds_3[key]), key
 
@@ -119,11 +122,12 @@ def test_model_save_reload_api(csv_filename, tmp_path):
     # Test saving and loading the model explicitly
     with tempfile.TemporaryDirectory() as tmpdir:
         ludwig_model1.save(tmpdir)
-        ludwig_model_loaded = LudwigModel.load(tmpdir)
+        ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
         check_model_equal(ludwig_model_loaded)
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(
-        os.path.join(output_dir, 'model')
+        os.path.join(output_dir, 'model'),
+        backend=backend
     )
     check_model_equal(ludwig_model_exp)

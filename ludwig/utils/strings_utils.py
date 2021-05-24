@@ -22,6 +22,8 @@ from collections import Counter
 
 import numpy as np
 
+from ludwig.data.dataframe.pandas import PANDAS
+from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
@@ -34,6 +36,8 @@ SPLIT_REGEX = re.compile(r'\s+')
 SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
+
+BOOL_TRUE_STRS = {'yes', 'y', 'true', 't', '1'}
 
 
 def make_safe_filename(s):
@@ -52,7 +56,7 @@ def strip_accents(s):
 
 
 def str2bool(v):
-    return str(v).lower() in ('yes', 'true', 't', '1')
+    return str(v).lower() in BOOL_TRUE_STRS
 
 
 def match_replace(string_to_match, list_regex):
@@ -75,7 +79,7 @@ def match_replace(string_to_match, list_regex):
 
 
 def load_vocabulary(vocab_file):
-    with open(vocab_file, 'r', encoding='utf-8') as f:
+    with open_file(vocab_file, 'r', encoding='utf-8') as f:
         vocabulary = []
         for line in f:
             line = line.strip()
@@ -96,11 +100,10 @@ def create_vocabulary(
         vocab_file=None,
         unknown_symbol=UNKNOWN_SYMBOL,
         padding_symbol=PADDING_SYMBOL,
-        pretrained_model_name_or_path=None
+        pretrained_model_name_or_path=None,
+        processor=PANDAS,
 ):
     vocab = None
-    max_line_length = 0
-    unit_counts = Counter()
 
     tokenizer = get_from_registry(
         tokenizer_type,
@@ -136,10 +139,11 @@ def create_vocabulary(
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    for line in data:
-        processed_line = tokenizer(line.lower() if lowercase else line)
-        unit_counts.update(processed_line)
-        max_line_length = max(max_line_length, len(processed_line))
+    processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
+    processed_counts = processed_lines.explode().value_counts(sort=False)
+    processed_counts = processor.compute(processed_counts)
+    unit_counts = Counter(dict(processed_counts))
+    max_line_length = processor.compute(processed_lines.map(len).max())
 
     if vocab is None:
         vocab = [unit for unit, count in
@@ -217,8 +221,8 @@ def build_sequence_matrix(
         unknown_symbol=UNKNOWN_SYMBOL,
         lowercase=True,
         tokenizer_vocab_file=None,
-        pretrained_model_name_or_path=None
-
+        pretrained_model_name_or_path=None,
+        processor=PANDAS,
 ):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file,
@@ -227,38 +231,36 @@ def build_sequence_matrix(
 
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
-    max_length = 0
-    unit_vectors = []
-    for sequence in sequences:
-        unit_indices_vector = _get_sequence_vector(
-            sequence,
-            tokenizer,
-            tokenizer_type,
-            format_dtype,
-            inverse_vocabulary,
-            lowercase=lowercase,
-            unknown_symbol=unknown_symbol
-        )
-        unit_vectors.append(unit_indices_vector)
-        if len(unit_indices_vector) > max_length:
-            max_length = len(unit_indices_vector)
+    unit_vectors = sequences.map(lambda sequence: _get_sequence_vector(
+        sequence,
+        tokenizer,
+        tokenizer_type,
+        format_dtype,
+        inverse_vocabulary,
+        lowercase=lowercase,
+        unknown_symbol=unknown_symbol
+    ))
 
+    max_length = processor.compute(unit_vectors.map(len).max())
     if max_length < length_limit:
         logging.debug('max length of {0}: {1} < limit: {2}'.format(
             format, max_length, length_limit
         ))
     max_length = length_limit
-    sequence_matrix = np.full((len(sequences), max_length),
-                              inverse_vocabulary[padding_symbol],
-                              dtype=format_dtype)
-    for i, vector in enumerate(unit_vectors):
+
+    def pad(vector):
+        sequence = np.full((max_length,),
+                           inverse_vocabulary[padding_symbol],
+                           dtype=format_dtype)
         limit = min(vector.shape[0], max_length)
         if padding == 'right':
-            sequence_matrix[i, :limit] = vector[:limit]
+            sequence[:limit] = vector[:limit]
         else:  # if padding == 'left
-            sequence_matrix[i, max_length - limit:] = vector[:limit]
+            sequence[max_length - limit:] = vector[:limit]
+        return sequence
 
-    return sequence_matrix
+    padded = processor.map_objects(unit_vectors, pad)
+    return padded
 
 
 class BaseTokenizer:

@@ -24,6 +24,7 @@ import signal
 import sys
 import threading
 import time
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 
 import tensorflow as tf
@@ -42,18 +43,61 @@ from ludwig.modules.metric_modules import get_improved_fun
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
-from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import is_on_master
+from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed, exponential_decay
 from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
 
-class Trainer:
+class BaseTrainer(ABC):
+    @abstractmethod
+    def train(
+            self,
+            model,
+            training_set,
+            validation_set=None,
+            test_set=None,
+            save_path='model',
+            **kwargs
+    ):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def train_online(
+            self,
+            model,
+            dataset,
+    ):
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def validation_field(self):
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def validation_metric(self):
+        raise NotImplementedError()
+
+    # Remote implementations may override this
+    def shutdown(self):
+        pass
+
+    # Functions needed to treat Trainer as a context manager
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.shutdown()
+
+
+class Trainer(BaseTrainer):
     """
     Trainer is a class that train a model
     """
@@ -90,6 +134,7 @@ class Trainer:
             skip_save_model=False,
             skip_save_progress=False,
             skip_save_log=False,
+            callbacks=None,
             random_seed=default_random_seed,
             horovod=None,
             debug=False,
@@ -179,6 +224,9 @@ class Trainer:
                is not needed turning it off can slightly increase the
                overall speed..
         :type skip_save_log: Boolean
+        :param callbacks: a list of `ludwig.callbacks.Callback` objects that
+               provide hooks into the Ludwig pipeline.
+        :type: list
         :param random_seed: Default initialization for the random seeds
         :type: Float
         """
@@ -192,8 +240,8 @@ class Trainer:
         self.batch_size = batch_size
         self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
         self.bucketing_field = bucketing_field
-        self.validation_field = validation_field
-        self.validation_metric = validation_metric
+        self._validation_field = validation_field
+        self._validation_metric = validation_metric
         self.early_stop = early_stop
         self.reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
         self.reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
@@ -215,6 +263,7 @@ class Trainer:
         self.horovod = horovod
         self.debug = debug
         self.received_sigint = False
+        self.callbacks = callbacks or []
 
         if self.horovod:
             self.learning_rate *= self.horovod.size()
@@ -292,7 +341,7 @@ class Trainer:
         # ====== General setup =======
         output_features = model.output_features
         digits_per_epochs = len(str(self.epochs))
-        # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
+        # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/ludwig-ai/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
@@ -307,7 +356,7 @@ class Trainer:
                     output_features) == 1:
                 only_of = next(iter(output_features))
                 if self.validation_metric in metrics_names[only_of]:
-                    self.validation_field = only_of
+                    self._validation_field = only_of
                     logger.warning(
                         "Replacing 'combined' validation field "
                         "with '{}' as the specified validation "
@@ -347,7 +396,7 @@ class Trainer:
         model_weights_path = model_hyperparameters_path = None
         training_checkpoints_path = training_checkpoints_prefix_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
-        if is_on_master():
+        if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
             model_weights_path = os.path.join(save_path,
                                               MODEL_WEIGHTS_FILE_NAME)
@@ -369,7 +418,7 @@ class Trainer:
 
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
-        if is_on_master():
+        if self.is_coordinator():
             checkpoint = tf.train.Checkpoint(
                 optimizer=self.optimizer,
                 model=model
@@ -381,7 +430,7 @@ class Trainer:
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
-        if is_on_master() and not self.skip_save_log and tensorboard_log_dir:
+        if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
             train_summary_writer = tf.summary.create_file_writer(
                 os.path.join(
                     tensorboard_log_dir, TRAINING
@@ -400,7 +449,7 @@ class Trainer:
                     )
                 )
 
-        if self.debug and is_on_master():
+        if self.debug and self.is_coordinator():
             # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
             debug_path = os.path.join(
                 save_path, 'debug'
@@ -411,13 +460,14 @@ class Trainer:
                 circular_buffer_size=-1,
             )
             tf.config.experimental_run_functions_eagerly(True)
+            # tf.debugging.enable_check_numerics()
 
         # ================ Resume logic ================
         if self.resume:
             progress_tracker = self.resume_training_progress_tracker(
                 training_progress_tracker_path
             )
-            if is_on_master():
+            if self.is_coordinator():
                 self.resume_weights_and_optimzier(
                     training_checkpoints_path, checkpoint
                 )
@@ -458,263 +508,284 @@ class Trainer:
             )
 
         set_random_seed(self.random_seed)
-        batcher = initialize_batcher(
-            training_set,
+        with training_set.initialize_batcher(
             batch_size=self.batch_size,
             seed=self.random_seed,
             horovod=self.horovod
-        )
+        ) as batcher:
 
-        # ================ Training Loop ================
-        first_batch = True
-        while progress_tracker.epoch < self.epochs:
-            batcher.set_epoch(progress_tracker.epoch)
+            # ================ Training Loop ================
+            first_batch = True
+            while progress_tracker.epoch < self.epochs:
+                batcher.set_epoch(progress_tracker.epoch)
 
-            # epoch init
-            start_time = time.time()
-            if is_on_master():
-                logger.info(
-                    '\nEpoch {epoch:{digits}d}'.format(
-                        epoch=progress_tracker.epoch + 1,
-                        digits=digits_per_epochs
-                    )
-                )
-
-            # needed because batch size may change
-            batcher.batch_size = progress_tracker.batch_size
-
-            # Reset the metrics at the start of the next epoch
-            model.reset_metrics()
-
-            # ================ Train ================
-            progress_bar = None
-            if is_on_master():
-                progress_bar = tqdm(
-                    desc='Training',
-                    total=batcher.steps_per_epoch,
-                    file=sys.stdout,
-                    disable=is_progressbar_disabled()
-                )
-
-            # training step loop
-            while not batcher.last_batch():
-
-                # Set learning rate for this batch
-                current_learning_rate = progress_tracker.learning_rate
-
-                if self.decay:
-                    current_learning_rate = exponential_decay(
-                        current_learning_rate,
-                        self.decay_rate,
-                        self.decay_steps,
-                        progress_tracker.steps,
-                        self.staircase
-                    )
-
-                if self.horovod:
-                    current_learning_rate = learning_rate_warmup_distributed(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        self.horovod.size(),
-                        batcher.step,
-                        batcher.steps_per_epoch
-                    ) * self.horovod.size()
-                else:
-                    current_learning_rate = learning_rate_warmup(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        batcher.step,
-                        batcher.steps_per_epoch
-                    )
-                self.optimizer.set_learning_rate(current_learning_rate)
-
-                # obtain batch
-                batch = batcher.next_batch()
-                inputs = {
-                    i_feat.feature_name: batch[i_feat.proc_column]
-                    for i_feat in model.input_features.values()
-                }
-                targets = {
-                    o_feat.feature_name: batch[o_feat.proc_column]
-                    for o_feat in model.output_features.values()
-                }
-
-                # Reintroduce for tensorboard graph
-                # if first_batch and is_on_master() and not skip_save_log:
-                #    tf.summary.trace_on(graph=True, profiler=True)
-
-                loss, all_losses = model.train_step(
-                    self.optimizer,
-                    inputs,
-                    targets,
-                    self.regularization_lambda
-                )
-
-                # Reintroduce for tensorboard graph
-                # if first_batch and is_on_master() and not skip_save_log:
-                #     with train_summary_writer.as_default():
-                #         tf.summary.trace_export(
-                #             name="Model",
-                #             step=0,
-                #             profiler_outdir=tensorboard_log_dir
-                #         )
-
-                if is_on_master() and not self.skip_save_log:
-                    self.write_step_summary(
-                        train_summary_writer=train_summary_writer,
-                        combined_loss=loss,
-                        all_losses=all_losses,
-                        step=progress_tracker.steps,
-                        learning_rate=current_learning_rate,
-                    )
-
-                if self.horovod and first_batch:
-                    # Horovod: broadcast initial variable states from rank 0 to all other processes.
-                    # This is necessary to ensure consistent initialization of all workers when
-                    # training is started with random weights or restored from a checkpoint.
-                    #
-                    # Note: broadcast should be done after the first gradient step to ensure
-                    # optimizer initialization.
-                    self.horovod.broadcast_variables(model.variables,
-                                                     root_rank=0)
-                    self.horovod.broadcast_variables(
-                        self.optimizer.variables(), root_rank=0)
-
-                progress_tracker.steps += 1
-                if is_on_master():
-                    progress_bar.update(1)
-                first_batch = False
-
-            # ================ Post Training Epoch ================
-            if is_on_master():
-                progress_bar.close()
-
-            progress_tracker.epoch += 1
-
-            # ================ Eval ================
-            # init tables
-            tables = OrderedDict()
-            for output_feature_name, output_feature in output_features.items():
-                tables[output_feature_name] = [
-                    [output_feature_name] + metrics_names[output_feature_name]
-                ]
-            tables[COMBINED] = [[COMBINED, LOSS]]
-
-            # eval metrics on train
-            self.evaluation(
-                model,
-                training_set,
-                'train',
-                progress_tracker.train_metrics,
-                tables,
-                self.eval_batch_size,
-            )
-
-            self.write_epoch_summary(
-                summary_writer=train_summary_writer,
-                metrics=progress_tracker.train_metrics,
-                step=progress_tracker.epoch,
-            )
-
-            if validation_set is not None and validation_set.size > 0:
-                # eval metrics on validation set
-                self.evaluation(
-                    model,
-                    validation_set,
-                    'vali',
-                    progress_tracker.vali_metrics,
-                    tables,
-                    self.eval_batch_size,
-                )
-
-                self.write_epoch_summary(
-                    summary_writer=validation_summary_writer,
-                    metrics=progress_tracker.vali_metrics,
-                    step=progress_tracker.epoch,
-                )
-
-            if test_set is not None and test_set.size > 0:
-                # eval metrics on test set
-                self.evaluation(
-                    model,
-                    test_set,
-                    TEST,
-                    progress_tracker.test_metrics,
-                    tables,
-                    self.eval_batch_size,
-                )
-
-                self.write_epoch_summary(
-                    summary_writer=test_summary_writer,
-                    metrics=progress_tracker.test_metrics,
-                    step=progress_tracker.epoch,
-                )
-
-            elapsed_time = (time.time() - start_time) * 1000.0
-
-            if is_on_master():
-                logger.info('Took {time}'.format(
-                    time=time_utils.strdelta(elapsed_time)))
-
-            # metric prints
-            if is_on_master():
-                for output_feature, table in tables.items():
+                # epoch init
+                start_time = time.time()
+                if self.is_coordinator():
                     logger.info(
-                        tabulate(
-                            table,
-                            headers='firstrow',
-                            tablefmt='fancy_grid',
-                            floatfmt='.4f'
+                        '\nEpoch {epoch:{digits}d}'.format(
+                            epoch=progress_tracker.epoch + 1,
+                            digits=digits_per_epochs
                         )
                     )
 
-            # ================ Validation Logic ================
-            if should_validate:
-                should_break = self.check_progress_on_validation(
+                # needed because batch size may change
+                batcher.batch_size = progress_tracker.batch_size
+
+                # Reset the metrics at the start of the next epoch
+                model.reset_metrics()
+
+                # ================ Train ================
+                progress_bar = None
+                if self.is_coordinator():
+                    progress_bar = tqdm(
+                        desc='Training',
+                        total=batcher.steps_per_epoch,
+                        file=sys.stdout,
+                        disable=is_progressbar_disabled()
+                    )
+
+                for callback in self.callbacks:
+                    callback.on_epoch_start(self, progress_tracker, save_path)
+
+                # training step loop
+                while not batcher.last_batch():
+                    for callback in self.callbacks:
+                        callback.on_batch_start(self, progress_tracker, save_path)
+
+                    # Set learning rate for this batch
+                    current_learning_rate = progress_tracker.learning_rate
+
+                    if self.decay:
+                        current_learning_rate = exponential_decay(
+                            current_learning_rate,
+                            self.decay_rate,
+                            self.decay_steps,
+                            progress_tracker.steps,
+                            self.staircase
+                        )
+
+                    if self.horovod:
+                        current_learning_rate = learning_rate_warmup_distributed(
+                            current_learning_rate,
+                            progress_tracker.epoch,
+                            self.learning_rate_warmup_epochs,
+                            self.horovod.size(),
+                            batcher.step,
+                            batcher.steps_per_epoch
+                        ) * self.horovod.size()
+                    else:
+                        current_learning_rate = learning_rate_warmup(
+                            current_learning_rate,
+                            progress_tracker.epoch,
+                            self.learning_rate_warmup_epochs,
+                            batcher.step,
+                            batcher.steps_per_epoch
+                        )
+                    self.optimizer.set_learning_rate(current_learning_rate)
+
+                    # obtain batch
+                    batch = batcher.next_batch()
+                    inputs = {
+                        i_feat.feature_name: batch[i_feat.proc_column]
+                        for i_feat in model.input_features.values()
+                    }
+                    targets = {
+                        o_feat.feature_name: batch[o_feat.proc_column]
+                        for o_feat in model.output_features.values()
+                    }
+
+                    # Reintroduce for tensorboard graph
+                    # if first_batch and self.is_coordinator() and not skip_save_log:
+                    #    tf.summary.trace_on(graph=True, profiler=True)
+
+                    loss, all_losses = model.train_step(
+                        self.optimizer,
+                        inputs,
+                        targets,
+                        self.regularization_lambda
+                    )
+
+                    # Reintroduce for tensorboard graph
+                    # if first_batch and self.is_coordinator() and not skip_save_log:
+                    #     with train_summary_writer.as_default():
+                    #         tf.summary.trace_export(
+                    #             name="Model",
+                    #             step=0,
+                    #             profiler_outdir=tensorboard_log_dir
+                    #         )
+
+                    if self.is_coordinator() and not self.skip_save_log:
+                        self.write_step_summary(
+                            train_summary_writer=train_summary_writer,
+                            combined_loss=loss,
+                            all_losses=all_losses,
+                            step=progress_tracker.steps,
+                            learning_rate=current_learning_rate,
+                        )
+
+                    if self.horovod and first_batch:
+                        # Horovod: broadcast initial variable states from rank 0 to all other processes.
+                        # This is necessary to ensure consistent initialization of all workers when
+                        # training is started with random weights or restored from a checkpoint.
+                        #
+                        # Note: broadcast should be done after the first gradient step to ensure
+                        # optimizer initialization.
+                        self.horovod.broadcast_variables(model.variables,
+                                                         root_rank=0)
+                        self.horovod.broadcast_variables(
+                            self.optimizer.variables(), root_rank=0)
+
+                    progress_tracker.steps += 1
+                    if self.is_coordinator():
+                        progress_bar.update(1)
+                    first_batch = False
+
+                    for callback in self.callbacks:
+                        callback.on_batch_end(self, progress_tracker, save_path)
+
+                # ================ Post Training Epoch ================
+                if self.is_coordinator():
+                    progress_bar.close()
+
+                progress_tracker.epoch += 1
+
+                # ================ Eval ================
+                # init tables
+                tables = OrderedDict()
+                for output_feature_name, output_feature in output_features.items():
+                    tables[output_feature_name] = [
+                        [output_feature_name] + metrics_names[output_feature_name]
+                    ]
+                tables[COMBINED] = [[COMBINED, LOSS]]
+
+                # eval metrics on train
+                self.evaluation(
                     model,
-                    progress_tracker,
-                    self.validation_field,
-                    self.validation_metric,
-                    model_weights_path,
-                    model_hyperparameters_path,
-                    self.reduce_learning_rate_on_plateau,
-                    self.reduce_learning_rate_on_plateau_patience,
-                    self.reduce_learning_rate_on_plateau_rate,
-                    self.reduce_learning_rate_eval_metric,
-                    self.reduce_learning_rate_eval_split,
-                    self.increase_batch_size_on_plateau,
-                    self.increase_batch_size_on_plateau_patience,
-                    self.increase_batch_size_on_plateau_rate,
-                    self.increase_batch_size_on_plateau_max,
-                    self.increase_batch_size_eval_metric,
-                    self.increase_batch_size_eval_split,
-                    self.early_stop,
-                    self.skip_save_model,
+                    training_set,
+                    'train',
+                    progress_tracker.train_metrics,
+                    tables,
+                    self.eval_batch_size,
                 )
-                if should_break:
-                    break
-            else:
-                # there's no validation, so we save the model at each iteration
-                if is_on_master():
-                    if not self.skip_save_model:
+
+                self.write_epoch_summary(
+                    summary_writer=train_summary_writer,
+                    metrics=progress_tracker.train_metrics,
+                    step=progress_tracker.epoch,
+                )
+
+                if validation_set is not None and len(validation_set) > 0:
+                    for callback in self.callbacks:
+                        callback.on_validation_start(self, progress_tracker,
+                                                     save_path)
+
+                    # eval metrics on validation set
+                    self.evaluation(
+                        model,
+                        validation_set,
+                        'vali',
+                        progress_tracker.vali_metrics,
+                        tables,
+                        self.eval_batch_size,
+                    )
+
+                    self.write_epoch_summary(
+                        summary_writer=validation_summary_writer,
+                        metrics=progress_tracker.vali_metrics,
+                        step=progress_tracker.epoch,
+                    )
+
+                    for callback in self.callbacks:
+                        callback.on_validation_end(self, progress_tracker,
+                                                   save_path)
+
+                if test_set is not None and len(test_set) > 0:
+                    for callback in self.callbacks:
+                        callback.on_test_start(self, progress_tracker, save_path)
+
+                    # eval metrics on test set
+                    self.evaluation(
+                        model,
+                        test_set,
+                        TEST,
+                        progress_tracker.test_metrics,
+                        tables,
+                        self.eval_batch_size,
+                    )
+
+                    self.write_epoch_summary(
+                        summary_writer=test_summary_writer,
+                        metrics=progress_tracker.test_metrics,
+                        step=progress_tracker.epoch,
+                    )
+
+                    for callback in self.callbacks:
+                        callback.on_test_end(self, progress_tracker, save_path)
+
+                elapsed_time = (time.time() - start_time) * 1000.0
+
+                if self.is_coordinator():
+                    logger.info('Took {time}'.format(
+                        time=time_utils.strdelta(elapsed_time)))
+
+                # metric prints
+                if self.is_coordinator():
+                    for output_feature, table in tables.items():
+                        logger.info(
+                            tabulate(
+                                table,
+                                headers='firstrow',
+                                tablefmt='fancy_grid',
+                                floatfmt='.4f'
+                            )
+                        )
+
+                # ================ Validation Logic ================
+                if should_validate:
+                    should_break = self.check_progress_on_validation(
+                        model,
+                        progress_tracker,
+                        self.validation_field,
+                        self.validation_metric,
+                        model_weights_path,
+                        model_hyperparameters_path,
+                        self.reduce_learning_rate_on_plateau,
+                        self.reduce_learning_rate_on_plateau_patience,
+                        self.reduce_learning_rate_on_plateau_rate,
+                        self.reduce_learning_rate_eval_metric,
+                        self.reduce_learning_rate_eval_split,
+                        self.increase_batch_size_on_plateau,
+                        self.increase_batch_size_on_plateau_patience,
+                        self.increase_batch_size_on_plateau_rate,
+                        self.increase_batch_size_on_plateau_max,
+                        self.increase_batch_size_eval_metric,
+                        self.increase_batch_size_eval_split,
+                        self.early_stop,
+                        self.skip_save_model,
+                    )
+                    if should_break:
+                        break
+                else:
+                    # there's no validation, so we save the model at each iteration
+                    if self.is_coordinator() and not self.skip_save_model:
                         model.save_weights(model_weights_path)
 
-            # ========== Save training progress ==========
-            if is_on_master():
-                if not self.skip_save_progress:
-                    checkpoint_manager.save()
-                    progress_tracker.save(
-                        os.path.join(
-                            save_path,
-                            TRAINING_PROGRESS_TRACKER_FILE_NAME
+                # ========== Save training progress ==========
+                if self.is_coordinator():
+                    if not self.skip_save_progress:
+                        checkpoint_manager.save()
+                        progress_tracker.save(
+                            os.path.join(
+                                save_path,
+                                TRAINING_PROGRESS_TRACKER_FILE_NAME
+                            )
                         )
-                    )
+                    contrib_command("train_epoch_end", progress_tracker)
+                    logger.info('')
 
-            if is_on_master():
-                contrib_command("train_epoch_end", progress_tracker)
-                logger.info('')
+                for callback in self.callbacks:
+                    callback.on_epoch_end(self, progress_tracker, save_path)
 
         if train_summary_writer is not None:
             train_summary_writer.close()
@@ -724,6 +795,7 @@ class Trainer:
             test_summary_writer.close()
 
         return (
+            model,
             progress_tracker.train_metrics,
             progress_tracker.vali_metrics,
             progress_tracker.test_metrics
@@ -734,41 +806,49 @@ class Trainer:
             model,
             dataset,
     ):
-        batcher = initialize_batcher(
-            dataset,
+        with dataset.initialize_batcher(
             batch_size=self.batch_size,
             horovod=self.horovod
-        )
+        ) as batcher:
 
-        # training step loop
-        progress_bar = tqdm(
-            desc='Trainining online',
-            total=batcher.steps_per_epoch,
-            file=sys.stdout,
-            disable=is_progressbar_disabled()
-        )
-
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-            inputs = {
-                i_feat.feature_name: batch[i_feat.proc_column]
-                for i_feat in model.input_features.values()
-            }
-            targets = {
-                o_feat.feature_name: batch[o_feat.proc_column]
-                for o_feat in model.output_features.values()
-            }
-
-            model.train_step(
-                self.optimizer,
-                inputs,
-                targets,
-                self.regularization_lambda
+            # training step loop
+            progress_bar = tqdm(
+                desc='Trainining online',
+                total=batcher.steps_per_epoch,
+                file=sys.stdout,
+                disable=is_progressbar_disabled()
             )
 
-            progress_bar.update(1)
+            while not batcher.last_batch():
+                batch = batcher.next_batch()
+                inputs = {
+                    i_feat.feature_name: batch[i_feat.proc_column]
+                    for i_feat in model.input_features.values()
+                }
+                targets = {
+                    o_feat.feature_name: batch[o_feat.proc_column]
+                    for o_feat in model.output_features.values()
+                }
 
-        progress_bar.close()
+                model.train_step(
+                    self.optimizer,
+                    inputs,
+                    targets,
+                    self.regularization_lambda
+                )
+
+                progress_bar.update(1)
+
+            progress_bar.close()
+        return model
+
+    @property
+    def validation_field(self):
+        return self._validation_field
+
+    @property
+    def validation_metric(self):
+        return self._validation_metric
 
     def append_metrics(self, model, dataset_name, results, metrics_log,
                        tables):
@@ -849,30 +929,28 @@ class Trainer:
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
-            if is_on_master():
-                if not skip_save_model:
-                    model.save_weights(model_weights_path)
-                    logger.info(
-                        'Validation {} on {} improved, model saved'.format(
-                            validation_metric,
-                            validation_output_feature_name
-                        )
+            if self.is_coordinator() and not skip_save_model:
+                model.save_weights(model_weights_path)
+                logger.info(
+                    'Validation {} on {} improved, model saved'.format(
+                        validation_metric,
+                        validation_output_feature_name
                     )
+                )
 
         progress_tracker.last_improvement = (
                 progress_tracker.epoch - progress_tracker.last_improvement_epoch
         )
-        if progress_tracker.last_improvement != 0:
-            if is_on_master():
-                logger.info(
-                    'Last improvement of {} validation {} '
-                    'happened {} epoch{} ago'.format(
-                        validation_output_feature_name,
-                        validation_metric,
-                        progress_tracker.last_improvement,
-                        '' if progress_tracker.last_improvement == 1 else 's'
-                    )
+        if progress_tracker.last_improvement != 0 and self.is_coordinator():
+            logger.info(
+                'Last improvement of {} validation {} '
+                'happened {} epoch{} ago'.format(
+                    validation_output_feature_name,
+                    validation_metric,
+                    progress_tracker.last_improvement,
+                    '' if progress_tracker.last_improvement == 1 else 's'
                 )
+            )
 
         # ========== Reduce Learning Rate Plateau logic ========
         if reduce_learning_rate_on_plateau > 0:
@@ -953,19 +1031,18 @@ class Trainer:
                 )
 
         # ========== Early Stop logic ==========
-        if early_stop > 0:
-            if progress_tracker.last_improvement >= early_stop:
-                if is_on_master():
-                    logger.info(
-                        "\nEARLY STOPPING due to lack of "
-                        "validation improvement, "
-                        "it has been {0} epochs since last "
-                        "validation improvement\n".format(
-                            progress_tracker.epoch -
-                            progress_tracker.last_improvement_epoch
-                        )
+        if 0 < early_stop <= progress_tracker.last_improvement:
+            if self.is_coordinator():
+                logger.info(
+                    "\nEARLY STOPPING due to lack of "
+                    "validation improvement, "
+                    "it has been {0} epochs since last "
+                    "validation improvement\n".format(
+                        progress_tracker.epoch -
+                        progress_tracker.last_improvement_epoch
                     )
-                should_break = True
+                )
+            should_break = True
         return should_break
 
     def set_epochs_to_1_or_quit(self, signum, frame):
@@ -988,7 +1065,7 @@ class Trainer:
         sys.exit(1)
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
-        if is_on_master():
+        if self.is_coordinator():
             logger.info('Resuming training of model: {0}'.format(
                 training_progress_tracker_path
             ))
@@ -1082,7 +1159,7 @@ class Trainer:
                         reduce_learning_rate_on_plateau_rate
                     )
 
-                    if is_on_master():
+                    if self.is_coordinator():
                         logger.info(
                             'PLATEAU REACHED, reducing learning rate to {} '
                             'due to lack of improvement of {} {} {}'.format(
@@ -1099,7 +1176,7 @@ class Trainer:
 
                     if (progress_tracker.num_reductions_learning_rate >=
                             reduce_learning_rate_on_plateau):
-                        if is_on_master():
+                        if self.is_coordinator():
                             logger.info(
                                 'Learning rate was already reduced '
                                 '{} times, not reducing it anymore'.format(
@@ -1160,7 +1237,7 @@ class Trainer:
                         increase_batch_size_on_plateau_max
                     )
 
-                    if is_on_master():
+                    if self.is_coordinator():
                         logger.info(
                             'PLATEAU REACHED, increasing batch size to {} '
                             'due to lack of improvement of {} {} {}'.format(
@@ -1177,7 +1254,7 @@ class Trainer:
 
                     if (progress_tracker.num_increases_batch_size >=
                             increase_batch_size_on_plateau):
-                        if is_on_master():
+                        if self.is_coordinator():
                             logger.info(
                                 'Batch size was already increased '
                                 '{} times, not increasing it anymore'.format(
@@ -1186,7 +1263,7 @@ class Trainer:
                             )
                     elif (progress_tracker.batch_size >=
                           increase_batch_size_on_plateau_max):
-                        if is_on_master():
+                        if self.is_coordinator():
                             logger.info(
                                 'Batch size was already increased '
                                 '{} times, currently it is {}, '
@@ -1196,9 +1273,33 @@ class Trainer:
                                 )
                             )
 
+    def is_coordinator(self):
+        if not self.horovod:
+            return True
+        return self.horovod.rank() == 0
+
+
+class RemoteTrainer(Trainer):
+    def __init__(
+            self,
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            **kwargs
+    ):
+        horovod = initialize_horovod()
+        initialize_tensorflow(gpus=gpus,
+                              gpu_memory_limit=gpu_memory_limit,
+                              allow_parallel_threads=allow_parallel_threads,
+                              horovod=horovod)
+        super().__init__(horovod=horovod, **kwargs)
+
+        # Only return results from rank 0 to reduce network overhead
+        self.train = return_first(self.train)
+        self.train_online = return_first(self.train_online)
+
 
 class ProgressTracker:
-
     def __init__(
             self,
             epoch,

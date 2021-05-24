@@ -87,6 +87,7 @@ PREDICTION = 'prediction'
 LOGITS = 'logits'
 HIDDEN = 'hidden'
 LAST_HIDDEN = 'last_hidden'
+PROJECTION_INPUT = 'projection_input'
 
 SUM = 'sum'
 APPEND = 'append'
@@ -109,6 +110,13 @@ SAMPLER = 'sampler'
 NAME = 'name'
 COLUMN = 'column'
 TYPE = 'type'
+
+RAY = 'ray'
+
 PROC_COLUMN = 'proc_column'
 
 CHECKSUM = 'checksum'
+
+HDF5 = 'hdf5'
+PARQUET = 'parquet'
+

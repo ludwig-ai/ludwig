@@ -4,12 +4,15 @@
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
 [![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
-[![Build Status](https://travis-ci.com/uber/ludwig.svg?branch=master)](https://travis-ci.com/github/uber/ludwig)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/uber/ludwig/blob/master/LICENSE)
+[![Build Status](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml/badge.svg)](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml)
+[![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fuber%2Fludwig.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fuber%2Fludwig?ref=badge_shield)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4210/badge)](https://bestpractices.coreinfrastructure.org/projects/4210)
 
 </div>
+
+Translated in [🇰🇷 Korean](README_KR.md)/
 
 Ludwig is a toolbox that allows users to train and test deep learning models without the need to write code.
 It is built on top of TensorFlow.
@@ -34,6 +37,12 @@ The core design principles baked into the toolbox are:
 - Extensibility: easy to add new model architecture and new feature datatypes.
 - Understandability: deep learning model internals are often considered black boxes, but Ludwig provides standard visualizations to understand their performance and compare their predictions.
 - Open Source: Apache License 2.0
+
+<p><img src="https://raw.githubusercontent.com/lfai/artwork/master/lfaidata-assets/lfaidata/horizontal/color/lfaidata-horizontal-color.png" alt="LF AI & Data logo" width="200"/></p>
+
+Ludwig is hosted by the Linux Foundation as part of the [LF AI & Data Foundation](https://lfaidata.foundation/). For details
+about who's involved and how Ludwig fits into the larger open source AI landscape, 
+read the Linux Foundation [announcement](https://lfaidata.foundation/blog/2020/12/17/ludwig-joins-lf-ai--data-as-new-incubation-project/).
 
 
 Installation
@@ -79,7 +88,7 @@ The full set of dependencies can be installed with `pip install ludwig[full]`.
 For developers who wish to build the source code from the repository:
 
 ```
-git clone git@github.com:uber/ludwig.git
+git clone git@github.com:ludwig-ai/ludwig.git
 cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate

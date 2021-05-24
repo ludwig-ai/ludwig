@@ -14,15 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
+import logging
+from collections.abc import Iterable
 
 import numpy as np
+import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.text_encoders import *
+from ludwig.encoders.text_encoders import ENCODER_REGISTRY
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import get_from_registry
@@ -38,7 +39,7 @@ from ludwig.utils.strings_utils import tokenizer_registry
 logger = logging.getLogger(__name__)
 
 
-class TextFeatureMixin(object):
+class TextFeatureMixin:
     type = TEXT
 
     preprocessing_defaults = {
@@ -79,7 +80,11 @@ class TextFeatureMixin(object):
     }
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def feature_meta(column, preprocessing_parameters, backend):
         (
             char_idx2str,
             char_str2idx,
@@ -96,7 +101,8 @@ class TextFeatureMixin(object):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path']
+                'pretrained_model_name_or_path'],
+            processor=backend.df_engine
         )
         (
             word_idx2str,
@@ -115,7 +121,8 @@ class TextFeatureMixin(object):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path']
+                'pretrained_model_name_or_path'],
+            processor=backend.df_engine
         )
         return (
             char_idx2str,
@@ -135,9 +142,10 @@ class TextFeatureMixin(object):
         )
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(
-            column, preprocessing_parameters
+            column, preprocessing_parameters, backend
         )
         (
             char_idx2str,
@@ -183,7 +191,7 @@ class TextFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         char_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['char_str2idx'],
@@ -198,8 +206,8 @@ class TextFeatureMixin(object):
             ],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
-
+            ],
+            processor=backend.df_engine
         )
         word_data = build_sequence_matrix(
             sequences=column,
@@ -215,7 +223,8 @@ class TextFeatureMixin(object):
             ],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
+            ],
+            processor=backend.df_engine
         )
 
         return char_data, word_data
@@ -223,17 +232,22 @@ class TextFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters
+            input_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]],
+            preprocessing_parameters,
+            backend
         )
-        dataset['{}_char'.format(feature[PROC_COLUMN])] = chars_data
-        dataset['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        proc_df['{}_char'.format(feature[PROC_COLUMN])] = chars_data
+        proc_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
+        return proc_df
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
@@ -260,14 +274,16 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             inputs_mask = tf.not_equal(inputs, self.pad_idx)
         else:
             inputs_mask = None
-
+        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
 
+        encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -315,26 +331,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
                 encoder_class.default_params
             )
 
-    encoder_registry = {
-        'bert': BERTEncoder,
-        'gpt': GPTEncoder,
-        'gpt2': GPT2Encoder,
-        # 'transformer_xl': TransformerXLEncoder,
-        'xlnet': XLNetEncoder,
-        'xlm': XLMEncoder,
-        'roberta': RoBERTaEncoder,
-        'distilbert': DistilBERTEncoder,
-        'ctrl': CTRLEncoder,
-        'camembert': CamemBERTEncoder,
-        'albert': ALBERTEncoder,
-        't5': T5Encoder,
-        'xlmroberta': XLMRoBERTaEncoder,
-        'flaubert': FlauBERTEncoder,
-        'electra': ELECTRAEncoder,
-        'longformer': LongformerEncoder,
-        'auto_transformer': AutoTransformerEncoder,
-        **SequenceInputFeature.encoder_registry
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
@@ -349,7 +346,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int32
 
     def get_output_shape(self):
@@ -440,87 +438,70 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
-        postprocessed = {}
-        name = self.feature_name
         level_idx2str = '{}_{}'.format(self.level, 'idx2str')
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS].numpy()
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result:
             if level_idx2str in metadata:
-                postprocessed[PREDICTIONS] = [
-                    [metadata[level_idx2str][token]
-                     if token < len(
-                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
-                     for token in pred]
-                    for pred in preds
-                ]
-            else:
-                postprocessed[PREDICTIONS] = preds
+                def idx2str(pred):
+                    return [
+                        metadata[level_idx2str][token]
+                        if token < len(metadata[level_idx2str])
+                        else UNKNOWN_SYMBOL
+                        for token in pred
+                    ]
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PREDICTIONS), preds)
+                result[predictions_col] = backend.df_engine.map_objects(
+                    result[predictions_col],
+                    idx2str
+                )
 
-            del result[PREDICTIONS]
-
-        if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS].numpy()
+        last_preds_col = f'{self.feature_name}_{LAST_PREDICTIONS}'
+        if last_preds_col in result:
             if level_idx2str in metadata:
-                postprocessed[LAST_PREDICTIONS] = [
-                    metadata[level_idx2str][last_pred]
-                    if last_pred < len(
-                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
-                    for last_pred in last_preds
-                ]
-            else:
-                postprocessed[LAST_PREDICTIONS] = last_preds
+                def last_idx2str(last_pred):
+                    if last_pred < len(metadata[level_idx2str]):
+                        return metadata[level_idx2str][last_pred]
+                    return UNKNOWN_SYMBOL
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS),
-                        last_preds)
+                result[last_preds_col] = backend.df_engine.map_objects(
+                    result[last_preds_col],
+                    last_idx2str
+                )
 
-            del result[LAST_PREDICTIONS]
-
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES]
-            if probs is not None:
-                probs = probs.numpy()
-
-                if len(probs) > 0 and isinstance(probs[0], list):
-                    prob = []
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        prob_col = f'{self.feature_name}_{PROBABILITY}'
+        if probs_col in result:
+            def compute_prob(probs):
+                if isinstance(probs, (list, tuple, np.ndarray)):
                     for i in range(len(probs)):
-                        for j in range(len(probs[i])):
-                            probs[i][j] = np.max(probs[i][j])
-                        prob.append(np.prod(probs[i]))
+                        probs[i] = np.max(probs[i])
+                    return np.prod(probs)
                 else:
-                    probs = np.amax(probs, axis=-1)
-                    prob = np.prod(probs, axis=-1)
+                    return np.prod(probs, axis=-1)
 
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                # postprocessed[PROBABILITIES] = probs
-                postprocessed[PROBABILITY] = prob
 
-                if not skip_save_unprocessed_output:
-                    # commenting probabilities out, see comment above
-                    # np.save(npy_filename.format(name, PROBABILITIES), probs)
-                    np.save(npy_filename.format(name, PROBABILITY), prob)
+            result[prob_col] = backend.df_engine.map_objects(
+                result[probs_col],
+                compute_prob,
+            )
 
-            del result[PROBABILITIES]
+            # commenting probabilities out because usually it is huge:
+            # dataset x length x classes
+            # todo: add a mechanism for letting the user decide to save it
+            # result[probs_col] = backend.df_engine.map_objects(
+            #     result[probs_col],
+            #     lambda prob: np.amax(prob, axis=-1),
+            # )
 
-        if LENGTHS in result:
-            del result[LENGTHS]
+        lengths_col = f'{self.feature_name}_{LENGTHS}'
+        if lengths_col in result:
+            del result[lengths_col]
 
-        return postprocessed
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):

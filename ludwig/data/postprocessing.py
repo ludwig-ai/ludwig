@@ -14,11 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
+
+import numpy as np
 import pandas as pd
 
+from ludwig.backend import LOCAL_BACKEND
+from ludwig.constants import BINARY
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS, \
-    normalize_numpy
+    normalize_numpy, to_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -27,17 +32,42 @@ def postprocess(
         output_features,
         training_set_metadata,
         output_directory='',
+        backend=LOCAL_BACKEND,
         skip_save_unprocessed_output=False,
 ):
-    postprocessed = {}
+    if not backend.is_coordinator():
+        # Only save unprocessed output on the coordinator
+        skip_save_unprocessed_output = True
+
+    saved_keys = set()
+    if not skip_save_unprocessed_output:
+        _save_as_numpy(predictions, output_directory, saved_keys)
+
     for of_name, output_feature in output_features.items():
-        postprocessed[of_name] = output_feature.postprocess_predictions(
-            predictions[of_name],
+        predictions = output_feature.postprocess_predictions(
+            predictions,
             training_set_metadata[of_name],
             output_directory=output_directory,
-            skip_save_unprocessed_output=skip_save_unprocessed_output
+            backend=backend,
         )
-    return postprocessed
+
+    # Save any new columns but do not save the original columns again
+    if not skip_save_unprocessed_output:
+        _save_as_numpy(predictions, output_directory, saved_keys)
+
+    return predictions
+
+
+def _save_as_numpy(predictions, output_directory, saved_keys):
+    predictions = predictions[[
+        c for c in predictions.columns if c not in saved_keys
+    ]]
+    npy_filename = os.path.join(output_directory, '{}.npy')
+    numpy_predictions = to_numpy_dataset(predictions)
+    for k, v in numpy_predictions.items():
+        if k not in saved_keys:
+            np.save(npy_filename.format(k), v)
+            saved_keys.add(k)
 
 
 def convert_predictions(predictions, output_features, training_set_metadata,
@@ -58,7 +88,22 @@ def convert_to_dict(
         output_features,
         training_set_metadata,
 ):
-    return predictions
+    output = {}
+    for of_name, output_feature in output_features.items():
+        feature_keys = {k for k in predictions.columns if k.startswith(of_name)}
+        feature_dict = {}
+        for key in feature_keys:
+            subgroup = key[len(of_name) + 1:]
+
+            values = predictions[key]
+            try:
+                values = np.stack(values.to_numpy())
+            except ValueError:
+                values = values.to_list()
+
+            feature_dict[subgroup] = values
+        output[of_name] = feature_dict
+    return output
 
 
 def convert_to_df(
@@ -66,41 +111,7 @@ def convert_to_df(
         output_features,
         training_set_metadata,
 ):
-    data_for_df = {}
-    for of_name, output_feature in output_features.items():
-        output_feature_dict = predictions[of_name]
-        for key_val in output_feature_dict.items():
-            output_subgroup_name, output_type_value = key_val
-            if (hasattr(output_type_value, 'shape') and
-                len(output_type_value.shape)) > 1:
-                if output_feature.type in SEQUENCE_TYPES:
-                    data_for_df[
-                        '{}_{}'.format(of_name, output_subgroup_name)
-                    ] = output_type_value.tolist()
-                else:
-                    for i, value in enumerate(output_type_value.T):
-                        if (of_name in training_set_metadata and
-                                'idx2str' in training_set_metadata[of_name]):
-                            class_name = training_set_metadata[of_name][
-                                'idx2str'][i]
-                        else:
-                            class_name = str(i)
-                        data_for_df[
-                            '{}_{}_{}'.format(
-                                of_name,
-                                output_subgroup_name,
-                                class_name
-                            )
-                        ] = normalize_numpy(value)
-            else:
-                data_for_df[
-                    '{}_{}'.format(
-                        of_name,
-                        output_subgroup_name
-                    )
-                ] = normalize_numpy(output_type_value)
-    output_df = pd.DataFrame(data_for_df)
-    return output_df
+    return predictions
 
 
 conversion_registry = {

@@ -23,13 +23,11 @@ from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
+from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -37,12 +35,12 @@ from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
-from ludwig.utils.strings_utils import str2bool
+from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
 
 
-class BinaryFeatureMixin(object):
+class BinaryFeatureMixin:
     type = BINARY
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
@@ -56,21 +54,53 @@ class BinaryFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
-        return {}
+    def cast_column(feature, dataset_df, backend):
+        # todo maybe move code from add_feature_data here
+        #  + figure out what NaN is in a bool column
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        if column.dtype != object:
+            return {}
+
+        distinct_values = backend.df_engine.compute(column.drop_duplicates())
+        if len(distinct_values) > 2:
+            raise ValueError(
+                f'Binary feature column {column.name} expects 2 distinct values, '
+                f'found: {distinct_values.values.tolist()}'
+            )
+
+        str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
+        bool2str = [k for k, v in sorted(str2bool.items(), key=lambda item: item[1])]
+
+        return {
+            'str2bool': str2bool,
+            'bool2str': bool2str,
+        }
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
     ):
-        column = dataset_df[feature[COLUMN]]
+        column = input_df[feature[COLUMN]]
+
         if column.dtype == object:
-            column = column.map(str2bool)
-        dataset[feature[PROC_COLUMN]] = column.astype(np.bool_).values
+            metadata = metadata[feature[NAME]]
+            if 'str2bool' in metadata:
+                column = column.map(lambda x: metadata['str2bool'][x])
+            else:
+                # No predefined mapping from string to bool, so compute it directly
+                column = column.map(strings_utils.str2bool)
+
+        proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
+        return proc_df
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
@@ -99,7 +129,8 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         return encoder_outputs
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.bool
 
     def get_input_shape(self):
@@ -118,14 +149,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'dense': DenseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
@@ -181,18 +205,23 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             robust_lambda=self.loss['robust_lambda'],
             confidence_penalty=self.loss['confidence_penalty']
         )
-        self.eval_loss_function = BWCEWLMetric(
+        self.eval_loss_function = self.train_loss_function
+
+    def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
+        self.metric_functions[LOSS] = BWCEWLMetric(
             positive_class_weight=self.loss['positive_class_weight'],
             robust_lambda=self.loss['robust_lambda'],
             confidence_penalty=self.loss['confidence_penalty'],
             name='eval_loss'
         )
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name='metric_accuracy')
+
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, PROBABILITIES, LOGITS
+        }
 
     # def update_metrics(self, targets, predictions):
     #     for metric, metric_fn in self.metric_functions.items():
@@ -201,7 +230,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     #         else:
     #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
-    def get_output_dtype(self):
+    @classmethod
+    def get_output_dtype(cls):
         return tf.bool
 
     def get_output_shape(self):
@@ -280,36 +310,40 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
+        class_names = ['False', 'True']
+        if 'bool2str' in metadata:
+            class_names = metadata['bool2str']
 
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PREDICTIONS),
-                    postprocessed[PREDICTIONS]
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result:
+            if 'bool2str' in metadata:
+                result[predictions_col] = backend.df_engine.map_objects(
+                    result[predictions_col],
+                    lambda pred: metadata['bool2str'][pred]
                 )
-            del result[PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PROBABILITIES),
-                    postprocessed[PROBABILITIES]
-                )
-            del result[PROBABILITIES]
+        probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
+        if probabilities_col in result:
+            false_col = f'{probabilities_col}_{class_names[0]}'
+            result[false_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                lambda prob: 1 - prob
+            )
 
-        return postprocessed
+            true_col = f'{probabilities_col}_{class_names[1]}'
+            result[true_col] = result[probabilities_col]
+
+            prob_col = f'{self.feature_name}_{PROBABILITY}'
+            result[prob_col] = result[[false_col, true_col]].max(axis=1)
+
+            result[probabilities_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                lambda prob: [1 - prob, prob]
+            )
+
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):

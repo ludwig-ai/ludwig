@@ -3,15 +3,10 @@
 This API example is based on [Ludwig's Kaggle Titanic example](https://ludwig-ai.github.io/ludwig-docs/examples/#kaggles-titanic-predicting-survivors) for predicting probability of surviving. 
 
 ### Preparatory Steps
-* Create `data` directory
-* Download [Kaggle competition dataset](https://www.kaggle.com/c/titanic/data) into the `data` directory.  Directory should
-appear as follows:
-```
-titanic/
-    data/
-        train.csv
-        test.csv
-```
+
+Create and download your [Kaggle API Credentials](https://github.com/Kaggle/kaggle-api#api-credentials).
+
+The Titanic dataset is hosted by Kaggle, and as such Ludwig will need to authenticate you through the Kaggle API to download the dataset. You will also need to join [the competition](https://www.kaggle.com/c/titanic) to enable downloading of the data.
 
 ### Examples
 |File|Description|

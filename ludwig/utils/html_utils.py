@@ -39,7 +39,6 @@ class HTMLStripper(HTMLParser):
 
     def error(self, message):
         logger.error(message)
-        pass
 
 
 def strip_tags(html):

@@ -23,10 +23,10 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import is_on_master, set_on_master
 from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -56,7 +56,7 @@ def train_cli(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
-        use_horovod: bool = None,
+        backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         logging_level: int =logging.INFO,
         debug: bool = False,
@@ -144,7 +144,8 @@ def train_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
-    :param use_horovod: (bool, default: `None`) flag for using horovod.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+        of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -162,7 +163,7 @@ def train_cli(
         model = LudwigModel.load(
             model_load_path,
             logging_level=logging_level,
-            use_horovod=use_horovod,
+            backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
@@ -171,7 +172,7 @@ def train_cli(
         model = LudwigModel(
             config=config,
             logging_level=logging_level,
-            use_horovod=use_horovod,
+            backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
@@ -375,11 +376,11 @@ def cli(sys_argv):
         help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
-        '-uh',
-        '--use_horovod',
-        action='store_true',
-        default=None,
-        help='uses horovod for distributed training'
+        "-b",
+        "--backend",
+        help='specifies backend to use for parallel / distributed execution, '
+             'defaults to local execution or Horovod if called using horovodrun',
+        choices=ALL_BACKENDS,
     )
     parser.add_argument(
         '-dbg',
@@ -404,9 +405,8 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.train')
 
-    set_on_master(args.use_horovod)
-
-    if is_on_master():
+    args.backend = initialize_backend(args.backend)
+    if args.backend.is_coordinator():
         print_ludwig('Train', LUDWIG_VERSION)
 
     train_cli(**vars(args))

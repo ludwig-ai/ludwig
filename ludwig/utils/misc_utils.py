@@ -30,7 +30,9 @@ from typing import Union
 import numpy
 
 import ludwig.globals
+from ludwig.constants import PROC_COLUMN
 from ludwig.utils.data_utils import figure_data_format
+from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 
 def get_experiment_description(
@@ -169,15 +171,6 @@ def set_default_values(dictionary, default_value_dictionary):
         set_default_value(dictionary, key, value)
 
 
-def find_non_existing_dir_by_adding_suffix(directory_name):
-    curr_directory_name = directory_name
-    suffix = 0
-    while os.path.exists(curr_directory_name):
-        curr_directory_name = directory_name + '_' + str(suffix)
-        suffix += 1
-    return curr_directory_name
-
-
 def get_class_attributes(c):
     return set(
         i for i in dir(c)
@@ -243,5 +236,17 @@ def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     s = json.dumps(d, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
     d = h.digest()
-    b = base64.b64encode(d)
+    b = base64.b64encode(d, altchars=b'__')
     return b[:max_length]
+
+
+def get_combined_features(config):
+    return config['input_features'] + config['output_features']
+
+
+def get_proc_features(config):
+    return get_proc_features_from_lists(config['input_features'], config['output_features'])
+
+
+def get_proc_features_from_lists(*args):
+    return {feature[PROC_COLUMN]: feature for features in args for feature in features}

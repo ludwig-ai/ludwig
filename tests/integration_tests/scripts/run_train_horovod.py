@@ -61,7 +61,7 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         model_dir = os.path.join(output_dir, 'model') if output_dir else None
         loaded_model = LudwigModel.load(model_dir)
 
-        # Model loading should broadcast weights from master
+        # Model loading should broadcast weights from coordinator
         loaded_weights = loaded_model.model.get_weights()
         bcast_weights = hvd.broadcast_object(loaded_weights)
         for loaded, bcast in zip(loaded_weights, bcast_weights):
@@ -80,7 +80,7 @@ def test_horovod_intent_classification(rel_path, input_features,
 
     # Horovod should be initialized following training. If not, this will raise an exception.
     assert hvd.size() == 2
-    assert ludwig.utils.horovod_utils.ON_MASTER == (hvd.rank() == 0)
+    assert ludwig.utils.horovod_utils._HVD.rank() == hvd.rank()
 
 
 if __name__ == "__main__":

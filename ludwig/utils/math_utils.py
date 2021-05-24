@@ -50,7 +50,7 @@ def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step,
     decay_rate = float(decay_rate)
     decay_steps = float(decay_steps)
     step = float(step)
-    exponent = step / decay_steps
+    exponent = 1 + step / decay_steps
     if staircase:
         exponent = math.ceil(exponent)
     return initial_learning_rate * math.pow(decay_rate, exponent)

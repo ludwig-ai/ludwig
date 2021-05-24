@@ -145,7 +145,7 @@ class Embed(Layer):
             embedding_initializer=None,
             embedding_regularizer=None
     ):
-        super(Embed, self).__init__()
+        super().__init__()
         self.supports_masking = True
 
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
@@ -194,7 +194,7 @@ class EmbedWeighted(Layer):
             embedding_initializer=None,
             embedding_regularizer=None
     ):
-        super(EmbedWeighted, self).__init__()
+        super().__init__()
 
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
@@ -256,7 +256,7 @@ class EmbedSparse(Layer):
             embedding_regularizer=None,
             reduce_output='sum'
     ):
-        super(EmbedSparse, self).__init__()
+        super().__init__()
 
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
@@ -319,7 +319,7 @@ class EmbedSequence(Layer):
             embedding_initializer=None,
             embedding_regularizer=None
     ):
-        super(EmbedSequence, self).__init__()
+        super().__init__()
         self.supports_masking = True
 
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
@@ -375,7 +375,7 @@ class TokenAndPositionEmbedding(Layer):
                  embedding_initializer=None,
                  embedding_regularizer=None
                  ):
-        super(TokenAndPositionEmbedding, self).__init__()
+        super().__init__()
         self.token_embed = EmbedSequence(
             vocab=vocab,
             embedding_size=embedding_size,

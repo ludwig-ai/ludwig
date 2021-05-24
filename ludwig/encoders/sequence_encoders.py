@@ -15,11 +15,14 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense
+from tensorflow.keras.layers import Dense
 
-from ludwig.modules.attention_modules import TrasformerStack
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register, register_default
+from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D
 from ludwig.modules.embedding_modules import EmbedSequence, \
@@ -31,7 +34,17 @@ from ludwig.modules.reduction_modules import SequenceReducer
 logger = logging.getLogger(__name__)
 
 
-class SequencePassthroughEncoder(Layer):
+ENCODER_REGISTRY = Registry()
+
+
+class SequenceEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register_default(name='passthrough')
+class SequencePassthroughEncoder(SequenceEncoder):
 
     def __init__(
             self,
@@ -48,7 +61,7 @@ class SequencePassthroughEncoder(Layer):
                    and returns the full tensor).
             :type reduce_output: str
         """
-        super(SequencePassthroughEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -80,7 +93,8 @@ class SequencePassthroughEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class SequenceEmbedEncoder(Layer):
+@register(name='embed')
+class SequenceEmbedEncoder(SequenceEncoder):
 
     def __init__(
             self,
@@ -175,7 +189,7 @@ class SequenceEmbedEncoder(Layer):
             :type dropout: Tensor
 
         """
-        super(SequenceEmbedEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -216,7 +230,8 @@ class SequenceEmbedEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class ParallelCNN(Layer):
+@register(name='parallel_cnn')
+class ParallelCNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -386,7 +401,7 @@ class ParallelCNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(ParallelCNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -531,7 +546,8 @@ class ParallelCNN(Layer):
         return {'encoder_output': hidden}
 
 
-class StackedCNN(Layer):
+@register(name='stacked_cnn')
+class StackedCNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -707,7 +723,7 @@ class StackedCNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedCNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -888,7 +904,8 @@ class StackedCNN(Layer):
         return {'encoder_output': hidden}
 
 
-class StackedParallelCNN(Layer):
+@register(name='stacked_parallel_cnn')
+class StackedParallelCNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -1066,7 +1083,7 @@ class StackedParallelCNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedParallelCNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if stacked_layers is not None and num_stacked_layers is None:
@@ -1230,7 +1247,8 @@ class StackedParallelCNN(Layer):
         return {'encoder_output': hidden}
 
 
-class StackedRNN(Layer):
+@register(name='rnn')
+class StackedRNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -1394,7 +1412,7 @@ class StackedRNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedRNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -1514,7 +1532,8 @@ class StackedRNN(Layer):
         }
 
 
-class StackedCNNRNN(Layer):
+@register(name='cnnrnn')
+class StackedCNNRNN(SequenceEncoder):
 
     def __init__(
             self,
@@ -1657,7 +1676,7 @@ class StackedCNNRNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedCNNRNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -1827,7 +1846,8 @@ class StackedCNNRNN(Layer):
         }
 
 
-class StackedTransformer(Layer):
+@register(name='transformer')
+class StackedTransformer(SequenceEncoder):
 
     def __init__(
             self,
@@ -1985,7 +2005,7 @@ class StackedTransformer(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedTransformer, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -2022,7 +2042,7 @@ class StackedTransformer(Layer):
             self.should_project = True
 
         logger.debug('  TransformerStack')
-        self.transformer_stack = TrasformerStack(
+        self.transformer_stack = TransformerStack(
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,

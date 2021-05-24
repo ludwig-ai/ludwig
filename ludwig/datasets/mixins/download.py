@@ -17,13 +17,13 @@
 import gzip
 import os
 import shutil
+import tarfile
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
 
 from tqdm import tqdm
-
 
 class TqdmUpTo(tqdm):
     """Provides progress bar for `urlretrieve`.
@@ -68,6 +68,43 @@ class ZipDownloadMixin:
     def download_urls(self):
         return self.config["download_urls"]
 
+class TarDownloadMixin:
+    """Downloads the compressed tar file containing the training data and extracts the contents."""
+
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
+
+    def download_raw_dataset(self):
+        """
+        Download the raw dataset and extract the contents of the tar file and
+        store that in the cache location.
+        """
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+        for url in self.download_urls:
+            filename = url.split('/')[-1]
+            with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024,
+                          miniters=1, desc=filename) as t:
+                urllib.request.urlretrieve(
+                    url,
+                    os.path.join(self.raw_temp_path, filename),
+                    t.update_to
+                )
+
+            download_folder_name = url.split('/')[-1].split('.')[0]
+            file_path = os.path.join(self.raw_temp_path, filename)
+            with tarfile.open(file_path) as tar_file:
+                tar_file.extractall(path=self.raw_temp_path)
+
+            for f in os.scandir(os.path.join(self.raw_temp_path, 
+                                             download_folder_name)):
+                shutil.copyfile(f, os.path.join(self.raw_temp_path, f.name))
+
+        os.rename(self.raw_temp_path, self.raw_dataset_path)
+
+    @property
+    def download_urls(self):
+        return self.config['download_urls']
 
 class GZipDownloadMixin:
     """Downloads the gzip archive file containing the training data and extracts the contents."""

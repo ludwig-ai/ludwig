@@ -35,6 +35,14 @@ with open(path.join(here, 'requirements_viz.txt'), encoding='utf-8') as f:
 with open(path.join(here, 'requirements_horovod.txt'), encoding='utf-8') as f:
     extra_requirements['horovod'] = [line.strip() for line in f if line]
 
+with open(path.join(here, 'requirements_dask.txt'), encoding='utf-8') as f:
+    extra_requirements['dask'] = [line.strip() for line in f if line]
+
+with open(path.join(here, 'requirements_ray.txt'), encoding='utf-8') as f:
+    extra_requirements['ray'] = [line.strip() for line in f if line] \
+                                + extra_requirements['dask'] \
+                                + extra_requirements['horovod']
+
 with open(path.join(here, 'requirements_hyperopt.txt'), encoding='utf-8') as f:
     extra_requirements['hyperopt'] = [line.strip() for line in f if line]
 
@@ -48,13 +56,13 @@ with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
 
 setup(
     name='ludwig',
-    version='0.3.2-dev0',
+    version='0.4-dev0',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
     long_description_content_type='text/markdown',
 
-    url='https://github.com/uber/ludwig',
+    url='https://github.com/ludwig-ai/ludwig',
     download_url='https://pypi.org/project/ludwig/',
 
     author='Piero Molino',

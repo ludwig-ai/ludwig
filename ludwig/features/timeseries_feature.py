@@ -53,7 +53,12 @@ class TimeseriesFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         tokenizer = get_from_registry(
             preprocessing_parameters['tokenizer'],
             tokenizer_registry
@@ -75,20 +80,20 @@ class TimeseriesFeatureMixin(object):
             tokenizer_name,
             length_limit,
             padding_value,
-            padding='right'
+            padding,
+            backend
     ):
         tokenizer = get_from_registry(
             tokenizer_name,
             tokenizer_registry
         )()
-        max_length = 0
-        ts_vectors = []
-        for ts in timeseries:
-            ts_vector = np.array(tokenizer(ts)).astype(np.float32)
-            ts_vectors.append(ts_vector)
-            if len(ts_vector) > max_length:
-                max_length = len(ts_vector)
 
+        ts_vectors = backend.df_engine.map_objects(
+            timeseries,
+            lambda ts: np.array(tokenizer(ts)).astype(np.float32)
+        )
+
+        max_length = backend.df_engine.compute(ts_vectors.map(len).max())
         if max_length < length_limit:
             logger.debug(
                 'max length of {0}: {1} < limit: {2}'.format(
@@ -98,42 +103,50 @@ class TimeseriesFeatureMixin(object):
                 )
             )
         max_length = length_limit
-        timeseries_matrix = np.full(
-            (len(timeseries), max_length),
-            padding_value,
-            dtype=np.float32
-        )
-        for i, vector in enumerate(ts_vectors):
+
+        def pad(vector):
+            padded = np.full(
+                (max_length,),
+                padding_value,
+                dtype=np.float32
+            )
             limit = min(vector.shape[0], max_length)
             if padding == 'right':
-                timeseries_matrix[i, :limit] = vector[:limit]
+                padded[:limit] = vector[:limit]
             else:  # if padding == 'left
-                timeseries_matrix[i, max_length - limit:] = vector[:limit]
-        return timeseries_matrix
+                padded[max_length - limit:] = vector[:limit]
+            return padded
+
+        return backend.df_engine.map_objects(ts_vectors, pad)
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         timeseries_data = TimeseriesFeatureMixin.build_matrix(
             column,
             preprocessing_parameters['tokenizer'],
             metadata['max_timeseries_length'],
             preprocessing_parameters['padding_value'],
-            preprocessing_parameters['padding'])
+            preprocessing_parameters['padding'],
+            backend)
         return timeseries_data
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
     ):
-        dataset[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
+        return proc_df
 
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
@@ -156,7 +169,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):
@@ -393,7 +407,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #         })
 #     ])
 #
-#     def get_output_dtype(self):
+#     @classmethod
+#     def get_output_dtype(cls):
 #         return tf.float32
 #
 #     def get_output_shape(self):

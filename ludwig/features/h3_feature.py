@@ -20,7 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.h3_encoders import H3Embed, H3WeightedSum, H3RNN
+from ludwig.encoders.h3_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
@@ -32,7 +32,7 @@ H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 H3_PADDING_VALUE = 7
 
 
-class H3FeatureMixin(object):
+class H3FeatureMixin:
     type = H3
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
@@ -47,7 +47,12 @@ class H3FeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        # todo: add cast to int64
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
         return {}
 
     @staticmethod
@@ -67,17 +72,23 @@ class H3FeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
     ):
-        column = dataset_df[feature[COLUMN]]
+        column = input_df[feature[COLUMN]]
         if column.dtype == object:
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
-        dataset[feature[PROC_COLUMN]] = np.array(column.tolist(),
-                                                 dtype=np.uint8)
+
+        proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
+            column,
+            lambda x: np.array(x, dtype=np.uint8)
+        )
+        return proc_df
 
 
 class H3InputFeature(H3FeatureMixin, InputFeature):
@@ -102,7 +113,8 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.uint8
 
     def get_input_shape(self):
@@ -121,8 +133,4 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': H3Embed,
-        'weighted_sum': H3WeightedSum,
-        'rnn': H3RNN
-    }
+    encoder_registry = ENCODER_REGISTRY

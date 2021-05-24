@@ -1,16 +1,19 @@
 Cython>=0.25
-h5py>=2.6,<2.11.0
-numpy>=1.15,<1.19.0
-pandas>=0.19
+h5py>=2.6,!=3.0.0
+numpy>=1.15
+pandas>=0.25,<1.1.5
 scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
-tensorflow>=2.2
-tfa-nightly==0.12.0.dev20200820045606
+tensorflow>=2.3.1
+tfa-nightly==0.12.0.dev20201215223743
 PyYAML>=3.12
 absl-py
+kaggle
 requests
+tables
+fsspec
 jsonschema
 
 

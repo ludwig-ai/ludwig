@@ -1,6 +1,7 @@
 import sys
 import requests
 import pandas as pd
+from ludwig.datasets import titanic
 
 # Ludwig model server default values
 LUDWIG_HOST = '0.0.0.0'
@@ -10,7 +11,7 @@ LUDWIG_PORT = '8000'
 #
 # retrieve data to make predictions
 #
-test_df = pd.read_csv('../titanic/data/test.csv')
+test_df = titanic.load()
 print('retrieved {:d} records for predictions'.format(test_df.shape[0]))
 
 

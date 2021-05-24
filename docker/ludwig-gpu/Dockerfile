@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM tensorflow/tensorflow:2.3.0-gpu
+FROM tensorflow/tensorflow:2.4.1-gpu
 
 RUN apt-get -y update && apt-get -y install \
     git \
@@ -19,14 +19,15 @@ RUN apt-get -y update && apt-get -y install \
     libnccl2=2.7.8-1+cuda10.1 \
     libnccl-dev=2.7.8-1+cuda10.1
 
-RUN git clone --depth=1 https://github.com/uber/ludwig.git \
-    && cd ludwig/ \
-    && HOROVOD_GPU_OPERATIONS=NCCL \
-       HOROVOD_WITH_TENSORFLOW=1 \
-       HOROVOD_WITHOUT_MPI=1 \
-       HOROVOD_WITHOUT_PYTORCH=1 \
-       HOROVOD_WITHOUT_MXNET=1 \
-    && pip install --no-cache-dir '.[full]'
+WORKDIR /ludwig
+
+COPY . .
+RUN HOROVOD_GPU_OPERATIONS=NCCL \
+    HOROVOD_WITH_TENSORFLOW=1 \
+    HOROVOD_WITHOUT_MPI=1 \
+    HOROVOD_WITHOUT_PYTORCH=1 \
+    HOROVOD_WITHOUT_MXNET=1 \
+    pip install --no-cache-dir '.[full]'
 
 WORKDIR /data
 

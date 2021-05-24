@@ -1,0 +1,5 @@
+version: 1.0
+competition: selfishgene/historical-hourly-weather-data
+archive_filename: historical-hourly-weather-data.zip
+download_file_type: csv
+csv_filename: temperature.csv

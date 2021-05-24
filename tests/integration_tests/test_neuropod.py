@@ -28,7 +28,7 @@ from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, set_feature, vector_feature, \
     image_feature, \
-    audio_feature, timeseries_feature, date_feature, h3_feature, bag_feature
+    audio_feature, timeseries_feature, date_feature, h3_feature, bag_feature, LocalTestBackend
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -81,7 +81,7 @@ def test_neuropod(csv_filename):
             'output_features': output_features,
             'training': {'epochs': 2}
         }
-        ludwig_model = LudwigModel(config)
+        ludwig_model = LudwigModel(config, backend=LocalTestBackend())
         ludwig_model.train(
             dataset=data_csv_path,
             skip_save_training_description=True,
@@ -107,7 +107,9 @@ def test_neuropod(csv_filename):
         ################
         neuropod_path = os.path.join(dir_path, 'neuropod')
         shutil.rmtree(neuropod_path, ignore_errors=True)
-        export_neuropod(ludwigmodel_path, neuropod_path=neuropod_path)
+        export_neuropod(
+            ludwigmodel_path, neuropod_path=neuropod_path, entrypoint='get_test_model'
+        )
 
         ########################
         # predict using neuropod
@@ -151,11 +153,9 @@ def test_neuropod(csv_filename):
                 neuropod_pred = preds[
                     output_feature_name + "_predictions"].tolist()
                 if output_feature_type == BINARY:
-                    neuropod_pred = list(
-                        map(lambda x: str2bool(x), neuropod_pred))
+                    neuropod_pred = [ str2bool(x) for x in neuropod_pred]
                 if output_feature_type in {SEQUENCE, TEXT, SET}:
-                    neuropod_pred = list(
-                        map(lambda x: x.split(), neuropod_pred))
+                    neuropod_pred = [ x.split() for x in neuropod_pred]
 
                 original_pred = original_predictions_df[
                     output_feature_name + "_predictions"].tolist()
@@ -167,9 +167,7 @@ def test_neuropod(csv_filename):
                 neuropod_prob = preds[
                     output_feature_name + "_probability"].tolist()
                 if output_feature_type in {SEQUENCE, TEXT, SET}:
-                    neuropod_prob = list(
-                        map(lambda x: [float(n) for n in x.split()],
-                            neuropod_prob))
+                    neuropod_prob = [ [float(n) for n in x.split()] for x in neuropod_prob]
                 if any(isinstance(el, list) for el in neuropod_prob):
                     neuropod_prob = np.array(list(
                         itertools.zip_longest(*neuropod_prob, fillvalue=0)

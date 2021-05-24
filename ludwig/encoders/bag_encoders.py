@@ -15,17 +15,27 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
-from tensorflow.keras.layers import Layer
-
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register_default
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-class BagEmbedWeightedEncoder(Layer):
+ENCODER_REGISTRY = Registry()
 
+
+class BagEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register_default(name='embed')
+class BagEmbedWeightedEncoder(BagEncoder):
     def __init__(
             self,
             vocab,
@@ -52,7 +62,7 @@ class BagEmbedWeightedEncoder(Layer):
             dropout=0.0,
             **kwargs
     ):
-        super(BagEmbedWeightedEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  EmbedWeighted')

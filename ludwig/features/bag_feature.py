@@ -21,7 +21,7 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
+from ludwig.encoders.bag_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils.misc_utils import set_default_value
@@ -30,7 +30,7 @@ from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UN
 logger = logging.getLogger(__name__)
 
 
-class BagFeatureMixin(object):
+class BagFeatureMixin:
     type = BAG
 
     preprocessing_defaults = {
@@ -51,12 +51,18 @@ class BagFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_size, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
-            lowercase=preprocessing_parameters['lowercase']
+            lowercase=preprocessing_parameters['lowercase'],
+            processor=backend.df_engine,
         )
         return {
             'idx2str': idx2str,
@@ -67,37 +73,37 @@ class BagFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
-        bag_matrix = np.zeros(
-            (len(column),
-             len(metadata['str2idx'])),
-            dtype=np.float32
-        )
-
-        for i, set_str in enumerate(column):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
+        def to_vector(set_str):
+            bag_vector = np.zeros((len(metadata['str2idx']),), dtype=np.float32)
             col_counter = Counter(set_str_to_idx(
                 set_str,
                 metadata['str2idx'],
                 preprocessing_parameters['tokenizer'])
             )
-            bag_matrix[i, list(col_counter.keys())] = list(
-                col_counter.values())
 
-        return bag_matrix
+            bag_vector[list(col_counter.keys())] = list(col_counter.values())
+            return bag_vector
+
+        return backend.df_engine.map_objects(column, to_vector)
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
     ):
-        dataset[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
+        proc_df[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
+            input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend
         )
+        return proc_df
 
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
@@ -120,7 +126,8 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):
@@ -139,7 +146,4 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        'embed': BagEmbedWeightedEncoder,
-        None: BagEmbedWeightedEncoder
-    }
+    encoder_registry = ENCODER_REGISTRY

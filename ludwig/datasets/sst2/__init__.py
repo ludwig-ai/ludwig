@@ -18,8 +18,12 @@ from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.sst2.sst_utils import SST
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = SST2(cache_dir=cache_dir)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
+         include_subtrees=False, convert_parentheses=True, 
+         remove_duplicates=False):
+    dataset = SST2(cache_dir=cache_dir, include_subtrees=include_subtrees,
+                   convert_parentheses=onvert_parentheses, 
+                   remove_duplicates=remove_duplicates)
     return dataset.load(split=split)
 
 
@@ -44,8 +48,15 @@ class SST2(SST):
     training data into a destination dataframe that can be use by Ludwig.
     """
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name='sst2', cache_dir=cache_dir)
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
+                 include_subtrees=False, 
+                 convert_parentheses=True,
+                 remove_duplicates=False):
+        super().__init__(dataset_name='sst2', cache_dir=cache_dir,
+                         include_subtrees=include_subtrees,
+                         discard_neutral=True,
+                         convert_parentheses=convert_parentheses,
+                         remove_duplicates=remove_duplicates)
 
     def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]

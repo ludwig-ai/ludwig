@@ -28,7 +28,7 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, vector_feature, image_feature, \
     audio_feature, timeseries_feature, date_feature, h3_feature, set_feature, \
-    bag_feature
+    bag_feature, LocalTestBackend
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -81,12 +81,13 @@ def test_savedmodel(csv_filename, should_load_model):
         #############
         # Train model
         #############
+        backend = LocalTestBackend()
         config = {
             'input_features': input_features,
             'output_features': output_features,
             'training': {'epochs': 2}
         }
-        ludwig_model = LudwigModel(config)
+        ludwig_model = LudwigModel(config, backend=backend)
         ludwig_model.train(
             dataset=data_csv_path,
             skip_save_training_description=True,
@@ -108,7 +109,7 @@ def test_savedmodel(csv_filename, should_load_model):
         # load Ludwig model
         ###################
         if should_load_model:
-            ludwig_model = LudwigModel.load(ludwigmodel_path)
+            ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
 
         ##############################
         # collect weight tensors names
@@ -127,7 +128,7 @@ def test_savedmodel(csv_filename, should_load_model):
         ###################################################
         # load Ludwig model, obtain predictions and weights
         ###################################################
-        ludwig_model = LudwigModel.load(ludwigmodel_path)
+        ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
         loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
         loaded_weights = deepcopy(ludwig_model.model.trainable_variables)
 
@@ -142,7 +143,8 @@ def test_savedmodel(csv_filename, should_load_model):
         dataset, training_set_metadata = preprocess_for_prediction(
             ludwig_model.config,
             dataset=data_csv_path,
-            training_set_metadata=training_set_metadata_json_fp
+            training_set_metadata=training_set_metadata_json_fp,
+            backend=backend,
         )
 
         restored_model = tf.saved_model.load(savedmodel_path)

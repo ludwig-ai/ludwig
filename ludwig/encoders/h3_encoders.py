@@ -15,10 +15,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer
 
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.initializer_modules import get_initializer
@@ -28,7 +30,17 @@ from ludwig.modules.reduction_modules import SequenceReducer
 logger = logging.getLogger(__name__)
 
 
-class H3Embed(Layer):
+ENCODER_REGISTRY = Registry()
+
+
+class H3Encoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register(name='embed')
+class H3Embed(H3Encoder):
 
     def __init__(
             self,
@@ -90,7 +102,7 @@ class H3Embed(Layer):
                    is greater than 0).
             :type regularize: Boolean
         """
-        super(H3Embed, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.embedding_size = embedding_size
@@ -258,7 +270,8 @@ class H3Embed(Layer):
         return {'encoder_output': hidden}
 
 
-class H3WeightedSum(Layer):
+@register(name='weighted_sum')
+class H3WeightedSum(H3Encoder):
 
     def __init__(
             self,
@@ -320,7 +333,7 @@ class H3WeightedSum(Layer):
                    is greater than 0).
             :type regularize: Boolean
         """
-        super(H3WeightedSum, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.should_softmax = should_softmax
@@ -405,7 +418,8 @@ class H3WeightedSum(Layer):
         return {'encoder_output': hidden}
 
 
-class H3RNN(Layer):
+@register(name='rnn')
+class H3RNN(H3Encoder):
 
     def __init__(
             self,
@@ -526,7 +540,7 @@ class H3RNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(H3RNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.embedding_size = embedding_size

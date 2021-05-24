@@ -15,14 +15,14 @@ input_features:
         name: SibSp
         type: numerical
         preprocessing:
-            missing_value_strategy: fill_with_median
-            normalization: minmax
+            missing_value_strategy: fill_with_mean
+            normalization: zscore
     -
         name: Parch
         type: numerical
         preprocessing:
-            missing_value_strategy: fill_with_median
-            normalization: minmax
+            missing_value_strategy: fill_with_mean
+            normalization: zscore
     -
         name: Fare
         type: numerical

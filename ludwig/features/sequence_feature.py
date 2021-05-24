@@ -19,27 +19,21 @@ import os
 import numpy as np
 
 from ludwig.constants import *
-from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
-from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
-from ludwig.encoders.sequence_encoders import ParallelCNN, StackedTransformer
-from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
-from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
-from ludwig.encoders.sequence_encoders import StackedCNN
-from ludwig.encoders.sequence_encoders import StackedCNNRNN
-from ludwig.encoders.sequence_encoders import StackedParallelCNN
-from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
+from ludwig.encoders.sequence_encoders import \
+    ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-from ludwig.modules.loss_modules import SequenceLoss
+from ludwig.modules.loss_modules import SequenceSampledSoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import EditDistanceMetric, \
     SequenceAccuracyMetric
 from ludwig.modules.metric_modules import PerplexityMetric
 from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
-from ludwig.modules.metric_modules import SequenceLossMetric
+from ludwig.modules.metric_modules import SequenceLossMetric, \
+    SequenceSampledLossMetric
 from ludwig.modules.metric_modules import TokenAccuracyMetric
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
@@ -52,7 +46,7 @@ from ludwig.utils.strings_utils import tokenizer_registry
 logger = logging.getLogger(__name__)
 
 
-class SequenceFeatureMixin(object):
+class SequenceFeatureMixin:
     type = SEQUENCE
 
     preprocessing_defaults = {
@@ -82,7 +76,12 @@ class SequenceFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
+        column = column.astype(str)
         idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
@@ -90,7 +89,7 @@ class SequenceFeatureMixin(object):
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-
+            processor=backend.df_engine
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
@@ -105,7 +104,7 @@ class SequenceFeatureMixin(object):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters):
+    def feature_data(column, metadata, preprocessing_parameters, backend):
         sequence_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['str2idx'],
@@ -117,22 +116,28 @@ class SequenceFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
-            ]
+            ],
+            processor=backend.df_engine
         )
         return sequence_data
 
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            dataset_df[feature[COLUMN]].astype(str),
-            metadata[feature[NAME]], preprocessing_parameters)
-        dataset[feature[PROC_COLUMN]] = sequence_data
+            input_df[feature[COLUMN]].astype(str),
+            metadata[feature[NAME]], preprocessing_parameters,
+            backend
+        )
+        proc_df[feature[PROC_COLUMN]] = sequence_data
+        return proc_df
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
@@ -162,7 +167,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.int32
 
     def get_input_shape(self):
@@ -184,20 +190,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
 
-    encoder_registry = {
-        'stacked_cnn': StackedCNN,
-        'parallel_cnn': ParallelCNN,
-        'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': StackedRNN,
-        'cnnrnn': StackedCNNRNN,
-        'transformer': StackedTransformer,
-        'embed': SequenceEmbedEncoder,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
-    }
+    encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
@@ -219,14 +212,24 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def _setup_loss(self):
         if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SequenceLoss()
+            self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
-                decoder_obj=self.decoder_obj,
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            if self.decoder == 'generator':
+                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+                    dec_dense_layer=self.decoder_obj.dense_layer,
+                    dec_num_layers=self.decoder_obj.num_layers,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                    name='train_loss'
+                )
+            else:
+                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+                    dec_dense_layer=self.decoder_obj.projection_layer,
+                    dec_num_layers=None,
+                    num_classes=self.num_classes,
+                    feature_loss=self.loss,
+                    name='train_loss'
+                )
         else:
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
@@ -234,11 +237,28 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SequenceLossMetric()
+        # special handling for evaluation with Generator decoder and beam search
+        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+            # beam search does not provide logits, need to use probabilities
+            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+                from_logits=False
+            )
+        else:
+            # all other cases
+            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss()
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
+        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+            # Generator Decoder w/ beam search
+            # beam search does not provide logits
+            self.metric_functions[LOSS] = SequenceLossMetric(
+                from_logits=False)
+        else:
+            # Generator Decoder w/ no beam search and Tagger Decoder
+            self.metric_functions[LOSS] = SequenceLossMetric(
+                from_logits=True)
+
         self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
         self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
@@ -274,7 +294,11 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         # Generator Decoder
         return self.decoder_obj._predictions_eval(inputs, training=training)
 
-    def get_output_dtype(self):
+    def get_prediction_set(self):
+        return self.decoder_obj.get_prediction_set()
+
+    @classmethod
+    def get_output_dtype(cls):
         return tf.int32
 
     def get_output_shape(self):
@@ -408,86 +432,75 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = None
-        if is_on_master():
-            npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        else:
-            skip_save_unprocessed_output = True
-
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS].numpy()
-            lengths = result[LENGTHS].numpy()
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        lengths_col = f'{self.feature_name}_{LENGTHS}'
+        if predictions_col in result:
             if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = [
-                    [metadata['idx2str'][token]
-                     if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
-                     for token in [pred[i] for i in range(length)]]
-                    for pred, length in
-                    [(preds[j], lengths[j]) for j in range(len(preds))]
-                ]
-            else:
-                postprocessed[PREDICTIONS] = preds
+                def idx2str(row):
+                    pred = row[predictions_col]
+                    length = row[lengths_col]
+                    return [
+                        metadata['idx2str'][token]
+                        if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
+                        for token in [pred[i] for i in range(length)]
+                    ]
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PREDICTIONS), preds)
+                result[predictions_col] = backend.df_engine.apply_objects(
+                    result, idx2str
+                )
 
-            del result[PREDICTIONS]
-
-        if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS].numpy()
+        last_preds_col = f'{self.feature_name}_{LAST_PREDICTIONS}'
+        if last_preds_col in result:
             if 'idx2str' in metadata:
-                postprocessed[LAST_PREDICTIONS] = [
-                    metadata['idx2str'][last_pred]
-                    if last_pred < len(metadata['idx2str']) else UNKNOWN_SYMBOL
-                    for last_pred in last_preds
-                ]
-            else:
-                postprocessed[LAST_PREDICTIONS] = last_preds
+                def last_idx2str(last_pred):
+                    if last_pred < len(metadata['idx2str']):
+                        return metadata['idx2str'][last_pred]
+                    return UNKNOWN_SYMBOL
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS),
-                        last_preds)
+                result[last_preds_col] = backend.df_engine.map_objects(
+                    result[last_preds_col],
+                    last_idx2str
+                )
 
-            del result[LAST_PREDICTIONS]
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        if probs_col in result:
+            def token_prob(prob):
+                dim = len(prob.shape)
+                if dim != 2:
+                    # probs should be shape [s, nc]
+                    raise ValueError(
+                        f'Sequence probability array should be 2-dimensional '
+                        f'shape, instead shape is {dim}-dimensional ({prob.shape})'
+                    )
+                return np.amax(prob, axis=-1)
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES].numpy()
-            if probs is not None:
+            # get probability of token in that sequence position
+            result[probs_col] = backend.df_engine.map_objects(
+                result[probs_col], token_prob
+            )
 
-                if len(probs) > 0 and isinstance(probs[0], list):
-                    prob = []
-                    for i in range(len(probs)):
-                        # todo: should adapt for the case of beam > 1
-                        for j in range(len(probs[i])):
-                            probs[i][j] = np.max(probs[i][j])
-                        prob.append(np.prod(probs[i]))
-                elif isinstance(probs, np.ndarray):
-                    if (probs.shape) == 3:  # prob of each class of each token
-                        probs = np.amax(probs, axis=-1)
-                    prob = np.prod(probs, axis=-1)
+            def compute_log_prob(row):
+                # sum log probability for tokens up to sequence length
+                # create mask only tokens for sequence length
+                seq_prob = row[probs_col]
+                length = row[lengths_col]
+                mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
+                return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
-                # commenting probabilities out because usually it is huge:
-                # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
-                # postprocessed[PROBABILITIES] = probs
-                postprocessed[PROBABILITY] = prob
+            # commenting probabilities out because usually it is huge:
+            # dataset x length x classes
+            # todo: add a mechanism for letting the user decide to save it
+            probability_col = f'{self.feature_name}_{PROBABILITY}'
+            result[probability_col] = backend.df_engine.apply_objects(
+                result, compute_log_prob
+            )
 
-                if not skip_save_unprocessed_output:
-                    # commenting probabilities out, see comment above
-                    # np.save(npy_filename.format(name, PROBABILITIES), probs)
-                    np.save(npy_filename.format(name, PROBABILITY), prob)
+        if lengths_col in result:
+            del result[lengths_col]
 
-            del result[PROBABILITIES]
-
-        if LENGTHS in result:
-            del result[LENGTHS]
-
-        return postprocessed
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):
@@ -537,7 +550,4 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-    decoder_registry = {
-        'generator': SequenceGeneratorDecoder,
-        'tagger': SequenceTaggerDecoder
-    }
+    decoder_registry = DECODER_REGISTRY

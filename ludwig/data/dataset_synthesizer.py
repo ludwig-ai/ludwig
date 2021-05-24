@@ -33,7 +33,6 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -545,8 +544,7 @@ def cli(sys_argv):
     # logger = logging.getLogger('ludwig.data.dataset_synthesizer')
 
 
-    if is_on_master():
-        print_ludwig('Synthesize Dataset', LUDWIG_VERSION)
+    print_ludwig('Synthesize Dataset', LUDWIG_VERSION)
 
     cli_synthesize_dataset(**vars(args))
 

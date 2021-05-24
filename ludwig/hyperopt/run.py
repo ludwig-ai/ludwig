@@ -6,15 +6,16 @@ from typing import Union, List
 import pandas as pd
 import yaml
 
+from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
-    LOSS, TYPE
+    LOSS, TYPE, RAY
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, \
     print_hyperopt_results, save_hyperopt_stats
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.horovod_utils import is_on_master
+from ludwig.utils.fs_utils import open_file, makedirs
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ def hyperopt(
         skip_save_model: bool = False,
         skip_save_progress: bool = False,
         skip_save_log: bool = False,
-        skip_save_processed_input: bool = False,
+        skip_save_processed_input: bool = True,
         skip_save_unprocessed_output: bool = False,
         skip_save_predictions: bool = False,
         skip_save_eval_stats: bool = False,
@@ -44,7 +45,7 @@ def hyperopt(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
-        use_horovod: bool = None,
+        backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         debug: bool = False,
         **kwargs,
@@ -132,7 +133,8 @@ def hyperopt(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
-    :param use_horovod: (bool, default: `None`) flag for using horovod.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+        of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
         initialization, splits and any other random function.
     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -142,9 +144,11 @@ def hyperopt(
 
     :return: (List[dict]) The results for the hyperparameter optimization
     """
+    backend = initialize_backend(backend)
+
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
-        with open(config, 'r') as def_file:
+        with open_file(config, 'r') as def_file:
             config_dict = yaml.safe_load(def_file)
     else:
         config_dict = config
@@ -158,6 +162,7 @@ def hyperopt(
         )
 
     hyperopt_config = config["hyperopt"]
+
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # print hyperopt config
@@ -256,6 +261,7 @@ def hyperopt(
     hyperopt_sampler = get_build_hyperopt_sampler(
         sampler[TYPE]
     )(goal, parameters, **sampler)
+
     hyperopt_executor = get_build_hyperopt_executor(
         executor[TYPE]
     )(hyperopt_sampler, output_feature, metric, split, **executor)
@@ -285,18 +291,17 @@ def hyperopt(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
+        backend=backend,
         random_seed=random_seed,
         debug=debug,
         **kwargs
     )
 
-    if is_on_master():
+    if backend.is_coordinator():
         print_hyperopt_results(hyperopt_results)
 
         if not skip_save_hyperopt_statistics:
-            if not os.path.exists(output_directory):
-                os.makedirs(output_directory)
+            makedirs(output_directory, exist_ok=True)
 
             hyperopt_stats = {
                 'hyperopt_config': hyperopt_config,

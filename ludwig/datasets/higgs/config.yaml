@@ -1,0 +1,4 @@
+version: 1.0
+download_urls:
+  - https://archive.ics.uci.edu/ml/machine-learning-databases/00280/HIGGS.csv.gz
+parquet_filename: higgs.parquet

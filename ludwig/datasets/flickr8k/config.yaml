@@ -1,0 +1,5 @@
+version: 1.0
+download_urls:
+  - https://github.com/jbrownlee/Datasets/releases/download/Flickr8k/Flickr8k_Dataset.zip
+  - https://github.com/jbrownlee/Datasets/releases/download/Flickr8k/Flickr8k_text.zip
+csv_filename: flickr8k_dataset.csv

@@ -13,21 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from abc import ABC
 import logging
 
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
-from tensorflow.keras.layers import Layer, Dense, Embedding
+from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
+    StackedRNNCells
+from tensorflow.keras.layers import Dense, Embedding
 from tensorflow.keras.layers import average
 from tensorflow_addons.seq2seq import AttentionWrapper
 from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
+from ludwig.decoders.base import Decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.recurrent_modules import BasicDecoder
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry, register
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
@@ -41,7 +46,17 @@ rnn_layers_registry = {
 PAD_TOKEN = 0
 
 
-class SequenceGeneratorDecoder(Layer):
+DECODER_REGISTRY = Registry()
+
+
+class SequenceDecoder(Decoder, ABC):
+    @classmethod
+    def register(cls, name):
+        DECODER_REGISTRY[name] = cls
+
+
+@register(name='generator')
+class SequenceGeneratorDecoder(SequenceDecoder):
 
     def __init__(
             self,
@@ -64,7 +79,7 @@ class SequenceGeneratorDecoder(Layer):
             reduce_input='sum',
             **kwargs
     ):
-        super(SequenceGeneratorDecoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.cell_type = cell_type
@@ -121,8 +136,9 @@ class SequenceGeneratorDecoder(Layer):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
-        self.decoder_rnncell = \
-            get_from_registry(cell_type, rnn_layers_registry)(state_size)
+        rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
+        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        self.decoder_rnncell = StackedRNNCells(rnn_cells)
         logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
@@ -135,11 +151,10 @@ class SequenceGeneratorDecoder(Layer):
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
             logger.debug('  {}'.format(self.attention_mechanism))
-
             self.decoder_rnncell = AttentionWrapper(
                 self.decoder_rnncell,
-                self.attention_mechanism,
-                attention_layer_size=state_size
+                [self.attention_mechanism] * num_layers,
+                attention_layer_size=[state_size] * num_layers
             )
             logger.debug('  {}'.format(self.decoder_rnncell))
 
@@ -152,7 +167,11 @@ class SequenceGeneratorDecoder(Layer):
             target=target,
             encoder_end_state=encoder_end_state
         )
-        return logits  # shape = [b, s, c]
+
+        # logits is tuple containing two tensor:
+        #   logits: suitable for use with softmax_crossentropy loss
+        #   projection_input: suitable for use with sampled_softmax
+        return logits
 
     def prepare_encoder_output_state(self, inputs):
 
@@ -271,12 +290,9 @@ class SequenceGeneratorDecoder(Layer):
 
         if self.attention_mechanism is not None:
             decoder_initial_state = decoder_initial_state.clone(
-                cell_state=encoder_state)
+                cell_state=(encoder_state,) * self.num_layers)
         else:
-            if not isinstance(encoder_state, list):
-                decoder_initial_state = [encoder_state]
-            else:
-                decoder_initial_state = encoder_state
+            decoder_initial_state = (encoder_state,) * self.num_layers
 
         return decoder_initial_state
 
@@ -319,7 +335,8 @@ class SequenceGeneratorDecoder(Layer):
             dtype=tf.float32
         )
 
-        decoder = tfa.seq2seq.BasicDecoder(
+        # use Ludwig custom BasicDecoder
+        decoder = BasicDecoder(
             self.decoder_rnncell,
             sampler=self.sampler,
             output_layer=self.dense_layer
@@ -348,7 +365,13 @@ class SequenceGeneratorDecoder(Layer):
             [[0, 0], [0, 1], [0, 0]]
         )
 
-        return logits  # , outputs, final_state, generated_sequence_lengths
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # logits: shape[batch_size, seq_size, num_classes] used for evaluation
+        # projection_input: shape[batch_size, seq_size, state_size] for sampled softmax
+        return {
+            LOGITS: logits,
+            PROJECTION_INPUT: outputs.projection_input
+        }
 
     def decoder_beam_search(
             self,
@@ -417,11 +440,7 @@ class SequenceGeneratorDecoder(Layer):
             decoder_init_kwargs=dict(
                 start_tokens=start_tokens,
                 end_token=end_token,
-                # following construct required to work around inconsistent handling
-                # of encoder_end_state by tfa
-                initial_state=decoder_initial_state \
-                    if len(decoder_initial_state) != 1 \
-                    else decoder_initial_state[0]
+                initial_state=decoder_initial_state
             ),
         )
 
@@ -437,6 +456,11 @@ class SequenceGeneratorDecoder(Layer):
                 predictions,
                 [[0, 0], [0, seq_len_diff]]
             )
+            probabilities = tf.pad(
+                probabilities,
+                [[0, 0], [0, seq_len_diff], [0, 0]],
+                constant_values=1.0 / self.vocab_size
+            )
 
         # -1 because they include pad
         lengths = decoder_lengths[:, 0] - 1
@@ -451,6 +475,12 @@ class SequenceGeneratorDecoder(Layer):
             name='last_predictions_{}'.format(self.name)
         )
 
+
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # lengths: shape[batch_size]
+        # predictions: shape [batch_size, seq_size]
+        # last_predictions: shape[batch_size
+        # probabilities: shape[batch_size, seq_size, num_classes]
         return None, lengths, predictions, last_predictions, probabilities
 
     def decoder_greedy(
@@ -543,14 +573,12 @@ class SequenceGeneratorDecoder(Layer):
             name='last_predictions_{}'.format(self.name)
         )
 
-        # mask logits
-        # mask = tf.sequence_mask(
-        #     lengths,
-        #     maxlen=tf.shape(logits)[1],
-        #     dtype=tf.float32
-        # )
-        # logits = logits * mask[:, :, tf.newaxis]
-
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # logits: shape [batch_size, seq_size, num_classes]
+        # lengths: shape[batch_size]
+        # predictions: shape [batch_size, seq_size]
+        # last_predictions: shape[batch_size
+        # probabilities: shape[batch_size, seq_size, num_classes]
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
@@ -593,6 +621,11 @@ class SequenceGeneratorDecoder(Layer):
             LAST_PREDICTIONS: last_preds,
             PROBABILITIES: probs,
             LOGITS: logits
+        }
+
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
         }
 
 
@@ -690,7 +723,8 @@ def extract_sequence_probabilities(decoder_output, beam_width, sequence_id=0):
     return probabilities
 
 
-class SequenceTaggerDecoder(Layer):
+@register(name='tagger')
+class SequenceTaggerDecoder(SequenceDecoder):
 
     def __init__(
             self,
@@ -707,7 +741,7 @@ class SequenceTaggerDecoder(Layer):
             is_timeseries=False,
             **kwargs
     ):
-        super(SequenceTaggerDecoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.attention = attention
@@ -758,7 +792,8 @@ class SequenceTaggerDecoder(Layer):
         return {
             LOGITS: logits,
             # logits shape [batch_size, sequence_length, num_classes]
-            LENGTHS: inputs[LENGTHS]
+            LENGTHS: inputs[LENGTHS],
+            PROJECTION_INPUT: hidden
         }
 
     def _logits_training(
@@ -816,10 +851,23 @@ class SequenceTaggerDecoder(Layer):
         )
         logits = logits * mask[:, :, tf.newaxis]
 
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # LOGITS: shape [batch_size, seq_size, num_classes]
+        # LENGTHS: shape[batch_size]
+        # PREDICTIONS: shape [batch_size, seq_size]
+        # LAST_PREDICTIONS: shape[batch_size]
+        # PROBABILITIES: shape[batch_size, seq_size, num_classes]
+        # PROJECTION_INPUT: shape[batch_size, seq_size, state_size]
         return {
             PREDICTIONS: predictions,
             LENGTHS: input_sequence_lengths,
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
-            LOGITS: logits
+            LOGITS: logits,
+            PROJECTION_INPUT: outputs[PROJECTION_INPUT]
+        }
+
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
         }

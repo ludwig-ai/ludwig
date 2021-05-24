@@ -15,11 +15,13 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from abc import ABC
 
 import tensorflow as tf
 from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Layer
 
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import Registry, register, register_default
 from ludwig.modules.convolutional_modules import Conv2DStack, \
     get_resnet_block_sizes
 from ludwig.modules.convolutional_modules import ResNet2
@@ -28,7 +30,17 @@ from ludwig.modules.fully_connected_modules import FCStack
 logger = logging.getLogger(__name__)
 
 
-class Stacked2DCNN(Layer):
+ENCODER_REGISTRY = Registry()
+
+
+class ImageEncoder(Encoder, ABC):
+    @classmethod
+    def register(cls, name):
+        ENCODER_REGISTRY[name] = cls
+
+
+@register_default(name='stacked_cnn')
+class Stacked2DCNN(ImageEncoder):
 
     def __init__(
             self,
@@ -71,7 +83,7 @@ class Stacked2DCNN(Layer):
             fc_dropout=0,
             **kwargs
     ):
-        super(Stacked2DCNN, self).__init__()
+        super().__init__()
 
         logger.debug(' {}'.format(self.name))
 
@@ -101,7 +113,9 @@ class Stacked2DCNN(Layer):
             default_pool_strides=pool_strides,
         )
 
-        logger.debug('  FCStacl')
+        self.flatten = Flatten()
+
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -131,7 +145,7 @@ class Stacked2DCNN(Layer):
             inputs,
             training,
         )
-        hidden = tf.reshape(hidden, [hidden.shape[0], -1])
+        hidden = self.flatten(hidden, training=training)
 
         # ================ Fully Connected ================
         outputs = self.fc_stack(hidden)
@@ -139,7 +153,8 @@ class Stacked2DCNN(Layer):
         return {'encoder_output': outputs}
 
 
-class ResNetEncoder(Layer):
+@register(name='resnet')
+class ResNetEncoder(ImageEncoder):
 
     def __init__(
             self,
@@ -168,7 +183,7 @@ class ResNetEncoder(Layer):
             dropout=0,
             **kwargs
     ):
-        super(ResNetEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if resnet_size < 50:

@@ -29,7 +29,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class BaseFeature(object):
+class BaseFeature:
     """Base class for all features.
 
     Note that this class is not-cooperative (does not forward kwargs), so when constructing
@@ -80,8 +80,9 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
                               dtype=self.get_input_dtype(),
                               name=self.name + '_input')
 
+    @classmethod
     @abstractmethod
-    def get_input_dtype(self):
+    def get_input_dtype(cls):
         """Returns the Tensor data type this input accepts."""
         pass
 
@@ -184,7 +185,13 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                               name=self.name + '_input')
 
     @abstractmethod
-    def get_output_dtype(self):
+    def get_prediction_set(self):
+        """Returns the set of prediction columns returned by this feature."""
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
         pass
 
@@ -267,18 +274,24 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 combiner_outputs['encoder_output_state']
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
-        logits = self.logits(logits_input, target=target, training=training)
+        logits = self.logits(logits_input, target=target,
+                             training=training)
 
-        # most of the cases the output of self.logits is a tensor
-        # in some cases like for sequence features, it can be  tuple of
-        # logits, predictions, scores
-        # The first element will be the logits tensor
-        if isinstance(logits, tuple):
-            logits = logits[0]
-        if not isinstance(logits, dict):
+        # most of the cases the output of self.logits() is a tensor
+        # there are three special cases:
+        # categorical feature: logits is a dictionary
+        #   with keys: logits, projection_input
+        # sequence feature with Generator Decoder: 'logits' is a dictionary
+        #   with keys: logits, projection_input
+        # sequence feature with Tagger Decoder: 'logits' is a dictionary
+        #   with keys: logits, lengths, projection_input
+        #
+
+        if isinstance(logits, tf.Tensor):
             logits = {'logits': logits}
 
         return {
+            # last_hidden used for dependencies processing
             'last_hidden': hidden,
             **logits
         }
@@ -301,7 +314,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
         pass
 

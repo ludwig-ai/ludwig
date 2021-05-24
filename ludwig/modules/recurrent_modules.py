@@ -15,7 +15,10 @@
 # ==============================================================================
 import inspect
 import logging
+import collections
 
+import tensorflow as tf
+import tensorflow_addons as tfa
 from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
 
 from ludwig.utils.misc_utils import get_from_registry
@@ -54,7 +57,7 @@ class RecurrentStack(Layer):
             recurrent_dropout=0.0,
             **kwargs
     ):
-        super(RecurrentStack, self).__init__()
+        super().__init__()
         self.supports_masking = True
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
@@ -103,7 +106,61 @@ class RecurrentStack(Layer):
             outputs = layer(hidden, training=training, mask=mask)
             hidden = outputs[0]
             final_state = outputs[1:]
-        if final_state:
-            if len(final_state) == 1:
-                final_state = final_state[0]
+        if final_state and len(final_state) == 1:
+            final_state = final_state[0]
         return hidden, final_state
+
+
+#
+# Ludwig Customizations to selected TFA classes
+# to support use of sampled softmax loss function
+#
+class BasicDecoderOutput(
+    collections.namedtuple('BasicDecoderOutput',
+                           ('rnn_output', 'sample_id', 'projection_input'))):
+    pass
+
+
+class BasicDecoder(tfa.seq2seq.BasicDecoder):
+    def _projection_input_size(self):
+        return tf.TensorShape(self.cell.output_size)
+
+    @property
+    def output_size(self):
+        return BasicDecoderOutput(
+            rnn_output=self._rnn_output_size(),
+            sample_id=self.sampler.sample_ids_shape,
+            projection_input=self._projection_input_size())
+
+    @property
+    def output_dtype(self):
+        dtype = self._cell_dtype
+        return BasicDecoderOutput(
+            tf.nest.map_structure(lambda _: dtype, self._rnn_output_size()),
+            self.sampler.sample_ids_dtype,
+            tf.nest.map_structure(lambda _: dtype,
+                                  self._projection_input_size())
+        )
+
+    # Ludwig specific implementation of BasicDecoder.step() method
+    def step(self, time, inputs, state, training=None, name=None):
+        cell_outputs, cell_state = self.cell(inputs, state, training=training)
+        cell_state = tf.nest.pack_sequence_as(state,
+                                              tf.nest.flatten(cell_state))
+
+        # get projection_inputs to compute sampled_softmax_cross_entropy_loss
+        projection_inputs = cell_outputs
+
+        if self.output_layer is not None:
+            cell_outputs = self.output_layer(cell_outputs)
+        sample_ids = self.sampler.sample(
+            time=time, outputs=cell_outputs, state=cell_state)
+        (finished, next_inputs, next_state) = self.sampler.next_inputs(
+            time=time,
+            outputs=cell_outputs,
+            state=cell_state,
+            sample_ids=sample_ids)
+        outputs = BasicDecoderOutput(cell_outputs, sample_ids,
+                                     projection_inputs)
+
+        return (outputs, next_state, next_inputs, finished)

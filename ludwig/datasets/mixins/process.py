@@ -36,35 +36,45 @@ class MultifileJoinProcessMixin:
     raw_dataset_path: str
     processed_dataset_path: str
 
-    def read_file(self, filetype, filename):
+    def read_file(self, filetype, filename, header=0):
         if filetype == 'json':
             file_df = pd.read_json(
                 os.path.join(self.raw_dataset_path, filename))
-        if filetype == 'jsonl':
+        elif filetype == 'jsonl':
             file_df = pd.read_json(
                 os.path.join(self.raw_dataset_path, filename), lines=True)
-        if filetype == 'tsv':
+        elif filetype == 'tsv':
             file_df = pd.read_table(
-                os.path.join(self.raw_dataset_path, filename))
-        if filetype == 'csv':
+                os.path.join(self.raw_dataset_path, filename))        
+        elif filetype == 'csv' or filetype == 'data':
             file_df = pd.read_csv(
-                os.path.join(self.raw_dataset_path, filename))
+                os.path.join(self.raw_dataset_path, filename), header=header)
+        else:
+            raise ValueError(f'Unsupported file type: {filetype}')
         return file_df
 
-    def process_downloaded_dataset(self):
+    def process_downloaded_dataset(self, header=0):
+        """Processes dataset
+
+        :param header: indicates whether raw data files contain headers
+        """
         downloaded_files = self.download_filenames
         filetype = self.download_file_type
         all_files = []
         for split_name, filename in downloaded_files.items():
-            file_df = self.read_file(filetype, filename)
-            if split_name == 'train_file': file_df['split'] = 0
-            if split_name == 'val_file': file_df['split'] = 1
-            if split_name == 'test_file': file_df['split'] = 2
+            file_df = self.read_file(filetype, filename, header)
+            if split_name == 'train_file':
+                file_df['split'] = 0
+            elif split_name == 'val_file':
+                file_df['split'] = 1
+            elif split_name == 'test_file':
+                file_df['split'] = 2
+            else:
+                raise ValueError(f'Unrecognized split name: {split_name}')
             all_files.append(file_df)
 
         concat_df = pd.concat(all_files, ignore_index=True)
-        if not os.path.exists(self.processed_dataset_path):
-            os.makedirs(self.processed_dataset_path)
+        os.makedirs(self.processed_dataset_path, exist_ok=True)
         concat_df.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False)

@@ -53,7 +53,7 @@ class Conv1DLayer(Layer):
             pool_strides=None,
             pool_padding='valid',
     ):
-        super(Conv1DLayer, self).__init__()
+        super().__init__()
 
         self.layers = []
 
@@ -134,7 +134,7 @@ class Conv1DStack(Layer):
             default_pool_padding='same',
             **kwargs
     ):
-        super(Conv1DStack, self).__init__()
+        super().__init__()
 
         if layers is None:
             if num_layers is None:
@@ -280,7 +280,7 @@ class ParallelConv1D(Layer):
             default_pool_padding='valid',
             **kwargs
     ):
-        super(ParallelConv1D, self).__init__()
+        super().__init__()
 
         if layers is None:
             self.layers = [
@@ -416,7 +416,7 @@ class ParallelConv1DStack(Layer):
             default_pool_padding='valid',
             **kwargs
     ):
-        super(ParallelConv1DStack, self).__init__()
+        super().__init__()
 
         if stacked_layers is None:
             self.stacked_parallel_layers = [
@@ -545,7 +545,7 @@ class Conv2DLayer(Layer):
             pool_strides=None,
             pool_padding='valid',
     ):
-        super(Conv2DLayer, self).__init__()
+        super().__init__()
 
         self.layers = []
 
@@ -625,7 +625,7 @@ class Conv2DStack(Layer):
             default_pool_strides=None,
             default_pool_padding='valid',
     ):
-        super(Conv2DStack, self).__init__()
+        super().__init__()
 
         if layers is None:
             if num_layers is None:
@@ -736,7 +736,7 @@ class Conv2DLayerFixedPadding(Layer):
             strides=1,
             weights_regularizer=None
     ):
-        super(Conv2DLayerFixedPadding, self).__init__()
+        super().__init__()
 
         self.layers = []
 
@@ -778,7 +778,7 @@ class ResNetBlock(Layer):
             batch_norm_epsilon=0.001,
             projection_shortcut=None
     ):
-        super(ResNetBlock, self).__init__()
+        super().__init__()
 
         self.projection_shortcut = projection_shortcut
 
@@ -852,7 +852,7 @@ class ResNetBottleneckBlock(Layer):
             batch_norm_epsilon=0.001,
             projection_shortcut=None
     ):
-        super(ResNetBottleneckBlock, self).__init__()
+        super().__init__()
 
         self.projection_shortcut = projection_shortcut
 
@@ -949,7 +949,7 @@ class ResNetBlockLayer(Layer):
             batch_norm_momentum=0.9,
             batch_norm_epsilon=0.001
     ):
-        super(ResNetBlockLayer, self).__init__()
+        super().__init__()
         # Bottleneck blocks end with 4x the number of filters as they start with
         num_filters_out = num_filters * 4 if is_bottleneck else num_filters
 
@@ -1037,7 +1037,7 @@ class ResNet2(Layer):
          Raises:
            ValueError: if invalid version is selected.
         """
-        super(ResNet2, self).__init__()
+        super().__init__()
         self.resnet_size = resnet_size
 
         block_class = ResNetBlock

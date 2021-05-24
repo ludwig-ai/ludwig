@@ -18,11 +18,12 @@ import argparse
 import logging
 import os
 import sys
-from typing import List
+from typing import List, Union
 
 import numpy as np
 
 from ludwig.api import LudwigModel
+from ludwig.backend import ALL_BACKENDS, LOCAL, Backend
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
@@ -44,7 +45,7 @@ def collect_activations(
         gpus: List[str] = None,
         gpu_memory_limit: int =None,
         allow_parallel_threads: bool = True,
-        use_horovod: bool = None,
+        backend: Union[Backend, str] = None,
         debug: bool = False,
         **kwargs
 ) -> List[str]:
@@ -80,6 +81,8 @@ def collect_activations(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param backend: (Union[Backend, str]) `Backend` or string name
+        of backend to use to execute preprocessing / training steps.
     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
         `inf_or_nan` checks.
 
@@ -99,7 +102,7 @@ def collect_activations(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod
+        backend=backend
     )
 
     # collect activations
@@ -321,11 +324,11 @@ def cli_collect_activations(sys_argv):
         help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
-        '-uh',
-        '--use_horovod',
-        action='store_true',
-        default=None,
-        help='uses horovod for distributed training'
+        "-b",
+        "--backend",
+        help='specifies backend to use for parallel / distributed execution, '
+             'defaults to local execution or Horovod if called using horovodrun',
+        choices=ALL_BACKENDS,
     )
     parser.add_argument(
         '-dbg',

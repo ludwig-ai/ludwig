@@ -1,0 +1,7 @@
+version: 1.0
+competition: titanic
+archive_filename: titanic.zip
+split_filenames:
+  train_file: train.csv
+  test_file: test.csv
+csv_filename: titanic.csv

@@ -25,8 +25,7 @@ from ludwig.constants import *
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.utils.audio_utils import calculate_incr_mean
-from ludwig.utils.audio_utils import calculate_incr_var
+from ludwig.utils.audio_utils import calculate_mean, calculate_var
 from ludwig.utils.audio_utils import get_fbank
 from ludwig.utils.audio_utils import get_group_delay
 from ludwig.utils.audio_utils import get_length_in_samp
@@ -41,7 +40,7 @@ from ludwig.utils.misc_utils import set_default_values
 logger = logging.getLogger(__name__)
 
 
-class AudioFeatureMixin(object):
+class AudioFeatureMixin:
     type = AUDIO
 
     preprocessing_defaults = {
@@ -75,7 +74,11 @@ class AudioFeatureMixin(object):
     }
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters):
+    def cast_column(feature, dataset_df, backend):
+        return dataset_df
+
+    @staticmethod
+    def get_feature_meta(column, preprocessing_parameters, backend):
         try:
             import soundfile
         except ImportError:
@@ -87,7 +90,7 @@ class AudioFeatureMixin(object):
             sys.exit(-1)
 
         audio_feature_dict = preprocessing_parameters['audio_feature']
-        first_audio_file_path = column[0]
+        first_audio_file_path = column.head(1)[0]
         _, sampling_rate_in_hz = soundfile.read(first_audio_file_path)
 
         feature_dim = AudioFeatureMixin._get_feature_dim(audio_feature_dict,
@@ -100,7 +103,8 @@ class AudioFeatureMixin(object):
         return {
             'feature_dim': feature_dim,
             'sampling_rate_in_hz': sampling_rate_in_hz,
-            'max_length': max_length
+            'max_length': max_length,
+            'reshape': (max_length, feature_dim)
         }
 
     @staticmethod
@@ -125,16 +129,17 @@ class AudioFeatureMixin(object):
         return feature_dim
 
     @staticmethod
-    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict,
-                                             feature_dim, max_length,
-                                             padding_value, normalization_type,
-                                             audio_stats):
-        """
-        :param filepath: path to the audio
-        :param audio_feature_dict: dictionary describing audio feature see default
-        :param feature_dim: dimension of each feature frame
-        :param max_length: max audio length defined by user in samples
-        """
+    def _process_in_memory(
+            column,
+            src_path,
+            audio_feature_dict,
+            feature_dim,
+            max_length,
+            padding_value,
+            normalization_type,
+            audio_file_length_limit_in_s,
+            backend
+    ):
         try:
             import soundfile
         except ImportError:
@@ -145,10 +150,59 @@ class AudioFeatureMixin(object):
             )
             sys.exit(-1)
 
-        feature_type = audio_feature_dict[TYPE]
-        audio, sampling_rate_in_hz = soundfile.read(filepath)
-        AudioFeatureMixin._update(audio_stats, audio, sampling_rate_in_hz)
+        def read_audio(path):
+            filepath = get_abs_path(src_path, path)
+            return soundfile.read(filepath)
 
+        df_engine = backend.df_engine
+        raw_audio = df_engine.map_objects(column, read_audio)
+        processed_audio = df_engine.map_objects(
+            raw_audio,
+            lambda row: AudioFeatureMixin._transform_to_feature(
+                audio=row[0],
+                sampling_rate_in_hz=row[1],
+                audio_feature_dict=audio_feature_dict,
+                feature_dim=feature_dim,
+                max_length=max_length,
+                padding_value=padding_value,
+                normalization_type=normalization_type
+            )
+        )
+
+        audio_stats = df_engine.map_objects(
+            raw_audio,
+            lambda row: AudioFeatureMixin._get_stats(
+                audio=row[0],
+                sampling_rate_in_hz=row[1],
+                max_length_in_s=audio_file_length_limit_in_s,
+            )
+        )
+
+        def reduce(series):
+            merged_stats = None
+            for audio_stats in series:
+                if merged_stats is None:
+                    merged_stats = audio_stats.copy()
+                else:
+                    AudioFeatureMixin._merge_stats(merged_stats, audio_stats)
+            return merged_stats
+
+        merged_stats = df_engine.reduce_objects(audio_stats, reduce)
+        merged_stats['mean'] = calculate_mean(merged_stats['sum'], merged_stats['count'])
+        merged_stats['var'] = calculate_var(merged_stats['sum'], merged_stats['sum2'], merged_stats['count'])
+        return processed_audio, merged_stats
+
+    @staticmethod
+    def _transform_to_feature(
+            audio,
+            sampling_rate_in_hz,
+            audio_feature_dict,
+            feature_dim,
+            max_length,
+            padding_value,
+            normalization_type
+    ):
+        feature_type = audio_feature_dict[TYPE]
         if feature_type == 'raw':
             audio_feature = np.expand_dims(audio, axis=-1)
         elif feature_type in ['stft', 'stft_phase', 'group_delay', 'fbank']:
@@ -178,21 +232,25 @@ class AudioFeatureMixin(object):
         return audio_feature_padded
 
     @staticmethod
-    def _update(audio_stats, audio, sampling_rate_in_hz):
+    def _get_stats(audio, sampling_rate_in_hz, max_length_in_s):
         audio_length_in_s = audio.shape[-1] / float(sampling_rate_in_hz)
-        audio_stats['count'] += 1
-        mean = ((audio_stats['count'] - 1) * audio_stats[
-            'mean'] + audio_length_in_s) / float(audio_stats['count'])
-        mean = calculate_incr_mean(audio_stats['count'], audio_stats['mean'],
-                                   audio_length_in_s)
-        var = calculate_incr_var(audio_stats['var'], audio_stats['mean'], mean,
-                                 audio_length_in_s)
-        audio_stats['mean'] = mean
-        audio_stats['var'] = var
-        audio_stats['max'] = max(audio_stats['max'], audio_length_in_s)
-        audio_stats['min'] = min(audio_stats['min'], audio_length_in_s)
-        if audio_length_in_s > audio_stats['max_length_in_s']:
-            audio_stats['cropped'] += 1
+        return {
+            'count': 1,
+            'sum': audio_length_in_s,
+            'sum2': audio_length_in_s * audio_length_in_s,
+            'min': audio_length_in_s,
+            'max': audio_length_in_s,
+            'cropped': 1 if audio_length_in_s > max_length_in_s else 0
+        }
+
+    @staticmethod
+    def _merge_stats(merged_stats, audio_stats):
+        merged_stats['count'] += audio_stats['count']
+        merged_stats['sum'] += audio_stats['sum']
+        merged_stats['sum2'] += audio_stats['sum2']
+        merged_stats['min'] = min(merged_stats['min'], audio_stats['min'])
+        merged_stats['max'] = max(merged_stats['max'], audio_stats['max'])
+        merged_stats['cropped'] += audio_stats['cropped']
 
     @staticmethod
     def _get_2D_feature(audio, feature_type, audio_feature_dict,
@@ -240,10 +298,12 @@ class AudioFeatureMixin(object):
     @staticmethod
     def add_feature_data(
             feature,
-            dataset_df,
-            dataset,
+            input_df,
+            proc_df,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
     ):
         set_default_value(
             feature['preprocessing'],
@@ -251,11 +311,11 @@ class AudioFeatureMixin(object):
             preprocessing_parameters['in_memory']
         )
 
-        if not 'audio_feature' in preprocessing_parameters:
+        if 'audio_feature' not in preprocessing_parameters:
             raise ValueError(
                 'audio_feature dictionary has to be present in preprocessing '
                 'for audio.')
-        if not TYPE in preprocessing_parameters['audio_feature']:
+        if TYPE not in preprocessing_parameters['audio_feature']:
             raise ValueError(
                 'type has to be present in audio_feature dictionary '
                 'for audio.')
@@ -267,14 +327,14 @@ class AudioFeatureMixin(object):
         src_path = None
         # this is not super nice, but works both and DFs and lists
         first_path = '.'
-        for first_path in dataset_df[column]:
+        for first_path in input_df[column]:
             break
-        if hasattr(dataset_df, 'src'):
-            src_path = os.path.dirname(os.path.abspath(dataset_df.src))
+        if hasattr(input_df, 'src'):
+            src_path = os.path.dirname(os.path.abspath(input_df.src))
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Audio file paths must be absolute')
 
-        num_audio_utterances = len(dataset_df)
+        num_audio_utterances = len(input_df)
         padding_value = preprocessing_parameters['padding_value']
         normalization_type = preprocessing_parameters['norm']
 
@@ -287,33 +347,20 @@ class AudioFeatureMixin(object):
         if num_audio_utterances == 0:
             raise ValueError(
                 'There are no audio files in the dataset provided.')
-        audio_stats = {
-            'count': 0,
-            'mean': 0,
-            'var': 0,
-            'std': 0,
-            'max': 0,
-            'min': float('inf'),
-            'cropped': 0,
-            'max_length_in_s': audio_file_length_limit_in_s
-        }
 
         if feature[PREPROCESSING]['in_memory']:
-            dataset[proc_column] = np.empty(
-                (num_audio_utterances, max_length, feature_dim),
-                dtype=np.float32
+            audio_features, audio_stats = AudioFeatureMixin._process_in_memory(
+                input_df[feature[NAME]],
+                src_path,
+                audio_feature_dict,
+                feature_dim,
+                max_length,
+                padding_value,
+                normalization_type,
+                audio_file_length_limit_in_s,
+                backend
             )
-            for i, path in enumerate(dataset_df[column]):
-                filepath = get_abs_path(
-                    src_path,
-                    path
-                )
-                audio_feature = AudioFeatureMixin._read_audio_and_transform_to_feature(
-                    filepath, audio_feature_dict, feature_dim, max_length,
-                    padding_value, normalization_type, audio_stats
-                )
-
-                dataset[proc_column][i, :, :] = audio_feature
+            proc_df[proc_column] = audio_features
 
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))
@@ -330,8 +377,12 @@ class AudioFeatureMixin(object):
                 audio_stats['count'], audio_stats['mean'],
                 audio_stats['std'], audio_stats['max'],
                 audio_stats['min'], audio_stats['cropped'],
-                audio_stats['max_length_in_s'])
+                audio_file_length_limit_in_s)
             logger.debug(print_statistics)
+        else:
+            backend.check_lazy_load_supported(feature)
+
+        return proc_df
 
     @staticmethod
     def _get_max_length_feature(
@@ -392,7 +443,8 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
-    def get_input_dtype(self):
+    @classmethod
+    def get_input_dtype(cls):
         return tf.float32
 
     def get_input_shape(self):

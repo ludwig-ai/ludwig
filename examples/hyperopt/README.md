@@ -1,6 +1,6 @@
 # Hyperparameter Optimization
 
-Demonstrates hyperparameter optimization using Ludwig's in-built capabililies.
+Demonstrates hyperparameter optimization using Ludwig's in-built capabilities.
 
 ### Preparatory Steps
 * Create `data` directory
@@ -20,5 +20,5 @@ Jupyter notebook `model_hyperopt_example.ipynb` demonstrates several hyperparame
 * Perform two hyperparameter runs
   * Parallel workers using random search strategy
   * Serial processing using random search strategy
-  * Parallel workers uing grid search strategy (Note: takes about 35 minutes)
+  * Parallel workers using grid search strategy (Note: takes about 35 minutes)
 * Demonstrate various Ludwig visualizations for hyperparameter optimization

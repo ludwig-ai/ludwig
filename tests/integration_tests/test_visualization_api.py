@@ -25,6 +25,7 @@ import pandas as pd
 
 from ludwig import visualize
 from ludwig.api import LudwigModel
+from ludwig.constants import SPLIT
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import category_feature, \
@@ -132,8 +133,8 @@ def obtain_df_splits(data_csv):
     data_df = read_csv(data_csv)
     # Obtain data split array mapping data rows to split type
     # 0-train, 1-validation, 2-test
-    data_split = get_split(data_df)
-    train_split, test_split, val_split = split_dataset_ttv(data_df, data_split)
+    data_df[SPLIT] = get_split(data_df)
+    train_split, test_split, val_split = split_dataset_ttv(data_df, SPLIT)
     # Splits are python dictionaries not dataframes- they need to be converted.
     test_df = pd.DataFrame(test_split)
     train_df = pd.DataFrame(train_split)
@@ -558,12 +559,22 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
 
         output_feature_name1 = output_features[0]['name']
         output_feature_name2 = output_features[1]['name']
-        # probabilities need to be list of lists containing each row data from the
-        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-        probability1 = predictions.iloc[:, [2, 3, 4]].values
-        probability2 = predictions.iloc[:, [7, 8, 9]].values
 
         ground_truth_metadata = model.training_set_metadata
+        feature1_cols = [
+            f'{output_feature_name1}_probabilities_{label}'
+            for label in ground_truth_metadata[output_feature_name1]['idx2str']
+        ]
+        feature2_cols = [
+            f'{output_feature_name2}_probabilities_{label}'
+            for label in ground_truth_metadata[output_feature_name2]['idx2str']
+        ]
+
+        # probabilities need to be list of lists containing each row data from the
+        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
+        probability1 = predictions.loc[:, feature1_cols].values
+        probability2 = predictions.loc[:, feature2_cols].values
+
         target_predictions1 = test_df[output_feature_name1]
         target_predictions2 = test_df[output_feature_name2]
         ground_truth1 = np.asarray([
@@ -630,12 +641,22 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
 
         output_feature_name1 = output_features[0]['name']
         output_feature_name2 = output_features[1]['name']
-        # probabilities need to be list of lists containing each row data from the
-        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-        probability1 = predictions.iloc[:, [2, 3, 4]].values
-        probability2 = predictions.iloc[:, [7, 8, 9]].values
 
         ground_truth_metadata = model.training_set_metadata
+        feature1_cols = [
+            f'{output_feature_name1}_probabilities_{label}'
+            for label in ground_truth_metadata[output_feature_name1]['idx2str']
+        ]
+        feature2_cols = [
+            f'{output_feature_name2}_probabilities_{label}'
+            for label in ground_truth_metadata[output_feature_name2]['idx2str']
+        ]
+
+        # probabilities need to be list of lists containing each row data from the
+        # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
+        probability1 = predictions.loc[:, feature1_cols].values
+        probability2 = predictions.loc[:, feature2_cols].values
+
         target_predictions1 = test_df[output_feature_name1]
         target_predictions2 = test_df[output_feature_name2]
         ground_truth1 = np.asarray([

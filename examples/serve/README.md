@@ -61,25 +61,24 @@ python client_program.py
 
 Output should look like this
 ``` 
-retrieved 418 records for predictions
-single record for prediciton:
- {'PassengerId': 892, 'Pclass': 3, 'Name': 'Kelly, Mr. James', 'Sex': 'male', 'Age': 34.5, 'SibSp': 0, 'Parch': 0, 'Ticket': '330911', 'Fare': 7.8292, 'Cabin': nan, 'Embarked': 'Q'}
+retrieved 1309 records for predictions
+single record for prediction:
+ {'PassengerId': 1, 'Survived': 0.0, 'Pclass': 3, 'Name': 'Braund, Mr. Owen Harris', 'Sex': 'male', 'Age': 22.0, 'SibSp': 1, 'Parch': 0, 'Ticket': 'A/5 21171', 'Fare': 7.25, 'Cabin': nan, 'Embarked': 'S', 'split': 0}
 
 invoking REST API /predict for single record...
 
 Received 1 predictions
 Sample predictions:
-   Survived_predictions  Survived_probabilities
-0                 False                0.257691
+   Survived_predictions  Survived_probabilities_False  Survived_probabilities_True  Survived_probability
+0                 False                      0.906132                     0.093868              0.906132
 
 invoking REST API /batch_predict for entire dataframe...
 
-Received 418 predictions
+Received 1309 predictions
 Sample predictions:
-   Survived_predictions  Survived_probabilities
-0                 False                0.257691
-1                 False                0.439749
-2                 False                0.439286
-3                 False                0.146570
-4                 False                0.427077
-```
+   Survived_predictions  Survived_probabilities_False  Survived_probabilities_True  Survived_probability
+0                 False                      0.906132                     0.093868              0.906132
+1                  True                      0.165714                     0.834286              0.834286
+2                  True                      0.441169                     0.558831              0.558831
+3                  True                      0.228311                     0.771689              0.771689
+4                 False                      0.878072                     0.121928              0.878072```

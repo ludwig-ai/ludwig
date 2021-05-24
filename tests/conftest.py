@@ -146,7 +146,7 @@ def hyperopt_results():
     # add hyperopt parameter space to the config
     config['hyperopt'] = hyperopt_configs
 
-    hyperopt_results = hyperopt(
+    hyperopt(
         config,
         dataset=rel_path,
         output_directory='results'
