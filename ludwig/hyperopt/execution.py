@@ -43,27 +43,30 @@ class HyperoptExecutor(ABC):
         if split is not None:
             if split not in stats:
                 return False
-
             stats = stats[split]
-            if self.output_feature not in stats:
-                return False
 
+        if self.output_feature not in stats:
+            return False
         stats = stats[self.output_feature]
+
         if self.metric not in stats:
             return False
-
-        metric_stats = stats[self.metric]
-        return len(metric_stats) > 0
+        stats = stats[self.metric]
+        return len(stats) > 0
 
     def _has_eval_metric(self, stats):
         if stats is None:
             return False
 
+        if self.output_feature not in stats:
+            return False
+        stats = stats[self.output_feature]
+
         for metric_part in self.metric.split('.'):
             if not isinstance(stats, dict) or metric_part not in stats:
                 return False
             stats = stats[metric_part]
-        return len(stats) > 0
+        return isinstance(stats, float)
 
     def get_metric_score(self, train_stats, eval_stats) -> float:
         if (train_stats is not None and
@@ -87,26 +90,24 @@ class HyperoptExecutor(ABC):
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
         print(f'EVAL_STATS: {eval_stats}')
-        if '.' in self.metric:
-            metric_parts = self.metric.split('.')
-            stats = eval_stats[self.output_feature]
-            for metric_part in metric_parts:
-                if isinstance(stats, dict):
-                    if metric_part in stats:
-                        stats = stats[metric_part]
-                    else:
-                        raise ValueError(
-                            f"Evaluation statistics do not contain "
-                            f"the metric {self.metric}")
+        stats = eval_stats[self.output_feature]
+        for metric_part in self.metric.split('.'):
+            if isinstance(stats, dict):
+                if metric_part in stats:
+                    stats = stats[metric_part]
                 else:
-                    raise ValueError(f"Evaluation statistics do not contain "
-                                     f"the metric {self.metric}")
-            if not isinstance(stats, float):
-                raise ValueError(f"The metric {self.metric} in "
-                                 f"evaluation statistics is not "
-                                 f"a numerical value: {stats}")
-            return stats
-        return eval_stats[self.output_feature][self.metric]
+                    raise ValueError(
+                        f"Evaluation statistics do not contain "
+                        f"the metric {self.metric}")
+            else:
+                raise ValueError(f"Evaluation statistics do not contain "
+                                 f"the metric {self.metric}")
+
+        if not isinstance(stats, float):
+            raise ValueError(f"The metric {self.metric} in "
+                             f"evaluation statistics is not "
+                             f"a numerical value: {stats}")
+        return stats
 
     def get_metric_score_from_train_stats(self, train_stats, select_split=None, returned_split=None) -> float:
         select_split = select_split or VALIDATION
@@ -532,9 +533,8 @@ class ParallelExecutor(HyperoptExecutor):
                                              hyperopt_parameters)
 
                 self.hyperopt_sampler.update_batch(
-                    (result["parameters"], result["metric_score"]) for result
-                    in
-                    batch_results
+                    (result.parameters, result.metric_score)
+                    for result in batch_results
                 )
 
                 trial_results.extend(batch_results)
@@ -769,9 +769,8 @@ class RayTuneExecutor(HyperoptExecutor):
                         VALIDATION: progress_tracker.vali_metrics,
                         TEST: progress_tracker.test_metrics,
                     }
-                    metric_scores = tune_executor.get_metric_score(train_stats, eval_stats=None)
 
-                    metric_score = metric_scores[-1] if isinstance(metric_scores, list) else metric_scores
+                    metric_score = tune_executor.get_metric_score(train_stats, eval_stats=None)
                     tune.report(
                         parameters=json.dumps(config, cls=NumpyEncoder),
                         metric_score=metric_score,
