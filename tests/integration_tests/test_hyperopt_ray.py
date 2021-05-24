@@ -22,6 +22,7 @@ import pytest
 import ray
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
@@ -227,7 +228,7 @@ def run_hyperopt(config, rel_path):
     )
 
     # check for return results
-    assert isinstance(hyperopt_results, list)
+    assert isinstance(hyperopt_results, RayTuneResults)
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(

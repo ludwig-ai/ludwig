@@ -11,6 +11,7 @@ from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE, RAY
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, \
     print_hyperopt_results, save_hyperopt_stats
@@ -49,7 +50,7 @@ def hyperopt(
         random_seed: int = default_random_seed,
         debug: bool = False,
         **kwargs,
-) -> List[dict]:
+) -> HyperoptResults:
     """This method performs an hyperparameter optimization.
 
     # Inputs
@@ -306,7 +307,7 @@ def hyperopt(
 
             hyperopt_stats = {
                 'hyperopt_config': hyperopt_config,
-                'hyperopt_results': hyperopt_results
+                'hyperopt_results': [t.to_dict() for t in hyperopt_results.ordered_trials],
             }
 
             save_hyperopt_stats(hyperopt_stats, output_directory)

@@ -11,7 +11,7 @@ from typing import Union
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import *
-from ludwig.hyperopt.results import TrialResults
+from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
@@ -166,7 +166,7 @@ class HyperoptExecutor(ABC):
             random_seed=default_random_seed,
             debug=False,
             **kwargs
-    ):
+    ) -> HyperoptResults:
         pass
 
 
@@ -209,8 +209,8 @@ class SerialExecutor(HyperoptExecutor):
             random_seed=default_random_seed,
             debug=False,
             **kwargs
-    ):
-        hyperopt_results = []
+    ) -> HyperoptResults:
+        trial_results = []
         trials = 0
         while not self.hyperopt_sampler.finished():
             sampled_parameters = self.hyperopt_sampler.sample_batch()
@@ -259,7 +259,7 @@ class SerialExecutor(HyperoptExecutor):
                 metric_score = self.get_metric_score(train_stats, eval_stats)
                 metric_scores.append(metric_score)
 
-                hyperopt_results.append(TrialResults(
+                trial_results.append(TrialResults(
                     parameters=parameters,
                     metric_score=metric_score,
                     training_stats=train_stats,
@@ -270,9 +270,8 @@ class SerialExecutor(HyperoptExecutor):
             self.hyperopt_sampler.update_batch(
                 zip(sampled_parameters, metric_scores))
 
-        hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
-
-        return hyperopt_results
+        ordered_trials = self.sort_hyperopt_results(trial_results)
+        return HyperoptResults(ordered_trials=ordered_trials)
 
 
 class ParallelExecutor(HyperoptExecutor):
@@ -360,7 +359,7 @@ class ParallelExecutor(HyperoptExecutor):
             random_seed=default_random_seed,
             debug=False,
             **kwargs
-    ):
+    ) -> HyperoptResults:
         ctx = multiprocessing.get_context('spawn')
 
         if gpus is None:
@@ -477,7 +476,7 @@ class ParallelExecutor(HyperoptExecutor):
         pool = ctx.Pool(self.num_workers,
                         ParallelExecutor.init_worker)
         try:
-            hyperopt_results = []
+            trial_results = []
             trials = 0
             while not self.hyperopt_sampler.finished():
                 sampled_parameters = self.hyperopt_sampler.sample_batch()
@@ -537,13 +536,13 @@ class ParallelExecutor(HyperoptExecutor):
                     batch_results
                 )
 
-                hyperopt_results.extend(batch_results)
+                trial_results.extend(batch_results)
         finally:
             pool.close()
             pool.join()
 
-        hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
-        return hyperopt_results
+        ordered_trials = self.sort_hyperopt_results(trial_results)
+        return HyperoptResults(ordered_trials=ordered_trials)
 
 
 class FiberExecutor(HyperoptExecutor):
@@ -613,7 +612,7 @@ class FiberExecutor(HyperoptExecutor):
             random_seed=default_random_seed,
             debug=False,
             **kwargs
-    ):
+    ) -> HyperoptResults:
         experiment_kwargs = dict(
             dataset=dataset,
             training_set=training_set,
@@ -648,7 +647,7 @@ class FiberExecutor(HyperoptExecutor):
             experiemnt_fn = self.fiber_meta(**self.resource_limits)(
                 experiemnt_fn)
 
-        hyperopt_results = []
+        trial_results = []
         trials = 0
         while not self.hyperopt_sampler.finished():
             sampled_parameters = self.hyperopt_sampler.sample_batch()
@@ -673,7 +672,7 @@ class FiberExecutor(HyperoptExecutor):
                 metric_score = self.get_metric_score(train_stats, eval_stats)
                 metric_scores.append(metric_score)
 
-                hyperopt_results.append(TrialResults(
+                trial_results.append(TrialResults(
                     parameters=parameters,
                     metric_score=metric_score,
                     training_stats=train_stats,
@@ -683,9 +682,8 @@ class FiberExecutor(HyperoptExecutor):
             self.hyperopt_sampler.update_batch(
                 zip(sampled_parameters, metric_scores))
 
-        hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
-
-        return hyperopt_results
+        ordered_trials = self.sort_hyperopt_results(trial_results)
+        return HyperoptResults(ordered_trials=ordered_trials)
 
 
 class RayTuneExecutor(HyperoptExecutor):
@@ -794,35 +792,37 @@ class RayTuneExecutor(HyperoptExecutor):
             eval_stats=json.dumps(eval_stats, cls=NumpyEncoder)
         )
 
-    def execute(self,
-                config,
-                dataset=None,
-                training_set=None,
-                validation_set=None,
-                test_set=None,
-                training_set_metadata=None,
-                data_format=None,
-                experiment_name="hyperopt",
-                model_name="run",
-                # model_load_path=None,
-                # model_resume_path=None,
-                skip_save_training_description=False,
-                skip_save_training_statistics=False,
-                skip_save_model=False,
-                skip_save_progress=False,
-                skip_save_log=False,
-                skip_save_processed_input=True,
-                skip_save_unprocessed_output=False,
-                skip_save_predictions=False,
-                skip_save_eval_stats=False,
-                output_directory="results",
-                gpus=None,
-                gpu_memory_limit=None,
-                allow_parallel_threads=True,
-                backend=None,
-                random_seed=default_random_seed,
-                debug=False,
-                **kwargs):
+    def execute(
+            self,
+            config,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
+            experiment_name="hyperopt",
+            model_name="run",
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=True,
+            skip_save_unprocessed_output=False,
+            skip_save_predictions=False,
+            skip_save_eval_stats=False,
+            output_directory="results",
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            backend=None,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
+    ) -> RayTuneResults:
         if isinstance(dataset, str) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
@@ -924,7 +924,10 @@ class RayTuneExecutor(HyperoptExecutor):
             for kwargs in ordered_trials.to_dict(orient="records")
         ]
 
-        return ordered_trials
+        return RayTuneResults(
+            ordered_trials=ordered_trials,
+            experiment_analysis=analysis
+        )
 
 
 def get_build_hyperopt_executor(executor_type):

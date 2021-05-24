@@ -4,6 +4,7 @@ import os
 from ludwig.constants import SAMPLER, EXECUTOR, VALIDATION, COMBINED, LOSS, \
     MINIMIZE, TYPE
 from ludwig.hyperopt.execution import executor_registry
+from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.sampling import sampler_registry
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc_utils import set_default_value, set_default_values, \
@@ -42,11 +43,11 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     )
 
 
-def print_hyperopt_results(hyperopt_results):
+def print_hyperopt_results(hyperopt_results: HyperoptResults):
     print_boxed('HYPEROPT RESULTS', print_fun=logger.info)
-    for hyperopt_result in hyperopt_results:
+    for trial_results in hyperopt_results.ordered_trials:
         logger.info('score: {:.6f} | parameters: {}'.format(
-            hyperopt_result['metric_score'], hyperopt_result['parameters']
+            trial_results.metric_score, trial_results.parameters
         ))
     logger.info("")
 

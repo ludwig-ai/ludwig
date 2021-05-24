@@ -19,6 +19,7 @@ import os.path
 import pytest
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
@@ -213,7 +214,7 @@ def test_hyperopt_run_hyperopt(csv_filename, samplers):
     )
 
     # check for return results
-    assert isinstance(hyperopt_results, list)
+    assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(
