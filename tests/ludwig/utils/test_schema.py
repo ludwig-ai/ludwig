@@ -20,13 +20,13 @@ from jsonschema.exceptions import ValidationError
 
 from ludwig.utils.schema import validate_config
 
-from tests.integration_tests.utils import ENCODERS
+from tests.integration_tests.utils import ENCODERS, numerical_feature, binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import sequence_feature
 
 
-def test_config_basic():
+def test_config_encoders():
     for encoder in ENCODERS:
         config = {
             'input_features': [
@@ -37,6 +37,45 @@ def test_config_basic():
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
         validate_config(config)
+
+
+def test_config_tabnet():
+    config = {
+        'input_features': [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            numerical_feature(),
+        ],
+        'output_features': [binary_feature(weight_regularization=None)],
+        'combiner': {
+            'type': 'tabnet',
+            'size': 24,
+            'output_size': 26,
+            'sparsity': 0.000001,
+            'bn_virtual_divider': 32,
+            'bn_momentum': 0.6,
+            'num_steps': 5,
+            'relaxation_factor': 1.5,
+            'use_keras_batch_norm': False,
+            'bn_virtual_bs': 512,
+        },
+        'training': {
+            'batch_size': 16384,
+            'eval_batch_size': 500000,
+            'epochs': 1000,
+            'early_stop': 20,
+            'learning_rate': 0.02,
+            'optimizer': {
+                'type': 'adam'
+            },
+            'decay': True,
+            'decay_steps': 20000,
+            'decay_rate': 0.9,
+            'staircase': True,
+            'regularization_lambda': 1,
+            'validation_field': 'label',
+        }
+    }
+    validate_config(config)
 
 
 def test_config_bad_feature_type():
@@ -81,4 +120,30 @@ def test_config_bad_preprocessing_param():
     }
 
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+        validate_config(config)
+
+
+def test_config_bad_combiner():
+    config = {
+        'input_features': [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            numerical_feature(),
+        ],
+        'output_features': [binary_feature(weight_regularization=None)],
+        'combiner': {
+            'type': 'tabnet'
+        }
+    }
+
+    # config is valid at this point
+    validate_config(config)
+
+    # bad combiner
+    config['combiner']['type'] = 'fake'
+    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+        validate_config(config)
+
+    # bad combiner format (list instead of dict)
+    config['combiner'] = [{'type': 'tabnet'}]
+    with pytest.raises(ValidationError):
         validate_config(config)

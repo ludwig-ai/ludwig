@@ -17,10 +17,12 @@
 
 from jsonschema import validate
 
+from ludwig.combiners.combiners import combiner_registry
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 
 INPUT_FEATURE_TYPES = sorted(list(input_type_registry.keys()))
 OUTPUT_FEATURE_TYPES = sorted(list(output_type_registry.keys()))
+COMBINER_TYPES = sorted(list(combiner_registry.keys()))
 
 
 def get_schema():
@@ -41,10 +43,16 @@ def get_schema():
                     'required': ['name', 'type'],
                 }
             },
-            'combiner': {},
             'output_features': {},
+            'combiner': {
+                'type': 'object',
+                'properties': {
+                    'type': {'type': 'string', 'enum': COMBINER_TYPES},
+                },
+            },
             'training': {},
             'preprocessing': {},
+            'hyperopt': {},
         },
         'required': ['input_features', 'output_features']
     }
