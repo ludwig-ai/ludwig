@@ -3,3 +3,4 @@ fastapi
 pydantic
 python-multipart
 neuropod ; platform_system != "Windows"
+imageio
