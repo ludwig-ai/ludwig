@@ -43,7 +43,20 @@ def get_schema():
                     'required': ['name', 'type'],
                 }
             },
-            'output_features': {},
+            'output_features': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'name': {'type': 'string'},
+                        'type': {'type': 'string', 'enum': OUTPUT_FEATURE_TYPES},
+                        'column': {'type': 'string'},
+                        'decoder': {'type': 'string'}
+                    },
+                    'allOf': get_output_decoder_conds() + get_output_preproc_conds(),
+                    'required': ['name', 'type'],
+                }
+            },
             'combiner': {
                 'type': 'object',
                 'properties': {
@@ -89,6 +102,36 @@ def get_input_preproc_conds():
     return conds
 
 
+def get_output_decoder_conds():
+    conds = []
+    for feature_type in OUTPUT_FEATURE_TYPES:
+        feature_cls = output_type_registry[feature_type]
+        decoder_names = list(feature_cls.decoder_registry.keys())
+        decoder_cond = create_cond(
+            {'type': feature_type},
+            {'decoder': {'enum': decoder_names}},
+        )
+        conds.append(decoder_cond)
+    return conds
+
+
+def get_output_preproc_conds():
+    conds = []
+    for feature_type in OUTPUT_FEATURE_TYPES:
+        feature_cls = output_type_registry[feature_type]
+        preproc_spec = {
+            'type': 'object',
+            'properties': feature_cls.preprocessing_schema,
+            'additionalProperties': False,
+        }
+        preproc_cond = create_cond(
+            {'type': feature_type},
+            {'preprocessing': preproc_spec},
+        )
+        conds.append(preproc_cond)
+    return conds
+
+
 def create_cond(if_pred, then_pred):
     return {
         'if': {
@@ -101,4 +144,5 @@ def create_cond(if_pred, then_pred):
 
 
 def validate_config(config):
+    print(f'CONFIG: {config["input_features"][5]}')
     validate(instance=config, schema=get_schema())

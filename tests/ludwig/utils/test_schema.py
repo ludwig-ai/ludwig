@@ -17,13 +17,69 @@
 
 import pytest
 from jsonschema.exceptions import ValidationError
+from ludwig.utils.defaults import merge_with_defaults
 
-from ludwig.utils.schema import validate_config
+from ludwig.utils.schema import validate_config, OUTPUT_FEATURE_TYPES
 
-from tests.integration_tests.utils import ENCODERS, numerical_feature, binary_feature
+from tests.integration_tests.utils import ENCODERS, numerical_feature, \
+    binary_feature, audio_feature, bag_feature, date_feature, h3_feature, \
+    set_feature, text_feature, timeseries_feature, vector_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import sequence_feature
+
+
+def test_config_features():
+    all_input_features = [
+        audio_feature('/tmp/destination_folder'),
+        bag_feature(),
+        binary_feature(),
+        category_feature(),
+        date_feature(),
+        h3_feature(),
+        image_feature('/tmp/destination_folder'),
+        numerical_feature(),
+        sequence_feature(),
+        set_feature(),
+        text_feature(),
+        timeseries_feature(),
+        vector_feature(),
+    ]
+    all_output_features = [
+        binary_feature(),
+        category_feature(),
+        numerical_feature(),
+        sequence_feature(),
+        set_feature(),
+        text_feature(),
+        vector_feature(),
+    ]
+
+    # validate config with all features
+    config = {
+        'input_features': all_input_features,
+        'output_features': all_output_features,
+    }
+    validate_config(config)
+
+    # make sure all defaults provided also registers as valid
+    config = merge_with_defaults(config)
+    validate_config(config)
+
+    # test various invalid output features
+    input_only_features = [
+        feature for feature in all_input_features
+        if feature['type'] not in OUTPUT_FEATURE_TYPES
+    ]
+    for input_feature in input_only_features:
+        config = {
+            'input_features': all_input_features,
+            'output_features': all_output_features + [input_feature],
+        }
+
+        dtype = input_feature['type']
+        with pytest.raises(ValidationError, match=rf"^'{dtype}' is not one of .*"):
+            validate_config(config)
 
 
 def test_config_encoders():
