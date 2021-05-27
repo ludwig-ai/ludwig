@@ -144,5 +144,4 @@ def create_cond(if_pred, then_pred):
 
 
 def validate_config(config):
-    print(f'CONFIG: {config["input_features"][5]}')
     validate(instance=config, schema=get_schema())

@@ -43,7 +43,7 @@ class VectorFeatureMixin:
     type = VECTOR
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ""
+        'fill_value': 0,
     }
 
     preprocessing_schema = {
