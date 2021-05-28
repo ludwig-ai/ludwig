@@ -203,3 +203,46 @@ def test_config_bad_combiner():
     config['combiner'] = [{'type': 'tabnet'}]
     with pytest.raises(ValidationError):
         validate_config(config)
+
+
+def test_config_fill_values():
+    vector_fill_values = [
+        '1.0 0.0 1.04 10.49',
+        '1 2 3 4 5'
+        '0'
+        '1.0'
+        ''
+    ]
+    binary_fill_values = [
+        'yes', 'No', '1', 'TRUE', 1
+    ]
+    for vector_fill_value, binary_fill_value in zip(vector_fill_values, binary_fill_values):
+        config = {
+            'input_features': [
+                vector_feature(preprocessing={'fill_value': vector_fill_value}),
+            ],
+            'output_features': [
+                binary_feature(preprocessing={'fill_value': binary_fill_value})
+            ],
+        }
+        validate_config(config)
+
+    bad_vector_fill_values = [
+        'one two three',
+        '1,2,3',
+        0
+    ]
+    bad_binary_fill_values = [
+        'one', 2, 'maybe'
+    ]
+    for vector_fill_value, binary_fill_value in zip(bad_vector_fill_values, bad_binary_fill_values):
+        config = {
+            'input_features': [
+                vector_feature(preprocessing={'fill_value': vector_fill_value}),
+            ],
+            'output_features': [
+                binary_feature(preprocessing={'fill_value': binary_fill_value})
+            ],
+        }
+        with pytest.raises(ValidationError):
+            validate_config(config)
