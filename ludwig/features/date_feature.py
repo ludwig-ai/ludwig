@@ -40,6 +40,13 @@ class DateFeatureMixin:
         'datetime_format': None
     }
 
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
+        'datetime_format': {'type': 'string'},
+    }
+
     @staticmethod
     def cast_column(feature, dataset_df, backend):
         return dataset_df

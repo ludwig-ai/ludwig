@@ -21,8 +21,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 
-from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE, COLUMN, PROC_COLUMN, \
-    PREPROCESSING, NAME
+from ludwig.constants import *
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -52,6 +51,25 @@ class AudioFeatureMixin:
         'norm': None,
         'audio_feature': {
             TYPE: 'raw',
+        }
+    }
+
+    preprocessing_schema = {
+        'audio_file_length_limit_in_s': {'type': 'number', 'minimum': 0},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'in_memory': {'type': 'boolean'},
+        'padding_value': {'type': 'number', 'minimum': 0},
+        'norm': {'type': ['string', 'null'], 'enum': [None, 'per_file', 'global']},
+        'audio_feature': {
+            'type': 'object',
+            'properties': {
+                'type': {'type': 'string', 'enum': ['raw', 'stft', 'stft_phase', 'group_delay', 'fbank']},
+                'window_length_in_s': {'type': 'number', 'minimum': 0},
+                'window_shift_in_s': {'type': 'number', 'minimum': 0},
+                'num_fft_points': {'type': 'number', 'minimum': 0},
+                'window_type': {'type': 'string'},
+                'num_filter_bands': {'type': 'number', 'minimum': 0},
+            }
         }
     }
 

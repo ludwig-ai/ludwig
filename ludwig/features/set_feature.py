@@ -30,7 +30,7 @@ from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import JaccardMetric
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,15 @@ class SetFeatureMixin:
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
+    }
+
+    preprocessing_schema = {
+        'tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
+        'most_common': {'type': 'integer', 'minimum': 0},
+        'lowercase': {'type': 'boolean'},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
     }
 
     @staticmethod

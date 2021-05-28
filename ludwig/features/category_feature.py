@@ -51,6 +51,14 @@ class CategoryFeatureMixin:
         'fill_value': UNKNOWN_SYMBOL
     }
 
+    preprocessing_schema = {
+        'most_common': {'type': 'integer', 'minimum': 0},
+        'lowercase': {'type': 'boolean'},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
+    }
+
     @staticmethod
     def cast_column(feature, dataset_df, backend):
         return dataset_df

@@ -41,6 +41,7 @@ from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.strings_utils import tokenizer_registry
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,19 @@ class SequenceFeatureMixin:
         'vocab_file': None,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
+    }
+
+    preprocessing_schema = {
+        'sequence_length_limit': {'type': 'integer', 'minimum': 0},
+        'most_common': {'type': 'integer', 'minimum': 0},
+        'padding_symbol': {'type': 'string'},
+        'unknown_symbol': {'type': 'string'},
+        'padding': {'type': 'string', 'enum': ['right', 'left']},
+        'tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
+        'lowercase': {'type': 'boolean'},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
     }
 
     @staticmethod

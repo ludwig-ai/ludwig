@@ -32,9 +32,7 @@ H3 = 'h3'
 VECTOR = 'vector'
 HEIGHT = 'height'
 WIDTH = 'width'
-CROP_OR_PAD = 'crop_or_pad'
 NUM_CHANNELS = 'num_channels'
-INTERPOLATE = 'interpolate'
 LOSS = 'loss'
 EVAL_LOSS = 'eval_loss'
 TRAIN_MEAN_LOSS = 'train_mean_loss'
@@ -71,7 +69,18 @@ FILL_WITH_CONST = 'fill_with_const'
 FILL_WITH_MODE = 'fill_with_mode'
 FILL_WITH_MEAN = 'fill_with_mean'
 BACKFILL = 'backfill'
+BFILL = 'bfill'
+PAD = 'pad'
+FFILL = 'ffill'
 DROP_ROW = 'drop_row'
+MISSING_VALUE_STRATEGY_OPTIONS = [
+    FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN,
+    BACKFILL, BFILL, PAD, FFILL, DROP_ROW
+]
+
+CROP_OR_PAD = 'crop_or_pad'
+INTERPOLATE = 'interpolate'
+RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
 METRIC = 'metric'
 PREDICTION = 'prediction'

@@ -15,7 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
 import tensorflow as tf
@@ -45,6 +44,19 @@ class BinaryFeatureMixin:
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0
+    }
+
+    fill_value_schema = {
+        "anyOf": [
+            {'type': 'integer', 'minimum': 0, 'maximum': 1},
+            {"type": "string", 'enum': strings_utils.all_bool_strs()}
+        ]
+    }
+
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': fill_value_schema,
+        'computed_fill_value': fill_value_schema,
     }
 
     @staticmethod

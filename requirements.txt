@@ -15,6 +15,7 @@ requests
 tables
 fsspec
 dataclasses-json
+jsonschema
 
 # new data format support
 xlwt            # excel

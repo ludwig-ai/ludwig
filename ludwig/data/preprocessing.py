@@ -1255,7 +1255,7 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
         dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             computed_fill_value,
         )
-    elif missing_value_strategy in ['backfill', 'bfill', 'pad', 'ffill']:
+    elif missing_value_strategy in [BACKFILL, BFILL, PAD, FFILL]:
         dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
