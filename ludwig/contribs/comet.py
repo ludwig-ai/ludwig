@@ -35,40 +35,6 @@ class CometCallback(Callback):
     def __init__(self):
         self.cometml_experiment = None
 
-    def experiment(self, *args, **kwargs):
-        try:
-            self.cometml_experiment = comet_ml.Experiment(log_code=False)
-        except Exception:
-            self.cometml_experiment = None
-            logger.exception(
-                "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
-            return
-
-        logger.info("comet.experiment() called......")
-        cli = self._make_command_line(args)
-        self.cometml_experiment.set_code(cli)
-        self.cometml_experiment.set_filename("Ludwig CLI")
-        self._log_html(cli)
-        config = comet_ml.get_config()
-        self._save_config(config)
-
-    def train(self, *args, **kwargs):
-        try:
-            self.cometml_experiment = comet_ml.Experiment(log_code=False)
-        except Exception:
-            self.cometml_experiment = None
-            logger.exception(
-                "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
-            return
-
-        logger.info("comet.train() called......")
-        cli = self._make_command_line(args)
-        self.cometml_experiment.set_code(cli)
-        self.cometml_experiment.set_filename("Ludwig CLI")
-        self._log_html(cli)
-        config = comet_ml.get_config()
-        self._save_config(config)
-
     def on_train_init(self, experiment_directory, experiment_name, model_name,
                    resume, output_directory):
         if self.cometml_experiment:
@@ -121,7 +87,7 @@ class CometCallback(Callback):
         """
         Called from ludwig/models/model.py
         """
-        logger.info("comet.train_epoch_end() called......")
+        logger.info("comet.on_epoch_end() called......")
         if self.cometml_experiment:
             for item_name in ["batch_size", "epoch", "steps",
                               "last_improvement_epoch",
@@ -145,7 +111,7 @@ class CometCallback(Callback):
                     elif item is not None:
                         self.cometml_experiment.log_metric(item_name, item)
                 except Exception:
-                    logger.info("comet.train_epoch_end() skip logging '%s'",
+                    logger.info("comet.on_epoch_end() skip logging '%s'",
                                 item_name)
 
     def visualize_figure(self, fig):
@@ -154,7 +120,7 @@ class CometCallback(Callback):
             self.cometml_experiment.log_figure(fig)
 
     def on_cmdline(self, cmd, *args):
-        if cmd not in {'visualize', 'predict', 'evaluate'}:
+        if cmd not in {'train', 'experiment', 'visualize', 'predict', 'evaluate'}:
             return
 
         try:
@@ -166,7 +132,11 @@ class CometCallback(Callback):
 
         logger.info(f"comet.{cmd}() called......")
         cli = self._make_command_line(cmd, args)
+        self.cometml_experiment.set_code(cli)
+        self.cometml_experiment.set_filename("Ludwig CLI")
         self._log_html(cli)
+        config = comet_ml.get_config()
+        self._save_config(config)
 
     def _save_config(self, config, directory='.'):
         ## save the .comet.config here:

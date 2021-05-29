@@ -23,9 +23,9 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
+from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.contrib import contrib_command, contrib_import, add_contrib_callback_args
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import check_which_config

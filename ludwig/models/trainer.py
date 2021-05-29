@@ -32,7 +32,6 @@ from tabulate import tabulate
 from tqdm import tqdm
 
 from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
-from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
@@ -772,7 +771,6 @@ class Trainer(BaseTrainer):
                                 TRAINING_PROGRESS_TRACKER_FILE_NAME
                             )
                         )
-                    contrib_command("train_epoch_end", progress_tracker)
                     logger.info('')
 
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))

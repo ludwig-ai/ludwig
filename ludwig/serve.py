@@ -26,7 +26,7 @@ from imageio import imread
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, AUDIO
-from ludwig.contrib import contrib_command, contrib_import, add_contrib_callback_args
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
