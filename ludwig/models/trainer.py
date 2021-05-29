@@ -545,13 +545,11 @@ class Trainer(BaseTrainer):
                         disable=is_progressbar_disabled()
                     )
 
-                for callback in self.callbacks:
-                    callback.on_epoch_start(self, progress_tracker, save_path)
+                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                 # training step loop
                 while not batcher.last_batch():
-                    for callback in self.callbacks:
-                        callback.on_batch_start(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
                     # Set learning rate for this batch
                     current_learning_rate = progress_tracker.learning_rate
@@ -641,8 +639,7 @@ class Trainer(BaseTrainer):
                         progress_bar.update(1)
                     first_batch = False
 
-                    for callback in self.callbacks:
-                        callback.on_batch_end(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
                 # ================ Post Training Epoch ================
                 if self.is_coordinator():
@@ -676,9 +673,7 @@ class Trainer(BaseTrainer):
                 )
 
                 if validation_set is not None and len(validation_set) > 0:
-                    for callback in self.callbacks:
-                        callback.on_validation_start(self, progress_tracker,
-                                                     save_path)
+                    self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
                     # eval metrics on validation set
                     self.evaluation(
@@ -696,13 +691,10 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    for callback in self.callbacks:
-                        callback.on_validation_end(self, progress_tracker,
-                                                   save_path)
+                    self.callback(lambda c: c.on_validation_end(self, progress_tracker, save_path))
 
                 if test_set is not None and len(test_set) > 0:
-                    for callback in self.callbacks:
-                        callback.on_test_start(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
                     # eval metrics on test set
                     self.evaluation(
@@ -720,8 +712,7 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    for callback in self.callbacks:
-                        callback.on_test_end(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_test_end(self, progress_tracker, save_path))
 
                 elapsed_time = (time.time() - start_time) * 1000.0
 
@@ -784,8 +775,7 @@ class Trainer(BaseTrainer):
                     contrib_command("train_epoch_end", progress_tracker)
                     logger.info('')
 
-                for callback in self.callbacks:
-                    callback.on_epoch_end(self, progress_tracker, save_path)
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
         if train_summary_writer is not None:
             train_summary_writer.close()
@@ -1277,6 +1267,11 @@ class Trainer(BaseTrainer):
         if not self.horovod:
             return True
         return self.horovod.rank() == 0
+
+    def callback(self, fn):
+        if self.is_coordinator():
+            for callback in self.callbacks:
+                fn(callback)
 
 
 class RemoteTrainer(Trainer):
