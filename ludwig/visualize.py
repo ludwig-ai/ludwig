@@ -4423,6 +4423,7 @@ def cli(sys_argv):
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
 
+    args.callbacks = args.callbacks or []
     for callback in args.callbacks:
         callback.on_cmdline('visualize', *sys_argv)
 

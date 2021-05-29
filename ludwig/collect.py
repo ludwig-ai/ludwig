@@ -354,6 +354,7 @@ def cli_collect_activations(sys_argv):
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
 
+    args.callbacks = args.callbacks or []
     for callback in args.callbacks:
         callback.on_cmdline('collect_activations', *sys_argv)
 
@@ -434,6 +435,7 @@ def cli_collect_weights(sys_argv):
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
 
+    args.callbacks = args.callbacks or []
     for callback in args.callbacks:
         callback.on_cmdline('collect_weights', *sys_argv)
 
@@ -487,6 +489,7 @@ def cli_collect_summary(sys_argv):
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
 
+    args.callbacks = args.callbacks or []
     for callback in args.callbacks:
         callback.on_cmdline('collect_summary', *sys_argv)
 

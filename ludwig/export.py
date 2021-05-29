@@ -128,6 +128,7 @@ def cli_export_savedmodel(sys_argv):
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
 
+    args.callbacks = args.callbacks or []
     for callback in args.callbacks:
         callback.on_cmdline('export_savedmodel', *sys_argv)
 
@@ -192,6 +193,7 @@ def cli_export_neuropod(sys_argv):
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
 
+    args.callbacks = args.callbacks or []
     for callback in args.callbacks:
         callback.on_cmdline('export_neuropod', *sys_argv)
 
