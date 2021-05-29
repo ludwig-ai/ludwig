@@ -12,8 +12,7 @@ import shutil
 import sys
 from unittest.mock import Mock
 
-import ludwig.contrib
-from ludwig.contribs.wandb import Wandb
+from ludwig.contribs.wandb import WandbCallback
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, '..', '..', '..')
@@ -29,19 +28,11 @@ parser.add_argument('--csv-filename', required=True)
 
 
 def run(csv_filename):
-    # enable wandb contrib module
-    ludwig.contrib.use_contrib('wandb')
-
-    # Check that wandb has been imported successfully as a contrib package
-    contrib_instances = ludwig.contrib.contrib_registry["instances"]
-    assert len(contrib_instances) == 1
-
-    wandb_instance = contrib_instances[0]
-    assert isinstance(wandb_instance, Wandb)
+    callback = WandbCallback()
 
     # Wrap these methods so we can check that they were called
-    wandb_instance.train_init = Mock(side_effect=wandb_instance.train_init)
-    wandb_instance.train_model = Mock(side_effect=wandb_instance.train_model)
+    callback.train_init = Mock(side_effect=callback.train_init)
+    callback.train_model = Mock(side_effect=callback.train_model)
 
     # disable sync to cloud
     os.environ['WANDB_MODE'] = 'dryrun'
@@ -56,14 +47,19 @@ def run(csv_filename):
         rel_path = generate_data(input_features, output_features, csv_filename)
 
         # Run experiment
-        run_experiment(input_features, output_features, dataset=rel_path)
+        run_experiment(
+            input_features,
+            output_features,
+            dataset=rel_path,
+            callbacks=[callback]
+        )
     finally:
         # Delete the temporary data created
         shutil.rmtree(image_dest_folder, ignore_errors=True)
 
     # Check that these methods were called at least once
-    wandb_instance.train_init.assert_called()
-    wandb_instance.train_model.assert_called()
+    callback.train_init.assert_called()
+    callback.train_model.assert_called()
 
 
 if __name__ == "__main__":

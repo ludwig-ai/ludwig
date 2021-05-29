@@ -23,7 +23,6 @@ from sys import platform
 import numpy as np
 import pandas as pd
 
-import ludwig.contrib
 from ludwig.constants import TRAINING, TYPE, VALIDATION
 
 logger = logging.getLogger(__name__)
@@ -125,7 +124,8 @@ def compare_classifiers_plot(
         adaptive=False,
         decimals=4,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(scores) == len(metrics)
     assert len(scores) > 0
@@ -197,7 +197,8 @@ def compare_classifiers_line_plot(
         metric,
         algorithm_names=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
     colors = plt.get_cmap('tab10').colors
@@ -237,7 +238,8 @@ def compare_classifiers_multiclass_multimetric_plot(
         metrics,
         labels=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(scores) > 0
 
@@ -278,7 +280,8 @@ def radar_chart(
         algorithms=None,
         log_scale=False,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -380,7 +383,8 @@ def donut(
         outside_groups,
         title=None,
         tight_layout=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     fig, ax = plt.subplots(figsize=(7,5))
 
@@ -459,7 +463,8 @@ def confidence_fitlering_plot(
         dataset_kepts,
         algorithm_names=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(accuracies) == len(dataset_kepts)
     num_algorithms = len(accuracies)
@@ -530,7 +535,8 @@ def confidence_fitlering_data_vs_acc_plot(
         decimal_digits=0,
         y_label='accuracy',
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(accuracies) == len(dataset_kepts)
 
@@ -596,7 +602,8 @@ def confidence_fitlering_data_vs_acc_multiline_plot(
         dataset_kepts,
         models_names,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(accuracies) == len(dataset_kepts)
 
@@ -653,7 +660,8 @@ def confidence_fitlering_3d_plot(
         dataset_kepts,
         threshold_output_feature_names=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(accuracies) == len(dataset_kepts)
     assert len(thresholds_1) == len(thresholds_2)
@@ -768,7 +776,8 @@ def threshold_vs_metric_plot(
         scores,
         algorithm_names=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -818,7 +827,8 @@ def roc_curves(
         algorithm_names=None,
         title=None,
         graded_color=False,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -869,7 +879,8 @@ def calibration_plot(
         fraction_positives,
         mean_predicted_values,
         algorithm_names=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(fraction_positives) == len(mean_predicted_values)
 
@@ -924,7 +935,8 @@ def brier_plot(
         brier_scores,
         algorithm_names=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -958,7 +970,8 @@ def brier_plot(
 def predictions_distribution_plot(
         probabilities,
         algorithm_names=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -996,7 +1009,8 @@ def confusion_matrix_plot(
         confusion_matrix,
         labels=None,
         output_feature_name=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     mpl.rcParams.update({'figure.autolayout': True})
     fig, ax = plt.subplots()
@@ -1032,7 +1046,8 @@ def double_axis_line_plot(
         y2_name,
         labels=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -1078,7 +1093,8 @@ def double_axis_line_plot(
 def plot_matrix(
         matrix,
         cmap='hot',
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     plt.matshow(matrix, cmap=cmap)
     visualize_callbacks(callbacks, plt.gcf())
@@ -1092,7 +1108,8 @@ def plot_distributions(
         distributions,
         labels=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -1130,7 +1147,8 @@ def plot_distributions_difference(
         distribution,
         labels=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     sns.set_style('whitegrid')
 
@@ -1166,7 +1184,8 @@ def bar_plot(
         decimals=4,
         labels=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None,
 ):
     assert len(xs) == len(ys)
     assert len(xs) > 0
