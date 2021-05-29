@@ -22,9 +22,9 @@ from typing import List, Union
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
+from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -238,7 +238,11 @@ def cli(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    for callback in args.callbacks:
+        callback.on_cmdline('predict', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
