@@ -1287,7 +1287,8 @@ class LudwigModel:
             backend: Union[Backend, str] = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True
+            allow_parallel_threads: bool = True,
+            callbacks: List[Callback] = None,
     ) -> 'LudwigModel':  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models
 
@@ -1308,6 +1309,9 @@ class LudwigModel:
             to use
             multithreading parallelism to improve performance at the cost of
             determinism.
+        :param callbacks: (list, default: `None`) a list of
+            `ludwig.callbacks.Callback` objects that provide hooks into the
+            Ludwig pipeline.
 
         # Return
 
@@ -1345,6 +1349,7 @@ class LudwigModel:
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
         )
 
         # generate model from config
