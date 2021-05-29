@@ -19,6 +19,9 @@ from abc import ABC
 
 
 class Callback(ABC):
+    def on_cmdline(self, cmd, *args):
+        pass
+
     def on_batch_start(self, trainer, progress_tracker, save_path):
         pass
 

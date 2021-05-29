@@ -41,9 +41,6 @@ from .wandb import Wandb
 
 contrib_registry = {
     # Contributors, add your class here:
-    'classes': {
-        'comet': Comet,
-        'wandb': Wandb,
-    },
-    'instances': [],
+    'comet': Comet,
+    'wandb': Wandb,
 }

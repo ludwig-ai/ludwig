@@ -17,36 +17,22 @@ import logging
 import os
 from datetime import datetime
 
+from ludwig.callbacks import Callback
+
+try:
+    import comet_ml
+    _HAS_COMET = True
+except Exception as e:
+    comet_ml = e
+    _HAS_COMET = False
+
 logger = logging.getLogger(__name__)
 
 
-class Comet():
+class CometCallback(Callback):
     """
     Class that defines the methods necessary to hook into process.
     """
-
-    @staticmethod
-    def import_call(*args, **kwargs):
-        """
-        Enable Third-party support from comet.ml
-        Allows experiment tracking, visualization, and
-        management.
-        """
-        try:
-            import comet_ml
-        except ImportError:
-            logger.error(
-                "Ignored --comet: Please install comet_ml; see www.comet.ml")
-            return None
-
-        try:
-            version = [int(i) for i in comet_ml.__version__.split(".")]
-        except Exception:
-            version = None
-        if version is not None and version >= [1, 0, 51]:
-            return Comet()
-        else:
-            logger.error("Ignored --comet: Need version 1.0.51 or greater")
 
     def __init__(self):
         self.cometml_experiment = None
@@ -136,7 +122,7 @@ class Comet():
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(output_directory)
 
-    def train_epoch_end(self, progress_tracker):
+    def on_epoch_end(self, trainer, progress_tracker, save_path):
         """
         Called from ludwig/models/model.py
         """
@@ -173,26 +159,15 @@ class Comet():
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(output_directory)
 
-    def visualize(self, *args, **kwargs):
-        import comet_ml
-        try:
-            self.cometml_experiment = comet_ml.ExistingExperiment()
-        except Exception:
-            self.cometml_experiment = None
-            logger.error("Ignored --comet. No '.comet.config' file")
-            return
-
-        logger.info("comet.visualize() called......")
-        cli = self._make_command_line(args)
-        self._log_html(cli)
-
     def visualize_figure(self, fig):
         logger.info("comet.visualize_figure() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_figure(fig)
 
-    def predict(self, *args, **kwargs):
-        import comet_ml
+    def on_cmdline(self, cmd, *args):
+        if cmd not in {'visualize', 'predict', 'evaluate'}:
+            return
+
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
         except Exception:
@@ -200,21 +175,8 @@ class Comet():
             logger.error("Ignored --comet. No '.comet.config' file")
             return
 
-        logger.info("comet.predict() called......")
-        cli = self._make_command_line(args)
-        self._log_html(cli)
-
-    def evaluate(self, *args, **kwargs):
-        import comet_ml
-        try:
-            self.cometml_experiment = comet_ml.ExistingExperiment()
-        except Exception:
-            self.cometml_experiment = None
-            logger.error("Ignored --comet. No '.comet.config' file")
-            return
-
-        logger.info("comet.evaluate() called......")
-        cli = self._make_command_line(args)
+        logger.info(f"comet.{cmd}() called......")
+        cli = self._make_command_line(cmd, args)
         self._log_html(cli)
 
     def _save_config(self, config, directory='.'):
@@ -229,6 +191,7 @@ class Comet():
         self.cometml_experiment.log_html(
             "<p><b>%s</b>: %s</p>" % (timestamp, text))
 
-    def _make_command_line(self, args):
+    def _make_command_line(self, cmd, args):
         ## put the commet flag back in:
-        return " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
+        arg_str = " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
+        return f"ludwig {cmd} {arg_str}"
