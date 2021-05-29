@@ -274,6 +274,7 @@ def cli(sys_argv):
     args = parser.parse_args(sys_argv)
     args.evaluate_performance = True
 
+    args.callbacks = args.callbacks or []
     for callback in args.callbacks:
         callback.on_cmdline('evaluate', *sys_argv)
 

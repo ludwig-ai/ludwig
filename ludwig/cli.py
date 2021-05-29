@@ -19,8 +19,6 @@ import sys
 
 import ludwig.contrib
 
-ludwig.contrib.contrib_import()
-
 
 class CLI:
     """CLI describes a command line interface for interacting with Ludwig, there
