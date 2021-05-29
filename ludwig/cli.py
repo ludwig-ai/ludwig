@@ -73,27 +73,22 @@ Available sub-commands:
 
     def train(self):
         from ludwig import train
-        ludwig.contrib.contrib_command("train", *sys.argv)
         train.cli(sys.argv[2:])
 
     def predict(self):
         from ludwig import predict
-        ludwig.contrib.contrib_command("predict", *sys.argv)
         predict.cli(sys.argv[2:])
 
     def evaluate(self):
         from ludwig import evaluate
-        ludwig.contrib.contrib_command("evaluate", *sys.argv)
         evaluate.cli(sys.argv[2:])
 
     def experiment(self):
         from ludwig import experiment
-        ludwig.contrib.contrib_command("experiment", *sys.argv)
         experiment.cli(sys.argv[2:])
 
     def hyperopt(self):
         from ludwig import hyperopt_cli
-        ludwig.contrib.contrib_command("hyperopt", *sys.argv)
         hyperopt_cli.cli(sys.argv[2:])
 
     def serve(self):

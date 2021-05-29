@@ -148,12 +148,6 @@ class CometCallback(Callback):
                     logger.info("comet.train_epoch_end() skip logging '%s'",
                                 item_name)
 
-    def experiment_save(self, *args, **kwargs):
-        logger.info("comet.experiment_save() called......")
-        output_directory = args[0]
-        if self.cometml_experiment:
-            self.cometml_experiment.log_asset_folder(output_directory)
-
     def visualize_figure(self, fig):
         logger.info("comet.visualize_figure() called......")
         if self.cometml_experiment:
