@@ -23,6 +23,7 @@ import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
+from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -43,8 +44,9 @@ def predict_cli(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
-        logging_level: int =logging.INFO,
+        logging_level: int = logging.INFO,
         debug: bool = False,
         **kwargs
 ) -> None:
@@ -84,6 +86,9 @@ def predict_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param logging_level: (int) Log level that will be sent to stderr.
@@ -101,7 +106,8 @@ def predict_cli(
         backend=backend,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads
+        allow_parallel_threads=allow_parallel_threads,
+        callbacks=callbacks,
     )
     model.predict(
         dataset=dataset,
@@ -262,6 +268,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("predict", *sys.argv)
     cli(sys.argv[1:])

@@ -25,8 +25,9 @@ import yaml
 
 from ludwig.api import LudwigModel, kfold_cross_validate
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
+from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
@@ -65,6 +66,7 @@ def experiment_cli(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         debug: bool = False,
@@ -171,6 +173,9 @@ def experiment_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
@@ -205,6 +210,7 @@ def experiment_cli(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
         )
     else:
         model = LudwigModel(
@@ -214,6 +220,7 @@ def experiment_cli(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
         )
     (
         eval_stats,
@@ -561,7 +568,11 @@ def cli(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    for callback in args.callbacks:
+        callback.on_cmdline('experiment', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -581,6 +592,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("experiment", *sys.argv)
     cli(sys.argv[1:])

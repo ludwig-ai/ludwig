@@ -28,11 +28,9 @@ import tempfile
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-import ludwig.contrib
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
 
-ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
@@ -40,7 +38,6 @@ import yaml
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -439,10 +436,14 @@ class LudwigModel:
                         training_set_metadata
                     )
 
-            contrib_command("train_init", experiment_directory=output_directory,
-                            experiment_name=experiment_name, model_name=model_name,
-                            output_directory=output_directory,
-                            resume=model_resume_path is not None)
+            for callback in self.callbacks:
+                callback.on_train_init(
+                    experiment_directory=output_directory,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    output_directory=output_directory,
+                    resume=model_resume_path is not None
+                )
 
             # Build model if not provided
             # if it was provided it means it was already loaded
@@ -468,8 +469,12 @@ class LudwigModel:
                 random_seed=random_seed,
                 debug=debug
             ) as trainer:
-                contrib_command("train_model", self.model, self.config,
-                                self.config_fp)
+                for callback in self.callbacks:
+                    callback.on_train_start(
+                        self.model,
+                        self.config,
+                        self.config_fp,
+                    )
 
                 # train model
                 if self.backend.is_coordinator():
@@ -533,7 +538,8 @@ class LudwigModel:
                         '\nFinished: {0}_{1}'.format(experiment_name, model_name))
                     logger.info('Saved to: {0}'.format(output_directory))
 
-                contrib_command("train_save", output_directory)
+                for callback in self.callbacks:
+                    callback.on_train_end(output_directory)
 
                 self.training_set_metadata = training_set_metadata
 
