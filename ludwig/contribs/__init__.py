@@ -36,11 +36,11 @@ method with `pass`, or just don't implement the method.
 """
 
 # Contributors, import your class here:
-from .comet import Comet
-from .wandb import Wandb
+from .comet import CometCallback
+from .wandb import WandbCallback
 
 contrib_registry = {
     # Contributors, add your class here:
-    'comet': Comet,
-    'wandb': Wandb,
+    'comet': CometCallback,
+    'wandb': WandbCallback,
 }

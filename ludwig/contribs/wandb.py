@@ -16,6 +16,8 @@
 import logging
 import os
 
+from ludwig.callbacks import Callback
+
 try:
     import wandb
 except Exception as e:
@@ -24,7 +26,7 @@ except Exception as e:
 logger = logging.getLogger(__name__)
 
 
-class Wandb():
+class WandbCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 
     def on_train_init(self, experiment_directory, experiment_name, model_name,
