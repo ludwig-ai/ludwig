@@ -42,7 +42,7 @@ class Wandb():
         del config["output_features"]
         wandb.config.update(config)
 
-    def visualize_figure(self, fig):
-        logger.info("wandb.visualize_figure() called...")
+    def on_visualize_figure(self, fig):
+        logger.info("wandb.on_visualize_figure() called...")
         if wandb.run:
             wandb.log({"figure": fig})

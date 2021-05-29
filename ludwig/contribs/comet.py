@@ -114,8 +114,8 @@ class CometCallback(Callback):
                     logger.info("comet.on_epoch_end() skip logging '%s'",
                                 item_name)
 
-    def visualize_figure(self, fig):
-        logger.info("comet.visualize_figure() called......")
+    def on_visualize_figure(self, fig):
+        logger.info("comet.on_visualize_figure() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_figure(fig)
 

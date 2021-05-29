@@ -57,13 +57,21 @@ FLOAT_QUANTILES = 10
 # plt.rc('ytick', labelsize='x-large')
 # plt.rc('axes', labelsize='x-large')
 
+def visualize_callbacks(callbacks, fig):
+    if callbacks is None:
+        return
+    for callback in callbacks:
+        callback.on_visualize_figure(fig)
+
+
 def learning_curves_plot(
         train_values,
         vali_values,
         metric,
         algorithm_names=None,
         title=None,
-        filename=None
+        filename=None,
+        callbacks=None
 ):
     num_algorithms = len(train_values)
     max_len = max([len(tv) for tv in train_values])
@@ -103,7 +111,7 @@ def learning_curves_plot(
 
     ax.legend()
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -176,7 +184,7 @@ def compare_classifiers_plot(
 
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -217,7 +225,7 @@ def compare_classifiers_line_plot(
 
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -257,7 +265,7 @@ def compare_classifiers_multiclass_multimetric_plot(
 
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -344,7 +352,7 @@ def radar_chart(
 
     ax.legend(frameon=True, loc='upper left')
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -438,7 +446,7 @@ def donut(
         ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.30, 1.00))
     else:
         ax.legend(wedges, labels, frameon=True, loc=1, bbox_to_anchor=(1.50, 1.00))
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename, bbox_inches = "tight")
     else:
@@ -507,7 +515,7 @@ def confidence_fitlering_plot(
 
     ax1.legend(frameon=True, loc=3)
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -576,7 +584,7 @@ def confidence_fitlering_data_vs_acc_plot(
 
     ax.legend(frameon=True, loc=3)
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -631,7 +639,7 @@ def confidence_fitlering_data_vs_acc_multiline_plot(
     legend_elements = [Line2D([0], [0], linewidth=1.0, color=colors[0])]
     ax.legend(legend_elements, models_names)
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -748,7 +756,7 @@ def confidence_fitlering_3d_plot(
     ax.legend(frameon=True, loc=3, handles=[handle_1, handle_2])
 
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -798,7 +806,7 @@ def threshold_vs_metric_plot(
 
     ax1.legend(frameon=True)
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -850,7 +858,7 @@ def roc_curves(
 
     ax.legend(frameon=True)
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -905,7 +913,7 @@ def calibration_plot(
     plt.title('Calibration (reliability curve)')
 
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -940,7 +948,7 @@ def brier_plot(
 
     plt.legend()
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -977,7 +985,7 @@ def predictions_distribution_plot(
     plt.legend(loc='upper center', ncol=2)
 
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -1010,7 +1018,7 @@ def confusion_matrix_plot(
     ax.set_ylabel('Actual {}'.format(output_feature_name))
 
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -1060,7 +1068,7 @@ def double_axis_line_plot(
              linewidth=3)
 
     fig.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -1073,7 +1081,7 @@ def plot_matrix(
         filename=None
 ):
     plt.matshow(matrix, cmap=cmap)
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -1111,7 +1119,7 @@ def plot_distributions(
 
     ax1.legend(frameon=True)
     fig.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -1145,7 +1153,7 @@ def plot_distributions_difference(
     ax1.plot(distribution, color=colors[0])
 
     fig.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:
@@ -1203,7 +1211,7 @@ def bar_plot(
             [PathEffects.withStroke(linewidth=3, foreground='black')])
 
     plt.tight_layout()
-    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
     else:

@@ -66,3 +66,6 @@ class Callback(ABC):
 
     def on_test_end(self, trainer, progress_tracker, save_path):
         pass
+
+    def on_visualize_figure(self, fig):
+        pass
