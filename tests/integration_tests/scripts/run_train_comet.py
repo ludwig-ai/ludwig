@@ -53,8 +53,8 @@ def run(csv_filename):
     output_dir = None
 
     # Wrap these methods so we can check that they were called
-    callback.train_init = Mock(side_effect=callback.train_init)
-    callback.train_model = Mock(side_effect=callback.train_model)
+    callback.on_train_init = Mock(side_effect=callback.on_train_init)
+    callback.on_train_start = Mock(side_effect=callback.on_train_start)
 
     with patch('comet_ml.Experiment.log_asset_data') as mock_log_asset_data:
         try:

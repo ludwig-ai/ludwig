@@ -31,8 +31,8 @@ def run(csv_filename):
     callback = WandbCallback()
 
     # Wrap these methods so we can check that they were called
-    callback.train_init = Mock(side_effect=callback.train_init)
-    callback.train_model = Mock(side_effect=callback.train_model)
+    callback.on_train_init = Mock(side_effect=callback.on_train_init)
+    callback.on_train_start = Mock(side_effect=callback.on_train_start)
 
     # disable sync to cloud
     os.environ['WANDB_MODE'] = 'dryrun'
@@ -58,8 +58,8 @@ def run(csv_filename):
         shutil.rmtree(image_dest_folder, ignore_errors=True)
 
     # Check that these methods were called at least once
-    callback.train_init.assert_called()
-    callback.train_model.assert_called()
+    callback.on_train_init.assert_called()
+    callback.on_train_start.assert_called()
 
 
 if __name__ == "__main__":
