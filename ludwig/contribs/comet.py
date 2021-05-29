@@ -120,14 +120,24 @@ class CometCallback(Callback):
             self.cometml_experiment.log_figure(fig)
 
     def on_cmdline(self, cmd, *args):
-        if cmd not in {'train', 'experiment', 'visualize', 'predict', 'evaluate'}:
-            return
-
-        try:
-            self.cometml_experiment = comet_ml.ExistingExperiment()
-        except Exception:
-            self.cometml_experiment = None
-            logger.error("Ignored --comet. No '.comet.config' file")
+        self.cometml_experiment = None
+        if cmd in {'train', 'experiment'}:
+            # create a new experiment
+            try:
+                self.cometml_experiment = comet_ml.Experiment(log_code=False)
+            except Exception:
+                logger.exception(
+                    "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
+                return
+        elif cmd in {'visualize', 'predict', 'evaluate'}:
+            # restore from an existing experiment
+            try:
+                self.cometml_experiment = comet_ml.ExistingExperiment()
+            except Exception:
+                logger.exception("Ignored --comet. No '.comet.config' file")
+                return
+        else:
+            # unhandled command
             return
 
         logger.info(f"comet.{cmd}() called......")
