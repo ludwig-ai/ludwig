@@ -192,7 +192,7 @@ class LudwigModel:
 
         # setup Backend
         self.backend = initialize_backend(backend)
-        self.callbacks = callbacks
+        self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
         self.backend.initialize_tensorflow(gpus=gpus,
