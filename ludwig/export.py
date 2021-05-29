@@ -20,7 +20,7 @@ import os
 import sys
 
 from ludwig.api import LudwigModel
-from ludwig.contrib import contrib_command
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.neuropod_utils import \
     export_neuropod as utils_export_neuropod
@@ -125,7 +125,11 @@ def cli_export_savedmodel(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    for callback in args.callbacks:
+        callback.on_cmdline('export_savedmodel', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -185,7 +189,11 @@ def cli_export_neuropod(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    for callback in args.callbacks:
+        callback.on_cmdline('export_neuropod', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -202,10 +210,8 @@ def cli_export_neuropod(sys_argv):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'savedmodel':
-            contrib_command("export_savedmodel", *sys.argv)
             cli_export_savedmodel(sys.argv[2:])
         elif sys.argv[1] == 'neuropod':
-            contrib_command("export_neuropod", *sys.argv)
             cli_export_neuropod(sys.argv[2:])
         else:
             print('Unrecognized command')

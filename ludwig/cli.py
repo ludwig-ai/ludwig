@@ -93,47 +93,38 @@ Available sub-commands:
 
     def serve(self):
         from ludwig import serve
-        ludwig.contrib.contrib_command("serve", *sys.argv)
         serve.cli(sys.argv[2:])
 
     def visualize(self):
         from ludwig import visualize
-        ludwig.contrib.contrib_command("visualize", *sys.argv)
         visualize.cli(sys.argv[2:])
 
     def collect_summary(self):
         from ludwig import collect
-        ludwig.contrib.contrib_command('collect_summary', *sys.argv)
         collect.cli_collect_summary(sys.argv[2:])
 
     def collect_weights(self):
         from ludwig import collect
-        ludwig.contrib.contrib_command("collect_weights", *sys.argv)
         collect.cli_collect_weights(sys.argv[2:])
 
     def collect_activations(self):
         from ludwig import collect
-        ludwig.contrib.contrib_command("collect_activations", *sys.argv)
         collect.cli_collect_activations(sys.argv[2:])
 
     def export_savedmodel(self):
         from ludwig import export
-        ludwig.contrib.contrib_command("export_savedmodel", *sys.argv)
         export.cli_export_savedmodel(sys.argv[2:])
 
     def export_neuropod(self):
         from ludwig import export
-        ludwig.contrib.contrib_command("export_neuropod", *sys.argv)
         export.cli_export_neuropod(sys.argv[2:])
 
     def preprocess(self):
         from ludwig import preprocess
-        ludwig.contrib.contrib_command("preprocess", *sys.argv)
         preprocess.cli(sys.argv[2:])
 
     def synthesize_dataset(self):
         from ludwig.data import dataset_synthesizer
-        ludwig.contrib.contrib_command("synthesize_dataset", *sys.argv)
         dataset_synthesizer.cli(sys.argv[2:])
 
 
