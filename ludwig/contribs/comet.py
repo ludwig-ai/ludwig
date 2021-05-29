@@ -21,10 +21,8 @@ from ludwig.callbacks import Callback
 
 try:
     import comet_ml
-    _HAS_COMET = True
 except Exception as e:
     comet_ml = e
-    _HAS_COMET = False
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +36,6 @@ class CometCallback(Callback):
         self.cometml_experiment = None
 
     def experiment(self, *args, **kwargs):
-        import comet_ml
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
@@ -56,7 +53,6 @@ class CometCallback(Callback):
         self._save_config(config)
 
     def train(self, *args, **kwargs):
-        import comet_ml
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
@@ -73,13 +69,12 @@ class CometCallback(Callback):
         config = comet_ml.get_config()
         self._save_config(config)
 
-    def train_init(self, experiment_directory, experiment_name, model_name,
+    def on_train_init(self, experiment_directory, experiment_name, model_name,
                    resume, output_directory):
         if self.cometml_experiment:
             # Comet ML already initialized
             return
 
-        import comet_ml
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False,
                                                           project_name=experiment_name)
@@ -89,15 +84,15 @@ class CometCallback(Callback):
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
-        logger.info("comet.train_init() called......")
+        logger.info("comet.on_train_init() called......")
         self.cometml_experiment.set_name(model_name)
         self.cometml_experiment.set_filename("Ludwig API")
         config = comet_ml.get_config()
         self._save_config(config, directory=experiment_directory)
 
-    def train_model(self, model, config, config_path,
-                    *args, **kwargs):
-        logger.info("comet.train_model() called......")
+    def on_train_start(self, model, config, config_path,
+                       *args, **kwargs):
+        logger.info("comet.on_train_start() called......")
         if self.cometml_experiment:
             # todo v0.4: currently not clear way to set model graph
             # see: https://github.com/comet-ml/issue-tracking/issues/296
@@ -117,8 +112,8 @@ class CometCallback(Callback):
                 self.cometml_experiment.log_asset_data(config,
                                                        base_name)
 
-    def train_save(self, output_directory, *args, **kwargs):
-        logger.info("comet.train_save() called......")
+    def on_train_end(self, output_directory, *args, **kwargs):
+        logger.info("comet.on_train_end() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(output_directory)
 

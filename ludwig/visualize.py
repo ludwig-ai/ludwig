@@ -30,7 +30,7 @@ from sklearn.metrics import brier_score_loss
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import *
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_from_file, load_json, load_array, \
     to_numpy_dataset, unflatten_df, replace_file_extension
@@ -4414,7 +4414,11 @@ def cli(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    for callback in args.callbacks:
+        callback.on_cmdline('visualize', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -4432,6 +4436,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("visualize", *sys.argv)
     cli(sys.argv[1:])
