@@ -17,14 +17,15 @@
 import argparse
 import logging
 import sys
-from typing import Union
+from typing import Union, List
 
 import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
+from ludwig.callbacks import Callback
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import check_which_config
@@ -45,6 +46,7 @@ def preprocess_cli(
         data_format: str = None,
         random_seed: int = default_random_seed,
         logging_level: int = logging.INFO,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
         debug: bool = False,
         **kwargs
@@ -131,6 +133,9 @@ def preprocess_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
@@ -151,6 +156,8 @@ def preprocess_cli(
     model = LudwigModel(
         config=preprocessing_config,
         logging_level=logging_level,
+        callbacks=callbacks,
+        backend=backend,
     )
     model.preprocess(
         dataset=dataset,
@@ -261,7 +268,11 @@ def cli(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    for callback in args.callbacks:
+        callback.on_cmdline('preprocess', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -278,6 +289,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("preprocess", *sys.argv)
     cli(sys.argv[1:])
