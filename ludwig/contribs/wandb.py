@@ -27,8 +27,15 @@ logger = logging.getLogger(__name__)
 class WandbCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 
-    def on_train_init(self, experiment_directory, experiment_name, model_name,
-                      resume, output_directory):
+    def on_train_init(
+            self,
+            base_config,
+            experiment_directory,
+            experiment_name,
+            model_name,
+            output_directory,
+            resume,
+    ):
         logger.info("wandb.on_train_init() called...")
         wandb.init(project=os.getenv("WANDB_PROJECT", experiment_name),
                    name=model_name, sync_tensorboard=True,

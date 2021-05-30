@@ -33,8 +33,15 @@ class CometCallback(Callback):
     def __init__(self):
         self.cometml_experiment = None
 
-    def on_train_init(self, experiment_directory, experiment_name, model_name,
-                   resume, output_directory):
+    def on_train_init(
+            self,
+            base_config,
+            experiment_directory,
+            experiment_name,
+            model_name,
+            output_directory,
+            resume,
+    ):
         if self.cometml_experiment:
             # Comet ML already initialized
             return

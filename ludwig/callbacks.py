@@ -27,6 +27,7 @@ class Callback(ABC):
 
     def on_train_init(
         self,
+        base_config,
         experiment_directory,
         experiment_name,
         model_name,

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from ludwig.callbacks import Callback
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, to_json_dict
@@ -19,23 +20,49 @@ def _get_or_create_experiment_id(experiment_name):
 class MlflowCallback(Callback):
     def __init__(self):
         self.experiment_id = None
+        self.run = None
 
     def on_hyperopt_init(self, experiment_name):
         self.experiment_id = _get_or_create_experiment_id(experiment_name)
 
-    def on_train_init(self, experiment_name, **kwargs):
+    def on_train_init(
+            self,
+            base_config,
+            experiment_name,
+            output_directory,
+            **kwargs
+    ):
         if self.experiment_id is not None:
+            # Experiment may already have been set during hyperopt init, in
+            # which case we don't want to create a new experiment / run, as
+            # this should be handled by the executor.
             return
+
         self.experiment_id = _get_or_create_experiment_id(experiment_name)
+        run_name = os.path.basename(output_directory)
+        self.run = mlflow.start_run(
+            experiment_id=self.experiment_id,
+            run_name=run_name
+        )
+        mlflow.log_dict(to_json_dict(base_config), 'config.yaml')
 
     def on_train_start(self, config, **kwargs):
-        config_flattened = flatten_dict(config)
+        train_config = {'training': config['training']}
+        config_flattened = flatten_dict(train_config)
         for chunk in chunk_dict(config_flattened, chunk_size=100):
             mlflow.log_params(chunk)
-        mlflow.log_dict(to_json_dict(config), 'config.yaml')
+
+    def on_train_end(self, output_directory):
+        for fname in os.listdir(output_directory):
+            mlflow.log_artifact(os.path.join(output_directory, fname))
+        if self.run is not None:
+            mlflow.end_run()
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
-        mlflow.log_metrics(progress_tracker.log_metrics)
+        mlflow.log_metrics(
+            progress_tracker.log_metrics,
+            step=progress_tracker.steps
+        )
 
     def on_visualize_figure(self, fig):
         # TODO: need to also include a filename for this figure
