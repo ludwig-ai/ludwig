@@ -72,3 +72,7 @@ class Callback(ABC):
 
     def on_visualize_figure(self, fig):
         pass
+
+    def prepare_ray_tune(self, train_fn, tune_config):
+        """Configures Ray Tune to properly use this callback in each trial."""
+        return train_fn, tune_config

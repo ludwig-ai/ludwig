@@ -902,6 +902,13 @@ class RayTuneExecutor(HyperoptExecutor):
         def run_experiment_trial(config, checkpoint_dir=None):
             return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx)
 
+        tune_config = {}
+        for callback in callbacks:
+            run_experiment_trial, tune_config = callback.prepare_ray_tune(
+                run_experiment_trial,
+                tune_config,
+            )
+
         register_trainable(
             f"trainable_func_f{hash_dict(config)}", 
             run_experiment_trial
@@ -909,7 +916,10 @@ class RayTuneExecutor(HyperoptExecutor):
 
         analysis = tune.run(
             f"trainable_func_f{hash_dict(config)}",
-            config=self.search_space,
+            config={
+                **self.search_space,
+                **tune_config,
+            },
             scheduler=self.scheduler,
             search_alg=search_alg,
             num_samples=self.num_samples,

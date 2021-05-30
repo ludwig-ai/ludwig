@@ -37,3 +37,13 @@ class MlflowCallback(Callback):
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         mlflow.log_metrics(progress_tracker.log_metrics)
+
+    def prepare_ray_tune(self, train_fn, tune_config):
+        from ray.tune.integration.mlflow import mlflow_mixin
+        return mlflow_mixin(train_fn), {
+            **tune_config,
+            'mlflow': {
+                'experiment_id': self.experiment_id,
+                'tracking_uri': mlflow.get_tracking_uri(),
+            }
+        }
