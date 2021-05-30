@@ -37,10 +37,12 @@ method with `pass`, or just don't implement the method.
 
 # Contributors, import your class here:
 from .comet import CometCallback
+from .mlflow import MlflowCallback
 from .wandb import WandbCallback
 
 contrib_registry = {
     # Contributors, add your class here:
     'comet': CometCallback,
     'wandb': WandbCallback,
+    'mlflow': MlflowCallback,
 }
