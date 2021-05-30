@@ -1,7 +1,7 @@
 import logging
 
 from ludwig.callbacks import Callback
-from ludwig.utils.data_utils import chunk_dict, flatten_dict
+from ludwig.utils.data_utils import chunk_dict, flatten_dict, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
 
 mlflow = LazyLoader('mlflow', globals(), 'mlflow')
@@ -32,9 +32,15 @@ class MlflowCallback(Callback):
         config_flattened = flatten_dict(config)
         for chunk in chunk_dict(config_flattened, chunk_size=100):
             mlflow.log_params(chunk)
+        mlflow.log_dict(to_json_dict(config), 'config.yaml')
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         mlflow.log_metrics(progress_tracker.log_metrics)
+
+    def on_visualize_figure(self, fig):
+        # TODO: need to also include a filename for this figure
+        # mlflow.log_figure(fig)
+        pass
 
     def prepare_ray_tune(self, train_fn, tune_config):
         from ray.tune.integration.mlflow import mlflow_mixin

@@ -213,6 +213,13 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
                   indent=indent)
 
 
+def to_json_dict(d):
+    """Converts Python dict to pure JSON ready format."""
+    return json.loads(
+        json.dumps(d, cls=NumpyEncoder)
+    )
+
+
 def chunk_dict(data, chunk_size=100):
     """Split large dictionary into chunks.
 
