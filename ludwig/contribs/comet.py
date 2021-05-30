@@ -18,11 +18,12 @@ import os
 from datetime import datetime
 
 from ludwig.callbacks import Callback
+from ludwig.utils.misc_utils import ExceptionVariable
 
 try:
     import comet_ml
 except Exception as e:
-    comet_ml = e
+    comet_ml = ExceptionVariable(e)
 
 logger = logging.getLogger(__name__)
 

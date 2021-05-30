@@ -17,11 +17,12 @@ import logging
 import os
 
 from ludwig.callbacks import Callback
+from ludwig.utils.misc_utils import ExceptionVariable
 
 try:
     import wandb
 except Exception as e:
-    wandb = e
+    wandb = ExceptionVariable(e)
 
 logger = logging.getLogger(__name__)
 
