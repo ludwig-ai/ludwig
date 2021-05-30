@@ -1,7 +1,7 @@
 import logging
 
 from ludwig.callbacks import Callback
-from ludwig.utils.data_utils import json_normalize
+from ludwig.utils.data_utils import chunk_dict, flatten_dict
 from ludwig.utils.package_utils import LazyLoader
 
 mlflow = LazyLoader('mlflow', globals(), 'mlflow')
@@ -29,8 +29,9 @@ class MlflowCallback(Callback):
         self.experiment_id = _get_or_create_experiment_id(experiment_name)
 
     def on_train_start(self, config, **kwargs):
-        config_flattened = json_normalize(config)
-        mlflow.log_params(config_flattened)
+        config_flattened = flatten_dict(config)
+        for chunk in chunk_dict(config_flattened, chunk_size=100):
+            mlflow.log_params(chunk)
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         mlflow.log_metrics(progress_tracker.log_metrics)
