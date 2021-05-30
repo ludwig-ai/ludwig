@@ -18,12 +18,9 @@ import os
 from datetime import datetime
 
 from ludwig.callbacks import Callback
-from ludwig.utils.exceptions import ExceptionVariable
+from ludwig.utils.package_utils import LazyLoader
 
-try:
-    import comet_ml
-except Exception as e:
-    comet_ml = ExceptionVariable(e)
+comet_ml = LazyLoader('comet_ml', globals(), 'comet_ml')
 
 logger = logging.getLogger(__name__)
 
