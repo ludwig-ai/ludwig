@@ -17,12 +17,9 @@ import logging
 import os
 
 from ludwig.callbacks import Callback
-from ludwig.utils.exceptions import ExceptionVariable
+from ludwig.utils.package_utils import LazyLoader
 
-try:
-    import wandb
-except Exception as e:
-    wandb = ExceptionVariable(e)
+wandb = LazyLoader('wandb', globals(), 'wandb')
 
 logger = logging.getLogger(__name__)
 
