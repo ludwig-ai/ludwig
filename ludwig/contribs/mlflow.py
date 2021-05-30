@@ -2,12 +2,9 @@ import logging
 
 from ludwig.callbacks import Callback
 from ludwig.utils.data_utils import json_normalize
-from ludwig.utils.exceptions import ExceptionVariable
+from ludwig.utils.package_utils import LazyLoader
 
-try:
-    import mlflow
-except Exception as e:
-    mlflow = ExceptionVariable(e)
+mlflow = LazyLoader('mlflow', globals(), 'mlflow')
 
 logger = logging.getLogger(__name__)
 
