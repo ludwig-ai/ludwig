@@ -783,10 +783,12 @@ class RayTuneExecutor(HyperoptExecutor):
                     eval_stats=json.dumps(train_stats[VALIDATION], cls=NumpyEncoder)
                 )
 
+        callbacks = hyperopt_dict.get('callbacks') or []
+        hyperopt_dict['callbacks'] = callbacks + [RayTuneReportCallback()]
+
         train_stats, eval_stats = run_experiment(
             **hyperopt_dict,
             model_resume_path=checkpoint_dir,
-            callbacks=[RayTuneReportCallback()],
         )
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
