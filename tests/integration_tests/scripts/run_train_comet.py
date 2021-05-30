@@ -13,10 +13,12 @@ import shutil
 import sys
 from unittest.mock import patch, Mock
 
-# Use contrib module before other imports to avoid importing TensorFlow before comet.
 # Bad key will ensure Comet is initialized, but nothing is uploaded externally.
 os.environ['COMET_API_KEY'] = 'key'
-from ludwig.contribs.comet import CometCallback
+
+# Use contrib module before other imports to avoid importing TensorFlow before comet.
+from ludwig.contribs.comet import CometCallback, comet_ml
+comet_ml.__version__
 
 from ludwig.api import LudwigModel
 
