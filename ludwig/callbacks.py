@@ -22,6 +22,9 @@ class Callback(ABC):
     def on_cmdline(self, cmd, *args):
         pass
 
+    def on_hyperopt_init(self, experiment_name):
+        pass
+
     def on_train_init(
         self,
         experiment_directory,

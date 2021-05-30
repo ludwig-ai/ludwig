@@ -471,9 +471,9 @@ class LudwigModel:
             ) as trainer:
                 for callback in self.callbacks:
                     callback.on_train_start(
-                        self.model,
-                        self.config,
-                        self.config_fp,
+                        model=self.model,
+                        config=self.config,
+                        config_fp=self.config_fp,
                     )
 
                 # train model
