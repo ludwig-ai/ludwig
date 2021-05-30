@@ -17,7 +17,7 @@ import logging
 import os
 
 from ludwig.callbacks import Callback
-from ludwig.utils.misc_utils import ExceptionVariable
+from ludwig.utils.exceptions import ExceptionVariable
 
 try:
     import wandb
