@@ -35,15 +35,6 @@ from ludwig.utils.data_utils import figure_data_format
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 
-class ExceptionVariable:
-    """Raises the exception when an attribute is accessed on this variable."""
-    def __init__(self, e):
-        self.e = e
-
-    def __getattr__(self, name):
-        raise self.e
-
-
 def get_experiment_description(
         config,
         dataset=None,

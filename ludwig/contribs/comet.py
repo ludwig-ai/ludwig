@@ -18,7 +18,7 @@ import os
 from datetime import datetime
 
 from ludwig.callbacks import Callback
-from ludwig.utils.misc_utils import ExceptionVariable
+from ludwig.utils.exceptions import ExceptionVariable
 
 try:
     import comet_ml
