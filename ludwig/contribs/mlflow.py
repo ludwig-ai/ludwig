@@ -25,6 +25,11 @@ class MlflowCallback(Callback):
     def on_hyperopt_init(self, experiment_name):
         self.experiment_id = _get_or_create_experiment_id(experiment_name)
 
+    def on_hyperopt_trial_start(self, parameters):
+        # Filter out mlflow params like tracking URI, experiment ID, etc.
+        params = {k: v for k, v in parameters.items() if k != 'mlflow'}
+        self._log_params({'hparam': params})
+
     def on_train_init(
             self,
             base_config,
@@ -32,25 +37,21 @@ class MlflowCallback(Callback):
             output_directory,
             **kwargs
     ):
-        if self.experiment_id is not None:
-            # Experiment may already have been set during hyperopt init, in
-            # which case we don't want to create a new experiment / run, as
-            # this should be handled by the executor.
-            return
+        # Experiment may already have been set during hyperopt init, in
+        # which case we don't want to create a new experiment / run, as
+        # this should be handled by the executor.
+        if self.experiment_id is None:
+            self.experiment_id = _get_or_create_experiment_id(experiment_name)
+            run_name = os.path.basename(output_directory)
+            self.run = mlflow.start_run(
+                experiment_id=self.experiment_id,
+                run_name=run_name
+            )
 
-        self.experiment_id = _get_or_create_experiment_id(experiment_name)
-        run_name = os.path.basename(output_directory)
-        self.run = mlflow.start_run(
-            experiment_id=self.experiment_id,
-            run_name=run_name
-        )
         mlflow.log_dict(to_json_dict(base_config), 'config.yaml')
 
     def on_train_start(self, config, **kwargs):
-        train_config = {'training': config['training']}
-        config_flattened = flatten_dict(train_config)
-        for chunk in chunk_dict(config_flattened, chunk_size=100):
-            mlflow.log_params(chunk)
+        self._log_params({'training': config['training']})
 
     def on_train_end(self, output_directory):
         for fname in os.listdir(output_directory):
@@ -78,3 +79,8 @@ class MlflowCallback(Callback):
                 'tracking_uri': mlflow.get_tracking_uri(),
             }
         }
+
+    def _log_params(self, params):
+        flat_params = flatten_dict(params)
+        for chunk in chunk_dict(flat_params, chunk_size=100):
+            mlflow.log_params(chunk)

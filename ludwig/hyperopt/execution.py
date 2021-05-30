@@ -666,6 +666,7 @@ class FiberExecutor(HyperoptExecutor):
                     {
                         'config': substitute_parameters(
                             copy.deepcopy(config), parameters),
+                        'parameters': parameters,
                         'experiment_name': f'{experiment_name}_{trials + i}',
                         **experiment_kwargs
                     }
@@ -789,6 +790,7 @@ class RayTuneExecutor(HyperoptExecutor):
         train_stats, eval_stats = run_experiment(
             **hyperopt_dict,
             model_resume_path=checkpoint_dir,
+            parameters=config,
         )
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
@@ -1003,6 +1005,7 @@ def substitute_parameters(config, parameters):
 
 def run_experiment(
         config,
+        parameters=None,
         dataset=None,
         training_set=None,
         validation_set=None,
@@ -1033,6 +1036,10 @@ def run_experiment(
         debug=False,
         **kwargs
 ):
+    if callbacks:
+        for callback in callbacks:
+            callback.on_hyperopt_trial_start(parameters)
+
     # Collect training and validation losses and metrics
     # & append it to `results`
     model = LudwigModel(
