@@ -272,6 +272,10 @@ def hyperopt(
         executor[TYPE]
     )(hyperopt_sampler, output_feature, metric, split, **executor)
 
+    if callbacks:
+        for callback in callbacks:
+            callback.on_hyperopt_init(experiment_name)
+
     hyperopt_results = hyperopt_executor.execute(
         config,
         dataset=dataset,

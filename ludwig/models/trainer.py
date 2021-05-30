@@ -1344,3 +1344,36 @@ class ProgressTracker:
     def load(filepath):
         loaded = load_json(filepath)
         return ProgressTracker(**loaded)
+
+    @property
+    def log_metrics(self):
+        log_metrics = {}
+        for item_name in [
+            "batch_size",
+            "epoch",
+            "steps",
+            "last_improvement_epoch",
+            "learning_rate",
+            "best_valid_metric",
+            "num_reductions_lr",
+            "num_increases_bs",
+            "train_metrics",
+            "vali_metrics",
+            "test_metrics"
+        ]:
+            try:
+                item = getattr(self, item_name)
+                if isinstance(item, dict):
+                    for key in item:
+                        if isinstance(item[key], dict):
+                            for key2 in item[key]:
+                                log_metrics[
+                                    item_name + "." + key + "." + key2
+                                ] = item[key][key2][-1]
+                        else:
+                            log_metrics[item_name + "." + key] = item[key][-1]
+                elif item is not None:
+                    log_metrics[item_name] = item
+            except Exception:
+                logger.info(f"skip logging '{item_name}'")
+        return log_metrics

@@ -212,6 +212,12 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
                   indent=indent)
 
 
+def json_normalize(d):
+    """Converts nested dictionary into flat dictionary."""
+    df = pd.json_normalize(d, sep='.')
+    return df.to_dict(orient='records')[0]
+
+
 def flatten_df(df, backend):
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
     column_shapes = {}
