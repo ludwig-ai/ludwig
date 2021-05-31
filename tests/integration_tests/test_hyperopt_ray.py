@@ -18,8 +18,11 @@ import os.path
 
 import pytest
 
+import mlflow
 import ray
+from mlflow.tracking import MlflowClient
 
+from ludwig.contribs import MlflowCallback
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt
@@ -100,9 +103,13 @@ def ray_start_4_cpus():
 
 
 @spawn
-def run_hyperopt_executor(sampler, executor, csv_filename,
-                          validate_output_feature=False,
-                          validation_metric=None):
+def run_hyperopt_executor(
+    sampler, executor, csv_filename,
+    validate_output_feature=False,
+    validation_metric=None,
+    experiment_name='ray_hyperopt',
+    callbacks=None
+):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -150,7 +157,12 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(config, dataset=rel_path)
+    hyperopt_executor.execute(
+        config,
+        dataset=rel_path,
+        experiment_name=experiment_name,
+        callbacks=callbacks
+    )
 
 
 @pytest.mark.distributed
@@ -167,6 +179,34 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
                           csv_filename,
                           validate_output_feature=True,
                           validation_metric=ACCURACY)
+
+
+@pytest.mark.distributed
+def test_hyperopt_ray_mlflow(csv_filename, ray_start_4_cpus, tmpdir):
+    mlflow_uri = f'file://{tmpdir}/mlruns'
+    mlflow.set_tracking_uri(mlflow_uri)
+    client = MlflowClient(tracking_uri=mlflow_uri)
+
+    num_samples = 2
+    exp_name = 'mlflow_test'
+    run_hyperopt_executor({"type": "ray", "num_samples": num_samples},
+                          {"type": "ray"},
+                          csv_filename,
+                          experiment_name=exp_name,
+                          callbacks=[MlflowCallback()])
+
+    experiment = mlflow.get_experiment_by_name(exp_name)
+    assert experiment is not None
+
+    df = mlflow.search_runs([experiment.experiment_id])
+    assert len(df) == num_samples
+
+    for run_id in df.run_id:
+        run = mlflow.get_run(run_id=run_id)
+
+        artifacts = [f.path for f in client.list_artifacts(run.info.run_id, "")]
+        assert 'config.yaml' in artifacts
+        assert 'model' in artifacts
 
 
 @pytest.mark.distributed
