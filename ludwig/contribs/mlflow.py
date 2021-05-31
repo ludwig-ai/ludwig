@@ -84,3 +84,26 @@ class MlflowCallback(Callback):
         flat_params = flatten_dict(params)
         for chunk in chunk_dict(flat_params, chunk_size=100):
             mlflow.log_params(chunk)
+
+
+import mlflow
+class LudwigMlFlowModel(mlflow.pyfunc.PythonModel):
+    def __init__(self):
+      super().__init__()
+      # embed your vader model instance
+      self._analyser = SentimentIntensityAnalyzer()
+
+   # preprocess the input with prediction from the vader sentiment model
+   def _score(self, txt):
+      prediction_scores = self._analyser.polarity_scores(txt)
+      return prediction_scores
+
+   def predict(self, context, model_input):
+
+      # Apply the preprocess function from the vader model to score
+      model_output = model_input.apply(lambda col: self._score(col))
+      return model_output
+
+
+def export_model(model_path, output_path, model_name):
+    mlflow.pyfunc.save_model(path=output_path, python_model=vader_model, conda_env=conda_env)

@@ -85,6 +85,36 @@ def export_neuropod(
     logger.info('Saved to: {0}'.format(output_path))
 
 
+def export_mlflow(
+        model_path,
+        output_path='mlflow',
+        model_name='mlflow',
+        **kwargs
+):
+    """Exports a model to MLFlow
+
+    # Inputs
+
+    :param model_path: (str) filepath to pre-trained model.
+    :param output_path: (str, default: `'mlflow'`)  directory to store the
+        mlflow model.
+    :param model_name: (str, default: `'mlflow'`) save mlflow under this
+        name.
+
+    # Return
+
+    :returns: (`None`)
+    """
+    logger.info('Model path: {}'.format(model_path))
+    logger.info('Output path: {}'.format(output_path))
+    logger.info('\n')
+
+    from ludwig.contribs import mlflow
+    mlflow.export_model(model_path, output_path, model_name)
+
+    logger.info('Saved to: {0}'.format(output_path))
+
+
 def cli_export_savedmodel(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
@@ -207,6 +237,71 @@ def cli_export_neuropod(sys_argv):
     print_ludwig('Export Neuropod', LUDWIG_VERSION)
 
     export_neuropod(**vars(args))
+
+
+def cli_export_mlflow(sys_argv):
+    parser = argparse.ArgumentParser(
+        description='This script loads a pretrained model '
+                    'and saves it as an MLFlow model.',
+        prog='ludwig export_mlflow',
+        usage='%(prog)s [options]'
+    )
+
+    # ----------------
+    # Model parameters
+    # ----------------
+    parser.add_argument(
+        '-m',
+        '--model_path',
+        help='model to load',
+        required=True
+    )
+    parser.add_argument(
+        '-mn',
+        '--model_name',
+        help='model name',
+        default='mlflow'
+    )
+
+    # -----------------
+    # Output parameters
+    # -----------------
+    parser.add_argument(
+        '-od',
+        '--output_path',
+        type=str,
+        help='path where to save the exported model',
+        required=True
+    )
+
+    # ------------------
+    # Runtime parameters
+    # ------------------
+    parser.add_argument(
+        '-l',
+        '--logging_level',
+        default='info',
+        help='the level of logging to use',
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+    )
+
+    add_contrib_callback_args(parser)
+    args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('export_mlflow', *sys_argv)
+
+    args.logging_level = logging_level_registry[args.logging_level]
+    logging.getLogger('ludwig').setLevel(
+        args.logging_level
+    )
+    global logger
+    logger = logging.getLogger('ludwig.export')
+
+    print_ludwig('Export MLFlow', LUDWIG_VERSION)
+
+    export_mlflow(**vars(args))
 
 
 if __name__ == '__main__':
