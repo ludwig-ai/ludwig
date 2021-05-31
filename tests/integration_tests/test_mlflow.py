@@ -58,7 +58,7 @@ def test_mlflow_callback(tmpdir):
     run_id = df.run_id[0]
     assert run_id == callback.run.info.run_id
 
-    artifacts = [f.path for f in MlflowClient().list_artifacts(callback.run.info.run_id, "")]
+    artifacts = [f.path for f in client.list_artifacts(callback.run.info.run_id, "")]
     local_dir = f'{tmpdir}/local_artifacts'
     os.makedirs(local_dir)
 
