@@ -1368,13 +1368,11 @@ def preprocess_for_training(
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
     cached = False
-    checksum = None
-    input_fname = None
+    cache = backend.cache.get_dataset_cache(
+        config, dataset, training_set, test_set, validation_set
+    )
     if data_format in CACHEABLE_FORMATS:
-        input_fname = dataset or training_set
-
-        checksum = backend.cache.get_cache_key(input_fname, config)
-        cache_results = backend.cache.get_dataset(input_fname, config)
+        cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:
@@ -1394,11 +1392,10 @@ def preprocess_for_training(
                     "if saving of processed input is not skipped "
                     "they will be overridden"
                 )
-                backend.cache.delete_dataset(input_fname, config)
+                cache.delete()
 
     if CHECKSUM not in training_set_metadata:
-        checksum = checksum or backend.cache.get_cache_key(input_fname, config)
-        training_set_metadata[CHECKSUM] = checksum
+        training_set_metadata[CHECKSUM] = cache.checksum
 
     data_format_processor = get_from_registry(
         data_format,
@@ -1441,9 +1438,8 @@ def preprocess_for_training(
         processed = (training_set, test_set, validation_set, training_set_metadata)
 
         # cache the dataset
-        processed = backend.cache.put_dataset(
-            input_fname, config, processed, skip_save_processed_input
-        )
+        if backend.cache.can_cache(skip_save_processed_input):
+            processed = cache.put(*processed)
         training_set, test_set, validation_set, training_set_metadata = processed
 
     training_dataset = backend.dataset_manager.create(
@@ -1687,9 +1683,10 @@ def preprocess_for_prediction(
     # because the cached data is stored in its split form, and would be
     # expensive to recombine, requiring further caching.
     cached = False
+    cache = backend.cache.get_dataset_cache(config, dataset)
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
-        cache_results = backend.cache.get_dataset(dataset, config)
+        cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:

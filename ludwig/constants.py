@@ -100,6 +100,8 @@ TEST = 'test'
 SPLIT = 'split'
 FULL = 'full'
 
+META = 'meta'
+
 HYPEROPT = 'hyperopt'
 STRATEGY = 'strategy'
 EXECUTOR = 'executor'
