@@ -11,6 +11,7 @@ from ludwig.features.feature_registries import input_type_registry, \
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.torch_utils import LudwigModule
 
 import torch
 from torch.nn import Module
@@ -19,7 +20,7 @@ import torchmetrics
 logger = logging.getLogger(__name__)
 
 
-class ECD(Module):
+class ECD(LudwigModule):
 
     def __init__(
             self,
@@ -186,7 +187,8 @@ class ECD(Module):
                 "of output features"
             )
 
-        outputs = self.call(inputs, training=False)
+        #outputs = self.call(inputs, training=False)
+        outputs = self(inputs, training=False)
 
         predictions = {}
         for of_name in of_list:
@@ -235,7 +237,7 @@ class ECD(Module):
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
         train_loss += regularization_lambda * sum(
-            self.losses)  # regularization / other losses
+            self.losses())  # regularization / other losses
         return train_loss, of_train_losses
 
     def eval_loss(self, targets, predictions):
@@ -247,7 +249,7 @@ class ECD(Module):
             )
             eval_loss += of_obj.loss['weight'] * of_eval_loss
             of_eval_losses[of_name] = of_eval_loss
-        eval_loss += sum(self.losses)  # regularization / other losses
+        eval_loss += sum(self.losses())  # regularization / other losses
         return eval_loss, of_eval_losses
 
     def update_metrics(self, targets, predictions):

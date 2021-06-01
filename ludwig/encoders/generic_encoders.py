@@ -19,13 +19,14 @@ import logging
 from tensorflow.keras.layers import Layer
 
 from torch.nn import Module
+from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-class PassthroughEncoder(Module):
+class PassthroughEncoder(LudwigModule):
 
     def __init__(
             self,
@@ -43,7 +44,7 @@ class PassthroughEncoder(Module):
         return {'encoder_output': inputs}
 
 
-class DenseEncoder(Module):
+class DenseEncoder(LudwigModule):
 
     def __init__(
             self,

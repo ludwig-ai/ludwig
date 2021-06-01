@@ -24,6 +24,7 @@ from tensorflow.keras.layers import Layer
 
 import torch
 from torch.nn import Linear
+from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.utils.torch_utils import (LudwigModule, initializers, activations, reg_loss)
 

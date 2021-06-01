@@ -22,6 +22,7 @@ from tensorflow.keras.layers import concatenate
 
 import torch
 from torch.nn import Module
+from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.constants import TYPE, CATEGORY, NUMERICAL, BINARY
 from ludwig.encoders.sequence_encoders import ParallelCNN
@@ -38,7 +39,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class ConcatCombiner(Module):
+class ConcatCombiner(LudwigModule):
     def __init__(
             self,
             input_features=None,

@@ -1396,7 +1396,8 @@ class LudwigModel:
                 model_dir,
                 MODEL_WEIGHTS_FILE_NAME
             )
-            self.model.load_weights(weights_save_path)
+            #self.model.load_weights(weights_save_path)
+            self.model.load_state_dict(torch.load(weights_save_path))
 
         self.backend.sync_model(self.model)
 

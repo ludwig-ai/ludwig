@@ -175,7 +175,7 @@ class Predictor(BasePredictor):
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: batch[o_feat.proc_column]
+                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column])
                     for o_feat in model.output_features.values()
                 }
 

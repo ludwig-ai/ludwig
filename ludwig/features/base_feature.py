@@ -19,6 +19,7 @@ from typing import Dict
 
 import tensorflow as tf
 
+import torch
 from torch.nn import Module
 
 from ludwig.constants import *
@@ -27,7 +28,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 #from ludwig.utils.tf_utils import sequence_length_3D
-from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask
+from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigModule
 
 import numpy as np
 
@@ -74,7 +75,7 @@ class BaseFeature:
                     setattr(self, k, feature[k])
 
 
-class InputFeature(BaseFeature, Module, ABC):
+class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 
     def __init__(self, *args, **kwargs):
@@ -127,11 +128,11 @@ class InputFeature(BaseFeature, Module, ABC):
         )
 
 
-class OutputFeature(BaseFeature, Module, ABC):
+class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
     #train_loss_function = None
-    eval_loss_function = None
+    #eval_loss_function = None
 
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
@@ -233,10 +234,12 @@ class OutputFeature(BaseFeature, Module, ABC):
         )
 
     def train_loss(self, targets, predictions):
-        return self.train_loss_function(targets, predictions)
+        #return self.train_loss_function(targets, predictions)
+        return self.train_loss_function(predictions, targets)
 
     def eval_loss(self, targets, predictions):
-        return self.eval_loss_function(targets, predictions)
+        #return self.eval_loss_function(targets, predictions)
+        return self.eval_loss_function(predictions, targets)
 
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
@@ -308,7 +311,7 @@ class OutputFeature(BaseFeature, Module, ABC):
         #   with keys: logits, lengths, projection_input
         #
 
-        if isinstance(logits, tf.Tensor):
+        if isinstance(logits, torch.Tensor):
             logits = {'logits': logits}
 
         return {

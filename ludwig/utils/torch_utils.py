@@ -1,4 +1,4 @@
-from torch.nn import Module
+from torch.nn import Module, ModuleDict
 import torch
 from torch.nn.init import (uniform_, normal_, constant_, ones_,  zeros_, eye_, dirac_,
         xavier_uniform_, xavier_normal_, kaiming_uniform_, kaiming_normal_, orthogonal_, sparse_)
@@ -89,18 +89,25 @@ class LudwigModel(Module):
 # I think I need this instead of what I have above:
 class LudwigModule(Module):
     def __init__(self):
-        super(LudwigModule, self).__init__()
+        super().__init__()
         self._callable_losses = []
 
-    @property
     def losses(self):
         collected_losses = []
         for loss_fn in self._callable_losses:
             collected_losses.append(loss_fn())
 
         for child in self.children():
-            collected_losses.extend(child.losses)
-
+            if isinstance(child, LudwigModule):
+                collected_losses.extend(child.losses())
+            elif isinstance(child, ModuleDict):
+                for c in child.values():
+                    collected_losses.extend(c.losses())
+            elif isinstance(child, Module):
+                pass
+            else:
+                print(type(child))
+                raise ValueError
 
         return collected_losses
 

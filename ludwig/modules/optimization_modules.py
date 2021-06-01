@@ -122,6 +122,4 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
     cls = type(optimizer.__name__, (optimizer,),
                dict(_ClippedOptimizer.__dict__))
     #return cls.from_config(optimizer.get_config())
-    opt = cls(**kwargs)
-    kwargs
-    return opt
+    return cls(**kwargs)

@@ -40,7 +40,6 @@ class MSELoss(_MSELoss):
         return loss
     '''
     def forward(self, input, target):
-        print(input)
         logits = input[LOGITS]
         loss = super().forward(logits, target)
         return loss

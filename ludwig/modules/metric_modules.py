@@ -447,7 +447,7 @@ class MAEMetric(MeanAbsoluteError):
 
     def update(self, preds, target):
         super().update_state(
-            preds[PREDICTIONS], target
+            preds[PREDICTIONS].detach(), target
         )
 
 '''
@@ -480,7 +480,7 @@ class MSEMetric(MeanSquaredError):
 
     def update(self, preds, target):
         super().update(
-            preds[PREDICTIONS], target
+            preds[PREDICTIONS].detach(), target
         )
 
 
