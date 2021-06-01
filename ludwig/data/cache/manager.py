@@ -100,7 +100,7 @@ class CacheManager:
         self._dataset_manager = dataset_manager
         self._cache_dir = cache_dir
 
-    def get_dataset_cache(self, config, dataset, training_set=None, test_set=None, validation_set=None):
+    def get_dataset_cache(self, config, dataset=None, training_set=None, test_set=None, validation_set=None):
         if dataset is not None:
             key = self.get_cache_key(dataset, config)
             cache_map = {

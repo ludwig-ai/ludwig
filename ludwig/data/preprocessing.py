@@ -1371,7 +1371,7 @@ def preprocess_for_training(
     cache = backend.cache.get_dataset_cache(
         config, dataset, training_set, test_set, validation_set
     )
-g    if data_format in CACHEABLE_FORMATS:
+    if data_format in CACHEABLE_FORMATS:
         cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
