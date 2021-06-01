@@ -43,9 +43,13 @@ class ECD(Module):
         super().__init__()
 
         # ================ Inputs ================
+        '''
         self.input_features = build_inputs(
             input_features_def
         )
+        '''
+        self.input_features = torch.nn.ModuleDict()
+        self.input_features.update(build_inputs(input_features_def))
 
         # ================ Combiner ================
         logger.debug('Combiner {}'.format(combiner_def[TYPE]))
@@ -56,10 +60,14 @@ class ECD(Module):
         )
 
         # ================ Outputs ================
+        '''
         self.output_features = build_outputs(
             output_features_def,
             self.combiner
         )
+        '''
+        self.output_features = torch.nn.ModuleDict()
+        self.output_features.update(build_outputs(output_features_def, self.combiner))
 
         # ================ Combined loss metric ================
         #self.eval_loss_metric = tf.keras.metrics.Mean()
@@ -97,7 +105,7 @@ class ECD(Module):
         keras_model = self.get_connected_model(training=False)
         keras_model.save(save_path)
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
         # parameter (inputs, targets) where
@@ -106,12 +114,16 @@ class ECD(Module):
 
         if isinstance(inputs, tuple):
             inputs, targets = inputs
+            for target_feature_name, target_value in targets.items():
+                targets[target_feature_name] = torch.from_numpy(target_value)
+                # inputs dict is converted to tensor in loop below
         else:
             targets = None
         assert inputs.keys() == self.input_features.keys()
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
+            inputs[input_feature_name] = torch.from_numpy(input_values)
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values, training=training,
                                      mask=mask)
@@ -188,13 +200,17 @@ class ECD(Module):
     def train_step(self, optimizer, inputs, targets,
                    regularization_lambda=0.0):
         #with tf.GradientTape() as tape:
+        optimizer.zero_grad()
         model_outputs = self((inputs, targets), training=True)
         loss, all_losses = self.train_loss(
             targets, model_outputs, regularization_lambda
         )
+        '''
         optimizer.minimize_with_tape(
             tape, loss, self.trainable_variables
         )
+        '''
+        optimizer.minimize(loss, self.parameters())
         # grads = tape.gradient(loss, model.trainable_weights)
         # optimizer.apply_gradients(zip(grads, model.trainable_weights))
         return loss, all_losses
@@ -236,7 +252,12 @@ class ECD(Module):
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
             of_obj.update_metrics(targets[of_name], predictions[of_name])
+        '''
         self.eval_loss_metric.update_state(
+            self.eval_loss(targets, predictions)[0]
+        )
+        '''
+        self.eval_loss_metric.update(
             self.eval_loss(targets, predictions)[0]
         )
 
@@ -245,14 +266,16 @@ class ECD(Module):
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
         all_of_metrics[COMBINED] = {
-            LOSS: self.eval_loss_metric.result().numpy()
+            #LOSS: self.eval_loss_metric.result().numpy()
+            LOSS: self.eval_loss_metric.compute()
         }
         return all_of_metrics
 
     def reset_metrics(self):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
-        self.eval_loss_metric.reset_states()
+        #self.eval_loss_metric.reset_states()
+        self.eval_loss_metric.reset()
 
     def collect_weights(
             self,
@@ -358,6 +381,7 @@ def build_outputs(
     output_features = {}
 
     for output_feature_def in output_features_def:
+        output_feature_def["input_size"] = combiner.get_output_shape()
         output_feature = build_single_output(
             output_feature_def,
             combiner,

@@ -31,6 +31,7 @@ class PassthroughEncoder(Module):
             self,
             **kwargs
     ):
+        self.name = "PassthroughEncoder"
         super(PassthroughEncoder, self).__init__()
         logger.debug(' {}'.format(self.name))
 

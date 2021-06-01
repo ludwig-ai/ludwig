@@ -96,6 +96,11 @@ class InputFeature(BaseFeature, Module, ABC):
         """Returns a tuple representing the Tensor shape this input accepts."""
         pass
 
+    @abstractmethod
+    def get_output_shape(self):
+        """Returns a tuple representing the Tensor shape this input outputs."""
+        pass
+
     @staticmethod
     @abstractmethod
     def update_config_with_metadata(
@@ -150,12 +155,14 @@ class OutputFeature(BaseFeature, Module, ABC):
         self.norm_params = None
         self.activation = 'relu'
         self.dropout = 0
+        self.input_size = None
 
         self.overwrite_defaults(feature)
 
         logger.debug(' output feature fully connected layers')
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
+            first_layer_input_size=self.input_size,
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,
             default_fc_size=self.fc_size,
@@ -200,6 +207,11 @@ class OutputFeature(BaseFeature, Module, ABC):
         """Returns a tuple representing the Tensor shape this feature outputs."""
         pass
 
+    @abstractmethod
+    def get_input_shape(self):
+        """Returns a tuple representing the Tensor shape this feature accepts."""
+        pass
+
     @property
     @abstractmethod
     def metric_functions(self) -> Dict:
@@ -225,21 +237,23 @@ class OutputFeature(BaseFeature, Module, ABC):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS or metric == HITS_AT_K:
                 #metric_fn.update_state(targets, predictions)
-                metric_fn.update_state(predictions, targets)
+                metric_fn.update(predictions, targets)
             else:
                 #metric_fn.update_state(targets, predictions[PREDICTIONS])
-                metric_fn.update_state(predictions[PREDICTIONS], targets)
+                metric_fn.update(predictions[PREDICTIONS], targets)
 
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
-            metric_vals[metric_name] = metric_onj.result().numpy()
+            #metric_vals[metric_name] = metric_onj.result().numpy()
+            metric_vals[metric_name] = metric_onj.compute()
         return metric_vals
 
     def reset_metrics(self):
         for of_name, metric_fn in self.metric_functions.items():
             if metric_fn is not None:
-                metric_fn.reset_states()
+                #metric_fn.reset_states()
+                metric_fn.reset()
 
     def call(
             self,

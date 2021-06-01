@@ -76,13 +76,16 @@ default_optimizer_params_registry = {
     'gd': {},
     'gradient_descent': {},
     'adam': {
-        'beta_1': 0.9,
-        'beta_2': 0.999,
-        'epsilon': 1e-08
+        'betas': (0.9, 0.999),
+        #'beta_1': 0.9,
+        #'beta_2': 0.999,
+        #'epsilon': 1e-08
+        'eps': 1e-08
     },
     'adadelta': {
         'rho': 0.95,
-        'epsilon': 1e-08
+        'eps': 1e-08
+        #'epsilon': 1e-08
     },
     'adagrad': {
         'initial_accumulator_value': 0.1
@@ -96,9 +99,10 @@ default_optimizer_params_registry = {
     },
     'nadam': {},
     'rmsprop': {
-        'decay': 0.9,
+        'weight_decay': 0.9,
         'momentum': 0.0,
-        'epsilon': 1e-10,
+        #'epsilon': 1e-10,
+        'eps': 1e-10,
         'centered': False
     }
 }

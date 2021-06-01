@@ -19,6 +19,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+import torch
 '''
 from tensorflow.keras.metrics import \
     MeanAbsoluteError as MeanAbsoluteErrorMetric
@@ -95,15 +96,16 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         # Required for certain encoders, maybe pass into initialize_encoder
-        feature['input_size'] = self.get_input_shape()
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        feature['input_size'] = self.get_input_shape()
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
     def forward(self, inputs, training=None, mask=None):
+        inputs = tf.convert_to_tensor(inputs)
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
         assert len(inputs.shape) == 1
@@ -123,6 +125,13 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def get_input_shape(self):
         #return ()
         return 1
+
+    def get_output_shape(self):
+        if isinstance(self.encoder_obj, DenseEncoder):
+            return self.encoder_obj.fc_stack.layers[-1]['fc_size']
+        else: # passthrough encoder
+            return self.get_input_shape()
+
 
     @staticmethod
     def update_config_with_metadata(
@@ -156,9 +165,9 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     clip = None
 
     def __init__(self, feature):
-        feature['input_size'] = self.get_output_shape()
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        feature['input_size'] = self.get_input_shape()
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -239,6 +248,9 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     # def update_metrics(self, targets, predictions):
     #     for metric in self.metric_functions.values():
     #         metric.update_state(targets, predictions[PREDICTIONS])
+
+    def get_input_shape(self):
+        return self.input_size
 
     @classmethod
     def get_output_dtype(cls):

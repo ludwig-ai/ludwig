@@ -59,6 +59,8 @@ class ConcatCombiner(Module):
             **kwargs
     ):
         super().__init__()
+        self.name = "ConcatCombiner"
+        self.input_features = input_features
         logger.debug(' {}'.format(self.name))
 
         self.fc_stack = None
@@ -70,10 +72,12 @@ class ConcatCombiner(Module):
             for i in range(num_fc_layers):
                 fc_layers.append({'fc_size': fc_size})
 
+        self.fc_layers = fc_layers
+
         if fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                first_layer_input_size=self.get_input_shape(input_features),
+                first_layer_input_size=self.get_input_shape(),
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -125,9 +129,15 @@ class ConcatCombiner(Module):
 
         return return_data
 
-    def get_input_shape(input_features):
-        shapes = [input_features[k].get_input_shape() for k in input_features]
+    def get_input_shape(self):
+        shapes = [self.input_features[k].get_output_shape() for k in self.input_features] #output shape not input shape
         return sum(shapes)
+
+    def get_output_shape(self):
+        if self.fc_layers is not None:
+            return self.fc_layers[-1]['fc_size']
+        else:
+            return self.get_input_shape()
 
 
 

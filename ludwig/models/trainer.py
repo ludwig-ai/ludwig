@@ -106,6 +106,7 @@ class Trainer(BaseTrainer):
 
     def __init__(
             self,
+            model,
             optimizer=None,
             epochs=100,
             regularization_lambda=0.0,
@@ -273,6 +274,7 @@ class Trainer(BaseTrainer):
         # ================ Optimizer ================
         if optimizer is None:
             optimizer = {TYPE: 'Adam'}
+        optimizer['params'] = model.parameters()
         self.optimizer = ClippedOptimizer(
             horovod=horovod,
             **optimizer

@@ -89,7 +89,7 @@ class LudwigModel(Module):
 # I think I need this instead of what I have above:
 class LudwigModule(Module):
     def __init__(self):
-        super(LudwigLayer, self).__init__()
+        super(LudwigModule, self).__init__()
         self._callable_losses = []
 
     @property

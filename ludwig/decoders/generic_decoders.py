@@ -22,6 +22,8 @@ from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Layer
 
+from torch.nn import Linear
+
 from ludwig.constants import LOSS, TYPE
 
 from ludwig.utils.torch_utils import (LudwigModule, initializers, activations)
@@ -46,6 +48,7 @@ class Regressor(LudwigModule):
             **kwargs
     ):
         super().__init__()
+        self.name = "Regressor"
         logger.debug(' {}'.format(self.name))
 
         #logger.debug('  Dense')

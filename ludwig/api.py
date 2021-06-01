@@ -455,6 +455,7 @@ class LudwigModel:
             # init trainer
             with self.backend.create_trainer(
                 **self.config[TRAINING],
+                model=self.model,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,

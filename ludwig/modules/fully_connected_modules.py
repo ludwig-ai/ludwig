@@ -153,7 +153,8 @@ class FCStack(LudwigModule):
         else:
             self.layers = layers
 
-        self.layers[0]['input_size'] = first_layer_input_size
+        if len(self.layers) > 0:
+            self.layers[0]['input_size'] = first_layer_input_size
         for i, layer in enumerate(self.layers):
             if i != 0:
                 layer['input_size'] = self.layers[i-1]['fc_size']

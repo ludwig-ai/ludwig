@@ -14,9 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 import tensorflow as tf
+import torch
 
 from ludwig.utils.misc_utils import get_from_registry
 
+'''
 optimizers_registry = {
     'sgd': tf.keras.optimizers.SGD,
     'stochastic_gradient_descent': tf.keras.optimizers.SGD,
@@ -30,6 +32,20 @@ optimizers_registry = {
     'nadam': tf.keras.optimizers.Nadam,
     'rmsprop': tf.keras.optimizers.RMSprop,
 }
+'''
+optimizers_registry = {
+    'sgd': torch.optim.SGD,
+    'stochastic_gradient_descent': torch.optim.SGD,
+    'gd': torch.optim.SGD,
+    'gradient_descent': torch.optim.SGD,
+    'adam': torch.optim.Adam,
+    'adadelta': torch.optim.Adadelta,
+    'adagrad': torch.optim.Adagrad,
+    'adamax': torch.optim.Adamax,
+    #'ftrl': tf.keras.optimizers.Ftrl,
+    #'nadam': tf.keras.optimizers.Nadam,
+    'rmsprop': torch.optim.RMSprop,
+}
 
 
 def ClippedOptimizer(type='sgd',
@@ -38,14 +54,16 @@ def ClippedOptimizer(type='sgd',
                      clipvalue=None,
                      horovod=None,
                      **kwargs):
-    optimizer = get_from_registry(type.lower(), optimizers_registry)(**kwargs)
+    #optimizer = get_from_registry(type.lower(), optimizers_registry)(**kwargs)
+    optimizer = get_from_registry(type.lower(), optimizers_registry)
     return clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
-                          horovod=horovod)
+                          horovod=horovod, **kwargs)
 
 
 def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
-                   horovod=None):
-    class _ClippedOptimizer(tf.keras.optimizers.Optimizer):
+                   horovod=None, **kwargs):
+    #class _ClippedOptimizer(tf.keras.optimizers.Optimizer):
+    class _ClippedOptimizer(torch.optim.Optimizer):
         def __init__(self, **kwargs):
             self.clipglobalnorm = clipglobalnorm
             self.clipnorm = clipnorm
@@ -53,6 +71,7 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
             self.horovod = horovod
             super(self.__class__, self).__init__(**kwargs)
 
+        '''
         def minimize_with_tape(self, tape, loss, variables):
             if self.horovod:
                 tape = self.horovod.DistributedGradientTape(tape)
@@ -76,10 +95,31 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
                     gradients
                 )
             self.apply_gradients(zip(gradients, variables))
+        '''
+        def minimize(self, loss, variables):
+            if self.horovod:
+                tape = self.horovod.DistributedGradientTape(tape)
+
+            loss.backward()
+            if self.clipglobalnorm:
+                torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
+            if self.clipnorm:
+                for x in variables:
+                    torch.nn.utils.clip_grad_norm_(x, self.clipglobalnorm)
+            if self.clipvalue:
+                pass
+
+            self.step()
 
         def set_learning_rate(self, learning_rate):
-            self.lr.assign(learning_rate)
-
+            #self.lr.assign(learning_rate)
+            for g in self.param_groups:
+                g['lr'] = learning_rate
+    '''
     cls = type(optimizer.__class__.__name__, (optimizer.__class__,),
                dict(_ClippedOptimizer.__dict__))
-    return cls.from_config(optimizer.get_config())
+    '''
+    cls = type(optimizer.__name__, (optimizer,),
+               dict(_ClippedOptimizer.__dict__))
+    #return cls.from_config(optimizer.get_config())
+    return cls(**kwargs)
