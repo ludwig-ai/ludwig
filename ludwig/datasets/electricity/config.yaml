@@ -1,0 +1,5 @@
+version: 1.0
+download_urls:
+  - https://raw.githubusercontent.com/nimz/electricity_demand/master/elecdemand.csv
+download_file_type: csv
+csv_filename: elecdemand.csv

@@ -45,7 +45,7 @@ class FCLayer(LudwigModule):
             activation='relu',
             dropout=0,
     ):
-        super(FCLayer, self).__init__()
+        super().__init__()
 
         self.layers = []
 
@@ -144,7 +144,7 @@ class FCStack(LudwigModule):
             default_dropout=0,
             **kwargs
     ):
-        super(FCStack, self).__init__()
+        super().__init__()
 
         if layers is None:
             self.layers = []
@@ -212,7 +212,7 @@ class FCStack(LudwigModule):
             self,
             input_shape,
     ):
-        super(FCStack, self).build(input_shape)
+        super().build(input_shape)
     '''
 
     def forward(self, inputs, training=None, mask=None):

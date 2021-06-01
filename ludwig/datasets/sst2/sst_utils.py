@@ -173,7 +173,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin,
                 index=False
             )
 
-        super(SST, self).process_downloaded_dataset()
+        super().process_downloaded_dataset()
 
 
 def format_text(text: str):

@@ -22,9 +22,11 @@ from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import ZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 
+
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Flickr8k(cache_dir=cache_dir)
     return dataset.load(split=split)
+
 
 class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
     """The Flickr8k dataset.

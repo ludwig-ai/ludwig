@@ -32,7 +32,7 @@ class PassthroughEncoder(Module):
             **kwargs
     ):
         self.name = "PassthroughEncoder"
-        super(PassthroughEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
     def forward(self, inputs, training=None, mask=None):
@@ -65,7 +65,7 @@ class DenseEncoder(Module):
             dropout=0,
             **kwargs
     ):
-        super(DenseEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  FCStack')

@@ -1,0 +1,4 @@
+version: 1.0
+download_urls:
+  - https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz
+csv_filename: forest_cover.csv

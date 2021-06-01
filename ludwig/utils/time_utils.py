@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
 
-class WithTimer(object):
+class WithTimer:
     def __init__(self, title='', quiet=False):
         self.title = title
         self.quiet = quiet
@@ -47,7 +47,7 @@ class WithTimer(object):
                                                                elapsed_wp[1]))
 
 
-class Timer(object):
+class Timer:
     def __init__(self):
         self.reset()
 

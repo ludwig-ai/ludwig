@@ -40,7 +40,11 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map_objects(self, series, map_fn):
+    def map_objects(self, series, map_fn, meta=None):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def apply_objects(self, series, map_fn, meta=None):
         raise NotImplementedError()
 
     @abstractmethod
@@ -48,7 +52,7 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def create_dataset(self, dataset, tag, config, training_set_metadata):
+    def to_parquet(self, df, path):
         raise NotImplementedError()
 
     @property
@@ -63,5 +67,5 @@ class DataFrameEngine(ABC):
 
     @property
     @abstractmethod
-    def use_hdf5_cache(self):
+    def partitioned(self):
         raise NotImplementedError()

@@ -16,18 +16,21 @@
 # ==============================================================================
 
 import logging
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import dask
 import ray
 from horovod.ray import RayExecutor
+from ray.exceptions import RayActorError
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME
+from ludwig.constants import NAME, PARQUET
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.models.predictor import BasePredictor, RemotePredictor
+from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
+from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 
@@ -143,41 +146,63 @@ class RayTrainer(BaseTrainer):
 
 class RayPredictor(BasePredictor):
     def __init__(self, horovod_kwargs, predictor_kwargs):
-        # TODO ray: investigate using Dask for prediction instead of Horovod
-        setting = RayExecutor.create_settings(timeout_s=30)
-        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RemotePredictor, executable_kwargs=predictor_kwargs)
+        # TODO ray: use horovod_kwargs to allocate GPU model replicas
+        self.predictor_kwargs = predictor_kwargs
+        self.actor_handles = []
 
-    def batch_predict(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
-        results = self.executor.execute(
-            lambda predictor: predictor.batch_predict(model.load(), *args, **kwargs)
-        )
-        return results[0]
+    def batch_predict(self, model, dataset, *args, **kwargs):
+        self._check_dataset(dataset)
 
-    def batch_evaluation(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
-        results = self.executor.execute(
-            lambda predictor: predictor.batch_evaluation(model.load(), *args, **kwargs)
+        remote_model = RayRemoteModel(model)
+        predictor_kwargs = self.predictor_kwargs
+        output_columns = get_output_columns(model.output_features)
+
+        def batch_predict_partition(dataset):
+            model = remote_model.load()
+            predictor = Predictor(**predictor_kwargs)
+            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
+            ordered_predictions = predictions[output_columns]
+            return ordered_predictions
+
+        return dataset.map_dataset_partitions(
+            batch_predict_partition,
+            meta=[(c, 'object') for c in output_columns]
         )
-        return results[0]
+
+    def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
+        raise NotImplementedError(
+            'Ray backend does not support batch evaluation at this time.'
+        )
 
     def batch_collect_activations(self, model, *args, **kwargs):
-        model = RayRemoteModel(model)
-        return self.executor.execute_single(
-            lambda predictor: predictor.batch_collect_activations(model.load(), *args, **kwargs)
+        raise NotImplementedError(
+            'Ray backend does not support collecting activations at this time.'
         )
 
+    def _check_dataset(self, dataset):
+        if not isinstance(dataset, PartitionedDataset):
+            raise RuntimeError(
+                f'Ray backend requires PartitionedDataset for inference, '
+                f'found: {type(dataset)}'
+            )
+
     def shutdown(self):
-        self.executor.shutdown()
+        for handle in self.actor_handles:
+            ray.kill(handle)
+        self.actor_handles.clear()
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, horovod_kwargs=None):
-        super().__init__()
+    def __init__(self, horovod_kwargs=None, data_format=PARQUET, **kwargs):
+        super().__init__(data_format=data_format, **kwargs)
         self._df_engine = DaskEngine()
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
+        if data_format != PARQUET:
+            raise ValueError(
+                f'Data format {data_format} is not supported when using the Ray backend. '
+                f'Try setting to `parquet`.'
+            )
 
     def initialize(self):
         try:

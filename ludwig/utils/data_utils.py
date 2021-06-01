@@ -24,9 +24,9 @@ import pickle
 import random
 import re
 
-import h5py
 import numpy as np
 import pandas as pd
+from ludwig.utils.fs_utils import open_file, download_h5, upload_h5
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
@@ -87,8 +87,7 @@ def get_abs_path(data_csv_path, file_path):
 
 
 def load_csv(data_fp):
-    data = []
-    with open(data_fp, 'rb') as f:
+    with open_file(data_fp, 'rb') as f:
         data = list(csv.reader(f))
     return data
 
@@ -105,7 +104,7 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=',', header=0, nrows=None, ski
     :param skiprows: number of rows to skip from the csv, None means no skips
     :return: Pandas dataframe with the data
     """
-    with open(data_fp, 'r', encoding="utf8") as csvfile:
+    with open_file(data_fp, 'r', encoding="utf8") as csvfile:
         try:
             dialect = csv.Sniffer().sniff(csvfile.read(1024 * 100),
                                           delimiters=[',', '\t', '|'])
@@ -188,7 +187,7 @@ def read_stata(data_fp, df_lib):
 
 
 def save_csv(data_fp, data):
-    with open(data_fp, 'w', encoding='utf-8') as csv_file:
+    with open_file(data_fp, 'w', encoding='utf-8') as csv_file:
         writer = csv.writer(csv_file)
         for row in data:
             if not isinstance(row, collections.Iterable) or isinstance(row,
@@ -202,15 +201,45 @@ def csv_contains_column(data_fp, column_name):
 
 
 def load_json(data_fp):
-    with open(data_fp, 'r') as input_file:
+    with open_file(data_fp, 'r') as input_file:
         data = json.load(input_file)
     return data
 
 
 def save_json(data_fp, data, sort_keys=True, indent=4):
-    with open(data_fp, 'w') as output_file:
+    with open_file(data_fp, 'w') as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys,
                   indent=indent)
+
+
+def flatten_df(df, backend):
+    # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
+    column_shapes = {}
+    for c in df.columns:
+        df = backend.df_engine.persist(df)
+        shape = backend.df_engine.compute(backend.df_engine.map_objects(
+            df[c],
+            lambda x: np.array(x).shape,
+        ).max())
+
+        if len(shape) > 1:
+            column_shapes[c] = shape
+            df[c] = backend.df_engine.map_objects(
+                df[c],
+                lambda x: np.array(x).reshape(-1)
+            )
+    return df, column_shapes
+
+
+def unflatten_df(df, column_shapes, backend):
+    for c in df.columns:
+        shape = column_shapes.get(c)
+        if shape:
+            df[c] = backend.df_engine.map_objects(
+                df[c],
+                lambda x: np.array(x).reshape(shape)
+            )
+    return df
 
 
 def to_numpy_dataset(df):
@@ -236,41 +265,37 @@ def from_numpy_dataset(dataset):
 
 
 def save_hdf5(data_fp, data):
-    mode = 'w'
-    if os.path.isfile(data_fp):
-        mode = 'r+'
-
     numpy_dataset = to_numpy_dataset(data)
-    with h5py.File(data_fp, mode) as h5_file:
+    with upload_h5(data_fp) as h5_file:
         h5_file.create_dataset(HDF5_COLUMNS_KEY, data=np.array(data.columns.values, dtype='S'))
         for column in data.columns:
             h5_file.create_dataset(column, data=numpy_dataset[column])
 
 
 def load_hdf5(data_fp):
-    hdf5_data = h5py.File(data_fp, 'r')
-    columns = [s.decode('utf-8') for s in hdf5_data[HDF5_COLUMNS_KEY][()].tolist()]
+    with download_h5(data_fp) as hdf5_data:
+        columns = [s.decode('utf-8') for s in hdf5_data[HDF5_COLUMNS_KEY][()].tolist()]
 
-    numpy_dataset = {}
-    for column in columns:
-        numpy_dataset[column] = hdf5_data[column][()]
+        numpy_dataset = {}
+        for column in columns:
+            numpy_dataset[column] = hdf5_data[column][()]
 
     return from_numpy_dataset(numpy_dataset)
 
 
 def load_object(object_fp):
-    with open(object_fp, 'rb') as f:
+    with open_file(object_fp, 'rb') as f:
         return pickle.load(f)
 
 
 def save_object(object_fp, obj):
-    with open(object_fp, 'wb') as f:
+    with open_file(object_fp, 'wb') as f:
         pickle.dump(obj, f)
 
 
 def load_array(data_fp, dtype=float):
     list_num = []
-    with open(data_fp, 'r') as input_file:
+    with open_file(data_fp, 'r') as input_file:
         for x in input_file:
             list_num.append(dtype(x.strip()))
     return np.array(list_num)
@@ -278,14 +303,14 @@ def load_array(data_fp, dtype=float):
 
 def load_matrix(data_fp, dtype=float):
     list_num = []
-    with open(data_fp, 'r') as input_file:
+    with open_file(data_fp, 'r') as input_file:
         for row in input_file:
             list_num.append([dtype(elem) for elem in row.strip().split()])
     return np.squeeze(np.array(list_num))
 
 
 def save_array(data_fp, array):
-    with open(data_fp, 'w') as output_file:
+    with open_file(data_fp, 'w') as output_file:
         for x in np.nditer(array):
             output_file.write(str(x) + '\n')
 
@@ -330,7 +355,7 @@ def load_glove(file_path):
     embedding_size = 0
 
     # collect embeddings size assuming the first line is correct
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open_file(file_path, 'r', encoding='utf-8') as f:
         found_line = False
         while not found_line:
             line = f.readline()
@@ -339,7 +364,7 @@ def load_glove(file_path):
                 found_line = True
 
     # collect embeddings
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open_file(file_path, 'r', encoding='utf-8') as f:
         for line_number, line in enumerate(f):
             if line:
                 try:
@@ -681,6 +706,32 @@ def is_model_dir(path: str) -> bool:
         if weights_files_count >= 2:
             is_model_dir = True
     return is_model_dir
+
+
+def ndarray2string(parm_array):
+    # convert numpy.ndarray to ludwig custom string format
+    if isinstance(parm_array, np.ndarray):
+        return '__ndarray__' + json.dumps(parm_array.tolist())
+    else:
+        raise ValueError(
+            'Argument must be numpy.ndarray.  Instead argument found to be '
+            '{}'.format(type(parm_array))
+        )
+
+
+def string2ndarray(parm_string):
+    # convert ludwig custom ndarray string to numpy.ndarray
+    if isinstance(parm_string, str) and parm_string[:11] == '__ndarray__':
+        return np.array(json.loads(parm_string[11:]))
+    else:
+        raise ValueError(
+            'Argument must be Ludwig custom string format for numpy.ndarray'
+        )
+
+
+def is_ludwig_ndarray_string(parm_string):
+    # tests if parameter is a Ludwig custom ndarray string
+    return isinstance(parm_string, str) and parm_string[:11] == '__ndarray__'
 
 
 external_data_reader_registry = {

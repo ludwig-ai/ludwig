@@ -1,0 +1,5 @@
+version: 1.0
+download_urls:
+  - https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+  - https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test
+csv_filename: adult_census_income.csv

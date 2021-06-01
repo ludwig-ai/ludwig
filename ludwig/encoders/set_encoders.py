@@ -63,7 +63,7 @@ class SetSparseEncoder(SetEncoder):
             reduce_output='sum',
             **kwargs
     ):
-        super(SetSparseEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  EmbedSparse')

@@ -29,6 +29,8 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
+from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
 
 ludwig.contrib.contrib_import()
 import numpy as np
@@ -66,6 +68,7 @@ from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
                                      get_output_directory)
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.schema import validate_config
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +175,7 @@ class LudwigModel:
         """
         # check if config is a path or a dict
         if isinstance(config, str):  # assume path
-            with open(config, 'r') as def_file:
+            with open_file(config, 'r') as def_file:
                 config_dict = yaml.safe_load(def_file)
             self.config_fp = config
         else:
@@ -181,6 +184,7 @@ class LudwigModel:
 
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
+        validate_config(self.config)
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -323,7 +327,7 @@ class LudwigModel:
         """
         # setup directories and file names
         if model_resume_path is not None:
-            if os.path.exists(model_resume_path):
+            if path_exists(model_resume_path):
                 output_directory = model_resume_path
             else:
                 if self.backend.is_coordinator():
@@ -354,15 +358,15 @@ class LudwigModel:
                 skip_save_processed_input
         )
 
-        description_fn = training_stats_fn = model_dir = None
-        if self.backend.is_coordinator():
-            if should_create_output_directory:
-                if not os.path.exists(output_directory):
-                    os.makedirs(output_directory, exist_ok=True)
-            description_fn, training_stats_fn, model_dir = get_file_names(
-                output_directory)
+        output_url = output_directory
+        with upload_output_directory(output_directory) as output_directory:
+            description_fn = training_stats_fn = model_dir = None
+            if self.backend.is_coordinator():
+                if should_create_output_directory:
+                    makedirs(output_directory, exist_ok=True)
+                description_fn, training_stats_fn, model_dir = get_file_names(
+                    output_directory)
 
-        with self.backend.create_cache_dir():
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
                 preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
             else:
@@ -537,7 +541,7 @@ class LudwigModel:
                     # Load the best weights from saved checkpoint
                     self.load_weights(model_dir)
 
-                return train_stats, preprocessed_data, output_directory
+                return train_stats, preprocessed_data, output_url
 
     def train_online(
             self,
@@ -699,7 +703,7 @@ class LudwigModel:
                         skip_save_unprocessed_output and skip_save_predictions
                 )
                 if should_create_exp_dir:
-                    os.makedirs(output_directory, exist_ok=True)
+                    makedirs(output_directory, exist_ok=True)
 
             logger.debug('Postprocessing')
             postproc_predictions = postprocess(
@@ -720,8 +724,11 @@ class LudwigModel:
 
             if self.backend.is_coordinator():
                 if not skip_save_predictions:
-                    save_prediction_outputs(postproc_predictions,
-                                            output_directory)
+                    save_prediction_outputs(
+                        postproc_predictions,
+                        output_directory,
+                        self.backend
+                    )
 
                     logger.info('Saved to: {0}'.format(output_directory))
 
@@ -821,6 +828,13 @@ class LudwigModel:
 
             # calculate the overall metrics
             if collect_overall_stats:
+                # TODO ray: support calculating stats on partitioned datasets
+                if isinstance(dataset, PartitionedDataset):
+                    raise ValueError(
+                        'Cannot calculate overall stats on a partitioned dataset at this time. '
+                        'Set `calculate_overall_stats=False`.'
+                    )
+
                 overall_stats = calculate_overall_stats(
                     self.model.output_features,
                     predictions,
@@ -843,7 +857,7 @@ class LudwigModel:
                         skip_save_eval_stats
                 )
                 if should_create_exp_dir:
-                    os.makedirs(output_directory, exist_ok=True)
+                    makedirs(output_directory, exist_ok=True)
 
             if collect_predictions:
                 logger.debug('Postprocessing')
@@ -866,7 +880,11 @@ class LudwigModel:
                         and not skip_save_predictions
                 )
                 if should_save_predictions:
-                    save_prediction_outputs(postproc_predictions, output_directory)
+                    save_prediction_outputs(
+                        postproc_predictions,
+                        output_directory,
+                        self.backend
+                    )
 
                 print_evaluation_stats(eval_stats)
                 if not skip_save_eval_stats:
@@ -1311,7 +1329,11 @@ class LudwigModel:
         # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         backend = initialize_backend(backend)
-        backend.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
+        backend.initialize_tensorflow(
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads
+        )
 
         config = backend.broadcast_return(
             lambda: load_json(os.path.join(
@@ -1627,7 +1649,7 @@ def kfold_cross_validate(
 
     # if config is a path, convert to dictionary
     if isinstance(config, str):  # assume path
-        with open(config, 'r') as def_file:
+        with open_file(config, 'r') as def_file:
             config = yaml.safe_load(def_file)
 
     # check for k_fold

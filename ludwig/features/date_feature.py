@@ -32,12 +32,19 @@ logger = logging.getLogger(__name__)
 DATE_VECTOR_LENGTH = 9
 
 
-class DateFeatureMixin(object):
+class DateFeatureMixin:
     type = DATE
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': '',
         'datetime_format': None
+    }
+
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
+        'datetime_format': {'type': 'string'},
     }
 
     @staticmethod
@@ -103,7 +110,8 @@ class DateFeatureMixin(object):
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         datetime_format = preprocessing_parameters['datetime_format']
         proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(

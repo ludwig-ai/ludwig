@@ -22,7 +22,7 @@ from tensorflow.keras.layers import Dense
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register, register_default
-from ludwig.modules.attention_modules import TrasformerStack
+from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D
 from ludwig.modules.embedding_modules import EmbedSequence, \
@@ -61,7 +61,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
                    and returns the full tensor).
             :type reduce_output: str
         """
-        super(SequencePassthroughEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -189,7 +189,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :type dropout: Tensor
 
         """
-        super(SequenceEmbedEncoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -401,7 +401,7 @@ class ParallelCNN(SequenceEncoder):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(ParallelCNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -723,7 +723,7 @@ class StackedCNN(SequenceEncoder):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedCNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -1083,7 +1083,7 @@ class StackedParallelCNN(SequenceEncoder):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedParallelCNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if stacked_layers is not None and num_stacked_layers is None:
@@ -1412,7 +1412,7 @@ class StackedRNN(SequenceEncoder):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedRNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -1676,7 +1676,7 @@ class StackedCNNRNN(SequenceEncoder):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedCNNRNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -2005,7 +2005,7 @@ class StackedTransformer(SequenceEncoder):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedTransformer, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -2042,7 +2042,7 @@ class StackedTransformer(SequenceEncoder):
             self.should_project = True
 
         logger.debug('  TransformerStack')
-        self.transformer_stack = TrasformerStack(
+        self.transformer_stack = TransformerStack(
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,

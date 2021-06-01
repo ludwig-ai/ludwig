@@ -32,12 +32,18 @@ H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 H3_PADDING_VALUE = 7
 
 
-class H3FeatureMixin(object):
+class H3FeatureMixin:
     type = H3
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 576495936675512319
         # mode 1 edge 0 resolution 0 base_cell 0
+    }
+
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'integer'},
+        'computed_fill_value': {'type': 'integer'},
     }
 
     @staticmethod
@@ -70,7 +76,8 @@ class H3FeatureMixin(object):
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         column = input_df[feature[COLUMN]]
         if column.dtype == object:

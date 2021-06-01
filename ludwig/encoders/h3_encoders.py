@@ -102,7 +102,7 @@ class H3Embed(H3Encoder):
                    is greater than 0).
             :type regularize: Boolean
         """
-        super(H3Embed, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.embedding_size = embedding_size
@@ -333,7 +333,7 @@ class H3WeightedSum(H3Encoder):
                    is greater than 0).
             :type regularize: Boolean
         """
-        super(H3WeightedSum, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.should_softmax = should_softmax
@@ -540,7 +540,7 @@ class H3RNN(H3Encoder):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(H3RNN, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.embedding_size = embedding_size

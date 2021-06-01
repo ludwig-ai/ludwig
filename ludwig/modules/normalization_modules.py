@@ -7,10 +7,10 @@ class GhostBatchNormalization(tf.keras.Model):
     def __init__(
             self,
             momentum: float = 0.9,
-            epsilon: float = 1e-5,
+            epsilon: float = 1e-3,
             virtual_batch_size: int = None
     ):
-        super(GhostBatchNormalization, self).__init__()
+        super().__init__()
         self.virtual_batch_size = virtual_batch_size
         self.bn = BatchNormalization(momentum=momentum, epsilon=epsilon)
 

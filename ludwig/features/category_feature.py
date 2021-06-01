@@ -29,7 +29,8 @@ from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import CategoryAccuracy
 from ludwig.modules.metric_modules import HitsAtKMetric
-from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
+    SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -41,13 +42,21 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class CategoryFeatureMixin(object):
+class CategoryFeatureMixin:
     type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
+    }
+
+    preprocessing_schema = {
+        'most_common': {'type': 'integer', 'minimum': 0},
+        'lowercase': {'type': 'boolean'},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
     }
 
     @staticmethod
@@ -88,7 +97,8 @@ class CategoryFeatureMixin(object):
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         proc_df[feature[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),
@@ -166,7 +176,14 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             **kwargs
     ):
         hidden = inputs[HIDDEN]
-        return self.decoder_obj(hidden)
+
+        # EXPECTED SHAPES FOR RETURNED TENSORS
+        # logits: shape [batch_size, num_classes]
+        # hidden: shape [batch_size, size of final fully connected layer]
+        return {
+            LOGITS: self.decoder_obj(hidden),
+            PROJECTION_INPUT: hidden
+        }
 
     def predictions(
             self,
@@ -187,10 +204,19 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
         predictions = tf.cast(predictions, dtype=tf.int64)
 
+        # EXPECTED SHAPE OF RETURNED TENSORS
+        # predictions: [batch_size]
+        # probabilities: [batch_size, num_classes]
+        # logits: [batch_size, num_classes]
         return {
             PREDICTIONS: predictions,
             PROBABILITIES: probabilities,
             LOGITS: logits
+        }
+
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, PROBABILITIES, LOGITS
         }
 
     @classmethod
@@ -221,15 +247,19 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SoftmaxCrossEntropyMetric(
+        self.eval_loss_function = SoftmaxCrossEntropyLoss(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='eval_loss')
+
+    def _setup_metrics(self):
+        self.metric_functions = {}  # needed to shadow class variable
+        # softmax_cross_entropy loss metric
+        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
             num_classes=self.num_classes,
             feature_loss=self.loss,
             name='eval_loss'
         )
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = CategoryAccuracy(
             name='metric_accuracy'
         )
@@ -388,61 +418,46 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             predictions,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            preds = predictions[PREDICTIONS].numpy()
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in predictions:
             if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = [
-                    metadata['idx2str'][pred] for pred in preds
-                ]
-
-            else:
-                postprocessed[PREDICTIONS] = preds
-
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PREDICTIONS), preds)
-
-            del predictions[PREDICTIONS]
-
-        if PROBABILITIES in predictions and len(
-                predictions[PROBABILITIES]) > 0:
-            probs = predictions[PROBABILITIES].numpy()
-            prob = np.amax(probs, axis=1)
-            postprocessed[PROBABILITIES] = probs
-            postprocessed[PROBABILITY] = prob
-
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PROBABILITIES), probs)
-                np.save(npy_filename.format(name, PROBABILITY), probs)
-
-            del predictions[PROBABILITIES]
-
-        if ('predictions_top_k' in predictions and
-            len(predictions['predictions_top_k'])) > 0:
-
-            preds_top_k = predictions['predictions_top_k'].numpy()
-            if 'idx2str' in metadata:
-                postprocessed['predictions_top_k'] = [
-                    [metadata['idx2str'][pred] for pred in pred_top_k]
-                    for pred_top_k in preds_top_k
-                ]
-            else:
-                postprocessed['predictions_top_k'] = preds_top_k
-
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, 'predictions_top_k'),
-                    preds_top_k
+                predictions[predictions_col] = backend.df_engine.map_objects(
+                    predictions[predictions_col],
+                    lambda pred: metadata['idx2str'][pred]
                 )
 
-            del predictions['predictions_top_k']
+        probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
+        if probabilities_col in predictions:
+            prob_col = f'{self.feature_name}_{PROBABILITY}'
+            predictions[prob_col] = predictions[probabilities_col].map(max)
+            predictions[probabilities_col] = backend.df_engine.map_objects(
+                predictions[probabilities_col],
+                lambda pred: pred.tolist()
+            )
+            if 'idx2str' in metadata:
+                for i, label in enumerate(metadata['idx2str']):
+                    key = f'{probabilities_col}_{label}'
 
-        return postprocessed
+                    # Use default param to force a capture before the loop completes, see:
+                    # https://stackoverflow.com/questions/2295290/what-do-lambda-function-closures-capture
+                    predictions[key] = backend.df_engine.map_objects(
+                        predictions[probabilities_col],
+                        lambda prob, i=i: prob[i],
+                    )
+
+        top_k_col = f'{self.feature_name}_predictions_top_k'
+        if top_k_col in predictions:
+            if 'idx2str' in metadata:
+                predictions[top_k_col] = backend.df_engine.map_objects(
+                    predictions[top_k_col],
+                    lambda pred_top_k: [
+                        metadata['idx2str'][pred] for pred in pred_top_k
+                    ]
+                )
+
+        return predictions
 
     @staticmethod
     def populate_defaults(output_feature):

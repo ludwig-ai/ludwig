@@ -237,7 +237,9 @@ def calculate_incr_mean(count, mean, length):
 
 
 def calculate_var(sum1, sum2, count):
-    return (sum2 - ((sum1 * sum1) / float(count))) / float(count - 1)
+    # todo: revert from 'max(1, count -1)' back to 'count - 1' in denominator
+    #    when GH Issue #1181 is addressed
+    return (sum2 - ((sum1 * sum1) / float(count))) / float(max(1, count - 1))
 
 
 def calculate_mean(sum1, count):

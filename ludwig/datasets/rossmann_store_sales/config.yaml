@@ -1,0 +1,4 @@
+version: 1.0
+competition: rossmann-store-sales
+archive_filename: rossmann-store-sales.zip
+csv_filename: rossmann_store_sales.csv

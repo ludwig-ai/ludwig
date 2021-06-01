@@ -24,6 +24,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = Irony(cache_dir=cache_dir)
     return dataset.load(split=split)
 
+
 class Irony(UncompressedFileDownloadMixin, IdentityProcessMixin,
             CSVLoadMixin, BaseDataset):
     """The Reddit Irony dataset.

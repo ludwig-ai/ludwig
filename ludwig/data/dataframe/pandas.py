@@ -18,10 +18,7 @@
 import numpy as np
 import pandas as pd
 
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
-from ludwig.utils.misc_utils import get_proc_features
 
 
 class PandasEngine(DataFrameEngine):
@@ -40,18 +37,17 @@ class PandasEngine(DataFrameEngine):
     def from_pandas(self, df):
         return df
 
-    def map_objects(self, series, map_fn):
+    def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
+
+    def apply_objects(self, df, apply_fn, meta=None):
+        return df.apply(apply_fn, axis=1)
 
     def reduce_objects(self, series, reduce_fn):
         return reduce_fn(series)
 
-    def create_dataset(self, dataset, tag, config, training_set_metadata):
-        return PandasDataset(
-            dataset,
-            get_proc_features(config),
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-        )
+    def to_parquet(self, df, path):
+        df.to_parquet(path, engine='pyarrow')
 
     @property
     def array_lib(self):
@@ -62,8 +58,8 @@ class PandasEngine(DataFrameEngine):
         return pd
 
     @property
-    def use_hdf5_cache(self):
-        return True
+    def partitioned(self):
+        return False
 
 
 PANDAS = PandasEngine()

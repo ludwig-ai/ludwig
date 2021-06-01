@@ -19,8 +19,8 @@ import os
 import sys
 from functools import partial
 from multiprocessing import Pool
+from typing import Union
 
-import h5py
 import numpy as np
 import tensorflow as tf
 
@@ -28,6 +28,7 @@ from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.fs_utils import upload_h5
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
@@ -36,7 +37,14 @@ from ludwig.utils.misc_utils import set_default_value
 logger = logging.getLogger(__name__)
 
 
-class ImageFeatureMixin(object):
+image_scaling_registry = {
+    'pixel_normalization': lambda x: x * 1.0 / 255,
+    'pixel_standardization': lambda x: tf.map_fn(
+        lambda f: tf.image.per_image_standardization(f), x)
+}
+
+
+class ImageFeatureMixin:
     type = IMAGE
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
@@ -44,6 +52,17 @@ class ImageFeatureMixin(object):
         'resize_method': 'interpolate',
         'scaling': 'pixel_normalization',
         'num_processes': 1
+    }
+
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'in_memory': {'type': 'boolean'},
+        'resize_method': {'type': 'string', 'enum': RESIZE_METHODS},
+        'scaling': {'type': 'string', 'enum': list(image_scaling_registry.keys())},
+        'num_processes': {'type': 'integer', 'minimum': 0},
+        'height': {'type': 'integer', 'minimum': 0},
+        'width': {'type': 'integer', 'minimum': 0},
+        'num_channels': {'type': 'integer', 'minimum': 0},
     }
 
     @staticmethod
@@ -58,16 +77,17 @@ class ImageFeatureMixin(object):
 
     @staticmethod
     def _read_image_and_resize(
-            filepath,
-            img_width,
-            img_height,
-            should_resize,
-            num_channels,
-            resize_method,
-            user_specified_num_channels
+            img_entry: Union[str, 'numpy.array'],
+            img_width: int,
+            img_height: int,
+            should_resize: bool,
+            num_channels: int,
+            resize_method: str,
+            user_specified_num_channels: int
     ):
         """
-        :param filepath: path to the image
+        :param img_entry Union[str, 'numpy.array']: if str file path to the
+                image else numpy.array of the image itself
         :param img_width: expected width of the image
         :param img_height: expected height of the image
         :param should_resize: Should the image be resized?
@@ -95,7 +115,10 @@ class ImageFeatureMixin(object):
             )
             sys.exit(-1)
 
-        img = imread(filepath)
+        if isinstance(img_entry, str):
+            img = imread(img_entry)
+        else:
+            img = img_entry
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
             img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -120,19 +143,18 @@ class ImageFeatureMixin(object):
 
             if img_num_channels != num_channels:
                 logger.warning(
-                    "Image {0} has {1} channels, where as {2} "
+                    "Image has {0} channels, where as {1} "
                     "channels are expected. Dropping/adding channels "
                     "with 0s as appropriate".format(
-                        filepath, img_num_channels, num_channels))
+                        img_num_channels, num_channels))
         else:
             # If the image isn't like the first image, raise exception
             if img_num_channels != num_channels:
                 raise ValueError(
-                    'Image {0} has {1} channels, unlike the first image, which '
-                    'has {2} channels. Make sure all the images have the same '
+                    'Image has {0} channels, unlike the first image, which '
+                    'has {1} channels. Make sure all the images have the same '
                     'number of channels or use the num_channels property in '
-                    'image preprocessing'.format(filepath,
-                                                 img_num_channels,
+                    'image preprocessing'.format(img_num_channels,
                                                  num_channels))
 
         if img.shape[0] != img_height or img.shape[1] != img_width:
@@ -152,8 +174,8 @@ class ImageFeatureMixin(object):
 
     @staticmethod
     def _finalize_preprocessing_parameters(
-            preprocessing_parameters,
-            first_image_path
+            preprocessing_parameters: dict,
+            first_img_entry: Union[str, 'numpy.array']
     ):
         """
         Helper method to determine the height, width and number of channels for
@@ -174,7 +196,10 @@ class ImageFeatureMixin(object):
             )
             sys.exit(-1)
 
-        first_image = imread(first_image_path)
+        if isinstance(first_img_entry, str):
+            first_image = imread(first_img_entry)
+        else:
+            first_image = first_img_entry
         first_img_height = first_image.shape[0]
         first_img_width = first_image.shape[1]
         first_img_num_channels = num_channels_in_image(first_image)
@@ -231,7 +256,8 @@ class ImageFeatureMixin(object):
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         in_memory = preprocessing_parameters['in_memory']
         if PREPROCESSING in feature and 'in_memory' in feature[PREPROCESSING]:
@@ -250,12 +276,23 @@ class ImageFeatureMixin(object):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_path = next(iter(input_df[feature[COLUMN]]))
+        first_img_entry = next(iter(input_df[feature[COLUMN]]))
+        logger.debug(
+            'Detected image feature type is {}'.format(type(first_img_entry))
+        )
 
-        if src_path is None and not os.path.isabs(first_path):
-            raise ValueError('Image file paths must be absolute')
+        if not isinstance(first_img_entry, str) \
+                and not isinstance(first_img_entry, np.ndarray):
+            raise ValueError(
+                'Invalid image feature data type.  Detected type is {}, '
+                'expect either string for file path or numpy array.'
+                    .format(type(first_img_entry))
+            )
 
-        first_path = get_abs_path(src_path, first_path)
+        if isinstance(first_img_entry, str):
+            if src_path is None and not os.path.isabs(first_img_entry):
+                raise ValueError('Image file paths must be absolute')
+            first_img_entry = get_abs_path(src_path, first_img_entry)
 
         (
             should_resize,
@@ -265,7 +302,7 @@ class ImageFeatureMixin(object):
             user_specified_num_channels,
             first_image
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_path
+            preprocessing_parameters, first_img_entry
         )
 
         metadata[feature[NAME]][PREPROCESSING]['height'] = height
@@ -283,7 +320,11 @@ class ImageFeatureMixin(object):
             user_specified_num_channels=user_specified_num_channels
         )
 
-        if in_memory:
+        # check to see if the active backend can support lazy loading of
+        # image features from the hdf5 cache.
+        backend.check_lazy_load_supported(feature)
+
+        if in_memory or skip_save_processed_input:
             # Number of processes to run in parallel for preprocessing
             metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
@@ -294,8 +335,9 @@ class ImageFeatureMixin(object):
             # standard code anyway.
             if backend.supports_multiprocessing and (
                     num_processes > 1 or num_images > 1):
-                all_file_paths = [get_abs_path(src_path, file_path)
-                                  for file_path in input_df[feature[NAME]]]
+                all_img_entries = [get_abs_path(src_path, img_entry)
+                                   if isinstance(img_entry, str) else img_entry
+                                   for img_entry in input_df[feature[COLUMN]]]
 
                 with Pool(num_processes) as pool:
                     logger.debug(
@@ -303,7 +345,9 @@ class ImageFeatureMixin(object):
                             num_processes
                         )
                     )
-                    proc_df[feature[PROC_COLUMN]] = pool.map(read_image_and_resize, all_file_paths)
+                    proc_df[feature[PROC_COLUMN]] = pool.map(
+                        read_image_and_resize, all_img_entries
+                    )
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -311,31 +355,38 @@ class ImageFeatureMixin(object):
                     'No process pool initialized. Using internal process for preprocessing images'
                 )
 
+                # helper function for handling single image
+                def _get_processed_image(img_store):
+                    if isinstance(img_store, str):
+                        return read_image_and_resize(
+                            get_abs_path(src_path, img_store)
+                        )
+                    else:
+                        return read_image_and_resize(img_store)
+
                 proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                     input_df[feature[COLUMN]],
-                    lambda file_path: read_image_and_resize(get_abs_path(src_path, file_path))
+                    _get_processed_image
                 )
         else:
-            backend.check_lazy_load_supported(feature)
 
-            all_file_paths = [get_abs_path(src_path, file_path)
-                              for file_path in input_df[feature[NAME]]]
+            all_img_entries = [get_abs_path(src_path, img_entry)
+                               if isinstance(img_entry, str) else img_entry
+                               for img_entry in input_df[feature[COLUMN]]]
 
-            data_fp = os.path.splitext(input_df.src)[0] + '.hdf5'
-            mode = 'w'
-            if os.path.isfile(data_fp):
-                mode = 'r+'
-
-            with h5py.File(data_fp, mode) as h5_file:
+            data_fp = backend.cache.get_cache_path(
+                input_df.src, metadata.get(CHECKSUM), TRAINING
+            )
+            with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
                     feature[PROC_COLUMN] + '_data',
                     (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
-                for i, filepath in enumerate(all_file_paths):
+                for i, img_entry in enumerate(all_img_entries):
                     image_dataset[i, :height, :width, :] = (
-                        read_image_and_resize(filepath)
+                        read_image_and_resize(img_entry)
                     )
                 h5_file.flush()
 
@@ -394,10 +445,3 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         set_default_value(input_feature, PREPROCESSING, {})
 
     encoder_registry = ENCODER_REGISTRY
-
-
-image_scaling_registry = {
-    'pixel_normalization': lambda x: x * 1.0 / 255,
-    'pixel_standardization': lambda x: tf.map_fn(
-        lambda f: tf.image.per_image_standardization(f), x)
-}

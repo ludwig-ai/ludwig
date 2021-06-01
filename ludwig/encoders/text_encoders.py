@@ -56,7 +56,7 @@ class BERTEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(BERTEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFBertModel
         except ModuleNotFoundError:
@@ -112,7 +112,7 @@ class GPTEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(GPTEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFOpenAIGPTModel
         except ModuleNotFoundError:
@@ -163,7 +163,7 @@ class GPT2Encoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(GPT2Encoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFGPT2Model
         except ModuleNotFoundError:
@@ -213,7 +213,7 @@ class TransformerXLEncoder(TextEncoder):
             trainable=True,
             **kwargs
     ):
-        super(TransformerXLEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFTransfoXLModel
         except ModuleNotFoundError:
@@ -261,7 +261,7 @@ class XLNetEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(XLNetEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFXLNetModel
         except ModuleNotFoundError:
@@ -312,7 +312,7 @@ class XLMEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(XLMEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFXLMModel
         except ModuleNotFoundError:
@@ -363,7 +363,7 @@ class RoBERTaEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(RoBERTaEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFRobertaModel
         except ModuleNotFoundError:
@@ -418,7 +418,7 @@ class DistilBERTEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(DistilBERTEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFDistilBertModel
         except ModuleNotFoundError:
@@ -468,7 +468,7 @@ class CTRLEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(CTRLEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFCTRLModel
         except ModuleNotFoundError:
@@ -519,7 +519,7 @@ class CamemBERTEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(CamemBERTEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFCamembertModel
         except ModuleNotFoundError:
@@ -574,7 +574,7 @@ class ALBERTEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(ALBERTEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFAlbertModel
         except ModuleNotFoundError:
@@ -629,7 +629,7 @@ class T5Encoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(T5Encoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFT5Model
         except ModuleNotFoundError:
@@ -680,7 +680,7 @@ class MT5Encoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(MT5Encoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFMT5Model
         except ModuleNotFoundError:
@@ -732,7 +732,7 @@ class XLMRoBERTaEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(XLMRoBERTaEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFXLMRobertaModel
         except ModuleNotFoundError:
@@ -787,7 +787,7 @@ class FlauBERTEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(FlauBERTEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFFlaubertModel
         except ModuleNotFoundError:
@@ -838,7 +838,7 @@ class ELECTRAEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(ELECTRAEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFElectraModel
         except ModuleNotFoundError:
@@ -889,7 +889,7 @@ class LongformerEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(LongformerEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFLongformerModel
         except ModuleNotFoundError:
@@ -940,7 +940,7 @@ class AutoTransformerEncoder(TextEncoder):
             num_tokens=None,
             **kwargs
     ):
-        super(AutoTransformerEncoder, self).__init__()
+        super().__init__()
         try:
             from transformers import TFAutoModel
         except ModuleNotFoundError:

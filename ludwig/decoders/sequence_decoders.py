@@ -20,7 +20,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
     StackedRNNCells
-from tensorflow.keras.layers import Layer, Dense, Embedding
+from tensorflow.keras.layers import Dense, Embedding
 from tensorflow.keras.layers import average
 from tensorflow_addons.seq2seq import AttentionWrapper
 from tensorflow_addons.seq2seq import BahdanauAttention
@@ -30,6 +30,7 @@ from ludwig.constants import *
 from ludwig.decoders.base import Decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.recurrent_modules import BasicDecoder
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry, register
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
@@ -78,7 +79,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             reduce_input='sum',
             **kwargs
     ):
-        super(SequenceGeneratorDecoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.cell_type = cell_type
@@ -166,7 +167,11 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             target=target,
             encoder_end_state=encoder_end_state
         )
-        return logits  # shape = [b, s, c]
+
+        # logits is tuple containing two tensor:
+        #   logits: suitable for use with softmax_crossentropy loss
+        #   projection_input: suitable for use with sampled_softmax
+        return logits
 
     def prepare_encoder_output_state(self, inputs):
 
@@ -330,7 +335,8 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             dtype=tf.float32
         )
 
-        decoder = tfa.seq2seq.BasicDecoder(
+        # use Ludwig custom BasicDecoder
+        decoder = BasicDecoder(
             self.decoder_rnncell,
             sampler=self.sampler,
             output_layer=self.dense_layer
@@ -359,7 +365,13 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             [[0, 0], [0, 1], [0, 0]]
         )
 
-        return logits  # , outputs, final_state, generated_sequence_lengths
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # logits: shape[batch_size, seq_size, num_classes] used for evaluation
+        # projection_input: shape[batch_size, seq_size, state_size] for sampled softmax
+        return {
+            LOGITS: logits,
+            PROJECTION_INPUT: outputs.projection_input
+        }
 
     def decoder_beam_search(
             self,
@@ -463,6 +475,12 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
+
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # lengths: shape[batch_size]
+        # predictions: shape [batch_size, seq_size]
+        # last_predictions: shape[batch_size
+        # probabilities: shape[batch_size, seq_size, num_classes]
         return None, lengths, predictions, last_predictions, probabilities
 
     def decoder_greedy(
@@ -555,14 +573,12 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-        # mask logits
-        # mask = tf.sequence_mask(
-        #     lengths,
-        #     maxlen=tf.shape(logits)[1],
-        #     dtype=tf.float32
-        # )
-        # logits = logits * mask[:, :, tf.newaxis]
-
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # logits: shape [batch_size, seq_size, num_classes]
+        # lengths: shape[batch_size]
+        # predictions: shape [batch_size, seq_size]
+        # last_predictions: shape[batch_size
+        # probabilities: shape[batch_size, seq_size, num_classes]
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
@@ -605,6 +621,11 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             LAST_PREDICTIONS: last_preds,
             PROBABILITIES: probs,
             LOGITS: logits
+        }
+
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
         }
 
 
@@ -720,7 +741,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
             is_timeseries=False,
             **kwargs
     ):
-        super(SequenceTaggerDecoder, self).__init__()
+        super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.attention = attention
@@ -771,7 +792,8 @@ class SequenceTaggerDecoder(SequenceDecoder):
         return {
             LOGITS: logits,
             # logits shape [batch_size, sequence_length, num_classes]
-            LENGTHS: inputs[LENGTHS]
+            LENGTHS: inputs[LENGTHS],
+            PROJECTION_INPUT: hidden
         }
 
     def _logits_training(
@@ -829,10 +851,23 @@ class SequenceTaggerDecoder(SequenceDecoder):
         )
         logits = logits * mask[:, :, tf.newaxis]
 
+        # EXPECTED SIZE OF RETURNED TENSORS
+        # LOGITS: shape [batch_size, seq_size, num_classes]
+        # LENGTHS: shape[batch_size]
+        # PREDICTIONS: shape [batch_size, seq_size]
+        # LAST_PREDICTIONS: shape[batch_size]
+        # PROBABILITIES: shape[batch_size, seq_size, num_classes]
+        # PROJECTION_INPUT: shape[batch_size, seq_size, state_size]
         return {
             PREDICTIONS: predictions,
             LENGTHS: input_sequence_lengths,
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
-            LOGITS: logits
+            LOGITS: logits,
+            PROJECTION_INPUT: outputs[PROJECTION_INPUT]
+        }
+
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LENGTHS, LAST_PREDICTIONS, PROBABILITIES, LOGITS
         }

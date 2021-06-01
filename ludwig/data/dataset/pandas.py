@@ -14,14 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import h5py
+import contextlib
+
 import numpy as np
 
-from ludwig.constants import PREPROCESSING
+from ludwig.constants import PREPROCESSING, TRAINING
 from ludwig.data.batcher.random_access import RandomAccessBatcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.sampler import DistributedSampler
-from ludwig.utils.data_utils import to_numpy_dataset
+from ludwig.utils import data_utils
+from ludwig.utils.data_utils import to_numpy_dataset, DATA_TRAIN_HDF5_FP
+from ludwig.utils.fs_utils import download_h5
+from ludwig.utils.misc_utils import get_proc_features
 
 
 class PandasDataset(Dataset):
@@ -49,7 +53,7 @@ class PandasDataset(Dataset):
         indices[1, :] = np.arange(len(sub_batch))
         indices = indices[:, np.argsort(indices[0])]
 
-        with h5py.File(self.data_hdf5_fp, 'r') as h5_file:
+        with download_h5(self.data_hdf5_fp) as h5_file:
             im_data = h5_file[proc_column + '_data'][indices[0, :], :, :]
         indices[2, :] = np.arange(len(sub_batch))
         indices = indices[:, np.argsort(indices[1])]
@@ -61,6 +65,7 @@ class PandasDataset(Dataset):
     def __len__(self):
         return self.size
 
+    @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
                            seed=0,
@@ -74,4 +79,36 @@ class PandasDataset(Dataset):
                                       sampler,
                                       batch_size=batch_size,
                                       ignore_last=ignore_last)
-        return batcher
+        yield batcher
+
+
+class PandasDatasetManager(object):
+    def __init__(self, backend):
+        self.backend = backend
+
+    def create(self, dataset, config, training_set_metadata):
+        return PandasDataset(
+            dataset,
+            get_proc_features(config),
+            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+        )
+
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        return self.create(
+            dataset, config, training_set_metadata
+        )
+
+    def save(self, cache_path, dataset, config, training_set_metadata, tag):
+        data_utils.save_hdf5(cache_path, dataset)
+        if tag == TRAINING:
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = cache_path
+        return dataset
+
+    def can_cache(self, input_fname, config, skip_save_processed_input):
+        return input_fname is not None and \
+               self.backend.is_coordinator() and \
+               not skip_save_processed_input
+
+    @property
+    def data_format(self):
+        return 'hdf5'
