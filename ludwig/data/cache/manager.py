@@ -90,7 +90,7 @@ class DatasetCache:
         return training_set, test_set, validation_set, training_set_metadata
 
     def delete(self):
-        for fname in self.cache_map.item():
+        for fname in self.cache_map.values():
             if path_exists(fname):
                 delete(fname)
 
@@ -130,9 +130,14 @@ class CacheManager:
         if not isinstance(dataset, str):
             dataset = None
 
-        stem = alphanum(key) \
-            if self._cache_dir is not None or dataset is None \
-            else Path(dataset).stem
+        if self._cache_dir is None and dataset is not None:
+            # Use the input dataset filename (minus the extension) as the cache path
+            stem = Path(dataset).stem
+        else:
+            # To avoid collisions across different directories, we use the unique checksum
+            # as the cache path
+            stem = alphanum(key)
+
         ext = ext or self.data_format
         cache_fname = f'{stem}.{tag}.{ext}'
         return os.path.join(self.get_cache_directory(dataset), cache_fname)

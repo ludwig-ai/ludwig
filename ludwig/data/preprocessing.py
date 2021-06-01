@@ -515,8 +515,8 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
-        test_set = test_set if path_exists(test_set) else None
-        validation_set = validation_set if path_exists(validation_set) else None
+        test_set = test_set if test_set and path_exists(test_set) else None
+        validation_set = validation_set if validation_set and path_exists(validation_set) else None
         return training_set, test_set, validation_set, training_set_metadata
 
 
@@ -1365,13 +1365,13 @@ def preprocess_for_training(
                 config['output_features'])
 
     # in case data_format is one of the cacheable formats,
-    # check if there's a cached hdf5 file with hte same name,
-    # and in case move on with the hdf5 branch
+    # check if there's a cached hdf5 file with the same name,
+    # and in case move on with the hdf5 branch.
     cached = False
     cache = backend.cache.get_dataset_cache(
         config, dataset, training_set, test_set, validation_set
     )
-    if data_format in CACHEABLE_FORMATS:
+g    if data_format in CACHEABLE_FORMATS:
         cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
@@ -1394,15 +1394,14 @@ def preprocess_for_training(
                 )
                 cache.delete()
 
-    if CHECKSUM not in training_set_metadata:
-        training_set_metadata[CHECKSUM] = cache.checksum
-
+    training_set_metadata[CHECKSUM] = cache.checksum
     data_format_processor = get_from_registry(
         data_format,
         data_format_preprocessor_registry
     )
 
-    if cached:
+    if cached or data_format == 'hdf5':
+        # Always interpret hdf5 files as preprocessed, even if missing from the cache
         processed = data_format_processor.prepare_processed_data(
             features,
             dataset=dataset,
