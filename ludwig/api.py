@@ -70,6 +70,8 @@ from ludwig.utils.misc_utils import (get_experiment_description,
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
 
+import torch
+
 logger = logging.getLogger(__name__)
 
 

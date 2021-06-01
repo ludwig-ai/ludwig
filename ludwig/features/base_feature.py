@@ -254,7 +254,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
             #metric_vals[metric_name] = metric_onj.result().numpy()
-            metric_vals[metric_name] = metric_onj.compute()
+            metric_vals[metric_name] = metric_onj.compute().detach().numpy().item()
         return metric_vals
 
     def reset_metrics(self):

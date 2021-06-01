@@ -270,7 +270,7 @@ class ECD(LudwigModule):
             all_of_metrics[of_name] = of_obj.get_metrics()
         all_of_metrics[COMBINED] = {
             #LOSS: self.eval_loss_metric.result().numpy()
-            LOSS: self.eval_loss_metric.compute()
+            LOSS: self.eval_loss_metric.compute().detach().numpy().item()
         }
         return all_of_metrics
 
