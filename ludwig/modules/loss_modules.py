@@ -18,16 +18,16 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.python.keras.losses import MeanAbsoluteError, MeanSquaredError
 import torch
-from torch.nn import (MSELoss, L1Loss)
+from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
 from ludwig.constants import *
 from ludwig.constants import LOGITS
 from ludwig.utils.tf_utils import sequence_length_2D
 
 
-class MSELoss(torch.nn.MSELoss):
+class MSELoss(_MSELoss):
     def __init__(self, **kwargs):
-        super(torch.nn.MSELoss, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     '''
     def call__(self, y_true, y_pred, sample_weight=None):
@@ -36,6 +36,7 @@ class MSELoss(torch.nn.MSELoss):
         return loss
     '''
     def forward(self, input, target):
+        print(input)
         logits = input[LOGITS]
         loss = super().forward(logits, target)
         return loss
@@ -43,7 +44,7 @@ class MSELoss(torch.nn.MSELoss):
 
 class MAELoss(L1Loss):
     def __init__(self, **kwargs):
-        super(MAELoss, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     '''
     def __call__(self, y_true, y_pred, sample_weight=None):

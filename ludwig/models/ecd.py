@@ -120,10 +120,11 @@ class ECD(Module):
         else:
             targets = None
         assert inputs.keys() == self.input_features.keys()
+        for input_feature_name, input_values in inputs.items():
+            inputs[input_feature_name] = torch.from_numpy(input_values)
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
-            inputs[input_feature_name] = torch.from_numpy(input_values)
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values, training=training,
                                      mask=mask)

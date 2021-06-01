@@ -279,6 +279,7 @@ class Trainer(BaseTrainer):
             horovod=horovod,
             **optimizer
         )
+        optimizer.pop('params')# can't serialize generator
 
     @classmethod
     def write_epoch_summary(

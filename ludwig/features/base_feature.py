@@ -130,7 +130,7 @@ class InputFeature(BaseFeature, Module, ABC):
 class OutputFeature(BaseFeature, Module, ABC):
     """Parent class for all output features."""
 
-    train_loss_function = None
+    #train_loss_function = None
     eval_loss_function = None
 
     def __init__(self, feature, *args, **kwargs):
@@ -255,7 +255,7 @@ class OutputFeature(BaseFeature, Module, ABC):
                 #metric_fn.reset_states()
                 metric_fn.reset()
 
-    def call(
+    def forward(
             self,
             inputs,
             # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)

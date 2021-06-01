@@ -105,7 +105,6 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
     def forward(self, inputs, training=None, mask=None):
-        inputs = tf.convert_to_tensor(inputs)
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
         assert len(inputs.shape) == 1

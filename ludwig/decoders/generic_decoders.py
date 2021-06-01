@@ -22,11 +22,13 @@ from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Layer
 
+import torch
 from torch.nn import Linear
+
+from ludwig.utils.torch_utils import (LudwigModule, initializers, activations, reg_loss)
 
 from ludwig.constants import LOSS, TYPE
 
-from ludwig.utils.torch_utils import (LudwigModule, initializers, activations)
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +86,13 @@ class Regressor(LudwigModule):
             # Handle in forward call
             self.add_loss(lambda: self.activation_loss)
 
+        self.activity_regularizer = activity_regularizer
+
     def forward(self, inputs, **kwargs):
         batch_size = inputs.shape[0]
         output = torch.squeeze(self.dense(inputs), axis=-1)
-        self.activation_loss = reg_loss(output, self.activity_regularizer)/batch_size
+        if self.activity_regularizer:
+            self.activation_loss = reg_loss(output, self.activity_regularizer)/batch_size
 
         return output
 
