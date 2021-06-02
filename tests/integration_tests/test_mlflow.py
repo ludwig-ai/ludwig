@@ -8,7 +8,6 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.api import LudwigModel
 from ludwig.contribs import MlflowCallback
-from ludwig.contribs.mlflow import LudwigMlflowModel
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
 
 
