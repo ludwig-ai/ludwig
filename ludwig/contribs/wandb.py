@@ -46,3 +46,7 @@ class WandbCallback(Callback):
         logger.info("wandb.on_visualize_figure() called...")
         if wandb.run:
             wandb.log({"figure": fig})
+
+    @staticmethod
+    def preload():
+        import wandb

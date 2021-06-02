@@ -69,3 +69,7 @@ class Callback(ABC):
 
     def on_visualize_figure(self, fig):
         pass
+
+    @staticmethod
+    def preload():
+        pass

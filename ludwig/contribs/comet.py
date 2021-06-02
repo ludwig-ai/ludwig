@@ -46,7 +46,7 @@ class CometCallback(Callback):
             self.cometml_experiment = None
             logger.exception(
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
-            return
+            raise
 
         logger.info("comet.on_train_init() called......")
         self.cometml_experiment.set_name(model_name)
@@ -162,3 +162,7 @@ class CometCallback(Callback):
         ## put the commet flag back in:
         arg_str = " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
         return f"ludwig {cmd} {arg_str}"
+
+    @staticmethod
+    def preload():
+        import comet_ml

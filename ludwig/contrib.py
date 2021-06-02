@@ -29,3 +29,12 @@ def add_contrib_callback_args(parser):
             action='append_const',
             const=contrib_cls(),
         )
+
+
+def preload(argv):
+    for arg in argv:
+        if arg.startswith('--'):
+            arg = arg[2:]
+
+        if arg in contrib_registry:
+            contrib_registry[arg].preload()
