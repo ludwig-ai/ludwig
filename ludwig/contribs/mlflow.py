@@ -55,9 +55,8 @@ class MlflowCallback(Callback):
         self._log_params({'training': config['training']})
 
     def on_train_end(self, output_directory):
-        for fname in os.listdir(output_directory):
-            mlflow.log_artifact(os.path.join(output_directory, fname))
         if self.run is not None:
+            _log_artifacts(output_directory)
             mlflow.end_run()
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
@@ -71,8 +70,16 @@ class MlflowCallback(Callback):
         # mlflow.log_figure(fig)
         pass
 
-    def prepare_ray_tune(self, train_fn, tune_config):
+    def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
         from ray.tune.integration.mlflow import mlflow_mixin
+        from ray.tune.logger import LoggerCallback
+
+        class LogModelCallback(LoggerCallback):
+            def log_trial_end(self, trial, failed=False):
+                if not failed:
+                    _log_artifacts(trial.logdir)
+        tune_callbacks.append(LogModelCallback())
+
         return mlflow_mixin(train_fn), {
             **tune_config,
             'mlflow': {
@@ -93,26 +100,44 @@ class LudwigMlFlowModel(mlflow.pyfunc.PythonModel):
         self._model = None
 
     def load_context(self, context):
-        self._model = LudwigModel.load(context['model'])
+        self._model = LudwigModel.load(context.artifacts['model'])
 
     def predict(self, context, model_input):
         pred_df, _ = self._model.predict(model_input)
         return pred_df
 
 
-def export_model(model_path, output_path, model_name=None):
-    kwargs = dict(
-        path=output_path,
+def _export_kwargs(model_path):
+    return dict(
         python_model=LudwigMlFlowModel(),
         artifacts={
             'model': model_path,
         },
     )
 
+
+def _log_artifacts(output_directory):
+    for fname in os.listdir(output_directory):
+        lpath = os.path.join(output_directory, fname)
+        if fname == 'model':
+            mlflow.pyfunc.log_model(
+                artifact_path='model',
+                **_export_kwargs(lpath)
+            )
+        else:
+            mlflow.log_artifact(lpath)
+
+
+def export_model(model_path, output_path, model_name=None):
+    kwargs = _export_kwargs(model_path)
     if model_name:
         mlflow.pyfunc.log_model(
+            artifact_path=output_path,
             registered_model_name=model_name,
             **kwargs
         )
     else:
-        mlflow.pyfunc.save_model(**kwargs)
+        mlflow.pyfunc.save_model(
+            path=output_path,
+            **kwargs
+        )
