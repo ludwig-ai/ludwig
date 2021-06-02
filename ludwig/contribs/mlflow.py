@@ -1,6 +1,7 @@
 import logging
 import os
 
+from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
@@ -86,24 +87,32 @@ class MlflowCallback(Callback):
             mlflow.log_params(chunk)
 
 
-import mlflow
 class LudwigMlFlowModel(mlflow.pyfunc.PythonModel):
     def __init__(self):
-      super().__init__()
-      # embed your vader model instance
-      self._analyser = SentimentIntensityAnalyzer()
+        super().__init__()
+        self._model = None
 
-   # preprocess the input with prediction from the vader sentiment model
-   def _score(self, txt):
-      prediction_scores = self._analyser.polarity_scores(txt)
-      return prediction_scores
+    def load_context(self, context):
+        self._model = LudwigModel.load(context['model'])
 
-   def predict(self, context, model_input):
-
-      # Apply the preprocess function from the vader model to score
-      model_output = model_input.apply(lambda col: self._score(col))
-      return model_output
+    def predict(self, context, model_input):
+        pred_df, _ = self._model.predict(model_input)
+        return pred_df
 
 
-def export_model(model_path, output_path, model_name):
-    mlflow.pyfunc.save_model(path=output_path, python_model=vader_model, conda_env=conda_env)
+def export_model(model_path, output_path, model_name=None):
+    kwargs = dict(
+        path=output_path,
+        python_model=LudwigMlFlowModel(),
+        artifacts={
+            'model': model_path,
+        },
+    )
+
+    if model_name:
+        mlflow.pyfunc.log_model(
+            registered_model_name=model_name,
+            **kwargs
+        )
+    else:
+        mlflow.pyfunc.save_model(**kwargs)
