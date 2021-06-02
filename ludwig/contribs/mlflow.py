@@ -92,7 +92,7 @@ class MlflowCallback(Callback):
             mlflow.log_params(chunk)
 
 
-class LudwigMlFlowModel(mlflow.pyfunc.PythonModel):
+class LudwigMlflowModel(mlflow.pyfunc.PythonModel):
     def __init__(self):
         super().__init__()
         self._model = None
@@ -107,7 +107,7 @@ class LudwigMlFlowModel(mlflow.pyfunc.PythonModel):
 
 def _export_kwargs(model_path):
     return dict(
-        python_model=LudwigMlFlowModel(),
+        python_model=LudwigMlflowModel(),
         artifacts={
             'model': model_path,
         },

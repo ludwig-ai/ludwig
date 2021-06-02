@@ -2,11 +2,13 @@ import os
 import shutil
 
 import mlflow
+import pandas as pd
 import yaml
 from mlflow.tracking import MlflowClient
 
 from ludwig.api import LudwigModel
 from ludwig.contribs import MlflowCallback
+from ludwig.contribs.mlflow import LudwigMlflowModel
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
 
 
@@ -44,6 +46,7 @@ def test_mlflow_callback(tmpdir):
                 validation_set=val_csv,
                 test_set=test_csv,
                 experiment_name=exp_name)
+    expected_df, _ = model.predict(test_csv)
 
     # Check mlflow artifacts
     assert callback.experiment_id is not None
@@ -71,10 +74,9 @@ def test_mlflow_callback(tmpdir):
         config_artifact = yaml.safe_load(f)
     assert config_artifact == config
 
-    assert 'model' in artifacts
-    local_model_path = client.download_artifacts(
-        callback.run.info.run_id, "model", local_dir
-    )
+    model_path = f'runs:/{callback.run.info.run_id}/model'
+    loaded_model = mlflow.pyfunc.load_model(model_path)
 
-    loaded_model = LudwigModel.load(local_model_path)
-    assert loaded_model.training_set_metadata == model.training_set_metadata
+    test_df = pd.read_csv(test_csv)
+    pred_df = loaded_model.predict(test_df)
+    assert(pred_df.equals(expected_df))
