@@ -55,14 +55,19 @@ class MlflowCallback(Callback):
         self._log_params({'training': config['training']})
 
     def on_train_end(self, output_directory):
+        _log_artifacts(output_directory)
         if self.run is not None:
-            _log_artifacts(output_directory)
             mlflow.end_run()
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         mlflow.log_metrics(
             progress_tracker.log_metrics,
             step=progress_tracker.steps
+        )
+
+        mlflow.pyfunc.log_model(
+            artifact_path='model',
+            **_export_kwargs(save_path)
         )
 
     def on_visualize_figure(self, fig):
@@ -72,13 +77,6 @@ class MlflowCallback(Callback):
 
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
         from ray.tune.integration.mlflow import mlflow_mixin
-        from ray.tune.logger import LoggerCallback
-
-        class LogModelCallback(LoggerCallback):
-            def log_trial_end(self, trial, failed=False):
-                if not failed:
-                    _log_artifacts(trial.logdir)
-        tune_callbacks.append(LogModelCallback())
 
         return mlflow_mixin(train_fn), {
             **tune_config,

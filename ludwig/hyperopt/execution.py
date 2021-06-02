@@ -905,7 +905,7 @@ class RayTuneExecutor(HyperoptExecutor):
             return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx)
 
         tune_config = {}
-        tune_callbacks = [],
+        tune_callbacks = []
         for callback in callbacks:
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
