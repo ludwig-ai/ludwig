@@ -13,15 +13,14 @@ import shutil
 import sys
 from unittest.mock import patch, Mock
 
-import ludwig.contrib
-
-# Use contrib module before other imports to avoid importing TensorFlow before comet.
 # Bad key will ensure Comet is initialized, but nothing is uploaded externally.
 os.environ['COMET_API_KEY'] = 'key'
-ludwig.contrib.use_contrib('comet')
+
+# Use contrib module before other imports to avoid importing TensorFlow before comet.
+from ludwig.contribs.comet import CometCallback, comet_ml
+comet_ml.__version__
 
 from ludwig.api import LudwigModel
-from ludwig.contribs.comet import Comet
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, '..', '..', '..')
@@ -36,13 +35,6 @@ parser.add_argument('--csv-filename', required=True)
 
 
 def run(csv_filename):
-    # Check that comet has been imported successfully as a contrib package
-    contrib_instances = ludwig.contrib.contrib_registry["instances"]
-    assert len(contrib_instances) == 1
-
-    comet_instance = contrib_instances[0]
-    assert isinstance(comet_instance, Comet)
-
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
@@ -58,12 +50,13 @@ def run(csv_filename):
         'training': {'epochs': 2}
     }
 
-    model = LudwigModel(config)
+    callback = CometCallback()
+    model = LudwigModel(config, callbacks=[callback])
     output_dir = None
 
     # Wrap these methods so we can check that they were called
-    comet_instance.train_init = Mock(side_effect=comet_instance.train_init)
-    comet_instance.train_model = Mock(side_effect=comet_instance.train_model)
+    callback.on_train_init = Mock(side_effect=callback.on_train_init)
+    callback.on_train_start = Mock(side_effect=callback.on_train_start)
 
     with patch('comet_ml.Experiment.log_asset_data') as mock_log_asset_data:
         try:
@@ -75,11 +68,11 @@ def run(csv_filename):
                 shutil.rmtree(output_dir, ignore_errors=True)
 
     # Verify that the experiment was created successfully
-    assert comet_instance.cometml_experiment is not None
+    assert callback.cometml_experiment is not None
 
     # Check that these methods were called at least once
-    comet_instance.train_init.assert_called()
-    comet_instance.train_model.assert_called()
+    callback.on_train_init.assert_called()
+    callback.on_train_start.assert_called()
 
     # Check that we ran `train_model`, which calls into `log_assert_data`, successfully
     mock_log_asset_data.assert_called()

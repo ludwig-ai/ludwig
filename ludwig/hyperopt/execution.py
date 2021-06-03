@@ -163,6 +163,7 @@ class HyperoptExecutor(ABC):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
+            callbacks=None,
             backend=None,
             random_seed=default_random_seed,
             debug=False,
@@ -206,6 +207,7 @@ class SerialExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
+            callbacks=None,
             backend=None,
             random_seed=default_random_seed,
             debug=False,
@@ -229,6 +231,7 @@ class SerialExecutor(HyperoptExecutor):
                     gpus=gpus,
                     gpu_memory_limit=gpu_memory_limit,
                     allow_parallel_threads=allow_parallel_threads,
+                    callbacks=callbacks,
                 )
                 eval_stats, train_stats, _, _ = model.experiment(
                     dataset=dataset,
@@ -356,6 +359,7 @@ class ParallelExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
+            callbacks=None,
             backend=None,
             random_seed=default_random_seed,
             debug=False,
@@ -517,6 +521,7 @@ class ParallelExecutor(HyperoptExecutor):
                             gpus=gpus,
                             gpu_memory_limit=gpu_memory_limit,
                             allow_parallel_threads=allow_parallel_threads,
+                            callbacks=callbacks,
                             backend=backend,
                             random_seed=random_seed,
                             debug=debug,
@@ -608,6 +613,7 @@ class FiberExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
+            callbacks=None,
             backend=None,
             random_seed=default_random_seed,
             debug=False,
@@ -637,6 +643,7 @@ class FiberExecutor(HyperoptExecutor):
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
             backend=backend,
             random_seed=random_seed,
             debug=debug,
@@ -748,39 +755,40 @@ class RayTuneExecutor(HyperoptExecutor):
 
         class RayTuneReportCallback(Callback):
             def on_epoch_end(self, trainer, progress_tracker, save_path):
-                if trainer.is_coordinator():
-                    with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
-                        checkpoint_model = os.path.join(checkpoint_dir, 'model')
-                        # shutil.copytree(save_path, checkpoint_model)
-                        # Note: A previous implementation used shutil.copytree() 
-                        # however, this copying method is non atomic
-                        if not os.path.isdir(checkpoint_model):
-                            copy_id = uuid.uuid4()
-                            tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
-                            shutil.copytree(save_path, tmp_dst)
-                            try:
-                                os.rename(tmp_dst, checkpoint_model)
-                            except:
-                                shutil.rmtree(tmp_dst)
+                with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+                    checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                    # shutil.copytree(save_path, checkpoint_model)
+                    # Note: A previous implementation used shutil.copytree()
+                    # however, this copying method is non atomic
+                    if not os.path.isdir(checkpoint_model):
+                        copy_id = uuid.uuid4()
+                        tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                        shutil.copytree(save_path, tmp_dst)
+                        try:
+                            os.rename(tmp_dst, checkpoint_model)
+                        except:
+                            shutil.rmtree(tmp_dst)
 
-                    train_stats = {
-                        TRAINING: progress_tracker.train_metrics,
-                        VALIDATION: progress_tracker.vali_metrics,
-                        TEST: progress_tracker.test_metrics,
-                    }
+                train_stats = {
+                    TRAINING: progress_tracker.train_metrics,
+                    VALIDATION: progress_tracker.vali_metrics,
+                    TEST: progress_tracker.test_metrics,
+                }
 
-                    metric_score = tune_executor.get_metric_score(train_stats, eval_stats=None)
-                    tune.report(
-                        parameters=json.dumps(config, cls=NumpyEncoder),
-                        metric_score=metric_score,
-                        training_stats=json.dumps(train_stats[TRAINING], cls=NumpyEncoder),
-                        eval_stats=json.dumps(train_stats[VALIDATION], cls=NumpyEncoder)
-                    )
+                metric_score = tune_executor.get_metric_score(train_stats, eval_stats=None)
+                tune.report(
+                    parameters=json.dumps(config, cls=NumpyEncoder),
+                    metric_score=metric_score,
+                    training_stats=json.dumps(train_stats[TRAINING], cls=NumpyEncoder),
+                    eval_stats=json.dumps(train_stats[VALIDATION], cls=NumpyEncoder)
+                )
+
+        callbacks = hyperopt_dict.get('callbacks') or []
+        hyperopt_dict['callbacks'] = callbacks + [RayTuneReportCallback()]
 
         train_stats, eval_stats = run_experiment(
             **hyperopt_dict,
             model_resume_path=checkpoint_dir,
-            callbacks=[RayTuneReportCallback()],
         )
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
@@ -817,6 +825,7 @@ class RayTuneExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
+            callbacks=None,
             backend=None,
             random_seed=default_random_seed,
             debug=False,
@@ -856,6 +865,7 @@ class RayTuneExecutor(HyperoptExecutor):
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
             backend=backend,
             random_seed=random_seed,
             debug=debug,
@@ -1007,8 +1017,8 @@ def run_experiment(
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
-        backend=None,
         callbacks=None,
+        backend=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -1021,6 +1031,7 @@ def run_experiment(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
+        callbacks=callbacks,
     )
     eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,
@@ -1046,7 +1057,6 @@ def run_experiment(
         output_directory=output_directory,
         skip_collect_predictions=True,
         skip_collect_overall_stats=False,
-        callbacks=callbacks,
         random_seed=random_seed,
         debug=debug,
     )

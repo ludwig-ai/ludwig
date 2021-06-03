@@ -13,7 +13,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_utils import SEQUENCE_TYPES, compute_feature_hash
 from ludwig.models.ecd import build_single_input, build_single_output
-from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import category_feature, LocalTestBackend
 from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
@@ -151,7 +151,8 @@ def test_encoder(test_case):
         config,
         training_set=df,
         skip_save_processed_input=True,
-        random_seed=RANDOM_SEED
+        random_seed=RANDOM_SEED,
+        backend=LocalTestBackend(),
     )
 
     # run through each type of regularizer for the encoder

@@ -23,9 +23,10 @@ from typing import List, Union
 import numpy as np
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS, LOCAL, Backend
+from ludwig.backend import ALL_BACKENDS,  Backend
+from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import (logging_level_registry, print_boxed,
                                       print_ludwig)
@@ -45,6 +46,7 @@ def collect_activations(
         gpus: List[str] = None,
         gpu_memory_limit: int =None,
         allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
         debug: bool = False,
         **kwargs
@@ -81,6 +83,9 @@ def collect_activations(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -102,6 +107,7 @@ def collect_activations(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
+        callbacks=callbacks,
         backend=backend
     )
 
@@ -345,7 +351,12 @@ def cli_collect_activations(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('collect_activations', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -421,7 +432,12 @@ def cli_collect_weights(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('collect_weights', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -470,7 +486,12 @@ def cli_collect_summary(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('collect_summary', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -487,13 +508,10 @@ def cli_collect_summary(sys_argv):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'activations':
-            contrib_command("collect_activations", *sys.argv)
             cli_collect_activations(sys.argv[2:])
         elif sys.argv[1] == 'weights':
-            contrib_command("collect_weights", *sys.argv)
             cli_collect_weights(sys.argv[2:])
         elif sys.argv[1] == 'names':
-            contrib_command("collect_summary", *sys.argv)
             cli_collect_summary(sys.argv[2:])
         else:
             print('Unrecognized command')

@@ -5,6 +5,7 @@ from typing import Union, List
 import pandas as pd
 import yaml
 
+from ludwig.callbacks import Callback
 from ludwig.hyperopt.execution import executor_registry
 from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
@@ -45,6 +46,7 @@ def hyperopt(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         debug: bool = False,
@@ -133,6 +135,9 @@ def hyperopt(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
@@ -292,6 +297,7 @@ def hyperopt(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
+        callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
         debug=debug,

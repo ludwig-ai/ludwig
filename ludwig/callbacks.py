@@ -19,6 +19,30 @@ from abc import ABC
 
 
 class Callback(ABC):
+    def on_cmdline(self, cmd, *args):
+        pass
+
+    def on_train_init(
+        self,
+        experiment_directory,
+        experiment_name,
+        model_name,
+        output_directory,
+        resume,
+    ):
+        pass
+
+    def on_train_start(
+        self,
+        model,
+        config,
+        config_fp,
+    ):
+        pass
+
+    def on_train_end(self, output_directory):
+        pass
+
     def on_batch_start(self, trainer, progress_tracker, save_path):
         pass
 
@@ -41,4 +65,11 @@ class Callback(ABC):
         pass
 
     def on_test_end(self, trainer, progress_tracker, save_path):
+        pass
+
+    def on_visualize_figure(self, fig):
+        pass
+
+    @staticmethod
+    def preload():
         pass

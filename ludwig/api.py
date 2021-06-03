@@ -28,11 +28,9 @@ import tempfile
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-import ludwig.contrib
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
 
-ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
@@ -40,7 +38,6 @@ import yaml
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -149,7 +146,8 @@ class LudwigModel:
             backend: Union[Backend, str] = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True
+            allow_parallel_threads: bool = True,
+            callbacks: List[Callback] = None,
     ) -> None:
         """
         Constructor for the Ludwig Model class.
@@ -168,6 +166,9 @@ class LudwigModel:
         :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
             to use multithreading parallelism to improve performance at the
             cost of determinism.
+        :param callbacks: (list, default: `None`) a list of
+              `ludwig.callbacks.Callback` objects that provide hooks into the
+               Ludwig pipeline.
 
         # Return
 
@@ -191,6 +192,7 @@ class LudwigModel:
 
         # setup Backend
         self.backend = initialize_backend(backend)
+        self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
         self.backend.initialize_tensorflow(gpus=gpus,
@@ -222,7 +224,6 @@ class LudwigModel:
             skip_save_log: bool = False,
             skip_save_processed_input: bool = False,
             output_directory: str = 'results',
-            callbacks: List[Callback] = None,
             random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
@@ -304,9 +305,6 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param callbacks: (list, default: `None`) a list of
-              `ludwig.callbacks.Callback` objects that provide hooks into the
-               Ludwig pipeline.
         :param random_seed: (int, default: `42`) a random seed that will be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -438,10 +436,14 @@ class LudwigModel:
                         training_set_metadata
                     )
 
-            contrib_command("train_init", experiment_directory=output_directory,
-                            experiment_name=experiment_name, model_name=model_name,
-                            output_directory=output_directory,
-                            resume=model_resume_path is not None)
+            for callback in self.callbacks:
+                callback.on_train_init(
+                    experiment_directory=output_directory,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    output_directory=output_directory,
+                    resume=model_resume_path is not None
+                )
 
             # Build model if not provided
             # if it was provided it means it was already loaded
@@ -463,12 +465,16 @@ class LudwigModel:
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
-                callbacks=callbacks,
+                callbacks=self.callbacks,
                 random_seed=random_seed,
                 debug=debug
             ) as trainer:
-                contrib_command("train_model", self.model, self.config,
-                                self.config_fp)
+                for callback in self.callbacks:
+                    callback.on_train_start(
+                        self.model,
+                        self.config,
+                        self.config_fp,
+                    )
 
                 # train model
                 if self.backend.is_coordinator():
@@ -532,7 +538,8 @@ class LudwigModel:
                         '\nFinished: {0}_{1}'.format(experiment_name, model_name))
                     logger.info('Saved to: {0}'.format(output_directory))
 
-                contrib_command("train_save", output_directory)
+                for callback in self.callbacks:
+                    callback.on_train_end(output_directory)
 
                 self.training_set_metadata = training_set_metadata
 
@@ -926,7 +933,6 @@ class LudwigModel:
             skip_collect_predictions: bool = False,
             skip_collect_overall_stats: bool = False,
             output_directory: str = 'results',
-            callbacks: List[Callback] = None,
             random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
@@ -1020,9 +1026,6 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param callbacks: (list, default: `None`) a list of
-              `ludwig.callbacks.Callback` objects that provide hooks into the
-               Ludwig pipeline.
         :param random_seed: (int: default: 42) random seed used for weights
             initialization, splits and any other random function.
         :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -1063,7 +1066,6 @@ class LudwigModel:
             skip_save_processed_input=skip_save_processed_input,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
-            callbacks=callbacks,
             random_seed=random_seed,
             debug=debug,
         )
@@ -1291,7 +1293,8 @@ class LudwigModel:
             backend: Union[Backend, str] = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True
+            allow_parallel_threads: bool = True,
+            callbacks: List[Callback] = None,
     ) -> 'LudwigModel':  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models
 
@@ -1312,6 +1315,9 @@ class LudwigModel:
             to use
             multithreading parallelism to improve performance at the cost of
             determinism.
+        :param callbacks: (list, default: `None`) a list of
+            `ludwig.callbacks.Callback` objects that provide hooks into the
+            Ludwig pipeline.
 
         # Return
 
@@ -1349,6 +1355,7 @@ class LudwigModel:
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
         )
 
         # generate model from config

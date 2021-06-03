@@ -29,8 +29,9 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.callbacks import Callback
 from ludwig.constants import *
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_from_file, load_json, load_array, \
     to_numpy_dataset, unflatten_df, replace_file_extension
@@ -1358,6 +1359,7 @@ def learning_curves(
         model_names: Union[str, List[str]] = None,
         output_directory: str = None,
         file_format: str = 'pdf',
+        callbacks: List[Callback] = None,
         **kwargs
 ) -> None:
     """Show how model metrics change over training and validation data epochs.
@@ -1378,6 +1380,9 @@ def learning_curves(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
 
     # Return
     :return: (None)
@@ -1425,7 +1430,8 @@ def learning_curves(
                     metric,
                     model_names_list,
                     title='Learning Curves {}'.format(output_feature_name),
-                    filename=filename
+                    filename=filename,
+                    callbacks=callbacks,
                 )
 
 
@@ -4414,7 +4420,12 @@ def cli(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('visualize', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -4432,6 +4443,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("visualize", *sys.argv)
     cli(sys.argv[1:])
