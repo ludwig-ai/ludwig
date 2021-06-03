@@ -185,34 +185,6 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus):
 
 
 @pytest.mark.distributed
-def test_hyperopt_ray_mlflow(csv_filename, ray_start_4_cpus, tmpdir):
-    mlflow_uri = f'file://{tmpdir}/mlruns'
-    mlflow.set_tracking_uri(mlflow_uri)
-    client = MlflowClient(tracking_uri=mlflow_uri)
-
-    num_samples = 2
-    exp_name = 'mlflow_test'
-    run_hyperopt_executor({"type": "ray", "num_samples": num_samples},
-                          {"type": "ray"},
-                          csv_filename,
-                          experiment_name=exp_name,
-                          callbacks=[MlflowCallback()])
-
-    experiment = mlflow.get_experiment_by_name(exp_name)
-    assert experiment is not None
-
-    df = mlflow.search_runs([experiment.experiment_id])
-    assert len(df) == num_samples
-
-    for run_id in df.run_id:
-        run = mlflow.get_run(run_id=run_id)
-
-        artifacts = [f.path for f in client.list_artifacts(run.info.run_id, "")]
-        assert 'config.yaml' in artifacts
-        assert 'model' in artifacts
-
-
-@pytest.mark.distributed
 def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
