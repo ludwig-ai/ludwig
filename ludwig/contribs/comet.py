@@ -53,7 +53,7 @@ class CometCallback(Callback):
             self.cometml_experiment = None
             logger.exception(
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
-            return
+            raise
 
         logger.info("comet.on_train_init() called......")
         self.cometml_experiment.set_name(model_name)
@@ -61,7 +61,7 @@ class CometCallback(Callback):
         config = comet_ml.get_config()
         self._save_config(config, directory=experiment_directory)
 
-    def on_train_start(self, model, config, config_path,
+    def on_train_start(self, model, config, config_fp,
                        *args, **kwargs):
         logger.info("comet.on_train_start() called......")
         if self.cometml_experiment:
@@ -72,8 +72,8 @@ class CometCallback(Callback):
             #         str(model._graph.as_graph_def()))
 
             if config:
-                if config_path:
-                    base_name = os.path.basename(config_path)
+                if config_fp:
+                    base_name = os.path.basename(config_fp)
                 else:
                     base_name = "config.yaml"
                 if "." in base_name:
@@ -147,3 +147,7 @@ class CometCallback(Callback):
         ## put the commet flag back in:
         arg_str = " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
         return f"ludwig {cmd} {arg_str}"
+
+    @staticmethod
+    def preload():
+        import comet_ml

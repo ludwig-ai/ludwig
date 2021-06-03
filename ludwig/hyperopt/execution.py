@@ -906,7 +906,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         tune_config = {}
         tune_callbacks = []
-        for callback in callbacks:
+        for callback in callbacks or []:
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
                 tune_config,
@@ -1039,9 +1039,8 @@ def run_experiment(
         debug=False,
         **kwargs
 ):
-    if callbacks:
-        for callback in callbacks:
-            callback.on_hyperopt_trial_start(parameters)
+    for callback in callbacks or []:
+        callback.on_hyperopt_trial_start(parameters)
 
     # Collect training and validation losses and metrics
     # & append it to `results`

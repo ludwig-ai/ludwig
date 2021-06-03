@@ -80,3 +80,7 @@ class Callback(ABC):
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
         """Configures Ray Tune to properly use this callback in each trial."""
         return train_fn, tune_config
+
+    @staticmethod
+    def preload():
+        pass

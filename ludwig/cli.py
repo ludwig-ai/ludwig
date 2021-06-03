@@ -17,6 +17,8 @@
 import argparse
 import sys
 
+import ludwig.contrib
+
 
 class CLI:
     """CLI describes a command line interface for interacting with Ludwig, there
@@ -130,6 +132,7 @@ Available sub-commands:
 
 
 def main():
+    ludwig.contrib.preload(sys.argv)
     CLI()
 
 
