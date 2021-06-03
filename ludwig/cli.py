@@ -55,7 +55,7 @@ Available sub-commands:
    collect_activations   Collects tensors for each datapoint using a pretrained model
    export_savedmodel     Exports Ludwig models to SavedModel
    export_neuropod       Exports Ludwig models to Neuropod
-   export_mlflow         Exports Ludwig models to MLFlow
+   export_mlflow         Exports Ludwig models to MLflow
    preprocess            Preprocess data and saves it into HDF5 and JSON format
    synthesize_dataset    Creates synthetic data for tesing purposes
 ''')

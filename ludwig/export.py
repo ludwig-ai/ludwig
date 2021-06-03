@@ -88,18 +88,18 @@ def export_neuropod(
 def export_mlflow(
         model_path,
         output_path='mlflow',
-        model_name='mlflow',
+        registered_model_name=None,
         **kwargs
 ):
-    """Exports a model to MLFlow
+    """Exports a model to MLflow
 
     # Inputs
 
     :param model_path: (str) filepath to pre-trained model.
     :param output_path: (str, default: `'mlflow'`)  directory to store the
         mlflow model.
-    :param model_name: (str, default: `'mlflow'`) save mlflow under this
-        name.
+    :param registered_model_name: (str, default: `None`) save mlflow under this
+        name in the model registry. Saved locally if `None`.
 
     # Return
 
@@ -110,7 +110,7 @@ def export_mlflow(
     logger.info('\n')
 
     from ludwig.contribs import mlflow
-    mlflow.export_model(model_path, output_path, model_name)
+    mlflow.export_model(model_path, output_path, registered_model_name)
 
     logger.info('Saved to: {0}'.format(output_path))
 
@@ -258,8 +258,8 @@ def cli_export_mlflow(sys_argv):
     )
     parser.add_argument(
         '-mn',
-        '--model_name',
-        help='model name',
+        '--registered_model_name',
+        help='model name to upload to in MLflow model registry',
         default='mlflow'
     )
 

@@ -134,12 +134,12 @@ def _log_artifacts(output_directory):
             mlflow.log_artifact(lpath)
 
 
-def export_model(model_path, output_path, model_name=None):
+def export_model(model_path, output_path, registered_model_name=None):
     kwargs = _export_kwargs(model_path)
-    if model_name:
+    if registered_model_name:
         mlflow.pyfunc.log_model(
             artifact_path=output_path,
-            registered_model_name=model_name,
+            registered_model_name=registered_model_name,
             **kwargs
         )
     else:

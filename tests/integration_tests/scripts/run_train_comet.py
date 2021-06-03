@@ -7,7 +7,7 @@
 # This test runs in an isolated environment to ensure TensorFlow imports are not leaked
 # from previous tests.
 
-# Comet must be imported before the libraries to wraps
+# Comet must be imported before the libraries it wraps
 import comet_ml
 
 import argparse
