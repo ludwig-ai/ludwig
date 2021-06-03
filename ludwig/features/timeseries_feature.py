@@ -42,6 +42,16 @@ class TimeseriesFeatureMixin(object):
         'fill_value': ''
     }
 
+    preprocessing_schema = {
+        'timeseries_length_limit': {'type': 'integer', 'minimum': 0},
+        'padding_value': {'type': 'number'},
+        'padding': {'type': 'string', 'enum': ['right', 'left']},
+        'tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
+    }
+
     @staticmethod
     def cast_column(feature, dataset_df, backend):
         return dataset_df
@@ -127,7 +137,8 @@ class TimeseriesFeatureMixin(object):
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         proc_df[feature[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),

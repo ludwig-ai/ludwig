@@ -25,7 +25,6 @@ from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
 from ludwig.data.dataset.base import Dataset
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
@@ -516,8 +515,8 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
-        test_set = test_set if path_exists(test_set) else None
-        validation_set = validation_set if path_exists(validation_set) else None
+        test_set = test_set if test_set and path_exists(test_set) else None
+        validation_set = validation_set if validation_set and path_exists(validation_set) else None
         return training_set, test_set, validation_set, training_set_metadata
 
 
@@ -1048,6 +1047,7 @@ def build_dataset(
         metadata=None,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
+        skip_save_processed_input=False
 ):
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
@@ -1076,7 +1076,8 @@ def build_dataset(
         dataset_df,
         features,
         metadata,
-        backend
+        backend,
+        skip_save_processed_input
     )
 
     dataset[SPLIT] = get_split(
@@ -1188,7 +1189,13 @@ def build_metadata(
     return metadata
 
 
-def build_data(input_df, features, training_set_metadata, backend):
+def build_data(
+        input_df,
+        features,
+        training_set_metadata,
+        backend,
+        skip_save_processed_input
+):
     proc_df = backend.df_engine.empty_df_like(input_df)
     for feature in features:
 
@@ -1214,7 +1221,8 @@ def build_data(input_df, features, training_set_metadata, backend):
                 proc_df,
                 training_set_metadata,
                 preprocessing_parameters,
-                backend
+                backend,
+                skip_save_processed_input
             )
 
     return proc_df
@@ -1247,7 +1255,7 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
         dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             computed_fill_value,
         )
-    elif missing_value_strategy in ['backfill', 'bfill', 'pad', 'ffill']:
+    elif missing_value_strategy in [BACKFILL, BFILL, PAD, FFILL]:
         dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
@@ -1357,16 +1365,14 @@ def preprocess_for_training(
                 config['output_features'])
 
     # in case data_format is one of the cacheable formats,
-    # check if there's a cached hdf5 file with hte same name,
-    # and in case move on with the hdf5 branch
+    # check if there's a cached hdf5 file with the same name,
+    # and in case move on with the hdf5 branch.
     cached = False
-    checksum = None
-    input_fname = None
+    cache = backend.cache.get_dataset_cache(
+        config, dataset, training_set, test_set, validation_set
+    )
     if data_format in CACHEABLE_FORMATS:
-        input_fname = dataset or training_set
-
-        checksum = backend.cache.get_cache_key(input_fname, config)
-        cache_results = backend.cache.get_dataset(input_fname, config)
+        cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:
@@ -1386,18 +1392,16 @@ def preprocess_for_training(
                     "if saving of processed input is not skipped "
                     "they will be overridden"
                 )
-                backend.cache.delete_dataset(input_fname, config)
+                cache.delete()
 
-    if CHECKSUM not in training_set_metadata:
-        checksum = checksum or backend.cache.get_cache_key(input_fname, config)
-        training_set_metadata[CHECKSUM] = checksum
-
+    training_set_metadata[CHECKSUM] = cache.checksum
     data_format_processor = get_from_registry(
         data_format,
         data_format_preprocessor_registry
     )
 
-    if cached:
+    if cached or data_format == 'hdf5':
+        # Always interpret hdf5 files as preprocessed, even if missing from the cache
         processed = data_format_processor.prepare_processed_data(
             features,
             dataset=dataset,
@@ -1433,9 +1437,8 @@ def preprocess_for_training(
         processed = (training_set, test_set, validation_set, training_set_metadata)
 
         # cache the dataset
-        processed = backend.cache.put_dataset(
-            input_fname, config, processed, skip_save_processed_input
-        )
+        if backend.cache.can_cache(skip_save_processed_input):
+            processed = cache.put(*processed)
         training_set, test_set, validation_set, training_set_metadata = processed
 
     training_dataset = backend.dataset_manager.create(
@@ -1513,7 +1516,8 @@ def _preprocess_file_for_training(
             preprocessing_params,
             metadata=training_set_metadata,
             backend=backend,
-            random_seed=random_seed
+            random_seed=random_seed,
+            skip_save_processed_input=skip_save_processed_input
         )
 
         if backend.is_coordinator() and not skip_save_processed_input:
@@ -1632,10 +1636,6 @@ def preprocess_for_prediction(
         :param split: the split of dataset to return
         :returns: Dataset, Train set metadata
         """
-    # TODO dask: support distributed backend for prediction
-    if backend.df_engine != LOCAL_BACKEND.df_engine:
-        backend = LOCAL_BACKEND
-
     # Sanity Check to make sure some data source is provided
     if dataset is None:
         raise ValueError('No training data is provided!')
@@ -1668,8 +1668,6 @@ def preprocess_for_prediction(
     if training_set_metadata and isinstance(training_set_metadata, str):
         training_set_metadata = load_metadata(training_set_metadata)
 
-    hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP, None)
-
     # setup
     output_features = []
     if include_outputs:
@@ -1684,9 +1682,10 @@ def preprocess_for_prediction(
     # because the cached data is stored in its split form, and would be
     # expensive to recombine, requiring further caching.
     cached = False
+    cache = backend.cache.get_dataset_cache(config, dataset)
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
-        cache_results = backend.cache.get_dataset(dataset, config)
+        cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:
@@ -1725,8 +1724,10 @@ def preprocess_for_prediction(
             backend
         )
         dataset, training_set_metadata, new_hdf5_fp = processed
+        training_set_metadata = training_set_metadata.copy()
+
         if new_hdf5_fp:
-            hdf5_fp = new_hdf5_fp
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = new_hdf5_fp
 
         replace_text_feature_level(features, [dataset])
 
@@ -1743,16 +1744,16 @@ def preprocess_for_prediction(
     elif split == TEST:
         dataset = test_set
 
-    features = get_proc_features_from_lists(
-        config['input_features'],
-        output_features
-    )
+    config = {
+        **config,
+        'output_features': output_features,
+    }
 
-    # TODO dask: support postprocessing using Backend
-    dataset = PandasDataset(
+    dataset = backend.dataset_manager.create_inference_dataset(
         dataset,
-        features,
-        hdf5_fp
+        split,
+        config,
+        training_set_metadata,
     )
 
     return dataset, training_set_metadata

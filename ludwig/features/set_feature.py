@@ -30,7 +30,7 @@ from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import JaccardMetric
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,15 @@ class SetFeatureMixin:
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
+    }
+
+    preprocessing_schema = {
+        'tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
+        'most_common': {'type': 'integer', 'minimum': 0},
+        'lowercase': {'type': 'boolean'},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
     }
 
     @staticmethod
@@ -89,7 +98,8 @@ class SetFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         proc_df[feature[PROC_COLUMN]] = SetFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),
@@ -212,6 +222,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[JACCARD] = JaccardMetric()
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, PROBABILITIES, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.bool
@@ -280,42 +295,39 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS].numpy()
-            if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = [
-                    [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
-                     if pred] for pred_set in preds
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result:
+            def idx2str(pred_set):
+                return [
+                    metadata['idx2str'][i]
+                    for i, pred in enumerate(pred_set)
+                    if pred
                 ]
-            else:
-                postprocessed[PREDICTIONS] = preds
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PREDICTIONS), preds)
+            result[predictions_col] = backend.df_engine.map_objects(
+                result[predictions_col],
+                idx2str,
+            )
 
-            del result[PREDICTIONS]
+        probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
+        prob_col = f'{self.feature_name}_{PROBABILITY}'
+        if probabilities_col in result:
+            threshold = self.threshold
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES].numpy()
-            prob = [[prob for prob in prob_set if
-                     prob >= self.threshold] for prob_set in
-                    probs]
-            postprocessed[PROBABILITIES] = probs
-            postprocessed[PROBABILITY] = prob
+            def get_prob(prob_set):
+                return [
+                    prob for prob in prob_set if
+                    prob >= threshold
+                ]
 
-            if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, PROBABILITIES), probs)
-                np.save(npy_filename.format(name, PROBABILITY), probs)
+            result[prob_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                get_prob,
+            )
 
-            del result[PROBABILITIES]
-
-        return postprocessed
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):

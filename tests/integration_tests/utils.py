@@ -624,7 +624,16 @@ def create_data_set_to_use(data_format, raw_data):
     return dataset_to_use
 
 
-def train_with_backend(backend, config, dataset=None, training_set=None, validation_set=None, test_set=None):
+def train_with_backend(
+        backend,
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        predict=True,
+        evaluate=True,
+):
     model = LudwigModel(config, backend=backend)
     output_dir = None
 
@@ -642,12 +651,14 @@ def train_with_backend(backend, config, dataset=None, training_set=None, validat
         if dataset is None:
             dataset = training_set
 
-        import dask.dataframe as dd
-        if isinstance(dataset, dd.DataFrame):
-            # For now, prediction must be done on Pandas DataFrame
-            dataset = dataset.compute()
+        if predict:
+            preds, _ = model.predict(dataset=dataset)
+            assert backend.df_engine.compute(preds) is not None
 
-        model.predict(dataset=dataset)
+        if evaluate:
+            _, eval_preds, _ = model.evaluate(dataset=dataset)
+            assert backend.df_engine.compute(eval_preds) is not None
+
         return model.model.get_weights()
     finally:
         # Remove results/intermediate data saved to disk

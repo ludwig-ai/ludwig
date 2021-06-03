@@ -43,7 +43,19 @@ class VectorFeatureMixin:
     type = VECTOR
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ""
+        'fill_value': '',
+    }
+
+    fill_value_schema = {
+        "type": "string",
+        "pattern": "^([0-9]+(\\.[0-9]*)?\\s*)*$"
+    }
+
+    preprocessing_schema = {
+        'vector_size': {'type': 'integer', 'minimum': 0},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': fill_value_schema,
+        'computed_fill_value': fill_value_schema,
     }
 
     @staticmethod
@@ -63,7 +75,8 @@ class VectorFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         """
                 Expects all the vectors to be of the same size. The vectors need to be
@@ -222,6 +235,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, LOGITS
+        }
+
     @classmethod
     def get_output_dtype(cls):
         return tf.float32
@@ -252,22 +270,15 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
-
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PREDICTIONS),
-                    postprocessed[PREDICTIONS]
-                )
-            del result[PREDICTIONS]
-
-        return postprocessed
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result:
+            result[predictions_col] = backend.df_engine.map_objects(
+                result[predictions_col],
+                lambda pred: pred.tolist()
+            )
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):

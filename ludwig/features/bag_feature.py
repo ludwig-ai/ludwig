@@ -25,7 +25,7 @@ from ludwig.encoders.bag_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,15 @@ class BagFeatureMixin:
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
+    }
+
+    preprocessing_schema = {
+        'tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
+        'most_common': {'type': 'integer', 'minimum': 0},
+        'lowercase': {'type': 'boolean'},
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': {'type': 'string'},
+        'computed_fill_value': {'type': 'string'},
     }
 
     @staticmethod
@@ -85,7 +94,8 @@ class BagFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         proc_df[feature[PROC_COLUMN]] = BagFeatureMixin.feature_data(
             input_df[feature[COLUMN]].astype(str),

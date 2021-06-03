@@ -18,6 +18,9 @@ import contextlib
 import math
 
 import tensorflow as tf
+from ludwig.data.dataset.pandas import PandasDataset
+from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 
 from petastorm import make_batch_reader
 from petastorm.tf_utils import make_petastorm_dataset
@@ -26,7 +29,7 @@ from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.utils.fs_utils import to_url
-from ludwig.utils.misc_utils import get_combined_features
+from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 
 
 class ParquetDataset(Dataset):
@@ -103,6 +106,20 @@ class ParquetDatasetManager(object):
             training_set_metadata
         )
 
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        if self.backend.df_engine.partitioned:
+            return PartitionedDataset(
+                dataset,
+                get_proc_features(config),
+                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            )
+        else:
+            return PandasDataset(
+                dataset,
+                get_proc_features(config),
+                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            )
+
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
         dataset_parquet_fp = cache_path
 
@@ -124,7 +141,7 @@ class ParquetDatasetManager(object):
         self.backend.df_engine.to_parquet(dataset, dataset_parquet_fp)
         return dataset_parquet_fp
 
-    def can_cache(self, input_fname, config, skip_save_processed_input):
+    def can_cache(self, skip_save_processed_input):
         return self.backend.is_coordinator()
 
     @property

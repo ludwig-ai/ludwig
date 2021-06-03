@@ -38,6 +38,16 @@ COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
 
 BOOL_TRUE_STRS = {'yes', 'y', 'true', 't', '1'}
+BOOL_FALSE_STRS = {'no', 'n', 'false', 'f', '0'}
+
+
+def all_bool_strs():
+    """Returns all valid boolean strings, with varied capitalization."""
+    fns = [lambda x: x, lambda x: x.upper(), lambda x: x.capitalize()]
+    return sorted(set(
+        fn(x) for fn in fns
+        for x in BOOL_TRUE_STRS | BOOL_FALSE_STRS
+    ))
 
 
 def make_safe_filename(s):

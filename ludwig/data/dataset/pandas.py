@@ -93,15 +93,19 @@ class PandasDatasetManager(object):
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
+    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
+        return self.create(
+            dataset, config, training_set_metadata
+        )
+
     def save(self, cache_path, dataset, config, training_set_metadata, tag):
         data_utils.save_hdf5(cache_path, dataset)
         if tag == TRAINING:
             training_set_metadata[DATA_TRAIN_HDF5_FP] = cache_path
         return dataset
 
-    def can_cache(self, input_fname, config, skip_save_processed_input):
-        return input_fname is not None and \
-               self.backend.is_coordinator() and \
+    def can_cache(self, skip_save_processed_input):
+        return self.backend.is_coordinator() and \
                not skip_save_processed_input
 
     @property

@@ -1,2 +1,2 @@
-ray
+ray[default,tune]
 pickle5

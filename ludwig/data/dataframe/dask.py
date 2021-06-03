@@ -24,10 +24,11 @@ import dask.dataframe as dd
 
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.dataset.parquet import ParquetDataset
+from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL
+from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, DATA_TRAIN_HDF5_FP
 from ludwig.utils.fs_utils import makedirs, to_url
-from ludwig.utils.misc_utils import get_combined_features
+from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 
 TMP_COLUMN = '__TMP_COLUMN__'
 
@@ -61,8 +62,13 @@ class DaskEngine(DataFrameEngine):
     def from_pandas(self, df):
         return dd.from_pandas(df, npartitions=self.parallelism)
 
-    def map_objects(self, series, map_fn):
-        return series.map(map_fn, meta=('data', 'object'))
+    def map_objects(self, series, map_fn, meta=None):
+        meta = meta or ('data', 'object')
+        return series.map(map_fn, meta=meta)
+
+    def apply_objects(self, df, apply_fn, meta=None):
+        meta = meta or ('data', 'object')
+        return df.apply(apply_fn, axis=1, meta=meta)
 
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
@@ -86,3 +92,7 @@ class DaskEngine(DataFrameEngine):
     @property
     def parallelism(self):
         return self._parallelism
+
+    @property
+    def partitioned(self):
+        return True

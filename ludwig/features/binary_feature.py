@@ -15,7 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
 import tensorflow as tf
@@ -45,6 +44,19 @@ class BinaryFeatureMixin:
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0
+    }
+
+    fill_value_schema = {
+        "anyOf": [
+            {'type': 'integer', 'minimum': 0, 'maximum': 1},
+            {"type": "string", 'enum': strings_utils.all_bool_strs()}
+        ]
+    }
+
+    preprocessing_schema = {
+        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'fill_value': fill_value_schema,
+        'computed_fill_value': fill_value_schema,
     }
 
     @staticmethod
@@ -80,7 +92,8 @@ class BinaryFeatureMixin:
             proc_df,
             metadata,
             preprocessing_parameters,
-            backend
+            backend,
+            skip_save_processed_input
     ):
         column = input_df[feature[COLUMN]]
 
@@ -211,6 +224,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name='metric_accuracy')
 
+    def get_prediction_set(self):
+        return {
+            PREDICTIONS, PROBABILITIES, LOGITS
+        }
+
     # def update_metrics(self, targets, predictions):
     #     for metric, metric_fn in self.metric_functions.items():
     #         if metric == LOSS:
@@ -298,45 +316,40 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             result,
             metadata,
             output_directory,
-            skip_save_unprocessed_output=False,
+            backend,
     ):
-        postprocessed = {}
-        name = self.feature_name
+        class_names = ['False', 'True']
+        if 'bool2str' in metadata:
+            class_names = metadata['bool2str']
 
-        npy_filename = os.path.join(output_directory, '{}_{}.npy')
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS].numpy()
+        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        if predictions_col in result:
             if 'bool2str' in metadata:
-                preds = [
-                    metadata['bool2str'][pred] for pred in preds
-                ]
-            postprocessed[PREDICTIONS] = preds
-
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PREDICTIONS),
-                    postprocessed[PREDICTIONS]
+                result[predictions_col] = backend.df_engine.map_objects(
+                    result[predictions_col],
+                    lambda pred: metadata['bool2str'][pred]
                 )
-            del result[PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
-            postprocessed[PROBABILITIES] = np.stack(
-                [1 - postprocessed[PROBABILITIES],
-                postprocessed[PROBABILITIES]],
-                axis=1
+        probabilities_col = f'{self.feature_name}_{PROBABILITIES}'
+        if probabilities_col in result:
+            false_col = f'{probabilities_col}_{class_names[0]}'
+            result[false_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                lambda prob: 1 - prob
             )
-            postprocessed[PROBABILITY] = np.amax(
-                postprocessed[PROBABILITIES], axis=1
-            )
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PROBABILITIES),
-                    postprocessed[PROBABILITIES]
-                )
-            del result[PROBABILITIES]
 
-        return postprocessed
+            true_col = f'{probabilities_col}_{class_names[1]}'
+            result[true_col] = result[probabilities_col]
+
+            prob_col = f'{self.feature_name}_{PROBABILITY}'
+            result[prob_col] = result[[false_col, true_col]].max(axis=1)
+
+            result[probabilities_col] = backend.df_engine.map_objects(
+                result[probabilities_col],
+                lambda prob: [1 - prob, prob]
+            )
+
+        return result
 
     @staticmethod
     def populate_defaults(output_feature):

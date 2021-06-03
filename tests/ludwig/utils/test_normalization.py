@@ -60,7 +60,8 @@ def test_norm():
         proc_df=proc_df,
         metadata={num_feature[NAME]: feature_1_meta},
         preprocessing_parameters={'normalization': 'zscore'},
-        backend=LOCAL_BACKEND
+        backend=LOCAL_BACKEND,
+        skip_save_processed_input=False
     )
     assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]),
                        np.array([-1.26491106, -0.63245553, 0, 0.63245553,
@@ -73,7 +74,8 @@ def test_norm():
         proc_df=proc_df,
         metadata={num_feature[NAME]: feature_2_meta},
         preprocessing_parameters={'normalization': 'minmax'},
-        backend=LOCAL_BACKEND
+        backend=LOCAL_BACKEND,
+        skip_save_processed_input=False
     )
     assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]),
                        np.array([0, 0.25, 0.5, 0.75, 1])

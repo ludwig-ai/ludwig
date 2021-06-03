@@ -29,6 +29,7 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 import ludwig.contrib
+from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
 
 ludwig.contrib.contrib_import()
@@ -67,6 +68,7 @@ from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
                                      get_output_directory)
 from ludwig.utils.print_utils import print_boxed
+from ludwig.utils.schema import validate_config
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +184,7 @@ class LudwigModel:
 
         # merge config with defaults
         self.config = merge_with_defaults(config_dict)
+        validate_config(self.config)
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -720,8 +723,11 @@ class LudwigModel:
 
             if self.backend.is_coordinator():
                 if not skip_save_predictions:
-                    save_prediction_outputs(postproc_predictions,
-                                            output_directory)
+                    save_prediction_outputs(
+                        postproc_predictions,
+                        output_directory,
+                        self.backend
+                    )
 
                     logger.info('Saved to: {0}'.format(output_directory))
 
@@ -821,6 +827,13 @@ class LudwigModel:
 
             # calculate the overall metrics
             if collect_overall_stats:
+                # TODO ray: support calculating stats on partitioned datasets
+                if isinstance(dataset, PartitionedDataset):
+                    raise ValueError(
+                        'Cannot calculate overall stats on a partitioned dataset at this time. '
+                        'Set `calculate_overall_stats=False`.'
+                    )
+
                 overall_stats = calculate_overall_stats(
                     self.model.output_features,
                     predictions,
@@ -866,7 +879,11 @@ class LudwigModel:
                         and not skip_save_predictions
                 )
                 if should_save_predictions:
-                    save_prediction_outputs(postproc_predictions, output_directory)
+                    save_prediction_outputs(
+                        postproc_predictions,
+                        output_directory,
+                        self.backend
+                    )
 
                 print_evaluation_stats(eval_stats)
                 if not skip_save_eval_stats:
@@ -1311,7 +1328,11 @@ class LudwigModel:
         # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         backend = initialize_backend(backend)
-        backend.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
+        backend.initialize_tensorflow(
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads
+        )
 
         config = backend.broadcast_return(
             lambda: load_json(os.path.join(

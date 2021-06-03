@@ -16,8 +16,68 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, LocalTrainingMixin
-from ludwig.constants import NAME, PARQUET
+from ludwig.constants import NAME, PARQUET, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
+from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
+
+
+class DaskRemoteModel:
+    def __init__(self, model):
+        self.cls, self.args, state = list(model.__reduce__())
+        self.state = state
+
+    def load(self):
+        obj = self.cls(*self.args)
+        # TODO(travis): get_connected_model is needed here because TF will not init
+        #  all weights until the graph has been traversed
+        obj.get_connected_model()
+        obj.__setstate__(self.state)
+        return obj
+
+
+class DaskPredictor(BasePredictor):
+    def __init__(self, predictor_kwargs):
+        self.predictor_kwargs = predictor_kwargs
+
+    def batch_predict(self, model, dataset, *args, **kwargs):
+        self._check_dataset(dataset)
+
+        remote_model = DaskRemoteModel(model)
+        predictor_kwargs = self.predictor_kwargs
+        output_columns = get_output_columns(model.output_features)
+
+        def batch_predict_partition(dataset):
+            model = remote_model.load()
+            predictor = Predictor(**predictor_kwargs)
+            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
+            ordered_predictions = predictions[output_columns]
+            return ordered_predictions
+
+        return dataset.map_dataset_partitions(
+            batch_predict_partition,
+            meta=[(c, 'object') for c in output_columns]
+        )
+
+    def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
+        raise NotImplementedError(
+            'Dask backend does not support batch evaluation at this time.'
+        )
+
+    def batch_collect_activations(self, model, *args, **kwargs):
+        raise NotImplementedError(
+            'Dask backend does not support collecting activations at this time.'
+        )
+
+    def _check_dataset(self, dataset):
+        if not isinstance(dataset, PartitionedDataset):
+            raise RuntimeError(
+                f'Dask backend requires PartitionedDataset for inference, '
+                f'found: {type(dataset)}'
+            )
+
+    def shutdown(self):
+        pass
 
 
 class DaskBackend(LocalTrainingMixin, Backend):
@@ -33,6 +93,9 @@ class DaskBackend(LocalTrainingMixin, Backend):
     def initialize(self):
         pass
 
+    def create_predictor(self, **kwargs):
+        return DaskPredictor(kwargs)
+
     @property
     def df_engine(self):
         return self._df_engine
@@ -42,5 +105,7 @@ class DaskBackend(LocalTrainingMixin, Backend):
         return False
 
     def check_lazy_load_supported(self, feature):
-        raise ValueError(f'DaskBackend does not support lazy loading of data files at train time. '
-                         f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
+        if not feature[PREPROCESSING]['in_memory']:
+            raise ValueError(
+                f'DaskBackend does not support lazy loading of data files at train time. '
+                f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')

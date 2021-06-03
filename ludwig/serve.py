@@ -22,9 +22,10 @@ import sys
 import tempfile
 
 import pandas as pd
+from imageio import imread
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN
+from ludwig.constants import COLUMN, AUDIO
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
@@ -73,11 +74,14 @@ def server(model, allowed_origins=None):
     async def predict(request: Request):
         try:
             form = await request.form()
-            files, entry = convert_input(form)
+            entry, files = convert_input(
+                form,
+                model.model.input_features
+            )
         except Exception:
-            logger.exception("Failed to parse batch_predict form")
+            logger.exception("Failed to parse predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
-                                    status_code=500)
+                                status_code=500)
 
         try:
             if (entry.keys() & input_features) != input_features:
@@ -89,8 +93,8 @@ def server(model, allowed_origins=None):
                 )
                 resp = resp.to_dict('records')[0]
                 return JSONResponse(resp)
-            except Exception:
-                logger.exception("Failed to run predict")
+            except Exception as exc:
+                logger.exception("Failed to run predict: {}".format(exc))
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
@@ -101,30 +105,29 @@ def server(model, allowed_origins=None):
     async def batch_predict(request: Request):
         try:
             form = await request.form()
-            files, data = convert_batch_input(form)
+            data, files = convert_batch_input(
+                form,
+                model.model.input_features
+            )
             data_df = pd.DataFrame.from_records(data['data'],
                                                 index=data.get('index'),
                                                 columns=data['columns'])
         except Exception:
             logger.exception("Failed to parse batch_predict form")
             return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
-                                    status_code=500)
-        
+                                status_code=500)
+
+        if (set(data_df.columns) & input_features) != input_features:
+            return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
+                                status_code=400)
         try:
-            if (set(data_df.columns) & input_features) != input_features:
-                return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
-                                    status_code=400)
-            try:
-                resp, _ = model.predict(dataset=data_df)
-                resp = resp.to_dict('split')
-                return JSONResponse(resp)
-            except Exception:
-                logger.exception("Failed to run batch_predict: {}")
-                return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
-                                    status_code=500)
-        finally:
-            for f in files:
-                os.remove(f.name)
+            resp, _ = model.predict(dataset=data_df)
+            resp = resp.to_dict('split')
+            return JSONResponse(resp)
+        except Exception:
+            logger.exception("Failed to run batch_predict: {}")
+            return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
+                                status_code=500)
 
     return app
 
@@ -140,34 +143,50 @@ def _write_file(v, files):
     return named_file.name
 
 
-def convert_input(form):
+def _read_image_buffer(v):
+    # get image format type, e.g., 'jpg', 'png', etc.
+    image_type_suffix = os.path.splitext(v.filename)[1][1:]
+
+    # read in file buffer to obtain ndarray of image
+    return imread(v.file.read(), image_type_suffix)
+
+
+def convert_input(form, input_features):
     """Returns a new input and a list of files to be cleaned up"""
     new_input = {}
     files = []
     for k, v in form.multi_items():
         if type(v) == UploadFile:
-            new_input[k] = _write_file(v, files)
+            # check if audio or image file
+            if input_features[k].type == AUDIO:
+                new_input[k] = _write_file(v, files)
+            else:
+                new_input[k] = _read_image_buffer(v)
         else:
             new_input[k] = v
 
-    return files, new_input
+    return new_input, files
 
 
-def convert_batch_input(form):
+def convert_batch_input(form, input_features):
     """Returns a new input and a list of files to be cleaned up"""
-    files = []
     file_index = {}
+    files = []
     for k, v in form.multi_items():
         if type(v) == UploadFile:
-            file_index[v.filename] = _write_file(v, files)
+            file_index[v.filename] = v
 
     data = json.loads(form['dataset'])
     for row in data['data']:
         for i in range(len(row)):
             if row[i] in file_index:
-                row[i] = file_index[row[i]]
+                feature_name = data['columns'][i]
+                if input_features[feature_name].type == AUDIO:
+                    row[i] = _write_file(file_index[row[i]], files)
+                else:
+                    row[i] = _read_image_buffer(file_index[row[i]])
 
-    return files, data
+    return data, files
 
 
 def run_server(
