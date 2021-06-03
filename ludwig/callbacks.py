@@ -22,8 +22,15 @@ class Callback(ABC):
     def on_cmdline(self, cmd, *args):
         pass
 
+    def on_hyperopt_init(self, experiment_name):
+        pass
+
+    def on_hyperopt_trial_start(self, parameters):
+        pass
+
     def on_train_init(
         self,
+        base_config,
         experiment_directory,
         experiment_name,
         model_name,
@@ -69,6 +76,10 @@ class Callback(ABC):
 
     def on_visualize_figure(self, fig):
         pass
+
+    def prepare_ray_tune(self, train_fn, tune_config):
+        """Configures Ray Tune to properly use this callback in each trial."""
+        return train_fn, tune_config
 
     @staticmethod
     def preload():

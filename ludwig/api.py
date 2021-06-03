@@ -184,6 +184,7 @@ class LudwigModel:
             self.config_fp = None
 
         # merge config with defaults
+        self.base_config = copy.deepcopy(config_dict)
         self.config = merge_with_defaults(config_dict)
         validate_config(self.config)
 
@@ -438,6 +439,7 @@ class LudwigModel:
 
             for callback in self.callbacks:
                 callback.on_train_init(
+                    base_config=self.base_config,
                     experiment_directory=output_directory,
                     experiment_name=experiment_name,
                     model_name=model_name,
@@ -471,9 +473,9 @@ class LudwigModel:
             ) as trainer:
                 for callback in self.callbacks:
                     callback.on_train_start(
-                        self.model,
-                        self.config,
-                        self.config_fp,
+                        model=self.model,
+                        config=self.config,
+                        config_fp=self.config_fp,
                     )
 
                 # train model

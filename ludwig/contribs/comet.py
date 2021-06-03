@@ -33,8 +33,15 @@ class CometCallback(Callback):
     def __init__(self):
         self.cometml_experiment = None
 
-    def on_train_init(self, experiment_directory, experiment_name, model_name,
-                   resume, output_directory):
+    def on_train_init(
+            self,
+            base_config,
+            experiment_directory,
+            experiment_name,
+            model_name,
+            output_directory,
+            resume,
+    ):
         if self.cometml_experiment:
             # Comet ML already initialized
             return
@@ -54,7 +61,7 @@ class CometCallback(Callback):
         config = comet_ml.get_config()
         self._save_config(config, directory=experiment_directory)
 
-    def on_train_start(self, model, config, config_path,
+    def on_train_start(self, model, config, config_fp,
                        *args, **kwargs):
         logger.info("comet.on_train_start() called......")
         if self.cometml_experiment:
@@ -65,8 +72,8 @@ class CometCallback(Callback):
             #         str(model._graph.as_graph_def()))
 
             if config:
-                if config_path:
-                    base_name = os.path.basename(config_path)
+                if config_fp:
+                    base_name = os.path.basename(config_fp)
                 else:
                     base_name = "config.yaml"
                 if "." in base_name:
@@ -87,30 +94,8 @@ class CometCallback(Callback):
         """
         logger.info("comet.on_epoch_end() called......")
         if self.cometml_experiment:
-            for item_name in ["batch_size", "epoch", "steps",
-                              "last_improvement_epoch",
-                              "learning_rate", "best_valid_metric",
-                              "num_reductions_lr",
-                              "num_increases_bs", "train_metrics",
-                              "vali_metrics",
-                              "test_metrics"]:
-                try:
-                    item = getattr(progress_tracker, item_name)
-                    if isinstance(item, dict):
-                        for key in item:
-                            if isinstance(item[key], dict):
-                                for key2 in item[key]:
-                                    self.cometml_experiment.log_metric(
-                                        item_name + "." + key + "." + key2,
-                                        item[key][key2][-1])
-                            else:
-                                self.cometml_experiment.log_metric(
-                                    item_name + "." + key, item[key][-1])
-                    elif item is not None:
-                        self.cometml_experiment.log_metric(item_name, item)
-                except Exception:
-                    logger.info("comet.on_epoch_end() skip logging '%s'",
-                                item_name)
+            for key, value in progress_tracker.log_metrics.items():
+                self.cometml_experiment.log_metric(key, value)
 
     def on_visualize_figure(self, fig):
         logger.info("comet.on_visualize_figure() called......")

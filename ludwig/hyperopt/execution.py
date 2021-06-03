@@ -666,6 +666,7 @@ class FiberExecutor(HyperoptExecutor):
                     {
                         'config': substitute_parameters(
                             copy.deepcopy(config), parameters),
+                        'parameters': parameters,
                         'experiment_name': f'{experiment_name}_{trials + i}',
                         **experiment_kwargs
                     }
@@ -789,6 +790,7 @@ class RayTuneExecutor(HyperoptExecutor):
         train_stats, eval_stats = run_experiment(
             **hyperopt_dict,
             model_resume_path=checkpoint_dir,
+            parameters=config,
         )
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
@@ -902,6 +904,13 @@ class RayTuneExecutor(HyperoptExecutor):
         def run_experiment_trial(config, checkpoint_dir=None):
             return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx)
 
+        tune_config = {}
+        for callback in callbacks or []:
+            run_experiment_trial, tune_config = callback.prepare_ray_tune(
+                run_experiment_trial,
+                tune_config,
+            )
+
         register_trainable(
             f"trainable_func_f{hash_dict(config)}", 
             run_experiment_trial
@@ -909,7 +918,10 @@ class RayTuneExecutor(HyperoptExecutor):
 
         analysis = tune.run(
             f"trainable_func_f{hash_dict(config)}",
-            config=self.search_space,
+            config={
+                **self.search_space,
+                **tune_config,
+            },
             scheduler=self.scheduler,
             search_alg=search_alg,
             num_samples=self.num_samples,
@@ -993,6 +1005,7 @@ def substitute_parameters(config, parameters):
 
 def run_experiment(
         config,
+        parameters=None,
         dataset=None,
         training_set=None,
         validation_set=None,
@@ -1023,6 +1036,9 @@ def run_experiment(
         debug=False,
         **kwargs
 ):
+    for callback in callbacks or []:
+        callback.on_hyperopt_trial_start(parameters)
+
     # Collect training and validation losses and metrics
     # & append it to `results`
     model = LudwigModel(
