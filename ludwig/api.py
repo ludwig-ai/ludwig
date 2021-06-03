@@ -484,64 +484,65 @@ class LudwigModel:
                     if not skip_save_model:
                         self.save_config(model_dir)
 
-                train_stats = trainer.train(
-                    self.model,
-                    training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    save_path=model_dir,
-                )
-
-                self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
-                train_stats = {
-                    TRAINING: train_trainset_stats,
-                    VALIDATION: train_valiset_stats,
-                    TEST: train_testset_stats
-                }
-
-                # save training statistics
-                if self.backend.is_coordinator():
-                    if not skip_save_training_statistics:
-                        save_json(training_stats_fn, train_stats)
-
-                # grab the results of the model with highest validation test performance
-                validation_field = trainer.validation_field
-                validation_metric = trainer.validation_metric
-                validation_field_result = train_valiset_stats[validation_field]
-
-                best_function = get_best_function(validation_metric)
-                # results of the model with highest validation test performance
-                if self.backend.is_coordinator() and validation_set is not None:
-                    epoch_best_vali_metric, best_vali_metric = best_function(
-                        enumerate(validation_field_result[validation_metric]),
-                        key=lambda pair: pair[1]
+                try:
+                    train_stats = trainer.train(
+                        self.model,
+                        training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        save_path=model_dir,
                     )
-                    logger.info(
-                        'Best validation model epoch: {0}'.format(
-                            epoch_best_vali_metric + 1)
-                    )
-                    logger.info(
-                        'Best validation model {0} on validation set {1}: {2}'.format(
-                            validation_metric, validation_field, best_vali_metric
-                        ))
-                    if test_set is not None:
-                        best_vali_metric_epoch_test_metric = train_testset_stats[
-                            validation_field][validation_metric][
-                            epoch_best_vali_metric]
 
-                        logger.info(
-                            'Best validation model {0} on test set {1}: {2}'.format(
-                                validation_metric,
-                                validation_field,
-                                best_vali_metric_epoch_test_metric
-                            )
+                    self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+                    train_stats = {
+                        TRAINING: train_trainset_stats,
+                        VALIDATION: train_valiset_stats,
+                        TEST: train_testset_stats
+                    }
+
+                    # save training statistics
+                    if self.backend.is_coordinator():
+                        if not skip_save_training_statistics:
+                            save_json(training_stats_fn, train_stats)
+
+                    # grab the results of the model with highest validation test performance
+                    validation_field = trainer.validation_field
+                    validation_metric = trainer.validation_metric
+                    validation_field_result = train_valiset_stats[validation_field]
+
+                    best_function = get_best_function(validation_metric)
+                    # results of the model with highest validation test performance
+                    if self.backend.is_coordinator() and validation_set is not None:
+                        epoch_best_vali_metric, best_vali_metric = best_function(
+                            enumerate(validation_field_result[validation_metric]),
+                            key=lambda pair: pair[1]
                         )
-                    logger.info(
-                        '\nFinished: {0}_{1}'.format(experiment_name, model_name))
-                    logger.info('Saved to: {0}'.format(output_directory))
+                        logger.info(
+                            'Best validation model epoch: {0}'.format(
+                                epoch_best_vali_metric + 1)
+                        )
+                        logger.info(
+                            'Best validation model {0} on validation set {1}: {2}'.format(
+                                validation_metric, validation_field, best_vali_metric
+                            ))
+                        if test_set is not None:
+                            best_vali_metric_epoch_test_metric = train_testset_stats[
+                                validation_field][validation_metric][
+                                epoch_best_vali_metric]
 
-                for callback in self.callbacks:
-                    callback.on_train_end(output_directory)
+                            logger.info(
+                                'Best validation model {0} on test set {1}: {2}'.format(
+                                    validation_metric,
+                                    validation_field,
+                                    best_vali_metric_epoch_test_metric
+                                )
+                            )
+                        logger.info(
+                            '\nFinished: {0}_{1}'.format(experiment_name, model_name))
+                        logger.info('Saved to: {0}'.format(output_directory))
+                finally:
+                    for callback in self.callbacks:
+                        callback.on_train_end(output_directory)
 
                 self.training_set_metadata = training_set_metadata
 
