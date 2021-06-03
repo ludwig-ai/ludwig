@@ -1064,6 +1064,8 @@ def build_dataset(
         backend
     )
 
+    # dataset_df = backend.df_engine.persist(dataset_df)
+
     metadata = build_metadata(
         metadata,
         dataset_df,
@@ -1097,6 +1099,7 @@ def build_dataset(
 def cast_columns(dataset_df, features, global_preprocessing_parameters,
                  backend):
     # todo figure out if global_preprocessing_parameters is needed
+    casted_cols = []
     for feature in features:
         cast_column = get_from_registry(
             feature[TYPE],
@@ -1104,11 +1107,16 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
         ).cast_column
         # todo figure out if additional parameters are needed
         #  for the cast_column function
-        dataset_df = cast_column(
-            feature,
-            dataset_df,
-            backend
+        casted_cols.append(
+            (feature[COLUMN], cast_column(
+                dataset_df[feature[COLUMN]],
+                backend
+            ))
         )
+
+    for col, v in casted_cols:
+        if v is not None:
+            dataset_df[col] = v
 
     return dataset_df
 
@@ -1429,6 +1437,7 @@ def preprocess_for_training(
             random_seed=random_seed
         )
         training_set, test_set, validation_set, training_set_metadata = processed
+        return processed
 
         replace_text_feature_level(
             features,

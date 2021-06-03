@@ -55,8 +55,8 @@ class SetFeatureMixin:
     }
 
     @staticmethod
-    def cast_column(feature, dataset_df, backend):
-        return dataset_df
+    def cast_column(series, backend):
+        return None
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

@@ -51,7 +51,7 @@ class DaskEngine(DataFrameEngine):
         return df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
 
     def parallelize(self, data):
-        return data.repartition(self.parallelism)
+        return data.repartition(1)
 
     def persist(self, data):
         return data.persist()
