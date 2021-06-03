@@ -1442,7 +1442,6 @@ def preprocess_for_training(
             random_seed=random_seed
         )
         training_set, test_set, validation_set, training_set_metadata = processed
-        return processed
 
         replace_text_feature_level(
             features,
