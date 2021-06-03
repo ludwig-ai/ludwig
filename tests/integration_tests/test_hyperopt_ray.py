@@ -140,7 +140,7 @@ def run_hyperopt_executor(
     hyperopt_config = config["hyperopt"]
 
     if validate_output_feature:
-        hyperopt_config['output_feature'] = output_features[0]['name']
+        hyperopt_config['output_feature'] = config['output_features'][0]['name']
     if validation_metric:
         hyperopt_config['validation_metric'] = validation_metric
 
@@ -165,8 +165,6 @@ def run_hyperopt_executor(
     hyperopt_executor.execute(
         config,
         dataset=rel_path,
-        experiment_name=experiment_name,
-        callbacks=callbacks
     )
 
 
