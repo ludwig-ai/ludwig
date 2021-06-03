@@ -18,9 +18,12 @@ def _get_or_create_experiment_id(experiment_name):
 
 
 class MlflowCallback(Callback):
-    def __init__(self):
+    def __init__(self, tracking_uri=None):
         self.experiment_id = None
         self.run = None
+        self.tracking_uri = tracking_uri
+        if tracking_uri:
+            mlflow.set_tracking_uri(tracking_uri)
 
     def on_hyperopt_init(self, experiment_name):
         self.experiment_id = _get_or_create_experiment_id(experiment_name)
@@ -84,3 +87,8 @@ class MlflowCallback(Callback):
         flat_params = flatten_dict(params)
         for chunk in chunk_dict(flat_params, chunk_size=100):
             mlflow.log_params(chunk)
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        if self.tracking_uri:
+            mlflow.set_tracking_uri(self.tracking_uri)
