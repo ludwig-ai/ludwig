@@ -18,9 +18,9 @@ import logging
 from typing import List
 
 import tensorflow as tf
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import concatenate
 
-from ludwig.constants import TYPE, CATEGORY, NUMERICAL, BINARY
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
@@ -32,7 +32,6 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
-from tensorflow.keras.layers import Dense
 
 logger = logging.getLogger(__name__)
 
@@ -672,6 +671,7 @@ combiner_registry = {
     'sequence': SequenceCombiner,
     'tabnet': TabNetCombiner,
     'comparator': ComparatorCombiner,
+    "transformer": TransformerCombiner,
 }
 
 sequence_encoder_registry = {

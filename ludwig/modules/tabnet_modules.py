@@ -9,7 +9,6 @@ from ludwig.modules.normalization_modules import GhostBatchNormalization
 class TabNet(tf.keras.Model):
     def __init__(
             self,
-            num_features: int,
             size: int,
             output_size: int,
             num_steps: int = 1,
@@ -24,7 +23,6 @@ class TabNet(tf.keras.Model):
         """TabNet
         Will output a vector of size output_dim.
         Args:
-            num_features (int): Number of features.
             size (int): Embedding feature dimension to use.
             output_size (int): Output dimension.
             num_steps (int, optional): Total number of steps. Defaults to 1.
@@ -36,7 +34,6 @@ class TabNet(tf.keras.Model):
             bn_virtual_bs (int, optional): Virtual batch ize for ghost batch norm..
         """
         super().__init__()
-        self.num_features = num_features
         self.size = size
         self.output_size = output_size
         self.num_steps = num_steps
@@ -149,7 +146,7 @@ class TabNet(tf.keras.Model):
 
             # Aggregated masks are used for visualization of the
             # feature importance attributes.
-            scale = tf.reduce_sum(out, axis=1, keep_dims=True) / self.num_steps
+            scale = tf.reduce_sum(out, axis=1, keepdims=True) / self.num_steps
             aggregated_mask += mask_values * scale
 
         final_output = self.final_projection(out_accumulator)

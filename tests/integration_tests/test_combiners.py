@@ -11,7 +11,6 @@ from ludwig.combiners.combiners import (
     ComparatorCombiner,
     sequence_encoder_registry,
 )
-from ludwig.models.ecd import build_inputs
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -243,7 +242,6 @@ def test_tabnet_combiner(encoder_outputs):
 
     # setup combiner to test
     combiner = TabNetCombiner(
-        build_inputs(input_features_def),
         size=2,
         output_size=2,
         num_steps=3,
