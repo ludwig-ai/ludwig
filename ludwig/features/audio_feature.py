@@ -330,7 +330,7 @@ class AudioFeatureMixin:
         for first_path in input_df[column]:
             break
         if hasattr(input_df, 'src'):
-            src_path = os.path.dirname(os.path.abspath(input_df.src))
+            src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Audio file paths must be absolute')
 

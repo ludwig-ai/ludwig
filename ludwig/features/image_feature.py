@@ -270,7 +270,7 @@ class ImageFeatureMixin:
 
         src_path = None
         if hasattr(input_df, 'src'):
-            src_path = os.path.dirname(os.path.abspath(input_df.src))
+            src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
         num_images = len(input_df)
         if num_images == 0:
@@ -375,7 +375,7 @@ class ImageFeatureMixin:
                                for img_entry in input_df[feature[COLUMN]]]
 
             data_fp = backend.cache.get_cache_path(
-                input_df.src, metadata.get(CHECKSUM), TRAINING
+                metadata.get(SRC), metadata.get(CHECKSUM), TRAINING
             )
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading

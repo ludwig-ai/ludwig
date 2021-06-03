@@ -252,7 +252,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_csv(dataset)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -300,7 +300,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_tsv(dataset)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -348,7 +348,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_json(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -396,7 +396,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_jsonl(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -444,7 +444,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_excel(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -492,7 +492,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_parquet(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -557,7 +557,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_pickle(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -605,7 +605,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_feather(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -653,7 +653,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_fwf(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -701,7 +701,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_html(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -749,7 +749,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_orc(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -797,7 +797,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_sas(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -845,7 +845,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_spss(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -893,7 +893,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_stata(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -1521,7 +1521,7 @@ def _preprocess_file_for_training(
         logger.info('Building dataset (it may take a while)')
 
         dataset_df = read_fn(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
 
         data, training_set_metadata = build_dataset(
             dataset_df,
@@ -1561,7 +1561,7 @@ def _preprocess_file_for_training(
             read_fn,
             backend
         )
-        concatenated_df.src = training_set
+        training_set_metadata[SRC] = training_set
 
         data, training_set_metadata = build_dataset(
             concatenated_df,
