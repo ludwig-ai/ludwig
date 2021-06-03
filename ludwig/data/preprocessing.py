@@ -1109,6 +1109,11 @@ def build_dataset(
     for k, v in proc_cols.items():
         dataset[k] = v
 
+    # At this point, there should be no missing values left in the dataframe, unless
+    # the DROP_ROW preprocessing option was selected, in which case we need to drop those
+    # rows.
+    dataset = dataset.dropna()
+
     return dataset, metadata
 
 
@@ -1266,9 +1271,11 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
-    # TODO: figure out how to do this with the parallel streams
-    # elif missing_value_strategy == DROP_ROW:
-    #     dataset_df = dataset_df.dropna(subset=[feature[COLUMN]])
+    elif missing_value_strategy == DROP_ROW:
+        # Here we only drop from this series, but after preprocessing we'll do a second
+        # round of dropping NA values from the entire output dataframe, which will
+        # result in the removal of the rows.
+        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
     else:
         raise ValueError('Invalid missing value strategy')
 
