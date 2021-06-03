@@ -21,6 +21,7 @@ import os
 import dask
 import dask.array as da
 import dask.dataframe as dd
+from dask.diagnostics import ProgressBar
 
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.dataset.parquet import ParquetDataset
@@ -75,12 +76,13 @@ class DaskEngine(DataFrameEngine):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
     def to_parquet(self, df, path):
-        df.to_parquet(
-            path,
-            engine='pyarrow',
-            write_index=False,
-            schema='infer',
-        )
+        with ProgressBar():
+            df.to_parquet(
+                path,
+                engine='pyarrow',
+                write_index=False,
+                schema='infer',
+            )
 
     @property
     def array_lib(self):
