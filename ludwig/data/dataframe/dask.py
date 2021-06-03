@@ -29,6 +29,8 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, DATA_TRAIN_HDF5_FP
 from ludwig.utils.fs_utils import makedirs, to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
+from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords
+
 
 TMP_COLUMN = '__TMP_COLUMN__'
 
@@ -80,6 +82,14 @@ class DaskEngine(DataFrameEngine):
             write_index=False,
             schema='infer',
         )
+
+    def to_tfrecord(self, df, path):
+        """Implementations of data frame to tfrecords."""
+        dask_to_tfrecords(
+            df,
+            path,
+            compression_type="GZIP",
+            compression_level=9)
 
     @property
     def array_lib(self):

@@ -25,7 +25,7 @@ from ray.exceptions import RayActorError
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME, PARQUET
+from ludwig.constants import NAME, PARQUET, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
@@ -198,7 +198,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._df_engine = DaskEngine()
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
-        if data_format != PARQUET:
+        if data_format not in [PARQUET, TFRECORD]:
             raise ValueError(
                 f'Data format {data_format} is not supported when using the Ray backend. '
                 f'Try setting to `parquet`.'

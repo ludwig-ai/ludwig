@@ -17,10 +17,12 @@
 
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.data.dataset.parquet import ParquetDatasetManager
+from ludwig.data.dataset.tfrecord import TFRecordDatasetManager
 
 dataset_registry = {
     'parquet': ParquetDatasetManager,
     'hdf5': PandasDatasetManager,
+    'tfrecord': TFRecordDatasetManager,
     None: PandasDatasetManager,
 }
 

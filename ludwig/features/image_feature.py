@@ -322,7 +322,7 @@ class ImageFeatureMixin:
 
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
-        backend.check_lazy_load_supported(feature)
+        # backend.check_lazy_load_supported(feature)
 
         if in_memory or skip_save_processed_input:
             # Number of processes to run in parallel for preprocessing

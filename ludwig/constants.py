@@ -119,4 +119,4 @@ CHECKSUM = 'checksum'
 
 HDF5 = 'hdf5'
 PARQUET = 'parquet'
-
+TFRECORD = "tfrecord"
