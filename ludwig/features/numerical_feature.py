@@ -158,9 +158,9 @@ class NumericalFeatureMixin:
     }
 
     @staticmethod
-    def cast_column(series, backend):
+    def cast_column(column, backend):
         return backend.df_engine.df_lib.to_numeric(
-            series, errors='coerce'
+            column, errors='coerce'
         ).astype(np.float32)
 
     @staticmethod

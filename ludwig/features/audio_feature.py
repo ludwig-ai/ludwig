@@ -74,8 +74,8 @@ class AudioFeatureMixin:
     }
 
     @staticmethod
-    def cast_column(series, backend):
-        return None
+    def cast_column(column, backend):
+        return column
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

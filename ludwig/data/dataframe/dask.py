@@ -38,8 +38,9 @@ def set_scheduler(scheduler):
 
 
 class DaskEngine(DataFrameEngine):
-    def __init__(self):
-        self._parallelism = multiprocessing.cpu_count()
+    def __init__(self, parallelism=None, persist=False):
+        self._parallelism = parallelism or multiprocessing.cpu_count()
+        self._persist = persist
 
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
@@ -54,7 +55,7 @@ class DaskEngine(DataFrameEngine):
         return data.repartition(1)
 
     def persist(self, data):
-        return data.persist()
+        return data.persist() if self._persist else data
 
     def compute(self, data):
         return data.compute()

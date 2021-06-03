@@ -60,10 +60,10 @@ class BinaryFeatureMixin:
     }
 
     @staticmethod
-    def cast_column(series, backend):
+    def cast_column(column, backend):
         # todo maybe move code from add_feature_data here
         #  + figure out what NaN is in a bool column
-        return None
+        return column
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

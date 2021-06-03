@@ -47,9 +47,9 @@ class H3FeatureMixin:
     }
 
     @staticmethod
-    def cast_column(series, backend):
+    def cast_column(column, backend):
         # todo: add cast to int64
-        return None
+        return column
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):

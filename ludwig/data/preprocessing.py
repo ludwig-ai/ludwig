@@ -1052,37 +1052,49 @@ def build_dataset(
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
 
+    # If persisting DataFrames in memory is enabled, we want to do this after
+    # each batch of parallel ops in order to avoid redundant computation
+    dataset_df = backend.df_engine.persist(dataset_df)
+
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
         global_preprocessing_parameters
     )
 
-    dataset_df = cast_columns(
+    # Get all the unique preprocessing features to compute
+    proc_features = []
+    feature_hashes = set()
+    for feature in features:
+        feature_hash = compute_feature_hash(feature)
+        if feature_hash not in feature_hashes:
+            feature[PROC_COLUMN] = feature_hash
+            proc_features.append(feature)
+            feature_hashes.add(feature_hash)
+
+    dataset_cols = cast_columns(
         dataset_df,
-        features,
+        proc_features,
         global_preprocessing_parameters,
         backend
     )
-
-    # dataset_df = backend.df_engine.persist(dataset_df)
 
     metadata = build_metadata(
         metadata,
-        dataset_df,
-        features,
+        dataset_cols,
+        proc_features,
         global_preprocessing_parameters,
         backend
     )
 
-    dataset = build_data(
-        dataset_df,
-        features,
+    proc_cols = build_data(
+        dataset_cols,
+        proc_features,
         metadata,
         backend,
         skip_save_processed_input
     )
 
-    dataset[SPLIT] = get_split(
+    proc_cols[SPLIT] = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -1093,13 +1105,17 @@ def build_dataset(
         random_seed=random_seed
     )
 
+    dataset = backend.df_engine.empty_df_like(dataset_df)
+    for k, v in proc_cols.items():
+        dataset[k] = v
+
     return dataset, metadata
 
 
 def cast_columns(dataset_df, features, global_preprocessing_parameters,
                  backend):
     # todo figure out if global_preprocessing_parameters is needed
-    casted_cols = []
+    dataset_cols = {}
     for feature in features:
         cast_column = get_from_registry(
             feature[TYPE],
@@ -1107,172 +1123,154 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
         ).cast_column
         # todo figure out if additional parameters are needed
         #  for the cast_column function
-        casted_cols.append(
-            (feature[COLUMN], cast_column(
-                dataset_df[feature[COLUMN]],
-                backend
-            ))
+        dataset_cols[feature[COLUMN]] = cast_column(
+            dataset_df[feature[COLUMN]],
+            backend
         )
 
-    for col, v in casted_cols:
-        if v is not None:
-            dataset_df[col] = v
-
-    return dataset_df
+    return dataset_cols
 
 
 def build_metadata(
-        metadata, dataset_df, features, global_preprocessing_parameters, backend
+        metadata, dataset_cols, features, global_preprocessing_parameters, backend
 ):
-    proc_feature_to_metadata = {}
     for feature in features:
         if feature[NAME] in metadata:
             continue
 
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
-
-        if feature[PROC_COLUMN] not in proc_feature_to_metadata:
-
-            if PREPROCESSING in feature:
-                preprocessing_parameters = merge_dict(
-                    global_preprocessing_parameters[feature[TYPE]],
-                    feature[PREPROCESSING]
-                )
-            else:
-                preprocessing_parameters = global_preprocessing_parameters[
-                    feature[TYPE]
-                ]
-
-            # deal with encoders that have fixed preprocessing
-            if 'encoder' in feature:
-                encoders_registry = get_from_registry(
-                    feature[TYPE],
-                    input_type_registry
-                ).encoder_registry
-                encoder_class = encoders_registry[feature['encoder']]
-                if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
-                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
-                    preprocessing_parameters = merge_dict(
-                        preprocessing_parameters,
-                        resolve_pointers(encoder_fpp, feature, 'feature.')
-                    )
-
-            fill_value = precompute_fill_value(
-                dataset_df,
-                feature,
-                preprocessing_parameters,
-                backend
+        if PREPROCESSING in feature:
+            preprocessing_parameters = merge_dict(
+                global_preprocessing_parameters[feature[TYPE]],
+                feature[PREPROCESSING]
             )
-            if fill_value is not None:
-                preprocessing_parameters = {
-                    'computed_fill_value': fill_value,
-                    **preprocessing_parameters
-                }
+        else:
+            preprocessing_parameters = global_preprocessing_parameters[
+                feature[TYPE]
+            ]
 
-            dataset_df = handle_missing_values(
-                dataset_df,
-                feature,
-                preprocessing_parameters
-            )
-
-            get_feature_meta = get_from_registry(
+        # deal with encoders that have fixed preprocessing
+        if 'encoder' in feature:
+            encoders_registry = get_from_registry(
                 feature[TYPE],
-                base_type_registry
-            ).get_feature_meta
+                input_type_registry
+            ).encoder_registry
+            encoder_class = encoders_registry[feature['encoder']]
+            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
+                encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-            column = dataset_df[feature[NAME]]
-            if column.dtype == object:
-                column = column.astype(str)
+                preprocessing_parameters = merge_dict(
+                    preprocessing_parameters,
+                    resolve_pointers(encoder_fpp, feature, 'feature.')
+                )
 
-            metadata[feature[NAME]] = get_feature_meta(
-                column,
-                preprocessing_parameters,
-                backend
-            )
+        fill_value = precompute_fill_value(
+            dataset_cols,
+            feature,
+            preprocessing_parameters,
+            backend
+        )
+        if fill_value is not None:
+            preprocessing_parameters = {
+                'computed_fill_value': fill_value,
+                **preprocessing_parameters
+            }
 
-            metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+        handle_missing_values(
+            dataset_cols,
+            feature,
+            preprocessing_parameters
+        )
+
+        get_feature_meta = get_from_registry(
+            feature[TYPE],
+            base_type_registry
+        ).get_feature_meta
+
+        column = dataset_cols[feature[COLUMN]]
+        if column.dtype == object:
+            column = column.astype(str)
+
+        metadata[feature[NAME]] = get_feature_meta(
+            column,
+            preprocessing_parameters,
+            backend
+        )
+
+        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
 
 def build_data(
-        input_df,
+        input_cols,
         features,
         training_set_metadata,
         backend,
         skip_save_processed_input
 ):
-    proc_df = backend.df_engine.empty_df_like(input_df)
+    proc_cols = {}
     for feature in features:
+        preprocessing_parameters = \
+            training_set_metadata[feature[NAME]][
+                PREPROCESSING]
+        handle_missing_values(
+            input_cols,
+            feature,
+            preprocessing_parameters
+        )
+        add_feature_data = get_from_registry(
+            feature[TYPE],
+            base_type_registry
+        ).add_feature_data
+        proc_cols = add_feature_data(
+            feature,
+            input_cols,
+            proc_cols,
+            training_set_metadata,
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
+        )
 
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
-
-        if feature[PROC_COLUMN] not in proc_df:
-            preprocessing_parameters = \
-                training_set_metadata[feature[NAME]][
-                    PREPROCESSING]
-            input_df = handle_missing_values(
-                input_df,
-                feature,
-                preprocessing_parameters
-            )
-            add_feature_data = get_from_registry(
-                feature[TYPE],
-                base_type_registry
-            ).add_feature_data
-            proc_df = add_feature_data(
-                feature,
-                input_df,
-                proc_df,
-                training_set_metadata,
-                preprocessing_parameters,
-                backend,
-                skip_save_processed_input
-            )
-
-    return proc_df
+    return proc_cols
 
 
-def precompute_fill_value(dataset_df, feature, preprocessing_parameters, backend):
+def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
     elif missing_value_strategy == FILL_WITH_MODE:
-        return dataset_df[feature[COLUMN]].value_counts().index[0]
+        return dataset_cols[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
-        return backend.df_engine.compute(dataset_df[feature[COLUMN]].mean())
+        return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
 
 
-def handle_missing_values(dataset_df, feature, preprocessing_parameters):
+def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
 
     # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get('computed_fill_value')
 
     if computed_fill_value is not None:
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
+        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             computed_fill_value,
         )
     elif missing_value_strategy in [BACKFILL, BFILL, PAD, FFILL]:
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
+        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
-    elif missing_value_strategy == DROP_ROW:
-        dataset_df = dataset_df.dropna(subset=[feature[COLUMN]])
+    # TODO: figure out how to do this with the parallel streams
+    # elif missing_value_strategy == DROP_ROW:
+    #     dataset_df = dataset_df.dropna(subset=[feature[COLUMN]])
     else:
         raise ValueError('Invalid missing value strategy')
-
-    return dataset_df
 
 
 def get_split(
