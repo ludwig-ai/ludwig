@@ -329,12 +329,12 @@ class AudioFeatureMixin:
         first_path = '.'
         for first_path in input_df[column]:
             break
-        if hasattr(input_df, 'src'):
+        if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
         if src_path is None and not os.path.isabs(first_path):
             raise ValueError('Audio file paths must be absolute')
 
-        num_audio_utterances = len(input_df)
+        num_audio_utterances = len(input_df[feature[COLUMN]])
         padding_value = preprocessing_parameters['padding_value']
         normalization_type = preprocessing_parameters['norm']
 

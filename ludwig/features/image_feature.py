@@ -269,10 +269,10 @@ class ImageFeatureMixin:
             num_processes = feature[PREPROCESSING]['num_processes']
 
         src_path = None
-        if hasattr(input_df, 'src'):
+        if SRC in metadata:
             src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
-        num_images = len(input_df)
+        num_images = len(input_df[feature[COLUMN]])
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
