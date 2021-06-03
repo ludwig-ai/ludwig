@@ -7,6 +7,9 @@
 # This test runs in an isolated environment to ensure TensorFlow imports are not leaked
 # from previous tests.
 
+# Comet must be imported before the libraries to wraps
+import comet_ml
+
 import argparse
 import os
 import shutil
@@ -16,11 +19,8 @@ from unittest.mock import patch, Mock
 # Bad key will ensure Comet is initialized, but nothing is uploaded externally.
 os.environ['COMET_API_KEY'] = 'key'
 
-# Use contrib module before other imports to avoid importing TensorFlow before comet.
-from ludwig.contribs.comet import CometCallback, comet_ml
-comet_ml.__version__
-
 from ludwig.api import LudwigModel
+from ludwig.contribs.comet import CometCallback
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, '..', '..', '..')
