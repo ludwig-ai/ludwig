@@ -82,7 +82,7 @@ class VectorFeatureMixin:
                 Expects all the vectors to be of the same size. The vectors need to be
                 whitespace delimited strings. Missing values are not handled.
                 """
-        if len(input_df[feature[COLUMN]]):
+        if len(input_df[feature[COLUMN]]) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
         # Convert the string of features into a numpy array
