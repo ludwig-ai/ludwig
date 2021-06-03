@@ -1065,11 +1065,11 @@ def build_dataset(
     proc_features = []
     feature_hashes = set()
     for feature in features:
-        feature_hash = compute_feature_hash(feature)
-        if feature_hash not in feature_hashes:
-            feature[PROC_COLUMN] = feature_hash
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
+        if feature[PROC_COLUMN] not in feature_hashes:
             proc_features.append(feature)
-            feature_hashes.add(feature_hash)
+            feature_hashes.add(feature[PROC_COLUMN])
 
     dataset_cols = cast_columns(
         dataset_df,
