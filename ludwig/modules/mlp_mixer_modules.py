@@ -88,9 +88,10 @@ class MLPMixer(Layer):
             self.avg_pool = GlobalAveragePooling1D()
 
     def call(self, inputs, **kwargs):
+        batch_size = tf.shape(inputs)[0]
         hidden = inputs
         hidden = self.patch_conv(hidden)
-        hidden = tf.reshape(hidden, [-1, hidden.shape[-1]])
+        hidden = tf.reshape(hidden, [batch_size, -1, hidden.shape[-1]])
         for mixer_block in self.mixer_blocks:
             hidden = mixer_block(hidden)
         hidden = self.layer_norm(hidden)
