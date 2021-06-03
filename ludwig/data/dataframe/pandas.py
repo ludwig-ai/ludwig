@@ -78,11 +78,11 @@ def pandas_df_to_tfrecords(df,
                            columns=None):
     schema = get_schema(df, columns)
     tfr_iters = get_tfrecords(df, schema)
-    tfrs = [tfr for tfr in tfr_iters]
-    write_tfrecords(tfrs, path,
+    # print(">>>>> Prepare to write a tf record to path {}.".format(path))
+    write_tfrecords(tfr_iters, path,
                     compression_type=compression_type,
                     compression_level=compression_level)
-    print(">>>>> Write a tf record to path {}.".format(path))
+    # print(">>>>> Done: Write a tf record to path {}.".format(path))
 
 
 def get_schema(df, columns=None):
@@ -102,22 +102,11 @@ def get_schema(df, columns=None):
 
 def write_tfrecords(tfrecords, path, compression_type=None, compression_level=9):
     opts = {}
-
     if compression_type:
         opts['options'] = tf.io.TFRecordOptions(
             compression_type=compression_type,
             compression_level=compression_level,
         )
-    # for idx, chunk in enumerate(tfrecords):
-    #     file_name = f'part-{str(idx).zfill(5)}-{uid}.tfrecords{compression_ext}'
-    #     file_path = f'{folder}/{file_name}'
-    #
-    #     with tf.io.TFRecordWriter(file_path, **opts) as writer:
-    #         for item in chunk:
-    #             writer.write(item.SerializeToString())
-
-    # file_name = f'part-{str(idx).zfill(5)}-{uid}.tfrecords{compression_ext}'
-    # file_path = f'{folder}/{file_name}'
     with tf.io.TFRecordWriter(path, **opts) as writer:
         for item in tfrecords:
             writer.write(item.SerializeToString())
