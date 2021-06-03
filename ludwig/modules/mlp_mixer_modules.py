@@ -16,7 +16,8 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
     Conv2D, GlobalAveragePooling1D
-from tensorflow.nn import gelu
+
+from ludwig.modules.activation_modules import gelu
 
 
 class MLP(Layer):
@@ -48,9 +49,9 @@ class MixerBlock(Layer):
         hidden = inputs
         hidden = self.layernorm1(hidden)
         hidden = tf.transpose(hidden, [0, 2, 1])
-        hidden =  self.mlp1(hidden)
+        hidden = self.mlp1(hidden)
         hidden = tf.transpose(hidden, [0, 2, 1])
-        mid = hidden  + inputs
+        mid = hidden + inputs
         hidden = self.layernorm2(mid)
         hidden = self.mlp2(hidden)
         return hidden + mid
@@ -63,6 +64,7 @@ class MLPMixer(Layer):
     An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale
     https://arxiv.org/abs/2010.11929
     """
+
     def __init__(
             self,
             patch_size=16,
