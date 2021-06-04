@@ -26,7 +26,7 @@ from imageio import imread
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, AUDIO
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -265,7 +265,12 @@ def cli(sys_argv):
              'Use "*" to allow any origin. See https://www.starlette.io/middleware/#corsmiddleware.',
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('serve', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -280,6 +285,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("serve", *sys.argv)
     cli(sys.argv[1:])

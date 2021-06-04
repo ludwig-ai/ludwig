@@ -28,11 +28,9 @@ import tempfile
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-import ludwig.contrib
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
 
-ludwig.contrib.contrib_import()
 import numpy as np
 import pandas as pd
 import yaml
@@ -40,7 +38,6 @@ import yaml
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -149,7 +146,8 @@ class LudwigModel:
             backend: Union[Backend, str] = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True
+            allow_parallel_threads: bool = True,
+            callbacks: List[Callback] = None,
     ) -> None:
         """
         Constructor for the Ludwig Model class.
@@ -168,6 +166,9 @@ class LudwigModel:
         :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
             to use multithreading parallelism to improve performance at the
             cost of determinism.
+        :param callbacks: (list, default: `None`) a list of
+              `ludwig.callbacks.Callback` objects that provide hooks into the
+               Ludwig pipeline.
 
         # Return
 
@@ -183,6 +184,7 @@ class LudwigModel:
             self.config_fp = None
 
         # merge config with defaults
+        self.base_config = copy.deepcopy(config_dict)
         self.config = merge_with_defaults(config_dict)
         validate_config(self.config)
 
@@ -191,6 +193,7 @@ class LudwigModel:
 
         # setup Backend
         self.backend = initialize_backend(backend)
+        self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
         self.backend.initialize_tensorflow(gpus=gpus,
@@ -222,7 +225,6 @@ class LudwigModel:
             skip_save_log: bool = False,
             skip_save_processed_input: bool = False,
             output_directory: str = 'results',
-            callbacks: List[Callback] = None,
             random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
@@ -304,9 +306,6 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param callbacks: (list, default: `None`) a list of
-              `ludwig.callbacks.Callback` objects that provide hooks into the
-               Ludwig pipeline.
         :param random_seed: (int, default: `42`) a random seed that will be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -438,10 +437,15 @@ class LudwigModel:
                         training_set_metadata
                     )
 
-            contrib_command("train_init", experiment_directory=output_directory,
-                            experiment_name=experiment_name, model_name=model_name,
-                            output_directory=output_directory,
-                            resume=model_resume_path is not None)
+            for callback in self.callbacks:
+                callback.on_train_init(
+                    base_config=self.base_config,
+                    experiment_directory=output_directory,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    output_directory=output_directory,
+                    resume=model_resume_path is not None
+                )
 
             # Build model if not provided
             # if it was provided it means it was already loaded
@@ -463,12 +467,16 @@ class LudwigModel:
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
-                callbacks=callbacks,
+                callbacks=self.callbacks,
                 random_seed=random_seed,
                 debug=debug
             ) as trainer:
-                contrib_command("train_model", self.model, self.config,
-                                self.config_fp)
+                for callback in self.callbacks:
+                    callback.on_train_start(
+                        model=self.model,
+                        config=self.config,
+                        config_fp=self.config_fp,
+                    )
 
                 # train model
                 if self.backend.is_coordinator():
@@ -476,63 +484,65 @@ class LudwigModel:
                     if not skip_save_model:
                         self.save_config(model_dir)
 
-                train_stats = trainer.train(
-                    self.model,
-                    training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    save_path=model_dir,
-                )
-
-                self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
-                train_stats = {
-                    TRAINING: train_trainset_stats,
-                    VALIDATION: train_valiset_stats,
-                    TEST: train_testset_stats
-                }
-
-                # save training statistics
-                if self.backend.is_coordinator():
-                    if not skip_save_training_statistics:
-                        save_json(training_stats_fn, train_stats)
-
-                # grab the results of the model with highest validation test performance
-                validation_field = trainer.validation_field
-                validation_metric = trainer.validation_metric
-                validation_field_result = train_valiset_stats[validation_field]
-
-                best_function = get_best_function(validation_metric)
-                # results of the model with highest validation test performance
-                if self.backend.is_coordinator() and validation_set is not None:
-                    epoch_best_vali_metric, best_vali_metric = best_function(
-                        enumerate(validation_field_result[validation_metric]),
-                        key=lambda pair: pair[1]
+                try:
+                    train_stats = trainer.train(
+                        self.model,
+                        training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        save_path=model_dir,
                     )
-                    logger.info(
-                        'Best validation model epoch: {0}'.format(
-                            epoch_best_vali_metric + 1)
-                    )
-                    logger.info(
-                        'Best validation model {0} on validation set {1}: {2}'.format(
-                            validation_metric, validation_field, best_vali_metric
-                        ))
-                    if test_set is not None:
-                        best_vali_metric_epoch_test_metric = train_testset_stats[
-                            validation_field][validation_metric][
-                            epoch_best_vali_metric]
 
-                        logger.info(
-                            'Best validation model {0} on test set {1}: {2}'.format(
-                                validation_metric,
-                                validation_field,
-                                best_vali_metric_epoch_test_metric
-                            )
+                    self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+                    train_stats = {
+                        TRAINING: train_trainset_stats,
+                        VALIDATION: train_valiset_stats,
+                        TEST: train_testset_stats
+                    }
+
+                    # save training statistics
+                    if self.backend.is_coordinator():
+                        if not skip_save_training_statistics:
+                            save_json(training_stats_fn, train_stats)
+
+                    # grab the results of the model with highest validation test performance
+                    validation_field = trainer.validation_field
+                    validation_metric = trainer.validation_metric
+                    validation_field_result = train_valiset_stats[validation_field]
+
+                    best_function = get_best_function(validation_metric)
+                    # results of the model with highest validation test performance
+                    if self.backend.is_coordinator() and validation_set is not None:
+                        epoch_best_vali_metric, best_vali_metric = best_function(
+                            enumerate(validation_field_result[validation_metric]),
+                            key=lambda pair: pair[1]
                         )
-                    logger.info(
-                        '\nFinished: {0}_{1}'.format(experiment_name, model_name))
-                    logger.info('Saved to: {0}'.format(output_directory))
+                        logger.info(
+                            'Best validation model epoch: {0}'.format(
+                                epoch_best_vali_metric + 1)
+                        )
+                        logger.info(
+                            'Best validation model {0} on validation set {1}: {2}'.format(
+                                validation_metric, validation_field, best_vali_metric
+                            ))
+                        if test_set is not None:
+                            best_vali_metric_epoch_test_metric = train_testset_stats[
+                                validation_field][validation_metric][
+                                epoch_best_vali_metric]
 
-                contrib_command("train_save", output_directory)
+                            logger.info(
+                                'Best validation model {0} on test set {1}: {2}'.format(
+                                    validation_metric,
+                                    validation_field,
+                                    best_vali_metric_epoch_test_metric
+                                )
+                            )
+                        logger.info(
+                            '\nFinished: {0}_{1}'.format(experiment_name, model_name))
+                        logger.info('Saved to: {0}'.format(output_directory))
+                finally:
+                    for callback in self.callbacks:
+                        callback.on_train_end(output_directory)
 
                 self.training_set_metadata = training_set_metadata
 
@@ -926,7 +936,6 @@ class LudwigModel:
             skip_collect_predictions: bool = False,
             skip_collect_overall_stats: bool = False,
             output_directory: str = 'results',
-            callbacks: List[Callback] = None,
             random_seed: int = default_random_seed,
             debug: bool = False,
             **kwargs
@@ -1020,9 +1029,6 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param callbacks: (list, default: `None`) a list of
-              `ludwig.callbacks.Callback` objects that provide hooks into the
-               Ludwig pipeline.
         :param random_seed: (int: default: 42) random seed used for weights
             initialization, splits and any other random function.
         :param debug: (bool, default: `False) if `True` turns on `tfdbg` with
@@ -1063,7 +1069,6 @@ class LudwigModel:
             skip_save_processed_input=skip_save_processed_input,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
-            callbacks=callbacks,
             random_seed=random_seed,
             debug=debug,
         )
@@ -1291,7 +1296,8 @@ class LudwigModel:
             backend: Union[Backend, str] = None,
             gpus: Union[str, int, List[int]] = None,
             gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True
+            allow_parallel_threads: bool = True,
+            callbacks: List[Callback] = None,
     ) -> 'LudwigModel':  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models
 
@@ -1312,6 +1318,9 @@ class LudwigModel:
             to use
             multithreading parallelism to improve performance at the cost of
             determinism.
+        :param callbacks: (list, default: `None`) a list of
+            `ludwig.callbacks.Callback` objects that provide hooks into the
+            Ludwig pipeline.
 
         # Return
 
@@ -1349,6 +1358,7 @@ class LudwigModel:
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
         )
 
         # generate model from config

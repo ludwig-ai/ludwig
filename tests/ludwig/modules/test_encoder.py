@@ -19,7 +19,8 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.data.dataset_synthesizer import build_vocab
-from ludwig.encoders.image_encoders import ResNetEncoder, Stacked2DCNN
+from ludwig.encoders.image_encoders import ResNetEncoder, Stacked2DCNN, \
+    MLPMixerEncoder
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
 from ludwig.encoders.sequence_encoders import StackedCNN
@@ -133,7 +134,7 @@ def test_image_encoders_resnet():
     )
 
     assert encoder is not None
-    assert encoder.resnet.__class__.__name__ == 'ResNet2'
+    assert encoder.resnet.__class__.__name__ == 'ResNet'
     assert encoder.resnet.num_filters == 8
     assert encoder.resnet.resnet_size == 8
     assert encoder.resnet.filter_size == 3
@@ -196,6 +197,51 @@ def test_image_encoders_stacked_2dcnn():
         output_data=None
     )
 
+
+def test_image_encoders_mlpmixer():
+    # Test the resnet encoder for images
+    encoder_args = {
+        'patch_size': 5, 'embed_size': 8, 'token_size': 32,
+        'channel_dim': 16, 'num_layers': 2,
+        'weights_regularizer': L1_REGULARIZER,
+        'bias_regularizer': L1_REGULARIZER,
+        'activity_regularizer': L1_REGULARIZER,
+        'dropout': DROPOUT
+    }
+    image_size = (10, 10, 3)
+
+    output_shape = [1, 8]
+    input_image = generate_images(image_size, 1)
+
+    encoder = create_encoder(MLPMixerEncoder, encoder_args)
+    encoder_test(
+        encoder=encoder,
+        input_data=input_image,
+        output_dtype=np.float,
+        output_shape=output_shape,
+        output_data=None
+    )
+
+    output_shape = [5, 8]
+    input_images = generate_images(image_size, 5)
+
+    encoder_test(
+        encoder=encoder,
+        input_data=input_images,
+        output_dtype=np.float,
+        output_shape=output_shape,
+        output_data=None
+    )
+
+    assert encoder is not None
+    assert encoder.mlp_mixer.__class__.__name__ == 'MLPMixer'
+    assert len(encoder.mlp_mixer.mixer_blocks) == 2
+    assert encoder.mlp_mixer.mixer_blocks[0].mlp1.hidden_size == 32
+    assert encoder.mlp_mixer.mixer_blocks[0].mlp2.hidden_size == 16
+    assert encoder.mlp_mixer.patch_conv.__class__.__name__ == 'Conv2D'
+    assert encoder.mlp_mixer.patch_conv.kernel_size == (5, 5)
+    assert encoder.mlp_mixer.patch_conv.strides == (5, 5)
+    assert encoder.mlp_mixer.patch_conv.filters == 8
 
 def test_sequence_encoder_embed():
     num_sentences = 4

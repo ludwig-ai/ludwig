@@ -23,6 +23,7 @@ import os.path
 import pickle
 import random
 import re
+from itertools import islice
 
 import numpy as np
 import pandas as pd
@@ -210,6 +211,41 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
     with open_file(data_fp, 'w') as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys,
                   indent=indent)
+
+
+def to_json_dict(d):
+    """Converts Python dict to pure JSON ready format."""
+    return json.loads(
+        json.dumps(d, cls=NumpyEncoder)
+    )
+
+
+def chunk_dict(data, chunk_size=100):
+    """Split large dictionary into chunks.
+
+    Source: https://stackoverflow.com/a/22878842
+    """
+    it = iter(data)
+    for i in range(0, len(data), chunk_size):
+        yield {k: data[k] for k in islice(it, chunk_size)}
+
+
+def flatten_dict(d, parent_key='', sep='.'):
+    """Based on https://www.geeksforgeeks.org/python-convert-nested-dictionary-into-flattened-dictionary/"""
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        elif isinstance(v, list):
+            list_mapping = {
+                str(i): item for i, item in enumerate(v)
+            }
+            items.extend(flatten_dict(list_mapping, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 
 def flatten_df(df, backend):

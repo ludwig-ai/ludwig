@@ -141,7 +141,7 @@ class ParquetDatasetManager(object):
         self.backend.df_engine.to_parquet(dataset, dataset_parquet_fp)
         return dataset_parquet_fp
 
-    def can_cache(self, input_fname, config, skip_save_processed_input):
+    def can_cache(self, skip_save_processed_input):
         return self.backend.is_coordinator()
 
     @property

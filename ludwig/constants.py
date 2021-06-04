@@ -100,6 +100,8 @@ TEST = 'test'
 SPLIT = 'split'
 FULL = 'full'
 
+META = 'meta'
+
 HYPEROPT = 'hyperopt'
 STRATEGY = 'strategy'
 EXECUTOR = 'executor'
@@ -120,3 +122,5 @@ CHECKSUM = 'checksum'
 HDF5 = 'hdf5'
 PARQUET = 'parquet'
 TFRECORD = "tfrecord"
+
+SRC = 'dataset_src'

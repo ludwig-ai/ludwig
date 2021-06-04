@@ -133,8 +133,6 @@ def test_visualization_learning_curves_output_saved(csv_filename):
     for command, viz_pattern in zip(commands, vis_patterns):
         result = subprocess.run(
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
         )
         figure_cnt = glob.glob(viz_pattern)
 

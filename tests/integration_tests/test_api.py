@@ -453,7 +453,7 @@ def test_api_callbacks(csv_filename):
             'combiner': {'type': 'concat', 'fc_size': 14},
             'training': {'epochs': epochs, 'batch_size': batch_size},
         }
-        model = LudwigModel(config)
+        model = LudwigModel(config, callbacks=[mock_callback])
 
         data_csv = generate_data(input_features, output_features,
                                  os.path.join(output_dir, csv_filename),
@@ -464,8 +464,7 @@ def test_api_callbacks(csv_filename):
 
         model.train(training_set=data_csv,
                     validation_set=val_csv,
-                    test_set=test_csv,
-                    callbacks=[mock_callback])
+                    test_set=test_csv)
 
     assert mock_callback.on_epoch_start.call_count == epochs
     assert mock_callback.on_epoch_end.call_count == epochs
