@@ -63,6 +63,7 @@ class ParquetDataset(Dataset):
     def initialize_batcher(self,
                            batch_size=128,
                            should_shuffle=True,
+                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):
@@ -81,7 +82,7 @@ class ParquetDataset(Dataset):
             dataset = dataset.unbatch()
             if should_shuffle:
                 rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
-                buffer_size = min(rows_per_piece, local_samples)
+                buffer_size = shuffle_buffer_size or min(rows_per_piece, local_samples)
                 dataset = dataset.shuffle(buffer_size)
             dataset = dataset.batch(batch_size)
 

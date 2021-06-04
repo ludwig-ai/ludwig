@@ -113,6 +113,7 @@ class Trainer(BaseTrainer):
             staircase=False,
             batch_size=128,
             eval_batch_size=0,
+            shuffle_buffer_size=None,
             bucketing_field=None,
             validation_field='combined',
             validation_metric='loss',
@@ -159,8 +160,10 @@ class Trainer(BaseTrainer):
         :type learning_rate: Integer
         :param batch_size: Size of batch to pass to the model for training.
         :type batch_size: Integer
-        :param batch_size: Size of batch to pass to the model for evaluation.
-        :type batch_size: Integer
+        :param eval_batch_size: Size of batch to pass to the model for evaluation.
+        :type eval_batch_size: Integer
+        :param shuffle_buffer_size: Size of buffer in number of examples to read for shuffling.
+        :type shuffle_buffer_size: Integer
         :param bucketing_field: when batching, buckets datapoints based the
                length of a field together. Bucketing on text length speeds up
                training of RNNs consistently, 30% in some cases
@@ -238,6 +241,7 @@ class Trainer(BaseTrainer):
         self.staircase = staircase
         self.batch_size = batch_size
         self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
+        self.shuffle_buffer_size = shuffle_buffer_size
         self.bucketing_field = bucketing_field
         self._validation_field = validation_field
         self._validation_metric = validation_metric
@@ -509,8 +513,9 @@ class Trainer(BaseTrainer):
         set_random_seed(self.random_seed)
         with training_set.initialize_batcher(
             batch_size=self.batch_size,
+            shuffle_buffer_size=self.shuffle_buffer_size,
             seed=self.random_seed,
-            horovod=self.horovod
+            horovod=self.horovod,
         ) as batcher:
 
             # ================ Training Loop ================
