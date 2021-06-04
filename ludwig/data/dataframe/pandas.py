@@ -78,11 +78,9 @@ def pandas_df_to_tfrecords(df,
                            columns=None):
     schema = get_schema(df, columns)
     tfr_iters = get_tfrecords(df, schema)
-    # print(">>>>> Prepare to write a tf record to path {}.".format(path))
     write_tfrecords(tfr_iters, path,
                     compression_type=compression_type,
                     compression_level=compression_level)
-    # print(">>>>> Done: Write a tf record to path {}.".format(path))
 
 
 def get_schema(df, columns=None):
@@ -145,7 +143,6 @@ def _get_feature_func(val):
 
     if isinstance(val, (float, np.floating)):
         return _float_feature
-    print("Reach here...")
     raise Exception(f'Unsupported type {type(val)!r}')
 
 

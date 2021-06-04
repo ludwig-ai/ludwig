@@ -17,22 +17,15 @@ from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 
 
 class TFRecordDataset(Dataset):
-    def __init__(self, url, features, training_set_metadata):
+    def __init__(self, url, features, training_set_metadata, compression_type="GZIP"):
         self.url = to_url(url)[7:]
-        if not os.path.isdir(self.url):
-            raise RuntimeError("url for TFRecordDataset must be a folder.")
-        abs_path = os.path.abspath(os.path.expanduser(self.url))
-        self.file_names = [os.path.join(abs_path, name)
-                           for name in glob.glob(os.path.join(abs_path, "*.tfrecords.gz"))]
         self.features = [feature[PROC_COLUMN] for feature in features]
         self.training_set_metadata = training_set_metadata
+        self.compression_type = compression_type
 
-        # dataset = tf.data.TFRecordDataset(self.file_names, compression_type="GZIP")
-        # self.feature, self.feature_lists = self._detect_schema(dataset)
-        with open(os.path.join(abs_path, "meta.json")) as in_file:
+        with open(os.path.join(self.url, "meta.json")) as in_file:
             meta = json.load(in_file)
         self.size = meta["size"]
-
         self.reshape_features = {
             feature[PROC_COLUMN]: list((-1, *training_set_metadata[feature[NAME]]['reshape']))
             for feature in features
@@ -61,29 +54,43 @@ class TFRecordDataset(Dataset):
         cur_shard, shard_count = None, None
         if horovod:
             cur_shard, shard_count = horovod.rank(), horovod.size()
-
-        dataset = tf.data.TFRecordDataset(self.file_names, compression_type="GZIP")
-        if shard_count > 1:
-            dataset = dataset.shard(shard_count, cur_shard)
         total_samples = self.size
         local_samples = int(total_samples / shard_count) if shard_count else total_samples
 
-        # map parser
+        # Below are routine optimizations for tf.dataset
+        compression_ext = '.gz' if self.compression_type else ''
+        path = os.path.join(self.url, "*.tfrecords{}".format(compression_ext))
+
+        # Now construct the tfrecrd dataset
+        files = tf.data.Dataset.list_files(path)
+
+        # interleave the tfrecord files for parallel reading
+        dataset = files.interleave(
+            lambda x: tf.data.TFRecordDataset(x, compression_type="GZIP"),
+            num_parallel_calls=tf.data.AUTOTUNE)
+        # Fetch one element so to get the parser.
         features, feature_lists = self._detect_schema(dataset)
         parser = self._get_parser(features, feature_lists)
-        dataset = dataset.map(parser)
-        # TODO(Hao): figure out the comments below.
-        # dataset = dataset.unbatch()
+
+        # sharding
+        if shard_count and shard_count > 1:
+            dataset = dataset.shard(shard_count, cur_shard)
+
+        # parallelize parser
+        dataset = dataset.map(parser, num_parallel_calls=tf.data.AUTOTUNE)
+        # Note(Hao) batching: ideally we should put this line before the above map.
+        # but the parser func is not vectorized for now.
+        dataset = dataset.batch(batch_size)
+
+        # cache
+        dataset = dataset.cache()
         if should_shuffle:
-            # rows_per_piece = max([piece.get_metadata().num_rows for piece in reader.dataset.pieces])
-            # buffer_size = min(rows_per_piece, local_samples)
             buffer_size = local_samples
             dataset = dataset.shuffle(buffer_size)
         dataset = dataset.repeat()
-        dataset = dataset.batch(batch_size)
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)
 
         steps_per_epoch = math.ceil(local_samples / batch_size)
-
         batcher = IterableBatcher(self,
                                   dataset,
                                   steps_per_epoch,
@@ -208,4 +215,4 @@ class TFRecordDatasetManager(object):
 
     @property
     def data_format(self):
-        return 'tfrecord'
+        return 'tfrecords'
