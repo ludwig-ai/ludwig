@@ -16,7 +16,7 @@
 # ==============================================================================
 
 from ludwig.backend.base import Backend, LocalTrainingMixin
-from ludwig.constants import NAME, PARQUET, PREPROCESSING
+from ludwig.constants import NAME, PARQUET, PREPROCESSING, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
@@ -85,7 +85,7 @@ class DaskBackend(LocalTrainingMixin, Backend):
         super().__init__(data_format=data_format, **kwargs)
         engine = engine or {}
         self._df_engine = DaskEngine(**engine)
-        if data_format != PARQUET:
+        if data_format not in [PARQUET, TFRECORD]:
             raise ValueError(
                 f'Data format {data_format} is not supported when using the Dask backend. '
                 f'Try setting to `parquet`.'

@@ -158,6 +158,7 @@ class TFRecordDataset(Dataset):
         else:
             return parse_example(features)
 
+
 class TFRecordDatasetManager(object):
     def __init__(self, backend):
         self.backend = backend
@@ -210,7 +211,7 @@ class TFRecordDatasetManager(object):
         self.backend.df_engine.to_tfrecord(dataset, dataset_tfrecord_fp)
         return dataset_tfrecord_fp
 
-    def can_cache(self, input_fname, config, skip_save_processed_input):
+    def can_cache(self, skip_save_processed_input):
         return self.backend.is_coordinator()
 
     @property

@@ -88,11 +88,12 @@ class DaskEngine(DataFrameEngine):
 
     def to_tfrecord(self, df, path):
         """Implementations of data frame to tfrecords."""
-        dask_to_tfrecords(
-            df,
-            path,
-            compression_type="GZIP",
-            compression_level=9)
+        with ProgressBar():
+            dask_to_tfrecords(
+                df,
+                path,
+                compression_type="GZIP",
+                compression_level=9)
 
     @property
     def array_lib(self):
