@@ -66,8 +66,8 @@ class ImageFeatureMixin:
     }
 
     @staticmethod
-    def cast_column(feature, dataset_df, backend):
-        return dataset_df
+    def cast_column(column, backend):
+        return column
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -269,10 +269,10 @@ class ImageFeatureMixin:
             num_processes = feature[PREPROCESSING]['num_processes']
 
         src_path = None
-        if hasattr(input_df, 'src'):
-            src_path = os.path.dirname(os.path.abspath(input_df.src))
+        if SRC in metadata:
+            src_path = os.path.dirname(os.path.abspath(metadata.get(SRC)))
 
-        num_images = len(input_df)
+        num_images = len(input_df[feature[COLUMN]])
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
@@ -375,7 +375,7 @@ class ImageFeatureMixin:
                                for img_entry in input_df[feature[COLUMN]]]
 
             data_fp = backend.cache.get_cache_path(
-                input_df.src, metadata.get(CHECKSUM), TRAINING
+                metadata.get(SRC), metadata.get(CHECKSUM), TRAINING
             )
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading

@@ -59,8 +59,8 @@ class VectorFeatureMixin:
     }
 
     @staticmethod
-    def cast_column(feature, dataset_df, backend):
-        return dataset_df
+    def cast_column(column, backend):
+        return column
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -82,7 +82,7 @@ class VectorFeatureMixin:
                 Expects all the vectors to be of the same size. The vectors need to be
                 whitespace delimited strings. Missing values are not handled.
                 """
-        if len(input_df) == 0:
+        if len(input_df[feature[COLUMN]]) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
         # Convert the string of features into a numpy array

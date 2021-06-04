@@ -81,9 +81,10 @@ class DaskPredictor(BasePredictor):
 
 
 class DaskBackend(LocalTrainingMixin, Backend):
-    def __init__(self, data_format=PARQUET, **kwargs):
+    def __init__(self, data_format=PARQUET, engine=None, **kwargs):
         super().__init__(data_format=data_format, **kwargs)
-        self._df_engine = DaskEngine()
+        engine = engine or {}
+        self._df_engine = DaskEngine(**engine)
         if data_format != PARQUET:
             raise ValueError(
                 f'Data format {data_format} is not supported when using the Dask backend. '

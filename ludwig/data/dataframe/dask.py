@@ -21,6 +21,7 @@ import os
 import dask
 import dask.array as da
 import dask.dataframe as dd
+from dask.diagnostics import ProgressBar
 
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.dataset.parquet import ParquetDataset
@@ -38,8 +39,9 @@ def set_scheduler(scheduler):
 
 
 class DaskEngine(DataFrameEngine):
-    def __init__(self):
-        self._parallelism = multiprocessing.cpu_count()
+    def __init__(self, parallelism=None, persist=False):
+        self._parallelism = parallelism or multiprocessing.cpu_count()
+        self._persist = persist
 
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
@@ -54,7 +56,7 @@ class DaskEngine(DataFrameEngine):
         return data.repartition(self.parallelism)
 
     def persist(self, data):
-        return data.persist()
+        return data.persist() if self._persist else data
 
     def compute(self, data):
         return data.compute()
@@ -74,12 +76,13 @@ class DaskEngine(DataFrameEngine):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
     def to_parquet(self, df, path):
-        df.to_parquet(
-            path,
-            engine='pyarrow',
-            write_index=False,
-            schema='infer',
-        )
+        with ProgressBar():
+            df.to_parquet(
+                path,
+                engine='pyarrow',
+                write_index=False,
+                schema='infer',
+            )
 
     @property
     def array_lib(self):
