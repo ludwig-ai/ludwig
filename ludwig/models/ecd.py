@@ -278,13 +278,9 @@ class ECD(tf.keras.Model):
 
         return weights
 
-    def __setstate__(self, newstate):
-        self.set_weights(newstate['weights'])
-
     def __reduce__(self):
         args = (self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed)
-        state = {'weights': self.get_weights()}
-        return ECD, args, state
+        return ECD, args, {}
 
 
 def build_inputs(
