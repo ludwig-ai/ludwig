@@ -42,15 +42,15 @@ def check_url_and_maybe_download(url):
 
 
 class TFRecordDataset(Dataset):
-    def __init__(self, url, features, training_set_metadata, compression_type="GZIP"):
+    def __init__(self, url, features, training_set_metadata):
         self.url = to_url(url)
         self.local_url = check_url_and_maybe_download(self.url)
         self.features = [feature[PROC_COLUMN] for feature in features]
         self.training_set_metadata = training_set_metadata
-        self.compression_type = compression_type
 
         meta = load_json(os.path.join(self.local_url, "meta.json"))
         self.size = meta["size"]
+        self.compression_type = meta["compression_type"]
         self.reshape_features = {
             feature[PROC_COLUMN]: list((-1, *training_set_metadata[feature[NAME]]['reshape']))
             for feature in features
@@ -91,7 +91,7 @@ class TFRecordDataset(Dataset):
 
         # interleave the tfrecord files for parallel reading
         dataset = files.interleave(
-            lambda x: tf.data.TFRecordDataset(x, compression_type="GZIP"),
+            lambda x: tf.data.TFRecordDataset(x, compression_type=self.compression_type),
             num_parallel_calls=tf.data.AUTOTUNE)
         # Fetch one element so to get the parser.
         features, feature_lists = self._detect_schema(dataset)

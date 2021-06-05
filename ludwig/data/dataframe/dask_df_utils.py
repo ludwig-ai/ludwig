@@ -26,9 +26,10 @@ def dask_to_tfrecords(
     compression_ext = '.gz' if compression_type else ''
     filenames = [f"part.{str(i).zfill(5)}.tfrecords{compression_ext}" for i in range(df.npartitions)]
 
-    # Also write a meta data file.
+    # Also write a meta data file
     meta = dict()
     meta["size"] = len(df.index)
+    meta["compression_type"] = compression_type if compression_type else ""
     save_json(os.path.join(local_folder, "meta.json"), meta)
 
     dsk = {}
