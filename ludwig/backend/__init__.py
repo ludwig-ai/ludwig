@@ -18,6 +18,11 @@
 from ludwig.backend.base import Backend, LocalBackend
 from ludwig.utils.horovod_utils import has_horovodrun
 
+try:
+    import ray as _ray
+except:
+    _ray = None
+
 
 LOCAL_BACKEND = LocalBackend()
 
@@ -27,6 +32,17 @@ HOROVOD = 'horovod'
 RAY = 'ray'
 
 ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
+
+
+def _has_ray():
+    if _ray is None:
+        return False
+
+    try:
+        _ray.init('auto', ignore_reinit_error=True)
+        return True
+    except:
+        return False
 
 
 def get_local_backend(**kwargs):
@@ -61,7 +77,9 @@ def create_backend(type, **kwargs):
     if isinstance(type, Backend):
         return type
 
-    if type is None and has_horovodrun():
+    if type is None and _has_ray():
+        type = RAY
+    elif type is None and has_horovodrun():
         type = HOROVOD
 
     return backend_registry[type](**kwargs)
