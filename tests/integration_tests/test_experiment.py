@@ -144,7 +144,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(
-        None, None, dataset=rel_path, config_file=yaml_filename
+        None, None, dataset=rel_path, config=yaml_filename
     )
 
 

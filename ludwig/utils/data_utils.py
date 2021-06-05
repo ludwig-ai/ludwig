@@ -27,6 +27,8 @@ from itertools import islice
 
 import numpy as np
 import pandas as pd
+import yaml
+
 from ludwig.utils.fs_utils import open_file, download_h5, upload_h5
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
@@ -199,6 +201,11 @@ def save_csv(data_fp, data):
 
 def csv_contains_column(data_fp, column_name):
     return column_name in read_csv(data_fp, nrows=0)  # only loads header
+
+
+def load_yaml(yaml_fp):
+    with open_file(yaml_fp, 'r') as f:
+        return yaml.safe_load(f)
 
 
 def load_json(data_fp):

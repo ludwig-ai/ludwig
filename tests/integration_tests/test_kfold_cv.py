@@ -150,7 +150,7 @@ def test_kfold_cv_cli(features_to_use: FeaturesToUse):
         # run k-fold cv
         kfold_cross_validate_cli(
             k_fold=num_folds,
-            config_file=config_fp,
+            config=config_fp,
             dataset=training_data_fp,
             output_directory=results_dir,
             logging_level='warn'

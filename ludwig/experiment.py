@@ -29,17 +29,15 @@ from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.data_utils import save_json
+from ludwig.utils.data_utils import save_json, load_yaml
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
 def experiment_cli(
-        config: dict,
-        config_file: str = None,
+        config: Union[str, dict],
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -79,10 +77,8 @@ def experiment_cli(
 
     # Inputs
 
-    :param config: (dict) config which defines the different
-        parameters of the model, features, preprocessing and training.
-    :param config_file: (str, default: `None`) the filepath string
-        that specifies the config.  It is a yaml file.
+    :param config: (Union[str, dict]) in-memory representation of
+            config or string path to a YAML config file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used in the experiment.
         If it has a split column, it will be used for splitting (0 for train,
@@ -199,9 +195,6 @@ def experiment_cli(
     """
     backend = initialize_backend(backend)
 
-    config = check_which_config(config,
-                                config_file)
-
     if model_load_path:
         model = LudwigModel.load(
             model_load_path,
@@ -260,7 +253,6 @@ def experiment_cli(
 def kfold_cross_validate_cli(
         k_fold,
         config=None,
-        config_file=None,
         dataset=None,
         data_format=None,
         output_directory='results',
@@ -272,13 +264,10 @@ def kfold_cross_validate_cli(
 
     # Inputs
     :param k_fold: (int) number of folds to create for the cross-validation
-    :param config: (dict, default: None) a dictionary containing
-            information needed to build a model. Refer to the [User Guide]
+    :param config: (Union[str, dict], default: None) a dictionary or file path
+            containing model configuration. Refer to the [User Guide]
            (http://ludwig.ai/user_guide/#model-config) for details.
-    :param config_file: (string, optional, default: `None`) path to
-           a YAML file containing the config. If available it will be
-           used instead of the config dict.
-    :param data_csv: (string, default: None)
+    :param dataset: (string, default: None)
     :param output_directory: (string, default: 'results')
     :param random_seed: (int) Random seed used k-fold splits.
     :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
@@ -287,22 +276,10 @@ def kfold_cross_validate_cli(
     :return: None
     """
 
-    if config is None and config_file is None:
-        raise ValueError(
-            "No config is provided 'config' or "
-            "'config_file' must be provided."
-        )
-    elif config is not None and config_file is not None:
-        raise ValueError(
-            "Cannot specify both 'config' and 'config_file'"
-            ", proivde only one of the parameters."
-        )
-
     (kfold_cv_stats,
      kfold_split_indices) = kfold_cross_validate(
         k_fold,
-        config=config if config is not None else
-        config_file,
+        config=config,
         dataset=dataset,
         data_format=data_format,
         output_directory=output_directory,
@@ -432,12 +409,14 @@ def cli(sys_argv):
         '-c',
         '--config',
         type=yaml.safe_load,
-        help='config'
+        help='JSON or YAML serialized string of the model configuration'
     )
     config.add_argument(
         '-cf',
         '--config_file',
-        help='YAML file describing the model. Ignores --model_hyperparameters'
+        dest='config',
+        type=load_yaml,
+        help='Path to the YAML file containing the model configuration'
     )
 
     parser.add_argument(
