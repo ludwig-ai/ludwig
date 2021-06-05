@@ -1,6 +1,7 @@
 import json
 
 import os
+import tempfile
 
 from dask.base import tokenize
 from dask.highlevelgraph import HighLevelGraph
@@ -8,6 +9,7 @@ from dask.delayed import Delayed
 from dask.utils import apply
 
 from ludwig.data.dataframe.pandas import pandas_df_to_tfrecords
+from ludwig.utils.data_utils import save_json
 
 
 def dask_to_tfrecords(
@@ -17,16 +19,17 @@ def dask_to_tfrecords(
         compression_level=9):
     """Store Dask.dataframe to TFRecord files."""
 
-    os.makedirs(folder, exist_ok=True)
+    use_s3 = folder.startswith("s3")
+    local_folder = tempfile.mkdtemp() if use_s3 else folder
+
+    os.makedirs(local_folder, exist_ok=True)
     compression_ext = '.gz' if compression_type else ''
     filenames = [f"part.{str(i).zfill(5)}.tfrecords{compression_ext}" for i in range(df.npartitions)]
 
     # Also write a meta data file.
     meta = dict()
     meta["size"] = len(df.index)
-    meta_path = os.path.join(folder, "meta.json")
-    with open(meta_path, "w") as outfile:
-        json.dump(meta, outfile)
+    save_json(os.path.join(local_folder, "meta.json"), meta)
 
     dsk = {}
     name = "to-tfrecord-" + tokenize(df, folder)
@@ -39,7 +42,7 @@ def dask_to_tfrecords(
             pandas_df_to_tfrecords,
             [
                 (df._name, d),
-                os.path.join(folder, filename),
+                os.path.join(local_folder, filename),
                 compression_type,
                 compression_level
             ],
@@ -52,4 +55,18 @@ def dask_to_tfrecords(
     graph = HighLevelGraph.from_collections(name, dsk, dependencies=[df])
     out = Delayed(name, graph)
     out = out.compute()
+
+    # Move to s3
+    if use_s3:
+        try:
+            import s3fs
+            s3_fs = s3fs.S3FileSystem()
+            s3_fs.put(os.path.join(local_folder, "meta.json"), "{}/{}".format(folder, "meta.json"))
+            for filename in filenames:
+                s3_fs.put(os.path.join(local_folder, filename), "{}/{}".format(folder, filename))
+        except ImportError:
+           raise ImportError("Writing to S3 requires `s3fs` support. "
+                             "Please install s3fs following: "
+                             "https://github.com/s3fs-fuse/s3fs-fuse#installation.")
+
     return out
