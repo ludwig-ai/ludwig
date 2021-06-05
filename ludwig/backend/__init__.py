@@ -57,17 +57,20 @@ backend_registry = {
 }
 
 
-def create_backend(name, **kwargs):
-    if isinstance(name, Backend):
-        return name
+def create_backend(type, **kwargs):
+    if isinstance(type, Backend):
+        return type
 
-    if name is None and has_horovodrun():
-        name = HOROVOD
+    if type is None and has_horovodrun():
+        type = HOROVOD
 
-    return backend_registry[name](**kwargs)
+    return backend_registry[type](**kwargs)
 
 
-def initialize_backend(name, **kwargs):
-    backend = create_backend(name, **kwargs)
+def initialize_backend(backend):
+    if isinstance(backend, dict):
+        backend = create_backend(**backend)
+    else:
+        backend = create_backend(backend)
     backend.initialize()
     return backend

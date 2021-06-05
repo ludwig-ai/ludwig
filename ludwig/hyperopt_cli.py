@@ -405,7 +405,7 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.hyperopt')
 
-    args.backend = initialize_backend(args.backend)
+    args.backend = initialize_backend(args.backend or args.config.get('backend'))
     if args.backend.is_coordinator():
         print_ludwig("Hyperopt", LUDWIG_VERSION)
 

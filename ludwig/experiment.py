@@ -561,7 +561,7 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.experiment')
 
-    args.backend = initialize_backend(args.backend)
+    args.backend = initialize_backend(args.backend or args.config.get('backend'))
     if args.backend.is_coordinator():
         print_ludwig('Experiment', LUDWIG_VERSION)
 

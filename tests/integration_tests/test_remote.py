@@ -42,10 +42,10 @@ def test_remote_training_set(tmpdir, fs_protocol, data_format):
         config_path = f'{fs_protocol}://{config_path}'
 
         backend_config = {
-            'name': 'local',
+            'type': 'local',
             'data_format': data_format
         }
-        backend = initialize_backend(**backend_config)
+        backend = initialize_backend(backend_config)
 
         model = LudwigModel(config_path, backend=backend)
         _, _, output_directory = model.train(

@@ -29,11 +29,10 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
 from ludwig.data.dataset.partitioned import PartitionedDataset
-from ludwig.utils.fs_utils import upload_output_directory, open_file, path_exists, makedirs
+from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
@@ -59,7 +58,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      DICT_FORMATS,
                                      external_data_reader_registry,
                                      figure_data_format, generate_kfold_splits,
-                                     load_json, save_json)
+                                     load_json, save_json, load_yaml)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
@@ -176,8 +175,7 @@ class LudwigModel:
         """
         # check if config is a path or a dict
         if isinstance(config, str):  # assume path
-            with open_file(config, 'r') as def_file:
-                config_dict = yaml.safe_load(def_file)
+            config_dict = load_yaml(config)
             self.config_fp = config
         else:
             config_dict = copy.deepcopy(config)
@@ -192,7 +190,7 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend)
+        self.backend = initialize_backend(backend or config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
@@ -1336,6 +1334,7 @@ class LudwigModel:
         """
         # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
+        backend_param = backend
         backend = initialize_backend(backend)
         backend.initialize_tensorflow(
             gpus=gpus,
@@ -1349,6 +1348,10 @@ class LudwigModel:
                 MODEL_HYPERPARAMETERS_FILE_NAME
             )
         ))
+
+        if backend_param is None and 'backend' in config:
+            # Reset backend from config
+            backend = initialize_backend(config.get('backend'))
 
         # initialize model
         ludwig_model = LudwigModel(
@@ -1654,12 +1657,10 @@ def kfold_cross_validate(
              `kfold_split_indices`: indices to split training data into
              training fold and test fold.
     """
-    backend = initialize_backend(backend)
-
     # if config is a path, convert to dictionary
     if isinstance(config, str):  # assume path
-        with open_file(config, 'r') as def_file:
-            config = yaml.safe_load(def_file)
+        config = load_yaml(config)
+    backend = initialize_backend(backend or config.get('backend'))
 
     # check for k_fold
     if num_folds is None:
