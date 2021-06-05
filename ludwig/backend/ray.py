@@ -95,7 +95,8 @@ def _get_df_engine(engine_config):
 class RayRemoteModel:
     def __init__(self, model):
         buf = save_weights_to_buffer(model)
-        self.cls, self.args, state = list(model.__reduce__())
+        self.cls = type(model)
+        self.args = model.get_args()
         self.state = ray.put(buf)
 
     def load(self):
