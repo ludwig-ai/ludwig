@@ -193,7 +193,7 @@ def experiment_cli(
         filepath string to where results are stored.
 
     """
-    backend = initialize_backend(backend)
+    backend = initialize_backend(backend or config.get('backend'))
 
     if model_load_path:
         model = LudwigModel.load(
