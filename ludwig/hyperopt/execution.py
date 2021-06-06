@@ -791,6 +791,7 @@ class RayTuneExecutor(HyperoptExecutor):
             **hyperopt_dict,
             model_resume_path=checkpoint_dir,
             parameters=config,
+            backend='local',
         )
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
