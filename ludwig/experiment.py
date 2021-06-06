@@ -193,6 +193,8 @@ def experiment_cli(
         filepath string to where results are stored.
 
     """
+    if isinstance(config, str):
+        config = load_yaml(config)
     backend = initialize_backend(backend or config.get('backend'))
 
     if model_load_path:
