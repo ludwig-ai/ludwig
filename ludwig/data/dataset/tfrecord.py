@@ -1,11 +1,8 @@
 """TF record dataset."""
 import contextlib
-import glob
-import json
 import math
 
 import os
-import tempfile
 import tensorflow as tf
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
@@ -18,37 +15,13 @@ from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 from ludwig.utils.data_utils import load_json
 
 
-def check_url_and_maybe_download(url):
-    if url.startswith("s3"):
-        try:
-            import s3fs
-            s3_fs = s3fs.S3FileSystem()
-            if not s3_fs.isdir(url):
-                raise RuntimeError("The remote S3 path should be a folder"
-                                   "containing all tfrecords.")
-            path = tempfile.mkdtemp()
-            for s3_path in s3_fs.ls(url):
-                s3_fs.get(s3_path, path)
-        except ImportError:
-            raise ImportError("Reading from S3 requires `s3fs` support. "
-                              "Please install s3fs following: "
-                              "https://github.com/s3fs-fuse/s3fs-fuse#installation.")
-    elif url.startswith("file"):
-        path = url[7:]
-    else:
-        raise RuntimeError("Unsupported file systems. Support S3 or "
-                           "local FS, but got: `{}`.".format(url))
-    return path
-
-
 class TFRecordDataset(Dataset):
     def __init__(self, url, features, training_set_metadata):
         self.url = to_url(url)
-        self.local_url = check_url_and_maybe_download(self.url)
         self.features = [feature[PROC_COLUMN] for feature in features]
         self.training_set_metadata = training_set_metadata
 
-        meta = load_json(os.path.join(self.local_url, "meta.json"))
+        meta = load_json(os.path.join(self.url, "meta.json"))
         self.size = meta["size"]
         self.compression_type = meta["compression_type"]
         self.reshape_features = {
@@ -84,7 +57,7 @@ class TFRecordDataset(Dataset):
 
         # Below are routine optimizations for tf.dataset
         compression_ext = '.gz' if self.compression_type else ''
-        path = os.path.join(self.local_url, "*.tfrecords{}".format(compression_ext))
+        path = os.path.join(self.url, "*.tfrecords{}".format(compression_ext))
 
         # Now construct the tfrecrd dataset
         files = tf.data.Dataset.list_files(path)
@@ -92,7 +65,8 @@ class TFRecordDataset(Dataset):
         # interleave the tfrecord files for parallel reading
         dataset = files.interleave(
             lambda x: tf.data.TFRecordDataset(x, compression_type=self.compression_type),
-            num_parallel_calls=tf.data.AUTOTUNE)
+            num_parallel_calls=tf.data.AUTOTUNE
+        )
         # Fetch one element so to get the parser.
         features, feature_lists = self._detect_schema(dataset)
         parser = self._get_parser(features, feature_lists)

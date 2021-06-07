@@ -15,7 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import uuid
 
 import numpy as np
 import pandas as pd
@@ -24,6 +23,7 @@ import tensorflow as tf
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.tfrecord import get_compression_ext, get_part_filename
 from ludwig.utils.data_utils import save_json
+from ludwig.utils.fs_utils import upload_output_file, makedirs
 
 
 class PandasEngine(DataFrameEngine):
@@ -57,6 +57,8 @@ class PandasEngine(DataFrameEngine):
     def to_tfrecord(self, df, path):
         compression_type = "GZIP"
         compression_ext = get_compression_ext(compression_type)
+
+        makedirs(path, exist_ok=True)
         write_meta(df, path, compression_type)
 
         filename = os.path.join(path, get_part_filename(0, compression_ext))
@@ -127,9 +129,10 @@ def write_tfrecords(tfrecords, path, compression_type=None, compression_level=9)
             compression_type=compression_type,
             compression_level=compression_level,
         )
-    with tf.io.TFRecordWriter(path, **opts) as writer:
-        for item in tfrecords:
-            writer.write(item.SerializeToString())
+    with upload_output_file(path) as local_path:
+        with tf.io.TFRecordWriter(local_path, **opts) as writer:
+            for item in tfrecords:
+                writer.write(item.SerializeToString())
 
 
 def get_tfrecords(df, schema):
