@@ -141,7 +141,7 @@ def export_model(model_path, output_path, registered_model_name=None):
             # No run specified, so in order to register the model in mlflow, we need
             # to create a new run and upload the model as an artifact first
             output_path = output_path or 'model'
-            with mlflow.start_run(f'upload_{registered_model_name}'):
+            with mlflow.start_run():
                 mlflow.pyfunc.log_model(
                     artifact_path=output_path,
                     registered_model_name=registered_model_name,
