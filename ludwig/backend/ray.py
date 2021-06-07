@@ -212,14 +212,14 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, horovod_kwargs=None, data_format=PARQUET, engine=None, **kwargs):
-        super().__init__(data_format=data_format, **kwargs)
+    def __init__(self, horovod_kwargs=None, cache_format=PARQUET, engine=None, **kwargs):
+        super().__init__(cache_format=cache_format, **kwargs)
         self._df_engine = _get_df_engine(engine)
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
-        if data_format != PARQUET:
+        if cache_format != PARQUET:
             raise ValueError(
-                f'Data format {data_format} is not supported when using the Ray backend. '
+                f'Data format {cache_format} is not supported when using the Ray backend. '
                 f'Try setting to `parquet`.'
             )
 

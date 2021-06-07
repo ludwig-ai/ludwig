@@ -27,8 +27,8 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 
 
 class Backend(ABC):
-    def __init__(self, cache_dir=None, data_format=None):
-        self._dataset_manager = create_dataset_manager(self, data_format)
+    def __init__(self, cache_dir=None, cache_format=None):
+        self._dataset_manager = create_dataset_manager(self, cache_format)
         self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
 
     @property
