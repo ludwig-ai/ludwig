@@ -208,6 +208,16 @@ def load_yaml(yaml_fp):
         return yaml.safe_load(f)
 
 
+def load_config_from_str(config):
+    """Load the config as either a serialized string or a path to a YAML file."""
+    config = yaml.safe_load(config)
+    if isinstance(config, str):
+        # Assume the caller provided a path name
+        with open(config, 'r') as f:
+            config = yaml.safe_load(f)
+    return config
+
+
 def load_json(data_fp):
     with open_file(data_fp, 'r') as input_file:
         data = json.load(input_file)

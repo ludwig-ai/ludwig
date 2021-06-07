@@ -20,14 +20,13 @@ import sys
 from typing import List, Union
 
 import pandas as pd
-import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.data_utils import load_yaml
+from ludwig.utils.data_utils import load_yaml, load_config_from_str
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -277,7 +276,7 @@ def cli(sys_argv):
     config.add_argument(
         '-c',
         '--config',
-        type=yaml.safe_load,
+        type=load_config_from_str,
         help='JSON or YAML serialized string of the model configuration'
     )
     config.add_argument(
