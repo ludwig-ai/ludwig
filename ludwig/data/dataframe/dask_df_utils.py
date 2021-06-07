@@ -8,7 +8,8 @@ from dask.highlevelgraph import HighLevelGraph
 from dask.delayed import Delayed
 from dask.utils import apply
 
-from ludwig.data.dataframe.pandas import pandas_df_to_tfrecords
+from ludwig.data.dataframe.pandas import pandas_df_to_tfrecords, write_meta
+from ludwig.data.dataset.tfrecord import get_part_filename, get_compression_ext
 from ludwig.utils.data_utils import save_json
 
 
@@ -23,14 +24,11 @@ def dask_to_tfrecords(
     local_folder = tempfile.mkdtemp() if use_s3 else folder
 
     os.makedirs(local_folder, exist_ok=True)
-    compression_ext = '.gz' if compression_type else ''
-    filenames = [f"part.{str(i).zfill(5)}.tfrecords{compression_ext}" for i in range(df.npartitions)]
+    compression_ext = get_compression_ext(compression_type)
+    filenames = [get_part_filename(i, compression_ext) for i in range(df.npartitions)]
 
     # Also write a meta data file
-    meta = dict()
-    meta["size"] = len(df.index)
-    meta["compression_type"] = compression_type if compression_type else ""
-    save_json(os.path.join(local_folder, "meta.json"), meta)
+    write_meta(df, local_folder, compression_type)
 
     dsk = {}
     name = "to-tfrecord-" + tokenize(df, folder)

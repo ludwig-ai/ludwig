@@ -242,3 +242,11 @@ class TFRecordDatasetManager(object):
     @property
     def data_format(self):
         return 'tfrecords'
+
+
+def get_compression_ext(compression_type):
+    return '.gz' if compression_type else ''
+
+
+def get_part_filename(i, compression_ext):
+    return f"part.{str(i).zfill(5)}.tfrecords{compression_ext}"

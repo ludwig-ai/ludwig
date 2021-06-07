@@ -22,6 +22,8 @@ import pandas as pd
 import tensorflow as tf
 
 from ludwig.data.dataframe.base import DataFrameEngine
+from ludwig.data.dataset.tfrecord import get_compression_ext, get_part_filename
+from ludwig.utils.data_utils import save_json
 
 
 class PandasEngine(DataFrameEngine):
@@ -51,6 +53,18 @@ class PandasEngine(DataFrameEngine):
 
     def to_parquet(self, df, path):
         df.to_parquet(path, engine='pyarrow')
+
+    def to_tfrecord(self, df, path):
+        compression_type = "GZIP"
+        compression_ext = get_compression_ext(compression_type)
+        write_meta(df, path, compression_type)
+
+        filename = os.path.join(path, get_part_filename(0, compression_ext))
+        pandas_df_to_tfrecords(
+            df,
+            filename,
+            compression_type=compression_type,
+            compression_level=9)
 
     @property
     def array_lib(self):
@@ -96,6 +110,14 @@ def get_schema(df, columns=None):
         else:
             schema[col] = (lambda f: lambda x: f(x))(_get_feature_func(val))
     return schema
+
+
+def write_meta(df, path, compression_type):
+    meta = {
+        'size': len(df.index),
+        'compression_type': compression_type or ''
+    }
+    save_json(os.path.join(path, "meta.json"), meta)
 
 
 def write_tfrecords(tfrecords, path, compression_type=None, compression_level=9):
