@@ -389,7 +389,6 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
         output_features,
         dataset=rel_path,
         skip_save_processed_input=image_parms.skip_save_processed_input,
-        backend=LocalTestBackend()
     )
 
     # Delete the temporary data created
