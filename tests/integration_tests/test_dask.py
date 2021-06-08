@@ -61,7 +61,7 @@ def split(data_parquet):
 
 def run_api_experiment(config, data_parquet, cache_format):
     # Train on Parquet
-    dask_backend = DaskBackend(data_format=cache_format)
+    dask_backend = DaskBackend(cache_format=cache_format)
     train_with_backend(dask_backend, config, dataset=data_parquet, evaluate=False)
 
     # Train on DataFrame directly
