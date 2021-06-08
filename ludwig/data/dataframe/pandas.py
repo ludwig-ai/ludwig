@@ -101,6 +101,8 @@ def pandas_df_to_tfrecords(df,
 
 def get_schema(df, columns=None):
     schema = {}
+    if len(df) == 0:
+        return schema
 
     for col, val in df.iloc[0].to_dict().items():
         if columns and col not in columns:

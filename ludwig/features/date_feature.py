@@ -136,7 +136,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int16
+        assert inputs.dtype in [tf.int16, tf.int64]
 
         inputs_encoded = self.encoder_obj(
             inputs, training=training, mask=mask

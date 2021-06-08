@@ -411,7 +411,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        # TFRecord supports tf.int64 only.
         assert inputs.dtype in [tf.uint8, tf.int64]
 
         # casting and rescaling
