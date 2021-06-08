@@ -121,4 +121,6 @@ CHECKSUM = 'checksum'
 
 HDF5 = 'hdf5'
 PARQUET = 'parquet'
+TFRECORD = "tfrecord"
+
 SRC = 'dataset_src'

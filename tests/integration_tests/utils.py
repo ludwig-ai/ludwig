@@ -348,6 +348,7 @@ def run_experiment(
         output_features,
         skip_save_processed_input=True,
         config=None,
+        backend=None,
         **kwargs
 ):
     """
@@ -374,6 +375,7 @@ def run_experiment(
 
     args = {
         'config': config,
+        'backend': backend or LocalTestBackend(),
         'skip_save_training_description': True,
         'skip_save_training_statistics': True,
         'skip_save_processed_input': skip_save_processed_input,

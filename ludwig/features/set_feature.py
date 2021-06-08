@@ -124,7 +124,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.bool
+        assert inputs.dtype in [tf.bool, tf.int64]
 
         encoder_output = self.encoder_obj(
             inputs, training=training, mask=mask

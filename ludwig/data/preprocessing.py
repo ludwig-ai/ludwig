@@ -38,7 +38,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      JSONL_FORMATS, ORC_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
                                      SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
-                                     TSV_FORMATS, figure_data_format,
+                                     TFRECORD_FORMATS, TSV_FORMATS, figure_data_format,
                                      override_in_memory_flag, read_csv,
                                      read_excel, read_feather, read_fwf,
                                      read_html, read_json, read_jsonl,
@@ -1019,6 +1019,61 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         return training_set, test_set, validation_set, training_set_metadata
 
 
+class TFRecordPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
+            random_seed=default_random_seed
+    ):
+        return TFRecordPreprocessor.prepare_processed_data(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            training_set_metadata,
+            skip_save_processed_input,
+            preprocessing_params,
+            backend,
+            random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata,
+            backend
+    ):
+        return dataset, training_set_metadata, None
+
+    @staticmethod
+    def prepare_processed_data(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
+            random_seed=default_random_seed
+    ):
+        test_set = test_set if test_set and path_exists(test_set) else None
+        validation_set = validation_set if validation_set and path_exists(validation_set) else None
+        return training_set, test_set, validation_set, training_set_metadata
+
+
 data_format_preprocessor_registry = {
     **{fmt: DictPreprocessor for fmt in DICT_FORMATS},
     **{fmt: DataFramePreprocessor for fmt in DATAFRAME_FORMATS},
@@ -1037,6 +1092,7 @@ data_format_preprocessor_registry = {
     **{fmt: SPSSPreprocessor for fmt in SPSS_FORMATS},
     **{fmt: StataPreprocessor for fmt in STATA_FORMATS},
     **{fmt: HDF5Preprocessor for fmt in HDF5_FORMATS},
+    **{fmt: TFRecordPreprocessor for fmt in TFRECORD_FORMATS},
 }
 
 

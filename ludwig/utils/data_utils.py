@@ -68,6 +68,7 @@ SAS_FORMATS = {'sas'}
 SPSS_FORMATS = {'spss'}
 STATA_FORMATS = {'stata'}
 HDF5_FORMATS = {'hdf5', 'h5'}
+TFRECORD_FORMATS = {'tfrecord', 'tfrecords'}
 CACHEABLE_FORMATS = set.union(*(CSV_FORMATS, TSV_FORMATS,
                                 JSON_FORMATS, JSONL_FORMATS,
                                 EXCEL_FORMATS, PARQUET_FORMATS, PICKLE_FORMATS,

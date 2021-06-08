@@ -25,7 +25,7 @@ from ray.exceptions import RayActorError
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME, PARQUET
+from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.partitioned import PartitionedDataset
@@ -217,7 +217,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._df_engine = _get_df_engine(engine)
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
-        if cache_format != PARQUET:
+        if cache_format not in [PARQUET, TFRECORD]:
             raise ValueError(
                 f'Data format {cache_format} is not supported when using the Ray backend. '
                 f'Try setting to `parquet`.'
@@ -255,5 +255,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return False
 
     def check_lazy_load_supported(self, feature):
-        raise ValueError(f'RayBackend does not support lazy loading of data files at train time. '
-                         f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
+        if not feature[PREPROCESSING]['in_memory']:
+            raise ValueError(f'RayBackend does not support lazy loading of data files at train time. '
+                             f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')

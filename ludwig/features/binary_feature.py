@@ -124,7 +124,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.bool
+        assert inputs.dtype in [tf.bool, tf.int64]
         assert len(inputs.shape) == 1
 
         inputs = tf.cast(inputs, dtype=tf.float32)

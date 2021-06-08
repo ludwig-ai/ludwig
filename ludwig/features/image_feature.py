@@ -411,9 +411,9 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.uint8
+        assert inputs.dtype in [tf.uint8, tf.int64]
 
-        # csting and rescaling
+        # casting and rescaling
         inputs = tf.cast(inputs, tf.float32) / 255
 
         inputs_encoded = self.encoder_obj(
