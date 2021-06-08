@@ -27,5 +27,5 @@ dataset_registry = {
 }
 
 
-def create_dataset_manager(backend, data_format, **kwargs):
-    return dataset_registry.get(data_format)(backend)
+def create_dataset_manager(backend, cache_format, **kwargs):
+    return dataset_registry.get(cache_format)(backend)

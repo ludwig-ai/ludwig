@@ -73,3 +73,7 @@ class DataFrameEngine(ABC):
     @abstractmethod
     def partitioned(self):
         raise NotImplementedError()
+
+    @abstractmethod
+    def set_parallelism(self, parallelism):
+        raise NotImplementedError()

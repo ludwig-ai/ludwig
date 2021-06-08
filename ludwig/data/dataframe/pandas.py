@@ -27,6 +27,9 @@ from ludwig.utils.fs_utils import upload_output_file, makedirs
 
 
 class PandasEngine(DataFrameEngine):
+    def __init__(self, **kwargs):
+        super().__init__()
+
     def empty_df_like(self, df):
         return pd.DataFrame(index=df.index)
 
@@ -79,6 +82,9 @@ class PandasEngine(DataFrameEngine):
     @property
     def partitioned(self):
         return False
+
+    def set_parallelism(self, parallelism):
+        pass
 
 
 PANDAS = PandasEngine()

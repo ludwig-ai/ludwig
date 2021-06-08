@@ -7,7 +7,7 @@ import yaml
 
 from ludwig.callbacks import Callback
 from ludwig.hyperopt.execution import executor_registry
-from ludwig.backend import Backend, initialize_backend
+from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE, SAMPLER, EXECUTOR, MINIMIZE
 from ludwig.features.feature_registries import output_type_registry
@@ -150,14 +150,19 @@ def hyperopt(
     :return: (List[dict]) List of results for each trial, ordered by
         descending performance on the target metric.
     """
-    backend = initialize_backend(backend)
-
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
         with open_file(config, 'r') as def_file:
             config_dict = yaml.safe_load(def_file)
     else:
         config_dict = config
+
+    # Explicitly default to a local backend to avoid picking up Ray or Horovod
+    # backend from the environment.
+    backend = backend or 'local'
+    backend = initialize_backend(backend or config_dict.get('backend'))
+    if not isinstance(backend, LocalBackend):
+        raise ValueError('Hyperopt requires using a `local` backend at this time.')
 
     # merge config with defaults
     config = merge_with_defaults(config_dict)

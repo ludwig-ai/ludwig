@@ -68,6 +68,7 @@ class PandasDataset(Dataset):
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
+                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):

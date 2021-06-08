@@ -27,6 +27,7 @@ from ray.util.dask import ray_dask_get
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
+from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
@@ -72,6 +73,23 @@ def get_horovod_kwargs():
         num_hosts=len(best_resources),
         use_gpu=use_gpu
     )
+
+
+_engine_registry = {
+    'dask': DaskEngine,
+    'pandas': PandasEngine,
+}
+
+
+def _get_df_engine(engine_config):
+    if engine_config is None:
+        return DaskEngine()
+
+    engine_config = engine_config.copy()
+
+    dtype = engine_config.pop('type', 'dask')
+    engine_cls = _engine_registry.get(dtype)
+    return engine_cls(**engine_config)
 
 
 class RayRemoteModel:
@@ -194,14 +212,14 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, horovod_kwargs=None, data_format=PARQUET, **kwargs):
-        super().__init__(data_format=data_format, **kwargs)
-        self._df_engine = DaskEngine()
+    def __init__(self, horovod_kwargs=None, cache_format=PARQUET, engine=None, **kwargs):
+        super().__init__(cache_format=cache_format, **kwargs)
+        self._df_engine = _get_df_engine(engine)
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
-        if data_format not in [PARQUET, TFRECORD]:
+        if cache_format not in [PARQUET, TFRECORD]:
             raise ValueError(
-                f'Data format {data_format} is not supported when using the Ray backend. '
+                f'Data format {cache_format} is not supported when using the Ray backend. '
                 f'Try setting to `parquet`.'
             )
 

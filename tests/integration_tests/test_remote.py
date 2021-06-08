@@ -10,9 +10,9 @@ from ludwig.backend import initialize_backend
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
 
 
-@pytest.mark.parametrize('data_format', ['hdf5', 'parquet', 'tfrecord'])
+@pytest.mark.parametrize('cache_format', ['hdf5', 'parquet', 'tfrecord'])
 @pytest.mark.parametrize('fs_protocol', ['file'])
-def test_remote_training_set(tmpdir, fs_protocol, data_format):
+def test_remote_training_set(tmpdir, fs_protocol, cache_format):
     with tempfile.TemporaryDirectory() as outdir:
         output_directory = f'{fs_protocol}://{outdir}'
 
@@ -42,10 +42,10 @@ def test_remote_training_set(tmpdir, fs_protocol, data_format):
         config_path = f'{fs_protocol}://{config_path}'
 
         backend_config = {
-            'name': 'local',
-            'data_format': data_format
+            'type': 'local',
+            'cache_format': cache_format
         }
-        backend = initialize_backend(**backend_config)
+        backend = initialize_backend(backend_config)
 
         model = LudwigModel(config_path, backend=backend)
         _, _, output_directory = model.train(
