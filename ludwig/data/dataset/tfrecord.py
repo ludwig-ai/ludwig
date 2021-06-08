@@ -3,6 +3,8 @@ import contextlib
 import math
 
 import os
+from distutils.version import LooseVersion
+
 import tensorflow as tf
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
@@ -13,6 +15,12 @@ from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.fs_utils import to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 from ludwig.utils.data_utils import load_json
+
+
+if LooseVersion(tf.__version__) >= LooseVersion('2.4'):
+    AUTOTUNE = tf.data.AUTOTUNE
+else:
+    AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
 class TFRecordDataset(Dataset):
@@ -65,7 +73,7 @@ class TFRecordDataset(Dataset):
         # interleave the tfrecord files for parallel reading
         dataset = files.interleave(
             lambda x: tf.data.TFRecordDataset(x, compression_type=self.compression_type),
-            num_parallel_calls=tf.data.AUTOTUNE
+            num_parallel_calls=AUTOTUNE
         )
         # Fetch one element so to get the parser.
         features, feature_lists = self._detect_schema(dataset)
@@ -76,7 +84,7 @@ class TFRecordDataset(Dataset):
             dataset = dataset.shard(shard_count, cur_shard)
 
         # parallelize parser
-        dataset = dataset.map(parser, num_parallel_calls=tf.data.AUTOTUNE)
+        dataset = dataset.map(parser, num_parallel_calls=AUTOTUNE)
         # Note(Hao) batching: ideally we should put this line before the above map.
         # but the parser func is not vectorized for now.
         dataset = dataset.batch(batch_size)
@@ -87,7 +95,7 @@ class TFRecordDataset(Dataset):
             buffer_size = local_samples
             dataset = dataset.shuffle(buffer_size)
         dataset = dataset.repeat()
-        dataset = dataset.prefetch(tf.data.AUTOTUNE)
+        dataset = dataset.prefetch(AUTOTUNE)
 
         steps_per_epoch = math.ceil(local_samples / batch_size)
         batcher = IterableBatcher(self,
