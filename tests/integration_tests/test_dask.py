@@ -70,7 +70,7 @@ def run_api_experiment(config, data_parquet, cache_format):
 
 
 def run_split_api_experiment(config, data_parquet, cache_format):
-    backend = DaskBackend(data_format=cache_format)
+    backend = DaskBackend(cache_format=cache_format)
 
     train_fname, val_fname, test_fname = split(data_parquet)
 
