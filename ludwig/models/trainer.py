@@ -113,6 +113,7 @@ class Trainer(BaseTrainer):
             staircase=False,
             batch_size=128,
             eval_batch_size=0,
+            should_shuffle=True,
             shuffle_buffer_size=None,
             bucketing_field=None,
             validation_field='combined',
@@ -162,6 +163,8 @@ class Trainer(BaseTrainer):
         :type batch_size: Integer
         :param eval_batch_size: Size of batch to pass to the model for evaluation.
         :type eval_batch_size: Integer
+        :param should_shuffle: Shuffle batches during training when true (default: True).
+        :type shuffle_buffer_size: Boolean
         :param shuffle_buffer_size: Size of buffer in number of examples to read for shuffling.
         :type shuffle_buffer_size: Integer
         :param bucketing_field: when batching, buckets datapoints based the
@@ -241,6 +244,7 @@ class Trainer(BaseTrainer):
         self.staircase = staircase
         self.batch_size = batch_size
         self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
+        self.should_shuffle = should_shuffle
         self.shuffle_buffer_size = shuffle_buffer_size
         self.bucketing_field = bucketing_field
         self._validation_field = validation_field
@@ -513,6 +517,7 @@ class Trainer(BaseTrainer):
         set_random_seed(self.random_seed)
         with training_set.initialize_batcher(
             batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
             shuffle_buffer_size=self.shuffle_buffer_size,
             seed=self.random_seed,
             horovod=self.horovod,
@@ -801,6 +806,8 @@ class Trainer(BaseTrainer):
     ):
         with dataset.initialize_batcher(
             batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            shuffle_buffer_size=self.shuffle_buffer_size,
             horovod=self.horovod
         ) as batcher:
 
