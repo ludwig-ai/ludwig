@@ -143,7 +143,7 @@ jobs:
         include:
           - docker-image: ludwig
             label: ${{ needs.start-runner.outputs.label-ludwig }}
-            ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id-horovod }}
+            ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id-ludwig }}
           - docker-image: ludwig-gpu
             label: ${{ needs.start-runner.outputs.label-ludwig-gpu }}
             ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id-ludwig-gpu }}
