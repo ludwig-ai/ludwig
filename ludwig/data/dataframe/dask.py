@@ -39,7 +39,7 @@ def set_scheduler(scheduler):
 
 
 class DaskEngine(DataFrameEngine):
-    def __init__(self, parallelism=None, persist=False):
+    def __init__(self, parallelism=None, persist=False, **kwargs):
         self._parallelism = parallelism or multiprocessing.cpu_count()
         self._persist = persist
 

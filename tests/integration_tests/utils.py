@@ -347,6 +347,7 @@ def run_experiment(
         input_features,
         output_features,
         skip_save_processed_input=True,
+        config=None,
         **kwargs
 ):
     """
@@ -358,7 +359,6 @@ def run_experiment(
     arguments
     :return: None
     """
-    config = None
     if input_features is not None and output_features is not None:
         # This if is necessary so that the caller can call with
         # config_file (and not config)

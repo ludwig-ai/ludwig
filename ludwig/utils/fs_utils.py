@@ -95,8 +95,8 @@ def upload_output_directory(url):
 
 @contextlib.contextmanager
 def open_file(url, *args, **kwargs):
-    of = fsspec.open(url, *args, **kwargs)
-    with of as f:
+    fs, path = get_fs_and_path(url)
+    with fs.open(path, *args, **kwargs) as f:
         yield f
 
 

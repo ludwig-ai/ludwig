@@ -20,23 +20,21 @@ import sys
 from typing import List, Union
 
 import pandas as pd
-import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.data_utils import load_yaml, load_config_from_str
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
 def train_cli(
-        config: dict = None,
-        config_file: str = None,
+        config: Union[str, dict] = None,
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -68,10 +66,8 @@ def train_cli(
     internals. Requires most of the parameters that are taken into the model.
     Builds a full ludwig model and performs the training.
 
-    :param config: (dict) config which defines the different
-        parameters of the model, features, preprocessing and training.
-    :param config_file: (str, default: `None`) the filepath string
-        that specifies the config.  It is a yaml file.
+    :param config: (Union[str, dict]) in-memory representation of
+            config or string path to a YAML config file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used for training.
         If it has a split column, it will be used for splitting (0 for train,
@@ -161,9 +157,6 @@ def train_cli(
 
     :return: (`None`)
     """
-    config = check_which_config(config,
-                                config_file)
-
     if model_load_path:
         model = LudwigModel.load(
             model_load_path,
@@ -283,13 +276,15 @@ def cli(sys_argv):
     config.add_argument(
         '-c',
         '--config',
-        type=yaml.safe_load,
-        help='config'
+        type=load_config_from_str,
+        help='JSON or YAML serialized string of the model configuration'
     )
     config.add_argument(
         '-cf',
         '--config_file',
-        help='YAML file describing the model. Ignores --config'
+        dest='config',
+        type=load_yaml,
+        help='Path to the YAML file containing the model configuration'
     )
 
     parser.add_argument(
@@ -417,7 +412,7 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.train')
 
-    args.backend = initialize_backend(args.backend)
+    args.backend = initialize_backend(args.backend or args.config.get('backend'))
     if args.backend.is_coordinator():
         print_ludwig('Train', LUDWIG_VERSION)
 

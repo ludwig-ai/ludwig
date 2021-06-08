@@ -165,6 +165,7 @@ def run_hyperopt_executor(
     hyperopt_executor.execute(
         config,
         dataset=rel_path,
+        backend='local',
     )
 
 

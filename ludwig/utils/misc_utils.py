@@ -215,23 +215,6 @@ def get_file_names(output_directory):
     return description_fn, training_stats_fn, model_dir
 
 
-def check_which_config(config, config_file):
-    # check for config and config_file
-    if config is None and config_file is None:
-        raise ValueError(
-            'Either config of config_file have to be'
-            'not None to initialize a LudwigModel'
-        )
-    if config is not None and config_file is not None:
-        raise ValueError(
-            'Only one between config and '
-            'config_file can be provided'
-        )
-    if not config:
-        config = config_file
-    return config
-
-
 def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     s = json.dumps(d, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
