@@ -54,6 +54,7 @@ class TFRecordDataset(Dataset):
     def initialize_batcher(self,
                            batch_size=128,
                            should_shuffle=True,
+                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):
@@ -92,7 +93,7 @@ class TFRecordDataset(Dataset):
         # cache
         dataset = dataset.cache()
         if should_shuffle:
-            buffer_size = local_samples
+            buffer_size = shuffle_buffer_size or local_samples
             dataset = dataset.shuffle(buffer_size)
         dataset = dataset.repeat()
         dataset = dataset.prefetch(AUTOTUNE)
