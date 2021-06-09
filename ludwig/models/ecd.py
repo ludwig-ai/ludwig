@@ -209,8 +209,17 @@ class ECD(tf.keras.Model):
                                               predictions[of_name])
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
-        train_loss += regularization_lambda * sum(
-            self.losses)  # regularization / other losses
+
+        for loss in self.losses:
+            if hasattr(loss, "loss_name"):
+                # this assumes that all losses with a loss_name are not
+                # regularization losses and should be added
+                # to the total loss as they are
+                train_loss += loss
+            else:
+                # this assumes all unnamed losses are regularization losses
+                train_loss += regularization_lambda * loss
+
         return train_loss, of_train_losses
 
     def eval_loss(self, targets, predictions):

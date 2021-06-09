@@ -458,14 +458,14 @@ class Trainer(BaseTrainer):
 
         if self.debug and self.is_coordinator():
             # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
-            debug_path = os.path.join(
-                save_path, 'debug'
-            )
-            tf.debugging.experimental.enable_dump_debug_info(
-                debug_path,
-                tensor_debug_mode='FULL_HEALTH',
-                circular_buffer_size=-1,
-            )
+            # debug_path = os.path.join(
+            #     save_path, 'debug'
+            # )
+            # tf.debugging.experimental.enable_dump_debug_info(
+            #     debug_path,
+            #     tensor_debug_mode='FULL_HEALTH',
+            #     circular_buffer_size=-1,
+            # )
             tf.config.experimental_run_functions_eagerly(True)
             # tf.debugging.enable_check_numerics()
 
@@ -880,7 +880,6 @@ class Trainer(BaseTrainer):
             metrics_log,
             tables,
             batch_size=128,
-            debug=False,
     ):
         predictor = Predictor(
             batch_size=batch_size, horovod=self.horovod, debug=self.debug
