@@ -42,8 +42,8 @@ jobs:
           security-group-id: sg-4cba0d08
           aws-resource-tags: >
             [
-              {"Key": "Name", "Value": "${{ github.repository }}-github-${{ github.head_ref }}"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+              {"Key": "Name", "Value": "ludwig-github-${{ github.head_ref }}"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"},
               {"Key": "GitHubHeadRef", "Value": "${{ github.head_ref }}"}
             ]
 
