@@ -212,8 +212,12 @@ class ECD(tf.keras.Model):
 
         for loss in self.losses:
             if hasattr(loss, "loss_name"):
+                # this assumes that all losses with a loss_name are not
+                # regularization losses and should be added
+                # to the total loss as they are
                 train_loss += loss
             else:
+                # this assumes all unnamed losses are regularization losses
                 train_loss += regularization_lambda * loss
 
         return train_loss, of_train_losses
