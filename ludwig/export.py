@@ -19,7 +19,6 @@ import logging
 import os
 import sys
 
-import ludwig.contribs.mlflow.model
 from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -110,8 +109,8 @@ def export_mlflow(
     logger.info('Output path: {}'.format(output_path))
     logger.info('\n')
 
-    from ludwig.contribs import mlflow
-    ludwig.contribs.mlflow.model.export_model(model_path, output_path, registered_model_name)
+    from ludwig.contribs.mlflow.model import export_model
+    export_model(model_path, output_path, registered_model_name)
 
     logger.info('Saved to: {0}'.format(output_path))
 
