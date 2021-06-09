@@ -102,7 +102,7 @@ jobs:
 
   stop-runner:
     name: Stop self-hosted EC2 runner
-    
+
     # required to stop the runner even if the error happened in the previous job
     if: always() && needs.start-runner.result != 'skipped'
     needs:
@@ -119,9 +119,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Stop EC2 runner
-          uses: machulav/ec2-github-runner@v2.2.0
-          with:
-            mode: stop
-            github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-            label: ${{ needs.start-runner.outputs.label }}
-            ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
+        uses: machulav/ec2-github-runner@v2.2.0
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
