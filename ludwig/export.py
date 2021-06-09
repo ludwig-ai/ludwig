@@ -109,8 +109,8 @@ def export_mlflow(
     logger.info('Output path: {}'.format(output_path))
     logger.info('\n')
 
-    from ludwig.contribs import mlflow
-    mlflow.export_model(model_path, output_path, registered_model_name)
+    from ludwig.contribs.mlflow.model import export_model
+    export_model(model_path, output_path, registered_model_name)
 
     logger.info('Saved to: {0}'.format(output_path))
 
