@@ -1,5 +1,6 @@
+import mlflow
+
 from ludwig.api import LudwigModel
-from ludwig.contribs.mlflow import mlflow
 
 
 class LudwigMlflowModel(mlflow.pyfunc.PythonModel):
