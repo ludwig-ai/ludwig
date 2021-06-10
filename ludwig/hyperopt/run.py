@@ -159,8 +159,8 @@ def hyperopt(
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
     # backend from the environment.
-    backend = backend or 'local'
-    backend = initialize_backend(backend or config_dict.get('backend'))
+    backend = backend or config_dict.get('backend') or 'local'
+    backend = initialize_backend(backend)
     if not isinstance(backend, LocalBackend):
         raise ValueError('Hyperopt requires using a `local` backend at this time.')
 
