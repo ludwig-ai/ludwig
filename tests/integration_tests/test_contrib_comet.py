@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
@@ -11,6 +13,7 @@ TEST_SCRIPT = os.path.join(os.path.dirname(__file__), 'scripts',
                            'run_train_comet.py')
 
 
+@pytest.mark.distributed
 def test_contrib_experiment(csv_filename):
     cmdline = [
         sys.executable, TEST_SCRIPT,

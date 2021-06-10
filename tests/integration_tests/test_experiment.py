@@ -98,6 +98,7 @@ def run_experiment_with_encoder(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
 def test_experiment_text_feature_HF(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
