@@ -222,7 +222,7 @@ def log_model(
 def _load_model(path):
     from ludwig.api import LudwigModel
 
-    return LudwigModel.load(path)
+    return LudwigModel.load(path, backend='local')
 
 
 def _load_pyfunc(path):
