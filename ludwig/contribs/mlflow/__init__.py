@@ -106,5 +106,5 @@ def _log_artifacts(output_directory):
 
 def _log_model(lpath):
     # Lazy import to avoid requiring this package
-    from ludwig.contribs.mlflow.model import log_model
-    log_model(lpath)
+    from ludwig.contribs.mlflow.model import log_saved_model
+    log_saved_model(lpath)
