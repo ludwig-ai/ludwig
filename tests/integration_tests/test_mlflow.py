@@ -8,7 +8,11 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.api import LudwigModel
 from ludwig.contribs import MlflowCallback
+from mlflow.models.signature import infer_signature
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
+
+from mlflow import pyfunc
+from mlflow.models import Model, infer_signature
 
 
 def test_mlflow_callback(tmpdir):
