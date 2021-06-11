@@ -16,6 +16,9 @@ from mlflow.utils.model_utils import _get_flavor_configuration
 from mlflow.exceptions import MlflowException
 from mlflow.tracking._model_registry import DEFAULT_AWAIT_MAX_SLEEP_SECONDS
 
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.utils.data_utils import load_json
+
 FLAVOR_NAME = "ludwig"
 
 _logger = logging.getLogger(__name__)
@@ -122,9 +125,23 @@ def save_model(
         data=model_data_subpath,
         env=conda_env_subpath,
     )
+
+    schema_keys = {'name', 'column', 'type'}
+    config = ludwig_model.config
+
     mlflow_model.add_flavor(
         FLAVOR_NAME,
-        lgb_version=ludwig.__version__,
+        ludwig_version=ludwig.__version__,
+        ludwig_schema={
+            'input_features': [
+                {k: v for k, v in feature.items() if k in schema_keys}
+                for feature in config['input_features']
+            ],
+            'output_features': [
+                {k: v for k, v in feature.items() if k in schema_keys}
+                for feature in config['output_features']
+            ]
+        },
         data=model_data_subpath,
     )
     mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
@@ -212,14 +229,14 @@ def _load_pyfunc(path):
     """
     Load PyFunc implementation. Called by ``pyfunc.load_pyfunc``.
 
-    :param path: Local filesystem path to the MLflow Model with the ``lightgbm`` flavor.
+    :param path: Local filesystem path to the MLflow Model with the ``ludwig`` flavor.
     """
     return _LudwigModelWrapper(_load_model(path))
 
 
 def load_model(model_uri):
     """
-    Load a LightGBM model from a local file or a run.
+    Load a Ludwig model from a local file or a run.
 
     :param model_uri: The location, in URI format, of the MLflow model. For example:
 
@@ -232,7 +249,7 @@ def load_model(model_uri):
                       `Referencing Artifacts <https://www.mlflow.org/docs/latest/tracking.html#
                       artifact-locations>`_.
 
-    :return: A LightGBM model (an instance of `lightgbm.Booster`_).
+    :return: A Ludwig model (an instance of `ludwig.api.LudwigModel`_).
     """
     local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
@@ -250,8 +267,6 @@ class _LudwigModelWrapper:
 
 
 def export_model(model_path, output_path, registered_model_name=None):
-    from ludwig.api import LudwigModel
-
     if registered_model_name:
         if not model_path.startswith('runs:/') or output_path is not None:
             # No run specified, so in order to register the model in mlflow, we need
@@ -284,8 +299,16 @@ def log_saved_model(lpath):
 
 
 class _CopyModel:
+    """Get model data with requiring us to read the model weights into memory."""
+
     def __init__(self, lpath):
         self.lpath = lpath
 
     def save(self, path):
         shutil.copytree(self.lpath, path)
+
+    @property
+    def config(self):
+        return load_json(os.path.join(
+            self.lpath, MODEL_HYPERPARAMETERS_FILE_NAME
+        ))

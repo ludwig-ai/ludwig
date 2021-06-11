@@ -8,11 +8,7 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.api import LudwigModel
 from ludwig.contribs import MlflowCallback
-from mlflow.models.signature import infer_signature
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
-
-from mlflow import pyfunc
-from mlflow.models import Model, infer_signature
 
 
 def test_mlflow_callback(tmpdir):
@@ -79,6 +75,18 @@ def test_mlflow_callback(tmpdir):
 
     model_path = f'runs:/{callback.run.info.run_id}/model'
     loaded_model = mlflow.pyfunc.load_model(model_path)
+
+    assert 'ludwig' in loaded_model.metadata.flavors
+    flavor = loaded_model.metadata.flavors['ludwig']
+
+    def compare_features(key):
+        assert len(model.config[key]) == len(flavor['ludwig_schema'][key])
+        for feature, schema_feature in zip(model.config[key], flavor['ludwig_schema'][key]):
+            assert feature['name'] == schema_feature['name']
+            assert feature['type'] == schema_feature['type']
+
+    compare_features('input_features')
+    compare_features('output_features')
 
     test_df = pd.read_csv(test_csv)
     pred_df = loaded_model.predict(test_df)
