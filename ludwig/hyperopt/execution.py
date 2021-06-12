@@ -31,6 +31,26 @@ except ImportError:
     ray = None
 
 
+######
+# todo clean up once non-daemonic processes work
+# import multiprocessing.pool
+
+class NoDaemonProcess(multiprocessing.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+
+class NoDaemonContext(type(multiprocessing.get_context('spawn'))):
+    Process = NoDaemonProcess
+
+
+#####
+
 class HyperoptExecutor(ABC):
     def __init__(self, hyperopt_sampler: Union[dict, HyperoptSampler],
                  output_feature: str, metric: str, split: str) -> None:
@@ -365,7 +385,9 @@ class ParallelExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ) -> HyperoptResults:
-        ctx = multiprocessing.get_context('spawn')
+        # todo clean up code
+        # ctx = multiprocessing.get_context('spawn')
+        ctx = NoDaemonContext()
 
         if gpus is None:
             gpus = get_available_gpus_cuda_string()
@@ -480,6 +502,7 @@ class ParallelExecutor(HyperoptExecutor):
 
         pool = ctx.Pool(self.num_workers,
                         ParallelExecutor.init_worker)
+
         try:
             trial_results = []
             trials = 0

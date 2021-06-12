@@ -71,14 +71,14 @@ HYPEROPT_CONFIG = {
 }
 
 SAMPLERS = [
-    {"type": "grid"},
-    {"type": "random", "num_samples": 5},
-    {"type": "pysot", "num_samples": 5},
+    # {"type": "grid"},
+    {"type": "random", "num_samples": 15},  # 5
+    # {"type": "pysot", "num_samples": 2},  #5
 ]
 
 EXECUTORS = [
     {"type": "serial"},
-    {"type": "parallel", "num_workers": 4},
+    {"type": "parallel", "num_workers": 2},  # 4
     {"type": "fiber", "num_workers": 4},
 ]
 
