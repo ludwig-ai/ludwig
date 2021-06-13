@@ -814,10 +814,9 @@ class Trainer(BaseTrainer):
                 if self.is_coordinator():
                     if not self.skip_save_progress:
                         #checkpoint_manager.save()
-                        '''
+                        os.makedirs(training_checkpoints_path, exist_ok=True)
                         torch.save(model, os.path.join(training_checkpoints_path, 'model.pt'))
                         torch.save(self.optimizer, os.path.join(training_checkpoints_path, 'optimizer.pt'))
-                        '''
                         progress_tracker.save(
                             os.path.join(
                                 save_path,
