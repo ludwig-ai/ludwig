@@ -146,6 +146,7 @@ class FCStack(LudwigModule):
             **kwargs
     ):
         super().__init__()
+        self.input_size = first_layer_input_size
 
         if layers is None:
             self.layers = []

@@ -336,11 +336,13 @@ class ECD(LudwigModule):
     def __setstate__(self, newstate):
         self.set_weights(newstate['weights'])
 
+    '''
     def __reduce__(self):
         args = self.get_args()
         #state = {'weights': self.get_weights()}
-        state = {'weights': self.parameters()}
+        state = {'weights': list(self.parameters())}
         return ECD, args, state
+    '''
 
 
 def build_inputs(
