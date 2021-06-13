@@ -98,6 +98,7 @@ def run_experiment_with_encoder(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
 def test_experiment_text_feature_HF(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
@@ -144,7 +145,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(
-        None, None, dataset=rel_path, config_file=yaml_filename
+        None, None, dataset=rel_path, config=yaml_filename
     )
 
 
@@ -388,7 +389,7 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
         input_features,
         output_features,
         dataset=rel_path,
-        skip_save_processed_input=image_parms.skip_save_processed_input
+        skip_save_processed_input=image_parms.skip_save_processed_input,
     )
 
     # Delete the temporary data created

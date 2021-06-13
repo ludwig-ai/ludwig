@@ -47,9 +47,9 @@ class H3FeatureMixin:
     }
 
     @staticmethod
-    def cast_column(feature, dataset_df, backend):
+    def cast_column(column, backend):
         # todo: add cast to int64
-        return dataset_df
+        return column
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -104,7 +104,7 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.uint8
+        assert inputs.dtype in [tf.uint8, tf.int64]
         assert len(inputs.shape) == 2
 
         inputs_encoded = self.encoder_obj(

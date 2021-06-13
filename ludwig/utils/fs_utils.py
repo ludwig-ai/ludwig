@@ -95,8 +95,8 @@ def upload_output_directory(url):
 
 @contextlib.contextmanager
 def open_file(url, *args, **kwargs):
-    of = fsspec.open(url, *args, **kwargs)
-    with of as f:
+    fs, path = get_fs_and_path(url)
+    with fs.open(path, *args, **kwargs) as f:
         yield f
 
 
@@ -109,15 +109,24 @@ def download_h5(url):
 
 @contextlib.contextmanager
 def upload_h5(url):
+    with upload_output_file(url) as local_fname:
+        mode = 'w'
+        if url == local_fname and path_exists(url):
+            mode = 'r+'
+
+        with h5py.File(local_fname, mode) as f:
+            yield f
+
+
+@contextlib.contextmanager
+def upload_output_file(url):
+    """Takes a remote URL as input, returns a temp filename, then uploads it when done."""
     protocol, _ = split_protocol(url)
     if protocol is not None:
         fs = fsspec.filesystem(protocol)
         with tempfile.TemporaryDirectory() as tmpdir:
-            local_fname = os.path.join(tmpdir, 'file.h5')
-            with h5py.File(local_fname, 'w') as f:
-                yield f
+            local_fname = os.path.join(tmpdir, 'tmpfile')
+            yield local_fname
             fs.put(local_fname, url, recursive=True)
     else:
-        mode = 'r+' if path_exists(url) else 'w'
-        with h5py.File(url, mode) as f:
-            yield f
+        yield url

@@ -23,9 +23,12 @@ import os.path
 import pickle
 import random
 import re
+from itertools import islice
 
 import numpy as np
 import pandas as pd
+import yaml
+
 from ludwig.utils.fs_utils import open_file, download_h5, upload_h5
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
@@ -65,6 +68,7 @@ SAS_FORMATS = {'sas'}
 SPSS_FORMATS = {'spss'}
 STATA_FORMATS = {'stata'}
 HDF5_FORMATS = {'hdf5', 'h5'}
+TFRECORD_FORMATS = {'tfrecord', 'tfrecords'}
 CACHEABLE_FORMATS = set.union(*(CSV_FORMATS, TSV_FORMATS,
                                 JSON_FORMATS, JSONL_FORMATS,
                                 EXCEL_FORMATS, PARQUET_FORMATS, PICKLE_FORMATS,
@@ -200,6 +204,21 @@ def csv_contains_column(data_fp, column_name):
     return column_name in read_csv(data_fp, nrows=0)  # only loads header
 
 
+def load_yaml(yaml_fp):
+    with open_file(yaml_fp, 'r') as f:
+        return yaml.safe_load(f)
+
+
+def load_config_from_str(config):
+    """Load the config as either a serialized string or a path to a YAML file."""
+    config = yaml.safe_load(config)
+    if isinstance(config, str):
+        # Assume the caller provided a path name
+        with open(config, 'r') as f:
+            config = yaml.safe_load(f)
+    return config
+
+
 def load_json(data_fp):
     with open_file(data_fp, 'r') as input_file:
         data = json.load(input_file)
@@ -210,6 +229,41 @@ def save_json(data_fp, data, sort_keys=True, indent=4):
     with open_file(data_fp, 'w') as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys,
                   indent=indent)
+
+
+def to_json_dict(d):
+    """Converts Python dict to pure JSON ready format."""
+    return json.loads(
+        json.dumps(d, cls=NumpyEncoder)
+    )
+
+
+def chunk_dict(data, chunk_size=100):
+    """Split large dictionary into chunks.
+
+    Source: https://stackoverflow.com/a/22878842
+    """
+    it = iter(data)
+    for i in range(0, len(data), chunk_size):
+        yield {k: data[k] for k in islice(it, chunk_size)}
+
+
+def flatten_dict(d, parent_key='', sep='.'):
+    """Based on https://www.geeksforgeeks.org/python-convert-nested-dictionary-into-flattened-dictionary/"""
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        elif isinstance(v, list):
+            list_mapping = {
+                str(i): item for i, item in enumerate(v)
+            }
+            items.extend(flatten_dict(list_mapping, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 
 def flatten_df(df, backend):

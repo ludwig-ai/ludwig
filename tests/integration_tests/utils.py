@@ -347,6 +347,8 @@ def run_experiment(
         input_features,
         output_features,
         skip_save_processed_input=True,
+        config=None,
+        backend=None,
         **kwargs
 ):
     """
@@ -358,7 +360,6 @@ def run_experiment(
     arguments
     :return: None
     """
-    config = None
     if input_features is not None and output_features is not None:
         # This if is necessary so that the caller can call with
         # config_file (and not config)
@@ -374,6 +375,7 @@ def run_experiment(
 
     args = {
         'config': config,
+        'backend': backend or LocalTestBackend(),
         'skip_save_training_description': True,
         'skip_save_training_statistics': True,
         'skip_save_processed_input': skip_save_processed_input,

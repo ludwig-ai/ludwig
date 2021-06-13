@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import re
+
 import numpy as np
 
 from ludwig.constants import SEQUENCE, PREPROCESSING, NAME
@@ -48,6 +50,11 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
     return np.array(out, dtype=np.int32)
 
 
+def sanitize(name):
+    """Replaces invalid id characters."""
+    return re.sub('\W|^(?=\d)', '_', name)
+
+
 def compute_feature_hash(feature: dict) -> str:
     preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
-    return feature[NAME] + "_" + preproc_hash.decode('ascii')
+    return sanitize(feature[NAME]) + "_" + preproc_hash.decode('ascii')

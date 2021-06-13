@@ -38,7 +38,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      JSONL_FORMATS, ORC_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
                                      SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
-                                     TSV_FORMATS, figure_data_format,
+                                     TFRECORD_FORMATS, TSV_FORMATS, figure_data_format,
                                      override_in_memory_flag, read_csv,
                                      read_excel, read_feather, read_fwf,
                                      read_html, read_json, read_jsonl,
@@ -252,7 +252,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_csv(dataset)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -300,7 +300,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_tsv(dataset)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -348,7 +348,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_json(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -396,7 +396,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_jsonl(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -444,7 +444,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_excel(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -492,7 +492,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_parquet(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -515,8 +515,8 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed
     ):
-        test_set = test_set if path_exists(test_set) else None
-        validation_set = validation_set if path_exists(validation_set) else None
+        test_set = test_set if test_set and path_exists(test_set) else None
+        validation_set = validation_set if validation_set and path_exists(validation_set) else None
         return training_set, test_set, validation_set, training_set_metadata
 
 
@@ -557,7 +557,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_pickle(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -605,7 +605,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_feather(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -653,7 +653,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_fwf(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -701,7 +701,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_html(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -749,7 +749,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_orc(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -797,7 +797,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_sas(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -845,7 +845,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_spss(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -893,7 +893,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             backend
     ):
         dataset_df = read_stata(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
             features,
@@ -1019,6 +1019,61 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         return training_set, test_set, validation_set, training_set_metadata
 
 
+class TFRecordPreprocessor(DataFormatPreprocessor):
+    @staticmethod
+    def preprocess_for_training(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
+            random_seed=default_random_seed
+    ):
+        return TFRecordPreprocessor.prepare_processed_data(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            training_set_metadata,
+            skip_save_processed_input,
+            preprocessing_params,
+            backend,
+            random_seed
+        )
+
+    @staticmethod
+    def preprocess_for_prediction(
+            dataset,
+            features,
+            preprocessing_params,
+            training_set_metadata,
+            backend
+    ):
+        return dataset, training_set_metadata, None
+
+    @staticmethod
+    def prepare_processed_data(
+            features,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            skip_save_processed_input=False,
+            preprocessing_params=default_preprocessing_parameters,
+            backend=LOCAL_BACKEND,
+            random_seed=default_random_seed
+    ):
+        test_set = test_set if test_set and path_exists(test_set) else None
+        validation_set = validation_set if validation_set and path_exists(validation_set) else None
+        return training_set, test_set, validation_set, training_set_metadata
+
+
 data_format_preprocessor_registry = {
     **{fmt: DictPreprocessor for fmt in DICT_FORMATS},
     **{fmt: DataFramePreprocessor for fmt in DATAFRAME_FORMATS},
@@ -1037,6 +1092,7 @@ data_format_preprocessor_registry = {
     **{fmt: SPSSPreprocessor for fmt in SPSS_FORMATS},
     **{fmt: StataPreprocessor for fmt in STATA_FORMATS},
     **{fmt: HDF5Preprocessor for fmt in HDF5_FORMATS},
+    **{fmt: TFRecordPreprocessor for fmt in TFRECORD_FORMATS},
 }
 
 
@@ -1052,35 +1108,49 @@ def build_dataset(
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
 
+    # If persisting DataFrames in memory is enabled, we want to do this after
+    # each batch of parallel ops in order to avoid redundant computation
+    dataset_df = backend.df_engine.persist(dataset_df)
+
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
         global_preprocessing_parameters
     )
 
-    dataset_df = cast_columns(
+    # Get all the unique preprocessing features to compute
+    proc_features = []
+    feature_hashes = set()
+    for feature in features:
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)
+        if feature[PROC_COLUMN] not in feature_hashes:
+            proc_features.append(feature)
+            feature_hashes.add(feature[PROC_COLUMN])
+
+    dataset_cols = cast_columns(
         dataset_df,
-        features,
+        proc_features,
         global_preprocessing_parameters,
         backend
     )
 
     metadata = build_metadata(
         metadata,
-        dataset_df,
-        features,
+        dataset_cols,
+        proc_features,
         global_preprocessing_parameters,
         backend
     )
 
-    dataset = build_data(
-        dataset_df,
-        features,
+    proc_cols = build_data(
+        dataset_cols,
+        proc_features,
         metadata,
         backend,
         skip_save_processed_input
     )
 
-    dataset[SPLIT] = get_split(
+    proc_cols[SPLIT] = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -1091,12 +1161,22 @@ def build_dataset(
         random_seed=random_seed
     )
 
+    dataset = backend.df_engine.empty_df_like(dataset_df)
+    for k, v in proc_cols.items():
+        dataset[k] = v
+
+    # At this point, there should be no missing values left in the dataframe, unless
+    # the DROP_ROW preprocessing option was selected, in which case we need to drop those
+    # rows.
+    dataset = dataset.dropna()
+
     return dataset, metadata
 
 
 def cast_columns(dataset_df, features, global_preprocessing_parameters,
                  backend):
     # todo figure out if global_preprocessing_parameters is needed
+    dataset_cols = {}
     for feature in features:
         cast_column = get_from_registry(
             feature[TYPE],
@@ -1104,167 +1184,156 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
         ).cast_column
         # todo figure out if additional parameters are needed
         #  for the cast_column function
-        dataset_df = cast_column(
-            feature,
-            dataset_df,
+        dataset_cols[feature[COLUMN]] = cast_column(
+            dataset_df[feature[COLUMN]],
             backend
         )
 
-    return dataset_df
+    return dataset_cols
 
 
 def build_metadata(
-        metadata, dataset_df, features, global_preprocessing_parameters, backend
+        metadata, dataset_cols, features, global_preprocessing_parameters, backend
 ):
-    proc_feature_to_metadata = {}
     for feature in features:
         if feature[NAME] in metadata:
             continue
 
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
-
-        if feature[PROC_COLUMN] not in proc_feature_to_metadata:
-
-            if PREPROCESSING in feature:
-                preprocessing_parameters = merge_dict(
-                    global_preprocessing_parameters[feature[TYPE]],
-                    feature[PREPROCESSING]
-                )
-            else:
-                preprocessing_parameters = global_preprocessing_parameters[
-                    feature[TYPE]
-                ]
-
-            # deal with encoders that have fixed preprocessing
-            if 'encoder' in feature:
-                encoders_registry = get_from_registry(
-                    feature[TYPE],
-                    input_type_registry
-                ).encoder_registry
-                encoder_class = encoders_registry[feature['encoder']]
-                if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
-                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
-                    preprocessing_parameters = merge_dict(
-                        preprocessing_parameters,
-                        resolve_pointers(encoder_fpp, feature, 'feature.')
-                    )
-
-            fill_value = precompute_fill_value(
-                dataset_df,
-                feature,
-                preprocessing_parameters,
-                backend
+        if PREPROCESSING in feature:
+            preprocessing_parameters = merge_dict(
+                global_preprocessing_parameters[feature[TYPE]],
+                feature[PREPROCESSING]
             )
-            if fill_value is not None:
-                preprocessing_parameters = {
-                    'computed_fill_value': fill_value,
-                    **preprocessing_parameters
-                }
+        else:
+            preprocessing_parameters = global_preprocessing_parameters[
+                feature[TYPE]
+            ]
 
-            dataset_df = handle_missing_values(
-                dataset_df,
-                feature,
-                preprocessing_parameters
-            )
-
-            get_feature_meta = get_from_registry(
+        # deal with encoders that have fixed preprocessing
+        if 'encoder' in feature:
+            encoders_registry = get_from_registry(
                 feature[TYPE],
-                base_type_registry
-            ).get_feature_meta
+                input_type_registry
+            ).encoder_registry
+            encoder_class = encoders_registry[feature['encoder']]
+            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
+                encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-            column = dataset_df[feature[NAME]]
-            if column.dtype == object:
-                column = column.astype(str)
+                preprocessing_parameters = merge_dict(
+                    preprocessing_parameters,
+                    resolve_pointers(encoder_fpp, feature, 'feature.')
+                )
 
-            metadata[feature[NAME]] = get_feature_meta(
-                column,
-                preprocessing_parameters,
-                backend
-            )
+        fill_value = precompute_fill_value(
+            dataset_cols,
+            feature,
+            preprocessing_parameters,
+            backend
+        )
+        if fill_value is not None:
+            preprocessing_parameters = {
+                'computed_fill_value': fill_value,
+                **preprocessing_parameters
+            }
 
-            metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+        handle_missing_values(
+            dataset_cols,
+            feature,
+            preprocessing_parameters
+        )
+
+        get_feature_meta = get_from_registry(
+            feature[TYPE],
+            base_type_registry
+        ).get_feature_meta
+
+        column = dataset_cols[feature[COLUMN]]
+        if column.dtype == object:
+            column = column.astype(str)
+
+        metadata[feature[NAME]] = get_feature_meta(
+            column,
+            preprocessing_parameters,
+            backend
+        )
+
+        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
 
 def build_data(
-        input_df,
+        input_cols,
         features,
         training_set_metadata,
         backend,
         skip_save_processed_input
 ):
-    proc_df = backend.df_engine.empty_df_like(input_df)
+    proc_cols = {}
     for feature in features:
+        preprocessing_parameters = \
+            training_set_metadata[feature[NAME]][
+                PREPROCESSING]
+        handle_missing_values(
+            input_cols,
+            feature,
+            preprocessing_parameters
+        )
+        add_feature_data = get_from_registry(
+            feature[TYPE],
+            base_type_registry
+        ).add_feature_data
+        proc_cols = add_feature_data(
+            feature,
+            input_cols,
+            proc_cols,
+            training_set_metadata,
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input
+        )
 
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
-
-        if feature[PROC_COLUMN] not in proc_df:
-            preprocessing_parameters = \
-                training_set_metadata[feature[NAME]][
-                    PREPROCESSING]
-            input_df = handle_missing_values(
-                input_df,
-                feature,
-                preprocessing_parameters
-            )
-            add_feature_data = get_from_registry(
-                feature[TYPE],
-                base_type_registry
-            ).add_feature_data
-            proc_df = add_feature_data(
-                feature,
-                input_df,
-                proc_df,
-                training_set_metadata,
-                preprocessing_parameters,
-                backend,
-                skip_save_processed_input
-            )
-
-    return proc_df
+    return proc_cols
 
 
-def precompute_fill_value(dataset_df, feature, preprocessing_parameters, backend):
+def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
     elif missing_value_strategy == FILL_WITH_MODE:
-        return dataset_df[feature[COLUMN]].value_counts().index[0]
+        return dataset_cols[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',
             )
-        return backend.df_engine.compute(dataset_df[feature[COLUMN]].mean())
+        return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
     # Otherwise, we cannot precompute the fill value for this dataset
     return None
 
 
-def handle_missing_values(dataset_df, feature, preprocessing_parameters):
+def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
 
     # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get('computed_fill_value')
 
     if computed_fill_value is not None:
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
+        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             computed_fill_value,
         )
     elif missing_value_strategy in [BACKFILL, BFILL, PAD, FFILL]:
-        dataset_df[feature[COLUMN]] = dataset_df[feature[COLUMN]].fillna(
+        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
     elif missing_value_strategy == DROP_ROW:
-        dataset_df = dataset_df.dropna(subset=[feature[COLUMN]])
+        # Here we only drop from this series, but after preprocessing we'll do a second
+        # round of dropping NA values from the entire output dataframe, which will
+        # result in the removal of the rows.
+        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
     else:
         raise ValueError('Invalid missing value strategy')
-
-    return dataset_df
 
 
 def get_split(
@@ -1365,16 +1434,14 @@ def preprocess_for_training(
                 config['output_features'])
 
     # in case data_format is one of the cacheable formats,
-    # check if there's a cached hdf5 file with hte same name,
-    # and in case move on with the hdf5 branch
+    # check if there's a cached hdf5 file with the same name,
+    # and in case move on with the hdf5 branch.
     cached = False
-    checksum = None
-    input_fname = None
+    cache = backend.cache.get_dataset_cache(
+        config, dataset, training_set, test_set, validation_set
+    )
     if data_format in CACHEABLE_FORMATS:
-        input_fname = dataset or training_set
-
-        checksum = backend.cache.get_cache_key(input_fname, config)
-        cache_results = backend.cache.get_dataset(input_fname, config)
+        cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:
@@ -1394,18 +1461,16 @@ def preprocess_for_training(
                     "if saving of processed input is not skipped "
                     "they will be overridden"
                 )
-                backend.cache.delete_dataset(input_fname, config)
+                cache.delete()
 
-    if CHECKSUM not in training_set_metadata:
-        checksum = checksum or backend.cache.get_cache_key(input_fname, config)
-        training_set_metadata[CHECKSUM] = checksum
-
+    training_set_metadata[CHECKSUM] = cache.checksum
     data_format_processor = get_from_registry(
         data_format,
         data_format_preprocessor_registry
     )
 
-    if cached:
+    if cached or data_format == 'hdf5':
+        # Always interpret hdf5 files as preprocessed, even if missing from the cache
         processed = data_format_processor.prepare_processed_data(
             features,
             dataset=dataset,
@@ -1441,9 +1506,8 @@ def preprocess_for_training(
         processed = (training_set, test_set, validation_set, training_set_metadata)
 
         # cache the dataset
-        processed = backend.cache.put_dataset(
-            input_fname, config, processed, skip_save_processed_input
-        )
+        if backend.cache.can_cache(skip_save_processed_input):
+            processed = cache.put(*processed)
         training_set, test_set, validation_set, training_set_metadata = processed
 
     training_dataset = backend.dataset_manager.create(
@@ -1513,7 +1577,7 @@ def _preprocess_file_for_training(
         logger.info('Building dataset (it may take a while)')
 
         dataset_df = read_fn(dataset, backend.df_engine.df_lib)
-        dataset_df.src = dataset
+        training_set_metadata[SRC] = dataset
 
         data, training_set_metadata = build_dataset(
             dataset_df,
@@ -1553,7 +1617,7 @@ def _preprocess_file_for_training(
             read_fn,
             backend
         )
-        concatenated_df.src = training_set
+        training_set_metadata[SRC] = training_set
 
         data, training_set_metadata = build_dataset(
             concatenated_df,
@@ -1687,9 +1751,10 @@ def preprocess_for_prediction(
     # because the cached data is stored in its split form, and would be
     # expensive to recombine, requiring further caching.
     cached = False
+    cache = backend.cache.get_dataset_cache(config, dataset)
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
-        cache_results = backend.cache.get_dataset(dataset, config)
+        cache_results = cache.get()
         if cache_results is not None:
             valid, *cache_values = cache_results
             if valid:

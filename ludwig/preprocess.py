@@ -17,17 +17,18 @@
 import argparse
 import logging
 import sys
-from typing import Union
+from typing import Union, List
 
 import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.backend import ALL_BACKENDS, LOCAL, Backend, initialize_backend
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
+from ludwig.callbacks import Callback
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -35,8 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 def preprocess_cli(
-        preprocessing_config: dict = None,
-        preprocessing_config_file: str = None,
+        preprocessing_config: Union[str, dict] = None,
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -45,6 +45,7 @@ def preprocess_cli(
         data_format: str = None,
         random_seed: int = default_random_seed,
         logging_level: int = logging.INFO,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
         debug: bool = False,
         **kwargs
@@ -53,10 +54,8 @@ def preprocess_cli(
     internals. Requires most of the parameters that are taken into the model.
     Builds a full ludwig model and performs the training.
 
-    :param config: (dict) config which defines the different
-        parameters of the model, features, preprocessing and training.
-    :param config_file: (str, default: `None`) the filepath string
-        that specifies the config.  It is a yaml file.
+    :param preprocessing_config: (Union[str, dict]) in-memory representation of
+            config or string path to a YAML config file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used for training.
         If it has a split column, it will be used for splitting (0 for train,
@@ -131,6 +130,9 @@ def preprocess_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
@@ -143,14 +145,11 @@ def preprocess_cli(
 
     :return: (`None`)
     """
-    preprocessing_config = check_which_config(
-        preprocessing_config,
-        preprocessing_config_file
-    )
-
     model = LudwigModel(
         config=preprocessing_config,
         logging_level=logging_level,
+        callbacks=callbacks,
+        backend=backend,
     )
     model.preprocess(
         dataset=dataset,
@@ -221,6 +220,8 @@ def cli(sys_argv):
     preprocessing_def.add_argument(
         '-pcf',
         '--preprocessing_config_file',
+        dest='preprocessing_config',
+        type=load_yaml,
         help='YAML file describing the preprocessing. '
              'Ignores --preprocessing_config.'
              'Uses the same format of config, '
@@ -261,7 +262,12 @@ def cli(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('preprocess', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -278,6 +284,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("preprocess", *sys.argv)
     cli(sys.argv[1:])

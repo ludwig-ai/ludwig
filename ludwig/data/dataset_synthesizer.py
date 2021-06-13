@@ -29,7 +29,7 @@ import yaml
 from ludwig.constants import (AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE,
                               NUMERICAL, PREPROCESSING, SEQUENCE, SET,
                               TEXT, TIMESERIES, TYPE, VECTOR, NAME)
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
@@ -434,7 +434,8 @@ cyclers_registry = {
 def cli_synthesize_dataset(
         dataset_size: int,
         features: List[dict],
-        output_path: str
+        output_path: str,
+        **kwargs
 ) -> None:
     """Symthesizes a dataset for testing purposes
 
@@ -533,7 +534,12 @@ def cli(sys_argv):
              'each dictionary must include a name, a type '
              'and can include some generation parameters depending on the type'
     )
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('synthesize_dataset', *sys_argv)
 
     # No log level parameter this is placeholder if we add at later date
     # args.logging_level = logging_level_registry[args.logging_level]
@@ -550,6 +556,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("synthesize_dataset", *sys.argv)
     cli(sys.argv[1:])

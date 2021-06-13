@@ -9,7 +9,6 @@ from ludwig.modules.normalization_modules import GhostBatchNormalization
 class TabNet(tf.keras.Model):
     def __init__(
             self,
-            num_features: int,
             size: int,
             output_size: int,
             num_steps: int = 1,
@@ -24,24 +23,28 @@ class TabNet(tf.keras.Model):
         """TabNet
         Will output a vector of size output_dim.
         Args:
-            num_features (int): Number of features.
             size (int): Embedding feature dimension to use.
             output_size (int): Output dimension.
             num_steps (int, optional): Total number of steps. Defaults to 1.
             num_total_blocks (int, optional): Total number of feature transformer blocks. Defaults to 4.
             num_shared_blocks (int, optional): Number of shared feature transformer blocks. Defaults to 2.
             relaxation_factor (float, optional): >1 will allow features to be used more than once. Defaults to 1.5.
-            bn_epsilon (float, optional): Batch normalization, epsilon. Defaults to 1e-5.
             bn_momentum (float, optional): Batch normalization, momentum. Defaults to 0.7.
+            bn_epsilon (float, optional): Batch normalization, epsilon. Defaults to 1e-5.
             bn_virtual_bs (int, optional): Virtual batch ize for ghost batch norm..
         """
         super().__init__()
-        self.num_features = num_features
         self.size = size
         self.output_size = output_size
         self.num_steps = num_steps
         self.relaxation_factor = relaxation_factor
         self.sparsity = sparsity
+
+        # needed by the attentive transformer in build()
+        self.num_steps = num_steps
+        self.bn_momentum = bn_momentum
+        self.bn_epsilon = bn_epsilon
+        self.bn_virtual_bs = bn_virtual_bs
 
         self.batch_norm = tf.keras.layers.BatchNormalization(
             momentum=bn_momentum, epsilon=bn_epsilon
@@ -70,21 +73,36 @@ class TabNet(tf.keras.Model):
                         0].shared_fc_layers
                 )
             )
-            self.attentive_transforms.append(
-                AttentiveTransformer(num_features, bn_momentum, bn_epsilon,
-                                     bn_virtual_bs)
-            )
+            # attentive transformers are initialized in build
+            # because their outputs size depends on the number
+            # of features that we determine by looking at the
+            # last dimension of the input tensor
+            # self.attentive_transforms.append(
+            #     AttentiveTransformer(num_features, bn_momentum, bn_epsilon,
+            #                          bn_virtual_bs)
+            # )
         self.final_projection = tf.keras.layers.Dense(self.output_size)
+
+    def build(self, input_shape):
+        num_features = input_shape[-1]
+        for i in range(self.num_steps):
+            self.attentive_transforms.append(
+                AttentiveTransformer(num_features, self.bn_momentum,
+                                     self.bn_epsilon, self.bn_virtual_bs)
+            )
 
     def call(
             self,
             features: tf.Tensor,
             training: bool = None,
             **kwargs
-    ) -> Tuple[tf.Tensor, List[tf.Tensor]]:
+    ) -> Tuple[tf.Tensor, tf.Tensor, List[tf.Tensor]]:
+        assert len(tf.shape(features)) == 2
         batch_size = tf.shape(features)[0]
+        num_features = tf.shape(features)[-1]
         out_accumulator = tf.zeros((batch_size, self.output_size))
-        prior_scales = tf.ones((batch_size, self.num_features))
+        aggregated_mask = tf.zeros([batch_size, num_features])
+        prior_scales = tf.ones((batch_size, num_features))
         masks = []
         total_entropy = 0.0
 
@@ -126,11 +144,18 @@ class TabNet(tf.keras.Model):
             out = tf.keras.activations.relu(x[:, :self.output_size])
             out_accumulator += out
 
+            # Aggregated masks are used for visualization of the
+            # feature importance attributes.
+            scale = tf.reduce_sum(out, axis=1, keepdims=True) / self.num_steps
+            aggregated_mask += mask_values * scale
+
         final_output = self.final_projection(out_accumulator)
 
-        self.add_loss(self.sparsity * total_entropy)
+        sparsity_loss = tf.multiply(self.sparsity, total_entropy)
+        setattr(sparsity_loss, "loss_name", "sparsity_loss")
+        self.add_loss(sparsity_loss)
 
-        return final_output, masks
+        return final_output, aggregated_mask, masks
 
 
 class FeatureBlock(tf.keras.Model):

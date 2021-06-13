@@ -18,8 +18,11 @@ import os.path
 
 import pytest
 
+import mlflow
 import ray
+from mlflow.tracking import MlflowClient
 
+from ludwig.contribs import MlflowCallback
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt
@@ -90,28 +93,14 @@ EXECUTORS = [
 ]
 
 
-@pytest.fixture
-def ray_start_4_cpus():
-    address_info = ray.init(num_cpus=4)
-    try:
-        yield address_info
-    finally:
-        ray.shutdown()
-
-
-@spawn
-def run_hyperopt_executor(sampler, executor, csv_filename,
-                          validate_output_feature=False,
-                          validation_metric=None):
+def _get_config(sampler, executor):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    config = {
+    return {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
@@ -123,12 +112,35 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
         },
     }
 
+
+@pytest.fixture
+def ray_start_4_cpus():
+    address_info = ray.init(num_cpus=4)
+    try:
+        yield address_info
+    finally:
+        ray.shutdown()
+
+
+@spawn
+def run_hyperopt_executor(
+    sampler, executor, csv_filename,
+    validate_output_feature=False,
+    validation_metric=None,
+):
+    config = _get_config(sampler, executor)
+    rel_path = generate_data(
+        config['input_features'],
+        config['output_features'],
+        csv_filename
+    )
+
     config = merge_with_defaults(config)
 
     hyperopt_config = config["hyperopt"]
 
     if validate_output_feature:
-        hyperopt_config['output_feature'] = output_features[0]['name']
+        hyperopt_config['output_feature'] = config['output_features'][0]['name']
     if validation_metric:
         hyperopt_config['validation_metric'] = validation_metric
 
@@ -150,7 +162,11 @@ def run_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(config, dataset=rel_path)
+    hyperopt_executor.execute(
+        config,
+        dataset=rel_path,
+        backend='local',
+    )
 
 
 @pytest.mark.distributed
@@ -218,12 +234,53 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus):
     run_hyperopt(config, rel_path)
 
 
+@pytest.mark.distributed
+def test_hyperopt_ray_mlflow(csv_filename, ray_start_4_cpus, tmpdir):
+    mlflow_uri = f'file://{tmpdir}/mlruns'
+    mlflow.set_tracking_uri(mlflow_uri)
+    client = MlflowClient(tracking_uri=mlflow_uri)
+
+    num_samples = 2
+    config = _get_config(
+        {"type": "ray", "num_samples": num_samples},
+        {"type": "ray"}
+    )
+
+    rel_path = generate_data(
+        config['input_features'],
+        config['output_features'],
+        csv_filename
+    )
+
+    exp_name = 'mlflow_test'
+    run_hyperopt(config, rel_path,
+                 experiment_name=exp_name,
+                 callbacks=[MlflowCallback(mlflow_uri)])
+
+    experiment = client.get_experiment_by_name(exp_name)
+    assert experiment is not None
+
+    runs = client.search_runs([experiment.experiment_id])
+    assert len(runs) > 0
+
+    for run in runs:
+        artifacts = [f.path for f in client.list_artifacts(run.info.run_id, "")]
+        assert 'config.yaml' in artifacts
+        assert 'model' in artifacts
+
+
 @spawn
-def run_hyperopt(config, rel_path):
+def run_hyperopt(
+        config, rel_path,
+        experiment_name='ray_hyperopt',
+        callbacks=None,
+):
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,
-        output_directory='results_hyperopt'
+        output_directory='results_hyperopt',
+        experiment_name=experiment_name,
+        callbacks=callbacks,
     )
 
     # check for return results

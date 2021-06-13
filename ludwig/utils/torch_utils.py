@@ -111,6 +111,6 @@ class LudwigModule(Module):
 
         return collected_losses
 
-    def add_losses(self, loss):
+    def add_loss(self, loss):
         if callable(loss):
             self._callable_losses.append(loss)

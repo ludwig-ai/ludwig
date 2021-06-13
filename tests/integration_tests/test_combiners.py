@@ -9,9 +9,8 @@ from ludwig.combiners.combiners import (
     SequenceCombiner,
     TabNetCombiner,
     ComparatorCombiner,
-    sequence_encoder_registry,
+    sequence_encoder_registry, TransformerCombiner,
 )
-from ludwig.models.ecd import build_inputs
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -243,7 +242,6 @@ def test_tabnet_combiner(encoder_outputs):
 
     # setup combiner to test
     combiner = TabNetCombiner(
-        build_inputs(input_features_def),
         size=2,
         output_size=2,
         num_steps=3,
@@ -291,3 +289,36 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     # this assumes dimensionality = 2
     size = BATCH_SIZE * 2 + fc_size * 2
     assert results["combiner_output"].shape.as_list() == [BATCH_SIZE, size]
+
+
+def test_transformer_combiner(encoder_outputs):
+    # clean out unneeded encoder outputs
+    encoder_outputs = {}
+    encoder_outputs['feature_1'] = {
+        'encoder_output': tf.random.normal(
+            [128, 1],
+            dtype=tf.float32
+        )
+    }
+    encoder_outputs['feature_2'] = {
+        'encoder_output': tf.random.normal(
+            [128, 1],
+            dtype=tf.float32
+        )
+    }
+
+    input_features_def = [
+        {'name': 'feature_1', 'type': 'numerical'},
+        {'name': 'feature_2', 'type': 'numerical'}
+    ]
+
+    # setup combiner to test
+    combiner = TransformerCombiner(
+        input_features=input_features_def
+    )
+
+    # concatenate encoder outputs
+    results = combiner(encoder_outputs)
+
+    # required key present
+    assert 'combiner_output' in results

@@ -48,6 +48,7 @@ class Regressor(LudwigModule):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
+            activation=None,
             **kwargs
     ):
         super().__init__()
@@ -65,7 +66,8 @@ class Regressor(LudwigModule):
             bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer,
             bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            activity_regularizer=activity_regularizer,
+            activation=activation
         )
         '''
         self.dense = Linear(

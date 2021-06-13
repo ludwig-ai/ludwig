@@ -5,8 +5,9 @@ from typing import Union, List
 import pandas as pd
 import yaml
 
+from ludwig.callbacks import Callback
 from ludwig.hyperopt.execution import executor_registry
-from ludwig.backend import Backend, initialize_backend
+from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE, SAMPLER, EXECUTOR, MINIMIZE
 from ludwig.features.feature_registries import output_type_registry
@@ -45,6 +46,7 @@ def hyperopt(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         debug: bool = False,
@@ -133,6 +135,9 @@ def hyperopt(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
@@ -145,14 +150,19 @@ def hyperopt(
     :return: (List[dict]) List of results for each trial, ordered by
         descending performance on the target metric.
     """
-    backend = initialize_backend(backend)
-
     # check if config is a path or a dict
     if isinstance(config, str):  # assume path
         with open_file(config, 'r') as def_file:
             config_dict = yaml.safe_load(def_file)
     else:
         config_dict = config
+
+    # Explicitly default to a local backend to avoid picking up Ray or Horovod
+    # backend from the environment.
+    backend = backend or config_dict.get('backend') or 'local'
+    backend = initialize_backend(backend)
+    if not isinstance(backend, LocalBackend):
+        raise ValueError('Hyperopt requires using a `local` backend at this time.')
 
     # merge config with defaults
     config = merge_with_defaults(config_dict)
@@ -267,6 +277,10 @@ def hyperopt(
         executor[TYPE]
     )(hyperopt_sampler, output_feature, metric, split, **executor)
 
+    if callbacks:
+        for callback in callbacks:
+            callback.on_hyperopt_init(experiment_name)
+
     hyperopt_results = hyperopt_executor.execute(
         config,
         dataset=dataset,
@@ -292,6 +306,7 @@ def hyperopt(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
+        callbacks=callbacks,
         backend=backend,
         random_seed=random_seed,
         debug=debug,

@@ -34,7 +34,6 @@ from tabulate import tabulate
 from tqdm import tqdm
 
 from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
-from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
@@ -117,6 +116,8 @@ class Trainer(BaseTrainer):
             staircase=False,
             batch_size=128,
             eval_batch_size=0,
+            should_shuffle=True,
+            shuffle_buffer_size=None,
             bucketing_field=None,
             validation_field='combined',
             validation_metric='loss',
@@ -163,8 +164,12 @@ class Trainer(BaseTrainer):
         :type learning_rate: Integer
         :param batch_size: Size of batch to pass to the model for training.
         :type batch_size: Integer
-        :param batch_size: Size of batch to pass to the model for evaluation.
-        :type batch_size: Integer
+        :param eval_batch_size: Size of batch to pass to the model for evaluation.
+        :type eval_batch_size: Integer
+        :param should_shuffle: Shuffle batches during training when true (default: True).
+        :type shuffle_buffer_size: Boolean
+        :param shuffle_buffer_size: Size of buffer in number of examples to read for shuffling.
+        :type shuffle_buffer_size: Integer
         :param bucketing_field: when batching, buckets datapoints based the
                length of a field together. Bucketing on text length speeds up
                training of RNNs consistently, 30% in some cases
@@ -242,6 +247,8 @@ class Trainer(BaseTrainer):
         self.staircase = staircase
         self.batch_size = batch_size
         self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
+        self.should_shuffle = should_shuffle
+        self.shuffle_buffer_size = shuffle_buffer_size
         self.bucketing_field = bucketing_field
         self._validation_field = validation_field
         self._validation_metric = validation_metric
@@ -486,14 +493,14 @@ class Trainer(BaseTrainer):
 
         if self.debug and self.is_coordinator():
             # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
-            debug_path = os.path.join(
-                save_path, 'debug'
-            )
-            tf.debugging.experimental.enable_dump_debug_info(
-                debug_path,
-                tensor_debug_mode='FULL_HEALTH',
-                circular_buffer_size=-1,
-            )
+            # debug_path = os.path.join(
+            #     save_path, 'debug'
+            # )
+            # tf.debugging.experimental.enable_dump_debug_info(
+            #     debug_path,
+            #     tensor_debug_mode='FULL_HEALTH',
+            #     circular_buffer_size=-1,
+            # )
             tf.config.experimental_run_functions_eagerly(True)
             # tf.debugging.enable_check_numerics()
 
@@ -548,8 +555,10 @@ class Trainer(BaseTrainer):
         set_random_seed(self.random_seed)
         with training_set.initialize_batcher(
             batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            shuffle_buffer_size=self.shuffle_buffer_size,
             seed=self.random_seed,
-            horovod=self.horovod
+            horovod=self.horovod,
         ) as batcher:
 
             # ================ Training Loop ================
@@ -583,13 +592,11 @@ class Trainer(BaseTrainer):
                         disable=is_progressbar_disabled()
                     )
 
-                for callback in self.callbacks:
-                    callback.on_epoch_start(self, progress_tracker, save_path)
+                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                 # training step loop
                 while not batcher.last_batch():
-                    for callback in self.callbacks:
-                        callback.on_batch_start(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
                     # Set learning rate for this batch
                     current_learning_rate = progress_tracker.learning_rate
@@ -679,8 +686,7 @@ class Trainer(BaseTrainer):
                         progress_bar.update(1)
                     first_batch = False
 
-                    for callback in self.callbacks:
-                        callback.on_batch_end(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
                 # ================ Post Training Epoch ================
                 if self.is_coordinator():
@@ -714,9 +720,7 @@ class Trainer(BaseTrainer):
                 )
 
                 if validation_set is not None and len(validation_set) > 0:
-                    for callback in self.callbacks:
-                        callback.on_validation_start(self, progress_tracker,
-                                                     save_path)
+                    self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
                     # eval metrics on validation set
                     self.evaluation(
@@ -734,13 +738,10 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    for callback in self.callbacks:
-                        callback.on_validation_end(self, progress_tracker,
-                                                   save_path)
+                    self.callback(lambda c: c.on_validation_end(self, progress_tracker, save_path))
 
                 if test_set is not None and len(test_set) > 0:
-                    for callback in self.callbacks:
-                        callback.on_test_start(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
                     # eval metrics on test set
                     self.evaluation(
@@ -758,8 +759,7 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    for callback in self.callbacks:
-                        callback.on_test_end(self, progress_tracker, save_path)
+                    self.callback(lambda c: c.on_test_end(self, progress_tracker, save_path))
 
                 elapsed_time = (time.time() - start_time) * 1000.0
 
@@ -823,11 +823,9 @@ class Trainer(BaseTrainer):
                                 TRAINING_PROGRESS_TRACKER_FILE_NAME
                             )
                         )
-                    contrib_command("train_epoch_end", progress_tracker)
                     logger.info('')
 
-                for callback in self.callbacks:
-                    callback.on_epoch_end(self, progress_tracker, save_path)
+                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
         if train_summary_writer is not None:
             train_summary_writer.close()
@@ -850,6 +848,8 @@ class Trainer(BaseTrainer):
     ):
         with dataset.initialize_batcher(
             batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            shuffle_buffer_size=self.shuffle_buffer_size,
             horovod=self.horovod
         ) as batcher:
 
@@ -922,7 +922,6 @@ class Trainer(BaseTrainer):
             metrics_log,
             tables,
             batch_size=128,
-            debug=False,
     ):
         predictor = Predictor(
             batch_size=batch_size, horovod=self.horovod, debug=self.debug
@@ -1331,6 +1330,11 @@ class Trainer(BaseTrainer):
             return True
         return self.horovod.rank() == 0
 
+    def callback(self, fn):
+        if self.is_coordinator():
+            for callback in self.callbacks:
+                fn(callback)
+
 
 class RemoteTrainer(Trainer):
     def __init__(
@@ -1404,3 +1408,36 @@ class ProgressTracker:
     def load(filepath):
         loaded = load_json(filepath)
         return ProgressTracker(**loaded)
+
+    @property
+    def log_metrics(self):
+        log_metrics = {}
+        for item_name in [
+            "batch_size",
+            "epoch",
+            "steps",
+            "last_improvement_epoch",
+            "learning_rate",
+            "best_valid_metric",
+            "num_reductions_lr",
+            "num_increases_bs",
+            "train_metrics",
+            "vali_metrics",
+            "test_metrics"
+        ]:
+            try:
+                item = getattr(self, item_name)
+                if isinstance(item, dict):
+                    for key in item:
+                        if isinstance(item[key], dict):
+                            for key2 in item[key]:
+                                log_metrics[
+                                    item_name + "." + key + "." + key2
+                                ] = item[key][key2][-1]
+                        else:
+                            log_metrics[item_name + "." + key] = item[key][-1]
+                elif item is not None:
+                    log_metrics[item_name] = item
+            except Exception:
+                logger.info(f"skip logging '{item_name}'")
+        return log_metrics

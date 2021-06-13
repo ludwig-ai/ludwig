@@ -60,10 +60,10 @@ class BinaryFeatureMixin:
     }
 
     @staticmethod
-    def cast_column(feature, dataset_df, backend):
+    def cast_column(column, backend):
         # todo maybe move code from add_feature_data here
         #  + figure out what NaN is in a bool column
-        return dataset_df
+        return column
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -124,7 +124,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.bool
+        assert inputs.dtype in [tf.bool, tf.int64]
         assert len(inputs.shape) == 1
 
         inputs = tf.cast(inputs, dtype=tf.float32)

@@ -59,9 +59,9 @@ def split(data_parquet):
     return train_fname, val_fname, test_fname
 
 
-def run_api_experiment(config, data_parquet):
+def run_api_experiment(config, data_parquet, cache_format):
     # Train on Parquet
-    dask_backend = DaskBackend()
+    dask_backend = DaskBackend(cache_format=cache_format)
     train_with_backend(dask_backend, config, dataset=data_parquet, evaluate=False)
 
     # Train on DataFrame directly
@@ -69,8 +69,8 @@ def run_api_experiment(config, data_parquet):
     train_with_backend(dask_backend, config, dataset=data_df, evaluate=False)
 
 
-def run_split_api_experiment(config, data_parquet):
-    backend = DaskBackend()
+def run_split_api_experiment(config, data_parquet, cache_format):
+    backend = DaskBackend(cache_format=cache_format)
 
     train_fname, val_fname, test_fname = split(data_parquet)
 
@@ -99,7 +99,8 @@ def run_test_parquet(
     output_features,
     num_examples=100,
     run_fn=run_api_experiment,
-    expect_error=False
+    expect_error=False,
+    cache_format='parquet',
 ):
     tf.config.experimental_run_functions_eagerly(True)
 
@@ -117,13 +118,14 @@ def run_test_parquet(
 
         if expect_error:
             with pytest.raises(ValueError):
-                run_fn(config, data_parquet=dataset_parquet)
+                run_fn(config, data_parquet=dataset_parquet, cache_format=cache_format)
         else:
-            run_fn(config, data_parquet=dataset_parquet)
+            run_fn(config, data_parquet=dataset_parquet, cache_format=cache_format)
 
 
+@pytest.mark.parametrize('cache_format', ['parquet', 'tfrecord'])
 @pytest.mark.distributed
-def test_dask_tabular():
+def test_dask_tabular(cache_format):
     input_features = [
         sequence_feature(reduce_output='sum'),
         numerical_feature(normalization='zscore'),
@@ -136,7 +138,7 @@ def test_dask_tabular():
         date_feature(),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
-    run_test_parquet(input_features, output_features)
+    run_test_parquet(input_features, output_features, cache_format=cache_format)
 
 
 @pytest.mark.distributed

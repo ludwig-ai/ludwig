@@ -21,24 +21,22 @@ import sys
 from typing import List, Union
 
 import pandas as pd
-import yaml
 
 from ludwig.api import LudwigModel, kfold_cross_validate
 from ludwig.backend import ALL_BACKENDS, Backend, initialize_backend
+from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
-from ludwig.contrib import contrib_command, contrib_import
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.data_utils import save_json
+from ludwig.utils.data_utils import save_json, load_yaml, load_config_from_str
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import check_which_config
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
 def experiment_cli(
-        config: dict,
-        config_file: str = None,
+        config: Union[str, dict],
         dataset: Union[str, dict, pd.DataFrame] = None,
         training_set: Union[str, dict, pd.DataFrame] = None,
         validation_set: Union[str, dict, pd.DataFrame] = None,
@@ -65,6 +63,7 @@ def experiment_cli(
         gpus: Union[str, int, List[int]] = None,
         gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
         random_seed: int = default_random_seed,
         debug: bool = False,
@@ -77,10 +76,8 @@ def experiment_cli(
 
     # Inputs
 
-    :param config: (dict) config which defines the different
-        parameters of the model, features, preprocessing and training.
-    :param config_file: (str, default: `None`) the filepath string
-        that specifies the config.  It is a yaml file.
+    :param config: (Union[str, dict]) in-memory representation of
+            config or string path to a YAML config file.
     :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
         source containing the entire dataset to be used in the experiment.
         If it has a split column, it will be used for splitting (0 for train,
@@ -171,6 +168,9 @@ def experiment_cli(
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
+    :param callbacks: (list, default: `None`) a list of
+        `ludwig.callbacks.Callback` objects that provide hooks into the
+        Ludwig pipeline.
     :param backend: (Union[Backend, str]) `Backend` or string name
         of backend to use to execute preprocessing / training steps.
     :param random_seed: (int: default: 42) random seed used for weights
@@ -192,10 +192,9 @@ def experiment_cli(
         filepath string to where results are stored.
 
     """
-    backend = initialize_backend(backend)
-
-    config = check_which_config(config,
-                                config_file)
+    if isinstance(config, str):
+        config = load_yaml(config)
+    backend = initialize_backend(backend or config.get('backend'))
 
     if model_load_path:
         model = LudwigModel.load(
@@ -205,6 +204,7 @@ def experiment_cli(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
         )
     else:
         model = LudwigModel(
@@ -214,6 +214,7 @@ def experiment_cli(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
         )
     (
         eval_stats,
@@ -253,7 +254,6 @@ def experiment_cli(
 def kfold_cross_validate_cli(
         k_fold,
         config=None,
-        config_file=None,
         dataset=None,
         data_format=None,
         output_directory='results',
@@ -265,13 +265,10 @@ def kfold_cross_validate_cli(
 
     # Inputs
     :param k_fold: (int) number of folds to create for the cross-validation
-    :param config: (dict, default: None) a dictionary containing
-            information needed to build a model. Refer to the [User Guide]
+    :param config: (Union[str, dict], default: None) a dictionary or file path
+            containing model configuration. Refer to the [User Guide]
            (http://ludwig.ai/user_guide/#model-config) for details.
-    :param config_file: (string, optional, default: `None`) path to
-           a YAML file containing the config. If available it will be
-           used instead of the config dict.
-    :param data_csv: (string, default: None)
+    :param dataset: (string, default: None)
     :param output_directory: (string, default: 'results')
     :param random_seed: (int) Random seed used k-fold splits.
     :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
@@ -280,22 +277,10 @@ def kfold_cross_validate_cli(
     :return: None
     """
 
-    if config is None and config_file is None:
-        raise ValueError(
-            "No config is provided 'config' or "
-            "'config_file' must be provided."
-        )
-    elif config is not None and config_file is not None:
-        raise ValueError(
-            "Cannot specify both 'config' and 'config_file'"
-            ", proivde only one of the parameters."
-        )
-
     (kfold_cv_stats,
      kfold_split_indices) = kfold_cross_validate(
         k_fold,
-        config=config if config is not None else
-        config_file,
+        config=config,
         dataset=dataset,
         data_format=data_format,
         output_directory=output_directory,
@@ -424,13 +409,15 @@ def cli(sys_argv):
     config.add_argument(
         '-c',
         '--config',
-        type=yaml.safe_load,
-        help='config'
+        type=load_config_from_str,
+        help='JSON or YAML serialized string of the model configuration'
     )
     config.add_argument(
         '-cf',
         '--config_file',
-        help='YAML file describing the model. Ignores --model_hyperparameters'
+        dest='config',
+        type=load_yaml,
+        help='Path to the YAML file containing the model configuration'
     )
 
     parser.add_argument(
@@ -561,7 +548,12 @@ def cli(sys_argv):
         choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
+    add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('experiment', *sys_argv)
 
     args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
@@ -570,7 +562,7 @@ def cli(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.experiment')
 
-    args.backend = initialize_backend(args.backend)
+    args.backend = initialize_backend(args.backend or args.config.get('backend'))
     if args.backend.is_coordinator():
         print_ludwig('Experiment', LUDWIG_VERSION)
 
@@ -581,6 +573,4 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
-    contrib_import()
-    contrib_command("experiment", *sys.argv)
     cli(sys.argv[1:])

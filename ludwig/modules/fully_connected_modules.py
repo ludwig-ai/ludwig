@@ -142,6 +142,7 @@ class FCStack(LudwigModule):
             default_norm_params=None,
             default_activation='relu',
             default_dropout=0,
+            residual=False,
             **kwargs
     ):
         super().__init__()
@@ -206,6 +207,7 @@ class FCStack(LudwigModule):
                     dropout=layer['dropout'],
                 )
             )
+        self.residual = residual
 
     '''
     def build(
@@ -213,10 +215,18 @@ class FCStack(LudwigModule):
             input_shape,
     ):
         super().build(input_shape)
+        self.input_size = input_shape[-1]
     '''
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
+        prev_fc_layer_size = self.input_size
         for layer in self.stack:
-            hidden = layer(hidden, training=training)
+            out = layer(hidden, training=training)
+            if self.residual and layer.fc_size == prev_fc_layer_size:
+                hidden = hidden + out
+            else:
+                hidden = out
+            # layers[0] is the dense layer in a FC layer
+            prev_fc_layer_size = layer.layers[0].units
         return hidden

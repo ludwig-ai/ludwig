@@ -18,18 +18,19 @@ import logging
 from typing import List
 
 import tensorflow as tf
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import concatenate
 
 import torch
 from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigModule
 
-from ludwig.constants import TYPE, CATEGORY, NUMERICAL, BINARY
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
@@ -58,6 +59,8 @@ class ConcatCombiner(LudwigModule):
             norm_params=None,
             activation='relu',
             dropout=0,
+            flatten_inputs=False,
+            residual=False,
             **kwargs
     ):
         super().__init__()
@@ -65,6 +68,7 @@ class ConcatCombiner(LudwigModule):
         self.input_features = input_features
         logger.debug(' {}'.format(self.name))
 
+        self.flatten_inputs = flatten_inputs
         self.fc_stack = None
 
         # todo future: this may be redundant, check
@@ -95,6 +99,7 @@ class ConcatCombiner(LudwigModule):
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
+                residual=residual,
             )
 
         if input_features and len(input_features) == 1 and fc_layers is None:
@@ -108,9 +113,17 @@ class ConcatCombiner(LudwigModule):
             **kwargs
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+
+        if self.flatten_inputs:
+            batch_size = tf.shape(encoder_outputs[0])[0]
+            encoder_outputs = [
+                tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            ]
+
         # ================ Concat ================
         if len(encoder_outputs) > 1:
             hidden = torch.cat(encoder_outputs, 1)
+            #hidden = concatenate(encoder_outputs, -1)
         else:
             hidden = list(encoder_outputs)[0]
 
@@ -341,7 +354,6 @@ class SequenceCombiner(tf.keras.Model):
 class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features,
             size: int,  # N_a in the paper
             output_size: int,  # N_d in the paper
             num_steps: int = 1,  # N_steps in the paper
@@ -358,24 +370,7 @@ class TabNetCombiner(tf.keras.Model):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        # todo this assumes each input feature outputs size 1
-        #  or 1hot for categorical
-        feature_sizes = []
-        for feature in input_features.values():
-            if feature.type == NUMERICAL or feature.type == BINARY:
-                feature_sizes.append(1)
-            elif feature.type == CATEGORY:
-                feature_sizes.append(feature.encoder_obj.embedding_size)
-            else:
-                raise ValueError(
-                    "TabNet does not currently support {} features, "
-                    "it only supports binary, numerical and category".format(
-                        feature[TYPE]
-                    )
-                )
-
         self.tabnet = TabNet(
-            num_features=sum(feature_sizes),
             size=size,
             output_size=output_size,
             num_steps=num_steps,
@@ -402,6 +397,12 @@ class TabNetCombiner(tf.keras.Model):
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
+        # ================ Flatten ================
+        batch_size = tf.shape(encoder_outputs[0])[0]
+        encoder_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+        ]
+
         # ================ Concat ================
         if len(encoder_outputs) > 1:
             hidden = concatenate(encoder_outputs, 1)
@@ -409,14 +410,130 @@ class TabNetCombiner(tf.keras.Model):
             hidden = list(encoder_outputs)[0]
 
         # ================ TabNet ================
-        hidden, masks = self.tabnet(
+        hidden, aggregated_mask, masks = self.tabnet(
             hidden,
             training=training,
         )
         if self.dropout:
             hidden = self.dropout(hidden, training=training)
 
-        return_data = {'combiner_output': hidden, 'attention_masks': masks}
+        return_data = {'combiner_output': hidden,
+                       'aggregated_attention_masks': aggregated_mask,
+                       'attention_masks': masks}
+
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
+
+        return return_data
+
+
+class TransformerCombiner(tf.keras.Model):
+    def __init__(
+            self,
+            input_features=None,
+            num_layers=1,
+            hidden_size=256,
+            num_heads=8,
+            transformer_fc_size=256,
+            dropout=0.1,
+            fc_layers=None,
+            num_fc_layers=0,
+            fc_size=256,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
+            norm=None,
+            norm_params=None,
+            fc_activation='relu',
+            fc_dropout=0,
+            fc_residual=False,
+            reduce_output='mean',
+            **kwargs
+    ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if self.reduce_output is None:
+            self.supports_masking = True
+
+        logger.debug('  Projectors')
+        self.projectors = [Dense(hidden_size) for _ in input_features]
+
+        logger.debug('  TransformerStack')
+        self.transformer_stack = TransformerStack(
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            fc_size=transformer_fc_size,
+            num_layers=num_layers,
+            dropout=dropout
+        )
+
+        if self.reduce_output is not None:
+            logger.debug('  FCStack')
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=fc_activation,
+                default_dropout=fc_dropout,
+                fc_residual=fc_residual,
+            )
+
+    def call(
+            self,
+            inputs,  # encoder outputs
+            training=None,
+            mask=None,
+            **kwargs
+    ):
+        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+
+        # ================ Project & Concat ================
+        projected = [
+            self.projectors[i](eo)
+            for i, eo in enumerate(encoder_outputs)
+        ]
+        hidden = tf.stack(projected)  # num_eo, bs, h
+        hidden = tf.transpose(hidden, perm=[1, 0, 2])  # bs, num_eo, h
+
+        # ================ Transformer Layers ================
+        hidden = self.transformer_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
+
+        # ================ Sequence Reduction ================
+        if self.reduce_output is not None:
+            hidden = self.reduce_sequence(hidden)
+
+            # ================ FC Layers ================
+            hidden = self.fc_stack(
+                hidden,
+                training=training,
+                mask=mask
+            )
+
+        return_data = {'combiner_output': hidden}
 
         if len(inputs) == 1:
             for key, value in [d for d in inputs.values()][0].items():
@@ -575,6 +692,7 @@ combiner_registry = {
     'sequence': SequenceCombiner,
     'tabnet': TabNetCombiner,
     'comparator': ComparatorCombiner,
+    "transformer": TransformerCombiner,
 }
 
 sequence_encoder_registry = {

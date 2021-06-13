@@ -21,6 +21,7 @@ import os
 import dask
 import dask.array as da
 import dask.dataframe as dd
+from dask.diagnostics import ProgressBar
 
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.dataset.parquet import ParquetDataset
@@ -29,6 +30,8 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, DATA_TRAIN_HDF5_FP
 from ludwig.utils.fs_utils import makedirs, to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
+from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords
+
 
 TMP_COLUMN = '__TMP_COLUMN__'
 
@@ -38,8 +41,9 @@ def set_scheduler(scheduler):
 
 
 class DaskEngine(DataFrameEngine):
-    def __init__(self):
-        self._parallelism = multiprocessing.cpu_count()
+    def __init__(self, parallelism=None, persist=False, **kwargs):
+        self._parallelism = parallelism or multiprocessing.cpu_count()
+        self._persist = persist
 
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
@@ -54,7 +58,7 @@ class DaskEngine(DataFrameEngine):
         return data.repartition(self.parallelism)
 
     def persist(self, data):
-        return data.persist()
+        return data.persist() if self._persist else data
 
     def compute(self, data):
         return data.compute()
@@ -74,12 +78,22 @@ class DaskEngine(DataFrameEngine):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
     def to_parquet(self, df, path):
-        df.to_parquet(
-            path,
-            engine='pyarrow',
-            write_index=False,
-            schema='infer',
-        )
+        with ProgressBar():
+            df.to_parquet(
+                path,
+                engine='pyarrow',
+                write_index=False,
+                schema='infer',
+            )
+
+    def to_tfrecord(self, df, path):
+        """Implementations of data frame to tfrecords."""
+        with ProgressBar():
+            dask_to_tfrecords(
+                df,
+                path,
+                compression_type="GZIP",
+                compression_level=9)
 
     @property
     def array_lib(self):
