@@ -534,7 +534,7 @@ class ComparatorCombiner(tf.keras.Model):
             self,
             entity_1: List[str],
             entity_2: List[str],
-            fc_layers=None,
+            # fc_layers=None,
             num_fc_layers=1,
             fc_size=256,
             use_bias=True,
@@ -557,10 +557,10 @@ class ComparatorCombiner(tf.keras.Model):
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if fc_layers is None and num_fc_layers is not None:
-            fc_layers = []
-            for i in range(num_fc_layers):
-                fc_layers.append({"fc_size": fc_size})
+        # if fc_layers is None and num_fc_layers is not None:
+        fc_layers = []
+        for i in range(num_fc_layers):
+            fc_layers.append({"fc_size": fc_size})
 
         if fc_layers is not None:
             logger.debug("  FCStack")
