@@ -105,6 +105,7 @@ class ConcatCombiner(tf.keras.Model):
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
+        # ================ Flatten ================
         if self.flatten_inputs:
             batch_size = tf.shape(encoder_outputs[0])[0]
             encoder_outputs = [
@@ -620,6 +621,12 @@ class ComparatorCombiner(tf.keras.Model):
         ############
         e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
 
+        # ================ Flatten ================
+        batch_size = tf.shape(e1_enc_outputs[0])[0]
+        e1_enc_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
+        ]
+
         # ================ Concat ================
         if len(e1_enc_outputs) > 1:
             e1_hidden = concatenate(e1_enc_outputs, 1)
@@ -628,10 +635,17 @@ class ComparatorCombiner(tf.keras.Model):
 
         # ================ Fully Connected ================
         e1_hidden = self.e1_fc_stack(e1_hidden, training=training, mask=mask)
+
         ############
         # Entity 2 #
         ############
         e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
+
+        # ================ Flatten ================
+        batch_size = tf.shape(e2_enc_outputs[0])[0]
+        e2_enc_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
+        ]
 
         # ================ Concat ================
         if len(e2_enc_outputs) > 1:
@@ -647,7 +661,9 @@ class ComparatorCombiner(tf.keras.Model):
         ###########
         if e1_hidden.shape != e2_hidden.shape:
             raise ValueError(
-                f"Mismatching shapes among dimensions! entity1 shape: {e1_hidden.shape.as_list()} entity2 shape: {e2_hidden.shape.as_list()}"
+                f"Mismatching shapes among dimensions! "
+                f"entity1 shape: {e1_hidden.shape.as_list()} "
+                f"entity2 shape: {e2_hidden.shape.as_list()}"
             )
 
         dot_product = tf.matmul(e1_hidden, tf.transpose(e2_hidden))
