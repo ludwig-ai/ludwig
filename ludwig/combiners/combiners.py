@@ -486,6 +486,12 @@ class TransformerCombiner(tf.keras.Model):
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
+        # ================ Flatten ================
+        batch_size = tf.shape(encoder_outputs[0])[0]
+        encoder_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+        ]
+
         # ================ Project & Concat ================
         projected = [
             self.projectors[i](eo)
