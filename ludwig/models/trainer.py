@@ -211,7 +211,7 @@ class Trainer(BaseTrainer):
         :param skip_save_model: disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
-               the validation metric imrpvoes, but if the model is really big
+               the validation metric (improves, but if the model is really big
                that can be time consuming. If you do not want to keep
                the weights and just find out what performance a model can get
                with a set of hyperparameters, use this parameter to skip it,

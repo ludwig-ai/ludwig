@@ -318,7 +318,7 @@ def cli(sys_argv):
         default=False,
         help='disables saving weights each time the model improves. '
              'By default Ludwig saves  weights after each epoch '
-             'the validation metric imrpvoes, but  if the model is really big '
+             'the validation metric (improves, but  if the model is really big '
              'that can be time consuming. If you do not want to keep '
              'the weights and just find out what performance a model can get '
              'with a set of hyperparameters, use this parameter to skip it'
