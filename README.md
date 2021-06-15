@@ -186,10 +186,14 @@ If you prefer to use an RNN encoder and increase the number of epochs to train f
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) to find out all the options available to you in the config and take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different tasks.
+Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/user_guide_intro/) to find out all the
+options available to you in the config and take a look at
+the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different
+tasks.
 
-After training, Ludwig will create a `results` directory containing the trained model with its hyperparameters and summary statistics of the training process.
-You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
+After training, Ludwig will create a `results` directory containing the trained model with its hyperparameters and
+summary statistics of the training process. You can visualize them using one of the several visualization options
+available in the `visualize` tool, for instance:
 
 ```
 ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
@@ -199,14 +203,16 @@ This command will display a graph like the following, where you can see loss and
 
 ![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
-Several more visualizations are available, please refer to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations) for more details.
+Several more visualizations are available, please refer
+to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/visualizations/) for more details.
 
 
 Distributed Training
 --------------------
 
-You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training) for full details.
+You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows
+training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs. Refer to
+the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/distributed_execution_backends/) for full details.
 
 
 Prediction and Evaluation
@@ -259,8 +265,9 @@ model = LudwigModel.load(model_path)
 predictions = model.predict(test_data)
 ```
 
-`config` containing the same information of the YAML file provided to the command line interface.
-More details are provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) and in the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
+`config` containing the same information of the YAML file provided to the command line interface. More details are
+provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/user_guide_intro/) and in
+the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
 
 
 Extensibility
