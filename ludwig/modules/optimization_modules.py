@@ -48,7 +48,8 @@ optimizers_registry = {
 }
 
 
-def ClippedOptimizer(type='sgd',
+def ClippedOptimizer(params, #model params
+                     type='sgd',
                      clipglobalnorm=5.0,
                      clipnorm=None,
                      clipvalue=None,
@@ -56,11 +57,11 @@ def ClippedOptimizer(type='sgd',
                      **kwargs):
     #optimizer = get_from_registry(type.lower(), optimizers_registry)(**kwargs)
     optimizer = get_from_registry(type.lower(), optimizers_registry)
-    return clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
+    return clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
                           horovod=horovod, **kwargs)
 
 
-def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
+def clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
                    horovod=None, **kwargs):
     #class _ClippedOptimizer(tf.keras.optimizers.Optimizer):
     class _ClippedOptimizer(torch.optim.Optimizer):
@@ -122,4 +123,4 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
     cls = type(optimizer.__name__, (optimizer,),
                dict(_ClippedOptimizer.__dict__))
     #return cls.from_config(optimizer.get_config())
-    return cls(**kwargs)
+    return cls(params=params, **kwargs)

@@ -71,10 +71,10 @@ default_training_params = {
 }
 
 default_optimizer_params_registry = {
-    'sgd': {},
-    'stochastic_gradient_descent': {},
-    'gd': {},
-    'gradient_descent': {},
+    'sgd': {'lr':0.001},
+    'stochastic_gradient_descent': {'lr':0.001},
+    'gd': {'lr':0.001},
+    'gradient_descent': {'lr':0.001},
     'adam': {
         'betas': (0.9, 0.999),
         #'beta_1': 0.9,

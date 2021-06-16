@@ -281,12 +281,11 @@ class Trainer(BaseTrainer):
         # ================ Optimizer ================
         if optimizer is None:
             optimizer = {TYPE: 'Adam'}
-        optimizer['params'] = model.parameters()
         self.optimizer = ClippedOptimizer(
+            model.parameters(),
             horovod=horovod,
             **optimizer
         )
-        optimizer.pop('params')# can't serialize generator
 
     @classmethod
     def write_epoch_summary(
