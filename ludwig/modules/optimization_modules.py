@@ -108,7 +108,7 @@ def clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
                 for x in variables:
                     torch.nn.utils.clip_grad_norm_(x, self.clipglobalnorm)
             if self.clipvalue:
-                pass
+                torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
 
             self.step()
 
