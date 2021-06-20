@@ -71,7 +71,7 @@ def to_url(path):
 @contextlib.contextmanager
 def upload_output_directory(url):
     if url is None:
-        yield None
+        yield None, None
         return
 
     protocol, _ = split_protocol(url)
