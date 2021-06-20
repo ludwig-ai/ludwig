@@ -83,14 +83,17 @@ def upload_output_directory(url):
             if path_exists(url):
                 fs.get(url, tmpdir + '/', recursive=True)
 
+            def put_fn():
+                fs.put(tmpdir, remote_path, recursive=True)
+
             # Write to temp directory locally
-            yield tmpdir
+            yield tmpdir, put_fn
 
             # Upload to remote when finished
-            fs.put(tmpdir, remote_path, recursive=True)
+            put_fn()
     else:
         # Just use the output directory directly if using a local filesystem
-        yield url
+        yield url, None
 
 
 @contextlib.contextmanager

@@ -84,3 +84,11 @@ class Callback(ABC):
     @staticmethod
     def preload():
         pass
+
+
+class OnEpochEndCallback(Callback):
+    def __init__(self, callback):
+        self.callback = callback
+
+    def on_epoch_end(self, trainer, progress_tracker, save_path):
+        self.callback()
