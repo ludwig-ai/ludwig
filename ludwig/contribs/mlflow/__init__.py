@@ -64,7 +64,7 @@ class MlflowCallback(Callback):
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         mlflow.log_metrics(
             progress_tracker.log_metrics(),
-            step=progress_tracker.epochs
+            step=progress_tracker.epoch
         )
         _log_model(save_path)
 
