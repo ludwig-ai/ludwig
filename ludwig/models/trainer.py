@@ -1356,8 +1356,7 @@ class ProgressTracker:
         loaded = load_json(filepath)
         return ProgressTracker(**loaded)
 
-    @property
-    def log_metrics(self):
+    def log_metrics(self, idx=-1):
         log_metrics = {}
         for item_name in [
             "batch_size",
@@ -1380,9 +1379,9 @@ class ProgressTracker:
                             for key2 in item[key]:
                                 log_metrics[
                                     item_name + "." + key + "." + key2
-                                ] = item[key][key2][-1]
+                                ] = item[key][key2][idx]
                         else:
-                            log_metrics[item_name + "." + key] = item[key][-1]
+                            log_metrics[item_name + "." + key] = item[key][idx]
                 elif item is not None:
                     log_metrics[item_name] = item
             except Exception:
