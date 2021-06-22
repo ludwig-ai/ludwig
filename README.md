@@ -59,7 +59,7 @@ brew install python3      # on mac
 You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
 
 ```
-virtualenv -p python3 venv
+virtualenv -p python3 venv && source venv/bin/activate
 ```
 
 In order to install Ludwig just run:
