@@ -20,7 +20,7 @@ from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
 
 from torch.nn import (Linear, LayerNorm, Module, Dropout)
 
-from ludwig.utils.torch_utils import (LudwigModule, initializers, activations)
+from ludwig.utils.torch_utils import (LudwigModule, initializers, activations, reg_loss)
 
 logger = logging.getLogger(__name__)
 
@@ -76,12 +76,15 @@ class FCLayer(LudwigModule):
         bias_initializer = initializers[bias_initializer]
         bias_initializer(fc.bias)
 
+        self.activity_regularizer = None
+
         if weights_regularizer:
             self.add_loss(lambda: reg_loss(fc.weight, weights_regularizer))
         if bias_regularizer:
             self.add_loss(lambda: reg_loss(fc.bias, bias_regularizer))
         if activity_regularizer:
             # Handle in forward call
+            self.activity_regularizer = activity_regularizer
             self.add_loss(lambda: self.activation_loss)
 
 
@@ -106,6 +109,8 @@ class FCLayer(LudwigModule):
             self.layers.append(Dropout(dropout))
 
         for layer in self.layers:
+            # REMOVE, just temporary
+            layer.name = "Placeholder"
             logger.debug('   {}'.format(layer.name))
 
     def forward(self, inputs, training=None, mask=None):
@@ -116,7 +121,7 @@ class FCLayer(LudwigModule):
         for i, layer in enumerate(self.layers):
             #hidden = layer(hidden, training=training)
             hidden = layer(hidden)
-            if i == self.activation_index:
+            if i == self.activation_index and self.activity_regularizer:
                 self.activation_loss = reg_loss(hidden, self.activity_regularizer)/batch_size
 
         return hidden
@@ -131,7 +136,7 @@ class FCStack(LudwigModule):
             num_layers=1,
             default_fc_size=256,
             default_use_bias=True,
-            default_weights_initializer='glorot_uniform',
+            default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
@@ -193,7 +198,7 @@ class FCStack(LudwigModule):
             self.stack.append(
                 FCLayer(
                     input_size=layer['input_size'],
-                    fc_size=layer['fc_size'],
+                    output_size=layer['fc_size'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
@@ -229,5 +234,6 @@ class FCStack(LudwigModule):
             else:
                 hidden = out
             # layers[0] is the dense layer in a FC layer
-            prev_fc_layer_size = layer.layers[0].units
+            #prev_fc_layer_size = layer.layers[0].units
+            prev_fc_layer_size = layer.layers[0].out_features
         return hidden

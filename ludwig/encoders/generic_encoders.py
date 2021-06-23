@@ -53,7 +53,7 @@ class DenseEncoder(LudwigModule):
             num_layers=1,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -67,6 +67,7 @@ class DenseEncoder(LudwigModule):
             **kwargs
     ):
         super().__init__()
+        self.name = 'DenseEncoder'
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  FCStack')

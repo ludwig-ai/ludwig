@@ -156,7 +156,7 @@ class ConcatCombiner(LudwigModule):
 
 
 
-class SequenceConcatCombiner(tf.keras.Model):
+class SequenceConcatCombiner(LudwigModule):
     def __init__(
             self,
             reduce_output=None,
@@ -295,7 +295,7 @@ class SequenceConcatCombiner(tf.keras.Model):
         return return_data
 
 
-class SequenceCombiner(tf.keras.Model):
+class SequenceCombiner(LudwigModule):
     def __init__(
             self,
             reduce_output=None,
