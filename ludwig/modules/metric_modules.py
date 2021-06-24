@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import numpy as np
-import pdb
 import tensorflow as tf
 from ludwig.modules.loss_modules import rmspe_loss
 from tensorflow.python.keras.metrics import (
@@ -24,14 +23,10 @@ from tensorflow.python.keras.metrics import (
     MeanSquaredError as MeanSquaredErrorMetric,
 )
 from tensorflow.python.keras.metrics import AUC as AUCErrorMetric
-from tensorflow.python.keras.metrics import (
-    BinaryCrossentropy as BinaryCrossEntropyErrorMetric,
-)
+
 from tensorflow.python.keras.metrics import (
     RootMeanSquaredError as RootMeanSquaredErrorMetric,
 )
-
-from keras import backend as K
 
 
 from ludwig.constants import *
@@ -56,8 +51,8 @@ metrics = {
     MEAN_SQUARED_ERROR,
     MEAN_ABSOLUTE_ERROR,
     PERPLEXITY,
-    ROOT_MEAN_SQUARED_ERROR,
     AUC_ROC,
+    ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
 
@@ -67,31 +62,11 @@ min_metrics = {
     MEAN_SQUARED_ERROR,
     MEAN_ABSOLUTE_ERROR,
     LOSS,
+    AUC_ROC,
     PERPLEXITY,
     ROOT_MEAN_SQUARED_ERROR,
-    AUC_ROC,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
-
-
-class AUC_ROC(AUCErrorMetric):
-    def __init__(self, curve="ROC", name="roc_auc"):
-        super().__init__(name=name, curve=curve)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        return super().update_state(
-            y_true, y_pred[PROBABILITIES], sample_weight=sample_weight
-        )
-
-
-class BinaryCrossentropyMetric(BinaryCrossEntropyErrorMetric):
-    def __init__(self, name="binary_crossentropy"):
-        super().__init__(name=name)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        return super().update_state(
-            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
-        )
 
 
 class RMSEMetric(RootMeanSquaredErrorMetric):
@@ -101,6 +76,16 @@ class RMSEMetric(RootMeanSquaredErrorMetric):
     def update_state(self, y_true, y_pred, sample_weight=None):
         return super().update_state(
             y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
+        )
+
+
+class AUC_ROC(AUCErrorMetric):
+    def __init__(self, curve="ROC", name="roc_auc"):
+        super().__init__(name=name, curve=curve)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        return super().update_state(
+            y_true, y_pred[PROBABILITIES], sample_weight=sample_weight
         )
 
 

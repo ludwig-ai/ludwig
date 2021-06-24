@@ -215,7 +215,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name="metric_accuracy"
         )
-        self.metric_functions[AUC] = AUC_ROC(name="metric_auc")
+        self.metric_functions[AUC_ROC] = AUC_ROC(name="metric_auc")
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
