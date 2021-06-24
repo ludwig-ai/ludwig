@@ -26,7 +26,7 @@ from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
-from ludwig.modules.metric_modules import BWCEWLMetric, AUC_ROC
+from ludwig.modules.metric_modules import BWCEWLMetric, ROCAUCMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -215,7 +215,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         self.metric_functions[ACCURACY] = BinaryAccuracy(
             name="metric_accuracy"
         )
-        self.metric_functions[AUC_ROC] = AUC_ROC(name="metric_auc")
+        self.metric_functions[ROCAUCMetric] = ROCAUCMetric(name="metric_auc")
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
