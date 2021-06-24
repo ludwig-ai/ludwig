@@ -35,7 +35,6 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss
 from ludwig.modules.metric_modules import (
-    ErrorScore,
     MAEMetric,
     MSEMetric,
     RMSEMetric,
@@ -324,7 +323,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         elif self.loss[TYPE] == "root_mean_squared_percentage_error":
             self.metric_functions[LOSS] = RMSPEMetric(name="eval_loss")
 
-        self.metric_functions[ERROR] = ErrorScore(name="metric_error")
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
             name="metric_mse"
         )
