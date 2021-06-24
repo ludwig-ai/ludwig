@@ -48,7 +48,7 @@ class ConcatCombiner(LudwigModule):
             num_fc_layers=None,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
