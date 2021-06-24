@@ -190,7 +190,7 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or config.get('backend'))
+        self.backend = initialize_backend(backend or self.config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
