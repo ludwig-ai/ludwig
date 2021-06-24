@@ -512,9 +512,6 @@ def sample_values_from_classes(
 
 
 def rmspe_loss(targets, predictions):
-    if type(predictions) == dict and PREDICTIONS in predictions.keys():
-        predictions = predictions[PREDICTIONS]
-
     loss = tf.math.sqrt(
         tf.math.reduce_mean(
             tf.math.square(tf.math.divide(
