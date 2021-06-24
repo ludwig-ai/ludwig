@@ -14,7 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 import numpy as np
+import pdb
 import tensorflow as tf
+from ludwig.modules.loss_modules import rmspe_loss
 from tensorflow.python.keras.metrics import (
     MeanAbsoluteError as MeanAbsoluteErrorMetric,
 )
@@ -28,6 +30,8 @@ from tensorflow.python.keras.metrics import (
 from tensorflow.python.keras.metrics import (
     RootMeanSquaredError as RootMeanSquaredErrorMetric,
 )
+
+from keras import backend as K
 
 
 from ludwig.constants import *
@@ -54,6 +58,7 @@ metrics = {
     PERPLEXITY,
     ROOT_MEAN_SQUARED_ERROR,
     AUC_ROC,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
 
 max_metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
@@ -65,6 +70,7 @@ min_metrics = {
     PERPLEXITY,
     ROOT_MEAN_SQUARED_ERROR,
     AUC_ROC,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
 
 
@@ -96,6 +102,15 @@ class RMSEMetric(RootMeanSquaredErrorMetric):
         return super().update_state(
             y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
+
+
+class RMSPEMetric(tf.keras.metrics.Mean):
+    def __init__(self, name="root_mean_squared_error"):
+        super().__init__(name=name)
+
+    def update_state(self, y, y_preds):
+        rmspe = rmspe_loss(y, y_preds)
+        return super().update_state(rmspe)
 
 
 class R2Score(tf.keras.metrics.Metric):

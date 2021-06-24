@@ -32,8 +32,8 @@ class MSELoss(MeanSquaredError):
         super().__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        logits = y_pred[LOGITS]
-        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        loss = super().__call__(
+            y_true, y_pred[LOGITS], sample_weight=sample_weight)
         return loss
 
 
@@ -42,8 +42,8 @@ class MAELoss(MeanAbsoluteError):
         super().__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        logits = y_pred[LOGITS]
-        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        loss = super().__call__(
+            y_true, y_pred[LOGITS], sample_weight=sample_weight)
         return loss
 
 
@@ -52,10 +52,24 @@ class RMSELoss(tf.keras.losses.Loss):
         super().__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        logits = y_pred[LOGITS]
-        loss = tf.keras.backend.sqrt(
-            tf.keras.backend.mean(tf.keras.backend.square(logits - y_true))
+        preds = y_pred[LOGITS]
+        loss = tf.math.sqrt(
+            tf.math.reduce_mean(
+                tf.math.square(
+                    tf.math.subtract(preds, y_true)
+                )
+            )
         )
+        return loss
+
+
+class RMSPELoss(tf.keras.losses.Loss):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        preds = y_pred[LOGITS]
+        loss = rmspe_loss(y_true, preds)
         return loss
 
 
@@ -495,3 +509,16 @@ def sample_values_from_classes(
     else:
         raise ValueError("Unsupported sampler {}".format(sampler))
     return sampled_values
+
+
+def rmspe_loss(targets, predictions):
+    if type(predictions) == dict and PREDICTIONS in predictions.keys():
+        predictions = predictions[PREDICTIONS]
+
+    loss = tf.math.sqrt(
+        tf.math.reduce_mean(
+            tf.math.square(tf.math.divide(
+                tf.math.subtract(targets, predictions), targets))
+        )
+    )
+    return loss

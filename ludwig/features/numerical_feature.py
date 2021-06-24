@@ -33,14 +33,15 @@ from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss
+from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss
 from ludwig.modules.metric_modules import (
     ErrorScore,
     MAEMetric,
     MSEMetric,
     RMSEMetric,
+    RMSPEMetric,
+    R2Score,
 )
-from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
@@ -253,12 +254,13 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     decoder = "regressor"
-    loss = {TYPE: ROOT_MEAN_SQUARED_ERROR}
+    loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {
         LOSS: None,
         MEAN_SQUARED_ERROR: None,
         MEAN_ABSOLUTE_ERROR: None,
         ROOT_MEAN_SQUARED_ERROR: None,
+        ROOT_MEAN_SQUARED_PERCENTAGE_ERROR: None,
         R2: None,
     }
     default_validation_metric = MEAN_SQUARED_ERROR
@@ -302,6 +304,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             self.train_loss_function = MAELoss()
         elif self.loss[TYPE] == "root_mean_squared_error":
             self.train_loss_function = RMSELoss()
+        elif self.loss[TYPE] == "root_mean_squared_percentage_error":
+            self.train_loss_function = RMSPELoss()
         else:
             raise ValueError(
                 "Unsupported loss type {}".format(self.loss[TYPE])
@@ -315,8 +319,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             self.metric_functions[LOSS] = MSEMetric(name="eval_loss")
         elif self.loss[TYPE] == "mean_absolute_error":
             self.metric_functions[LOSS] = MAEMetric(name="eval_loss")
-        else:
+        elif self.loss[TYPE] == "root_mean_squared_error":
             self.metric_functions[LOSS] = RMSEMetric(name="eval_loss")
+        elif self.loss[TYPE] == "root_mean_squared_percentage_error":
+            self.metric_functions[LOSS] = RMSPEMetric(name="eval_loss")
+
         self.metric_functions[ERROR] = ErrorScore(name="metric_error")
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
             name="metric_mse"
@@ -327,6 +334,9 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         self.metric_functions[
             ROOT_MEAN_SQUARED_ERROR
         ] = RootMeanSquaredErrorMetric(name="metric_rmse")
+        self.metric_functions[
+            ROOT_MEAN_SQUARED_PERCENTAGE_ERROR
+        ] = RMSPEMetric(name="metric_rmspe")
         self.metric_functions[R2] = R2Score(name="metric_r2")
 
     def get_prediction_set(self):
