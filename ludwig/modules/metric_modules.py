@@ -45,7 +45,7 @@ metrics = {
     MEAN_SQUARED_ERROR,
     MEAN_ABSOLUTE_ERROR,
     PERPLEXITY,
-    AUC_ROC,
+    ROC_AUC,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
@@ -56,7 +56,7 @@ min_metrics = {
     MEAN_SQUARED_ERROR,
     MEAN_ABSOLUTE_ERROR,
     LOSS,
-    AUC_ROC,
+    ROC_AUC,
     PERPLEXITY,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -79,7 +79,7 @@ class ROCAUCMetric(AUCMetric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         return super().update_state(
-            y_true, y_pred[PROBABILITIES], sample_weight=sample_weight
+            y_true, y_pred, sample_weight=sample_weight
         )
 
 
@@ -130,14 +130,14 @@ class R2Score(tf.keras.metrics.Metric):
     def result(self):
         y_bar = self.sum_y / self.N
         tot_ss = (
-                self.sum_y_squared
-                - 2.0 * y_bar * self.sum_y
-                + self.N * y_bar ** 2
+            self.sum_y_squared
+            - 2.0 * y_bar * self.sum_y
+            + self.N * y_bar ** 2
         )
         res_ss = (
-                self.sum_y_squared
-                - 2.0 * self.sum_y_y_hat
-                + self.sum_y_hat_squared
+            self.sum_y_squared
+            - 2.0 * self.sum_y_y_hat
+            + self.sum_y_hat_squared
         )
         return 1.0 - res_ss / tot_ss
 
@@ -511,9 +511,9 @@ def masked_sequence_corrected_predictions(
     )
 
     one_masked_correct_prediction = (
-            1.0
-            - tf.cast(mask, tf.float32)
-            + (tf.cast(mask, tf.float32) * tf.cast(correct_preds, tf.float32))
+        1.0
+        - tf.cast(mask, tf.float32)
+        + (tf.cast(mask, tf.float32) * tf.cast(correct_preds, tf.float32))
     )
     sequence_correct_preds = tf.reduce_prod(
         one_masked_correct_prediction, axis=-1
