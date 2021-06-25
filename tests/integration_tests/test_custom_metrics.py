@@ -3,7 +3,7 @@ from collections import namedtuple
 import numpy as np
 import pytest
 
-from ludwig.modules.metric_modules import R2Score, ErrorScore, JaccardMetric
+from ludwig.modules.metric_modules import R2Score, JaccardMetric
 
 RANDOM_SEED = 42
 NUMBER_OBSERVATIONS = 500
@@ -66,40 +66,6 @@ def test_R2Score(generated_data):
 
     # r2 score for bad should be "far away" from 1
     assert bad_prediction_score < 0.05
-
-
-def test_ErrorScore(generated_data):
-    error_score = ErrorScore()
-
-    assert np.isnan(error_score.result().numpy())
-
-    # test as single batch
-    error_score.update_state(generated_data.y_true, generated_data.y_good)
-    good_single_batch = error_score.result().numpy()
-    assert np.isreal(good_single_batch)
-
-    # test as two batches
-    error_score.reset_states()
-    error_score.update_state(generated_data.y_true[:SPLIT_POINT],
-                             generated_data.y_good[:SPLIT_POINT])
-    error_score.update_state(generated_data.y_true[SPLIT_POINT:],
-                             generated_data.y_good[SPLIT_POINT:])
-    good_two_batch = error_score.result().numpy()
-    assert np.isreal(good_two_batch)
-
-    # single batch and multi-batch should be very close
-    assert np.isclose(good_single_batch, good_two_batch)
-
-    # test for bad predictions
-    error_score.reset_states()
-    error_score.update_state(generated_data.y_true[:SPLIT_POINT],
-                             generated_data.y_bad[:SPLIT_POINT])
-    error_score.update_state(generated_data.y_true[SPLIT_POINT:],
-                             generated_data.y_bad[SPLIT_POINT:])
-    bad_prediction_score = error_score.result().numpy()
-
-    # magnitude of bad predictions should be greater than good predictions
-    assert np.abs(bad_prediction_score) > np.abs(good_two_batch)
 
 
 def test_JaccardMetric():
