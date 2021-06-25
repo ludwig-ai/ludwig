@@ -49,37 +49,38 @@ HYPEROPT_CONFIG = {
             "space": "linear",
             "steps": 3,
         },
-       "combiner.fc_layers" : {
+        "combiner.fc_layers": {
             'type': 'category',
             'values': [
                 [{'fc_size': 512}, {'fc_size': 256}],
                 [{'fc_size': 512}],
-                [{'fc_size': 256}]
+                # [{'fc_size': 256}]  # todo: undo comment when working
             ]
         },
-        
-        "utterance.cell_type": {
-            "type": "category",
-            "values": ["rnn", "gru"]
-        },
-        "utterance.bidirectional": {
-            "type": "category",
-            "values": [True, False]
-        }
+
+        # todo: undo comments when working
+        # "utterance.cell_type": {
+        #     "type": "category",
+        #     "values": ["rnn", "gru"]
+        # },
+        # "utterance.bidirectional": {
+        #     "type": "category",
+        #     "values": [True, False]
+        # }
     },
     "goal": "minimize"
 }
 
 SAMPLERS = [
-    # {"type": "grid"},
+    {"type": "grid"},
     {"type": "random", "num_samples": 5},
-    # {"type": "pysot", "num_samples": 2},  #5
+    {"type": "pysot", "num_samples": 5},
 ]
 
 EXECUTORS = [
     {"type": "serial"},
-    {"type": "parallel", "num_workers": 2},  # 4
-    # {"type": "fiber", "num_workers": 4},
+    {"type": "parallel", "num_workers": 4},
+    {"type": "fiber", "num_workers": 4},
 ]
 
 
