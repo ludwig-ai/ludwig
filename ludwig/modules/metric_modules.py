@@ -88,6 +88,7 @@ class RMSPEMetric(tf.keras.metrics.Mean):
         super().__init__(name=name)
 
     def update_state(self, y, y_preds):
+        predictions = y_preds
         if isinstance(y_preds, dict) and PREDICTIONS in y_preds:
             predictions = y_preds[PREDICTIONS]
         rmspe = rmspe_loss(y, predictions)
