@@ -1,0 +1,41 @@
+# contains default mlp architecture and training parameters
+# specifies hyperparameter search space
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+
+training:
+  batch_size: 256
+  validation_metric: accuracy
+
+hyperopt:
+  goal: maximize
+  parameters:
+    combiner.num_fc_layers:
+      space: randint
+      type: int
+      lower: 1
+      upper: 5
+    combiner.fc_size:
+      space: choice
+      categories: [128, 256]
+    training.learning_rate:
+      space: loguniform
+      lower: 0.001
+      upper: 0.1
+    training.batch_size:
+      space: choice
+      categories: [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+
+  sampler:
+    type: ray
+    search_alg:
+      type: hb_bohb
+    scheduler:
+      type: hb_bohb
+      time_attr: time_steps
+      reduction_factor: 4
+
+  executor:
+    type: ray

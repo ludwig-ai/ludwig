@@ -1,0 +1,42 @@
+# contains default transformer architecture and training parameters
+# specifies hyperparameter search space
+combiner: # default combiner params for tabnet
+  type: transformer
+
+training: #  default training parameters
+  batch_size: 128
+  validation_metric: accuracy
+
+hyperopt:
+  goal: maximize
+  parameters:
+    training.learning_rate:
+      space: loguniform
+      lower: 0.001
+      upper: 0.1
+    training.batch_size:
+      space: choice
+      categories: [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+    combiner.num_layers:
+      space: randint
+      type: int
+      lower: 1
+      upper: 5
+    combiner.num_fc_layers:
+      space: choice
+      categories: [1, 2]
+    combiner.residual:
+      space: choice
+      categories: [True, False]
+
+  sampler:
+    type: ray
+    search_alg:
+      type: hb_bohb
+    scheduler:
+      type: hb_bohb
+      time_attr: time_steps
+      reduction_factor: 4
+
+  executor:
+    type: ray
