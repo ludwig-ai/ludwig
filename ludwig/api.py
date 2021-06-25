@@ -356,7 +356,17 @@ class LudwigModel:
         )
 
         output_url = output_directory
-        with upload_output_directory(output_directory) as output_directory:
+        with upload_output_directory(output_directory) as (output_directory, upload_fn):
+            train_callbacks = self.callbacks
+            if upload_fn is not None:
+                # Upload output files (checkpoints, etc.) to remote storage at the end of
+                # each epoch, in case of failure in the middle of training.
+                class UploadOnEpochEndCallback(Callback):
+                    def on_epoch_end(self, trainer, progress_tracker, save_path):
+                        upload_fn()
+
+                train_callbacks = train_callbacks + [UploadOnEpochEndCallback()]
+
             description_fn = training_stats_fn = model_dir = None
             if self.backend.is_coordinator():
                 if should_create_output_directory:
@@ -465,7 +475,7 @@ class LudwigModel:
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
-                callbacks=self.callbacks,
+                callbacks=train_callbacks,
                 random_seed=random_seed,
                 debug=debug
             ) as trainer:
