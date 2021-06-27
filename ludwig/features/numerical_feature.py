@@ -22,11 +22,10 @@ import tensorflow as tf
 from tensorflow.keras.metrics import (
     MeanAbsoluteError as MeanAbsoluteErrorMetric,
 )
-from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 from tensorflow.keras.metrics import (
+    MeanSquaredError as MeanSquaredErrorMetric,
     RootMeanSquaredError as RootMeanSquaredErrorMetric,
 )
-
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
@@ -44,7 +43,7 @@ from ludwig.modules.metric_modules import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
-from tensorflow.python.keras.metrics import RootMeanSquaredError
+from tensorflow.keras.metrics import RootMeanSquaredError
 
 logger = logging.getLogger(__name__)
 
@@ -176,13 +175,13 @@ class NumericalFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature,
-        input_df,
-        proc_df,
-        metadata,
-        preprocessing_parameters,
-        backend,
-        skip_save_processed_input,
+            feature,
+            input_df,
+            proc_df,
+            metadata,
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input,
     ):
         proc_df[feature[PROC_COLUMN]] = (
             input_df[feature[COLUMN]].astype(np.float32).values
@@ -233,7 +232,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
+            input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
@@ -349,7 +348,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(
-        output_feature, feature_metadata, *args, **kwargs
+            output_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
@@ -359,11 +358,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return {}
 
     def postprocess_predictions(
-        self,
-        predictions,
-        metadata,
-        output_directory,
-        backend,
+            self,
+            predictions,
+            metadata,
+            output_directory,
+            backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
