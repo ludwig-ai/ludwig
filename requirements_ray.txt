@@ -1,2 +1,3 @@
-ray[default,tune]>=1.4
+ray[default,tune]
 pickle5
+tensorboardX<2.3
