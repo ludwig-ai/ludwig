@@ -7,6 +7,7 @@ import signal
 import shutil
 from abc import ABC, abstractmethod
 from typing import Union
+from concurrent.futures import ProcessPoolExecutor
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
@@ -30,26 +31,6 @@ try:
 except ImportError:
     ray = None
 
-
-######
-# todo clean up once non-daemonic processes work
-# import multiprocessing.pool
-
-class NoDaemonProcess(multiprocessing.Process):
-    @property
-    def daemon(self):
-        return False
-
-    @daemon.setter
-    def daemon(self, value):
-        pass
-
-
-class NoDaemonContext(type(multiprocessing.get_context('spawn'))):
-    Process = NoDaemonProcess
-
-
-#####
 
 class HyperoptExecutor(ABC):
     def __init__(self, hyperopt_sampler: Union[dict, HyperoptSampler],
@@ -385,9 +366,8 @@ class ParallelExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ) -> HyperoptResults:
-        # todo clean up code
-        # ctx = multiprocessing.get_context('spawn')
-        ctx = NoDaemonContext()
+
+        ctx = multiprocessing.get_context('spawn')
 
         if gpus is None:
             gpus = get_available_gpus_cuda_string()
@@ -500,8 +480,14 @@ class ParallelExecutor(HyperoptExecutor):
                                    "gpu_memory_limit": gpu_memory_limit}
                     self.queue.put(gpu_id_meta)
 
-        pool = ctx.Pool(self.num_workers,
-                        ParallelExecutor.init_worker)
+        # todo clean up code when done
+        # pool = ctx.Pool(self.num_workers,
+        #                 ParallelExecutor.init_worker)
+        pool = ProcessPoolExecutor(
+            max_workers=self.num_workers,
+            mp_context=ctx,
+            initializer=ParallelExecutor.init_worker
+        )
 
         try:
             trial_results = []
@@ -565,9 +551,14 @@ class ParallelExecutor(HyperoptExecutor):
                 )
 
                 trial_results.extend(batch_results)
-        finally:
-            pool.close()
-            pool.join()
+        # todo better refine exception capture
+        except Exception as exc:
+            print(exc)
+        # todo: clean up when done
+        #       ProcessPoolExecutor does not have the close/join methods
+        # finally:
+        #     pool.close()
+        #     pool.join()
 
         ordered_trials = self.sort_hyperopt_results(trial_results)
         return HyperoptResults(ordered_trials=ordered_trials)

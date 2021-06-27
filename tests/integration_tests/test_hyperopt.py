@@ -54,25 +54,23 @@ HYPEROPT_CONFIG = {
             'values': [
                 [{'fc_size': 512}, {'fc_size': 256}],
                 [{'fc_size': 512}],
-                # [{'fc_size': 256}]  # todo: undo comment when working
+                [{'fc_size': 256}]
             ]
         },
-
-        # todo: undo comments when working
-        # "utterance.cell_type": {
-        #     "type": "category",
-        #     "values": ["rnn", "gru"]
-        # },
-        # "utterance.bidirectional": {
-        #     "type": "category",
-        #     "values": [True, False]
-        # }
+        "utterance.cell_type": {
+            "type": "category",
+            "values": ["rnn", "gru"]
+        },
+        "utterance.bidirectional": {
+            "type": "category",
+            "values": [True, False]
+        }
     },
     "goal": "minimize"
 }
 
 SAMPLERS = [
-    {"type": "grid"},
+    # {"type": "grid"},
     {"type": "random", "num_samples": 5},
     {"type": "pysot", "num_samples": 5},
 ]
