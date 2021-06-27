@@ -70,7 +70,7 @@ HYPEROPT_CONFIG = {
 }
 
 SAMPLERS = [
-    # {"type": "grid"},
+    {"type": "grid"},
     {"type": "random", "num_samples": 5},
     {"type": "pysot", "num_samples": 5},
 ]
