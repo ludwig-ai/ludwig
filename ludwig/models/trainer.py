@@ -211,7 +211,7 @@ class Trainer(BaseTrainer):
         :param skip_save_model: disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
-               the validation metric imrpvoes, but if the model is really big
+               the validation metric (improves, but if the model is really big
                that can be time consuming. If you do not want to keep
                the weights and just find out what performance a model can get
                with a set of hyperparameters, use this parameter to skip it,
@@ -1356,8 +1356,7 @@ class ProgressTracker:
         loaded = load_json(filepath)
         return ProgressTracker(**loaded)
 
-    @property
-    def log_metrics(self):
+    def log_metrics(self, idx=-1):
         log_metrics = {}
         for item_name in [
             "batch_size",
@@ -1380,9 +1379,9 @@ class ProgressTracker:
                             for key2 in item[key]:
                                 log_metrics[
                                     item_name + "." + key + "." + key2
-                                ] = item[key][key2][-1]
+                                ] = item[key][key2][idx]
                         else:
-                            log_metrics[item_name + "." + key] = item[key][-1]
+                            log_metrics[item_name + "." + key] = item[key][idx]
                 elif item is not None:
                     log_metrics[item_name] = item
             except Exception:

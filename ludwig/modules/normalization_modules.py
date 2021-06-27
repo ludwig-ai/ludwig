@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.keras.layers import BatchNormalization
 
 
 class GhostBatchNormalization(tf.keras.Model):
