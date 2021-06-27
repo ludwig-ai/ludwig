@@ -489,76 +489,67 @@ class ParallelExecutor(HyperoptExecutor):
             initializer=ParallelExecutor.init_worker
         )
 
-        try:
-            trial_results = []
-            trials = 0
-            while not self.hyperopt_sampler.finished():
-                sampled_parameters = self.hyperopt_sampler.sample_batch()
+        trial_results = []
+        trials = 0
+        while not self.hyperopt_sampler.finished():
+            sampled_parameters = self.hyperopt_sampler.sample_batch()
 
-                hyperopt_parameters = []
-                for i, parameters in enumerate(sampled_parameters):
-                    modified_config = substitute_parameters(
-                        copy.deepcopy(config), parameters)
+            hyperopt_parameters = []
+            for i, parameters in enumerate(sampled_parameters):
+                modified_config = substitute_parameters(
+                    copy.deepcopy(config), parameters)
 
-                    trial_id = trials + i
-                    hyperopt_parameters.append(
-                        dict(
-                            parameters=parameters,
-                            config=modified_config,
-                            eval_split=self.split,
-                            dataset=dataset,
-                            training_set=training_set,
-                            validation_set=validation_set,
-                            test_set=test_set,
-                            training_set_metadata=training_set_metadata,
-                            data_format=data_format,
-                            experiment_name=f'{experiment_name}_{trial_id}',
-                            model_name=model_name,
-                            # model_load_path=model_load_path,
-                            # model_resume_path=model_resume_path,
-                            skip_save_training_description=skip_save_training_description,
-                            skip_save_training_statistics=skip_save_training_statistics,
-                            skip_save_model=skip_save_model,
-                            skip_save_progress=skip_save_progress,
-                            skip_save_log=skip_save_log,
-                            # needed because of concurrent HDF5 writes
-                            skip_save_processed_input=True,
-                            skip_save_unprocessed_output=skip_save_unprocessed_output,
-                            skip_save_predictions=skip_save_predictions,
-                            skip_save_eval_stats=skip_save_eval_stats,
-                            output_directory=output_directory,
-                            gpus=gpus,
-                            gpu_memory_limit=gpu_memory_limit,
-                            allow_parallel_threads=allow_parallel_threads,
-                            callbacks=callbacks,
-                            backend=backend,
-                            random_seed=random_seed,
-                            debug=debug,
-                        )
+                trial_id = trials + i
+                hyperopt_parameters.append(
+                    dict(
+                        parameters=parameters,
+                        config=modified_config,
+                        eval_split=self.split,
+                        dataset=dataset,
+                        training_set=training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        training_set_metadata=training_set_metadata,
+                        data_format=data_format,
+                        experiment_name=f'{experiment_name}_{trial_id}',
+                        model_name=model_name,
+                        # model_load_path=model_load_path,
+                        # model_resume_path=model_resume_path,
+                        skip_save_training_description=skip_save_training_description,
+                        skip_save_training_statistics=skip_save_training_statistics,
+                        skip_save_model=skip_save_model,
+                        skip_save_progress=skip_save_progress,
+                        skip_save_log=skip_save_log,
+                        # needed because of concurrent HDF5 writes
+                        skip_save_processed_input=True,
+                        skip_save_unprocessed_output=skip_save_unprocessed_output,
+                        skip_save_predictions=skip_save_predictions,
+                        skip_save_eval_stats=skip_save_eval_stats,
+                        output_directory=output_directory,
+                        gpus=gpus,
+                        gpu_memory_limit=gpu_memory_limit,
+                        allow_parallel_threads=allow_parallel_threads,
+                        callbacks=callbacks,
+                        backend=backend,
+                        random_seed=random_seed,
+                        debug=debug,
                     )
-                trials += len(sampled_parameters)
-
-                if gpus is not None:
-                    batch_results = pool.map(self._run_experiment_gpu,
-                                             hyperopt_parameters)
-                else:
-                    batch_results = pool.map(self._run_experiment,
-                                             hyperopt_parameters)
-
-                self.hyperopt_sampler.update_batch(
-                    (result.parameters, result.metric_score)
-                    for result in batch_results
                 )
+            trials += len(sampled_parameters)
 
-                trial_results.extend(batch_results)
-        # todo better refine exception capture
-        except Exception as exc:
-            print(exc)
-        # todo: clean up when done
-        #       ProcessPoolExecutor does not have the close/join methods
-        # finally:
-        #     pool.close()
-        #     pool.join()
+            if gpus is not None:
+                batch_results = pool.map(self._run_experiment_gpu,
+                                         hyperopt_parameters)
+            else:
+                batch_results = pool.map(self._run_experiment,
+                                         hyperopt_parameters)
+
+            self.hyperopt_sampler.update_batch(
+                (result.parameters, result.metric_score)
+                for result in batch_results
+            )
+
+            trial_results.extend(batch_results)
 
         ordered_trials = self.sort_hyperopt_results(trial_results)
         return HyperoptResults(ordered_trials=ordered_trials)
