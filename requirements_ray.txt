@@ -1,2 +1,2 @@
-ray[default,tune]
+ray[default,tune]>=1.4
 pickle5
