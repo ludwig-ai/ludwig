@@ -43,6 +43,39 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
+# workaround: https://github.com/tensorflow/tensorflow/issues/38305
+class VocabLookup(tf.keras.layers.Layer):
+    def __init__(self, lookup_table, default_value, dtype):
+        super(VocabLookup, self).__init__(trainable=False, dtype=dtype)
+        self.lookup_table = lookup_table
+        self.default_value = default_value
+
+    def build(self, input_shape):
+        keys, values = zip(*self.lookup_table.items())
+        keys_tensor = tf.constant(keys)
+        vals_tensor = tf.constant(values)
+        self.table = tf.lookup.StaticHashTable(
+            tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor),
+            default_value=self.default_value,
+        )
+
+        # table_init = tf.lookup.TextFileInitializer(self.vocab_path, tf.string, tf.lookup.TextFileIndex.WHOLE_LINE,
+        #                                            tf.int64, tf.lookup.TextFileIndex.LINE_NUMBER)
+        # self.table = tf.lookup.StaticHashTable(table_init, -1)
+
+        self.built = True
+
+    def call(self, t):
+        # splitted_text = tf.strings.split(input_text).to_tensor()
+        t = tf.strings.strip(t)
+        return self.table.lookup(t)
+
+    def get_config(self):
+        config = super(VocabLookup, self).get_config()
+        config.update({'lookup_table': self.lookup_table, 'default_value': self.default_value})
+        return config
+
+
 class CategoryFeatureMixin:
     type = CATEGORY
     preprocessing_defaults = {
@@ -108,17 +141,12 @@ class CategoryFeatureMixin:
         return proc_df
 
     @staticmethod
-    def preprocess_inference_graph(t: tf.Tensor, metadata: dict):
-        keys, values = zip(*metadata['str2idx'].items())
-        keys_tensor = tf.constant(keys)
-        vals_tensor = tf.constant(values)
-        table = tf.lookup.StaticHashTable(
-            tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor),
+    def preprocess_inference_graph(t, metadata):
+        return VocabLookup(
+            lookup_table=metadata['str2idx'],
             default_value=metadata['str2idx'][UNKNOWN_SYMBOL],
-        )
-
-        t = tf.strings.strip(t)
-        return table.lookup(t)
+            dtype=tf.int64,
+        )(t)
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
@@ -154,11 +182,11 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return ()
 
     @classmethod
-    def get_inference_dtype(cls):
+    def get_inference_input_dtype(cls):
         return tf.string
 
     @classmethod
-    def get_inference_shape(cls):
+    def get_inference_input_shape(cls):
         return ()
 
     @staticmethod
@@ -482,16 +510,15 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return predictions
 
     @staticmethod
-    def postprocess_inference_graph(preds: Dict[str: tf.Tensor], metadata: dict):
-        keys, values = zip(*metadata['idx2str'].items())
-        keys_tensor = tf.constant(keys)
-        vals_tensor = tf.constant(values)
-        table = tf.lookup.StaticHashTable(
-            tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor),
+    def postprocess_inference_graph(preds: dict, metadata: dict):
+        table = VocabLookup(
+            lookup_table=metadata['idx2str'],
             default_value="",
+            dtype=tf.string,
         )
+
         return {
-            PREDICTIONS: table.lookup(preds[PREDICTIONS]),
+            PREDICTIONS: table(preds[PREDICTIONS]),
             PROBABILITIES: preds[PROBABILITIES],
         }
 

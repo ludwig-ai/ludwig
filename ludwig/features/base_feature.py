@@ -75,10 +75,11 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create_inference_input(self):
-        return tf.keras.Input(shape=self.get_inference_input_shape(),
-                              dtype=self.get_inference_input_dtype(),
-                              name=self.name + '_inference_input')
+    @classmethod
+    def create_inference_input(cls, feature_name):
+        return tf.keras.Input(shape=cls.get_inference_input_shape(),
+                              dtype=cls.get_inference_input_dtype(),
+                              name=feature_name + '_inference_input')
 
     def create_input(self):
         return tf.keras.Input(shape=self.get_input_shape(),

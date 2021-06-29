@@ -1517,19 +1517,23 @@ class LudwigModel:
         }
 
         inputs = {
-            feature_name: feature.create_inference_input()
+            feature_name: feature.create_inference_input(feature_name)
             for feature_name, feature in input_features.items()
         }
 
         preproc_inputs = {
-            feature_name: feature.preprocess_inference_graph(inputs[feature_name])
+            feature_name: feature.preprocess_inference_graph(
+                inputs[feature_name], self.training_set_metadata[feature_name]
+            )
             for feature_name, feature in input_features.items()
         }
 
         preproc_outputs = self.model.call(preproc_inputs)
 
         outputs = {
-            feature_name: feature.postprocess_inference_graph(preproc_outputs[feature_name])
+            feature_name: feature.postprocess_inference_graph(
+                preproc_outputs[feature_name], self.training_set_metadata[feature_name]
+            )
             for feature_name, feature in input_features.items()
         }
 

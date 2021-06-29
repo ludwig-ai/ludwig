@@ -240,7 +240,7 @@ class NumericalFeatureMixin:
         return proc_df
 
     @staticmethod
-    def preprocess_inference_graph(t: tf.Tensor, metadata: dict):
+    def preprocess_inference_graph(t, metadata):
         numeric_transformer = get_transformer(
             metadata, metadata["preprocessing"]
         )
@@ -278,11 +278,11 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         return ()
 
     @classmethod
-    def get_inference_dtype(cls):
+    def get_inference_input_dtype(cls):
         return tf.float32
 
     @classmethod
-    def get_inference_shape(cls):
+    def get_inference_input_shape(cls):
         return ()
 
     @staticmethod
@@ -432,7 +432,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         return predictions
 
-    def postprocess_inference_graph(self, preds: Dict[str, tf.Tensor], metadata: dict):
+    def postprocess_inference_graph(self, preds: dict, metadata: dict):
         numeric_transformer = get_transformer(
             metadata, metadata["preprocessing"]
         )
