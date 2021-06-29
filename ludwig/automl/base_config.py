@@ -47,11 +47,11 @@ def allocate_experiment_resources(resources: Dict) -> Dict:
     # (2) add support for kubernetes namespace (if applicable)
     # (3) add support for smarter allocation based on size of GPU memory
     experiment_resources = {
-        'cpu_resources_per_trial': '1'
+        'cpu_resources_per_trial': 1
     }
     if resources['gpu'] > 0:
         experiment_resources.update({
-            'gpu_resources_per_trial': '1'
+            'gpu_resources_per_trial': 1
         })
     return experiment_resources
 
