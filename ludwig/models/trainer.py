@@ -334,7 +334,8 @@ class Trainer(BaseTrainer):
     def tune_batch_size(
         self,
         model,
-        training_set
+        training_set,
+        max_trials: int = 10,
     ):
         original_epochs = self.epochs
         skip_save_model = self.skip_save_model
@@ -347,10 +348,15 @@ class Trainer(BaseTrainer):
         self.skip_save_log = True
 
         high = None
+        count = 0
         while True:
+            print(count)
             gc.collect()
             try:
                 self.train(model, training_set)
+                count += 1
+                if count > max_trials:
+                    break
                 low = self.batch_size
                 prev_batch_size = self.batch_size
                 if high:
