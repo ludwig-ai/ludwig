@@ -67,7 +67,6 @@ class VocabLookup(tf.keras.layers.Layer):
 
     def call(self, t):
         # splitted_text = tf.strings.split(input_text).to_tensor()
-        t = tf.strings.strip(t)
         return self.table.lookup(t)
 
     def get_config(self):
@@ -142,6 +141,7 @@ class CategoryFeatureMixin:
 
     @staticmethod
     def preprocess_inference_graph(t, metadata):
+        t = tf.strings.strip(t)
         return VocabLookup(
             lookup_table=metadata['str2idx'],
             default_value=metadata['str2idx'][UNKNOWN_SYMBOL],
@@ -511,14 +511,17 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def postprocess_inference_graph(preds: dict, metadata: dict):
+        lookup_table = {
+            i: v for i, v in enumerate(metadata['idx2str'])
+        }
         table = VocabLookup(
-            lookup_table=metadata['idx2str'],
+            lookup_table=lookup_table,
             default_value="",
             dtype=tf.string,
         )
 
         return {
-            PREDICTIONS: table(preds[PREDICTIONS]),
+            PREDICTIONS: table(tf.cast(preds[PREDICTIONS], tf.int32)),
             PROBABILITIES: preds[PROBABILITIES],
         }
 

@@ -44,7 +44,7 @@ from ludwig.data.preprocessing import (load_metadata,
                                        preprocess_for_prediction,
                                        preprocess_for_training)
 from ludwig.features.feature_registries import \
-    update_config_with_metadata, input_type_registry
+    update_config_with_metadata, input_type_registry, output_type_registry
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME,
@@ -1512,7 +1512,7 @@ class LudwigModel:
         input_features = {
             feature[NAME]: get_from_registry(
                 feature[TYPE], input_type_registry
-            )
+            )(feature)
             for feature in self.config['input_features']
         }
 
@@ -1530,11 +1530,25 @@ class LudwigModel:
 
         preproc_outputs = self.model.call(preproc_inputs)
 
+        output_features = {
+            feature[NAME]: get_from_registry(
+                feature[TYPE], output_type_registry
+            )(feature)
+            for feature in self.config['output_features']
+        }
+
+        preproc_preds = {
+            feature_name: feature.predictions(
+                preproc_outputs[feature_name], training=False
+            )
+            for feature_name, feature in output_features.items()
+        }
+
         outputs = {
             feature_name: feature.postprocess_inference_graph(
-                preproc_outputs[feature_name], self.training_set_metadata[feature_name]
+                preproc_preds[feature_name], self.training_set_metadata[feature_name]
             )
-            for feature_name, feature in input_features.items()
+            for feature_name, feature in output_features.items()
         }
 
         return tf.keras.Model(inputs=inputs, outputs=outputs)
