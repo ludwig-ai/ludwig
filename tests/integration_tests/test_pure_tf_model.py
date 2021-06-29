@@ -23,6 +23,7 @@ import pytest
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from tests.integration_tests.utils import category_feature, binary_feature, \
@@ -88,127 +89,18 @@ def test_pure_tf_model(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
-    ludwig_model.create_inference_graph()
+    ludwig_tf_model = ludwig_model.create_inference_graph()
+    print(ludwig_tf_model)
 
-    # ###################
-    # # save Ludwig model
-    # ###################
-    # ludwigmodel_path = os.path.join(dir_path, 'ludwigmodel')
-    # shutil.rmtree(ludwigmodel_path, ignore_errors=True)
-    # ludwig_model.save(ludwigmodel_path)
-    #
-    # ###################
-    # # load Ludwig model
-    # ###################
-    # if should_load_model:
-    #     ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
-    #
-    # ##############################
-    # # collect weight tensors names
-    # ##############################
-    # original_predictions_df, _ = ludwig_model.predict(
-    #     dataset=data_csv_path)
-    # original_weights = deepcopy(ludwig_model.model.trainable_variables)
-    #
-    # #################
-    # # save savedmodel
-    # #################
-    # savedmodel_path = os.path.join(dir_path, 'savedmodel')
-    # shutil.rmtree(savedmodel_path, ignore_errors=True)
-    # ludwig_model.model.save_savedmodel(savedmodel_path)
-    #
-    # ###################################################
-    # # load Ludwig model, obtain predictions and weights
-    # ###################################################
-    # ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
-    # loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
-    # loaded_weights = deepcopy(ludwig_model.model.trainable_variables)
-    #
-    # #################################################
-    # # restore savedmodel, obtain predictions and weights
-    # #################################################
-    # training_set_metadata_json_fp = os.path.join(
-    #     ludwigmodel_path,
-    #     TRAIN_SET_METADATA_FILE_NAME
-    # )
-    #
-    # dataset, training_set_metadata = preprocess_for_prediction(
-    #     ludwig_model.config,
-    #     dataset=data_csv_path,
-    #     training_set_metadata=training_set_metadata_json_fp,
-    #     backend=backend,
-    # )
-    #
-    # restored_model = tf.saved_model.load(savedmodel_path)
-    #
-    # # Check the outputs for one of the features for correctness
-    # # Here we choose the first output feature (categorical)
-    # of_name = list(ludwig_model.model.output_features.keys())[0]
-    #
-    # data_to_predict = {
-    #     name: tf.convert_to_tensor(
-    #         dataset.dataset[feature.proc_column],
-    #         dtype=feature.get_input_dtype()
-    #     )
-    #     for name, feature in ludwig_model.model.input_features.items()
-    # }
-    #
-    # logits = restored_model(data_to_predict, False, None)
-    #
-    # restored_predictions = tf.argmax(
-    #     logits[of_name]['logits'],
-    #     -1,
-    #     name='predictions_{}'.format(of_name)
-    # )
-    # restored_predictions = tf.map_fn(
-    #     lambda idx: training_set_metadata[of_name]['idx2str'][idx],
-    #     restored_predictions,
-    #     dtype=tf.string
-    # )
-    #
-    # restored_weights = deepcopy(restored_model.trainable_variables)
-    #
-    # #########
-    # # Cleanup
-    # #########
-    # shutil.rmtree(ludwigmodel_path, ignore_errors=True)
-    # shutil.rmtree(savedmodel_path, ignore_errors=True)
-    #
-    # ###############################################
-    # # Check if weights and predictions are the same
-    # ###############################################
-    #
-    # # check for same number of weights as original model
-    # assert len(original_weights) == len(loaded_weights)
-    # assert len(original_weights) == len(restored_weights)
-    #
-    # # check to ensure weight valuess match the original model
-    # loaded_weights_match = np.all(
-    #     [np.all(np.isclose(original_weights[i].numpy(),
-    #                        loaded_weights[i].numpy())) for i in
-    #      range(len(original_weights))]
-    # )
-    #
-    # original_weights = sorted(original_weights, key=lambda w: w.name)
-    # restored_weights = sorted(restored_weights, key=lambda w: w.name)
-    #
-    # restored_weights_match = np.all(
-    #     [np.all(np.isclose(original_weights[i].numpy(),
-    #                        restored_weights[i].numpy())) for i in
-    #      range(len(original_weights))]
-    # )
-    #
-    # assert loaded_weights_match and restored_weights_match
-    #
-    # #  Are predictions identical to original ones?
-    # loaded_predictions_match = np.all(
-    #     original_predictions_df[predictions_column_name] ==
-    #     loaded_prediction_df[predictions_column_name]
-    # )
-    #
-    # restored_predictions_match = np.all(
-    #     original_predictions_df[predictions_column_name] ==
-    #     restored_predictions.numpy().astype('str')
-    # )
-    #
-    # assert loaded_predictions_match and restored_predictions_match
+    pred_data = list(build_synthetic_dataset(1, input_features))
+
+    inputs = {
+        c: tf.convert_to_tensor(
+            [v],
+            dtype=ludwig_model.model.input_features[c].get_inference_input_dtype()
+        )
+        for c, v in zip(pred_data[0], pred_data[1])
+    }
+    print(inputs)
+
+    print(ludwig_tf_model(inputs))
