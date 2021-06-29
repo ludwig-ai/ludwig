@@ -1,6 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-import dataclasses_json
 import GPUtil
 import psutil
 from dataclasses_json import LetterCase, config, dataclass_json
