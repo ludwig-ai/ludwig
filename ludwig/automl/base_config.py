@@ -1,18 +1,17 @@
 """
 config.py
 
-Build base config
-(1) infer types based on dataset (i.e. collects features)
+Builds base configuration file:
+
+(1) infer types based on dataset 
 (2) populate with 
     - default combiner parameters,
     - preprocessing parameters,
     - combiner specific default training parameters,
     - combiner specific hyperopt space
     - feature parameters
-(3) add machine / resources -- how are we to know what resources the usre has -- 
-    add logic to infer this (if necessary)
+(3) add machineresources 
     (base implementation -- # CPU, # GPU)
-
 """
 
 from typing import List, Dict, Union
@@ -21,20 +20,32 @@ import pandas as pd
 from ludwig.automl.utils import FieldInfo, get_avg_words, get_available_resources
 from ludwig.utils.data_utils import load_yaml
 import os
-from pathlib import Path
 
+PATH_HERE = os.path.abspath(os.path.dirname(__file__))
+CONFIG_DIR = os.path.join(PATH_HERE, 'defaults')
 
 model_defaults = {
-    'concat': os.path.join(os.path.realpath(__file__).rsplit('/', 1)[0], 'defaults/concat_config.yaml'),
-    'tabnet': os.path.join(os.path.realpath(__file__).rsplit('/', 1)[0], 'defaults/tabnet_config.yaml'),
-    'transformer': os.path.join(os.path.realpath(__file__).rsplit('/', 1)[0], 'defaults/transformer_config.yaml')
+    'concat': os.path.join(CONFIG_DIR, 'concat_config.yaml'),
+    'tabnet': os.path.join(CONFIG_DIR, 'tabnet_config.yaml'),
+    'transformer': os.path.join(CONFIG_DIR, 'transformer_config.yaml')
 }
 
 
 def allocate_experiment_resources(resources: Dict) -> Dict:
+    """
+    Allocates ray trial resources based on available resources
+
+    # Inputs
+    :param resources (Dict) specifies all available GPUs, CPUs and associated
+        metadata of the machines (i.e. memory)
+
+    # Return
+    :return: (Dict) gpu and cpu resources per trial
+    """
     # TODO (ASN):
     # (1) expand logic to support multiple GPUs per trial (multi-gpu training)
     # (2) add support for kubernetes namespace (if applicable)
+    # (3) add support for smarter allocation based on size of GPU memory
     experiment_resources = {
         'cpu_resources_per_trial': '1'
     }
@@ -47,11 +58,26 @@ def allocate_experiment_resources(resources: Dict) -> Dict:
 
 def create_default_config(dataset: str, target_name: str = None, time_limit_s: Union[int, float] = None):
     """
-    # (1) extract fields and generate list of FieldInfo objects
-    # (2) get field metadata
-    # (3) build input_features and output_feautures portion of config
-    # (4) for each combiner -- add default training, hyperopt
-    # (5) infer resource constraints and add to hyperopt executor
+    Returns auto_train configs for three available combiner models. 
+    Coordinates the following tasks:
+
+    - extracts fields and generates list of FieldInfo objects
+    - gets field metadata (i.e avg. words, total non-null entries)
+    - builds input_features and output_feautures section of config
+    - for each combiner, adds default training, hyperopt
+    - infers resource constraints and adds gpu and cpu resource allocation per
+      trial
+
+    # Inputs
+    :param dataset: (str) filepath to dataset.
+    :param target_name: (str) name of target feature
+    :param time_limit_s: (int, float) total time allocated to auto_train. acts
+                                    as the stopping parameter
+
+    # Return
+    :return: (Dict) dictionaries contain auto train config files for all available
+    combiner types
+
     """
     fields, row_count = get_field_info(dataset)
     input_and_output_feature_config = get_input_and_output_features(
@@ -71,6 +97,18 @@ def create_default_config(dataset: str, target_name: str = None, time_limit_s: U
 
 
 def get_field_info(dataset: str):
+    """
+    Constructs FeildInfo objects for each feature in dataset. These objects
+    are used for downstream type inference
+
+    # Inputs
+    :param dataset: (str) filepath to dataset.
+
+    # Return
+    :return: (List[FieldInfo]) list of FieldInfo objects
+
+    """
+
     # TODO (ASN): add more detailed logic for loading dataset. initial implementation
     # assumes dataset is stored as a csv file and readable by pandas
     dataframe = pd.read_csv(dataset)
@@ -95,11 +133,34 @@ def get_input_and_output_features(
     row_count: int,
     target_name: str = None,
 ) -> dict:
+    """
+    Constructs FeildInfo objects for each feature in dataset. These objects
+    are used for downstream type inference
+
+    # Inputs
+    :param dataset: (List[FieldInfo]) FieldInfo objects for all fields in dataset
+    :param row_count: (int) total number of entries in original dataset
+    :param target_name (str) name of target feature
+
+    # Return
+    :return: (Dict) section of auto_train config for input_features and output_features 
+    """
     metadata = get_field_metadata(fields, row_count, target_name)
     return get_config_from_metadata(metadata, target_name)
 
 
 def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
+    """
+    Builds input/output feature sections of auto-train config using field
+    metadata
+
+    # Inputs
+    :param metadata: (List[Dict]) field descriptions
+    :param target_name (str) name of target feature
+
+    # Return
+    :return: (Dict) section of auto_train config for input_features and output_features
+    """
     config = {
         "input_features": [],
         "output_features": [],
@@ -117,6 +178,18 @@ def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
 def get_field_metadata(
     fields: List[FieldInfo], row_count: int, target_name: str = None
 ) -> list:
+    """
+    Computes metadata for each field in dataset
+
+    # Inputs
+    :param dataset: (List[FieldInfo]) FieldInfo objects for all fields in dataset
+    :param row_count: (int) total number of entries in original dataset
+    :param target_name (str) name of target feature
+
+    # Return
+    :return: (List) List of dictionaries containing metadata for each field
+    """
+
     metadata = []
     for field in fields:
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
@@ -146,6 +219,8 @@ def get_field_metadata(
         - 1
     )
 
+    # TODO (ASN): clarify logic below
+
     # Second pass to exclude fields that are too expensive given the constraints
     for meta in metadata:
         if input_count > 2 and meta["config"]["type"] == "text":
@@ -153,6 +228,40 @@ def get_field_metadata(
             meta["excluded"] = True
 
     return metadata
+
+
+def get_predicted_type(
+    field: FieldInfo, missing_value_percent: float, target_name: str = None
+) -> str:
+    """
+    Perform type inference on field
+
+    # Inputs
+    :param dataset: (FieldInfo) object describing field
+    :param missing_value_percent: (int) percentage of missing values
+    :param target_name (str) name of target feature
+
+    # Return
+    :return: (str) feature type
+    """
+    distinct_values = field.distinct_values
+    if distinct_values == 2 and (
+        missing_value_percent == 0 or field.name == target_name
+    ):
+        return "binary"
+
+    if distinct_values < 20:
+        # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
+        # NOTE (ASN): edge case -- there are less than 20 samples in dataset
+        return "category"
+
+    # add criteria for number of spaces
+    if field.avg_words and field.avg_words > 2:
+        return "text"
+
+    # TODO (ASN): add other modalities (image, etc. )
+
+    return "numerical"
 
 
 def should_exclude(field: FieldInfo, row_count: int, target_name: str) -> bool:
@@ -177,26 +286,3 @@ def get_predicted_mode(field: FieldInfo, target_name: str = None) -> str:
     if field.name.lower() == "split":
         return "split"
     return "input"
-
-
-def get_predicted_type(
-    field: FieldInfo, missing_value_percent: float, target_name: str = None
-) -> str:
-    distinct_values = field.distinct_values
-    if distinct_values == 2 and (
-        missing_value_percent == 0 or field.name == target_name
-    ):
-        return "binary"
-
-    if distinct_values < 20:
-        # TODO(tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
-        # NOTE (ASN): edge case -- there are less than 20 samples in dataset
-        return "category"
-
-    # add criteria for number of spaces
-    if field.avg_words > 2:
-        return "text"
-
-    # TODO (ASN): add other modalities (image, etc. )
-
-    return "numerical"
