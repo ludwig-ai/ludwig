@@ -10,13 +10,13 @@ combiner:
 training:
   batch_size: 256
   learning_rate: 0.0001
-  validation_metric: accuracy
+  # validation_metric: accuracy
   tune_batch_size:
     type: bin_search
     substitute_with_max: True
 
 hyperopt:
-  goal: maximize
+  # goal: maximize
   parameters:
     training.learning_rate:
       space: loguniform
@@ -51,7 +51,7 @@ hyperopt:
     type: ray
     scheduler:
       type: pbt
-      time_attr: timesteps_total
+      time_attr: training_iteration
       perturbation_interval: 10 # TODO (ASN): calibrate perturbation interval
     num_samples: 40
 

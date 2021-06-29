@@ -9,7 +9,7 @@ combiner:
   relaxation_factor: 1.5 # gamma
 
 training:
-  validation_metric: accuracy
+  # validation_metric: accuracy
   batch_size: 2048
   learning_rate: 0.02
   decay: true
@@ -25,7 +25,7 @@ training:
     substitute_with_max: True
 
 hyperopt:
-  goal: maximize
+  # goal: maximize
   parameters:
     training.learning_rate:
       space: choice
@@ -65,9 +65,9 @@ hyperopt:
     type: ray
     scheduler:
       type: pbt
-      time_attr: timesteps_total
+      time_attr: training_iteration
       perturbation_interval: 10 # TODO (ASN): calibrate perturbation interval
-    num_samples: 1
+    num_samples: 40
 
   executor:
     type: ray
