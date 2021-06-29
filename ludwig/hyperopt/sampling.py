@@ -353,7 +353,7 @@ class RayTuneSampler(HyperoptSampler):
             return None
 
         if scheduler_config.get("type") == "pbt":
-            scheduler_config.extend(
+            scheduler_config.update(
                 {"hyperparam_mutations": self.search_space})
 
         return tune.create_scheduler(
