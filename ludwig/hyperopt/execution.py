@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 import copy
@@ -17,7 +18,7 @@ from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import (get_available_gpu_memory, 
+from ludwig.utils.misc_utils import (get_available_gpu_memory,
                                      get_from_registry,
                                      hash_dict)
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -86,7 +87,8 @@ class HyperoptExecutor(ABC):
                         "as no validation / eval sets were given")
             return self.get_metric_score_from_train_stats(train_stats, TRAINING, TRAINING)
         else:
-            raise RuntimeError("Unable to obtain metric score from missing training / eval statistics")
+            raise RuntimeError(
+                "Unable to obtain metric score from missing training / eval statistics")
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
         stats = eval_stats[self.output_feature]
@@ -704,6 +706,7 @@ class RayTuneExecutor(HyperoptExecutor):
             cpu_resources_per_trial: int = None,
             gpu_resources_per_trial: int = None,
             kubernetes_namespace: str = None,
+            time_budget_s: Union[int, float, datetime.timedelta] = None,
             **kwargs
     ) -> None:
         if ray is None:
@@ -712,7 +715,8 @@ class RayTuneExecutor(HyperoptExecutor):
                               )
         if not isinstance(hyperopt_sampler, RayTuneSampler):
             raise ValueError('Sampler {} is not compatible with RayTuneExecutor, '
-                             'please use the RayTuneSampler'.format(hyperopt_sampler)
+                             'please use the RayTuneSampler'.format(
+                                 hyperopt_sampler)
                              )
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
@@ -735,6 +739,7 @@ class RayTuneExecutor(HyperoptExecutor):
         self.cpu_resources_per_trial = cpu_resources_per_trial
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
+        self.time_budget_s = time_budget_s
 
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx):
         for gpu_id in ray.get_gpu_ids():
@@ -776,12 +781,15 @@ class RayTuneExecutor(HyperoptExecutor):
                     TEST: progress_tracker.test_metrics,
                 }
 
-                metric_score = tune_executor.get_metric_score(train_stats, eval_stats=None)
+                metric_score = tune_executor.get_metric_score(
+                    train_stats, eval_stats=None)
                 tune.report(
                     parameters=json.dumps(config, cls=NumpyEncoder),
                     metric_score=metric_score,
-                    training_stats=json.dumps(train_stats[TRAINING], cls=NumpyEncoder),
-                    eval_stats=json.dumps(train_stats[VALIDATION], cls=NumpyEncoder)
+                    training_stats=json.dumps(
+                        train_stats[TRAINING], cls=NumpyEncoder),
+                    eval_stats=json.dumps(
+                        train_stats[VALIDATION], cls=NumpyEncoder)
                 )
 
         callbacks = hyperopt_dict.get('callbacks') or []
@@ -893,7 +901,8 @@ class RayTuneExecutor(HyperoptExecutor):
         if self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
             sync_config = tune.SyncConfig(
-                sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace)
+                sync_to_driver=NamespacedKubernetesSyncer(
+                    self.kubernetes_namespace)
             )
 
         resources_per_trial = {
@@ -914,7 +923,7 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         register_trainable(
-            f"trainable_func_f{hash_dict(config)}", 
+            f"trainable_func_f{hash_dict(config)}",
             run_experiment_trial
         )
 
@@ -928,6 +937,7 @@ class RayTuneExecutor(HyperoptExecutor):
             search_alg=search_alg,
             num_samples=self.num_samples,
             resources_per_trial=resources_per_trial,
+            time_budget_s=self.time_budget_s,
             queue_trials=True,
             sync_config=sync_config,
             local_dir=output_directory,

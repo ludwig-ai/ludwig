@@ -152,7 +152,7 @@ class RandomSampler(HyperoptSampler):
                         value_str = str(value)
                         value_type = str2bool
                     elif value_type == str or value_type == int or \
-                        value_type == float:
+                            value_type == float:
                         value_str = str(value)
                     else:
                         value_str = json.dumps(value)
@@ -274,7 +274,7 @@ class PySOTSampler(HyperoptSampler):
                         value_str = str(value)
                         value_type = str2bool
                     elif value_type == str or value_type == int or \
-                        value_type == float:
+                            value_type == float:
                         value_str = str(value)
                     else:
                         value_str = json.dumps(value)
@@ -351,6 +351,10 @@ class RayTuneSampler(HyperoptSampler):
     def _create_scheduler(self, scheduler_config):
         if not scheduler_config:
             return None
+
+        if scheduler_config.get("type") == "pbt":
+            scheduler_config.extend(
+                {"hyperparam_mutations": self.search_space})
 
         return tune.create_scheduler(
             scheduler_config.get("type"),
