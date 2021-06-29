@@ -338,7 +338,7 @@ class RayTuneSampler(HyperoptSampler):
         self._check_ray_tune()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
-        self.scheduler = self._create_scheduler(scheduler)
+        self.scheduler = self._create_scheduler(scheduler, parameters)
         self.num_samples = num_samples
         self.goal = goal
 
@@ -348,13 +348,13 @@ class RayTuneSampler(HyperoptSampler):
                 "Requested Ray sampler but Ray Tune is not installed. Run `pip install ray[tune]`"
             )
 
-    def _create_scheduler(self, scheduler_config):
+    def _create_scheduler(self, scheduler_config, parameters):
         if not scheduler_config:
             return None
 
         if scheduler_config.get("type") == "pbt":
             scheduler_config.update(
-                {"hyperparam_mutations": self.search_space})
+                {"hyperparam_mutations": parameters})
 
         return tune.create_scheduler(
             scheduler_config.get("type"),

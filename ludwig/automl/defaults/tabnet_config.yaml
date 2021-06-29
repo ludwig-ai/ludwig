@@ -16,7 +16,7 @@ training:
   decay_steps: 500
   decay_rate: 0.95
   epochs: 3000
-  early_stop: 300
+  # early_stop: 300
   regularization_lambda: 1
   optimizer:
     type: adam
@@ -67,7 +67,7 @@ hyperopt:
       type: pbt
       time_attr: timesteps_total
       perturbation_interval: 10 # TODO (ASN): calibrate perturbation interval
-    num_samples: 40
+    num_samples: 1
 
   executor:
     type: ray
