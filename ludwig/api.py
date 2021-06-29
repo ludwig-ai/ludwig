@@ -347,12 +347,12 @@ class LudwigModel:
         # if we are skipping all saving,
         # there is no need to create a directory that will remain empty
         should_create_output_directory = not (
-                skip_save_training_description and
-                skip_save_training_statistics and
-                skip_save_model and
-                skip_save_progress and
-                skip_save_log and
-                skip_save_processed_input
+            skip_save_training_description and
+            skip_save_training_statistics and
+            skip_save_model and
+            skip_save_progress and
+            skip_save_log and
+            skip_save_processed_input
         )
 
         output_url = output_directory
@@ -365,7 +365,8 @@ class LudwigModel:
                     output_directory)
 
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
-                preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = (
+                    training_set, validation_set, test_set, training_set_metadata)
             else:
                 # save description
                 if self.backend.is_coordinator():
@@ -384,10 +385,12 @@ class LudwigModel:
                     # print description
                     logger.info('Experiment name: {}'.format(experiment_name))
                     logger.info('Model name: {}'.format(model_name))
-                    logger.info('Output directory: {}'.format(output_directory))
+                    logger.info(
+                        'Output directory: {}'.format(output_directory))
                     logger.info('\n')
                     for key, value in description.items():
-                        logger.info('{}: {}'.format(key, pformat(value, indent=4)))
+                        logger.info('{}: {}'.format(
+                            key, pformat(value, indent=4)))
                     logger.info('\n')
 
                 preprocessed_data = self.preprocess(
@@ -421,7 +424,8 @@ class LudwigModel:
             if self.backend.is_coordinator():
                 logger.info('Training set: {0}'.format(len(training_set)))
                 if validation_set is not None:
-                    logger.info('Validation set: {0}'.format(len(validation_set)))
+                    logger.info('Validation set: {0}'.format(
+                        len(validation_set)))
                 if test_set is not None:
                     logger.info('Test set: {0}'.format(len(test_set)))
                 if not skip_save_model:
@@ -476,6 +480,16 @@ class LudwigModel:
                         config_fp=self.config_fp,
                     )
 
+                # auto tune batch size
+                if "tune_batch_size" in self.config[TRAINING].keys():
+                    temp_model = LudwigModel.create_model(self.config,
+                                                          random_seed=random_seed)
+                    tuned_batch_size = trainer.tune_batch_size(
+                        temp_model,
+                        training_set,
+                    )
+                    self.config[TRAINING]['batch_size'] = tuned_batch_size
+
                 # train model
                 if self.backend.is_coordinator():
                     print_boxed('TRAINING')
@@ -512,7 +526,8 @@ class LudwigModel:
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         epoch_best_vali_metric, best_vali_metric = best_function(
-                            enumerate(validation_field_result[validation_metric]),
+                            enumerate(
+                                validation_field_result[validation_metric]),
                             key=lambda pair: pair[1]
                         )
                         logger.info(
@@ -707,7 +722,7 @@ class LudwigModel:
                 # if we are skipping all saving,
                 # there is no need to create a directory that will remain empty
                 should_create_exp_dir = not (
-                        skip_save_unprocessed_output and skip_save_predictions
+                    skip_save_unprocessed_output and skip_save_predictions
                 )
                 if should_create_exp_dir:
                     makedirs(output_directory, exist_ok=True)
@@ -720,7 +735,7 @@ class LudwigModel:
                 output_directory=output_directory,
                 backend=self.backend,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not self.backend.is_coordinator(),
+                or not self.backend.is_coordinator(),
             )
             converted_postproc_predictions = convert_predictions(
                 postproc_predictions,
@@ -859,9 +874,9 @@ class LudwigModel:
                 # if we are skipping all saving,
                 # there is no need to create a directory that will remain empty
                 should_create_exp_dir = not (
-                        skip_save_unprocessed_output and
-                        skip_save_predictions and
-                        skip_save_eval_stats
+                    skip_save_unprocessed_output and
+                    skip_save_predictions and
+                    skip_save_eval_stats
                 )
                 if should_create_exp_dir:
                     makedirs(output_directory, exist_ok=True)
@@ -875,16 +890,16 @@ class LudwigModel:
                     output_directory=output_directory,
                     backend=self.backend,
                     skip_save_unprocessed_output=skip_save_unprocessed_output
-                                                 or not self.backend.is_coordinator(),
+                    or not self.backend.is_coordinator(),
                 )
             else:
                 postproc_predictions = predictions  # = {}
 
             if self.backend.is_coordinator():
                 should_save_predictions = (
-                        collect_predictions
-                        and postproc_predictions is not None
-                        and not skip_save_predictions
+                    collect_predictions
+                    and postproc_predictions is not None
+                    and not skip_save_predictions
                 )
                 if should_save_predictions:
                     save_prediction_outputs(
@@ -1285,7 +1300,7 @@ class LudwigModel:
          training_set_metadata) = preprocessed_data
 
         return proc_training_set, proc_validation_set, proc_test_set, \
-               training_set_metadata
+            training_set_metadata
 
     @staticmethod
     def load(
@@ -1347,7 +1362,7 @@ class LudwigModel:
                 model_dir,
                 MODEL_HYPERPARAMETERS_FILE_NAME
             )
-        ))
+            ))
 
         if backend_param is None and 'backend' in config:
             # Reset backend from config
@@ -1697,7 +1712,7 @@ def kfold_cross_validate(
     else:
         ValueError(
             "{} format is not supported for k_fold_cross_validate()"
-                .format(data_format)
+            .format(data_format)
         )
 
     kfold_cv_stats = {}

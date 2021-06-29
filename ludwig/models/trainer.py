@@ -17,6 +17,7 @@
 """
 This module contains the class and auxiliary methods of a model.
 """
+import gc
 import logging
 import os
 import os.path
@@ -28,27 +29,26 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 
 import tensorflow as tf
-from tabulate import tabulate
-from tqdm import tqdm
-
-from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
-from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
-from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
-from ludwig.globals import is_progressbar_disabled
+from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
+                            MODEL_WEIGHTS_FILE_NAME,
+                            TRAINING_CHECKPOINTS_DIR_PATH,
+                            TRAINING_PROGRESS_TRACKER_FILE_NAME,
+                            is_progressbar_disabled)
 from ludwig.models.predictor import Predictor
-from ludwig.modules.metric_modules import get_improved_fun
-from ludwig.modules.metric_modules import get_initial_validation_value
+from ludwig.modules.metric_modules import (get_improved_fun,
+                                           get_initial_validation_value)
 from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
-from ludwig.utils.math_utils import learning_rate_warmup, \
-    learning_rate_warmup_distributed, exponential_decay
+from ludwig.utils.math_utils import (exponential_decay, learning_rate_warmup,
+                                     learning_rate_warmup_distributed)
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.tf_utils import initialize_tensorflow
+from tabulate import tabulate
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -331,6 +331,54 @@ class Trainer(BaseTrainer):
 
         train_summary_writer.flush()
 
+    def tune_batch_size(
+        self,
+        model,
+        training_set
+    ):
+        original_epochs = self.epochs
+        skip_save_model = self.skip_save_model
+        skip_save_progress = self.skip_save_progress
+        skip_save_log = self.skip_save_log
+        # Set temporary values
+        self.epochs = 3
+        self.skip_save_model = True
+        self.skip_save_progress = True
+        self.skip_save_log = True
+
+        high = None
+        while True:
+            gc.collect()
+            try:
+                self.train(model, training_set)
+                low = self.batch_size
+                prev_batch_size = self.batch_size
+                if high:
+                    if high - low <= 1:
+                        break
+                    midval = (high + low) // 2
+                    self.batch_size = midval
+                else:
+                    self.batch_size *= 2  # double batch size
+
+                if self.batch_size == prev_batch_size:
+                    break
+
+            except tf.errors.ResourceExhaustedError as e:
+                gc.collect()
+                high = prev_batch_size
+                midval = (high + low) // 2
+                self.batch_size = midval
+                if high - low <= 1:
+                    break
+
+        # Restore original parameters to defaults
+        self.epochs = original_epochs
+        self.skip_save_model = skip_save_model
+        self.skip_save_progress = skip_save_progress
+        self.skip_save_log = skip_save_log
+        return self.batch_size
+
     def train(
             self,
             model,
@@ -554,11 +602,13 @@ class Trainer(BaseTrainer):
                         disable=is_progressbar_disabled()
                     )
 
-                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+                self.callback(lambda c: c.on_epoch_start(
+                    self, progress_tracker, save_path))
 
                 # training step loop
                 while not batcher.last_batch():
-                    self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_batch_start(
+                        self, progress_tracker, save_path))
 
                     # Set learning rate for this batch
                     current_learning_rate = progress_tracker.learning_rate
@@ -648,7 +698,8 @@ class Trainer(BaseTrainer):
                         progress_bar.update(1)
                     first_batch = False
 
-                    self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_batch_end(
+                        self, progress_tracker, save_path))
 
                 # ================ Post Training Epoch ================
                 if self.is_coordinator():
@@ -661,7 +712,8 @@ class Trainer(BaseTrainer):
                 tables = OrderedDict()
                 for output_feature_name, output_feature in output_features.items():
                     tables[output_feature_name] = [
-                        [output_feature_name] + metrics_names[output_feature_name]
+                        [output_feature_name] +
+                        metrics_names[output_feature_name]
                     ]
                 tables[COMBINED] = [[COMBINED, LOSS]]
 
@@ -682,7 +734,8 @@ class Trainer(BaseTrainer):
                 )
 
                 if validation_set is not None and len(validation_set) > 0:
-                    self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_validation_start(
+                        self, progress_tracker, save_path))
 
                     # eval metrics on validation set
                     self.evaluation(
@@ -700,10 +753,12 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    self.callback(lambda c: c.on_validation_end(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_validation_end(
+                        self, progress_tracker, save_path))
 
                 if test_set is not None and len(test_set) > 0:
-                    self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_test_start(
+                        self, progress_tracker, save_path))
 
                     # eval metrics on test set
                     self.evaluation(
@@ -721,7 +776,8 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    self.callback(lambda c: c.on_test_end(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_test_end(
+                        self, progress_tracker, save_path))
 
                 elapsed_time = (time.time() - start_time) * 1000.0
 
@@ -783,7 +839,8 @@ class Trainer(BaseTrainer):
                         )
                     logger.info('')
 
-                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+                self.callback(lambda c: c.on_epoch_end(
+                    self, progress_tracker, save_path))
 
         if train_summary_writer is not None:
             train_summary_writer.close()
@@ -938,7 +995,7 @@ class Trainer(BaseTrainer):
                 )
 
         progress_tracker.last_improvement = (
-                progress_tracker.epoch - progress_tracker.last_improvement_epoch
+            progress_tracker.epoch - progress_tracker.last_improvement_epoch
         )
         if progress_tracker.last_improvement != 0 and self.is_coordinator():
             logger.info(
@@ -963,8 +1020,8 @@ class Trainer(BaseTrainer):
                 reduce_learning_rate_eval_split
             )
             progress_tracker.last_learning_rate_reduction = (
-                    progress_tracker.epoch -
-                    progress_tracker.last_learning_rate_reduction_epoch
+                progress_tracker.epoch -
+                progress_tracker.last_learning_rate_reduction_epoch
             )
             if (
                     progress_tracker.last_learning_rate_reduction > 0
@@ -1002,8 +1059,8 @@ class Trainer(BaseTrainer):
                 increase_batch_size_eval_split
             )
             progress_tracker.last_increase_batch_size = (
-                    progress_tracker.epoch -
-                    progress_tracker.last_increase_batch_size_epoch
+                progress_tracker.epoch -
+                progress_tracker.last_increase_batch_size_epoch
             )
             if (
                     progress_tracker.last_increase_batch_size > 0
@@ -1197,7 +1254,7 @@ class Trainer(BaseTrainer):
         if (not progress_tracker.num_increases_batch_size >=
                 increase_batch_size_on_plateau
                 and not progress_tracker.batch_size ==
-                        increase_batch_size_on_plateau_max):
+                increase_batch_size_on_plateau_max):
 
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
