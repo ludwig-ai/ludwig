@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
+from typing import Union, Dict
 
 import numpy as np
 import tensorflow as tf
@@ -43,7 +43,6 @@ from ludwig.modules.metric_modules import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
-from tensorflow.keras.metrics import RootMeanSquaredError
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +53,21 @@ class ZScoreTransformer:
         self.sigma = std
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.mu) / self.sigma
+        return self._transform(x)
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return self._inverse_transform(x)
+
+    def transform_inference(self, x: tf.Tensor):
+        return self._transform(x)
+
+    def inverse_transform_inference(self, x: tf.Tensor):
+        return self._inverse_transform(x)
+
+    def _transform(self, x: Union[np.ndarray, tf.Tensor]):
+        return (x - self.mu) / self.sigma
+
+    def _inverse_transform(self, x: Union[np.ndarray, tf.Tensor]):
         return x * self.sigma + self.mu
 
     @staticmethod
@@ -75,9 +86,21 @@ class MinMaxTransformer:
         self.range = None if min is None or max is None else max - min
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.min_value) / self.range
+        return self._transform(x)
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return self._inverse_transform(x)
+
+    def transform_inference(self, x: tf.Tensor):
+        return self._transform(x)
+
+    def inverse_transform_inference(self, x: tf.Tensor):
+        return self._inverse_transform(x)
+
+    def _transform(self, x: Union[np.ndarray, tf.Tensor]):
+        return (x - self.min_value) / self.range
+
+    def _inverse_transform(self, x: Union[np.ndarray, tf.Tensor]):
         if self.range is None:
             raise ValueError(
                 "Numeric transformer needs to be instantiated with "
@@ -109,6 +132,12 @@ class Log1pTransformer:
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         return np.expm1(x)
 
+    def transform_inference(self, x: tf.Tensor):
+        return tf.math.log1p(x)
+
+    def inverse_transform_inference(self, x: tf.Tensor):
+        return tf.math.expm1(x)
+
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
         return {}
@@ -124,6 +153,12 @@ class IdentityTransformer:
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         return x
 
+    def transform_inference(self, x: tf.Tensor):
+        return x
+
+    def inverse_transform_inference(self, x: tf.Tensor):
+        return x
+
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
         return {}
@@ -135,6 +170,13 @@ numeric_transformation_registry = {
     "log1p": Log1pTransformer,
     None: IdentityTransformer,
 }
+
+
+def get_transformer(metadata, preprocessing_parameters):
+    return get_from_registry(
+        preprocessing_parameters.get("normalization", None),
+        numeric_transformation_registry,
+    )(**metadata)
 
 
 class NumericalFeatureMixin:
@@ -188,16 +230,21 @@ class NumericalFeatureMixin:
         )
 
         # normalize data as required
-        numeric_transformer = get_from_registry(
-            preprocessing_parameters.get("normalization", None),
-            numeric_transformation_registry,
-        )(**metadata[feature[NAME]])
-
+        numeric_transformer = get_transformer(
+            metadata[feature[NAME]], preprocessing_parameters
+        )
         proc_df[feature[PROC_COLUMN]] = numeric_transformer.transform(
             proc_df[feature[PROC_COLUMN]]
         )
 
         return proc_df
+
+    @staticmethod
+    def preprocess_inference_graph(t: tf.Tensor, metadata: dict):
+        numeric_transformer = get_transformer(
+            metadata, metadata["preprocessing"]
+        )
+        return numeric_transformer.transform_inference(t)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -228,6 +275,14 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         return tf.float32
 
     def get_input_shape(self):
+        return ()
+
+    @classmethod
+    def get_inference_dtype(cls):
+        return tf.float32
+
+    @classmethod
+    def get_inference_shape(cls):
         return ()
 
     @staticmethod
@@ -367,16 +422,23 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
             # as needed convert predictions make to original value space
-            numeric_transformer = get_from_registry(
-                metadata["preprocessing"].get("normalization", None),
-                numeric_transformation_registry,
-            )(**metadata)
+            numeric_transformer = get_transformer(
+                metadata, metadata["preprocessing"]
+            )
             predictions[predictions_col] = backend.df_engine.map_objects(
                 predictions[predictions_col],
                 lambda pred: numeric_transformer.inverse_transform(pred),
             )
 
         return predictions
+
+    def postprocess_inference_graph(self, preds: Dict[str, tf.Tensor], metadata: dict):
+        numeric_transformer = get_transformer(
+            metadata, metadata["preprocessing"]
+        )
+        return {
+            PREDICTIONS: numeric_transformer.inverse_transform_inference(preds[PREDICTIONS])
+        }
 
     @staticmethod
     def populate_defaults(output_feature):

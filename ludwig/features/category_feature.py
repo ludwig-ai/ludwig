@@ -19,6 +19,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from typing import Dict
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
@@ -106,6 +107,19 @@ class CategoryFeatureMixin:
         )
         return proc_df
 
+    @staticmethod
+    def preprocess_inference_graph(t: tf.Tensor, metadata: dict):
+        keys, values = zip(*metadata['str2idx'].items())
+        keys_tensor = tf.constant(keys)
+        vals_tensor = tf.constant(values)
+        table = tf.lookup.StaticHashTable(
+            tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor),
+            default_value=metadata['str2idx'][UNKNOWN_SYMBOL],
+        )
+
+        t = tf.strings.strip(t)
+        return table.lookup(t)
+
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = 'dense'
@@ -137,6 +151,14 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return tf.int32
 
     def get_input_shape(self):
+        return ()
+
+    @classmethod
+    def get_inference_dtype(cls):
+        return tf.string
+
+    @classmethod
+    def get_inference_shape(cls):
         return ()
 
     @staticmethod
@@ -458,6 +480,20 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 )
 
         return predictions
+
+    @staticmethod
+    def postprocess_inference_graph(preds: Dict[str: tf.Tensor], metadata: dict):
+        keys, values = zip(*metadata['idx2str'].items())
+        keys_tensor = tf.constant(keys)
+        vals_tensor = tf.constant(values)
+        table = tf.lookup.StaticHashTable(
+            tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor),
+            default_value="",
+        )
+        return {
+            PREDICTIONS: table.lookup(preds[PREDICTIONS]),
+            PROBABILITIES: preds[PROBABILITIES],
+        }
 
     @staticmethod
     def populate_defaults(output_feature):

@@ -33,17 +33,18 @@ from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
+from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, TYPE, NAME
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
                                        preprocess_for_prediction,
                                        preprocess_for_training)
 from ludwig.features.feature_registries import \
-    update_config_with_metadata
+    update_config_with_metadata, input_type_registry
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME,
@@ -1506,6 +1507,33 @@ class LudwigModel:
         """
         self._check_initialization()
         self.model.save_savedmodel(save_path)
+
+    def create_inference_graph(self):
+        input_features = {
+            feature[NAME]: get_from_registry(
+                feature[TYPE], input_type_registry
+            )
+            for feature in self.config['input_features']
+        }
+
+        inputs = {
+            feature_name: feature.create_inference_input()
+            for feature_name, feature in input_features.items()
+        }
+
+        preproc_inputs = {
+            feature_name: feature.preprocess_inference_graph(inputs[feature_name])
+            for feature_name, feature in input_features.items()
+        }
+
+        preproc_outputs = self.model.call(preproc_inputs)
+
+        outputs = {
+            feature_name: feature.postprocess_inference_graph(preproc_outputs[feature_name])
+            for feature_name, feature in input_features.items()
+        }
+
+        return tf.keras.Model(inputs=inputs, outputs=outputs)
 
     def _check_initialization(self):
         if self.model is None or \

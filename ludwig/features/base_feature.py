@@ -75,6 +75,11 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def create_inference_input(self):
+        return tf.keras.Input(shape=self.get_inference_input_shape(),
+                              dtype=self.get_inference_input_dtype(),
+                              name=self.name + '_inference_input')
+
     def create_input(self):
         return tf.keras.Input(shape=self.get_input_shape(),
                               dtype=self.get_input_dtype(),
@@ -88,6 +93,18 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
 
     @abstractmethod
     def get_input_shape(self):
+        """Returns a tuple representing the Tensor shape this input accepts."""
+        pass
+
+    @classmethod
+    # @abstractmethod
+    def get_inference_input_dtype(cls):
+        """Returns the Tensor data type this input accepts."""
+        pass
+
+    @classmethod
+    # @abstractmethod
+    def get_inference_input_shape(cls):
         """Returns a tuple representing the Tensor shape this input accepts."""
         pass
 
