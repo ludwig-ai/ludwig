@@ -354,7 +354,7 @@ class RayTuneSampler(HyperoptSampler):
 
         if scheduler_config.get("type") == "pbt":
             scheduler_config.update(
-                {"hyperparam_mutations": parameters})
+                {"hyperparam_mutations": self.search_space})
 
         return tune.create_scheduler(
             scheduler_config.get("type"),
@@ -411,7 +411,7 @@ class RayTuneSampler(HyperoptSampler):
         """
         values = values.copy()
         for key in ["values", "categories"]:
-            if key in values:
+            if key in values and not isinstance(values[key][0], (int, float)):
                 values[key] = [json.dumps(v) for v in values[key]]
                 ctx[param] = json.loads
         return values
