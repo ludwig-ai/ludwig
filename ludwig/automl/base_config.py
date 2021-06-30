@@ -14,12 +14,13 @@ Builds base configuration file:
     (base implementation -- # CPU, # GPU)
 """
 
-from typing import List, Dict, Union
+import os
+from typing import Dict, List, Union
 
 import pandas as pd
-from ludwig.automl.utils import FieldInfo, get_avg_words, get_available_resources
+from ludwig.automl.utils import (FieldInfo, get_available_resources,
+                                 get_avg_words)
 from ludwig.utils.data_utils import load_yaml
-import os
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, 'defaults')

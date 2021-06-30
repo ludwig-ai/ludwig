@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import GPUtil
 import psutil
-from dataclasses_json import LetterCase, config, dataclass_json
+from dataclasses_json import LetterCase, dataclass_json
 from pandas import Series
 
 
