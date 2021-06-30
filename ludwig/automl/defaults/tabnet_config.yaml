@@ -53,7 +53,7 @@ hyperopt:
       categories: [1.0, 1.2, 1.5, 2.0]
     combiner.sparsity:
       space: choice
-      categories: [0, 0.000001, 0.0001, 0.001, 0.01, 0.1]
+      categories: [0.0, 0.000001, 0.0001, 0.001, 0.01, 0.1]
     combiner.bn_virtual_bs:
       space: choice
       categories: [256, 512, 1024, 2048, 4096]
@@ -64,10 +64,9 @@ hyperopt:
   sampler:
     type: ray
     scheduler:
-      type: pbt
-      time_attr: training_iteration
-      perturbation_interval: 10 # TODO (ASN): calibrate perturbation interval
-    num_samples: 40
+      type: async_hyperband
+      time_attr: time_total_s
+    num_samples: 20
 
   executor:
     type: ray

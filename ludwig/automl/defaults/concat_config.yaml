@@ -39,10 +39,9 @@ hyperopt:
   sampler:
     type: ray
     scheduler:
-      type: pbt
-      time_attr: training_iteration
-      perturbation_interval: 10
-    num_samples: 40 # TODO (ASN): calibrate perturbation interval
+      type: async_hyperband
+      time_attr: time_total_s
+    num_samples: 20
 
   executor:
     type: ray
