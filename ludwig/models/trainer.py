@@ -331,6 +331,43 @@ class Trainer(BaseTrainer):
 
         train_summary_writer.flush()
 
+    def train_for_tuning(
+        self,
+        model,
+        dataset,
+        total_steps=3,
+    ):
+        """ function to be used by tune_batch_size and tune_learning_rate """
+        with dataset.initialize_batcher(
+            batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            shuffle_buffer_size=self.shuffle_buffer_size,
+            horovod=self.horovod
+        ) as batcher:
+
+            step_count = 0
+            while not batcher.last_batch() and step_count < total_steps:
+                batch = batcher.next_batch()
+                inputs = {
+                    i_feat.feature_name: batch[i_feat.proc_column]
+                    for i_feat in model.input_features.values()
+                }
+                targets = {
+                    o_feat.feature_name: batch[o_feat.proc_column]
+                    for o_feat in model.output_features.values()
+                }
+
+                model.train_step(
+                    self.optimizer,
+                    inputs,
+                    targets,
+                    self.regularization_lambda
+                )
+                step_count += 1
+
+        # TODO (ASN) : return loss and learning rate for tune_learning_rate
+        return model
+
     def tune_batch_size(
         self,
         model,
@@ -342,7 +379,7 @@ class Trainer(BaseTrainer):
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
         # Set temporary values
-        self.epochs = 3
+        # self.epochs = 3
         self.skip_save_model = True
         self.skip_save_progress = True
         self.skip_save_log = True
@@ -350,10 +387,9 @@ class Trainer(BaseTrainer):
         high = None
         count = 0
         while True:
-            print(count)
             gc.collect()
             try:
-                self.train(model, training_set)
+                self.train_for_tuning(model, training_set, total_steps=3)
                 count += 1
                 if count > max_trials:
                     break
@@ -379,7 +415,7 @@ class Trainer(BaseTrainer):
                     break
 
         # Restore original parameters to defaults
-        self.epochs = original_epochs
+        # self.epochs = original_epochs
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
