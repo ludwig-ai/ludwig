@@ -30,6 +30,7 @@ hyperopt:
       upper: 0.1
     training.learning_rate:
       space: loguniform
+      type: float
       lower: 0.0001
       upper: 0.01
     training.batch_size:
