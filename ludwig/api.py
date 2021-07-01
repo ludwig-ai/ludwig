@@ -494,9 +494,11 @@ class LudwigModel:
                 if "tune_learning_rate" in self.config[TRAINING].keys():
                     new_learning_rate = trainer.tune_learning_rate(
                         self.config,
+                        LudwigModel.create_model(self.config, random_seed),
                         training_set,
                         random_seed=random_seed
                     )
+                    self.config[TRAINING]['learning_rate'] = new_learning_rate
 
                 # train model
                 if self.backend.is_coordinator():

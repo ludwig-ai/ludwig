@@ -19,7 +19,7 @@ from typing import Dict, List, Union
 
 import pandas as pd
 from ludwig.automl.utils import (FieldInfo, get_available_resources,
-                                 get_num_tokens)
+                                 avg_num_tokens)
 from ludwig.utils.data_utils import load_yaml
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -121,7 +121,7 @@ def get_field_info(dataset: str):
         nonnull_values = len(dataframe[field].notnull())
         avg_words = None
         if dtype in ['str', 'string', 'object']:
-            avg_words = get_num_tokens(dataframe[field])
+            avg_words = avg_num_tokens(dataframe[field])
         fields.append(
             FieldInfo(name=field, dtype=dtype,
                       distinct_values=distinct_values, nonnull_values=nonnull_values, avg_words=avg_words)
