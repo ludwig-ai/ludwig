@@ -19,7 +19,7 @@ from typing import Dict, List, Union
 
 import pandas as pd
 from ludwig.automl.utils import (FieldInfo, get_available_resources,
-                                 get_avg_words)
+                                 get_num_tokens)
 from ludwig.utils.data_utils import load_yaml
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -81,7 +81,7 @@ def create_default_config(dataset: str, target_name: str = None, time_limit_s: U
 
     """
     fields, row_count = get_field_info(dataset)
-    input_and_output_feature_config = get_input_and_output_features(
+    input_and_output_feature_config = get_features_config(
         fields, row_count, target_name)
     resources = get_available_resources()
     experiment_resources = allocate_experiment_resources(resources)
@@ -121,7 +121,7 @@ def get_field_info(dataset: str):
         nonnull_values = len(dataframe[field].notnull())
         avg_words = None
         if dtype in ['str', 'string', 'object']:
-            avg_words = get_avg_words(dataframe[field])
+            avg_words = get_num_tokens(dataframe[field])
         fields.append(
             FieldInfo(name=field, dtype=dtype,
                       distinct_values=distinct_values, nonnull_values=nonnull_values, avg_words=avg_words)
@@ -129,7 +129,7 @@ def get_field_info(dataset: str):
     return fields, row_count
 
 
-def get_input_and_output_features(
+def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
     target_name: str = None,
@@ -194,7 +194,7 @@ def get_field_metadata(
     metadata = []
     for field in fields:
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
-        dtype = get_predicted_type(field, missing_value_percent, target_name)
+        dtype = infer_type(field, missing_value_percent, target_name)
         metadata.append(
             {
                 "name": field.name,
@@ -204,8 +204,8 @@ def get_field_metadata(
                     "type": dtype,
                 },
                 "excluded": should_exclude(field, row_count, target_name),
-                "mode": get_predicted_mode(field, target_name),
-                "missingValues": missing_value_percent,
+                "mode": infer_mode(field, target_name),
+                "missing_values": missing_value_percent,
             }
         )
 
@@ -231,7 +231,7 @@ def get_field_metadata(
     return metadata
 
 
-def get_predicted_type(
+def infer_type(
     field: FieldInfo, missing_value_percent: float, target_name: str = None
 ) -> str:
     """
@@ -281,7 +281,7 @@ def should_exclude(field: FieldInfo, row_count: int, target_name: str) -> bool:
     return False
 
 
-def get_predicted_mode(field: FieldInfo, target_name: str = None) -> str:
+def infer_mode(field: FieldInfo, target_name: str = None) -> str:
     if field.name == target_name:
         return "output"
     if field.name.lower() == "split":
