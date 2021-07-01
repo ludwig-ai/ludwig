@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
-import GPUtil
-import psutil
+import ray
 from dataclasses_json import LetterCase, dataclass_json
 from pandas import Series
 
@@ -28,12 +27,11 @@ def avg_num_tokens(field: Series) -> int:
 
 def get_available_resources():
     # returns total number of gpus and cpus
-    GPUs = GPUtil.getGPUs()
-    GPUavailability = GPUtil.getAvailability(
-        GPUs, maxLoad=0.5, maxMemory=0.5, includeNan=False, excludeID=[], excludeUUID=[])
-    CPUs = psutil.cpu_count()
+    resources = ray.cluster_resources()
+    gpus = resources.get('GPU', 0)
+    cpus = resources.get('CPU', 0)
     resources = {
-        'gpu': sum(GPUavailability),
-        'cpu': CPUs
+        'gpu': gpus,
+        'cpu': cpus
     }
     return resources
