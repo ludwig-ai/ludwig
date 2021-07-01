@@ -30,9 +30,9 @@ from collections import OrderedDict
 from random import random
 from re import M
 import numpy as np
-
+import pbt
 import tensorflow as tf
-from ludwig.api import LudwigModel
+#from ludwig.api import LudwigModel
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
@@ -373,6 +373,7 @@ class Trainer(BaseTrainer):
     def tune_learning_rate(
         self,
         config,
+        model,
         training_set,
         random_seed: int = default_random_seed,
         min_lr: float = 1e-8,
@@ -382,13 +383,13 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98
     ):
-        model = LudwigModel.create_model(config, random_seed)
         current_learning_rate = min_lr
         losses = []
         learning_rates = []
         avg_loss = 0.0
         best_loss = 0.0
         epoch = 0
+        diverging=False
 
         def linear_scheduler(current_learning_rate, current_step):
             scale = (current_step + 1) / total_training_steps
@@ -398,12 +399,12 @@ class Trainer(BaseTrainer):
             scale = (current_step + 1) / total_training_steps
             return current_learning_rate * (max_lr/current_learning_rate)**scale
 
-        def get_optimal_lr(losses, skip_begin: int = 10, skip_end: int = 1):
+        def get_optimal_lr(losses, learning_rates, skip_begin: int = 10, skip_end: int = 1):
             try:
                 loss = np.array(losses[skip_begin:-skip_end])
                 loss = loss[np.isfinite(loss)]
                 best_lr_index = np.gradient(loss).argmin() + skip_begin
-                best_lr = losses[best_lr_index]
+                best_lr = learning_rates[best_lr_index]
                 return best_lr
             except Exception:
                 return None
@@ -415,7 +416,9 @@ class Trainer(BaseTrainer):
             horovod=self.horovod
         ) as batcher:
             step_count = 0
-            while epoch < self.epochs and step_count < total_training_steps:
+            while epoch < self.epochs and step_count < total_training_steps and not diverging:
+                batcher.set_epoch(epoch)
+                model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
                     batch = batcher.next_batch()
                     inputs = {
@@ -433,7 +436,6 @@ class Trainer(BaseTrainer):
                         targets,
                         self.regularization_lambda
                     )
-
                     # compute smoothed loss
                     avg_loss = beta * avg_loss + (1-beta) * loss
                     smoothed_loss = avg_loss / (1 - beta**(step_count + 1))
@@ -444,6 +446,7 @@ class Trainer(BaseTrainer):
 
                     # check whether loss is diverging
                     if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
+                        diverging=True
                         break
                     else:
                         if smoothed_loss < best_loss or step_count == 0:
@@ -462,11 +465,9 @@ class Trainer(BaseTrainer):
 
                 epoch += 1
 
-        optimal_lr = get_optimal_lr(losses)
-
+        optimal_lr = get_optimal_lr(losses, learning_rates)
         if optimal_lr:
             self.learning_rate = optimal_lr
-
         return self.learning_rate
 
     def tune_batch_size(
@@ -476,6 +477,8 @@ class Trainer(BaseTrainer):
         random_seed: int = default_random_seed,
         max_trials: int = 10,
     ):
+        from ludwig.api import LudwigModel
+
         # original_epochs = self.epochs
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
