@@ -17,7 +17,7 @@ class FieldInfo:
     avg_words: int = None
 
 
-def get_avg_words(field: Series) -> int:
+def avg_num_tokens(field: Series) -> int:
     # sample a subset if dataframe is large
     if len(field) > 5000:
         field = field.sample(n=5000, random_state=40)
