@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Union
 
 from dataclasses_json import dataclass_json
 
@@ -15,10 +15,10 @@ except ImportError:
 @dataclass_json
 @dataclass
 class TrialResults:
-    parameters: dict
+    parameters: Union[dict, float]
     metric_score: float
-    training_stats: dict
-    eval_stats: dict
+    training_stats: Union[dict, float]
+    eval_stats: Union[dict, float]
 
 
 @dataclass
