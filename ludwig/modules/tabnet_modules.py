@@ -97,7 +97,8 @@ class TabNet(tf.keras.Model):
             training: bool = None,
             **kwargs
     ) -> Tuple[tf.Tensor, tf.Tensor, List[tf.Tensor]]:
-        assert len(tf.shape(features)) == 2
+        tf.assert_rank(features, 2)
+
         batch_size = tf.shape(features)[0]
         num_features = tf.shape(features)[-1]
         out_accumulator = tf.zeros((batch_size, self.output_size))
