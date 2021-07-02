@@ -383,13 +383,18 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98
     ):
+        # TODO (ASN): Circle back on how we want to set default placeholder value
+        # Currently, since self.learning_rate is originally set to auto, we provide a
+        # placeholder starting value (namely, .001)
+        self.learning_rate = 0.001
+
         current_learning_rate = min_lr
         losses = []
         learning_rates = []
         avg_loss = 0.0
         best_loss = 0.0
         epoch = 0
-        diverging=False
+        diverging = False
 
         def linear_scheduler(current_learning_rate, current_step):
             scale = (current_step + 1) / total_training_steps
@@ -446,7 +451,7 @@ class Trainer(BaseTrainer):
 
                     # check whether loss is diverging
                     if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
-                        diverging=True
+                        diverging = True
                         break
                     else:
                         if smoothed_loss < best_loss or step_count == 0:
@@ -479,12 +484,14 @@ class Trainer(BaseTrainer):
     ):
         from ludwig.api import LudwigModel
 
-        # original_epochs = self.epochs
+        # TODO (ASN) : Circle back on how we want to set default placeholder value
+        # Currently, since self.batch_size is originally set to auto, we provide a
+        # placeholder starting value (namely, 128)
+        self.batch_size = 128
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
         # Set temporary values
-        # self.epochs = 3
         self.skip_save_model = True
         self.skip_save_progress = True
         self.skip_save_log = True
@@ -526,6 +533,10 @@ class Trainer(BaseTrainer):
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
+
+        if self.eval_batch_size == "auto":
+            self.eval_batch_size = self.batch_size
+
         return self.batch_size
 
     def train(

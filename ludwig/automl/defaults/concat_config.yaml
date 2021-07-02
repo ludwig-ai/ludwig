@@ -5,12 +5,9 @@ combiner:
   dropout: 0.1
 
 training:
-  batch_size: 256
-  learning_rate: .001
+  batch_size: auto #256
+  learning_rate: auto #.001
   # validation_metric: accuracy
-  tune_batch_size:
-    type: bin_search
-    substitute_with_max: True
 
 hyperopt:
   # goal: maximize

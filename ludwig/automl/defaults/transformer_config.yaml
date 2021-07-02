@@ -8,12 +8,9 @@ combiner:
   num_fc_layers: 1
 
 training:
-  batch_size: 256
-  learning_rate: 0.0001
+  batch_size: auto #256
+  learning_rate: auto #0.0001
   # validation_metric: accuracy
-  tune_batch_size:
-    type: bin_search
-    substitute_with_max: True
 
 hyperopt:
   # goal: maximize

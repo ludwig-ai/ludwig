@@ -9,6 +9,8 @@ import shutil
 from abc import ABC, abstractmethod
 from typing import Union
 
+from ray.tune.session import get_trial_dir, get_trial_id
+
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import *
@@ -789,7 +791,9 @@ class RayTuneExecutor(HyperoptExecutor):
                     training_stats=json.dumps(
                         train_stats[TRAINING], cls=NumpyEncoder),
                     eval_stats=json.dumps(
-                        train_stats[VALIDATION], cls=NumpyEncoder)
+                        train_stats[VALIDATION], cls=NumpyEncoder),
+                    trial_id=tune.get_trial_id(),
+                    trial_dir=tune.get_trial_dir()
                 )
 
         callbacks = hyperopt_dict.get('callbacks') or []
@@ -806,7 +810,9 @@ class RayTuneExecutor(HyperoptExecutor):
             parameters=json.dumps(config, cls=NumpyEncoder),
             metric_score=metric_score,
             training_stats=json.dumps(train_stats, cls=NumpyEncoder),
-            eval_stats=json.dumps(eval_stats, cls=NumpyEncoder)
+            eval_stats=json.dumps(eval_stats, cls=NumpyEncoder),
+            trial_id=tune.get_trial_id(),
+            trial_dir=tune.get_trial_dir()
         )
 
     def execute(
@@ -956,7 +962,9 @@ class RayTuneExecutor(HyperoptExecutor):
         ordered_trials = [
             TrialResults.from_dict(
                 load_json_values(kwargs)
-            ) for kwargs in ordered_trials.to_dict(orient="records")
+            ) 
+            for kwargs in ordered_trials.to_dict(orient="records")
+            if not isinstance(kwargs, (float, int))
         ]
 
         return RayTuneResults(
