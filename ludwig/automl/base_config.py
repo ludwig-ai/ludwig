@@ -85,11 +85,12 @@ def create_default_config(
     combiner types
 
     """
-    fields, row_count = get_field_info(dataset)
-    input_and_output_feature_config = get_features_config(
-        fields, row_count, target_name)
     resources = get_available_resources()
     experiment_resources = allocate_experiment_resources(resources)
+
+    fields, row_count = get_field_info(dataset)
+    input_and_output_feature_config = get_features_config(
+        fields, row_count, target_name, resources)
 
     model_configs = {}
     for model_name, path_to_defaults in model_defaults.items():
@@ -137,6 +138,7 @@ def get_field_info(dataset: str):
 def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
+    resources: Dict,
     target_name: str = None,
 ) -> Dict:
     """
@@ -151,7 +153,7 @@ def get_features_config(
     # Return
     :return: (Dict) section of auto_train config for input_features and output_features 
     """
-    metadata = get_field_metadata(fields, row_count, target_name)
+    metadata = get_field_metadata(fields, row_count, resources, target_name)
     return get_config_from_metadata(metadata, target_name)
 
 
@@ -182,7 +184,7 @@ def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
 
 
 def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, target_name: str = None
+    fields: List[FieldInfo], row_count: int, resources: Dict, target_name: str = None
 ) -> list:
     """
     Computes metadata for each field in dataset
@@ -225,13 +227,12 @@ def get_field_metadata(
         - 1
     )
 
-    # TODO (ASN): clarify logic below
-
-    # Second pass to exclude fields that are too expensive given the constraints
-    for meta in metadata:
-        if input_count > 2 and meta["config"]["type"] == "text":
-            # By default, exclude text inputs when there are other candidate inputs
-            meta["excluded"] = True
+    # Exclude text fields if no GPUs are available
+    if resources['gpu'] == 0:
+        for meta in metadata:
+            if input_count > 2 and meta["config"]["type"] == "text":
+                # By default, exclude text inputs when there are other candidate inputs
+                meta["excluded"] = True
 
     return metadata
 

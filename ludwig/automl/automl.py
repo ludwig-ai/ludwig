@@ -58,7 +58,7 @@ def auto_train(
 
     autotrain_results = {
         'path_to_best_model': experiment_analysis.best_checkpoint,
-        'trial_id': "_".join(experiment_analysis.best_logdir.split("_")[1:])
+        'trial_id': "_".join(experiment_analysis.best_logdir.split("/")[-1].split("_")[1:])
     }
     return autotrain_results
 
