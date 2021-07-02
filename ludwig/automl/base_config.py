@@ -18,6 +18,7 @@ import os
 from typing import Dict, List, Union
 
 import pandas as pd
+import dask.dataframe as dd
 from ludwig.automl.utils import (FieldInfo, get_available_resources,
                                  avg_num_tokens)
 from ludwig.utils.data_utils import load_yaml
@@ -57,7 +58,11 @@ def allocate_experiment_resources(resources: Dict) -> Dict:
     return experiment_resources
 
 
-def create_default_config(dataset: str, target_name: str = None, time_limit_s: Union[int, float] = None):
+def create_default_config(
+    dataset: Union[str, dd.core.DataFrame, pd.DataFrame],
+    target_name: str = None,
+    time_limit_s: Union[int, float] = None
+) -> Dict:
     """
     Returns auto_train configs for three available combiner models. 
     Coordinates the following tasks:
@@ -133,7 +138,7 @@ def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
     target_name: str = None,
-) -> dict:
+) -> Dict:
     """
     Constructs FeildInfo objects for each feature in dataset. These objects
     are used for downstream type inference

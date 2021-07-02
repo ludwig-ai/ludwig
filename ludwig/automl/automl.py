@@ -11,6 +11,7 @@ Driver script which:
 from typing import Dict, Union
 
 import pandas as pd
+import dask.dataframe as dd
 from ludwig.automl.base_config import create_default_config
 from ludwig.hyperopt.run import hyperopt
 
@@ -26,7 +27,12 @@ def model_select(default_configs):
     return default_configs['tabnet'], 'tabnet'
 
 
-def auto_train(dataset: str, target: str, time_limit_s: Union[int, float], output_dir: str = OUTPUT_DIR):
+def auto_train(
+    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
+    target: str,
+    time_limit_s: Union[int, float],
+    output_dir: str = OUTPUT_DIR
+):
     """
     Main auto train API that first builds configs for each model type
     (e.g. concat, tabnet, transformer). Then selects model based on dataset
@@ -48,16 +54,25 @@ def auto_train(dataset: str, target: str, time_limit_s: Union[int, float], outpu
     model_config, model_name = model_select(default_configs)
     hyperopt_results = _train(model_config, dataset,
                               output_dir, model_name=model_name)
+    experiment_analysis = hyperopt_results.experiment_analysis
+
+    autotrain_results = {
+        'path_to_best_model': experiment_analysis.best_checkpoint,
+        'trial_id': "_".join(experiment_analysis.best_logdir.split("_")[1:])
+    }
+    return autotrain_results
 
 
 def _train(
-    config: Dict, dataset: Union[str, Dict, pd.DataFrame], output_dir: str, model_name: str
+    config: Dict,
+    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
+    output_dir: str,
+    model_name: str
 ):
     hyperopt_results = hyperopt(
         config,
         dataset=dataset,
         output_directory=output_dir,
         model_name=model_name
-        # gpus=gpu_list,
     )
     return hyperopt_results
