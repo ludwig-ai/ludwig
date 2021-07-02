@@ -500,7 +500,7 @@ class Trainer(BaseTrainer):
         high = None
         count = 0
         halving_count = 0
-        while True and halving_count < halving_limit:
+        while halving_count < halving_limit:
             gc.collect()
             try:
                 # re-initalize model...
