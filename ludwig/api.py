@@ -481,7 +481,7 @@ class LudwigModel:
                     )
 
                 # auto tune batch size
-                if "tune_batch_size" in self.config[TRAINING].keys():
+                if self.config[TRAINING]["batch_size"] == "auto":
                     # TODO (ASN): add support for substitute_with_max parameter
                     tuned_batch_size = trainer.tune_batch_size(
                         self.config,
@@ -491,7 +491,7 @@ class LudwigModel:
                     self.config[TRAINING]['batch_size'] = tuned_batch_size
 
                 # auto tune learning rate
-                if "tune_learning_rate" in self.config[TRAINING].keys():
+                if self.config[TRAINING]["learning_rate"] == "auto":
                     new_learning_rate = trainer.tune_learning_rate(
                         self.config,
                         LudwigModel.create_model(self.config, random_seed),

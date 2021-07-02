@@ -481,6 +481,7 @@ class Trainer(BaseTrainer):
         training_set,
         random_seed: int = default_random_seed,
         max_trials: int = 10,
+        halving_limit: int = 3
     ):
         from ludwig.api import LudwigModel
 
@@ -498,7 +499,8 @@ class Trainer(BaseTrainer):
 
         high = None
         count = 0
-        while True:
+        halving_count = 0
+        while True and halving_count < halving_limit:
             gc.collect()
             try:
                 # re-initalize model...
@@ -514,6 +516,7 @@ class Trainer(BaseTrainer):
                         break
                     midval = (high + low) // 2
                     self.batch_size = midval
+                    halving_count += 1
                 else:
                     self.batch_size *= 2  # double batch size
 
