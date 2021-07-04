@@ -18,7 +18,7 @@ import logging
 from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
                                      Dropout, Layer, LayerNormalization)
 
-from torch.nn import (Linear, LayerNorm, Module, Dropout)
+from torch.nn import (Linear, LayerNorm, Module, Dropout, ModuleList)
 
 from ludwig.utils.torch_utils import (LudwigModule, initializers, activations, reg_loss)
 
@@ -47,7 +47,8 @@ class FCLayer(LudwigModule):
     ):
         super().__init__()
 
-        self.layers = []
+        #self.layers = []
+        self.layers = ModuleList()
 
         '''
         self.layers.append(Dense(
@@ -192,7 +193,8 @@ class FCStack(LudwigModule):
             if 'dropout' not in layer:
                 layer['dropout'] = default_dropout
 
-        self.stack = []
+        #self.stack = []
+        self.stack = ModuleList()
 
         for i, layer in enumerate(self.layers):
             self.stack.append(
