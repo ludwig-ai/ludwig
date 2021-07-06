@@ -485,6 +485,9 @@ class Trainer(BaseTrainer):
     ):
         from ludwig.api import LudwigModel
 
+        def _is_valid_batch_size(batch_size):
+            return batch_size < len(training_set)
+
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value (namely, 128)
@@ -525,11 +528,19 @@ class Trainer(BaseTrainer):
 
             except tf.errors.ResourceExhaustedError as e:
                 gc.collect()
-                high = prev_batch_size
+                high = self.batch_size
                 midval = (high + low) // 2
                 self.batch_size = midval
                 if high - low <= 1:
                     break
+
+            # make sure that batch size is valid (e.g. less than size of ds)
+            if not _is_valid_batch_size(self.batch_size):
+                self.batch_size = min(self.batch_size, len(training_set))
+
+            # edge case where bs is no longer increasing
+            if self.batch_size == prev_batch_size:
+                break
 
         # Restore original parameters to defaults
         # self.epochs = original_epochs
