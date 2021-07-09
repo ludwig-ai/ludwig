@@ -500,6 +500,9 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
+        # Turn eager mode on
+        tf.config.experimental_run_functions_eagerly(True)
+
         high = None
         count = 0
         halving_count = 0
@@ -519,7 +522,6 @@ class Trainer(BaseTrainer):
                         break
                     midval = (high + low) // 2
                     self.batch_size = midval
-                    halving_count += 1
                 else:
                     self.batch_size *= 2  # double batch size
 
@@ -529,6 +531,7 @@ class Trainer(BaseTrainer):
             except tf.errors.ResourceExhaustedError as e:
                 gc.collect()
                 high = self.batch_size
+                halving_count += 1
                 midval = (high + low) // 2
                 self.batch_size = midval
                 if high - low <= 1:
@@ -550,6 +553,9 @@ class Trainer(BaseTrainer):
 
         if self.eval_batch_size == "auto":
             self.eval_batch_size = self.batch_size
+
+        # Turn eager mode off
+        tf.config.experimental_run_functions_eagerly(False)
 
         return self.batch_size
 
