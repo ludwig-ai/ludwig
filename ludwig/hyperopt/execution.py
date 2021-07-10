@@ -959,12 +959,19 @@ class RayTuneExecutor(HyperoptExecutor):
             ascending=self.goal != MAXIMIZE
         )
 
+        # Catch nans in edge case where the trial doesn't complete
+        temp_ordered_trials = []
+        for kwargs in ordered_trials.to_dict(orient="records"):
+            for key in ['parameters', 'training_stats', 'eval_stats']:
+                if isinstance(kwargs[key], float):
+                    kwargs[key] = {}
+            temp_ordered_trials.append(kwargs)
+
         ordered_trials = [
             TrialResults.from_dict(
                 load_json_values(kwargs)
-            ) 
-            for kwargs in ordered_trials.to_dict(orient="records")
-            if not isinstance(kwargs, (float, int))
+            )
+            for kwargs in temp_ordered_trials
         ]
 
         return RayTuneResults(

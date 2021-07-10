@@ -15,10 +15,10 @@ except ImportError:
 @dataclass_json
 @dataclass
 class TrialResults:
-    parameters: Union[dict, float]
+    parameters: dict
     metric_score: float
-    training_stats: Union[dict, float]
-    eval_stats: Union[dict, float]
+    training_stats: dict
+    eval_stats: dict
 
 
 @dataclass
