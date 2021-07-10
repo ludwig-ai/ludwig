@@ -8,10 +8,12 @@ Driver script which:
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
+from logging import raiseExceptions
 from typing import Dict, Union
 
-import pandas as pd
 import dask.dataframe as dd
+import numpy as np
+import pandas as pd
 from ludwig.automl.base_config import create_default_config
 from ludwig.hyperopt.run import hyperopt
 
@@ -55,6 +57,14 @@ def auto_train(
     hyperopt_results = _train(model_config, dataset,
                               output_dir, model_name=model_name)
     experiment_analysis = hyperopt_results.experiment_analysis
+
+    # catch edge case where metric_score is nan
+    for trial in hyperopt_results.ordered_trials:
+        if np.isnan(trial.metric_score):
+            raise ValueError(
+                "There was an error running the experiment"
+                "A trial failed to start"
+            )
 
     autotrain_results = {
         'path_to_best_model': experiment_analysis.best_checkpoint,
