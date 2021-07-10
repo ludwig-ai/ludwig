@@ -48,7 +48,7 @@ class ImageFeatureMixin:
     type = IMAGE
 
     IMAGE_SAMPLE_SIZE = 100
-    MIN_IMAGE_SAMPLE_DIM = 256
+    MIN_IMAGE_INFER_DIM = 256
 
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
@@ -235,10 +235,10 @@ class ImageFeatureMixin:
 
                 height_avg = min(
                     sum(x.shape[0] for x in sample_images) / len(sample_images),
-                    ImageFeatureMixin.MIN_IMAGE_SAMPLE_DIM)
+                    ImageFeatureMixin.MIN_IMAGE_INFER_DIM)
                 width_avg = min(
                     sum(x.shape[1] for x in sample_images) / len(sample_images),
-                    ImageFeatureMixin.MIN_IMAGE_SAMPLE_DIM)
+                    ImageFeatureMixin.MIN_IMAGE_INFER_DIM)
 
                 height, width = round(height_avg), round(width_avg)
             else:
