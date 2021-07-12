@@ -90,7 +90,7 @@ def create_default_config(
 
     fields, row_count = get_field_info(dataset)
     input_and_output_feature_config = get_features_config(
-        fields, row_count, target_name, resources)
+        fields, row_count, resources, target_name)
 
     model_configs = {}
     for model_name, path_to_defaults in model_defaults.items():
