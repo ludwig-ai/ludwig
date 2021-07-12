@@ -59,11 +59,14 @@ def auto_train(
     experiment_analysis = hyperopt_results.experiment_analysis
 
     # catch edge case where metric_score is nan
+    # TODO (ASN): Decide how we want to proceed if at least one trial has
+    # completed
     for trial in hyperopt_results.ordered_trials:
         if np.isnan(trial.metric_score):
             raise ValueError(
-                "There was an error running the experiment"
-                "A trial failed to start"
+                "There was an error running the experiment. "
+                "A trial failed to start. "
+                "Consider increasing the time budget for experiment. "
             )
 
     autotrain_results = {
