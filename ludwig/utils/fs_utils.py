@@ -31,6 +31,11 @@ def get_fs_and_path(url):
     return fs, path
 
 
+def is_http(urlpath):
+    protocol, _ = split_protocol(urlpath)
+    return protocol == "http" or protocol == "https"
+
+
 def find_non_existing_dir_by_adding_suffix(directory_name):
     fs, _ = get_fs_and_path(directory_name)
     suffix = 0
