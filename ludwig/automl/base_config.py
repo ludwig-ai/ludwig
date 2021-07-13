@@ -14,14 +14,28 @@ Builds base configuration file:
     (base implementation -- # CPU, # GPU)
 """
 
+import logging
 import os
-from typing import Dict, List, Union
+import sys
+from typing import List, Union
 
 import pandas as pd
-import dask.dataframe as dd
-from ludwig.automl.utils import (FieldInfo, get_available_resources,
-                                 avg_num_tokens)
+from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
+                                 get_available_resources)
+from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE
 from ludwig.utils.data_utils import load_yaml
+
+logger = logging.getLogger(__name__)
+try:
+    import dask.dataframe as dd
+    import ray
+except ImportError:
+    logger.error(
+        ' ray is not installed. '
+        'In order to use auto_train please run '
+        'pip install ludwig[ray]'
+    )
+    sys.exit(-1)
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, 'defaults')
@@ -33,16 +47,16 @@ model_defaults = {
 }
 
 
-def allocate_experiment_resources(resources: Dict) -> Dict:
+def allocate_experiment_resources(resources: dict) -> dict:
     """
     Allocates ray trial resources based on available resources
 
     # Inputs
-    :param resources (Dict) specifies all available GPUs, CPUs and associated
+    :param resources (dict) specifies all available GPUs, CPUs and associated
         metadata of the machines (i.e. memory)
 
     # Return
-    :return: (Dict) gpu and cpu resources per trial
+    :return: (dict) gpu and cpu resources per trial
     """
     # TODO (ASN):
     # (1) expand logic to support multiple GPUs per trial (multi-gpu training)
@@ -51,10 +65,15 @@ def allocate_experiment_resources(resources: Dict) -> Dict:
     experiment_resources = {
         'cpu_resources_per_trial': 1
     }
-    if resources['gpu'] > 0:
+    gpu_count, cpu_count = resources['gpu'], resources['cpu']
+    if gpu_count > 0:
         experiment_resources.update({
             'gpu_resources_per_trial': 1
         })
+        if cpu_count > 1:
+            cpus_per_trial = int(cpu_count/gpu_count)
+            experiment_resources['cpu_resources_per_trial'] = cpus_per_trial
+
     return experiment_resources
 
 
@@ -62,7 +81,7 @@ def create_default_config(
     dataset: Union[str, dd.core.DataFrame, pd.DataFrame],
     target_name: str = None,
     time_limit_s: Union[int, float] = None
-) -> Dict:
+) -> dict:
     """
     Returns auto_train configs for three available combiner models. 
     Coordinates the following tasks:
@@ -81,7 +100,7 @@ def create_default_config(
                                     as the stopping parameter
 
     # Return
-    :return: (Dict) dictionaries contain auto train config files for all available
+    :return: (dict) dictionaries contain auto train config files for all available
     combiner types
 
     """
@@ -105,7 +124,7 @@ def create_default_config(
 
 def get_field_info(dataset: str):
     """
-    Constructs FeildInfo objects for each feature in dataset. These objects
+    Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
 
     # Inputs
@@ -138,9 +157,9 @@ def get_field_info(dataset: str):
 def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
-    resources: Dict,
+    resources: dict,
     target_name: str = None,
-) -> Dict:
+) -> dict:
     """
     Constructs FeildInfo objects for each feature in dataset. These objects
     are used for downstream type inference
@@ -151,7 +170,7 @@ def get_features_config(
     :param target_name (str) name of target feature
 
     # Return
-    :return: (Dict) section of auto_train config for input_features and output_features 
+    :return: (dict) section of auto_train config for input_features and output_features 
     """
     metadata = get_field_metadata(fields, row_count, resources, target_name)
     return get_config_from_metadata(metadata, target_name)
@@ -163,11 +182,11 @@ def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
     metadata
 
     # Inputs
-    :param metadata: (List[Dict]) field descriptions
+    :param metadata: (List[dict]) field descriptions
     :param target_name (str) name of target feature
 
     # Return
-    :return: (Dict) section of auto_train config for input_features and output_features
+    :return: (dict) section of auto_train config for input_features and output_features
     """
     config = {
         "input_features": [],
@@ -176,15 +195,15 @@ def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
 
     for field_meta in metadata:
         if field_meta["name"] == target_name:
-            config["output_features"].append(field_meta["config"])
+            config["output_features"].append(field_meta[CONFIG])
         elif not field_meta["excluded"] and field_meta["mode"] == "input":
-            config["input_features"].append(field_meta["config"])
+            config["input_features"].append(field_meta[CONFIG])
 
     return config
 
 
 def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, resources: Dict, target_name: str = None
+    fields: List[FieldInfo], row_count: int, resources: dict, target_name: str = None
 ) -> list:
     """
     Computes metadata for each field in dataset
@@ -221,7 +240,7 @@ def get_field_metadata(
         sum(
             not meta["excluded"]
             and meta["mode"] == "input"
-            and meta["config"]["type"] != "text"
+            and meta[CONFIG][TYPE] != TEXT
             for meta in metadata
         )
         - 1
@@ -230,7 +249,7 @@ def get_field_metadata(
     # Exclude text fields if no GPUs are available
     if resources['gpu'] == 0:
         for meta in metadata:
-            if input_count > 2 and meta["config"]["type"] == "text":
+            if input_count > 2 and meta[CONFIG][TYPE] == TEXT:
                 # By default, exclude text inputs when there are other candidate inputs
                 meta["excluded"] = True
 
@@ -255,20 +274,20 @@ def infer_type(
     if distinct_values == 2 and (
         missing_value_percent == 0 or field.name == target_name
     ):
-        return "binary"
+        return BINARY
 
     if distinct_values < 20:
         # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
         # NOTE (ASN): edge case -- there are less than 20 samples in dataset
-        return "category"
+        return CATEGORY
 
     # add criteria for number of spaces
     if field.avg_words and field.avg_words > 2:
-        return "text"
+        return TEXT
 
     # TODO (ASN): add other modalities (image, etc. )
 
-    return "numerical"
+    return NUMERICAL
 
 
 def should_exclude(field: FieldInfo, row_count: int, target_name: str) -> bool:

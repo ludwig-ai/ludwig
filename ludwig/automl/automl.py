@@ -8,14 +8,28 @@ Driver script which:
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
-from logging import raiseExceptions
+import logging
+import sys
 from typing import Dict, Union
 
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 from ludwig.automl.base_config import create_default_config
 from ludwig.hyperopt.run import hyperopt
+
+logger = logging.getLogger(__name__)
+
+
+try:
+    import dask.dataframe as dd
+    import ray
+except ImportError:
+    logger.error(
+        ' ray is not installed. '
+        'In order to use auto_train please run '
+        'pip install ludwig[ray]'
+    )
+    sys.exit(-1)
 
 OUTPUT_DIR = "."
 
@@ -26,14 +40,15 @@ def model_select(default_configs):
     Note: Current implementation returns tabnet by default. This will be
         improved in subsequent iterations
     """
-    return default_configs['tabnet'], 'tabnet'
+    return default_configs['tabnet']
 
 
 def auto_train(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     target: str,
     time_limit_s: Union[int, float],
-    output_dir: str = OUTPUT_DIR
+    output_dir: str = OUTPUT_DIR,
+    config=None,
 ):
     """
     Main auto train API that first builds configs for each model type
@@ -51,13 +66,12 @@ def auto_train(
     # Returns
     :return: (str) path to best trained model
     """
-
-    default_configs = create_default_config(dataset, target, time_limit_s)
-    model_config, model_name = model_select(default_configs)
-    hyperopt_results = _train(model_config, dataset,
+    if config is None:
+        config = _create_auto_config(dataset, target, time_limit_s)
+    model_name = config['combiner']['type']
+    hyperopt_results = _train(config, dataset,
                               output_dir, model_name=model_name)
     experiment_analysis = hyperopt_results.experiment_analysis
-
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
     # completed
@@ -74,6 +88,12 @@ def auto_train(
         'trial_id': "_".join(experiment_analysis.best_logdir.split("/")[-1].split("_")[1:])
     }
     return autotrain_results
+
+
+def _create_auto_config(dataset, target, time_limit_s) -> dict:
+    default_configs = create_default_config(dataset, target, time_limit_s)
+    model_config = model_select(default_configs)
+    return model_config
 
 
 def _train(
