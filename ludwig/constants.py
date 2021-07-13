@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from tests.integration_tests.test_combiners import BATCH_SIZE
-
-
 BINARY = 'binary'
 CATEGORY = 'category'
 INT = 'int'
