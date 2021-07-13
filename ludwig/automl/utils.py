@@ -1,8 +1,22 @@
+import logging
+import sys
 from dataclasses import dataclass
 
-import ray
 from dataclasses_json import LetterCase, dataclass_json
 from pandas import Series
+
+logger = logging.getLogger(__name__)
+
+
+try:
+    import ray
+except ImportError:
+    logger.error(
+        ' ray is not installed. '
+        'In order to use auto_train please run '
+        'pip install ludwig[ray]'
+    )
+    sys.exit(-1)
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
