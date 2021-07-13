@@ -30,9 +30,7 @@ from collections import OrderedDict
 from random import random
 from re import M
 import numpy as np
-import pbt
 import tensorflow as tf
-#from ludwig.api import LudwigModel
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
@@ -501,61 +499,63 @@ class Trainer(BaseTrainer):
         self.skip_save_log = True
 
         # Turn eager mode on
-        tf.config.experimental_run_functions_eagerly(True)
+        tf.config.run_functions_eagerly(True)
 
-        high = None
-        count = 0
-        halving_count = 0
-        while halving_count < halving_limit:
-            gc.collect()
-            try:
-                # re-initalize model...
-                model = LudwigModel.create_model(config, random_seed)
-                self.train_for_tuning(model, training_set, total_steps=3)
-                count += 1
-                if count >= max_trials:
-                    break
-                low = self.batch_size
-                prev_batch_size = self.batch_size
-                if high:
-                    if high - low <= 1:
+        try:
+
+            high = None
+            count = 0
+            halving_count = 0
+            while halving_count < halving_limit:
+                gc.collect()
+                try:
+                    # re-initalize model...
+                    model = LudwigModel.create_model(config, random_seed)
+                    self.train_for_tuning(model, training_set, total_steps=3)
+                    count += 1
+                    if count >= max_trials:
                         break
+                    low = self.batch_size
+                    prev_batch_size = self.batch_size
+                    if high:
+                        if high - low <= 1:
+                            break
+                        midval = (high + low) // 2
+                        self.batch_size = midval
+                    else:
+                        self.batch_size *= 2  # double batch size
+
+                    if self.batch_size == prev_batch_size:
+                        break
+
+                except tf.errors.ResourceExhaustedError as e:
+                    gc.collect()
+                    high = self.batch_size
+                    halving_count += 1
                     midval = (high + low) // 2
                     self.batch_size = midval
-                else:
-                    self.batch_size *= 2  # double batch size
+                    if high - low <= 1:
+                        break
 
+                # make sure that batch size is valid (e.g. less than size of ds)
+                if not _is_valid_batch_size(self.batch_size):
+                    self.batch_size = min(self.batch_size, len(training_set))
+
+                # edge case where bs is no longer increasing
                 if self.batch_size == prev_batch_size:
                     break
 
-            except tf.errors.ResourceExhaustedError as e:
-                gc.collect()
-                high = self.batch_size
-                halving_count += 1
-                midval = (high + low) // 2
-                self.batch_size = midval
-                if high - low <= 1:
-                    break
+            # Restore original parameters to defaults
+            # self.epochs = original_epochs
+            self.skip_save_model = skip_save_model
+            self.skip_save_progress = skip_save_progress
+            self.skip_save_log = skip_save_log
 
-            # make sure that batch size is valid (e.g. less than size of ds)
-            if not _is_valid_batch_size(self.batch_size):
-                self.batch_size = min(self.batch_size, len(training_set))
-
-            # edge case where bs is no longer increasing
-            if self.batch_size == prev_batch_size:
-                break
-
-        # Restore original parameters to defaults
-        # self.epochs = original_epochs
-        self.skip_save_model = skip_save_model
-        self.skip_save_progress = skip_save_progress
-        self.skip_save_log = skip_save_log
-
-        if self.eval_batch_size == "auto":
-            self.eval_batch_size = self.batch_size
-
-        # Turn eager mode off
-        tf.config.experimental_run_functions_eagerly(False)
+            if self.eval_batch_size == "auto":
+                self.eval_batch_size = self.batch_size
+        finally:
+            # Turn eager mode off
+            tf.config.run_functions_eagerly(False)
 
         return self.batch_size
 
