@@ -31,6 +31,7 @@ except ImportError:
     )
     sys.exit(-1)
 
+
 OUTPUT_DIR = "."
 
 
