@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from tests.integration_tests.test_combiners import BATCH_SIZE
+
+
 BINARY = 'binary'
 CATEGORY = 'category'
 INT = 'int'
@@ -124,3 +127,7 @@ PARQUET = 'parquet'
 TFRECORD = "tfrecord"
 
 SRC = 'dataset_src'
+
+BATCH_SIZE = 'batch_size'
+LEARNING_RATE = 'learning_rate'
+AUTO = 'auto'
