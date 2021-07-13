@@ -1,0 +1,5 @@
+version: 1.0
+competition: ealaxi/paysim1
+archive_filename: paysim1.zip
+download_file_type: csv
+csv_filename: PS_20174392719_1491204439457_log.csv
