@@ -46,16 +46,16 @@ image_scaling_registry = {
 
 class ImageFeatureMixin:
     type = IMAGE
-
-    IMAGE_SAMPLE_SIZE = 100
-    MIN_IMAGE_INFER_DIM = 256
-
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
         'resize_method': 'interpolate',
         'scaling': 'pixel_normalization',
-        'num_processes': 1
+        'num_processes': 1,
+        'infer_image_dimensions': False,
+        'infer_image_max_height': 256,
+        'infer_image_max_width': 256,
+        'infer_image_sample_size': 100
     }
 
     preprocessing_schema = {
@@ -67,6 +67,10 @@ class ImageFeatureMixin:
         'height': {'type': 'integer', 'minimum': 0},
         'width': {'type': 'integer', 'minimum': 0},
         'num_channels': {'type': 'integer', 'minimum': 0},
+        'infer_image_dimensions': {'type': 'boolean'},
+        'infer_image_max_height': {'type': 'integer', 'minimum': 0},
+        'infer_image_max_width': {'type': 'integer', 'minimum': 0},
+        'infer_image_sample_size': {'type': 'integer', 'minimum': 0}
     }
 
     @staticmethod
@@ -87,7 +91,8 @@ class ImageFeatureMixin:
             return get_abs_path(src_path, img_entry)
         if is_http(img_entry):
             return img_entry
-        return open_file(img_entry, 'r')
+        with open_file(img_entry, 'r') as f:
+            return f
 
     @staticmethod
     def read_image(img):
@@ -226,23 +231,28 @@ class ImageFeatureMixin:
                 )
         else:
             # User hasn't specified height and width.
-            # So infer height and width from a sample.
-            if INFER_IMAGE_DIMENSIONS in preprocessing_parameters and preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
+            # Default to first image, or infer from sample.
+            height, width = first_img_height, first_img_width
+
+            if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 should_resize = True
-                sample_size = min(len(input_feature_col), ImageFeatureMixin.IMAGE_SAMPLE_SIZE)
+                sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
                 sample_images = [ImageFeatureMixin.read_image(
                     ImageFeatureMixin.get_image_from_path(src_path, img)) for img in input_feature_col[:sample_size]]
 
-                height_avg = min(
-                    sum(x.shape[0] for x in sample_images) / len(sample_images),
-                    ImageFeatureMixin.MIN_IMAGE_INFER_DIM)
-                width_avg = min(
-                    sum(x.shape[1] for x in sample_images) / len(sample_images),
-                    ImageFeatureMixin.MIN_IMAGE_INFER_DIM)
+                if sample_images:
+                    height_avg = min(
+                        sum(x.shape[0] for x in sample_images) / len(sample_images),
+                        preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT])
+                    width_avg = min(
+                        sum(x.shape[1] for x in sample_images) / len(sample_images),
+                        preprocessing_parameters[INFER_IMAGE_MAX_WIDTH])
 
-                height, width = round(height_avg), round(width_avg)
-            else:
-                height, width = first_img_height, first_img_width
+                    height, width = round(height_avg), round(width_avg)
+
+                    logger.debug("Inferring height: {0} and width: {1}".format(height, width))
+                else:
+                    logger.warning("Sample set for inference is empty, default to height and width of first image")
 
         if NUM_CHANNELS in preprocessing_parameters:
             # User specified num_channels in the model/feature config
