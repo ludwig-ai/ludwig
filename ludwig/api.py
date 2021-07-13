@@ -36,7 +36,7 @@ import pandas as pd
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION
+from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -481,24 +481,24 @@ class LudwigModel:
                     )
 
                 # auto tune batch size
-                if self.config[TRAINING]["batch_size"] == "auto":
+                if self.config[TRAINING][BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
                     tuned_batch_size = trainer.tune_batch_size(
                         self.config,
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING]['batch_size'] = tuned_batch_size
+                    self.config[TRAINING][BATCH_SIZE] = tuned_batch_size
 
                 # auto tune learning rate
-                if self.config[TRAINING]["learning_rate"] == "auto":
+                if self.config[TRAINING][LEARNING_RATE] == AUTO:
                     new_learning_rate = trainer.tune_learning_rate(
                         self.config,
                         LudwigModel.create_model(self.config, random_seed),
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING]['learning_rate'] = new_learning_rate
+                    self.config[TRAINING][LEARNING_RATE] = new_learning_rate
 
                 # train model
                 if self.backend.is_coordinator():
