@@ -59,7 +59,7 @@ brew install python3      # on mac
 You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
 
 ```
-virtualenv -p python3 venv
+virtualenv -p python3 venv && source venv/bin/activate
 ```
 
 In order to install Ludwig just run:
@@ -273,12 +273,17 @@ the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
 Extensibility
 -------------
 
-Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes that contain functions to preprocess the data, encode it, and decode it.
+Ludwig is built from the ground up with extensibility in mind. It is easy to add
+an additional datatype that is not currently supported by adding a
+datatype-specific implementation of abstract classes that contain functions to
+preprocess the data, encode it, and decode it.
 
-Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending on the datatype) as inputs and provides tensors as output.
-This encourages reuse and sharing new models with the community.
-Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/) for further details.
+Furthermore, new models, with their own specific hyperparameters, can be easily
+added by implementing a class that accepts tensors (of a specific rank,
+depending on the datatype) as inputs and provides tensors as output. This
+encourages reuse and sharing new models with the community. Refer to
+the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/developer_guide_intro/)
+for further details.
 
 
 Full documentation

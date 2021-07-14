@@ -1,0 +1,278 @@
+output_features:
+  - name: target
+    type: binary
+input_features:
+  - name: v1
+    type: numerical
+  - name: v2
+    type: numerical
+  - name: v3
+    type: category
+  - name: v4
+    type: numerical
+  - name: v5
+    type: numerical
+  - name: v6
+    type: numerical
+  - name: v7
+    type: numerical
+  - name: v8
+    type: numerical
+  - name: v9
+    type: numerical
+  - name: v10
+    type: numerical
+  - name: v11
+    type: numerical
+  - name: v12
+    type: numerical
+  - name: v13
+    type: numerical
+  - name: v14
+    type: numerical
+  - name: v15
+    type: numerical
+  - name: v16
+    type: numerical
+  - name: v17
+    type: numerical
+  - name: v18
+    type: numerical
+  - name: v19
+    type: numerical
+  - name: v20
+    type: numerical
+  - name: v21
+    type: numerical
+  - name: v22
+    type: category
+  - name: v23
+    type: numerical
+  - name: v24
+    type: category
+  - name: v25
+    type: numerical
+  - name: v26
+    type: numerical
+  - name: v27
+    type: numerical
+  - name: v28
+    type: numerical
+  - name: v29
+    type: numerical
+  - name: v30
+    type: category
+  - name: v31
+    type: category
+  - name: v32
+    type: numerical
+  - name: v33
+    type: numerical
+  - name: v34
+    type: numerical
+  - name: v35
+    type: numerical
+  - name: v36
+    type: numerical
+  - name: v37
+    type: numerical
+  - name: v38
+    type: numerical
+  - name: v39
+    type: numerical
+  - name: v40
+    type: numerical
+  - name: v41
+    type: numerical
+  - name: v42
+    type: numerical
+  - name: v43
+    type: numerical
+  - name: v44
+    type: numerical
+  - name: v45
+    type: numerical
+  - name: v46
+    type: numerical
+  - name: v47
+    type: category
+  - name: v48
+    type: numerical
+  - name: v49
+    type: numerical
+  - name: v50
+    type: numerical
+  - name: v51
+    type: numerical
+  - name: v52
+    type: category
+  - name: v53
+    type: numerical
+  - name: v54
+    type: numerical
+  - name: v55
+    type: numerical
+  - name: v56
+    type: category
+  - name: v57
+    type: numerical
+  - name: v58
+    type: numerical
+  - name: v59
+    type: numerical
+  - name: v60
+    type: numerical
+  - name: v61
+    type: numerical
+  - name: v62
+    type: numerical
+  - name: v63
+    type: numerical
+  - name: v64
+    type: numerical
+  - name: v65
+    type: numerical
+  - name: v66
+    type: category
+  - name: v67
+    type: numerical
+  - name: v68
+    type: numerical
+  - name: v69
+    type: numerical
+  - name: v70
+    type: numerical
+  - name: v71
+    type: category
+  - name: v72
+    type: numerical
+  - name: v73
+    type: numerical
+  - name: v74
+    type: category
+  - name: v75
+    type: category
+  - name: v76
+    type: numerical
+  - name: v77
+    type: numerical
+  - name: v78
+    type: numerical
+  - name: v79
+    type: category
+  - name: v80
+    type: numerical
+  - name: v81
+    type: numerical
+  - name: v82
+    type: numerical
+  - name: v83
+    type: numerical
+  - name: v84
+    type: numerical
+  - name: v85
+    type: numerical
+  - name: v86
+    type: numerical
+  - name: v87
+    type: numerical
+  - name: v88
+    type: numerical
+  - name: v89
+    type: numerical
+  - name: v90
+    type: numerical
+  - name: v91
+    type: category
+  - name: v92
+    type: numerical
+  - name: v93
+    type: numerical
+  - name: v94
+    type: numerical
+  - name: v95
+    type: numerical
+  - name: v96
+    type: numerical
+  - name: v97
+    type: numerical
+  - name: v98
+    type: numerical
+  - name: v99
+    type: numerical
+  - name: v100
+    type: numerical
+  - name: v101
+    type: numerical
+  - name: v102
+    type: numerical
+  - name: v103
+    type: numerical
+  - name: v104
+    type: numerical
+  - name: v105
+    type: numerical
+  - name: v106
+    type: numerical
+  - name: v107
+    type: category
+  - name: v108
+    type: numerical
+  - name: v109
+    type: numerical
+  - name: v110
+    type: category
+  - name: v111
+    type: numerical
+  - name: v112
+    type: category
+  - name: v113
+    type: category
+  - name: v114
+    type: numerical
+  - name: v115
+    type: numerical
+  - name: v116
+    type: numerical
+  - name: v117
+    type: numerical
+  - name: v118
+    type: numerical
+  - name: v119
+    type: numerical
+  - name: v120
+    type: numerical
+  - name: v121
+    type: numerical
+  - name: v122
+    type: numerical
+  - name: v123
+    type: numerical
+  - name: v124
+    type: numerical
+  - name: v125
+    type: category
+  - name: v126
+    type: numerical
+  - name: v127
+    type: numerical
+  - name: v128
+    type: numerical
+  - name: v129
+    type: numerical
+  - name: v130
+    type: numerical
+  - name: v131
+    type: numerical
+combiner:
+  type: transformer
+  num_layers: 1
+  num_heads: 8
+  hidden_size: 32
+  dropout: 0.1
+  fc_dropout: 0.2
+  num_fc_layers: 1
+training:
+  batch_size: 256
+  learning_rate: 0.0001
+  epochs: 1

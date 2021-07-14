@@ -28,7 +28,7 @@ from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import upload_h5
+from ludwig.utils.fs_utils import open_file, is_http, upload_h5
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
@@ -51,7 +51,11 @@ class ImageFeatureMixin:
         'in_memory': True,
         'resize_method': 'interpolate',
         'scaling': 'pixel_normalization',
-        'num_processes': 1
+        'num_processes': 1,
+        'infer_image_dimensions': False,
+        'infer_image_max_height': 256,
+        'infer_image_max_width': 256,
+        'infer_image_sample_size': 100
     }
 
     preprocessing_schema = {
@@ -63,6 +67,10 @@ class ImageFeatureMixin:
         'height': {'type': 'integer', 'minimum': 0},
         'width': {'type': 'integer', 'minimum': 0},
         'num_channels': {'type': 'integer', 'minimum': 0},
+        'infer_image_dimensions': {'type': 'boolean'},
+        'infer_image_max_height': {'type': 'integer', 'minimum': 0},
+        'infer_image_max_width': {'type': 'integer', 'minimum': 0},
+        'infer_image_sample_size': {'type': 'integer', 'minimum': 0}
     }
 
     @staticmethod
@@ -74,6 +82,32 @@ class ImageFeatureMixin:
         return {
             PREPROCESSING: preprocessing_parameters
         }
+
+    @staticmethod
+    def get_image_from_path(src_path, img_entry):
+        if not isinstance(img_entry, str):
+            return img_entry
+        if src_path or os.path.isabs(img_entry):
+            return get_abs_path(src_path, img_entry)
+        if is_http(img_entry):
+            return img_entry
+        with open_file(img_entry, 'r') as f:
+            return f
+
+    @staticmethod
+    def read_image(img):
+        try:
+            from skimage.io import imread
+        except ImportError:
+            logger.error(
+                ' scikit-image is not installed. '
+                'In order to install all image feature dependencies run '
+                'pip install ludwig[image]'
+            )
+            sys.exit(-1)
+        if isinstance(img, str):
+            return imread(img)
+        return img
 
     @staticmethod
     def _read_image_and_resize(
@@ -105,20 +139,7 @@ class ImageFeatureMixin:
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
-        try:
-            from skimage.io import imread
-        except ImportError:
-            logger.error(
-                ' scikit-image is not installed. '
-                'In order to install all image feature dependencies run '
-                'pip install ludwig[image]'
-            )
-            sys.exit(-1)
-
-        if isinstance(img_entry, str):
-            img = imread(img_entry)
-        else:
-            img = img_entry
+        img = ImageFeatureMixin.read_image(img_entry)
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
             img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -175,7 +196,9 @@ class ImageFeatureMixin:
     @staticmethod
     def _finalize_preprocessing_parameters(
             preprocessing_parameters: dict,
-            first_img_entry: Union[str, 'numpy.array']
+            first_img_entry: Union[str, 'numpy.array'],
+            src_path: str,
+            input_feature_col: np.array
     ):
         """
         Helper method to determine the height, width and number of channels for
@@ -185,21 +208,7 @@ class ImageFeatureMixin:
         that all the images in the data are expected be of the same size with
         the same number of channels
         """
-        # Read the first image in the dataset
-        try:
-            from skimage.io import imread
-        except ImportError:
-            logger.error(
-                ' scikit-image is not installed. '
-                'In order to install all image feature dependencies run '
-                'pip install ludwig[image]'
-            )
-            sys.exit(-1)
-
-        if isinstance(first_img_entry, str):
-            first_image = imread(first_img_entry)
-        else:
-            first_image = first_img_entry
+        first_image = ImageFeatureMixin.read_image(first_img_entry)
         first_img_height = first_image.shape[0]
         first_img_width = first_image.shape[1]
         first_img_num_channels = num_channels_in_image(first_image)
@@ -222,11 +231,28 @@ class ImageFeatureMixin:
                 )
         else:
             # User hasn't specified height and width.
-            # So we assume that all images have the same width and height.
-            # Thus the width and height of the first one are the same
-            # as all the other ones
-            height = first_img_height
-            width = first_img_width
+            # Default to first image, or infer from sample.
+            height, width = first_img_height, first_img_width
+
+            if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
+                should_resize = True
+                sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
+                sample_images = [ImageFeatureMixin.read_image(
+                    ImageFeatureMixin.get_image_from_path(src_path, img)) for img in input_feature_col[:sample_size]]
+
+                if sample_images:
+                    height_avg = min(
+                        sum(x.shape[0] for x in sample_images) / len(sample_images),
+                        preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT])
+                    width_avg = min(
+                        sum(x.shape[1] for x in sample_images) / len(sample_images),
+                        preprocessing_parameters[INFER_IMAGE_MAX_WIDTH])
+
+                    height, width = round(height_avg), round(width_avg)
+
+                    logger.debug("Inferring height: {0} and width: {1}".format(height, width))
+                else:
+                    logger.warning("Sample set for inference is empty, default to height and width of first image")
 
         if NUM_CHANNELS in preprocessing_parameters:
             # User specified num_channels in the model/feature config
@@ -289,10 +315,7 @@ class ImageFeatureMixin:
                     .format(type(first_img_entry))
             )
 
-        if isinstance(first_img_entry, str):
-            if src_path is None and not os.path.isabs(first_img_entry):
-                raise ValueError('Image file paths must be absolute')
-            first_img_entry = get_abs_path(src_path, first_img_entry)
+        first_img_entry = ImageFeatureMixin.get_image_from_path(src_path, first_img_entry)
 
         (
             should_resize,
@@ -302,7 +325,7 @@ class ImageFeatureMixin:
             user_specified_num_channels,
             first_image
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_img_entry
+            preprocessing_parameters, first_img_entry, src_path, input_df[feature[COLUMN]]
         )
 
         metadata[feature[NAME]][PREPROCESSING]['height'] = height
