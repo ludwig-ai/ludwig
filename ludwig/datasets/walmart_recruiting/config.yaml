@@ -3,6 +3,5 @@ competition: walmart-recruiting-trip-type-classification
 archive_filename: walmart-recruiting-trip-type-classification.zip
 split_filenames:
   train_file: train.csv.zip
-  #test_file: test.csv.zip
-csv_filename: walmart_recruiting.csv
+csv_filename: train.csv.zip
 download_file_type: csv

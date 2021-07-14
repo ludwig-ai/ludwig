@@ -15,11 +15,14 @@
 # limitations under the License.
 # ==============================================================================
 import os
+from zipfile import ZipFile
+
 import pandas as pd
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
+from ludwig.datasets.mixins.kaggle import (KaggleDownloadMixin,
+                                           create_kaggle_client)
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
@@ -31,7 +34,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
     return dataset.load(split=split)
 
 
-class WalmartRecruiting(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, BaseDataset):
+class WalmartRecruiting(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMixin, BaseDataset):
     """The Walmart Recruiting: Trip Type Classification
     https://www.kaggle.com/c/walmart-recruiting-trip-type-classification
     """
@@ -44,3 +47,34 @@ class WalmartRecruiting(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadM
         self.kaggle_key = kaggle_key
         self.is_kaggle_competition = True
         super().__init__(dataset_name='walmart_recruiting', cache_dir=cache_dir)
+
+    def download_raw_dataset(self):
+        """
+        Download the raw dataset and extract the contents of the zip file and
+        store that in the cache location.  If the user has not specified creds in the
+        kaggle.json file we lookup the passed in username and the api key and
+        perform authentication.
+        """
+        with self.update_env(KAGGLE_USERNAME=self.kaggle_username, KAGGLE_KEY=self.kaggle_key):
+            # Call authenticate explicitly to pick up new credentials if necessary
+            api = create_kaggle_client()
+            api.authenticate()
+        os.makedirs(self.raw_temp_path, exist_ok=True)
+
+        if self.is_kaggle_competition:
+            download_func = api.competition_download_files
+        else:
+            download_func = api.dataset_download_files
+        # Download all files for a competition/dataset
+        download_func(self.competition_name, path=self.raw_temp_path)
+
+        archive_zip = os.path.join(self.raw_temp_path, self.archive_filename)
+        print(archive_zip)
+        # test.csv.zip is an encrypted zip file that requires a password
+        # Avoid unzipping that file
+        with ZipFile(archive_zip, 'r') as z:
+            file_names = z.namelist()
+            for fname in file_names:
+                if fname != "test.csv.zip":
+                    z.extract(fname, self.raw_temp_path)
+        os.rename(self.raw_temp_path, self.raw_dataset_path)

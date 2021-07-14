@@ -64,12 +64,12 @@ class IEEEFraud(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, Ba
         # Merge on TransactionID
         train = pd.merge(
             train_dfs['train_transaction'], train_dfs['train_identity'], on='TransactionID', how='left')
-        test = pd.merge(
-            test_dfs['test_transaction'], test_dfs['test_identity'], on='TransactionID', how='left')
-        train['split'] = 0
-        test['split'] = 2
+        """test = pd.merge(
+            test_dfs['test_transaction'], test_dfs['test_identity'], on='TransactionID', how='left')"""
+        #train['split'], test['split'] = 0, 2
 
-        concat_df = pd.concat([train, test], ignore_index=True)
+        #concat_df = pd.concat([train, test], ignore_index=True)
+        concat_df = train
         os.makedirs(self.processed_dataset_path, exist_ok=True)
         concat_df.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
