@@ -3,18 +3,17 @@ config.py
 
 Builds base configuration file:
 
-(1) infer types based on dataset 
-(2) populate with 
+(1) infer types based on dataset
+(2) populate with
     - default combiner parameters,
     - preprocessing parameters,
     - combiner specific default training parameters,
     - combiner specific hyperopt space
     - feature parameters
-(3) add machineresources 
+(3) add machineresources
     (base implementation -- # CPU, # GPU)
 """
 
-import logging
 import os
 import sys
 from typing import List, Union
@@ -25,17 +24,15 @@ from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
 from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE
 from ludwig.utils.data_utils import load_yaml
 
-logger = logging.getLogger(__name__)
 try:
     import dask.dataframe as dd
     import ray
 except ImportError:
-    logger.error(
+    raise ImportError(
         ' ray is not installed. '
         'In order to use auto_train please run '
         'pip install ludwig[ray]'
     )
-    sys.exit(-1)
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, 'defaults')
@@ -71,13 +68,13 @@ def allocate_experiment_resources(resources: dict) -> dict:
             'gpu_resources_per_trial': 1
         })
         if cpu_count > 1:
-            cpus_per_trial = int(cpu_count/gpu_count)
+            cpus_per_trial = max(int(cpu_count / gpu_count), 1)
             experiment_resources['cpu_resources_per_trial'] = cpus_per_trial
 
     return experiment_resources
 
 
-def create_default_config(
+def _create_default_config(
     dataset: Union[str, dd.core.DataFrame, pd.DataFrame],
     target_name: str = None,
     time_limit_s: Union[int, float] = None

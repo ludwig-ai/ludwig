@@ -8,34 +8,29 @@ Driver script which:
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
-import logging
-import sys
 from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
-from ludwig.automl.base_config import create_default_config
+from ludwig.automl.base_config import _create_default_config
+from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
-
-logger = logging.getLogger(__name__)
-
 
 try:
     import dask.dataframe as dd
     import ray
 except ImportError:
-    logger.error(
+    raise ImportError(
         ' ray is not installed. '
         'In order to use auto_train please run '
         'pip install ludwig[ray]'
     )
-    sys.exit(-1)
 
 
 OUTPUT_DIR = "."
 
 
-def model_select(default_configs):
+def _model_select(default_configs):
     """
     Performs model selection based on dataset.
     Note: Current implementation returns tabnet by default. This will be
@@ -68,8 +63,8 @@ def auto_train(
     :return: (str) path to best trained model
     """
     if config is None:
-        config = _create_auto_config(dataset, target, time_limit_s)
-    model_name = config['combiner']['type']
+        config = create_auto_config(dataset, target, time_limit_s)
+    model_name = config[COMBINER][TYPE]
     hyperopt_results = _train(config, dataset,
                               output_dir, model_name=model_name)
     experiment_analysis = hyperopt_results.experiment_analysis
@@ -91,9 +86,9 @@ def auto_train(
     return autotrain_results
 
 
-def _create_auto_config(dataset, target, time_limit_s) -> dict:
-    default_configs = create_default_config(dataset, target, time_limit_s)
-    model_config = model_select(default_configs)
+def create_auto_config(dataset, target, time_limit_s) -> dict:
+    default_configs = _create_default_config(dataset, target, time_limit_s)
+    model_config = _model_select(default_configs)
     return model_config
 
 
