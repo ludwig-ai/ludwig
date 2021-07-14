@@ -15,7 +15,6 @@ Builds base configuration file:
 """
 
 import os
-import sys
 from typing import List, Union
 
 import pandas as pd

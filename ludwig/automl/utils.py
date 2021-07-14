@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from dataclasses_json import LetterCase, dataclass_json
 from pandas import Series
 
-
 try:
     import ray
 except ImportError:
