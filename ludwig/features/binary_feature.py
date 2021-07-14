@@ -35,6 +35,7 @@ from ludwig.utils.metrics_utils import roc_curve
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils import strings_utils
+from ludwig.utils.tf_utils import VocabLookup
 
 logger = logging.getLogger(__name__)
 
@@ -92,13 +93,13 @@ class BinaryFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-        feature,
-        input_df,
-        proc_df,
-        metadata,
-        preprocessing_parameters,
-        backend,
-        skip_save_processed_input,
+            feature,
+            input_df,
+            proc_df,
+            metadata,
+            preprocessing_parameters,
+            backend,
+            skip_save_processed_input,
     ):
         column = input_df[feature[COLUMN]]
 
@@ -112,6 +113,24 @@ class BinaryFeatureMixin:
 
         proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
         return proc_df
+
+    @staticmethod
+    def preprocess_inference_graph(t, metadata):
+        def preprocess_inference_graph_string():
+            t_strip = tf.strings.strip(t)
+            return VocabLookup(
+                lookup_table=metadata["str2bool"]
+                if "str2bool" in metadata
+                else {s: True for s in strings_utils.BOOL_TRUE_STRS},
+                default_value=False,
+                dtype=tf.bool,
+            )(t_strip)
+
+        return tf.cond(
+            t.dtype == tf.string,
+            preprocess_inference_graph_string,
+            lambda: tf.cast(t, tf.bool)
+        )
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
@@ -147,9 +166,17 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def get_input_shape(self):
         return ()
 
+    @classmethod
+    def get_inference_input_dtype(cls):
+        return tf.string
+
+    @classmethod
+    def get_inference_input_shape(cls):
+        return ()
+
     @staticmethod
     def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
+            input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
@@ -236,7 +263,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
+            input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
@@ -280,11 +307,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return overall_stats
 
     def postprocess_predictions(
-        self,
-        result,
-        metadata,
-        output_directory,
-        backend,
+            self,
+            result,
+            metadata,
+            output_directory,
+            backend,
     ):
         class_names = ["False", "True"]
         if "bool2str" in metadata:
@@ -316,6 +343,27 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             )
 
         return result
+
+    @staticmethod
+    def postprocess_inference_graph(preds: dict, metadata: dict):
+        bool_vals = preds[PREDICTIONS]
+        if 'bool2str' in metadata:
+            lookup_table = {
+                False: metadata['bool2str'][0],
+                True: metadata['bool2str'][1],
+            }
+            table = VocabLookup(
+                lookup_table=lookup_table,
+                default_value=metadata['bool2str'][0],
+                dtype=tf.bool,
+            )
+        else:
+            table = tf.identity(bool_vals)
+
+        return {
+            PREDICTIONS: table(bool_vals),
+            PROBABILITIES: preds[PROBABILITIES],
+        }
 
     @staticmethod
     def populate_defaults(output_feature):

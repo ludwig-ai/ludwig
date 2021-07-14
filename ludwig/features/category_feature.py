@@ -15,11 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
 import tensorflow as tf
-from typing import Dict
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
@@ -30,8 +28,7 @@ from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import CategoryAccuracy
 from ludwig.modules.metric_modules import HitsAtKMetric
-from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
-    SampledSoftmaxCrossEntropyMetric
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -39,40 +36,9 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.tf_utils import VocabLookup
 
 logger = logging.getLogger(__name__)
-
-
-# workaround: https://github.com/tensorflow/tensorflow/issues/38305
-class VocabLookup(tf.keras.layers.Layer):
-    def __init__(self, lookup_table, default_value, dtype):
-        super(VocabLookup, self).__init__(trainable=False, dtype=dtype)
-        self.lookup_table = lookup_table
-        self.default_value = default_value
-
-    def build(self, input_shape):
-        keys, values = zip(*self.lookup_table.items())
-        keys_tensor = tf.constant(keys)
-        vals_tensor = tf.constant(values)
-        self.table = tf.lookup.StaticHashTable(
-            tf.lookup.KeyValueTensorInitializer(keys_tensor, vals_tensor),
-            default_value=self.default_value,
-        )
-
-        # table_init = tf.lookup.TextFileInitializer(self.vocab_path, tf.string, tf.lookup.TextFileIndex.WHOLE_LINE,
-        #                                            tf.int64, tf.lookup.TextFileIndex.LINE_NUMBER)
-        # self.table = tf.lookup.StaticHashTable(table_init, -1)
-
-        self.built = True
-
-    def call(self, t):
-        # splitted_text = tf.strings.split(input_text).to_tensor()
-        return self.table.lookup(t)
-
-    def get_config(self):
-        config = super(VocabLookup, self).get_config()
-        config.update({'lookup_table': self.lookup_table, 'default_value': self.default_value})
-        return config
 
 
 class CategoryFeatureMixin:
