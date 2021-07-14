@@ -116,21 +116,24 @@ class BinaryFeatureMixin:
 
     @staticmethod
     def preprocess_inference_graph(t, metadata):
-        def preprocess_inference_graph_string():
-            t_strip = tf.strings.strip(t)
-            return VocabLookup(
-                lookup_table=metadata["str2bool"]
-                if "str2bool" in metadata
-                else {s: True for s in strings_utils.BOOL_TRUE_STRS},
+        if "str2bool" in metadata:
+            t = tf.strings.strip(t)
+            t = VocabLookup(
+                lookup_table=metadata["str2bool"],
                 default_value=False,
                 dtype=tf.bool,
-            )(t_strip)
-
-        return tf.cond(
-            t.dtype == tf.string,
-            preprocess_inference_graph_string,
-            lambda: tf.cast(t, tf.bool)
-        )
+            )(t)
+        else:
+            t = tf.strings.strip(t)
+            t = tf.strings.lower(t)
+            t = VocabLookup(
+                lookup_table={s: True for s in strings_utils.BOOL_TRUE_STRS},
+                default_value=False,
+                dtype=tf.bool,
+            )(t)
+        # else:  # bool input
+        #   t = t
+        return t
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
@@ -346,22 +349,26 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @staticmethod
     def postprocess_inference_graph(preds: dict, metadata: dict):
-        bool_vals = preds[PREDICTIONS]
         if 'bool2str' in metadata:
             lookup_table = {
                 False: metadata['bool2str'][0],
                 True: metadata['bool2str'][1],
             }
-            table = VocabLookup(
-                lookup_table=lookup_table,
-                default_value=metadata['bool2str'][0],
-                dtype=tf.bool,
-            )
         else:
-            table = tf.identity(bool_vals)
+            lookup_table = {
+                False: "false",
+                True: "true",
+            }
+        table = VocabLookup(
+            lookup_table=lookup_table,
+            default_value="false",
+            dtype=tf.bool,
+        )
+        # else:  # bool output case
+        #     table = tf.identity
 
         return {
-            PREDICTIONS: table(bool_vals),
+            PREDICTIONS: table(preds[PREDICTIONS]),
             PROBABILITIES: preds[PROBABILITIES],
         }
 
