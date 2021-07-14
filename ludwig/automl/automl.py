@@ -12,6 +12,7 @@ from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
+import warnings
 from ludwig.automl.base_config import _create_default_config
 from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
@@ -73,7 +74,7 @@ def auto_train(
     # completed
     for trial in hyperopt_results.ordered_trials:
         if np.isnan(trial.metric_score):
-            raise ValueError(
+            warnings.warn(
                 "There was an error running the experiment. "
                 "A trial failed to start. "
                 "Consider increasing the time budget for experiment. "
