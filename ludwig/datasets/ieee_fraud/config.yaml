@@ -1,0 +1,10 @@
+version: 1.0
+competition: ieee-fraud-detection
+archive_filename: ieee-fraud-detection.zip
+split_filenames:
+  train_identity: train_identity.csv
+  train_transaction: train_transaction.csv
+  test_identity: test_identity.csv
+  test_transaction: test_transaction.csv
+csv_filename: ieee-fraud.csv
+download_file_type: csv
