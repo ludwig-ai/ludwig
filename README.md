@@ -273,12 +273,17 @@ the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
 Extensibility
 -------------
 
-Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes that contain functions to preprocess the data, encode it, and decode it.
+Ludwig is built from the ground up with extensibility in mind. It is easy to add
+an additional datatype that is not currently supported by adding a
+datatype-specific implementation of abstract classes that contain functions to
+preprocess the data, encode it, and decode it.
 
-Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending on the datatype) as inputs and provides tensors as output.
-This encourages reuse and sharing new models with the community.
-Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/) for further details.
+Furthermore, new models, with their own specific hyperparameters, can be easily
+added by implementing a class that accepts tensors (of a specific rank,
+depending on the datatype) as inputs and provides tensors as output. This
+encourages reuse and sharing new models with the community. Refer to
+the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/developer_guide_intro/)
+for further details.
 
 
 Full documentation

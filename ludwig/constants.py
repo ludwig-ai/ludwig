@@ -32,6 +32,10 @@ H3 = "h3"
 VECTOR = "vector"
 HEIGHT = "height"
 WIDTH = "width"
+INFER_IMAGE_DIMENSIONS = "infer_image_dimensions"
+INFER_IMAGE_MAX_HEIGHT = "infer_image_max_height"
+INFER_IMAGE_MAX_WIDTH = "infer_image_max_width"
+INFER_IMAGE_SAMPLE_SIZE = "infer_image_sample_size"
 NUM_CHANNELS = "num_channels"
 LOSS = "loss"
 ROC_AUC = "roc_auc"
@@ -132,4 +136,11 @@ HDF5 = "hdf5"
 PARQUET = "parquet"
 TFRECORD = "tfrecord"
 
-SRC = "dataset_src"
+SRC = 'dataset_src'
+
+BATCH_SIZE = 'batch_size'
+LEARNING_RATE = 'learning_rate'
+AUTO = 'auto'
+CONFIG = 'config'
+
+COMBINER = "combiner"

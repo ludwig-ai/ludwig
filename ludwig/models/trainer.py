@@ -17,6 +17,7 @@
 """
 This module contains the class and auxiliary methods of a model.
 """
+import gc
 import logging
 import os
 import os.path
@@ -26,29 +27,30 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-
+from random import random
+from re import M
+import numpy as np
 import tensorflow as tf
-from tabulate import tabulate
-from tqdm import tqdm
-
-from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
-from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
-from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
-from ludwig.globals import is_progressbar_disabled
+from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
+                            MODEL_WEIGHTS_FILE_NAME,
+                            TRAINING_CHECKPOINTS_DIR_PATH,
+                            TRAINING_PROGRESS_TRACKER_FILE_NAME,
+                            is_progressbar_disabled)
 from ludwig.models.predictor import Predictor
-from ludwig.modules.metric_modules import get_improved_fun
-from ludwig.modules.metric_modules import get_initial_validation_value
+from ludwig.modules.metric_modules import (get_improved_fun,
+                                           get_initial_validation_value)
 from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
-from ludwig.utils.math_utils import learning_rate_warmup, \
-    learning_rate_warmup_distributed, exponential_decay
+from ludwig.utils.math_utils import (exponential_decay, learning_rate_warmup,
+                                     learning_rate_warmup_distributed)
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.tf_utils import initialize_tensorflow
+from tabulate import tabulate
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -331,6 +333,232 @@ class Trainer(BaseTrainer):
 
         train_summary_writer.flush()
 
+    def train_for_tuning(
+        self,
+        model,
+        dataset,
+        total_steps=3,
+    ):
+        """ function to be used by tune_batch_size """
+        with dataset.initialize_batcher(
+            batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            shuffle_buffer_size=self.shuffle_buffer_size,
+            horovod=self.horovod
+        ) as batcher:
+
+            step_count = 0
+            while not batcher.last_batch() and step_count < total_steps:
+                batch = batcher.next_batch()
+                inputs = {
+                    i_feat.feature_name: batch[i_feat.proc_column]
+                    for i_feat in model.input_features.values()
+                }
+                targets = {
+                    o_feat.feature_name: batch[o_feat.proc_column]
+                    for o_feat in model.output_features.values()
+                }
+
+                model.train_step(
+                    self.optimizer,
+                    inputs,
+                    targets,
+                    self.regularization_lambda
+                )
+                step_count += 1
+        return model
+
+    def tune_learning_rate(
+        self,
+        config,
+        model,
+        training_set,
+        random_seed: int = default_random_seed,
+        min_lr: float = 1e-8,
+        max_lr: float = 1.0,
+        total_training_steps: int = 100,
+        mode: str = "exponential",
+        early_stop_threshold: int = 3,
+        beta: float = 0.98
+    ):
+        # TODO (ASN): Circle back on how we want to set default placeholder value
+        # Currently, since self.learning_rate is originally set to auto, we provide a
+        # placeholder starting value (namely, .001)
+        self.learning_rate = 0.001
+
+        current_learning_rate = min_lr
+        losses = []
+        learning_rates = []
+        avg_loss = 0.0
+        best_loss = 0.0
+        epoch = 0
+        diverging = False
+
+        def linear_scheduler(current_learning_rate, current_step):
+            scale = (current_step + 1) / total_training_steps
+            return current_learning_rate + scale * (max_lr - current_learning_rate)
+
+        def exponential_scheduler(current_learning_rate, current_step):
+            scale = (current_step + 1) / total_training_steps
+            return current_learning_rate * (max_lr/current_learning_rate)**scale
+
+        def get_optimal_lr(losses, learning_rates, skip_begin: int = 10, skip_end: int = 1):
+            try:
+                loss = np.array(losses[skip_begin:-skip_end])
+                loss = loss[np.isfinite(loss)]
+                best_lr_index = np.gradient(loss).argmin() + skip_begin
+                best_lr = learning_rates[best_lr_index]
+                return best_lr
+            except Exception:
+                return None
+
+        with training_set.initialize_batcher(
+            batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            shuffle_buffer_size=self.shuffle_buffer_size,
+            horovod=self.horovod
+        ) as batcher:
+            step_count = 0
+            while epoch < self.epochs and step_count < total_training_steps and not diverging:
+                batcher.set_epoch(epoch)
+                model.reset_metrics()
+                while not batcher.last_batch() and step_count < total_training_steps:
+                    batch = batcher.next_batch()
+                    inputs = {
+                        i_feat.feature_name: batch[i_feat.proc_column]
+                        for i_feat in model.input_features.values()
+                    }
+                    targets = {
+                        o_feat.feature_name: batch[o_feat.proc_column]
+                        for o_feat in model.output_features.values()
+                    }
+
+                    loss, _ = model.train_step(
+                        self.optimizer,
+                        inputs,
+                        targets,
+                        self.regularization_lambda
+                    )
+                    # compute smoothed loss
+                    avg_loss = beta * avg_loss + (1-beta) * loss
+                    smoothed_loss = avg_loss / (1 - beta**(step_count + 1))
+
+                    # store learning rate and loss
+                    learning_rates.append(current_learning_rate)
+                    losses.append(smoothed_loss)
+
+                    # check whether loss is diverging
+                    if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
+                        diverging = True
+                        break
+                    else:
+                        if smoothed_loss < best_loss or step_count == 0:
+                            best_loss = smoothed_loss
+
+                    # compute new learning rate
+                    if mode == "exponential":
+                        current_learning_rate = exponential_scheduler(
+                            current_learning_rate, step_count)
+                    else:
+                        current_learning_rate = linear_scheduler(
+                            current_learning_rate, step_count)
+
+                    self.optimizer.set_learning_rate(current_learning_rate)
+                    step_count += 1
+
+                epoch += 1
+
+        optimal_lr = get_optimal_lr(losses, learning_rates)
+        if optimal_lr:
+            self.learning_rate = optimal_lr
+        return self.learning_rate
+
+    def tune_batch_size(
+        self,
+        config,
+        training_set,
+        random_seed: int = default_random_seed,
+        max_trials: int = 10,
+        halving_limit: int = 3
+    ):
+        from ludwig.api import LudwigModel
+
+        def _is_valid_batch_size(batch_size):
+            return batch_size < len(training_set)
+
+        # TODO (ASN) : Circle back on how we want to set default placeholder value
+        # Currently, since self.batch_size is originally set to auto, we provide a
+        # placeholder starting value (namely, 128)
+        self.batch_size = 128
+        skip_save_model = self.skip_save_model
+        skip_save_progress = self.skip_save_progress
+        skip_save_log = self.skip_save_log
+        # Set temporary values
+        self.skip_save_model = True
+        self.skip_save_progress = True
+        self.skip_save_log = True
+
+        # Turn eager mode on
+        tf.config.run_functions_eagerly(True)
+
+        try:
+
+            high = None
+            count = 0
+            halving_count = 0
+            while halving_count < halving_limit:
+                gc.collect()
+                try:
+                    # re-initalize model...
+                    model = LudwigModel.create_model(config, random_seed)
+                    self.train_for_tuning(model, training_set, total_steps=3)
+                    count += 1
+                    if count >= max_trials:
+                        break
+                    low = self.batch_size
+                    prev_batch_size = self.batch_size
+                    if high:
+                        if high - low <= 1:
+                            break
+                        midval = (high + low) // 2
+                        self.batch_size = midval
+                    else:
+                        self.batch_size *= 2  # double batch size
+
+                    if self.batch_size == prev_batch_size:
+                        break
+
+                except tf.errors.ResourceExhaustedError as e:
+                    gc.collect()
+                    high = self.batch_size
+                    halving_count += 1
+                    midval = (high + low) // 2
+                    self.batch_size = midval
+                    if high - low <= 1:
+                        break
+
+                # make sure that batch size is valid (e.g. less than size of ds)
+                if not _is_valid_batch_size(self.batch_size):
+                    self.batch_size = min(self.batch_size, len(training_set))
+
+                # edge case where bs is no longer increasing
+                if self.batch_size == prev_batch_size:
+                    break
+
+            # Restore original parameters to defaults
+            # self.epochs = original_epochs
+            self.skip_save_model = skip_save_model
+            self.skip_save_progress = skip_save_progress
+            self.skip_save_log = skip_save_log
+
+            if self.eval_batch_size == "auto":
+                self.eval_batch_size = self.batch_size
+        finally:
+            # Turn eager mode off
+            tf.config.run_functions_eagerly(False)
+
+        return self.batch_size
+
     def train(
             self,
             model,
@@ -554,11 +782,13 @@ class Trainer(BaseTrainer):
                         disable=is_progressbar_disabled()
                     )
 
-                self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
+                self.callback(lambda c: c.on_epoch_start(
+                    self, progress_tracker, save_path))
 
                 # training step loop
                 while not batcher.last_batch():
-                    self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_batch_start(
+                        self, progress_tracker, save_path))
 
                     # Set learning rate for this batch
                     current_learning_rate = progress_tracker.learning_rate
@@ -648,7 +878,8 @@ class Trainer(BaseTrainer):
                         progress_bar.update(1)
                     first_batch = False
 
-                    self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_batch_end(
+                        self, progress_tracker, save_path))
 
                 # ================ Post Training Epoch ================
                 if self.is_coordinator():
@@ -661,7 +892,8 @@ class Trainer(BaseTrainer):
                 tables = OrderedDict()
                 for output_feature_name, output_feature in output_features.items():
                     tables[output_feature_name] = [
-                        [output_feature_name] + metrics_names[output_feature_name]
+                        [output_feature_name] +
+                        metrics_names[output_feature_name]
                     ]
                 tables[COMBINED] = [[COMBINED, LOSS]]
 
@@ -682,7 +914,8 @@ class Trainer(BaseTrainer):
                 )
 
                 if validation_set is not None and len(validation_set) > 0:
-                    self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_validation_start(
+                        self, progress_tracker, save_path))
 
                     # eval metrics on validation set
                     self.evaluation(
@@ -700,10 +933,12 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    self.callback(lambda c: c.on_validation_end(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_validation_end(
+                        self, progress_tracker, save_path))
 
                 if test_set is not None and len(test_set) > 0:
-                    self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_test_start(
+                        self, progress_tracker, save_path))
 
                     # eval metrics on test set
                     self.evaluation(
@@ -721,7 +956,8 @@ class Trainer(BaseTrainer):
                         step=progress_tracker.epoch,
                     )
 
-                    self.callback(lambda c: c.on_test_end(self, progress_tracker, save_path))
+                    self.callback(lambda c: c.on_test_end(
+                        self, progress_tracker, save_path))
 
                 elapsed_time = (time.time() - start_time) * 1000.0
 
@@ -783,7 +1019,8 @@ class Trainer(BaseTrainer):
                         )
                     logger.info('')
 
-                self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+                self.callback(lambda c: c.on_epoch_end(
+                    self, progress_tracker, save_path))
 
         if train_summary_writer is not None:
             train_summary_writer.close()
@@ -938,7 +1175,7 @@ class Trainer(BaseTrainer):
                 )
 
         progress_tracker.last_improvement = (
-                progress_tracker.epoch - progress_tracker.last_improvement_epoch
+            progress_tracker.epoch - progress_tracker.last_improvement_epoch
         )
         if progress_tracker.last_improvement != 0 and self.is_coordinator():
             logger.info(
@@ -963,8 +1200,8 @@ class Trainer(BaseTrainer):
                 reduce_learning_rate_eval_split
             )
             progress_tracker.last_learning_rate_reduction = (
-                    progress_tracker.epoch -
-                    progress_tracker.last_learning_rate_reduction_epoch
+                progress_tracker.epoch -
+                progress_tracker.last_learning_rate_reduction_epoch
             )
             if (
                     progress_tracker.last_learning_rate_reduction > 0
@@ -1002,8 +1239,8 @@ class Trainer(BaseTrainer):
                 increase_batch_size_eval_split
             )
             progress_tracker.last_increase_batch_size = (
-                    progress_tracker.epoch -
-                    progress_tracker.last_increase_batch_size_epoch
+                progress_tracker.epoch -
+                progress_tracker.last_increase_batch_size_epoch
             )
             if (
                     progress_tracker.last_increase_batch_size > 0
@@ -1197,7 +1434,7 @@ class Trainer(BaseTrainer):
         if (not progress_tracker.num_increases_batch_size >=
                 increase_batch_size_on_plateau
                 and not progress_tracker.batch_size ==
-                        increase_batch_size_on_plateau_max):
+                increase_batch_size_on_plateau_max):
 
             if increase_batch_size_eval_split == TRAINING:
                 split_metrics = progress_tracker.train_metrics
