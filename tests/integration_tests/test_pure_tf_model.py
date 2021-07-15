@@ -92,15 +92,15 @@ def test_pure_tf_model(csv_filename, tmpdir):
     ludwig_tf_model = ludwig_model.create_inference_graph()
     print(ludwig_tf_model)
 
-    # pred_data = list(build_synthetic_dataset(1, input_features))
-    #
-    # inputs = {
-    #     c: tf.convert_to_tensor(
-    #         [v],
-    #         dtype=ludwig_model.model.input_features[c].get_inference_input_dtype()
-    #     )
-    #     for c, v in zip(pred_data[0], pred_data[1])
-    # }
-    # print(inputs)
-    #
-    # print(ludwig_tf_model(inputs))
+    pred_data = list(build_synthetic_dataset(1, input_features))
+
+    inputs = {
+        c: tf.convert_to_tensor(
+            [v],
+            dtype=ludwig_model.model.input_features[c].get_inference_input_dtype()
+        )
+        for c, v in zip(pred_data[0], pred_data[1])
+    }
+    print(inputs)
+
+    print(ludwig_tf_model(inputs))

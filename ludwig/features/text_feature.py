@@ -19,7 +19,6 @@ import logging
 import numpy as np
 import tensorflow as tf
 import tensorflow_text as tf_text
-from tensorflow_text.python.keras.layers.todense import ToDense
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY
@@ -35,7 +34,7 @@ from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 from ludwig.utils.strings_utils import tokenizer_registry
-from ludwig.utils.tf_utils import VocabLookup, Tokenize, Pad
+from ludwig.utils.tf_utils import VocabLookup
 
 logger = logging.getLogger(__name__)
 
@@ -253,29 +252,17 @@ class TextFeatureMixin:
     @staticmethod
     def preprocess_inference_graph(t, metadata):
         # TODO(travis): assume word level for now, revisit when we decide what to do about computing both
-        print(f'TEXT METADATA: {metadata}')
-
         if metadata[PREPROCESSING]['lowercase']:
             t = tf.strings.lower(t)
 
-        print(f'TENSOR: {t}')
         t = Tokenize(dtype=tf.string)(t)
-        print(f'TOKENIZED: {t}')
-
         t = VocabLookup(
             lookup_table=metadata['word_str2idx'],
             default_value=metadata['word_str2idx'][metadata['word_unk_symbol']],
             dtype=tf.int64,
         )(t)
-        print(f'VOCAB LOOKUP: {t}')
 
-        # t = ToDense(pad_value=metadata['word_pad_idx'], )(t)
-        # t = tf_text.pad_model_inputs(
-        #     t, metadata['word_max_sequence_length'], metadata['word_pad_idx']
-        # )
         t, mask = Pad(metadata['word_max_sequence_length'], metadata['word_pad_idx'], dtype=tf.int64)(t)
-        print(f'PAD: {t} {type(t)}')
-
         return t
 
 
@@ -544,3 +531,38 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def populate_defaults(output_feature):
         set_default_value(output_feature, 'level', 'word')
         SequenceOutputFeature.populate_defaults(output_feature)
+
+
+class Tokenize(tf.keras.layers.Layer):
+    def __init__(self, dtype):
+        super(Tokenize, self).__init__(trainable=False, dtype=dtype)
+
+    def build(self, input_shape):
+        self.tokenizer = tf_text.WhitespaceTokenizer()
+
+    def call(self, t):
+        return self.tokenizer.tokenize(t)
+
+    def get_config(self):
+        config = super(Tokenize, self).get_config()
+        return config
+
+
+class Pad(tf.keras.layers.Layer):
+    def __init__(self, max_sequence_length, pad_idx, dtype):
+        super(Pad, self).__init__(trainable=False, dtype=dtype)
+        self.max_sequence_length = max_sequence_length
+        self.pad_idx = pad_idx
+
+    def build(self, input_shape):
+        pass
+
+    def call(self, t):
+        return tf_text.pad_model_inputs(
+            t, self.max_sequence_length, self.pad_idx
+        )
+
+    def get_config(self):
+        config = super(Pad, self).get_config()
+        config.update({'max_sequence_length': self.max_sequence_length, 'pad_idx': self.pad_idx})
+        return config
