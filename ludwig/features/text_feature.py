@@ -15,10 +15,11 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from collections.abc import Iterable
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_text as tf_text
+from tensorflow_text.python.keras.layers.todense import ToDense
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY
@@ -34,7 +35,7 @@ from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 from ludwig.utils.strings_utils import tokenizer_registry
-
+from ludwig.utils.tf_utils import VocabLookup, Tokenize, Pad
 
 logger = logging.getLogger(__name__)
 
@@ -249,6 +250,34 @@ class TextFeatureMixin:
         proc_df['{}_word'.format(feature[PROC_COLUMN])] = words_data
         return proc_df
 
+    @staticmethod
+    def preprocess_inference_graph(t, metadata):
+        # TODO(travis): assume word level for now, revisit when we decide what to do about computing both
+        print(f'TEXT METADATA: {metadata}')
+
+        if metadata[PREPROCESSING]['lowercase']:
+            t = tf.strings.lower(t)
+
+        print(f'TENSOR: {t}')
+        t = Tokenize(dtype=tf.string)(t)
+        print(f'TOKENIZED: {t}')
+
+        t = VocabLookup(
+            lookup_table=metadata['word_str2idx'],
+            default_value=metadata['word_str2idx'][metadata['word_unk_symbol']],
+            dtype=tf.int64,
+        )(t)
+        print(f'VOCAB LOOKUP: {t}')
+
+        # t = ToDense(pad_value=metadata['word_pad_idx'], )(t)
+        # t = tf_text.pad_model_inputs(
+        #     t, metadata['word_max_sequence_length'], metadata['word_pad_idx']
+        # )
+        t, mask = Pad(metadata['word_max_sequence_length'], metadata['word_pad_idx'], dtype=tf.int64)(t)
+        print(f'PAD: {t} {type(t)}')
+
+        return t
+
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     encoder = 'parallel_cnn'
@@ -288,6 +317,14 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     def get_input_shape(self):
         return None,
+
+    @classmethod
+    def get_inference_input_dtype(cls):
+        return tf.string
+
+    @classmethod
+    def get_inference_input_shape(cls):
+        return ()
 
     @staticmethod
     def update_config_with_metadata(

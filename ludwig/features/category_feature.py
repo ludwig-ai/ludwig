@@ -487,7 +487,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         )
 
         return {
-            PREDICTIONS: table(tf.cast(preds[PREDICTIONS], tf.int64)),
+            PREDICTIONS: table(tf.cast(preds[PREDICTIONS], tf.int32)),
             PROBABILITIES: preds[PROBABILITIES],
         }
 
