@@ -351,24 +351,24 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def postprocess_inference_graph(preds: dict, metadata: dict):
         if 'bool2str' in metadata:
             lookup_table = {
-                False: metadata['bool2str'][0],
-                True: metadata['bool2str'][1],
+                0: metadata['bool2str'][0],
+                1: metadata['bool2str'][1],
             }
         else:
             lookup_table = {
-                False: "false",
-                True: "true",
+                0: "false",
+                1: "true",
             }
         table = VocabLookup(
             lookup_table=lookup_table,
             default_value="false",
-            dtype=tf.bool,
+            dtype=tf.int32,
         )
         # else:  # bool output case
         #     table = tf.identity
 
         return {
-            PREDICTIONS: table(preds[PREDICTIONS]),
+            PREDICTIONS: table(tf.cast(preds[PREDICTIONS], dtype=tf.int32)),
             PROBABILITIES: preds[PROBABILITIES],
         }
 

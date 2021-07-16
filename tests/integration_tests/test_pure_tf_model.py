@@ -34,7 +34,6 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.distributed
 def test_pure_tf_model(csv_filename, tmpdir):
     dir_path = tmpdir
     data_csv_path = os.path.join(tmpdir, csv_filename)
@@ -43,7 +42,7 @@ def test_pure_tf_model(csv_filename, tmpdir):
 
     # Single sequence input, single category output
     input_features = [
-        # binary_feature(),
+        binary_feature(),
         numerical_feature(),
         category_feature(vocab_size=3),
         # sequence_feature(vocab_size=3),
@@ -60,7 +59,7 @@ def test_pure_tf_model(csv_filename, tmpdir):
 
     output_features = [
         category_feature(vocab_size=3),
-        # binary_feature(),
+        binary_feature(),
         numerical_feature(),
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
@@ -93,6 +92,11 @@ def test_pure_tf_model(csv_filename, tmpdir):
     print(ludwig_tf_model)
 
     pred_data = list(build_synthetic_dataset(1, input_features))
+
+    # needed because ludwig_tf_model binary features expect strings
+    pred_data[1] = [str(v) + ""
+                    if isinstance(v, np.bool_) else v
+                    for v in pred_data[1]]
 
     inputs = {
         c: tf.convert_to_tensor(
