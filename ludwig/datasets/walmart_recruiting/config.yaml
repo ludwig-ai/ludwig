@@ -1,0 +1,7 @@
+version: 1.0
+competition: walmart-recruiting-trip-type-classification
+archive_filename: walmart-recruiting-trip-type-classification.zip
+split_filenames:
+  train_file: train.csv.zip
+csv_filename: train.csv.zip
+download_file_type: csv
