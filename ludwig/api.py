@@ -58,7 +58,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      DICT_FORMATS,
                                      external_data_reader_registry,
                                      figure_data_format, generate_kfold_splits,
-                                     load_json, save_json, load_yaml)
+                                     load_json, save_json, load_yaml, load_dataset)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.misc_utils import (get_experiment_description,
                                      get_file_names, get_from_registry,
@@ -1717,30 +1717,18 @@ def kfold_cross_validate(
     if not data_format or data_format == 'auto':
         data_format = figure_data_format(dataset)
 
-    # use appropriate reader to create dataframe
-    if data_format in DATAFRAME_FORMATS:
-        data_df = dataset
-        data_dir = os.getcwd()
-    elif data_format in DICT_FORMATS:
-        data_df = pd.DataFrame(dataset)
-        data_dir = os.getcwd()
-    elif data_format in CACHEABLE_FORMATS:
-        data_reader = get_from_registry(data_format,
-                                        external_data_reader_registry)
-        data_df = data_reader(dataset, backend.df_engine.df_lib)
-        data_dir = os.path.dirname(dataset)
-    else:
-        ValueError(
-            "{} format is not supported for k_fold_cross_validate()"
-            .format(data_format)
-        )
+    data_df = load_dataset(
+        dataset,
+        data_format=data_format,
+        df_lib=backend.df_engine.df_lib
+    )
 
     kfold_cv_stats = {}
     kfold_split_indices = {}
 
     for train_indices, test_indices, fold_num in \
             generate_kfold_splits(data_df, num_folds, random_seed):
-        with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
+        with tempfile.TemporaryDirectory() as temp_dir_name:
             curr_train_df = data_df.iloc[train_indices]
             curr_test_df = data_df.iloc[test_indices]
 

@@ -22,7 +22,7 @@ import pandas as pd
 from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
                                  get_available_resources, _ray_init)
 from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE
-from ludwig.utils.data_utils import load_yaml
+from ludwig.utils.data_utils import load_yaml, load_dataset
 
 try:
     import dask.dataframe as dd
@@ -145,10 +145,7 @@ def get_dataset_info(dataset: str) -> DatasetInfo:
     :return: (List[FieldInfo]) list of FieldInfo objects
 
     """
-
-    # TODO (ASN): add more detailed logic for loading dataset. initial implementation
-    # assumes dataset is stored as a csv file and readable by pandas
-    dataframe = pd.read_csv(dataset)
+    dataframe = load_dataset(dataset)
     row_count = len(dataframe)
     fields = []
     for field in dataframe.columns:
