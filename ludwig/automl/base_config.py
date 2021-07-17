@@ -15,11 +15,12 @@ Builds base configuration file:
 """
 
 import os
+from dataclasses import dataclass
 from typing import List, Union
 
 import pandas as pd
 from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
-                                 get_available_resources)
+                                 get_available_resources, _ray_init)
 from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE
 from ludwig.utils.data_utils import load_yaml
 
@@ -41,6 +42,12 @@ model_defaults = {
     'tabnet': os.path.join(CONFIG_DIR, 'tabnet_config.yaml'),
     'transformer': os.path.join(CONFIG_DIR, 'transformer_config.yaml')
 }
+
+
+@dataclass
+class DatasetInfo:
+    fields: List[FieldInfo]
+    row_count: int
 
 
 def allocate_experiment_resources(resources: dict) -> dict:
@@ -74,7 +81,7 @@ def allocate_experiment_resources(resources: dict) -> dict:
 
 
 def _create_default_config(
-    dataset: Union[str, dd.core.DataFrame, pd.DataFrame],
+    dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
     target_name: str = None,
     time_limit_s: Union[int, float] = None
 ) -> dict:
@@ -100,12 +107,20 @@ def _create_default_config(
     combiner types
 
     """
+    _ray_init()
     resources = get_available_resources()
     experiment_resources = allocate_experiment_resources(resources)
 
-    fields, row_count = get_field_info(dataset)
+    dataset_info = dataset
+    if not isinstance(dataset, DatasetInfo):
+        dataset_info = get_dataset_info(dataset)
+
     input_and_output_feature_config = get_features_config(
-        fields, row_count, resources, target_name)
+        dataset_info.fields,
+        dataset_info.row_count,
+        resources,
+        target_name
+    )
 
     model_configs = {}
     for model_name, path_to_defaults in model_defaults.items():
@@ -118,7 +133,7 @@ def _create_default_config(
     return model_configs
 
 
-def get_field_info(dataset: str):
+def get_dataset_info(dataset: str) -> DatasetInfo:
     """
     Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
@@ -147,7 +162,7 @@ def get_field_info(dataset: str):
             FieldInfo(name=field, dtype=dtype,
                       distinct_values=distinct_values, nonnull_values=nonnull_values, avg_words=avg_words)
         )
-    return fields, row_count
+    return DatasetInfo(fields=fields, row_count=row_count)
 
 
 def get_features_config(

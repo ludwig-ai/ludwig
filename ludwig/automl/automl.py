@@ -9,17 +9,21 @@ Driver script which:
 (3) Runs hyperparameter optimization experiment
 """
 from typing import Dict, Union
+import warnings
 
 import numpy as np
 import pandas as pd
-import warnings
+
+from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config
+from ludwig.automl.utils import _ray_init
 from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 
 try:
     import dask.dataframe as dd
     import ray
+    from ray.tune import ExperimentAnalysis
 except ImportError:
     raise ImportError(
         ' ray is not installed. '
@@ -31,13 +35,21 @@ except ImportError:
 OUTPUT_DIR = "."
 
 
-def _model_select(default_configs):
-    """
-    Performs model selection based on dataset.
-    Note: Current implementation returns tabnet by default. This will be
-        improved in subsequent iterations
-    """
-    return default_configs['tabnet']
+class AutoTrainResults:
+    def __init__(self, experiment_analysis: ExperimentAnalysis):
+        self._experiment_analysis = experiment_analysis
+
+    @property
+    def path_to_best_model(self) -> str:
+        return self._experiment_analysis.best_checkpoint
+
+    @property
+    def best_trial_id(self) -> str:
+        return self._experiment_analysis.best_trial.trial_id
+
+    @property
+    def best_model(self) -> LudwigModel:
+        return LudwigModel.load(self.path_to_best_model)
 
 
 def auto_train(
@@ -45,8 +57,8 @@ def auto_train(
     target: str,
     time_limit_s: Union[int, float],
     output_dir: str = OUTPUT_DIR,
-    config=None,
-):
+    config: dict = None,
+) -> AutoTrainResults:
     """
     Main auto train API that first builds configs for each model type
     (e.g. concat, tabnet, transformer). Then selects model based on dataset
@@ -56,19 +68,23 @@ def auto_train(
 
     # Inputs
     :param dataset: (str) filepath to dataset.
-    :param target_name: (str) name of target feature
+    :param target: (str) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                         as the stopping parameter
+    :param output_dir: (str) directory into which to write results, defaults to
+                       current working directory.
+    :param config: (dict) optional Ludwig configuration to use for training, defaults
+                   to `create_auto_config`.
 
     # Returns
-    :return: (str) path to best trained model
+    :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
+    _ray_init()
     if config is None:
         config = create_auto_config(dataset, target, time_limit_s)
     model_name = config[COMBINER][TYPE]
     hyperopt_results = _train(config, dataset,
                               output_dir, model_name=model_name)
-    experiment_analysis = hyperopt_results.experiment_analysis
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
     # completed
@@ -80,17 +96,23 @@ def auto_train(
                 "Consider increasing the time budget for experiment. "
             )
 
-    autotrain_results = {
-        'path_to_best_model': experiment_analysis.best_checkpoint,
-        'trial_id': "_".join(experiment_analysis.best_logdir.split("/")[-1].split("_")[1:])
-    }
-    return autotrain_results
+    experiment_analysis = hyperopt_results.experiment_analysis
+    return AutoTrainResults(experiment_analysis)
 
 
 def create_auto_config(dataset, target, time_limit_s) -> dict:
     default_configs = _create_default_config(dataset, target, time_limit_s)
     model_config = _model_select(default_configs)
     return model_config
+
+
+def _model_select(default_configs):
+    """
+    Performs model selection based on dataset.
+    Note: Current implementation returns tabnet by default. This will be
+        improved in subsequent iterations
+    """
+    return default_configs['tabnet']
 
 
 def _train(
