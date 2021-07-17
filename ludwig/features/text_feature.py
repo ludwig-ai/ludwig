@@ -18,7 +18,6 @@ import logging
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_text as tf_text
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY
@@ -34,7 +33,7 @@ from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 from ludwig.utils.strings_utils import tokenizer_registry
-from ludwig.utils.tf_utils import VocabLookup
+from ludwig.utils.tf_utils import VocabLookup, Tokenize, Pad
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +60,13 @@ class TextFeatureMixin:
     }
 
     preprocessing_schema = {
-        'char_tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
+        'char_tokenizer': {'type': 'string',
+                           'enum': sorted(list(tokenizer_registry.keys()))},
         'char_vocab_file': {'type': 'string'},
         'char_sequence_length_limit': {'type': 'integer', 'minimum': 0},
         'char_most_common': {'type': 'integer', 'minimum': 0},
-        'word_tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
+        'word_tokenizer': {'type': 'string',
+                           'enum': sorted(list(tokenizer_registry.keys()))},
         'pretrained_model_name_or_path': {'type': 'string'},
         'word_vocab_file': {'type': 'string'},
         'word_sequence_length_limit': {'type': 'integer', 'minimum': 0},
@@ -74,7 +75,8 @@ class TextFeatureMixin:
         'unknown_symbol': {'type': 'string'},
         'padding': {'type': 'string', 'enum': ['right', 'left']},
         'lowercase': {'type': 'boolean'},
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'missing_value_strategy': {'type': 'string',
+                                   'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'string'},
         'computed_fill_value': {'type': 'string'},
     }
@@ -258,11 +260,13 @@ class TextFeatureMixin:
         t = Tokenize(dtype=tf.string)(t)
         t = VocabLookup(
             lookup_table=metadata['word_str2idx'],
-            default_value=metadata['word_str2idx'][metadata['word_unk_symbol']],
+            default_value=metadata['word_str2idx'][
+                metadata['word_unk_symbol']],
             dtype=tf.int64,
         )(t)
 
-        t, mask = Pad(metadata['word_max_sequence_length'], metadata['word_pad_idx'], dtype=tf.int64)(t)
+        t, mask = Pad(metadata['word_max_sequence_length'],
+                      metadata['word_pad_idx'], dtype=tf.int64)(t)
         return t
 
 
@@ -507,7 +511,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 else:
                     return np.prod(probs, axis=-1)
 
-
             result[prob_col] = backend.df_engine.map_objects(
                 result[probs_col],
                 compute_prob,
@@ -531,38 +534,3 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def populate_defaults(output_feature):
         set_default_value(output_feature, 'level', 'word')
         SequenceOutputFeature.populate_defaults(output_feature)
-
-
-class Tokenize(tf.keras.layers.Layer):
-    def __init__(self, dtype):
-        super(Tokenize, self).__init__(trainable=False, dtype=dtype)
-
-    def build(self, input_shape):
-        self.tokenizer = tf_text.WhitespaceTokenizer()
-
-    def call(self, t):
-        return self.tokenizer.tokenize(t)
-
-    def get_config(self):
-        config = super(Tokenize, self).get_config()
-        return config
-
-
-class Pad(tf.keras.layers.Layer):
-    def __init__(self, max_sequence_length, pad_idx, dtype):
-        super(Pad, self).__init__(trainable=False, dtype=dtype)
-        self.max_sequence_length = max_sequence_length
-        self.pad_idx = pad_idx
-
-    def build(self, input_shape):
-        pass
-
-    def call(self, t):
-        return tf_text.pad_model_inputs(
-            t, self.max_sequence_length, self.pad_idx
-        )
-
-    def get_config(self):
-        config = super(Pad, self).get_config()
-        config.update({'max_sequence_length': self.max_sequence_length, 'pad_idx': self.pad_idx})
-        return config

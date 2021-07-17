@@ -23,6 +23,8 @@ import warnings
 import zipfile
 
 import tensorflow as tf
+import tensorflow_text as tf_text
+
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 
 _TF_INIT_PARAMS = None
@@ -194,4 +196,39 @@ class VocabLookup(tf.keras.layers.Layer):
     def get_config(self):
         config = super(VocabLookup, self).get_config()
         config.update({'lookup_table': self.lookup_table, 'default_value': self.default_value})
+        return config
+
+
+class Tokenize(tf.keras.layers.Layer):
+    def __init__(self, dtype):
+        super(Tokenize, self).__init__(trainable=False, dtype=dtype)
+
+    def build(self, input_shape):
+        self.tokenizer = tf_text.WhitespaceTokenizer()
+
+    def call(self, t):
+        return self.tokenizer.tokenize(t)
+
+    def get_config(self):
+        config = super(Tokenize, self).get_config()
+        return config
+
+
+class Pad(tf.keras.layers.Layer):
+    def __init__(self, max_sequence_length, pad_idx, dtype):
+        super(Pad, self).__init__(trainable=False, dtype=dtype)
+        self.max_sequence_length = max_sequence_length
+        self.pad_idx = pad_idx
+
+    def build(self, input_shape):
+        pass
+
+    def call(self, t):
+        return tf_text.pad_model_inputs(
+            t, self.max_sequence_length, self.pad_idx
+        )
+
+    def get_config(self):
+        config = super(Pad, self).get_config()
+        config.update({'max_sequence_length': self.max_sequence_length, 'pad_idx': self.pad_idx})
         return config

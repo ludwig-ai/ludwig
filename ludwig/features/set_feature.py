@@ -31,6 +31,7 @@ from ludwig.modules.metric_modules import JaccardMetric
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.tf_utils import VocabLookup, Tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,23 @@ class SetFeatureMixin:
         )
         return proc_df
 
+    @staticmethod
+    def preprocess_inference_graph(t, metadata):
+        if metadata[PREPROCESSING]['lowercase']:
+            t = tf.strings.lower(t)
+
+        # TODO: works only for space tokenizer for now
+        t = Tokenize(dtype=tf.string)(t)
+        t = VocabLookup(
+            lookup_table=metadata['str2idx'],
+            default_value=metadata['str2idx'][UNKNOWN_SYMBOL],
+            dtype=tf.int64,
+        )(t)
+
+        set_vector = tf.zeros((len(metadata['str2idx']),), dtype=tf.int8)
+        set_vector[t] = 1
+        return tf.cast(set_vector, dtype=tf.bool)
+
 
 class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = 'embed'
@@ -138,6 +156,14 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     def get_input_shape(self):
         return len(self.vocab),
+
+    @classmethod
+    def get_inference_input_dtype(cls):
+        return tf.string
+
+    @classmethod
+    def get_inference_input_shape(cls):
+        return ()
 
     @staticmethod
     def update_config_with_metadata(
@@ -328,6 +354,34 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             )
 
         return result
+
+    @staticmethod
+    def postprocess_inference_graph(preds: dict, metadata: dict):
+        lookup_table = {
+            i: v for i, v in enumerate(metadata['idx2str'])
+        }
+        table = VocabLookup(
+            lookup_table=lookup_table,
+            default_value="",
+            dtype=tf.string,
+        )
+
+        p = preds[PREDICTIONS]
+        batch_size = tf.shape(p)[0]
+        ranges = tf.tile(tf.range(0, len(metadata['idx2str'])), batch_size)
+        int_preds = tf.multiply(ranges, p)  # p acts as a mask
+        pred_strings = table(int_preds)
+        pred_strings = tf.strings.reduce_join(pred_strings, axis=-1,
+                                              separator=" ")
+        pred_strings = tf.strings.regex_replace(pred_strings, "\s+", " ")
+        pred_strings = tf.string.strip(pred_strings)
+
+        # TODO: do something similar for the probabilities
+
+        return {
+            PREDICTIONS: pred_strings,
+            PROBABILITIES: preds[PROBABILITIES],
+        }
 
     @staticmethod
     def populate_defaults(output_feature):
