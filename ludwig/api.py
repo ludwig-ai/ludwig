@@ -24,7 +24,10 @@
 import copy
 import logging
 import os
+import subprocess
+import sys
 import tempfile
+from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -47,7 +50,7 @@ from ludwig.features.feature_registries import \
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME,
-                            set_disable_progressbar)
+                            set_disable_progressbar, LUDWIG_VERSION)
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import (Predictor, calculate_overall_stats,
                                      print_evaluation_stats,
@@ -60,9 +63,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      figure_data_format, generate_kfold_splits,
                                      load_json, save_json, load_yaml, load_dataset)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.misc_utils import (get_experiment_description,
-                                     get_file_names, get_from_registry,
-                                     get_output_directory)
+from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
 
@@ -1820,3 +1821,60 @@ def kfold_cross_validate(
     logger.info('completed {:d}-fold cross validation'.format(num_folds))
 
     return kfold_cv_stats, kfold_split_indices
+
+
+def get_experiment_description(
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        random_seed=None
+):
+    description = OrderedDict()
+    description['ludwig_version'] = LUDWIG_VERSION
+    description['command'] = ' '.join(sys.argv)
+
+    try:
+        with open(os.devnull, 'w') as devnull:
+            is_a_git_repo = subprocess.call(['git', 'branch'],
+                                            stderr=subprocess.STDOUT,
+                                            stdout=devnull) == 0
+        if is_a_git_repo:
+            description['commit_hash'] = \
+                subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
+                    'utf-8')[:12]
+    except:
+        pass
+
+    if random_seed is not None:
+        description['random_seed'] = random_seed
+
+    if isinstance(dataset, str):
+        description['dataset'] = dataset
+    if isinstance(training_set, str):
+        description['training_set'] = training_set
+    if isinstance(validation_set, str):
+        description['validation_set'] = validation_set
+    if isinstance(test_set, str):
+        description['test_set'] = test_set
+    if training_set_metadata is not None:
+        description['training_set_metadata'] = training_set_metadata
+
+    # determine data format if not provided or auto
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(
+            dataset, training_set, validation_set, test_set
+        )
+
+    if data_format:
+        description['data_format'] = str(data_format)
+
+    description['config'] = config
+
+    import tensorflow as tf
+    description['tf_version'] = tf.__version__
+
+    return description
