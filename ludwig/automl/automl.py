@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.automl.base_config import _create_default_config
+from ludwig.automl.base_config import _create_default_config, DatasetInfo
 from ludwig.automl.utils import _ray_init
 from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
@@ -57,7 +57,6 @@ def auto_train(
     target: str,
     time_limit_s: Union[int, float],
     output_dir: str = OUTPUT_DIR,
-    config: dict = None,
 ) -> AutoTrainResults:
     """
     Main auto train API that first builds configs for each model type
@@ -73,15 +72,58 @@ def auto_train(
                         as the stopping parameter
     :param output_dir: (str) directory into which to write results, defaults to
                        current working directory.
+
+    # Returns
+    :return: (AutoTrainResults) results containing hyperopt experiments and best model
+    """
+    config = create_auto_config(dataset, target, time_limit_s)
+    return train_with_config(dataset, config, output_dir=output_dir)
+
+
+def create_auto_config(
+        dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
+        target: str,
+        time_limit_s: Union[int, float],
+) -> dict:
+    """
+    Returns an auto-generated Ludwig config with the intent of training
+    the best model on given given dataset / target in the given time
+    limit.
+
+    # Inputs
+    :param dataset: (str) filepath to dataset.
+    :param target: (str) name of target feature
+    :param time_limit_s: (int, float) total time allocated to auto_train. acts
+                                    as the stopping parameter
+
+    # Return
+    :return: (dict) selected model configuration
+    """
+    default_configs = _create_default_config(dataset, target, time_limit_s)
+    model_config = _model_select(default_configs)
+    return model_config
+
+
+def train_with_config(
+    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
+    config: dict,
+    output_dir: str = OUTPUT_DIR,
+) -> AutoTrainResults:
+    """
+    Performs hyperparameter optimization with respect to the given config
+    and selects the best model.
+
+    # Inputs
+    :param dataset: (str) filepath to dataset.
     :param config: (dict) optional Ludwig configuration to use for training, defaults
                    to `create_auto_config`.
+    :param output_dir: (str) directory into which to write results, defaults to
+        current working directory.
 
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     _ray_init()
-    if config is None:
-        config = create_auto_config(dataset, target, time_limit_s)
     model_name = config[COMBINER][TYPE]
     hyperopt_results = _train(config, dataset,
                               output_dir, model_name=model_name)
@@ -98,12 +140,6 @@ def auto_train(
 
     experiment_analysis = hyperopt_results.experiment_analysis
     return AutoTrainResults(experiment_analysis)
-
-
-def create_auto_config(dataset, target, time_limit_s) -> dict:
-    default_configs = _create_default_config(dataset, target, time_limit_s)
-    model_config = _model_select(default_configs)
-    return model_config
 
 
 def _model_select(default_configs):
