@@ -8,7 +8,7 @@ Driver script which:
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
-from typing import Dict, Union, List
+from typing import Dict, Union
 import warnings
 
 import numpy as np
@@ -17,7 +17,6 @@ import pandas as pd
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config, DatasetInfo
 from ludwig.automl.utils import _ray_init
-from ludwig.callbacks import Callback
 from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 
