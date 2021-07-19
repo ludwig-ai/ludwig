@@ -8,7 +8,7 @@ Driver script which:
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
-from typing import Dict, Union
+from typing import Dict, Union, List
 import warnings
 
 import numpy as np
@@ -17,6 +17,7 @@ import pandas as pd
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config, DatasetInfo
 from ludwig.automl.utils import _ray_init
+from ludwig.callbacks import Callback
 from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 
@@ -40,6 +41,10 @@ class AutoTrainResults:
         self._experiment_analysis = experiment_analysis
 
     @property
+    def experiment_analysis(self):
+        return self._experiment_analysis
+
+    @property
     def path_to_best_model(self) -> str:
         return self._experiment_analysis.best_checkpoint
 
@@ -56,7 +61,8 @@ def auto_train(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     target: str,
     time_limit_s: Union[int, float],
-    output_dir: str = OUTPUT_DIR,
+    output_directory: str = OUTPUT_DIR,
+    **kwargs
 ) -> AutoTrainResults:
     """
     Main auto train API that first builds configs for each model type
@@ -70,20 +76,25 @@ def auto_train(
     :param target: (str) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                         as the stopping parameter
-    :param output_dir: (str) directory into which to write results, defaults to
-                       current working directory.
+    :param output_directory: (str) directory into which to write results, defaults to
+                             current working directory.
 
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(dataset, target, time_limit_s)
-    return train_with_config(dataset, config, output_dir=output_dir)
+    return train_with_config(
+        dataset,
+        config,
+        output_directory=output_directory,
+        **kwargs
+    )
 
 
 def create_auto_config(
-        dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
-        target: str,
-        time_limit_s: Union[int, float],
+    dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
+    target: str,
+    time_limit_s: Union[int, float],
 ) -> dict:
     """
     Returns an auto-generated Ludwig config with the intent of training
@@ -107,7 +118,8 @@ def create_auto_config(
 def train_with_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     config: dict,
-    output_dir: str = OUTPUT_DIR,
+    output_directory: str = OUTPUT_DIR,
+    **kwargs,
 ) -> AutoTrainResults:
     """
     Performs hyperparameter optimization with respect to the given config
@@ -117,7 +129,7 @@ def train_with_config(
     :param dataset: (str) filepath to dataset.
     :param config: (dict) optional Ludwig configuration to use for training, defaults
                    to `create_auto_config`.
-    :param output_dir: (str) directory into which to write results, defaults to
+    :param output_directory: (str) directory into which to write results, defaults to
         current working directory.
 
     # Returns
@@ -125,8 +137,13 @@ def train_with_config(
     """
     _ray_init()
     model_name = config[COMBINER][TYPE]
-    hyperopt_results = _train(config, dataset,
-                              output_dir, model_name=model_name)
+    hyperopt_results = _train(
+        config,
+        dataset,
+        output_directory=output_directory,
+        model_name=model_name,
+        **kwargs
+    )
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
     # completed
@@ -154,13 +171,16 @@ def _model_select(default_configs):
 def _train(
     config: Dict,
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
-    output_dir: str,
-    model_name: str
+    output_directory: str,
+    model_name: str,
+    **kwargs
 ):
     hyperopt_results = hyperopt(
         config,
         dataset=dataset,
-        output_directory=output_dir,
-        model_name=model_name
+        output_directory=output_directory,
+        model_name=model_name,
+        backend='local',
+        **kwargs
     )
     return hyperopt_results

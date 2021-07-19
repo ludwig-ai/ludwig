@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import List, Union
 
 import pandas as pd
+from ludwig.automl.data_source import DataSource, DataframeSource
 from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
                                  get_available_resources, _ray_init)
 from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE
@@ -146,18 +147,28 @@ def get_dataset_info(dataset: str) -> DatasetInfo:
 
     """
     dataframe = load_dataset(dataset)
-    row_count = len(dataframe)
+    source = DataframeSource(dataframe)
+    return get_dataset_info_from_source(source)
+
+
+def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
+    row_count = len(source)
     fields = []
-    for field in dataframe.columns:
-        dtype = dataframe[field].dtype.name
-        distinct_values = len(dataframe[field].unique())
-        nonnull_values = len(dataframe[field].notnull())
+    for field in source.columns:
+        dtype = source.get_dtype(field)
+        distinct_values = source.get_distinct_values(field)
+        nonnull_values = source.get_nonnull_values(field)
         avg_words = None
-        if dtype in ['str', 'string', 'object']:
-            avg_words = avg_num_tokens(dataframe[field])
+        if source.is_string_type(dtype):
+            avg_words = source.get_avg_num_tokens(field)
         fields.append(
-            FieldInfo(name=field, dtype=dtype,
-                      distinct_values=distinct_values, nonnull_values=nonnull_values, avg_words=avg_words)
+            FieldInfo(
+                name=field,
+                dtype=dtype,
+                distinct_values=distinct_values,
+                nonnull_values=nonnull_values,
+                avg_words=avg_words
+            )
         )
     return DatasetInfo(fields=fields, row_count=row_count)
 
