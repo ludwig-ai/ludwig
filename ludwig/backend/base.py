@@ -17,6 +17,9 @@
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+import os
+import re
+import logging
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
@@ -24,7 +27,9 @@ from ludwig.data.dataset import create_dataset_manager
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.tf_utils import initialize_tensorflow
+from ludwig.utils.data_utils import save_csv
 
+logger = logging.getLogger(__name__)
 
 class Backend(ABC):
     def __init__(self, cache_dir=None, cache_format=None):
@@ -129,3 +134,57 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
 
     def initialize(self):
         pass
+
+    def export_predictions(
+            self,
+            postprocessed_output,
+            output_directory
+    ):
+        # LocalBackend save predictions in csv format
+        # for each column in the postprocessed_output dataframe save as a csv
+
+        # setup to parse column names to form csv files
+        # column names are one of the following forms
+        #   <feature_name>_predictions
+        #   <feature_name>_probabilities
+        #   <feature_name>_probability
+        #   <feature_name>_probabilities_<token_text>
+        pattern = re.compile(
+            r"""^(?P<feature_name>.*?)       # output feature name
+            (?P<pred_type>\(_probabilities_|_predictions|_probabilities|_probability\)?)  #prediction type
+            (?P<token_text>\($|.*$\)?)""",
+            # if present, text value seq or category
+            re.VERBOSE
+        )
+        for c in postprocessed_output.columns:
+            # parse column name
+            match = pattern.match(c)
+            try:
+                if len(match.group('token_text')) == 0:
+                    # create file name w/o token text suffix
+                    csv_filename = os.path.join(
+                        output_directory,
+                        '{}_{}.csv'.format(
+                            match.group('feature_name'),
+                            match.group('pred_type').strip('_')
+                        )
+                    )
+                else:
+                    # create file name w/ token text suffix
+                    csv_filename = os.path.join(
+                        output_directory,
+                        '{}_{}_{}.csv'.format(
+                            match.group('feature_name'),
+                            match.group('pred_type').strip('_'),
+                            match.group('token_text').strip('_')
+                        )
+                    )
+
+                # save csv file with prediction values
+                save_csv(csv_filename, postprocessed_output[c].to_numpy())
+            except AttributeError:
+                logger.error(
+                    f'Unable to parse column name "{c}" to generate csv '
+                    'prediction file.'
+                )
+                raise

@@ -17,6 +17,7 @@
 
 import logging
 from collections import defaultdict, OrderedDict
+import os
 
 import dask
 import ray
@@ -32,7 +33,9 @@ from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.misc_utils import sum_dicts
-from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
+from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, \
+    load_weights_from_buffer
+from ludwig.utils.data_utils import flatten_df, save_json
 
 
 logger = logging.getLogger(__name__)
@@ -256,5 +259,23 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def check_lazy_load_supported(self, feature):
         if not feature[PREPROCESSING]['in_memory']:
-            raise ValueError(f'RayBackend does not support lazy loading of data files at train time. '
-                             f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
+            raise ValueError(
+                f'RayBackend does not support lazy loading of data files at train time. '
+                f'Set preprocessing config `in_memory: True` for feature {feature[NAME]}')
+
+    def export_predictions(
+            self,
+            postprocessed_output,
+            output_directory
+    ):
+        # Non-LocalBackend save predictions in parquet format
+        postprocessed_output, column_shapes = flatten_df(
+            postprocessed_output, self
+        )
+        postprocessed_output.to_parquet(
+            os.path.join(output_directory, 'predictions.parquet')
+        )
+        save_json(
+            os.path.join(output_directory, 'predictions.shapes.json'),
+            column_shapes
+        )

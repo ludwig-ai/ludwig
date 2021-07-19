@@ -335,68 +335,70 @@ def save_prediction_outputs(
         output_directory,
         backend,
 ):
-    if isinstance(backend, bck.LocalBackend):
-        # LocalBackend save predictions in csv format
-        # for each column in the postprocessed_output dataframe save as a csv
-
-        # setup to parse column names to form csv files
-        # column names are one of the following forms
-        #   <feature_name>_predictions
-        #   <feature_name>_probabilities
-        #   <feature_name>_probability
-        #   <feature_name>_probabilities_<token_text>
-        pattern = re.compile(
-            r"""^(?P<feature_name>.*?)       # output feature name
-            (?P<pred_type>\(_probabilities_|_predictions|_probabilities|_probability\)?)  #prediction type
-            (?P<token_text>\($|.*$\)?)""",
-            # if present, text value seq or category
-            re.VERBOSE
-        )
-        for c in postprocessed_output.columns:
-            # parse column name
-            match = pattern.match(c)
-            try:
-                if len(match.group('token_text')) == 0:
-                    # create file name w/o token text suffix
-                    csv_filename = os.path.join(
-                        output_directory,
-                        '{}_{}.csv'.format(
-                            match.group('feature_name'),
-                            match.group('pred_type').strip('_')
-                        )
-                    )
-                else:
-                    # create file name w/ token text suffix
-                    csv_filename = os.path.join(
-                        output_directory,
-                        '{}_{}_{}.csv'.format(
-                            match.group('feature_name'),
-                            match.group('pred_type').strip('_'),
-                            match.group('token_text').strip('_')
-                        )
-                    )
-
-                # save csv file with prediction values
-                save_csv(csv_filename, postprocessed_output[c].to_numpy())
-            except AttributeError:
-                logger.error(
-                    f'Unable to parse column name "{c}" to generate csv '
-                    'prediction file.'
-                )
-                raise
-
-    else:
-        # Non-LocalBackend save predictions in parquet format
-        postprocessed_output, column_shapes = flatten_df(
-            postprocessed_output, backend
-        )
-        postprocessed_output.to_parquet(
-            os.path.join(output_directory, 'predictions.parquet')
-        )
-        save_json(
-            os.path.join(output_directory, 'predictions.shapes.json'),
-            column_shapes
-        )
+    backend.export_predictions(postprocessed_output, output_directory)
+    # todo: clean up commented code when done with PR
+    # if isinstance(backend, bck.LocalBackend):
+    #     # LocalBackend save predictions in csv format
+    #     # for each column in the postprocessed_output dataframe save as a csv
+    #
+    #     # setup to parse column names to form csv files
+    #     # column names are one of the following forms
+    #     #   <feature_name>_predictions
+    #     #   <feature_name>_probabilities
+    #     #   <feature_name>_probability
+    #     #   <feature_name>_probabilities_<token_text>
+    #     pattern = re.compile(
+    #         r"""^(?P<feature_name>.*?)       # output feature name
+    #         (?P<pred_type>\(_probabilities_|_predictions|_probabilities|_probability\)?)  #prediction type
+    #         (?P<token_text>\($|.*$\)?)""",
+    #         # if present, text value seq or category
+    #         re.VERBOSE
+    #     )
+    #     for c in postprocessed_output.columns:
+    #         # parse column name
+    #         match = pattern.match(c)
+    #         try:
+    #             if len(match.group('token_text')) == 0:
+    #                 # create file name w/o token text suffix
+    #                 csv_filename = os.path.join(
+    #                     output_directory,
+    #                     '{}_{}.csv'.format(
+    #                         match.group('feature_name'),
+    #                         match.group('pred_type').strip('_')
+    #                     )
+    #                 )
+    #             else:
+    #                 # create file name w/ token text suffix
+    #                 csv_filename = os.path.join(
+    #                     output_directory,
+    #                     '{}_{}_{}.csv'.format(
+    #                         match.group('feature_name'),
+    #                         match.group('pred_type').strip('_'),
+    #                         match.group('token_text').strip('_')
+    #                     )
+    #                 )
+    #
+    #             # save csv file with prediction values
+    #             save_csv(csv_filename, postprocessed_output[c].to_numpy())
+    #         except AttributeError:
+    #             logger.error(
+    #                 f'Unable to parse column name "{c}" to generate csv '
+    #                 'prediction file.'
+    #             )
+    #             raise
+    #
+    # else:
+    #     # Non-LocalBackend save predictions in parquet format
+    #     postprocessed_output, column_shapes = flatten_df(
+    #         postprocessed_output, backend
+    #     )
+    #     postprocessed_output.to_parquet(
+    #         os.path.join(output_directory, 'predictions.parquet')
+    #     )
+    #     save_json(
+    #         os.path.join(output_directory, 'predictions.shapes.json'),
+    #         column_shapes
+    #     )
 
 
 def save_evaluation_stats(test_stats, output_directory):
