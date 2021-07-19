@@ -36,7 +36,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
 class AllstateClaimsSeverity(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMixin, BaseDataset):
     """Allstate Claims Severity
     
-    https://www.kaggle.com/c/allstate-claims-severity/data
+    https://www.kaggle.com/c/allstate-claims-severity/overview
     """
 
     def __init__(
@@ -48,5 +48,4 @@ class AllstateClaimsSeverity(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadM
         self.kaggle_username = kaggle_username
         self.kaggle_key = kaggle_key
         self.is_kaggle_competition = True
-        super().__init__(dataset_name='allstate_claim_severity',
-                         cache_dir=cache_dir)
+        super().__init__(dataset_name='allstate_claim_severity', cache_dir=cache_dir)

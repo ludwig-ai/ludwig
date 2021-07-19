@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
@@ -47,6 +48,5 @@ class PortoSeguroSafeDriver(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMi
         self.kaggle_username = kaggle_username
         self.kaggle_key = kaggle_key
         self.is_kaggle_competition = True
-        super().__init__(dataset_name='porto_seguro_safe_driver',
-                         cache_dir=cache_dir)
-
+        super().__init__(dataset_name='porto_seguro_safe_driver', cache_dir=cache_dir)
+        
