@@ -6,8 +6,8 @@ from ludwig.automl.utils import avg_num_tokens
 
 
 class DataSource(ABC):
-    @abstractmethod
     @property
+    @abstractmethod
     def columns(self) -> List[str]:
         raise NotImplementedError()
 
