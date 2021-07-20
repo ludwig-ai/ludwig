@@ -20,76 +20,15 @@ import hashlib
 import json
 import os
 import random
-import subprocess
 import subprocess as sp
-import sys
 from collections import OrderedDict
 from collections.abc import Mapping
 from typing import Union
 
 import numpy
 
-import ludwig.globals
 from ludwig.constants import PROC_COLUMN
-from ludwig.utils.data_utils import figure_data_format
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
-
-
-def get_experiment_description(
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        random_seed=None
-):
-    description = OrderedDict()
-    description['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
-    description['command'] = ' '.join(sys.argv)
-
-    try:
-        with open(os.devnull, 'w') as devnull:
-            is_a_git_repo = subprocess.call(['git', 'branch'],
-                                            stderr=subprocess.STDOUT,
-                                            stdout=devnull) == 0
-        if is_a_git_repo:
-            description['commit_hash'] = \
-                subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
-                    'utf-8')[:12]
-    except:
-        pass
-
-    if random_seed is not None:
-        description['random_seed'] = random_seed
-
-    if isinstance(dataset, str):
-        description['dataset'] = dataset
-    if isinstance(training_set, str):
-        description['training_set'] = training_set
-    if isinstance(validation_set, str):
-        description['validation_set'] = validation_set
-    if isinstance(test_set, str):
-        description['test_set'] = test_set
-    if training_set_metadata is not None:
-        description['training_set_metadata'] = training_set_metadata
-
-    # determine data format if not provided or auto
-    if not data_format or data_format == 'auto':
-        data_format = figure_data_format(
-            dataset, training_set, validation_set, test_set
-        )
-
-    if data_format:
-        description['data_format'] = str(data_format)
-
-    description['config'] = config
-
-    import tensorflow as tf
-    description['tf_version'] = tf.__version__
-
-    return description
 
 
 def set_random_seed(random_seed):

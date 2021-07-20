@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 from dataclasses_json import LetterCase, dataclass_json
@@ -11,6 +12,9 @@ except ImportError:
         'In order to use auto_train please run '
         'pip install ludwig[ray]'
     )
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
@@ -43,3 +47,14 @@ def get_available_resources():
         'cpu': cpus
     }
     return resources
+
+
+def _ray_init():
+    if ray.is_initialized():
+        return
+
+    try:
+        ray.init('auto', ignore_reinit_error=True)
+    except ConnectionError:
+        logger.info('Initializing new Ray cluster...')
+        ray.init()
