@@ -180,7 +180,7 @@ def get_features_config(
     target_name: str = None,
 ) -> dict:
     """
-    Constructs FeildInfo objects for each feature in dataset. These objects
+    Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
 
     # Inputs
@@ -228,7 +228,7 @@ def get_field_metadata(
     Computes metadata for each field in dataset
 
     # Inputs
-    :param dataset: (List[FieldInfo]) FieldInfo objects for all fields in dataset
+    :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
     :param row_count: (int) total number of entries in original dataset
     :param target_name (str) name of target feature
 
@@ -254,7 +254,7 @@ def get_field_metadata(
             }
         )
 
-    # Count of number of initial nonptext input features in the config, -1 for output
+    # Count of number of initial non-text input features in the config, -1 for output
     input_count = (
         sum(
             not meta["excluded"]
