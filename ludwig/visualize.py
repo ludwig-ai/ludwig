@@ -34,7 +34,7 @@ from ludwig.constants import *
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_from_file, load_json, load_array, \
-    to_numpy_dataset, unflatten_df, replace_file_extension
+    to_numpy_dataset, unflatten_df, replace_file_extension, PARQUET_FORMATS
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.data_utils import CACHEABLE_FORMATS, \
     figure_data_format_dataset, external_data_reader_registry
@@ -351,10 +351,22 @@ def compare_classifiers_performance_from_prob_cli(
         split_file=split_file
     )
 
-    col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
-    probabilities_per_model = _get_cols_from_predictions(
-        probabilities, [col], metadata
-    )
+    # extract predictions
+    # assumes all files are of the same type: csv or parquet
+    if isinstance(probabilities, list):
+        pred_file_extension = os.path.splitext(probabilities[0])[1][1:]
+    else:
+        pred_file_extension = os.path.splitext(probabilities)[1][1:]
+
+    if pred_file_extension in PARQUET_FORMATS:
+        col = f'{output_feature_name}{_PROBABILITIES_SUFFIX}'
+        probabilities_per_model = _get_cols_from_predictions(
+            probabilities, [col], metadata
+        )
+    else:
+        probabilities_per_model = load_data_for_viz(
+            'load_from_file', probabilities, dtype=float
+        )
 
     compare_classifiers_performance_from_prob(
         probabilities_per_model,
