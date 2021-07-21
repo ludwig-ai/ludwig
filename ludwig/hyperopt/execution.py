@@ -74,9 +74,9 @@ class HyperoptExecutor(ABC):
     def get_metric_score(self, train_stats, eval_stats) -> float:
         if (train_stats is not None and
                 self._has_metric(train_stats, self.split) and
-                self._has_metric(train_stats, VALIDATION)):
-            logger.info("Returning metric score from training statistics")
-            return self.get_metric_score_from_train_stats(train_stats)
+                self._has_metric(train_stats, TEST)):
+            logger.info("Returning metric score from training (test) statistics")
+            return self.get_metric_score_from_train_stats(train_stats, TEST, TEST)
         elif self._has_eval_metric(eval_stats):
             logger.info("Returning metric score from eval statistics. "
                         "If skip_save_model is True, eval statistics "
@@ -84,9 +84,14 @@ class HyperoptExecutor(ABC):
                         "rather than the model at the epoch with "
                         "best validation performance")
             return self.get_metric_score_from_eval_stats(eval_stats)
+        elif (train_stats is not None and
+                self._has_metric(train_stats, self.split) and
+                self._has_metric(train_stats, VALIDATION)):
+            logger.info("Returning metric score from training (validation) statistics")
+            return self.get_metric_score_from_train_stats(train_stats)
         elif self._has_metric(train_stats, TRAINING):
             logger.info("Returning metric score from training split statistics, "
-                        "as no validation / eval sets were given")
+                        "as no test / validation / eval sets were given")
             return self.get_metric_score_from_train_stats(train_stats, TRAINING, TRAINING)
         else:
             raise RuntimeError(

@@ -1,0 +1,7 @@
+version: 1.0
+competition: otto-group-product-classification-challenge
+archive_filename: otto-group-product-classification-challenge.zip
+split_filenames:
+  train_file: train.csv
+csv_filename: train.csv
+download_file_type: csv

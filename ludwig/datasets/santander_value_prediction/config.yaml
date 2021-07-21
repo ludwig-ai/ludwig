@@ -1,0 +1,8 @@
+version: 1.0
+competition: santander-value-prediction-challenge
+archive_filename: santander-value-prediction-challenge.zip
+split_filenames:
+  train_file: train.csv
+  #test_file: test.csv
+download_file_type: csv
+csv_filename: train.csv

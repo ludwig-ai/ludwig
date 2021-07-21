@@ -1,0 +1,7 @@
+version: 1.0
+competition: allstate-claims-severity
+archive_filename: allstate-claims-severity.zip
+split_filenames:
+  train_file: train.csv
+csv_filename: train.csv
+download_file_type: csv

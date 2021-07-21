@@ -31,6 +31,11 @@ def get_fs_and_path(url):
     return fs, path
 
 
+def is_http(urlpath):
+    protocol, _ = split_protocol(urlpath)
+    return protocol == "http" or protocol == "https"
+
+
 def find_non_existing_dir_by_adding_suffix(directory_name):
     fs, _ = get_fs_and_path(directory_name)
     suffix = 0
@@ -71,7 +76,7 @@ def to_url(path):
 @contextlib.contextmanager
 def upload_output_directory(url):
     if url is None:
-        yield None
+        yield None, None
         return
 
     protocol, _ = split_protocol(url)
@@ -83,14 +88,17 @@ def upload_output_directory(url):
             if path_exists(url):
                 fs.get(url, tmpdir + '/', recursive=True)
 
+            def put_fn():
+                fs.put(tmpdir, remote_path, recursive=True)
+
             # Write to temp directory locally
-            yield tmpdir
+            yield tmpdir, put_fn
 
             # Upload to remote when finished
-            fs.put(tmpdir, remote_path, recursive=True)
+            put_fn()
     else:
         # Just use the output directory directly if using a local filesystem
-        yield url
+        yield url, None
 
 
 @contextlib.contextmanager
