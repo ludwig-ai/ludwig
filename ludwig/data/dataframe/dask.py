@@ -48,11 +48,18 @@ class DaskEngine(DataFrameEngine):
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
 
-    def empty_df_like(self, df):
+    def _empty_df_like(self, df):
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
         return df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
+
+    def df_like(self, df, proc_cols):
+        # TODO: determine if following is resulting in fragmented DataFrame
+        dataset = _empty_df_like(dataset_df)
+        for k, v in proc_cols.items():
+            dataset[k] = v
+        return dataset
 
     def parallelize(self, data):
         return data.repartition(self.parallelism)
