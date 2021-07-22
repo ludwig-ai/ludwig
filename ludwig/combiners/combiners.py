@@ -18,7 +18,7 @@ import logging
 from typing import List
 
 import tensorflow as tf
-from keras.layers import LayerNormalization
+from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import concatenate
 

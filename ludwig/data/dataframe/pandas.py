@@ -30,8 +30,9 @@ class PandasEngine(DataFrameEngine):
     def __init__(self, **kwargs):
         super().__init__()
 
-    def empty_df_like(self, df):
-        return pd.DataFrame(index=df.index)
+    def df_like(self, df, proc_cols):
+        # df argument unused for pandas, which can instantiate df directly
+        return pd.DataFrame(proc_cols)
 
     def parallelize(self, data):
         return data
