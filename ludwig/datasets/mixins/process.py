@@ -33,7 +33,8 @@ class IdentityProcessMixin:
         protocol, _ = split_protocol(self.process_downloaded_dataset)
         if protocol is not None:
             fs = fsspec.filesystem(protocol)
-            fs.put(self.raw_dataset_path, self.process_downloaded_dataset)
+            fs.copy(self.raw_dataset_path,
+                    self.process_downloaded_dataset, recursive=True)
         else:
             os.rename(self.raw_dataset_path, self.processed_dataset_path)
 

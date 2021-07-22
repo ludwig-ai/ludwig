@@ -75,8 +75,7 @@ class ZipDownloadMixin:
             protocol, _ = split_protocol(self.raw_dataset_path)
             if protocol is not None:
                 fs = fsspec.filesystem(protocol)
-                makedirs(self.raw_dataset_path, exist_ok=True)
-                fs.put(tmpdir, self.raw_dataset_path)
+                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
             else:
                 shutil.copytree(tmpdir, self.raw_dataset_path)
 
@@ -124,9 +123,8 @@ class TarDownloadMixin:
 
             protocol, _ = split_protocol(self.raw_dataset_path)
             if protocol is not None:
-                makedirs(self.raw_dataset_path, exist_ok=True)
                 fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path)
+                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
             else:
                 shutil.copytree(tmpdir, self.raw_dataset_path)
 
@@ -167,9 +165,8 @@ class GZipDownloadMixin:
 
             protocol, _ = split_protocol(self.raw_dataset_path)
             if protocol is not None:
-                makedirs(self.raw_dataset_path, exist_ok=True)
                 fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path)
+                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
             else:
                 shutil.copytree(tmpdir, self.raw_dataset_path)
 
@@ -198,9 +195,8 @@ class UncompressedFileDownloadMixin:
 
             protocol, _ = split_protocol(self.raw_dataset_path)
             if protocol is not None:
-                makedirs(self.raw_dataset_path, exist_ok=True)
                 fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path)
+                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
             else:
                 shutil.copytree(tmpdir, self.raw_dataset_path)
 
