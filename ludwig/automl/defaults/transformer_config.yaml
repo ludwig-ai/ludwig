@@ -1,3 +1,7 @@
+preprocessing:
+  image:
+    infer_image_dimensions: True
+
 combiner:
   type: transformer
   num_layers: 6
