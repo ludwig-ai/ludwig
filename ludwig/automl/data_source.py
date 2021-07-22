@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from ludwig.automl.utils import avg_num_tokens
+from ludwig.utils.image_utils import is_image
 
 
 class DataSource(ABC):
@@ -52,6 +53,10 @@ class DataframeSource(DataSource):
 
     def get_nonnull_values(self, column) -> int:
         return len(self.df[column].notnull())
+
+    def get_image_values(self, column, sample_size=10) -> int:
+        n = min(sample_size, len(self.df[column]))
+        return sum(is_image(None, x) for x in self.df[column][:n])
 
     def get_avg_num_tokens(self, column) -> int:
         return avg_num_tokens(self.df[column])

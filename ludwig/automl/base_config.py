@@ -22,7 +22,7 @@ import pandas as pd
 from ludwig.automl.data_source import DataSource, DataframeSource
 from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
                                  get_available_resources, _ray_init)
-from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE
+from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE, IMAGE
 from ludwig.utils.data_utils import load_yaml, load_dataset
 
 try:
@@ -158,6 +158,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         dtype = source.get_dtype(field)
         distinct_values = source.get_distinct_values(field)
         nonnull_values = source.get_nonnull_values(field)
+        image_values = source.get_image_values(field)
         avg_words = None
         if source.is_string_type(dtype):
             avg_words = source.get_avg_num_tokens(field)
@@ -167,6 +168,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 dtype=dtype,
                 distinct_values=distinct_values,
                 nonnull_values=nonnull_values,
+                image_values=image_values,
                 avg_words=avg_words
             )
         )
@@ -294,6 +296,9 @@ def infer_type(
         missing_value_percent == 0 or field.name == target_name
     ):
         return BINARY
+
+    if field.image_values >= 3:
+        return IMAGE
 
     if distinct_values < 20:
         # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
