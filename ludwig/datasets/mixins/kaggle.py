@@ -1,5 +1,10 @@
 import os
+import fsspec
+import shutil
+from fsspec.core import split_protocol
+from ludwig.utils.fs_utils import makedirs
 from contextlib import contextmanager
+import tempfile
 from zipfile import ZipFile
 
 
@@ -33,19 +38,28 @@ class KaggleDownloadMixin:
             # Call authenticate explicitly to pick up new credentials if necessary
             api = create_kaggle_client()
             api.authenticate()
-        os.makedirs(self.raw_temp_path, exist_ok=True)
 
-        if self.is_kaggle_competition:
-            download_func = api.competition_download_files
-        else:
-            download_func = api.dataset_download_files
-        # Download all files for a competition/dataset
-        download_func(self.competition_name, path=self.raw_temp_path)
+        #os.makedirs(self.raw_temp_path, exist_ok=True)
 
-        archive_zip = os.path.join(self.raw_temp_path, self.archive_filename)
-        with ZipFile(archive_zip, 'r') as z:
-            z.extractall(self.raw_temp_path)
-        os.rename(self.raw_temp_path, self.raw_dataset_path)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            if self.is_kaggle_competition:
+                download_func = api.competition_download_files
+            else:
+                download_func = api.dataset_download_files
+            # Download all files for a competition/dataset
+            download_func(self.competition_name, path=tmpdir)
+
+            archive_zip = os.path.join(tmpdir, self.archive_filename)
+            with ZipFile(archive_zip, 'r') as z:
+                z.extractall(tmpdir)
+
+            protocol, _ = split_protocol(self.raw_dataset_path)
+            if protocol is not None:
+                makedirs(self.raw_dataset_path, exist_ok=True)
+                fs = fsspec.filesystem(protocol)
+                fs.put(tmpdir, self.raw_dataset_path)
+            else:
+                shutil.copytree(tmpdir, self.raw_dataset_path)
 
     @contextmanager
     def update_env(self, **kwargs):

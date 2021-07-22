@@ -16,7 +16,11 @@
 # ==============================================================================
 import os
 
+import fsspec
+import h5py
 import pandas as pd
+from fsspec.core import split_protocol
+from ludwig.utils.fs_utils import makedirs
 
 
 class IdentityProcessMixin:
@@ -26,7 +30,12 @@ class IdentityProcessMixin:
     processed_dataset_path: str
 
     def process_downloaded_dataset(self):
-        os.rename(self.raw_dataset_path, self.processed_dataset_path)
+        protocol, _ = split_protocol(self.process_downloaded_dataset)
+        if protocol is not None:
+            fs = fsspec.filesystem(protocol)
+            fs.put(self.raw_dataset_path, self.process_downloaded_dataset)
+        else:
+            os.rename(self.raw_dataset_path, self.processed_dataset_path)
 
 
 class MultifileJoinProcessMixin:
@@ -45,7 +54,7 @@ class MultifileJoinProcessMixin:
                 os.path.join(self.raw_dataset_path, filename), lines=True)
         elif filetype == 'tsv':
             file_df = pd.read_table(
-                os.path.join(self.raw_dataset_path, filename))        
+                os.path.join(self.raw_dataset_path, filename))
         elif filetype == 'csv' or filetype == 'data':
             file_df = pd.read_csv(
                 os.path.join(self.raw_dataset_path, filename), header=header)
@@ -74,7 +83,8 @@ class MultifileJoinProcessMixin:
             all_files.append(file_df)
 
         concat_df = pd.concat(all_files, ignore_index=True)
-        os.makedirs(self.processed_dataset_path, exist_ok=True)
+        # os.makedirs(self.processed_dataset_path, exist_ok=True)
+        makedirs(self.process_downloaded_dataset, exist_ok=True)
         concat_df.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False)
