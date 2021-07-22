@@ -55,8 +55,7 @@ class DataframeSource(DataSource):
         return len(self.df[column].notnull())
 
     def get_image_values(self, column, sample_size=10) -> int:
-        n = min(sample_size, len(self.df[column]))
-        return sum(is_image(None, x) for x in self.df[column][:n])
+        return sum(is_image(None, x) for x in self.df[column].head(sample_size))
 
     def get_avg_num_tokens(self, column) -> int:
         return avg_num_tokens(self.df[column])

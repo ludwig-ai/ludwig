@@ -19,10 +19,10 @@ from dataclasses import dataclass
 from typing import List, Union
 
 import pandas as pd
+
 from ludwig.automl.data_source import DataSource, DataframeSource
-from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
-                                 get_available_resources, _ray_init)
-from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE, IMAGE
+from ludwig.automl.utils import (FieldInfo, get_available_resources, _ray_init)
+from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
 from ludwig.utils.data_utils import load_yaml, load_dataset
 
 try:
