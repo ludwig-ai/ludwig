@@ -20,7 +20,7 @@ from abc import ABC, abstractmethod
 
 class DataFrameEngine(ABC):
     @abstractmethod
-    def empty_df_like(self, df):
+    def df_like(self, df, proc_cols):
         raise NotImplementedError()
 
     @abstractmethod
