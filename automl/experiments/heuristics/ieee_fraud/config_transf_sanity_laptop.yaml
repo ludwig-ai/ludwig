@@ -1,0 +1,880 @@
+output_features:
+  - name: isFraud
+    type: binary
+input_features:
+  - name: TransactionDT
+    type: numerical
+  - name: TransactionAmt
+    type: numerical
+  - name: ProductCD
+    type: category
+  - name: card1
+    type: numerical
+  - name: card2
+    type: numerical
+  - name: card3
+    type: numerical
+  - name: card4
+    type: category
+  - name: card5
+    type: numerical
+  - name: card6
+    type: category
+  - name: addr1
+    type: numerical
+  - name: addr2
+    type: numerical
+  - name: dist1
+    type: numerical
+  - name: dist2
+    type: numerical
+  - name: P_emaildomain
+    type: category
+  - name: R_emaildomain
+    type: numerical
+  - name: C1
+    type: numerical
+  - name: C2
+    type: numerical
+  - name: C3
+    type: numerical
+  - name: C4
+    type: numerical
+  - name: C5
+    type: numerical
+  - name: C6
+    type: numerical
+  - name: C7
+    type: numerical
+  - name: C8
+    type: numerical
+  - name: C9
+    type: numerical
+  - name: C10
+    type: numerical
+  - name: C11
+    type: numerical
+  - name: C12
+    type: numerical
+  - name: C13
+    type: numerical
+  - name: C14
+    type: numerical
+  - name: D1
+    type: numerical
+  - name: D2
+    type: numerical
+  - name: D3
+    type: numerical
+  - name: D4
+    type: numerical
+  - name: D5
+    type: numerical
+  - name: D6
+    type: numerical
+  - name: D7
+    type: numerical
+  - name: D8
+    type: numerical
+  - name: D9
+    type: numerical
+  - name: D10
+    type: numerical
+  - name: D11
+    type: numerical
+  - name: D12
+    type: numerical
+  - name: D13
+    type: numerical
+  - name: D14
+    type: numerical
+  - name: D15
+    type: numerical
+  - name: M1
+    type: category
+  - name: M2
+    type: category
+  - name: M3
+    type: category
+  - name: M4
+    type: category
+  - name: M5
+    type: category
+  - name: M6
+    type: category
+  - name: M7
+    type: category
+  - name: M8
+    type: category
+  - name: M9
+    type: category
+  - name: V1
+    type: numerical
+  - name: V2
+    type: numerical
+  - name: V3
+    type: numerical
+  - name: V4
+    type: numerical
+  - name: V5
+    type: numerical
+  - name: V6
+    type: numerical
+  - name: V7
+    type: numerical
+  - name: V8
+    type: numerical
+  - name: V9
+    type: numerical
+  - name: V10
+    type: numerical
+  - name: V11
+    type: numerical
+  - name: V12
+    type: numerical
+  - name: V13
+    type: numerical
+  - name: V14
+    type: numerical
+  - name: V15
+    type: numerical
+  - name: V16
+    type: numerical
+  - name: V17
+    type: numerical
+  - name: V18
+    type: numerical
+  - name: V19
+    type: numerical
+  - name: V20
+    type: numerical
+  - name: V21
+    type: numerical
+  - name: V22
+    type: numerical
+  - name: V23
+    type: numerical
+  - name: V24
+    type: numerical
+  - name: V25
+    type: numerical
+  - name: V26
+    type: numerical
+  - name: V27
+    type: numerical
+  - name: V28
+    type: numerical
+  - name: V29
+    type: numerical
+  - name: V30
+    type: numerical
+  - name: V31
+    type: numerical
+  - name: V32
+    type: numerical
+  - name: V33
+    type: numerical
+  - name: V34
+    type: numerical
+  - name: V35
+    type: numerical
+  - name: V36
+    type: numerical
+  - name: V37
+    type: numerical
+  - name: V38
+    type: numerical
+  - name: V39
+    type: numerical
+  - name: V40
+    type: numerical
+  - name: V41
+    type: numerical
+  - name: V42
+    type: numerical
+  - name: V43
+    type: numerical
+  - name: V44
+    type: numerical
+  - name: V45
+    type: numerical
+  - name: V46
+    type: numerical
+  - name: V47
+    type: numerical
+  - name: V48
+    type: numerical
+  - name: V49
+    type: numerical
+  - name: V50
+    type: numerical
+  - name: V51
+    type: numerical
+  - name: V52
+    type: numerical
+  - name: V53
+    type: numerical
+  - name: V54
+    type: numerical
+  - name: V55
+    type: numerical
+  - name: V56
+    type: numerical
+  - name: V57
+    type: numerical
+  - name: V58
+    type: numerical
+  - name: V59
+    type: numerical
+  - name: V60
+    type: numerical
+  - name: V61
+    type: numerical
+  - name: V62
+    type: numerical
+  - name: V63
+    type: numerical
+  - name: V64
+    type: numerical
+  - name: V65
+    type: numerical
+  - name: V66
+    type: numerical
+  - name: V67
+    type: numerical
+  - name: V68
+    type: numerical
+  - name: V69
+    type: numerical
+  - name: V70
+    type: numerical
+  - name: V71
+    type: numerical
+  - name: V72
+    type: numerical
+  - name: V73
+    type: numerical
+  - name: V74
+    type: numerical
+  - name: V75
+    type: numerical
+  - name: V76
+    type: numerical
+  - name: V77
+    type: numerical
+  - name: V78
+    type: numerical
+  - name: V79
+    type: numerical
+  - name: V80
+    type: numerical
+  - name: V81
+    type: numerical
+  - name: V82
+    type: numerical
+  - name: V83
+    type: numerical
+  - name: V84
+    type: numerical
+  - name: V85
+    type: numerical
+  - name: V86
+    type: numerical
+  - name: V87
+    type: numerical
+  - name: V88
+    type: numerical
+  - name: V89
+    type: numerical
+  - name: V90
+    type: numerical
+  - name: V91
+    type: numerical
+  - name: V92
+    type: numerical
+  - name: V93
+    type: numerical
+  - name: V94
+    type: numerical
+  - name: V95
+    type: numerical
+  - name: V96
+    type: numerical
+  - name: V97
+    type: numerical
+  - name: V98
+    type: numerical
+  - name: V99
+    type: numerical
+  - name: V100
+    type: numerical
+  - name: V101
+    type: numerical
+  - name: V102
+    type: numerical
+  - name: V103
+    type: numerical
+  - name: V104
+    type: numerical
+  - name: V105
+    type: numerical
+  - name: V106
+    type: numerical
+  - name: V107
+    type: numerical
+  - name: V108
+    type: numerical
+  - name: V109
+    type: numerical
+  - name: V110
+    type: numerical
+  - name: V111
+    type: numerical
+  - name: V112
+    type: numerical
+  - name: V113
+    type: numerical
+  - name: V114
+    type: numerical
+  - name: V115
+    type: numerical
+  - name: V116
+    type: numerical
+  - name: V117
+    type: numerical
+  - name: V118
+    type: numerical
+  - name: V119
+    type: numerical
+  - name: V120
+    type: numerical
+  - name: V121
+    type: numerical
+  - name: V122
+    type: numerical
+  - name: V123
+    type: numerical
+  - name: V124
+    type: numerical
+  - name: V125
+    type: numerical
+  - name: V126
+    type: numerical
+  - name: V127
+    type: numerical
+  - name: V128
+    type: numerical
+  - name: V129
+    type: numerical
+  - name: V130
+    type: numerical
+  - name: V131
+    type: numerical
+  - name: V132
+    type: numerical
+  - name: V133
+    type: numerical
+  - name: V134
+    type: numerical
+  - name: V135
+    type: numerical
+  - name: V136
+    type: numerical
+  - name: V137
+    type: numerical
+  - name: V138
+    type: numerical
+  - name: V139
+    type: numerical
+  - name: V140
+    type: numerical
+  - name: V141
+    type: numerical
+  - name: V142
+    type: numerical
+  - name: V143
+    type: numerical
+  - name: V144
+    type: numerical
+  - name: V145
+    type: numerical
+  - name: V146
+    type: numerical
+  - name: V147
+    type: numerical
+  - name: V148
+    type: numerical
+  - name: V149
+    type: numerical
+  - name: V150
+    type: numerical
+  - name: V151
+    type: numerical
+  - name: V152
+    type: numerical
+  - name: V153
+    type: numerical
+  - name: V154
+    type: numerical
+  - name: V155
+    type: numerical
+  - name: V156
+    type: numerical
+  - name: V157
+    type: numerical
+  - name: V158
+    type: numerical
+  - name: V159
+    type: numerical
+  - name: V160
+    type: numerical
+  - name: V161
+    type: numerical
+  - name: V162
+    type: numerical
+  - name: V163
+    type: numerical
+  - name: V164
+    type: numerical
+  - name: V165
+    type: numerical
+  - name: V166
+    type: numerical
+  - name: V167
+    type: numerical
+  - name: V168
+    type: numerical
+  - name: V169
+    type: numerical
+  - name: V170
+    type: numerical
+  - name: V171
+    type: numerical
+  - name: V172
+    type: numerical
+  - name: V173
+    type: numerical
+  - name: V174
+    type: numerical
+  - name: V175
+    type: numerical
+  - name: V176
+    type: numerical
+  - name: V177
+    type: numerical
+  - name: V178
+    type: numerical
+  - name: V179
+    type: numerical
+  - name: V180
+    type: numerical
+  - name: V181
+    type: numerical
+  - name: V182
+    type: numerical
+  - name: V183
+    type: numerical
+  - name: V184
+    type: numerical
+  - name: V185
+    type: numerical
+  - name: V186
+    type: numerical
+  - name: V187
+    type: numerical
+  - name: V188
+    type: numerical
+  - name: V189
+    type: numerical
+  - name: V190
+    type: numerical
+  - name: V191
+    type: numerical
+  - name: V192
+    type: numerical
+  - name: V193
+    type: numerical
+  - name: V194
+    type: numerical
+  - name: V195
+    type: numerical
+  - name: V196
+    type: numerical
+  - name: V197
+    type: numerical
+  - name: V198
+    type: numerical
+  - name: V199
+    type: numerical
+  - name: V200
+    type: numerical
+  - name: V201
+    type: numerical
+  - name: V202
+    type: numerical
+  - name: V203
+    type: numerical
+  - name: V204
+    type: numerical
+  - name: V205
+    type: numerical
+  - name: V206
+    type: numerical
+  - name: V207
+    type: numerical
+  - name: V208
+    type: numerical
+  - name: V209
+    type: numerical
+  - name: V210
+    type: numerical
+  - name: V211
+    type: numerical
+  - name: V212
+    type: numerical
+  - name: V213
+    type: numerical
+  - name: V214
+    type: numerical
+  - name: V215
+    type: numerical
+  - name: V216
+    type: numerical
+  - name: V217
+    type: numerical
+  - name: V218
+    type: numerical
+  - name: V219
+    type: numerical
+  - name: V220
+    type: numerical
+  - name: V221
+    type: numerical
+  - name: V222
+    type: numerical
+  - name: V223
+    type: numerical
+  - name: V224
+    type: numerical
+  - name: V225
+    type: numerical
+  - name: V226
+    type: numerical
+  - name: V227
+    type: numerical
+  - name: V228
+    type: numerical
+  - name: V229
+    type: numerical
+  - name: V230
+    type: numerical
+  - name: V231
+    type: numerical
+  - name: V232
+    type: numerical
+  - name: V233
+    type: numerical
+  - name: V234
+    type: numerical
+  - name: V235
+    type: numerical
+  - name: V236
+    type: numerical
+  - name: V237
+    type: numerical
+  - name: V238
+    type: numerical
+  - name: V239
+    type: numerical
+  - name: V240
+    type: numerical
+  - name: V241
+    type: numerical
+  - name: V242
+    type: numerical
+  - name: V243
+    type: numerical
+  - name: V244
+    type: numerical
+  - name: V245
+    type: numerical
+  - name: V246
+    type: numerical
+  - name: V247
+    type: numerical
+  - name: V248
+    type: numerical
+  - name: V249
+    type: numerical
+  - name: V250
+    type: numerical
+  - name: V251
+    type: numerical
+  - name: V252
+    type: numerical
+  - name: V253
+    type: numerical
+  - name: V254
+    type: numerical
+  - name: V255
+    type: numerical
+  - name: V256
+    type: numerical
+  - name: V257
+    type: numerical
+  - name: V258
+    type: numerical
+  - name: V259
+    type: numerical
+  - name: V260
+    type: numerical
+  - name: V261
+    type: numerical
+  - name: V262
+    type: numerical
+  - name: V263
+    type: numerical
+  - name: V264
+    type: numerical
+  - name: V265
+    type: numerical
+  - name: V266
+    type: numerical
+  - name: V267
+    type: numerical
+  - name: V268
+    type: numerical
+  - name: V269
+    type: numerical
+  - name: V270
+    type: numerical
+  - name: V271
+    type: numerical
+  - name: V272
+    type: numerical
+  - name: V273
+    type: numerical
+  - name: V274
+    type: numerical
+  - name: V275
+    type: numerical
+  - name: V276
+    type: numerical
+  - name: V277
+    type: numerical
+  - name: V278
+    type: numerical
+  - name: V279
+    type: numerical
+  - name: V280
+    type: numerical
+  - name: V281
+    type: numerical
+  - name: V282
+    type: numerical
+  - name: V283
+    type: numerical
+  - name: V284
+    type: numerical
+  - name: V285
+    type: numerical
+  - name: V286
+    type: numerical
+  - name: V287
+    type: numerical
+  - name: V288
+    type: numerical
+  - name: V289
+    type: numerical
+  - name: V290
+    type: numerical
+  - name: V291
+    type: numerical
+  - name: V292
+    type: numerical
+  - name: V293
+    type: numerical
+  - name: V294
+    type: numerical
+  - name: V295
+    type: numerical
+  - name: V296
+    type: numerical
+  - name: V297
+    type: numerical
+  - name: V298
+    type: numerical
+  - name: V299
+    type: numerical
+  - name: V300
+    type: numerical
+  - name: V301
+    type: numerical
+  - name: V302
+    type: numerical
+  - name: V303
+    type: numerical
+  - name: V304
+    type: numerical
+  - name: V305
+    type: numerical
+  - name: V306
+    type: numerical
+  - name: V307
+    type: numerical
+  - name: V308
+    type: numerical
+  - name: V309
+    type: numerical
+  - name: V310
+    type: numerical
+  - name: V311
+    type: numerical
+  - name: V312
+    type: numerical
+  - name: V313
+    type: numerical
+  - name: V314
+    type: numerical
+  - name: V315
+    type: numerical
+  - name: V316
+    type: numerical
+  - name: V317
+    type: numerical
+  - name: V318
+    type: numerical
+  - name: V319
+    type: numerical
+  - name: V320
+    type: numerical
+  - name: V321
+    type: numerical
+  - name: V322
+    type: numerical
+  - name: V323
+    type: numerical
+  - name: V324
+    type: numerical
+  - name: V325
+    type: numerical
+  - name: V326
+    type: numerical
+  - name: V327
+    type: numerical
+  - name: V328
+    type: numerical
+  - name: V329
+    type: numerical
+  - name: V330
+    type: numerical
+  - name: V331
+    type: numerical
+  - name: V332
+    type: numerical
+  - name: V333
+    type: numerical
+  - name: V334
+    type: numerical
+  - name: V335
+    type: numerical
+  - name: V336
+    type: numerical
+  - name: V337
+    type: numerical
+  - name: V338
+    type: numerical
+  - name: V339
+    type: numerical
+  - name: id_01
+    type: numerical
+  - name: id_02
+    type: numerical
+  - name: id_03
+    type: numerical
+  - name: id_04
+    type: numerical
+  - name: id_05
+    type: numerical
+  - name: id_06
+    type: numerical
+  - name: id_07
+    type: numerical
+  - name: id_08
+    type: numerical
+  - name: id_09
+    type: numerical
+  - name: id_10
+    type: numerical
+  - name: id_11
+    type: numerical
+  - name: id_12
+    type: numerical
+  - name: id_13
+    type: numerical
+  - name: id_14
+    type: numerical
+  - name: id_15
+    type: numerical
+  - name: id_16
+    type: numerical
+  - name: id_17
+    type: numerical
+  - name: id_18
+    type: numerical
+  - name: id_19
+    type: numerical
+  - name: id_20
+    type: numerical
+  - name: id_21
+    type: numerical
+  - name: id_22
+    type: numerical
+  - name: id_23
+    type: numerical
+  - name: id_24
+    type: numerical
+  - name: id_25
+    type: numerical
+  - name: id_26
+    type: numerical
+  - name: id_27
+    type: numerical
+  - name: id_28
+    type: numerical
+  - name: id_29
+    type: numerical
+  - name: id_30
+    type: numerical
+  - name: id_31
+    type: numerical
+  - name: id_32
+    type: numerical
+  - name: id_33
+    type: numerical
+  - name: id_34
+    type: numerical
+  - name: id_35
+    type: numerical
+  - name: id_36
+    type: numerical
+  - name: id_37
+    type: numerical
+  - name: id_38
+    type: numerical
+  - name: DeviceType
+    type: numerical
+  - name: DeviceInfo
+    type: numerical
+combiner:
+  type: transformer
+  num_layers: 1
+  num_heads: 8
+  hidden_size: 32
+  dropout: 0.1
+  fc_dropout: 0.2
+  num_fc_layers: 1
+training:
+  batch_size: 32
+  learning_rate: 0.0001
+  epochs: 1
