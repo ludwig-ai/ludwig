@@ -16,6 +16,7 @@
 # ==============================================================================
 import os
 import pandas as pd
+import fsspec
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
@@ -65,7 +66,8 @@ class IEEEFraud(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, Ba
         final_train = pd.merge(
             train_dfs['train_transaction'], train_dfs['train_identity'], on='TransactionID', how='left')
 
-        os.makedirs(self.processed_dataset_path, exist_ok=True)
+        with fsspec.open(self.process_downloaded_dataset, mode="wb") as f:
+            pass
         # Only save train split as test split has no ground truth labels
         final_train.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
