@@ -21,7 +21,6 @@ import tarfile
 import tempfile
 import fsspec
 from fsspec.core import split_protocol
-from typing import Protocol
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
