@@ -66,7 +66,7 @@ class IEEEFraud(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, Ba
         final_train = pd.merge(
             train_dfs['train_transaction'], train_dfs['train_identity'], on='TransactionID', how='left')
 
-        with fsspec.open(self.process_downloaded_dataset, mode="wb") as f:
+        with fsspec.open(self.processed_dataset_path, mode="wb") as f:
             pass
         # Only save train split as test split has no ground truth labels
         final_train.to_csv(
