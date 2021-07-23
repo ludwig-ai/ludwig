@@ -1,3 +1,7 @@
+preprocessing:
+  image:
+    infer_image_dimensions: True
+
 combiner:
   type: concat
   num_fc_layers: 3

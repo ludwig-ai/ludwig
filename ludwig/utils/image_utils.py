@@ -15,14 +15,66 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import os
 import sys
 from math import ceil, floor
 
 import numpy as np
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
+from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.fs_utils import open_file, is_http
 
 logger = logging.getLogger(__name__)
+
+
+def get_image_from_path(src_path, img_entry, ret_bytes=False):
+    """
+    skimage.io.imread() can read filenames or urls
+    imghdr.what() can read filenames or bytes
+    """
+    if not isinstance(img_entry, str):
+        return img_entry
+    if is_http(img_entry):
+        if ret_bytes:
+            import requests
+            return requests.get(img_entry, stream=True).raw.read()
+        return img_entry
+    if src_path or os.path.isabs(img_entry):
+        return get_abs_path(src_path, img_entry)
+    with open_file(img_entry, 'rb') as f:
+        if ret_bytes:
+            return f.read()
+        return f
+
+
+def is_image(src_path, img_entry):
+    if not isinstance(img_entry, str):
+        return False
+    try:
+        import imghdr
+
+        img = get_image_from_path(src_path, img_entry, True)
+        if isinstance(img, bytes):
+            return imghdr.what(None, img) is not None
+        return imghdr.what(img) is not None
+    except:
+        return False
+
+
+def read_image(img):
+    try:
+        from skimage.io import imread
+    except ImportError:
+        logger.error(
+            ' scikit-image is not installed. '
+            'In order to install all image feature dependencies run '
+            'pip install ludwig[image]'
+        )
+        sys.exit(-1)
+    if isinstance(img, str):
+        return imread(img)
+    return img
 
 
 def pad(img, size, axis):
