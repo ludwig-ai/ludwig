@@ -30,11 +30,11 @@ class IdentityProcessMixin:
     processed_dataset_path: str
 
     def process_downloaded_dataset(self):
-        protocol, _ = split_protocol(self.process_downloaded_dataset)
+        protocol, _ = split_protocol(self.processed_dataset_path)
         if protocol is not None:
             fs = fsspec.filesystem(protocol)
             fs.copy(self.raw_dataset_path,
-                    self.process_downloaded_dataset, recursive=True)
+                    self.processed_dataset_path, recursive=True)
         else:
             os.rename(self.raw_dataset_path, self.processed_dataset_path)
 
@@ -84,9 +84,9 @@ class MultifileJoinProcessMixin:
             all_files.append(file_df)
 
         concat_df = pd.concat(all_files, ignore_index=True)
-        # os.makedirs(self.processed_dataset_path, exist_ok=True)
+        #os.makedirs(self.processed_dataset_path, exist_ok=True)
         #makedirs(self.process_downloaded_dataset, exist_ok=True)
-        with fsspec.open(self.process_downloaded_dataset, mode="wb") as f:
+        with fsspec.open(self.processed_dataset_path, mode="wb") as f:
             pass
 
         concat_df.to_csv(
