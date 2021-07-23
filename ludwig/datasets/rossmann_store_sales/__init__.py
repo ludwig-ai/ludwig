@@ -17,12 +17,14 @@
 import calendar
 import os
 
+import fsspec
 import numpy as np
 import pandas as pd
-
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from fsspec.core import split_protocol
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.utils.fs_utils import makedirs
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
@@ -61,7 +63,6 @@ class RossmannStoreSales(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
                          cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
-        os.makedirs(self.processed_dataset_path, exist_ok=True)
 
         stores_df = pd.read_csv(os.path.join(self.raw_dataset_path,
                                              "store.csv"))
@@ -77,10 +78,16 @@ class RossmannStoreSales(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
                       inplace=True)
         df = train_df
 
-        os.makedirs(self.processed_temp_path, exist_ok=True)
+        makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
                   index=False)
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
+        protocol, _ = split_protocol(self.processed_dataset_path)
+        if protocol is not None:
+            fs = fsspec.filesystem(protocol)
+            fs.copy(self.processed_temp_path,
+                    self.processed_dataset_path, recursive=True)
+        else:
+            os.rename(self.processed_temp_path, self.processed_dataset_path)
 
 
 def preprocess_dates(df):

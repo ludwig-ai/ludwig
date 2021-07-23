@@ -18,12 +18,14 @@ import os
 import struct
 from multiprocessing.pool import ThreadPool
 
+import fsspec
 import numpy as np
-from skimage.io import imsave
-
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from fsspec.core import split_protocol
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import GZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.utils.fs_utils import makedirs
+from skimage.io import imsave
 
 NUM_LABELS = 10
 
@@ -54,7 +56,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         """Read the training and test directories and write out
         a csv containing the training path and the label.
         """
-        os.makedirs(self.processed_temp_path, exist_ok=True)
+        makedirs(self.processed_temp_path, exist_ok=True)
         for dataset in ["training", "testing"]:
             print(f'>>> create ludwig formatted {dataset} data')
             labels, data = self.read_source_dataset(dataset,
@@ -63,7 +65,13 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
                                       os.path.join(self.processed_temp_path,
                                                    dataset))
         self.output_training_and_test_data()
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
+        protocol, _ = split_protocol(self.processed_dataset_path)
+        if protocol is not None:
+            fs = fsspec.filesystem(protocol)
+            fs.copy(self.processed_temp_path,
+                    self.processed_dataset_path, recursive=True)
+        else:
+            os.rename(self.processed_temp_path, self.processed_dataset_path)
         print('>>> completed data preparation')
 
     def read_source_dataset(self, dataset="training", path="."):
@@ -110,7 +118,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
         ]
 
         for output_dir in output_dirs:
-            os.makedirs(output_dir, exist_ok=True)
+            makedirs(output_dir, exist_ok=True)
 
         def write_processed_image(t):
             i, label = t

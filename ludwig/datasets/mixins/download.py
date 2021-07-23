@@ -19,16 +19,15 @@ import os
 import shutil
 import tarfile
 import tempfile
-import fsspec
-from fsspec.core import split_protocol
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
 
+import fsspec
+from fsspec.core import split_protocol
 from fsspec.registry import filesystem
 from ludwig.utils.fs_utils import makedirs
-
 from tqdm import tqdm
 
 
@@ -185,7 +184,6 @@ class UncompressedFileDownloadMixin:
         """
         Download the raw dataset files and store in the cache location.
         """
-        os.makedirs(self.raw_temp_path, exist_ok=True)
         with tempfile.TemporaryDirectory() as tmpdir:
             for url in self.download_url:
                 filename = url.split('/')[-1]

@@ -16,11 +16,13 @@
 # ==============================================================================
 import os
 
+import fsspec
 import pandas as pd
-
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from fsspec.core import split_protocol
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import ParquetLoadMixin
+from ludwig.utils.fs_utils import makedirs
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
@@ -35,8 +37,8 @@ class Higgs(UncompressedFileDownloadMixin, ParquetLoadMixin, BaseDataset):
     This is a classification problem to distinguish between a signal process
     which produces Higgs bosons and a background process which does not.
 
-	More info:
-	https://archive.ics.uci.edu/ml/datasets/HIGGS
+        More info:
+        https://archive.ics.uci.edu/ml/datasets/HIGGS
     """
 
     raw_dataset_path: str
@@ -69,9 +71,16 @@ class Higgs(UncompressedFileDownloadMixin, ParquetLoadMixin, BaseDataset):
         else:
             df['split'] = [0] * 10500000 + [2] * 500000
 
-        os.makedirs(self.processed_temp_path, exist_ok=True)
+        makedirs(self.processed_temp_path, exist_ok=True)
         df.to_parquet(os.path.join(self.processed_temp_path, self.parquet_filename),
                       engine='pyarrow',
                       row_group_size=50000,
                       index=False)
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
+
+        protocol, _ = split_protocol(self.processed_dataset_path)
+        if protocol is not None:
+            fs = fsspec.filesystem(protocol)
+            fs.copy(self.processed_temp_path,
+                    self.processed_dataset_path, recursive=True)
+        else:
+            os.rename(self.processed_temp_path, self.processed_dataset_path)

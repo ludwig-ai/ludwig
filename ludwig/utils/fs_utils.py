@@ -53,7 +53,12 @@ def path_exists(url):
 
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
-    return fs.makedirs(path, exist_ok=exist_ok)
+    if fs == "s3":
+        with fsspec.open(url, mode="wb") as f:
+            pass
+        return
+    else:
+        return fs.makedirs(path, exist_ok=exist_ok)
 
 
 def delete(url, recursive=False):

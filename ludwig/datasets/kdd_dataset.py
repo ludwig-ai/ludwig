@@ -17,12 +17,14 @@
 import os
 from zipfile import ZipFile
 
+import fsspec
 import pandas as pd
-
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from fsspec.core import split_protocol
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.utils.fs_utils import makedirs
 
 
 class KDDCup2009Dataset(UncompressedFileDownloadMixin,
@@ -92,10 +94,17 @@ class KDDCup2009Dataset(UncompressedFileDownloadMixin,
 
         df = pd.concat([processed_train_df, processed_val_df, test_df])
 
-        os.makedirs(self.processed_temp_path, exist_ok=True)
+        makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
                   index=False)
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
+
+        protocol, _ = split_protocol(self.processed_dataset_path)
+        if protocol is not None:
+            fs = fsspec.filesystem(protocol)
+            fs.copy(self.processed_temp_path,
+                    self.processed_dataset_path, recursive=True)
+        else:
+            os.rename(self.processed_temp_path, self.processed_dataset_path)
 
 
 def process_categorical_features(df, categorical_features):
