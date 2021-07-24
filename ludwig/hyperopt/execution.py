@@ -789,9 +789,6 @@ class RayTuneExecutor(HyperoptExecutor):
                     TEST: progress_tracker.test_metrics,
                 }
 
-                print(f'TRAIN STATS: {train_stats}')
-                raise RuntimeError()
-
                 metric_score = tune_executor.get_metric_score(
                     train_stats, eval_stats=None)
                 tune.report(
