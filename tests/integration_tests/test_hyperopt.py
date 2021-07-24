@@ -307,3 +307,12 @@ def test_hyperopt_executor_get_metric_score():
         None, output_feature, metric, split, **executor)
     score = hyperopt_executor.get_metric_score(train_stats, eval_stats)
     assert score == 0.6
+
+
+# def test_get_metric_score_splits():
+#     {'training': OrderedDict(
+#         [('Survived', OrderedDict([('loss', [0.987948]), ('accuracy', [0.5443322]), ('hits_at_k', [1.0])])),
+#          ('combined', {'loss': [0.9881778]})]), 'validation': OrderedDict(
+#         [('Survived', OrderedDict([('loss', []), ('accuracy', []), ('hits_at_k', [])])), ('combined', {'loss': []})]),
+#      'test': OrderedDict([('Survived', OrderedDict([('loss', [1.4840347]), ('accuracy', [0.0]), ('hits_at_k', [1.0])])),
+#                           ('combined', {'loss': [1.4842356]})])}
