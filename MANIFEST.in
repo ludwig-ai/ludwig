@@ -1,2 +1,3 @@
 include *.txt
 recursive-include ludwig/datasets *.yaml
+recursive-include ludwig/automl/defaults *.yaml
