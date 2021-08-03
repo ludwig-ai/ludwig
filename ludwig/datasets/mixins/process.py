@@ -20,7 +20,7 @@ import fsspec
 import h5py
 import pandas as pd
 from fsspec.core import split_protocol
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import rename
 
 
 class IdentityProcessMixin:
@@ -30,13 +30,7 @@ class IdentityProcessMixin:
     processed_dataset_path: str
 
     def process_downloaded_dataset(self):
-        protocol, _ = split_protocol(self.processed_dataset_path)
-        if protocol is not None:
-            fs = fsspec.filesystem(protocol)
-            fs.copy(self.raw_dataset_path,
-                    self.processed_dataset_path, recursive=True)
-        else:
-            os.rename(self.raw_dataset_path, self.processed_dataset_path)
+        rename(self.raw_dataset_path, self.processed_dataset_path)
 
 
 class MultifileJoinProcessMixin:

@@ -51,6 +51,15 @@ def path_exists(url):
     return fs.exists(path)
 
 
+def rename(src, tgt):
+    protocol, _ = split_protocol(tgt)
+    if protocol is not None:
+        #fs = fsspec.filesystem(protocol)
+        fsspec.mv(src, tgt, recursive=True)
+    else:
+        os.rename(src, tgt)
+
+
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     if fs == "s3":
