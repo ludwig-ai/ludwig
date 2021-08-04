@@ -24,10 +24,7 @@ from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
 
-import fsspec
-from fsspec.core import split_protocol
-from fsspec.registry import filesystem
-from ludwig.utils.fs_utils import upload_output_file
+from ludwig.utils.fs_utils import upload_output_directory
 from tqdm import tqdm
 
 
@@ -64,25 +61,11 @@ class ZipDownloadMixin:
         store that in the cache location.
         """
 
-        with upload_output_file(self.raw_dataset_path) as tmpdir:
+        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
             for url in self.download_urls:
                 with urlopen(url) as zipresp:
                     with ZipFile(BytesIO(zipresp.read())) as zfile:
                         zfile.extractall(tmpdir)
-            if tmpdir == self.raw_dataset_path:
-                shutil.copytree(tmpdir, self.raw_dataset_path)
-
-        """with tempfile.TemporaryDirectory() as tmpdir:
-            for url in self.download_urls:
-                with urlopen(url) as zipresp:
-                    with ZipFile(BytesIO(zipresp.read())) as zfile:
-                        zfile.extractall(tmpdir)
-            protocol, _ = split_protocol(self.raw_dataset_path)
-            if protocol is not None:
-                fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
-            else:
-                shutil.copytree(tmpdir, self.raw_dataset_path)"""
 
     @property
     def download_urls(self):
@@ -102,7 +85,7 @@ class TarDownloadMixin:
         store that in the cache location.
         """
 
-        with upload_output_file(self.raw_dataset_path) as tmpdir:
+        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
             for url in self.download_urls:
                 filename = url.split('/')[-1]
                 with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024,
@@ -122,36 +105,6 @@ class TarDownloadMixin:
                                                  download_folder_name)):
                     shutil.copyfile(f, os.path.join(
                         tmpdir, f.name))
-            if tmpdir == self.raw_dataset_path:
-                shutil.copytree(tmpdir, self.raw_dataset_path)
-
-        """with tempfile.TemporaryDirectory() as tmpdir:
-            for url in self.download_urls:
-                filename = url.split('/')[-1]
-                with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024,
-                              miniters=1, desc=filename) as t:
-                    urllib.request.urlretrieve(
-                        url,
-                        os.path.join(tmpdir, filename),
-                        t.update_to
-                    )
-
-                download_folder_name = url.split('/')[-1].split('.')[0]
-                file_path = os.path.join(tmpdir, filename)
-                with tarfile.open(file_path) as tar_file:
-                    tar_file.extractall(path=tmpdir)
-
-                for f in os.scandir(os.path.join(tmpdir,
-                                                 download_folder_name)):
-                    shutil.copyfile(f, os.path.join(
-                        tmpdir, f.name))
-
-            protocol, _ = split_protocol(self.raw_dataset_path)
-            if protocol is not None:
-                fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
-            else:
-                shutil.copytree(tmpdir, self.raw_dataset_path)"""
 
     @property
     def download_urls(self):
@@ -170,7 +123,7 @@ class GZipDownloadMixin:
         Download the raw dataset and extract the contents of the zip file and
         store that in the cache location.
         """
-        with upload_output_file(self.raw_dataset_path) as tmpdir:
+        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
             for file_download_url in self.download_urls:
                 filename = file_download_url.split('/')[-1]
                 with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024,
@@ -186,32 +139,6 @@ class GZipDownloadMixin:
                     with open(os.path.join(tmpdir, gzip_content_file),
                               'wb') as output:
                         shutil.copyfileobj(gzfile, output)
-            if tmpdir == self.raw_dataset_path:
-                shutil.copytree(tmpdir, self.raw_dataset_path)
-
-        """with tempfile.TemporaryDirectory() as tmpdir:
-            for file_download_url in self.download_urls:
-                filename = file_download_url.split('/')[-1]
-                with TqdmUpTo(unit='B', unit_scale=True, unit_divisor=1024,
-                              miniters=1, desc=filename) as t:
-                    urllib.request.urlretrieve(
-                        file_download_url,
-                        os.path.join(tmpdir, filename),
-                        t.update_to
-                    )
-                gzip_content_file = '.'.join(filename.split('.')[:-1])
-                with gzip.open(
-                        os.path.join(tmpdir, filename)) as gzfile:
-                    with open(os.path.join(tmpdir, gzip_content_file),
-                              'wb') as output:
-                        shutil.copyfileobj(gzfile, output)
-
-            protocol, _ = split_protocol(self.raw_dataset_path)
-            if protocol is not None:
-                fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
-            else:
-                shutil.copytree(tmpdir, self.raw_dataset_path)"""
 
     @property
     def download_urls(self):
@@ -229,25 +156,13 @@ class UncompressedFileDownloadMixin:
         """
         Download the raw dataset files and store in the cache location.
         """
-        with upload_output_file(self.raw_dataset_path) as tmpdir:
+        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
             for url in self.download_url:
                 filename = url.split('/')[-1]
                 urllib.request.urlretrieve(url, os.path.join(tmpdir,
                                                              filename))
             if tmpdir == self.raw_dataset_path:
                 shutil.copytree(tmpdir, self.raw_dataset_path)
-        """with tempfile.TemporaryDirectory() as tmpdir:
-            for url in self.download_url:
-                filename = url.split('/')[-1]
-                urllib.request.urlretrieve(url, os.path.join(tmpdir,
-                                                             filename))
-
-            protocol, _ = split_protocol(self.raw_dataset_path)
-            if protocol is not None:
-                fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
-            else:
-                shutil.copytree(tmpdir, self.raw_dataset_path)"""
 
     @property
     def download_url(self):
