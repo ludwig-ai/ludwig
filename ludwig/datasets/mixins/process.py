@@ -16,11 +16,9 @@
 # ==============================================================================
 import os
 
-import fsspec
 import h5py
 import pandas as pd
-from fsspec.core import split_protocol
-from ludwig.utils.fs_utils import rename
+from ludwig.utils.fs_utils import rename, makedirs
 
 
 class IdentityProcessMixin:
@@ -78,11 +76,7 @@ class MultifileJoinProcessMixin:
             all_files.append(file_df)
 
         concat_df = pd.concat(all_files, ignore_index=True)
-        #os.makedirs(self.processed_dataset_path, exist_ok=True)
-        #makedirs(self.process_downloaded_dataset, exist_ok=True)
-        with fsspec.open(self.processed_dataset_path, mode="wb") as f:
-            pass
-
+        makedirs(self.process_downloaded_dataset, exist_ok=True)
         concat_df.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False)
