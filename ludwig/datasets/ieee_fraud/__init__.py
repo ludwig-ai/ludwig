@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from ludwig.utils.fs_utils import makedirs
 import os
 import pandas as pd
-import fsspec
+from ludwig.utils.fs_utils import makedirs
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
@@ -66,8 +67,7 @@ class IEEEFraud(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, Ba
         final_train = pd.merge(
             train_dfs['train_transaction'], train_dfs['train_identity'], on='TransactionID', how='left')
 
-        with fsspec.open(self.processed_dataset_path, mode="wb") as f:
-            pass
+        makedirs(self.processed_dataset_path)
         # Only save train split as test split has no ground truth labels
         final_train.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
