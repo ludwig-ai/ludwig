@@ -161,8 +161,6 @@ class UncompressedFileDownloadMixin:
                 filename = url.split('/')[-1]
                 urllib.request.urlretrieve(url, os.path.join(tmpdir,
                                                              filename))
-            if tmpdir == self.raw_dataset_path:
-                shutil.copytree(tmpdir, self.raw_dataset_path)
 
     @property
     def download_url(self):
