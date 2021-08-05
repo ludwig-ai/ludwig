@@ -111,7 +111,7 @@ def upload_output_directory(url):
             # Upload to remote when finished
             put_fn()
     else:
-        makedirs(url)
+        makedirs(url, exist_ok=True)
         # Just use the output directory directly if using a local filesystem
         yield url, None
 
