@@ -28,10 +28,11 @@ from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import open_file, is_http, upload_h5
+from ludwig.utils.fs_utils import upload_h5
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
+from ludwig.utils.image_utils import get_image_from_path, read_image
 from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
@@ -84,32 +85,6 @@ class ImageFeatureMixin:
         }
 
     @staticmethod
-    def get_image_from_path(src_path, img_entry):
-        if not isinstance(img_entry, str):
-            return img_entry
-        if src_path or os.path.isabs(img_entry):
-            return get_abs_path(src_path, img_entry)
-        if is_http(img_entry):
-            return img_entry
-        with open_file(img_entry, 'r') as f:
-            return f
-
-    @staticmethod
-    def read_image(img):
-        try:
-            from skimage.io import imread
-        except ImportError:
-            logger.error(
-                ' scikit-image is not installed. '
-                'In order to install all image feature dependencies run '
-                'pip install ludwig[image]'
-            )
-            sys.exit(-1)
-        if isinstance(img, str):
-            return imread(img)
-        return img
-
-    @staticmethod
     def _read_image_and_resize(
             img_entry: Union[str, 'numpy.array'],
             img_width: int,
@@ -139,7 +114,7 @@ class ImageFeatureMixin:
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
-        img = ImageFeatureMixin.read_image(img_entry)
+        img = read_image(img_entry)
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
             img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -208,7 +183,7 @@ class ImageFeatureMixin:
         that all the images in the data are expected be of the same size with
         the same number of channels
         """
-        first_image = ImageFeatureMixin.read_image(first_img_entry)
+        first_image = read_image(first_img_entry)
         first_img_height = first_image.shape[0]
         first_img_width = first_image.shape[1]
         first_img_num_channels = num_channels_in_image(first_image)
@@ -237,8 +212,8 @@ class ImageFeatureMixin:
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 should_resize = True
                 sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-                sample_images = [ImageFeatureMixin.read_image(
-                    ImageFeatureMixin.get_image_from_path(src_path, img)) for img in input_feature_col[:sample_size]]
+                sample_images = [read_image(get_image_from_path(src_path, img))
+                                 for img in input_feature_col[:sample_size]]
 
                 if sample_images:
                     height_avg = min(
@@ -315,7 +290,7 @@ class ImageFeatureMixin:
                     .format(type(first_img_entry))
             )
 
-        first_img_entry = ImageFeatureMixin.get_image_from_path(src_path, first_img_entry)
+        first_img_entry = get_image_from_path(src_path, first_img_entry)
 
         (
             should_resize,
