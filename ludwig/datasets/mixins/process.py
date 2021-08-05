@@ -76,7 +76,7 @@ class MultifileJoinProcessMixin:
             all_files.append(file_df)
 
         concat_df = pd.concat(all_files, ignore_index=True)
-        makedirs(self.process_downloaded_dataset, exist_ok=True)
+        makedirs(self.processed_dataset_path, exist_ok=True)
         concat_df.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False)
