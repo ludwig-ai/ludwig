@@ -6,7 +6,7 @@ from zipfile import ZipFile
 
 import fsspec
 from fsspec.core import split_protocol
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import upload_output_directory
 
 
 def create_kaggle_client():
@@ -40,9 +40,7 @@ class KaggleDownloadMixin:
             api = create_kaggle_client()
             api.authenticate()
 
-        #os.makedirs(self.raw_temp_path, exist_ok=True)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
             if self.is_kaggle_competition:
                 download_func = api.competition_download_files
             else:
@@ -53,13 +51,6 @@ class KaggleDownloadMixin:
             archive_zip = os.path.join(tmpdir, self.archive_filename)
             with ZipFile(archive_zip, 'r') as z:
                 z.extractall(tmpdir)
-
-            protocol, _ = split_protocol(self.raw_dataset_path)
-            if protocol is not None:
-                fs = fsspec.filesystem(protocol)
-                fs.put(tmpdir, self.raw_dataset_path, recursive=True)
-            else:
-                shutil.copytree(tmpdir, self.raw_dataset_path)
 
     @contextmanager
     def update_env(self, **kwargs):
