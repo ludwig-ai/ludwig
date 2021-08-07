@@ -53,14 +53,16 @@ class CSVLoadMixin:
         :param split: Splits along 'split' column if present
         :returns: A pandas dataframe
         """
-        dataset_csv = os.path.join(self.processed_dataset_path,
-                                   self.csv_filename)
-        data_df = pd.read_csv(dataset_csv)
+        data_df = pd.read_csv(self.dataset_path)
         return _split(data_df, split)
 
     @property
     def csv_filename(self):
         return self.config["csv_filename"]
+
+    @property
+    def dataset_path(self):
+        return os.path.join(self.processed_dataset_path, self.csv_filename)
 
 
 class ParquetLoadMixin:
