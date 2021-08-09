@@ -221,26 +221,46 @@ def test_sequence_combiner(
         combiner_shape[-1] == default_fc_size
 
 
-def test_tabnet_combiner(encoder_outputs):
-    # clean out unneeded encoder outputs
-    encoder_outputs = {}
-    encoder_outputs['feature_1'] = {
-        'encoder_output': tf.random.normal(
-            [128, 1],
-            dtype=tf.float32
-        )
-    }
-    encoder_outputs['feature_2'] = {
-        'encoder_output': tf.random.normal(
-            [128, 1],
-            dtype=tf.float32
-        )
+def tabnet_encoder_outputs():
+    # Need to do this in a function, otherwise TF will try to initialize
+    # too early
+    return {
+        'batch_128': {
+            'feature_1': {
+                'encoder_output': tf.random.normal(
+                    [128, 1],
+                    dtype=tf.float32
+                )
+            },
+            'feature_2': {
+                'encoder_output': tf.random.normal(
+                    [128, 1],
+                    dtype=tf.float32
+                )
+            },
+        },
+        'inputs': {
+            'feature_1': {
+                'encoder_output': tf.keras.Input(
+                    (),
+                    dtype=tf.float32,
+                    name='feature_1',
+                )
+            },
+            'feature_2': {
+                'encoder_output': tf.keras.Input(
+                    (),
+                    dtype=tf.float32,
+                    name='feature_2',
+                )
+            },
+        }
     }
 
-    input_features_def = [
-        {'name': 'feature_1', 'type': 'numerical'},
-        {'name': 'feature_2', 'type': 'numerical'}
-    ]
+
+@pytest.mark.parametrize("encoder_outputs_key", ['batch_128', 'inputs'])
+def test_tabnet_combiner(encoder_outputs_key):
+    encoder_outputs = tabnet_encoder_outputs()[encoder_outputs_key]
 
     # setup combiner to test
     combiner = TabNetCombiner(
