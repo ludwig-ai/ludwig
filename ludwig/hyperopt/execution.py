@@ -935,12 +935,12 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         register_trainable(
-            f"trainable_func_f{hash_dict(config)}",
+            f"trainable_func_f{hash_dict(config).decode('ascii')}",
             run_experiment_trial
         )
 
         analysis = tune.run(
-            f"trainable_func_f{hash_dict(config)}",
+            f"trainable_func_f{hash_dict(config).decode('ascii')}",
             config={
                 **self.search_space,
                 **tune_config,

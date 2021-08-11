@@ -371,6 +371,12 @@ class TabNetCombiner(tf.keras.Model):
         else:
             self.dropout = None
 
+    def build(self, input_shape):
+        self.flatten_layers = {
+            k: tf.keras.layers.Flatten()
+            for k in input_shape.keys()
+        }
+
     def call(
             self,
             inputs,  # encoder outputs
@@ -378,12 +384,14 @@ class TabNetCombiner(tf.keras.Model):
             mask=None,
             **kwargs
     ):
-        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+        encoder_output_map = {
+            k: inputs[k]['encoder_output'] for k in inputs
+        }
 
         # ================ Flatten ================
-        batch_size = tf.shape(encoder_outputs[0])[0]
         encoder_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            self.flatten_layers[k](eo)
+            for k, eo in encoder_output_map.items()
         ]
 
         # ================ Concat ================
