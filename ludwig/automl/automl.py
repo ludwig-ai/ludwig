@@ -84,7 +84,7 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory ** kwargs)
+        dataset, target, time_limit_s, tune_for_memory, ** kwargs)
     return train_with_config(
         dataset,
         config,
