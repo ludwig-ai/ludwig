@@ -18,6 +18,7 @@ from ludwig.automl.utils import get_available_resources
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
+from ludwig.constants import COMBINER, HYPEROPT, BATCH_SIZE, TRAINING, TYPE, PREPROCESSING, SPACE
 
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
@@ -42,11 +43,14 @@ RANKED_MODIFIABLE_PARAM_LIST = {
 }
 
 
+BYTES_TO_MB = 1e6
+
+
 def get_trainingset_metadata(config, dataset):
     (_, _, _, training_set_metadata) = preprocess_for_training(
         config,
         dataset=dataset,
-        preprocessing_params=config['preprocessing'])
+        preprocessing_params=config[PREPROCESSING])
     return training_set_metadata
 
 
@@ -57,7 +61,7 @@ def get_machine_memory():
         def get_remote_gpu():
             gpus = GPUtil.getGPUs()
             total_mem = gpus[0].memory_total
-            return total_mem * 1e6
+            return total_mem * BYTES_TO_MB
 
         @ray.remote(num_cpus=1)
         def get_remote_cpu():
@@ -72,7 +76,7 @@ def get_machine_memory():
             machine_mem = ray.get(get_remote_cpu.remote())
     else:  # not using ray cluster
         if GPUtil.getGPUs():
-            machine_mem = GPUtil.getGPUs()[0].memory_total * 1e6
+            machine_mem = GPUtil.getGPUs()[0].memory_total * BYTES_TO_MB
         else:
             machine_mem = psutil.virtual_memory().total
 
@@ -85,7 +89,7 @@ def compute_memory_usage(config, training_set_metadata) -> int:
     lm.get_connected_model()
     model_tensors = lm.collect_weights()
     total_size = 0
-    batch_size = config['training']['batch_size']
+    batch_size = config[TRAINING][BATCH_SIZE]
     for tnsr in model_tensors:
         total_size += tnsr[1].numpy().size * batch_size
     total_bytes = total_size * 32  # assumes 32-bit precision
@@ -103,7 +107,7 @@ def sub_new_params(config: dict, new_param_vals: dict):
 
 def get_new_params(current_param_values, hyperparam_search_space, params_to_modify):
     for param, _ in params_to_modify.items():
-        if hyperparam_search_space[param]['space'] == "choice":
+        if hyperparam_search_space[param][SPACE] == "choice":
             current_param_values[param] = hyperparam_search_space[param]['categories'][-1]
         else:
             current_param_values[param] = hyperparam_search_space[param]['upper']
@@ -115,8 +119,8 @@ def memory_tune_config(config, dataset):
     raw_config = merge_with_defaults(config)
     training_set_metadata = get_trainingset_metadata(raw_config, dataset)
     modified_hyperparam_search_space = copy.deepcopy(
-        raw_config['hyperopt']['parameters'])
-    params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[raw_config['combiner']['type']]
+        raw_config[HYPEROPT]['parameters'])
+    params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[raw_config[COMBINER][TYPE]]
     param_list = list(params_to_modify.keys())
     current_param_values = {}
     max_memory = get_machine_memory()
@@ -156,5 +160,5 @@ def memory_tune_config(config, dataset):
 
     modified_config = copy.deepcopy(config)
 
-    modified_config['hyperopt']['parameters'] = modified_hyperparam_search_space
+    modified_config[HYPEROPT]["parameters"] = modified_hyperparam_search_space
     return modified_config, fits_in_memory
