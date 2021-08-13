@@ -76,7 +76,8 @@ class HyperoptExecutor(ABC):
 
     def get_metric_score(self, train_stats, eval_stats) -> float:
         if self._has_metric(train_stats, TEST):
-            logger.info("Returning metric score from training (test) statistics")
+            logger.info(
+                "Returning metric score from training (test) statistics")
             return self.get_metric_score_from_train_stats(train_stats, TEST)
         elif self._has_eval_metric(eval_stats):
             logger.info("Returning metric score from eval statistics. "
@@ -86,7 +87,8 @@ class HyperoptExecutor(ABC):
                         "best validation performance")
             return self.get_metric_score_from_eval_stats(eval_stats)
         elif self._has_metric(train_stats, VALIDATION):
-            logger.info("Returning metric score from training (validation) statistics")
+            logger.info(
+                "Returning metric score from training (validation) statistics")
             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
         elif self._has_metric(train_stats, TRAINING):
             logger.info("Returning metric score from training split statistics, "
@@ -948,6 +950,7 @@ class RayTuneExecutor(HyperoptExecutor):
             scheduler=self.scheduler,
             search_alg=search_alg,
             num_samples=self.num_samples,
+            keep_checkpoints_num=1,
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
             queue_trials=True,
