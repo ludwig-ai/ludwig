@@ -55,7 +55,7 @@ def get_machine_memory():
     if ray.is_initialized():  # using ray cluster
         @ray.remote(num_gpus=1)
         def get_remote_gpu():
-            gpus = GPUtil.get_gpus()
+            gpus = GPUtil.getGPUs()
             total_mem = gpus[0].memory_total
             return total_mem * 1e6
 
@@ -71,8 +71,8 @@ def get_machine_memory():
         else:
             machine_mem = ray.get(get_remote_cpu.remote())
     else:  # not using ray cluster
-        if GPUtil.get_gpus():
-            machine_mem = GPUtil.get_gpus()[0].memory_total * 1e6
+        if GPUtil.getGPUs():
+            machine_mem = GPUtil.getGPUs()[0].memory_total * 1e6
         else:
             machine_mem = psutil.virtual_memory().total
 
@@ -85,8 +85,9 @@ def compute_memory_usage(config, training_set_metadata) -> int:
     lm.get_connected_model()
     model_tensors = lm.collect_weights()
     total_size = 0
+    batch_size = config['training']['batch_size']
     for tnsr in model_tensors:
-        total_size += tnsr[1].numpy().size
+        total_size += tnsr[1].numpy().size * batch_size
     total_bytes = total_size * 32  # assumes 32-bit precision
     return total_bytes
 
@@ -117,19 +118,19 @@ def memory_tune_config(config, dataset):
         raw_config['hyperopt']['parameters'])
     params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[raw_config['combiner']['type']]
     param_list = list(params_to_modify.keys())
-    current_param_values = get_new_params(
-        {}, modified_hyperparam_search_space, params_to_modify)
+    current_param_values = {}
     max_memory = get_machine_memory()
 
     while param_list is not None:
         # compute memory utilization
+        current_param_values = get_new_params(
+            current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
         if compute_memory_usage(temp_config, training_set_metadata) < max_memory:
             fits_in_memory = True
             break
         # check if we have exhausted tuning of current param (e.g. we can no longer reduce the param value)
         param, min_value = param_list[0],  params_to_modify[param_list[0]]
-        param_space = modified_hyperparam_search_space[param]["space"]
 
         if param in modified_hyperparam_search_space.keys():
             param_space = modified_hyperparam_search_space[param]["space"]
@@ -153,5 +154,7 @@ def memory_tune_config(config, dataset):
         else:
             param_list.pop(0)  # param not in hyperopt search space
 
-    config['hyperopt']['parameters'] = modified_hyperparam_search_space
-    return config, fits_in_memory
+    modified_config = copy.deepcopy(config)
+
+    modified_config['hyperopt']['parameters'] = modified_hyperparam_search_space
+    return modified_config, fits_in_memory
