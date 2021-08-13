@@ -1,10 +1,23 @@
-from collections import OrderedDict
 import copy
+from collections import OrderedDict
+
+import psutil
+import ray
+
+try:
+    import GPUtil
+except ImportError:
+    raise ImportError(
+        ' GPUtil is not installed. '
+        'In order to use this module please run '
+        'pip install GPUtil'
+    )
 
 from ludwig.api import LudwigModel
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.automl.utils import get_available_resources
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
+from ludwig.utils.defaults import merge_with_defaults
 
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
@@ -15,8 +28,9 @@ RANKED_MODIFIABLE_PARAM_LIST = {
     }),
     'concat': OrderedDict({
         'training.batch_size': 32,
-        'combiner.num_fc_layers': 1,
         'combiner.fc_size': 64,
+        'combiner.num_fc_layers': 1,
+
     }),
     'tabtransformer': OrderedDict({
         'training.batch_size': 32,
@@ -37,10 +51,32 @@ def get_trainingset_metadata(config, dataset):
 
 
 def get_machine_memory():
-    # default -- asssume that memory usage on GPU is 15GB
-    # what about CPU?
-    # TODO (ASN): improve module to support more clever ways of extracting memory bounds
-    return 1.5e+13
+
+    if ray.is_initialized():  # using ray cluster
+        @ray.remote(num_gpus=1)
+        def get_remote_gpu():
+            gpus = GPUtil.get_gpus()
+            total_mem = gpus[0].memory_total
+            return total_mem * 1e6
+
+        @ray.remote(num_cpus=1)
+        def get_remote_cpu():
+            total_mem = psutil.virtual_memory().total
+            return total_mem
+
+        resources = get_available_resources()  # check if cluster has GPUS
+
+        if resources['gpu'] > 0:
+            machine_mem = ray.get(get_remote_gpu.remote())
+        else:
+            machine_mem = ray.get(get_remote_cpu.remote())
+    else:  # not using ray cluster
+        if GPUtil.get_gpus():
+            machine_mem = GPUtil.get_gpus()[0].memory_total * 1e6
+        else:
+            machine_mem = psutil.virtual_memory().total
+
+    return machine_mem
 
 
 def compute_memory_usage(config, training_set_metadata) -> int:
@@ -51,7 +87,7 @@ def compute_memory_usage(config, training_set_metadata) -> int:
     total_size = 0
     for tnsr in model_tensors:
         total_size += tnsr[1].numpy().size
-    total_bytes = total_size * 32
+    total_bytes = total_size * 32  # assumes 32-bit precision
     return total_bytes
 
 
@@ -66,8 +102,10 @@ def sub_new_params(config: dict, new_param_vals: dict):
 
 def get_new_params(current_param_values, hyperparam_search_space, params_to_modify):
     for param, _ in params_to_modify.items():
-        # TODO (ASN): fix to not just work with categorical search space
-        current_param_values[param] = hyperparam_search_space[param]['categories'][-1]
+        if hyperparam_search_space[param]['space'] == "choice":
+            current_param_values[param] = hyperparam_search_space[param]['categories'][-1]
+        else:
+            current_param_values[param] = hyperparam_search_space[param]['upper']
     return current_param_values
 
 
@@ -77,8 +115,7 @@ def memory_tune_config(config, dataset):
     training_set_metadata = get_trainingset_metadata(raw_config, dataset)
     modified_hyperparam_search_space = copy.deepcopy(
         raw_config['hyperopt']['parameters'])
-    combiner_type = copy.deepcopy(raw_config['combiner']['type'])
-    params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[combiner_type]
+    params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[raw_config['combiner']['type']]
     param_list = list(params_to_modify.keys())
     current_param_values = get_new_params(
         {}, modified_hyperparam_search_space, params_to_modify)
@@ -92,14 +129,29 @@ def memory_tune_config(config, dataset):
             break
         # check if we have exhausted tuning of current param (e.g. we can no longer reduce the param value)
         param, min_value = param_list[0],  params_to_modify[param_list[0]]
-        if param in modified_hyperparam_search_space.keys() and len(modified_hyperparam_search_space[param]['categories']) > 2:
-            if modified_hyperparam_search_space[param]['categories'][-2] > min_value:
-                modified_hyperparam_search_space[param][
-                    'categories'] = modified_hyperparam_search_space[param]['categories'][:-1]
+        param_space = modified_hyperparam_search_space[param]["space"]
+
+        if param in modified_hyperparam_search_space.keys():
+            param_space = modified_hyperparam_search_space[param]["space"]
+            if param_space == "choice":
+                if len(modified_hyperparam_search_space[param]['categories']) > 2 and \
+                        modified_hyperparam_search_space[param]['categories'][-2] > min_value:
+                    modified_hyperparam_search_space[param][
+                        'categories'] = modified_hyperparam_search_space[param]['categories'][:-1]
+                else:
+                    param_list.pop(0)  # exhausted reduction of this parameter
             else:
-                param_list.pop(0)
+                # reduce by 10%
+                upper_bound, lower_bound = modified_hyperparam_search_space[param][
+                    "upper"], modified_hyperparam_search_space[param]["lower"]
+                reduction_val = (upper_bound - lower_bound) * 0.1
+                new_upper_bound = upper_bound - reduction_val
+                if (new_upper_bound) > lower_bound and new_upper_bound > min_value:
+                    modified_hyperparam_search_space[param]["upper"] = new_upper_bound
+                else:
+                    param_list.pop(0)  # exhausted reduction of this parameter
         else:
-            param_list.pop(0)
+            param_list.pop(0)  # param not in hyperopt search space
 
     config['hyperopt']['parameters'] = modified_hyperparam_search_space
     return config, fits_in_memory
