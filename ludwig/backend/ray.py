@@ -184,12 +184,12 @@ class RayPredictor(BasePredictor):
             return ordered_predictions
 
         # TODO(shreya): figure out additional arguments for map_batches
-        # return dataset.map_batches(batch_predict_partition)
+        return dataset.map_batches(batch_predict_partition)
 
-        return dataset.map_dataset_partitions(
-            batch_predict_partition,
-            meta=[(c, 'object') for c in output_columns]
-        )
+        # return dataset.map_dataset_partitions(
+            # batch_predict_partition,
+            # meta=[(c, 'object') for c in output_columns]
+        # )
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
