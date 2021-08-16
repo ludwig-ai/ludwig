@@ -24,7 +24,7 @@ from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import makedirs, rename
 
 
 class KDDCup2009Dataset(UncompressedFileDownloadMixin,
@@ -98,13 +98,7 @@ class KDDCup2009Dataset(UncompressedFileDownloadMixin,
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
                   index=False)
 
-        protocol, _ = split_protocol(self.processed_dataset_path)
-        if protocol is not None:
-            fs = fsspec.filesystem(protocol)
-            fs.copy(self.processed_temp_path,
-                    self.processed_dataset_path, recursive=True)
-        else:
-            os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)
 
 
 def process_categorical_features(df, categorical_features):

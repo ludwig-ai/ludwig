@@ -22,7 +22,7 @@ from fsspec.core import split_protocol
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import ParquetLoadMixin
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import makedirs, rename
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
@@ -77,10 +77,4 @@ class Higgs(UncompressedFileDownloadMixin, ParquetLoadMixin, BaseDataset):
                       row_group_size=50000,
                       index=False)
 
-        protocol, _ = split_protocol(self.processed_dataset_path)
-        if protocol is not None:
-            fs = fsspec.filesystem(protocol)
-            fs.copy(self.processed_temp_path,
-                    self.processed_dataset_path, recursive=True)
-        else:
-            os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)

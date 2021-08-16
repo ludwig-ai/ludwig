@@ -22,7 +22,7 @@ from fsspec.core import split_protocol
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import makedirs, rename
 from sklearn.model_selection import train_test_split
 
 
@@ -144,10 +144,4 @@ class ForestCover(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
         makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
                   index=False)
-        protocol, _ = split_protocol(self.processed_dataset_path)
-        if protocol is not None:
-            fs = fsspec.filesystem(protocol)
-            fs.copy(self.processed_temp_path,
-                    self.processed_dataset_path, recursive=True)
-        else:
-            os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)
