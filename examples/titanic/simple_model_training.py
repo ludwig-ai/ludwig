@@ -19,6 +19,11 @@ shutil.rmtree('./results', ignore_errors=True)
 
 # Download and prepare the dataset
 training_set, _, _ = titanic.load(split=True)
+# training_set = '/Users/shreyarajpal/.ludwig_cache/titanic_1.0/processed/titanic.training.parquet'
+training_set = '/Users/shreyarajpal/.ludwig_cache/titanic_1.0/processed/titanic.split.csv'
+
+import ray
+ray.init(num_cpus=2)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./model1_config.yaml',
