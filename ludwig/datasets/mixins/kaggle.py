@@ -1,11 +1,9 @@
 import os
-import shutil
-import tempfile
+
 from contextlib import contextmanager
 from zipfile import ZipFile
 
-import fsspec
-from fsspec.core import split_protocol
+
 from ludwig.utils.fs_utils import upload_output_directory
 
 

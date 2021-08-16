@@ -16,9 +16,7 @@
 # ==============================================================================
 import os
 
-import fsspec
 import pandas as pd
-from fsspec.core import split_protocol
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin

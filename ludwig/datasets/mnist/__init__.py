@@ -18,9 +18,7 @@ import os
 import struct
 from multiprocessing.pool import ThreadPool
 
-import fsspec
 import numpy as np
-from fsspec.core import split_protocol
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import GZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin

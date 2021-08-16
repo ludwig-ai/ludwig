@@ -18,8 +18,6 @@ import os
 import re
 from collections import defaultdict
 
-import fsspec
-from fsspec.core import split_protocol
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import ZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
