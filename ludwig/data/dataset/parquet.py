@@ -114,12 +114,12 @@ class ParquetDatasetManager(object):
         if self.backend.df_engine.partitioned:
             print(f'GOES HERE!!')
             print(f'')
-            # return read_parquet(dataset.url)
-            return PartitionedDataset(
-                dataset,
-                get_proc_features(config),
-                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-            )
+            return read_parquet(dataset.url)
+            # return PartitionedDataset(
+                # dataset,
+                # get_proc_features(config),
+                # training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            # )
         else:
             return PandasDataset(
                 dataset,
