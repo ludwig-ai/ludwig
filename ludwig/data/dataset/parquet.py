@@ -16,6 +16,7 @@
 # ==============================================================================
 import contextlib
 import math
+from os import read
 
 import tensorflow as tf
 from ludwig.data.dataset.pandas import PandasDataset
@@ -30,6 +31,8 @@ from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.utils.fs_utils import to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
+
+from ray.data import read_parquet
 
 
 class ParquetDataset(Dataset):
@@ -109,6 +112,9 @@ class ParquetDatasetManager(object):
 
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
         if self.backend.df_engine.partitioned:
+            print(f'GOES HERE!!')
+            print(f'')
+            # return read_parquet(dataset.url)
             return PartitionedDataset(
                 dataset,
                 get_proc_features(config),

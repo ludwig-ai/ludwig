@@ -183,6 +183,9 @@ class RayPredictor(BasePredictor):
             ordered_predictions = predictions[output_columns]
             return ordered_predictions
 
+        # TODO(shreya): figure out additional arguments for map_batches
+        # return dataset.map_batches(batch_predict_partition)
+
         return dataset.map_dataset_partitions(
             batch_predict_partition,
             meta=[(c, 'object') for c in output_columns]
