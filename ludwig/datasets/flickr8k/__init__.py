@@ -23,7 +23,7 @@ from fsspec.core import split_protocol
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import ZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import makedirs, rename
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
@@ -85,10 +85,4 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                                 i
                             ))
         # Note: csv is stored in /processed while images are stored in /raw
-        protocol, _ = split_protocol(self.processed_dataset_path)
-        if protocol is not None:
-            fs = fsspec.filesystem(protocol)
-            fs.copy(self.processed_temp_path,
-                    self.processed_dataset_path, recursive=True)
-        else:
-            os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)

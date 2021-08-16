@@ -24,7 +24,7 @@ from fsspec.core import split_protocol
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import GZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import makedirs, rename
 from skimage.io import imsave
 
 NUM_LABELS = 10
@@ -65,13 +65,7 @@ class Mnist(CSVLoadMixin, GZipDownloadMixin, BaseDataset):
                                       os.path.join(self.processed_temp_path,
                                                    dataset))
         self.output_training_and_test_data()
-        protocol, _ = split_protocol(self.processed_dataset_path)
-        if protocol is not None:
-            fs = fsspec.filesystem(protocol)
-            fs.copy(self.processed_temp_path,
-                    self.processed_dataset_path, recursive=True)
-        else:
-            os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)
         print('>>> completed data preparation')
 
     def read_source_dataset(self, dataset="training", path="."):
