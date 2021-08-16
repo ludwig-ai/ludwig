@@ -16,6 +16,7 @@ import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config, DatasetInfo
+from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.utils import _ray_init
 from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
@@ -61,6 +62,7 @@ def auto_train(
     target: str,
     time_limit_s: Union[int, float],
     output_directory: str = OUTPUT_DIR,
+    tune_for_memory: bool = False,
     **kwargs
 ) -> AutoTrainResults:
     """
@@ -81,7 +83,8 @@ def auto_train(
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
-    config = create_auto_config(dataset, target, time_limit_s)
+    config = create_auto_config(
+        dataset, target, time_limit_s, tune_for_memory, **kwargs)
     return train_with_config(
         dataset,
         config,
@@ -94,6 +97,7 @@ def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     target: str,
     time_limit_s: Union[int, float],
+    tune_for_memory: bool,
 ) -> dict:
     """
     Returns an auto-generated Ludwig config with the intent of training
@@ -111,6 +115,8 @@ def create_auto_config(
     """
     default_configs = _create_default_config(dataset, target, time_limit_s)
     model_config = _model_select(default_configs)
+    if tune_for_memory:
+        model_config, _ = memory_tune_config(model_config, dataset)
     return model_config
 
 
