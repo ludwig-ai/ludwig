@@ -16,7 +16,6 @@
 # ==============================================================================
 import contextlib
 import math
-from os import read
 
 import tensorflow as tf
 from ludwig.data.dataset.pandas import PandasDataset

@@ -17,7 +17,6 @@
 
 import logging
 from collections import defaultdict, OrderedDict
-from ludwig.data.dataset.pandas import PandasDataset
 
 import dask
 import ray
@@ -29,6 +28,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer

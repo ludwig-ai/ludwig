@@ -20,7 +20,6 @@ from dask.dataframe import DataFrame
 from ray.data import from_dask
 
 from ludwig.data.dataset.pandas import PandasDataset
-from ray.data import from_dask
 
 
 class RayDataset(object):
