@@ -16,9 +16,11 @@
 # ==============================================================================
 
 import logging
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
+from functools import partial
 
 import dask
+import pandas as pd
 import ray
 from horovod.ray import RayExecutor
 from ray.exceptions import RayActorError
@@ -164,6 +166,22 @@ class RayTrainer(BaseTrainer):
         self.executor.shutdown()
 
 
+class BatchInferModel:
+    def __init__(self, remote_model, predictor_kwargs, output_columns, features, data_hdf5_fp, *args, **kwargs):
+        self.model = remote_model.load()
+        self.predictor = Predictor(**predictor_kwargs)
+        self.output_columns = output_columns
+        self.features = features
+        self.data_hdf5_fp = data_hdf5_fp
+        self.batch_predict = partial(self.predictor.batch_predict, *args, **kwargs)
+
+    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
+        predictions = self.predictor.batch_predict(model=self.model, dataset=pd_ds)
+        ordered_predictions = predictions[self.output_columns]
+        return ordered_predictions
+
+
 class RayPredictor(BasePredictor):
     def __init__(self, horovod_kwargs, predictor_kwargs):
         # TODO ray: use horovod_kwargs to allocate GPU model replicas
@@ -176,18 +194,14 @@ class RayPredictor(BasePredictor):
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
+        batch_predictor = BatchInferModel(
+            remote_model, predictor_kwargs, output_columns, dataset.features,
+            dataset.data_hdf5_fp, *args, **kwargs
+        )
 
-        def batch_predict_partition(df):
-            pd_ds = PandasDataset(df, dataset.features, dataset.data_hdf5_fp)
-            model = remote_model.load()
-            predictor = Predictor(**predictor_kwargs)
-            predictions = predictor.batch_predict(model, pd_ds, *args, **kwargs)
-            ordered_predictions = predictions[output_columns]
-            return ordered_predictions
-        
         num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
         return dataset.ds.map_batches(
-            batch_predict_partition, 
+            batch_predictor, 
             compute='actors',
             batch_format='pandas',
             num_gpus=num_gpus
