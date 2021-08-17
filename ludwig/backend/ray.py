@@ -191,7 +191,7 @@ class RayPredictor(BasePredictor):
             compute='actors',
             batch_format='pandas',
             num_gpus=num_gpus
-        )
+        ).to_dask()
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
