@@ -118,15 +118,21 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=',', header=0, nrows=None, ski
             # Could not conclude the delimiter, defaulting to user provided
             pass
 
+    kwargs = dict(
+        sep=separator,
+        header=header,
+        skiprows=skiprows
+    )
+
+    if nrows is not None:
+        kwargs['nrows'] = nrows
+
     try:
-        df = df_lib.read_csv(data_fp, sep=separator, header=header,
-                             nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, **kwargs)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = df_lib.read_csv(data_fp, sep=separator, header=header,
-                             escapechar='\\',
-                             nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, escapechar='\\', **kwargs)
 
     return df
 
