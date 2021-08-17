@@ -1,5 +1,3 @@
-training:
-    epochs: 2
 input_features:
     -
         name: Pclass

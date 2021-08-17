@@ -18,17 +18,11 @@ from ludwig.datasets import titanic
 shutil.rmtree('./results', ignore_errors=True)
 
 # Download and prepare the dataset
-# training_set, _, _ = titanic.load(split=True)
-# training_set = '/Users/shreyarajpal/.ludwig_cache/titanic_1.0/processed/titanic.training.parquet'
-# training_set = '/Users/shreyarajpal/.ludwig_cache/titanic_1.0/processed/titanic.split.csv'
-training_set = '/Users/shreyarajpal/Downloads/titanic_pq.parquet'
-
-import ray
-ray.init(num_cpus=2)
+training_set, _, _ = titanic.load(split=True)
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./model1_config.yaml',
-                    logging_level=logging.INFO, backend='ray')
+                    logging_level=logging.INFO)
 
 # initiate model training
 (
@@ -41,10 +35,12 @@ model = LudwigModel(config='./model1_config.yaml',
     model_name='simple_model'
 )
 
-
-model.predict(dataset=training_set)
-
 # list contents of output directory
 print("contents of output directory:", output_directory)
 for item in os.listdir(output_directory):
     print("\t", item)
+
+
+
+
+
