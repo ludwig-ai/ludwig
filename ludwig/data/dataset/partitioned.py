@@ -14,7 +14,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import Dict, List
+
+from dask.dataframe import DataFrame
+from ray.data import from_dask
+
 from ludwig.data.dataset.pandas import PandasDataset
+from ray.data import from_dask
+
+
+class RayDataset:
+    """ Wrapper around ray.data.Dataset. """
+
+    def __init__(self, df: DataFrame, features: List[Dict], data_hdf5_fp: str):
+
+        self.ds = from_dask(df)
+        self.features = features
+        self.data_hdf5_fp = data_hdf5_fp
+
+
+class RayDataset(object):
+    """ Wrapper around ray.data.Dataset. """
+
+    def __init__(self, df: DataFrame, features: List[Dict], data_hdf5_fp: str):
+        self.ds = from_dask(df)
+        self.features = features
+        self.data_hdf5_fp = data_hdf5_fp
 
 
 class PartitionedDataset(object):
