@@ -17,6 +17,7 @@
 
 import logging
 from collections import defaultdict, OrderedDict
+from ludwig.data.dataset.pandas import PandasDataset
 
 import dask
 import ray
@@ -28,7 +29,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
-from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.misc_utils import sum_dicts
@@ -176,20 +177,21 @@ class RayPredictor(BasePredictor):
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
 
-        def batch_predict_partition(dataset):
+        def batch_predict_partition(df):
+            pd_ds = PandasDataset(df, dataset.features, dataset.data_hdf5_fp)
             model = remote_model.load()
             predictor = Predictor(**predictor_kwargs)
-            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
+            predictions = predictor.batch_predict(model, pd_ds, *args, **kwargs)
             ordered_predictions = predictions[output_columns]
             return ordered_predictions
-
-        # TODO(shreya): figure out additional arguments for map_batches
-        return dataset.map_batches(batch_predict_partition)
-
-        # return dataset.map_dataset_partitions(
-            # batch_predict_partition,
-            # meta=[(c, 'object') for c in output_columns]
-        # )
+        
+        num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
+        return dataset.ds.map_batches(
+            batch_predict_partition, 
+            compute='actors',
+            batch_format='pandas',
+            num_gpus=num_gpus
+        )
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
@@ -202,9 +204,9 @@ class RayPredictor(BasePredictor):
         )
 
     def _check_dataset(self, dataset):
-        if not isinstance(dataset, PartitionedDataset):
+        if not isinstance(dataset, RayDataset):
             raise RuntimeError(
-                f'Ray backend requires PartitionedDataset for inference, '
+                f'Ray backend requires RayDataset for inference, '
                 f'found: {type(dataset)}'
             )
 

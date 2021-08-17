@@ -874,6 +874,7 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 # TODO ray: support calculating stats on partitioned datasets
+                # TODO(shreya): Confirm what's needed to enable this.
                 if isinstance(dataset, PartitionedDataset):
                     raise ValueError(
                         'Cannot calculate overall stats on a partitioned dataset at this time. '
