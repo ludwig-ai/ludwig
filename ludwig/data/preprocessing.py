@@ -1111,7 +1111,6 @@ def build_dataset(
     # If persisting DataFrames in memory is enabled, we want to do this after
     # each batch of parallel ops in order to avoid redundant computation
     dataset_df = backend.df_engine.persist(dataset_df)
-    print(dataset_df)
 
     global_preprocessing_parameters = merge_dict(
         default_preprocessing_parameters,
@@ -1175,14 +1174,12 @@ def build_dataset(
 def cast_columns(dataset_df, features, global_preprocessing_parameters,
                  backend):
     # todo figure out if global_preprocessing_parameters is needed
-
     dataset_cols = {}
     for feature in features:
         cast_column = get_from_registry(
             feature[TYPE],
             base_type_registry
         ).cast_column
-
         # todo figure out if additional parameters are needed
         #  for the cast_column function
         dataset_cols[feature[COLUMN]] = cast_column(
