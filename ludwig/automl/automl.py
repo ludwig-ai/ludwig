@@ -116,7 +116,12 @@ def create_auto_config(
     default_configs = _create_default_config(dataset, target, time_limit_s)
     model_config = _model_select(default_configs)
     if tune_for_memory:
-        model_config, _ = memory_tune_config(model_config, dataset)
+        if ray.is_initialized():
+            model_config, _ = ray.get(ray.remote(num_cpus=1)(
+                memory_tune_config
+            ).remote(model_config, dataset))
+        else:
+            model_config, _ = memory_tune_config(model_config, dataset)
     return model_config
 
 
