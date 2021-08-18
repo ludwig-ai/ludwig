@@ -15,12 +15,13 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from collections import defaultdict
 import re
+from collections import defaultdict
 
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import ZipDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.utils.fs_utils import makedirs, rename
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
@@ -40,7 +41,8 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
         super().__init__(dataset_name="flickr8k", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
-        os.makedirs(self.processed_temp_path, exist_ok=True)
+        makedirs(self.processed_temp_path, exist_ok=True)
+
         # create a dictionary matching image_path --> list of captions
         image_to_caption = defaultdict(list)
         with open(
@@ -81,4 +83,4 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                                 i
                             ))
         # Note: csv is stored in /processed while images are stored in /raw
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)

@@ -17,11 +17,11 @@
 import os
 
 import pandas as pd
-from sklearn.model_selection import train_test_split
-
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.utils.fs_utils import makedirs, rename
+from sklearn.model_selection import train_test_split
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
@@ -36,8 +36,8 @@ class ForestCover(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
 
     Predicting forest cover type from cartographic variables only.
 
-	More info:
-	https://archive.ics.uci.edu/ml/datasets/covertype
+        More info:
+        https://archive.ics.uci.edu/ml/datasets/covertype
     """
 
     raw_dataset_path: str
@@ -139,7 +139,7 @@ class ForestCover(UncompressedFileDownloadMixin, CSVLoadMixin, BaseDataset):
             df.loc[val_indices, "split"] = 1
             df.loc[test_indices, "split"] = 2
 
-        os.makedirs(self.processed_temp_path, exist_ok=True)
+        makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
                   index=False)
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)

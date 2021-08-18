@@ -191,7 +191,8 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or self.config.get('backend'))
+        self.backend = initialize_backend(
+            backend or self.config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
@@ -366,7 +367,8 @@ class LudwigModel:
                     def on_epoch_end(self, trainer, progress_tracker, save_path):
                         upload_fn()
 
-                train_callbacks = train_callbacks + [UploadOnEpochEndCallback()]
+                train_callbacks = train_callbacks + \
+                    [UploadOnEpochEndCallback()]
 
             description_fn = training_stats_fn = model_dir = None
             if self.backend.is_coordinator():
