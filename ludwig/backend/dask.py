@@ -18,7 +18,7 @@
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME, PARQUET, PREPROCESSING, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 
 
@@ -70,9 +70,9 @@ class DaskPredictor(BasePredictor):
         )
 
     def _check_dataset(self, dataset):
-        if not isinstance(dataset, PartitionedDataset):
+        if not isinstance(dataset, RayDataset):
             raise RuntimeError(
-                f'Dask backend requires PartitionedDataset for inference, '
+                f'Dask backend requires RayDataset for inference, '
                 f'found: {type(dataset)}'
             )
 

@@ -19,8 +19,6 @@ from typing import Dict, List
 from dask.dataframe import DataFrame
 from ray.data import from_dask
 
-from ludwig.data.dataset.pandas import PandasDataset
-
 
 class RayDataset(object):
     """ Wrapper around ray.data.Dataset. """
@@ -29,20 +27,3 @@ class RayDataset(object):
         self.ds = from_dask(df)
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
-
-
-class PartitionedDataset(object):
-    def __init__(self, df, features, data_hdf5_fp):
-        self.df = df
-        self.features = features
-        self.data_hdf5_fp = data_hdf5_fp
-
-    def get(self, col):
-        return self.df[col]
-
-    def map_dataset_partitions(self, fn, meta):
-        def wrapped(partition):
-            dataset = PandasDataset(partition, self.features, self.data_hdf5_fp)
-            return fn(dataset)
-
-        return self.df.map_partitions(wrapped, meta=meta)
