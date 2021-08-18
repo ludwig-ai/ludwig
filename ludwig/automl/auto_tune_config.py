@@ -8,9 +8,9 @@ try:
     import GPUtil
 except ImportError:
     raise ImportError(
-        ' GPUtil is not installed. '
-        'In order to use this module please run '
-        'pip install GPUtil'
+        ' ray is not installed. '
+        'In order to use auto_train please run '
+        'pip install ludwig[ray]'
     )
 
 from ludwig.api import LudwigModel
@@ -43,7 +43,7 @@ RANKED_MODIFIABLE_PARAM_LIST = {
 }
 
 
-BYTES_TO_MB = 1e6
+BYTES_PER_MiB = 1048576
 
 
 def get_trainingset_metadata(config, dataset):
@@ -60,8 +60,8 @@ def get_machine_memory():
         @ray.remote(num_gpus=1)
         def get_remote_gpu():
             gpus = GPUtil.getGPUs()
-            total_mem = gpus[0].memory_total
-            return total_mem * BYTES_TO_MB
+            total_mem_mb = gpus[0].memory_total
+            return total_mem_mb * BYTES_PER_MiB
 
         @ray.remote(num_cpus=1)
         def get_remote_cpu():
@@ -76,7 +76,7 @@ def get_machine_memory():
             machine_mem = ray.get(get_remote_cpu.remote())
     else:  # not using ray cluster
         if GPUtil.getGPUs():
-            machine_mem = GPUtil.getGPUs()[0].memory_total * BYTES_TO_MB
+            machine_mem = GPUtil.getGPUs()[0].memory_total * BYTES_PER_MiB
         else:
             machine_mem = psutil.virtual_memory().total
 
