@@ -18,8 +18,8 @@ import logging
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Dropout
-from tensorflow.python.keras.engine.base_layer import Layer
-from tensorflow.python.keras.layers import Embedding
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Embedding
 
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer

@@ -94,7 +94,7 @@ class CometCallback(Callback):
         """
         logger.info("comet.on_epoch_end() called......")
         if self.cometml_experiment:
-            for key, value in progress_tracker.log_metrics.items():
+            for key, value in progress_tracker.log_metrics().items():
                 self.cometml_experiment.log_metric(key, value)
 
     def on_visualize_figure(self, fig):

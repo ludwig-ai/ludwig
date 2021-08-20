@@ -15,31 +15,86 @@
 # ==============================================================================
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.metrics import \
-    MeanAbsoluteError as MeanAbsoluteErrorMetric
-from tensorflow.python.keras.metrics import \
-    MeanSquaredError as MeanSquaredErrorMetric
+from tensorflow.keras.metrics import (
+    MeanAbsoluteError as MeanAbsoluteErrorMetric,
+    MeanSquaredError as MeanSquaredErrorMetric,
+    RootMeanSquaredError as RootMeanSquaredErrorMetric,
+    AUC as AUCMetric,
+)
 
 from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
-from ludwig.modules.loss_modules import (BWCEWLoss,
-                                         SequenceSoftmaxCrossEntropyLoss,
-                                         SequenceSampledSoftmaxCrossEntropyLoss,
-                                         SigmoidCrossEntropyLoss,
-                                         SoftmaxCrossEntropyLoss,
-                                         SampledSoftmaxCrossEntropyLoss)
-from abc import abstractmethod
+from ludwig.modules.loss_modules import (
+    BWCEWLoss,
+    SequenceSoftmaxCrossEntropyLoss,
+    SequenceSampledSoftmaxCrossEntropyLoss,
+    SigmoidCrossEntropyLoss,
+    SoftmaxCrossEntropyLoss,
+    SampledSoftmaxCrossEntropyLoss,
+    rmspe_loss,
+)
 import torch
 from torchmetrics import (MeanAbsoluteError, MeanSquaredError, Metric)
 #from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
-metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
-           MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
-           PERPLEXITY}
+metrics = {
+    ACCURACY,
+    TOKEN_ACCURACY,
+    HITS_AT_K,
+    R2,
+    JACCARD,
+    EDIT_DISTANCE,
+    MEAN_SQUARED_ERROR,
+    MEAN_ABSOLUTE_ERROR,
+    PERPLEXITY,
+    ROC_AUC,
+    ROOT_MEAN_SQUARED_ERROR,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
+}
 
 max_metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
-min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
-               PERPLEXITY}
+min_metrics = {
+    EDIT_DISTANCE,
+    MEAN_SQUARED_ERROR,
+    MEAN_ABSOLUTE_ERROR,
+    LOSS,
+    ROC_AUC,
+    PERPLEXITY,
+    ROOT_MEAN_SQUARED_ERROR,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
+}
+
+
+class RMSEMetric(RootMeanSquaredErrorMetric):
+    def __init__(self, name="root_mean_squared_error"):
+        super().__init__(name=name)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        return super().update_state(
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
+        )
+
+
+class ROCAUCMetric(AUCMetric):
+    def __init__(self, curve="ROC", name="roc_auc"):
+        super().__init__(name=name, curve=curve)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        return super().update_state(
+            y_true, y_pred, sample_weight=sample_weight
+        )
+
+
+class RMSPEMetric(tf.keras.metrics.Mean):
+    def __init__(self, name="root_mean_squared_percentage_error"):
+        super().__init__(name=name)
+
+    def update_state(self, y, y_preds):
+        predictions = y_preds
+        if isinstance(y_preds, dict) and PREDICTIONS in y_preds:
+            predictions = y_preds[PREDICTIONS]
+        rmspe = rmspe_loss(y, predictions)
+        return super().update_state(rmspe)
 
 class LudwigMetric:
     def __init__(self, name):
@@ -70,28 +125,22 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
         super().__init__()
         '''
         self.sum_y = self.add_weight(
-            'sum_y', initializer='zeros',
-            dtype=tf.float32
+            "sum_y", initializer="zeros", dtype=tf.float32
         )
         self.sum_y_squared = self.add_weight(
-            'sum_y_squared', initializer='zeros',
-            dtype=tf.float32
+            "sum_y_squared", initializer="zeros", dtype=tf.float32
         )
         self.sum_y_hat = self.add_weight(
-            'sum_y_hat', initializer='zeros',
-            dtype=tf.float32
+            "sum_y_hat", initializer="zeros", dtype=tf.float32
         )
         self.sum_y_hat_squared = self.add_weight(
-            'sum_y_hat_squared', initializer='zeros',
-            dtype=tf.float32
+            "sum_y_hat_squared", initializer="zeros", dtype=tf.float32
         )
         self.sum_y_hat = self.add_weight(
-            'sum_y_y_hat', initializer='zeros',
-            dtype=tf.float32
+            "sum_y_y_hat", initializer="zeros", dtype=tf.float32
         )
         self.sum_y_y_hat = self.add_weight(
-            'sum_y_y_hat', initializer='zeros',
-            dtype=tf.float32
+            "sum_y_y_hat", initializer="zeros", dtype=tf.float32
         )
         self.N = self.add_weight(
             'N', initializer='zeros',
@@ -127,10 +176,16 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
 
     def compute(self):
         y_bar = self.sum_y / self.N
-        tot_ss = self.sum_y_squared - 2.0 * y_bar * self.sum_y \
-                 + self.N * y_bar ** 2
-        res_ss = self.sum_y_squared - 2.0 * self.sum_y_y_hat \
-                 + self.sum_y_hat_squared
+        tot_ss = (
+            self.sum_y_squared
+            - 2.0 * y_bar * self.sum_y
+            + self.N * y_bar ** 2
+        )
+        res_ss = (
+            self.sum_y_squared
+            - 2.0 * self.sum_y_y_hat
+            + self.sum_y_hat_squared
+        )
         return 1.0 - res_ss / tot_ss
 
 
@@ -178,24 +233,20 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
             positive_class_weight=1,
             robust_lambda=0,
             confidence_penalty=0,
-            name='binary_cross_entropy_weighted_loss_metric'
+            name="binary_cross_entropy_weighted_loss_metric",
     ):
         super().__init__(name=name)
 
         self.bwcew_loss_function = BWCEWLoss(
             positive_class_weight=positive_class_weight,
             robust_lambda=robust_lambda,
-            confidence_penalty=confidence_penalty
+            confidence_penalty=confidence_penalty,
         )
 
         self.sum_loss = self.add_weight(
-            'sum_loss', initializer='zeros',
-            dtype=tf.float32
+            "sum_loss", initializer="zeros", dtype=tf.float32
         )
-        self.N = self.add_weight(
-            'N', initializer='zeros',
-            dtype=tf.float32
-        )
+        self.N = self.add_weight("N", initializer="zeros", dtype=tf.float32)
 
     def update_state(self, y, y_hat):
         loss = self.bwcew_loss_function(y, y_hat)
@@ -211,13 +262,12 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
             self,
             num_classes=0,
             feature_loss=None,
-            name='softmax_cross_entropy_metric'
+            name="softmax_cross_entropy_metric",
     ):
         super().__init__(name=name)
 
         self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(
-            num_classes=num_classes,
-            feature_loss=feature_loss
+            num_classes=num_classes, feature_loss=feature_loss
         )
 
     def update_state(self, y, y_hat):
@@ -230,14 +280,14 @@ class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
             decoder_obj=None,
             num_classes=0,
             feature_loss=None,
-            name='sampled_softmax_cross_entropy_metric'
+            name="sampled_softmax_cross_entropy_metric",
     ):
         super(SampledSoftmaxCrossEntropyMetric, self).__init__(name=name)
 
         self.metric_function = SampledSoftmaxCrossEntropyLoss(
             decoder_obj=decoder_obj,
             num_classes=num_classes,
-            feature_loss=feature_loss
+            feature_loss=feature_loss,
         )
 
     def update_state(self, y, y_hat):
@@ -245,11 +295,7 @@ class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
 
 
 class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
-    def __init__(
-            self,
-            feature_loss=None,
-            name='sigmoid_cross_entropy_metric'
-    ):
+    def __init__(self, feature_loss=None, name="sigmoid_cross_entropy_metric"):
         super().__init__(name=name)
         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(
             feature_loss
@@ -264,7 +310,8 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
         super().__init__(name=name)
 
         self.loss_function = SequenceSoftmaxCrossEntropyLoss(
-            from_logits=from_logits)
+            from_logits=from_logits
+        )
 
     def update_state(self, y, y_hat):
         loss = self.loss_function(y, y_hat)
@@ -278,7 +325,7 @@ class SequenceSampledLossMetric(tf.keras.metrics.Mean):
             dec_num_layers=None,
             num_classes=0,
             feature_loss=None,
-            name=None
+            name=None,
     ):
         super(SequenceSampledLossMetric, self).__init__(name=name)
 
@@ -286,7 +333,7 @@ class SequenceSampledLossMetric(tf.keras.metrics.Mean):
             dec_dense_layer=dec_dense_layer,
             dec_num_layers=dec_num_layers,
             num_classes=num_classes,
-            feature_loss=feature_loss
+            feature_loss=feature_loss,
         )
 
     def update_state(self, y, y_hat):
@@ -308,13 +355,12 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
         last_targets = tf.gather_nd(
             y_true,
             tf.stack(
-                [tf.range(tf.shape(y_true)[0]),
-                 tf.maximum(
-                     targets_sequence_length - 1,
-                     0
-                 )],
-                axis=1
-            )
+                [
+                    tf.range(tf.shape(y_true)[0]),
+                    tf.maximum(targets_sequence_length - 1, 0),
+                ],
+                axis=1,
+            ),
         )
         super().update_state(last_targets, y_pred, sample_weight=sample_weight)
 
@@ -349,7 +395,7 @@ class EditDistanceMetric(tf.keras.metrics.Mean):
             y_true_tensor,
             target_sequence_length,
             y_pred,
-            prediction_sequence_length
+            prediction_sequence_length,
         )
         super().update_state(edit_distance_val)
 
@@ -366,9 +412,7 @@ class TokenAccuracyMetric(tf.keras.metrics.Mean):
         y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
         target_sequence_length = sequence_length_2D(y_true_tensor)
         masked_corrected_preds = masked_corrected_predictions(
-            y_true_tensor,
-            y_pred,
-            target_sequence_length
+            y_true_tensor, y_pred, target_sequence_length
         )
 
         super().update_state(masked_corrected_preds)
@@ -385,10 +429,11 @@ class SequenceAccuracyMetric(tf.keras.metrics.Mean):
         prediction_dtype = y_pred.dtype
         y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
         target_sequence_length = sequence_length_2D(y_true_tensor)
-        masked_sequence_corrected_preds = \
+        masked_sequence_corrected_preds = (
             masked_sequence_corrected_predictions(
                 y_true_tensor, y_pred, target_sequence_length
             )
+        )
 
         super().update_state(masked_sequence_corrected_preds)
 
@@ -402,7 +447,7 @@ class CategoryAccuracy(tf.keras.metrics.Accuracy):
         super().update_state(
             tf.cast(y_true, dtype=tf.int64),
             y_pred,
-            sample_weight=sample_weight
+            sample_weight=sample_weight,
         )
 
 
@@ -412,9 +457,7 @@ class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
-            y_true,
-            y_pred[LOGITS],
-            sample_weight=sample_weight
+            y_true, y_pred[LOGITS], sample_weight=sample_weight
         )
 
 '''
@@ -488,10 +531,10 @@ class JaccardMetric(tf.keras.metrics.Metric):
     def __init__(self, name=None):
         super().__init__(name=name)
         self.jaccard_total = self.add_weight(
-            'jaccard_numerator', initializer='zeros', dtype=tf.float32
+            "jaccard_numerator", initializer="zeros", dtype=tf.float32
         )
         self.N = self.add_weight(
-            'jaccard_denomerator', initializer='zeros', dtype=tf.float32
+            "jaccard_denomerator", initializer="zeros", dtype=tf.float32
         )
 
     def update_state(self, y_true, y_pred):
@@ -507,11 +550,11 @@ class JaccardMetric(tf.keras.metrics.Metric):
 
         intersection = tf.reduce_sum(
             tf.cast(tf.logical_and(y_true_bool, y_pred_bool), tf.float32),
-            axis=1
+            axis=1,
         )
         union = tf.reduce_sum(
             tf.cast(tf.logical_or(y_true_bool, y_pred_bool), tf.float32),
-            axis=1
+            axis=1,
         )
 
         jaccard_index = intersection / union  # shape [b]
@@ -533,9 +576,9 @@ def get_improved_fun(metric):
 
 def get_initial_validation_value(metric):
     if metric in min_metrics:
-        return float('inf')
+        return float("inf")
     else:
-        return float('-inf')
+        return float("-inf")
 
 
 def get_best_function(metric):
@@ -546,32 +589,32 @@ def get_best_function(metric):
 
 
 def accuracy(targets, predictions, output_feature_name):
-    correct_predictions = tf.equal(predictions, targets,
-                                   name='correct_predictions_{}'.format(
-                                       output_feature_name))
+    correct_predictions = tf.equal(
+        predictions,
+        targets,
+        name="correct_predictions_{}".format(output_feature_name),
+    )
     accuracy = tf.reduce_mean(
         tf.cast(correct_predictions, tf.float32),
-        name='accuracy_{}'.format(output_feature_name))
+        name="accuracy_{}".format(output_feature_name),
+    )
     return accuracy, correct_predictions
 
 
 def masked_corrected_predictions(
-        targets,
-        predictions,
-        targets_sequence_lengths
+        targets, predictions, targets_sequence_lengths
 ):
-    truncated_preds = predictions[:, :targets.shape[1]]
-    paddings = tf.stack([
-        [0, 0],
-        [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]
-    ])
-    padded_truncated_preds = tf.pad(truncated_preds, paddings, name='ptp')
+    truncated_preds = predictions[:, : targets.shape[1]]
+    paddings = tf.stack(
+        [[0, 0], [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]]
+    )
+    padded_truncated_preds = tf.pad(truncated_preds, paddings, name="ptp")
 
     correct_preds = tf.equal(padded_truncated_preds, targets)
 
-    mask = tf.sequence_mask(targets_sequence_lengths,
-                            maxlen=correct_preds.shape[1],
-                            dtype=tf.int32)
+    mask = tf.sequence_mask(
+        targets_sequence_lengths, maxlen=correct_preds.shape[1], dtype=tf.int32
+    )
 
     _, masked_correct_preds = tf.dynamic_partition(correct_preds, mask, 2)
     masked_correct_preds = tf.cast(masked_correct_preds, dtype=tf.float32)
@@ -580,30 +623,25 @@ def masked_corrected_predictions(
 
 
 def masked_sequence_corrected_predictions(
-        targets,
-        predictions,
-        targets_sequence_lengths
+        targets, predictions, targets_sequence_lengths
 ):
-    truncated_preds = predictions[:, :targets.shape[1]]
-    paddings = tf.stack([
-        [0, 0],
-        [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]
-    ])
-    padded_truncated_preds = tf.pad(truncated_preds,
-                                    paddings,
-                                    name='ptp')
+    truncated_preds = predictions[:, : targets.shape[1]]
+    paddings = tf.stack(
+        [[0, 0], [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]]
+    )
+    padded_truncated_preds = tf.pad(truncated_preds, paddings, name="ptp")
 
     correct_preds = tf.equal(padded_truncated_preds, targets)
 
-    mask = tf.sequence_mask(targets_sequence_lengths,
-                            maxlen=correct_preds.shape[1],
-                            dtype=tf.int32)
+    mask = tf.sequence_mask(
+        targets_sequence_lengths, maxlen=correct_preds.shape[1], dtype=tf.int32
+    )
 
-    one_masked_correct_prediction = \
-        1.0 - tf.cast(mask, tf.float32) + (
-                tf.cast(mask, tf.float32) * tf.cast(correct_preds,
-                                                    tf.float32)
-        )
+    one_masked_correct_prediction = (
+        1.0
+        - tf.cast(mask, tf.float32)
+        + (tf.cast(mask, tf.float32) * tf.cast(correct_preds, tf.float32))
+    )
     sequence_correct_preds = tf.reduce_prod(
         one_masked_correct_prediction, axis=-1
     )
@@ -612,24 +650,30 @@ def masked_sequence_corrected_predictions(
 
 
 def hits_at_k(targets, predictions_logits, top_k, output_feature_name):
-    with tf.device('/cpu:0'):
-        hits_at_k = tf.nn.in_top_k(predictions_logits, targets, top_k,
-                                   name='hits_at_k_{}'.format(
-                                       output_feature_name))
-        mean_hits_at_k = tf.reduce_mean(tf.cast(hits_at_k, tf.float32),
-                                        name='mean_hits_at_k_{}'.format(
-                                            output_feature_name))
+    with tf.device("/cpu:0"):
+        hits_at_k = tf.nn.in_top_k(
+            predictions_logits,
+            targets,
+            top_k,
+            name="hits_at_k_{}".format(output_feature_name),
+        )
+        mean_hits_at_k = tf.reduce_mean(
+            tf.cast(hits_at_k, tf.float32),
+            name="mean_hits_at_k_{}".format(output_feature_name),
+        )
     return hits_at_k, mean_hits_at_k
 
 
-def edit_distance(targets, target_seq_length, predictions_sequence,
-                  predictions_seq_length):
-    predicts = to_sparse(predictions_sequence,
-                         predictions_seq_length,
-                         tf.shape(predictions_sequence)[1])
-    labels = to_sparse(targets,
-                       target_seq_length,
-                       tf.shape(targets)[1])
+def edit_distance(
+        targets, target_seq_length, predictions_sequence,
+        predictions_seq_length
+):
+    predicts = to_sparse(
+        predictions_sequence,
+        predictions_seq_length,
+        tf.shape(predictions_sequence)[1],
+    )
+    labels = to_sparse(targets, target_seq_length, tf.shape(targets)[1])
     edit_distance = tf.edit_distance(predicts, labels)
     mean_edit_distance = tf.reduce_mean(edit_distance)
     return edit_distance, mean_edit_distance
@@ -650,27 +694,30 @@ def perplexity(cross_entropy_loss):
 
 def error(targets, predictions, output_feature_name):
     # return tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
-    return tf.subtract(targets, predictions,
-                       name='error_{}'.format(output_feature_name))
+    return tf.subtract(
+        targets, predictions, name="error_{}".format(output_feature_name)
+    )
 
 
 def absolute_error(targets, predictions, output_feature_name):
     # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
-    return tf.abs(error, name='absolute_error_{}'.format(output_feature_name))
+    return tf.abs(error, name="absolute_error_{}".format(output_feature_name))
 
 
 def squared_error(targets, predictions, output_feature_name):
     # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
-    return tf.pow(error, 2,
-                  name='squared_error_{}'.format(output_feature_name))
+    return tf.pow(
+        error, 2, name="squared_error_{}".format(output_feature_name)
+    )
 
 
 def r2(targets, predictions, output_feature_name):
     y_bar = tf.reduce_mean(targets)
     tot_ss = tf.reduce_sum(tf.pow(targets - y_bar, 2))
     res_ss = tf.reduce_sum(tf.pow(targets - predictions, 2))
-    r2 = tf.subtract(1., res_ss / tot_ss,
-                     name='r2_{}'.format(output_feature_name))
+    r2 = tf.subtract(
+        1.0, res_ss / tot_ss, name="r2_{}".format(output_feature_name)
+    )
     return r2

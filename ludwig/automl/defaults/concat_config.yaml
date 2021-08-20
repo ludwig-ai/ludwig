@@ -1,0 +1,50 @@
+preprocessing:
+  image:
+    infer_image_dimensions: True
+
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+
+training:
+  batch_size: auto #256
+  learning_rate: auto #.001
+  # validation_metric: accuracy
+
+hyperopt:
+  # goal: maximize
+  parameters:
+    combiner.num_fc_layers:
+      space: randint
+      type: int
+      lower: 1
+      upper: 8
+    combiner.fc_size:
+      space: choice
+      categories: [128, 256, 512, 1024]
+    combiner.dropout:
+      space: uniform
+      type: float
+      lower: 0.0
+      upper: 0.1
+    training.learning_rate:
+      space: loguniform
+      type: float
+      lower: 0.0001
+      upper: 0.01
+    training.batch_size:
+      space: choice
+      categories: [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+
+  sampler:
+    type: ray
+    scheduler:
+      type: async_hyperband
+      time_attr: time_total_s
+    num_samples: 20
+
+  executor:
+    type: ray
+    time_budget_s: 6000

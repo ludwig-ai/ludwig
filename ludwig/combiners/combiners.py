@@ -18,6 +18,7 @@ import logging
 from typing import List
 
 import tensorflow as tf
+from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import concatenate
 
@@ -25,12 +26,14 @@ import torch
 from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigModule
 
+from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.modules.attention_modules import TransformerStack
+from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
@@ -114,6 +117,7 @@ class ConcatCombiner(LudwigModule):
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
+        # ================ Flatten ================
         if self.flatten_inputs:
             batch_size = tf.shape(encoder_outputs[0])[0]
             encoder_outputs = [
@@ -388,6 +392,12 @@ class TabNetCombiner(tf.keras.Model):
         else:
             self.dropout = None
 
+    def build(self, input_shape):
+        self.flatten_layers = {
+            k: tf.keras.layers.Flatten()
+            for k in input_shape.keys()
+        }
+
     def call(
             self,
             inputs,  # encoder outputs
@@ -395,12 +405,14 @@ class TabNetCombiner(tf.keras.Model):
             mask=None,
             **kwargs
     ):
-        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
+        encoder_output_map = {
+            k: inputs[k]['encoder_output'] for k in inputs
+        }
 
         # ================ Flatten ================
-        batch_size = tf.shape(encoder_outputs[0])[0]
         encoder_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            self.flatten_layers[k](eo)
+            for k, eo in encoder_output_map.items()
         ]
 
         # ================ Concat ================
@@ -507,6 +519,12 @@ class TransformerCombiner(tf.keras.Model):
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
+        # ================ Flatten ================
+        batch_size = tf.shape(encoder_outputs[0])[0]
+        encoder_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+        ]
+
         # ================ Project & Concat ================
         projected = [
             self.projectors[i](eo)
@@ -543,12 +561,196 @@ class TransformerCombiner(tf.keras.Model):
         return return_data
 
 
+class TabTransformerCombiner(tf.keras.Model):
+    def __init__(
+            self,
+            input_features=None,
+            embed_input_feature_name=None,  # None or embedding size or "add"
+            num_layers=1,
+            hidden_size=256,
+            num_heads=8,
+            transformer_fc_size=256,
+            dropout=0.1,
+            fc_layers=None,
+            num_fc_layers=0,
+            fc_size=256,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
+            norm=None,
+            norm_params=None,
+            fc_activation='relu',
+            fc_dropout=0,
+            fc_residual=False,
+            reduce_output='concat',
+            **kwargs
+    ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        if reduce_output is None:
+            raise ValueError("TabTransformer requires the `resude_output` "
+                             "parametr")
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.supports_masking = True
+        self.layer_norm = LayerNormalization()
+
+        self.embed_input_feature_name = embed_input_feature_name
+        if self.embed_input_feature_name:
+            vocab = [i_f for i_f in input_features
+                     if i_f[TYPE] != NUMERICAL or i_f[TYPE] != BINARY]
+            if self.embed_input_feature_name == 'add':
+                self.embed_i_f_name_layer = Embed(vocab, hidden_size,
+                                                  force_embedding_size=True)
+                projector_size = hidden_size
+            elif isinstance(self.embed_input_feature_name, int):
+                if self.embed_input_feature_name > hidden_size:
+                    raise ValueError(
+                        "TabTransformer parameter "
+                        "`embed_input_feature_name` "
+                        "specified integer value ({}) "
+                        "needs to be smaller than "
+                        "`hidden_size` ({}).".format(
+                            self.embed_input_feature_name, hidden_size
+                        ))
+                self.embed_i_f_name_layer = Embed(
+                    vocab,
+                    self.embed_input_feature_name,
+                    force_embedding_size=True,
+                )
+                projector_size = hidden_size - self.embed_input_feature_name
+            else:
+                raise ValueError("TabTransformer parameter "
+                                 "`embed_input_feature_name` "
+                                 "should be either None, an integer or `add`, "
+                                 "the current value is "
+                                 "{}".format(self.embed_input_feature_name))
+        else:
+            projector_size = hidden_size
+
+        logger.debug('  Projectors')
+        self.projectors = [Dense(projector_size) for i_f in input_features
+                           if i_f[TYPE] != NUMERICAL and i_f[TYPE] != BINARY]
+        self.skip_features = [i_f[NAME] for i_f in input_features
+                              if i_f[TYPE] == NUMERICAL or i_f[TYPE] == BINARY]
+
+        logger.debug('  TransformerStack')
+        self.transformer_stack = TransformerStack(
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            fc_size=transformer_fc_size,
+            num_layers=num_layers,
+            dropout=dropout
+        )
+
+        logger.debug('  FCStack')
+        self.fc_stack = FCStack(
+            layers=fc_layers,
+            num_layers=num_fc_layers,
+            default_fc_size=fc_size,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
+            default_norm=norm,
+            default_norm_params=norm_params,
+            default_activation=fc_activation,
+            default_dropout=fc_dropout,
+            fc_residual=fc_residual,
+        )
+
+    def call(
+            self,
+            inputs,  # encoder outputs
+            training=None,
+            mask=None,
+            **kwargs
+    ):
+        skip_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
+                                if k in self.skip_features]
+        other_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
+                                 if k not in self.skip_features]
+
+        # ================ Flatten ================
+        batch_size = tf.shape(other_encoder_outputs[0])[0]
+        other_encoder_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in other_encoder_outputs
+        ]
+        skip_encoder_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in skip_encoder_outputs
+        ]
+
+        # ================ Project & Concat others ================
+        projected = [
+            self.projectors[i](eo)
+            for i, eo in enumerate(other_encoder_outputs)
+        ]
+        hidden = tf.stack(projected)  # num_eo, bs, h
+        hidden = tf.transpose(hidden, perm=[1, 0, 2])  # bs, num_eo, h
+
+        if self.embed_input_feature_name:
+            i_f_names_idcs = tf.range(0, len(other_encoder_outputs))
+            embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
+            embedded_i_f_names = tf.expand_dims(embedded_i_f_names, axis=0)
+            embedded_i_f_names = tf.tile(embedded_i_f_names, [batch_size, 1, 1])
+            if self.embed_input_feature_name == 'add':
+               hidden = hidden + embedded_i_f_names
+            else:
+                hidden = tf.concat([hidden, embedded_i_f_names], axis=-1)
+
+        # ================ Transformer Layers ================
+        hidden = self.transformer_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
+
+        # ================ Sequence Reduction ================
+        hidden = self.reduce_sequence(hidden)
+
+        # ================ Concat Skipped ================
+        if len(skip_encoder_outputs) > 1:
+            skip_hidden = concatenate(skip_encoder_outputs, -1)
+        else:
+            skip_hidden = list(skip_encoder_outputs)[0]
+        skip_hidden = self.layer_norm(skip_hidden)
+
+        # ================ Concat Skipped and Others ================
+        hidden = concatenate([hidden, skip_hidden], -1)
+
+        # ================ FC Layers ================
+        hidden = self.fc_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
+
+        return_data = {'combiner_output': hidden}
+
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
+
+        return return_data
+
+
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
             self,
             entity_1: List[str],
             entity_2: List[str],
-            fc_layers=None,
+            # fc_layers=None,
             num_fc_layers=1,
             fc_size=256,
             use_bias=True,
@@ -571,10 +773,10 @@ class ComparatorCombiner(tf.keras.Model):
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if fc_layers is None and num_fc_layers is not None:
-            fc_layers = []
-            for i in range(num_fc_layers):
-                fc_layers.append({"fc_size": fc_size})
+        # if fc_layers is None and num_fc_layers is not None:
+        fc_layers = []
+        for i in range(num_fc_layers):
+            fc_layers.append({"fc_size": fc_size})
 
         if fc_layers is not None:
             logger.debug("  FCStack")
@@ -635,6 +837,12 @@ class ComparatorCombiner(tf.keras.Model):
         ############
         e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
 
+        # ================ Flatten ================
+        batch_size = tf.shape(e1_enc_outputs[0])[0]
+        e1_enc_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
+        ]
+
         # ================ Concat ================
         if len(e1_enc_outputs) > 1:
             e1_hidden = concatenate(e1_enc_outputs, 1)
@@ -643,10 +851,17 @@ class ComparatorCombiner(tf.keras.Model):
 
         # ================ Fully Connected ================
         e1_hidden = self.e1_fc_stack(e1_hidden, training=training, mask=mask)
+
         ############
         # Entity 2 #
         ############
         e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
+
+        # ================ Flatten ================
+        batch_size = tf.shape(e2_enc_outputs[0])[0]
+        e2_enc_outputs = [
+            tf.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
+        ]
 
         # ================ Concat ================
         if len(e2_enc_outputs) > 1:
@@ -662,7 +877,9 @@ class ComparatorCombiner(tf.keras.Model):
         ###########
         if e1_hidden.shape != e2_hidden.shape:
             raise ValueError(
-                f"Mismatching shapes among dimensions! entity1 shape: {e1_hidden.shape.as_list()} entity2 shape: {e2_hidden.shape.as_list()}"
+                f"Mismatching shapes among dimensions! "
+                f"entity1 shape: {e1_hidden.shape.as_list()} "
+                f"entity2 shape: {e2_hidden.shape.as_list()}"
             )
 
         dot_product = tf.matmul(e1_hidden, tf.transpose(e2_hidden))
@@ -693,6 +910,7 @@ combiner_registry = {
     'tabnet': TabNetCombiner,
     'comparator': ComparatorCombiner,
     "transformer": TransformerCombiner,
+    "tabtransformer": TabTransformerCombiner,
 }
 
 sequence_encoder_registry = {

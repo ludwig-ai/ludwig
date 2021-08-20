@@ -30,6 +30,7 @@ import pandas as pd
 import yaml
 
 from ludwig.utils.fs_utils import open_file, download_h5, upload_h5
+from ludwig.utils.misc_utils import get_from_registry
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
@@ -117,15 +118,21 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=',', header=0, nrows=None, ski
             # Could not conclude the delimiter, defaulting to user provided
             pass
 
+    kwargs = dict(
+        sep=separator,
+        header=header,
+        skiprows=skiprows
+    )
+
+    if nrows is not None:
+        kwargs['nrows'] = nrows
+
     try:
-        df = df_lib.read_csv(data_fp, sep=separator, header=header,
-                             nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, **kwargs)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = df_lib.read_csv(data_fp, sep=separator, header=header,
-                             escapechar='\\',
-                             nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, escapechar='\\', **kwargs)
 
     return df
 
@@ -804,3 +811,20 @@ external_data_reader_registry = {
     **{fmt: read_spss for fmt in SPSS_FORMATS},
     **{fmt: read_stata for fmt in STATA_FORMATS}
 }
+
+
+def load_dataset(dataset, data_format=None, df_lib=PANDAS_DF):
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(dataset)
+
+    # use appropriate reader to create dataframe
+    if data_format in DATAFRAME_FORMATS:
+        return dataset
+    elif data_format in DICT_FORMATS:
+        return pd.DataFrame(dataset)
+    elif data_format in CACHEABLE_FORMATS:
+        data_reader = get_from_registry(data_format,
+                                        external_data_reader_registry)
+        return data_reader(dataset, df_lib)
+    else:
+        ValueError(f"{data_format} format is not supported")

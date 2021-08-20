@@ -1,0 +1,8 @@
+version: 1.0
+competition: bnp-paribas-cardif-claims-management
+archive_filename: bnp-paribas-cardif-claims-management.zip
+split_filenames:
+  train_file: train.csv.zip
+  #test_file: test.csv.zip
+download_file_type: csv
+csv_filename: train.csv.zip

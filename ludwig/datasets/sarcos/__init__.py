@@ -18,17 +18,20 @@ import os
 from scipy.io import loadmat
 import pandas as pd
 
+from ludwig.utils.fs_utils import open_file, get_fs_and_path
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
 
+
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     dataset = Sarcos(cache_dir=cache_dir)
     return dataset.load(split=split)
 
+
 class Sarcos(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
-            CSVLoadMixin, BaseDataset):
+             CSVLoadMixin, BaseDataset):
     """
         The Sarcos dataset
 
@@ -48,11 +51,13 @@ class Sarcos(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
             S. Vijayakumar and S. Schaal, Proc ICML 2000. 
             http://www.gaussianprocess.org/gpml/data/
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="sarcos", cache_dir=cache_dir)
 
     def read_file(self, filetype, filename, header=0):
-        mat = loadmat(os.path.join(self.raw_dataset_path, filename))
+        with open_file(os.path.join(self.raw_dataset_path, filename)) as f:
+            mat = loadmat(f)
         file_df = pd.DataFrame(mat[filename.split('.')[0]])
         return file_df
 
@@ -72,4 +77,3 @@ class Sarcos(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False
         )
-        

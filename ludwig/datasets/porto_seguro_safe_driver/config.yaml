@@ -1,0 +1,7 @@
+version: 1.0
+competition: porto-seguro-safe-driver-prediction
+archive_filename: porto-seguro-safe-driver-prediction.zip
+split_filenames:
+  train_file: train.csv
+csv_filename: train.csv
+download_file_type: csv

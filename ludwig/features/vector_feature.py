@@ -31,8 +31,9 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
     MAELoss
-from ludwig.modules.metric_modules import ErrorScore, \
+from ludwig.modules.metric_modules import (
     SoftmaxCrossEntropyMetric, MSEMetric, MAEMetric
+)
 from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.misc_utils import set_default_value
 
@@ -53,7 +54,8 @@ class VectorFeatureMixin:
 
     preprocessing_schema = {
         'vector_size': {'type': 'integer', 'minimum': 0},
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'missing_value_strategy': {'type': 'string',
+                                   'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': fill_value_schema,
         'computed_fill_value': fill_value_schema,
     }
@@ -99,7 +101,8 @@ class VectorFeatureMixin:
             raise
 
         # Determine vector size
-        vector_size = backend.df_engine.compute(proc_df[feature[PROC_COLUMN]].map(len).max())
+        vector_size = backend.df_engine.compute(
+            proc_df[feature[PROC_COLUMN]].map(len).max())
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -226,7 +229,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[ERROR] = ErrorScore(name='metric_error')
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
             name='metric_mse'
         )

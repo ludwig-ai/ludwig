@@ -1161,9 +1161,7 @@ def build_dataset(
         random_seed=random_seed
     )
 
-    dataset = backend.df_engine.empty_df_like(dataset_df)
-    for k, v in proc_cols.items():
-        dataset[k] = v
+    dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those

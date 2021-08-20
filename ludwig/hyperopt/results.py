@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Union
 
 from dataclasses_json import dataclass_json
 
