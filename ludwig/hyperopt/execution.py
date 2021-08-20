@@ -1,4 +1,5 @@
 import datetime
+from ludwig.backend.horovod import HorovodBackend
 import os
 import uuid
 import copy
@@ -8,6 +9,7 @@ import signal
 import shutil
 from abc import ABC, abstractmethod
 from typing import Union
+import logging
 
 from ray.tune.session import get_trial_dir, get_trial_id
 
@@ -24,12 +26,15 @@ from ludwig.utils.misc_utils import (get_available_gpu_memory,
                                      get_from_registry,
                                      hash_dict)
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
+from .ray import DistributedTrainableCreator
 
 try:
     import ray
     from ray import tune
+    from ray.tune.utils.placement_groups import PlacementGroupFactory
     from ray.tune.utils import wait_for_gpu
     from ray.tune import register_trainable
+    from ray.tune.integration.horovod import DistributedTrainableCreator as HorovodDistributedTrainableCreator
 except ImportError:
     ray = None
 
@@ -752,10 +757,12 @@ class RayTuneExecutor(HyperoptExecutor):
         self.time_budget_s = time_budget_s
 
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx):
+        print(f"_run_experiment tune.is_session_enabled() {tune.is_session_enabled()}")
+        print("_run_experiment 1")
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
-
+        print("_run_experiment 2")
         # Some config values may be JSON encoded as strings, so decode them here
         config = RayTuneSampler.decode_values(config, decode_ctx)
 
@@ -771,6 +778,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         class RayTuneReportCallback(Callback):
             def on_epoch_end(self, trainer, progress_tracker, save_path):
+                print(f"on_epoch_end tune.is_session_enabled() {tune.is_session_enabled()}")
                 with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
                     checkpoint_model = os.path.join(checkpoint_dir, 'model')
                     # shutil.copytree(save_path, checkpoint_model)
@@ -806,12 +814,13 @@ class RayTuneExecutor(HyperoptExecutor):
 
         callbacks = hyperopt_dict.get('callbacks') or []
         hyperopt_dict['callbacks'] = callbacks + [RayTuneReportCallback()]
-
+        print("_run_experiment 3")
         train_stats, eval_stats = run_experiment(
             **hyperopt_dict,
             model_resume_path=checkpoint_dir,
             parameters=config,
         )
+        print("_run_experiment 4")
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
         tune.report(
@@ -925,6 +934,7 @@ class RayTuneExecutor(HyperoptExecutor):
         }
 
         def run_experiment_trial(config, checkpoint_dir=None):
+            print(f"run_experiment_trial tune.is_session_enabled() {tune.is_session_enabled()}")
             return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx)
 
         tune_config = {}
@@ -935,6 +945,17 @@ class RayTuneExecutor(HyperoptExecutor):
                 tune_config,
                 tune_callbacks,
             )
+
+        #if isinstance(backend, HorovodBackend):
+        num_slots = (self.gpu_resources_per_trial if self.gpu_resources_per_trial else self.cpu_resources_per_trial) or 1
+        run_experiment_trial = DistributedTrainableCreator(
+            run_experiment_trial,
+            use_gpu=bool(self.gpu_resources_per_trial),
+            num_hosts=1,
+            num_slots=num_slots,
+            replicate_pem=False
+        )
+        resources_per_trial = None
 
         register_trainable(
             f"trainable_func_f{hash_dict(config).decode('ascii')}",
@@ -961,6 +982,7 @@ class RayTuneExecutor(HyperoptExecutor):
             trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
             trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
             callbacks=tune_callbacks,
+            fail_fast=True
         )
 
         ordered_trials = analysis.results_df.sort_values(
@@ -1073,6 +1095,8 @@ def run_experiment(
         debug=False,
         **kwargs
 ):
+    print(f"run_experiment tune.is_session_enabled() {tune.is_session_enabled()}")
+    print("run_experiment 1")
     for callback in callbacks or []:
         callback.on_hyperopt_trial_start(parameters)
 
@@ -1085,7 +1109,9 @@ def run_experiment(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
+        #logging_level=logging.DEBUG
     )
+    print("run_experiment 2")
     eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,
         training_set=training_set,
@@ -1113,6 +1139,7 @@ def run_experiment(
         random_seed=random_seed,
         debug=debug,
     )
+    print("run_experiment 3")
     return train_stats, eval_stats
 
 

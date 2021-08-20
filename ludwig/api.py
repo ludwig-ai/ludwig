@@ -476,6 +476,7 @@ class LudwigModel:
                                                       random_seed=random_seed)
 
             # init trainer
+            print("create trainer")
             with self.backend.create_trainer(
                 **self.config[TRAINING],
                 resume=model_resume_path is not None,

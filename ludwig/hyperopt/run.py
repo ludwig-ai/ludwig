@@ -1,4 +1,6 @@
 import logging
+from ludwig.backend.ray import RayBackend
+from ludwig.backend.horovod import HorovodBackend
 from pprint import pformat
 from typing import Union, List
 
@@ -6,7 +8,7 @@ import pandas as pd
 import yaml
 
 from ludwig.callbacks import Callback
-from ludwig.hyperopt.execution import executor_registry
+from ludwig.hyperopt.execution import RayTuneExecutor, executor_registry
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.constants import HYPEROPT, TRAINING, VALIDATION, TEST, COMBINED, \
     LOSS, TYPE, SAMPLER, EXECUTOR, MINIMIZE
@@ -157,13 +159,6 @@ def hyperopt(
     else:
         config_dict = config
 
-    # Explicitly default to a local backend to avoid picking up Ray or Horovod
-    # backend from the environment.
-    backend = backend or config_dict.get('backend') or 'local'
-    backend = initialize_backend(backend)
-    if not isinstance(backend, LocalBackend):
-        raise ValueError('Hyperopt requires using a `local` backend at this time.')
-
     # merge config with defaults
     config = merge_with_defaults(config_dict)
 
@@ -276,6 +271,13 @@ def hyperopt(
     hyperopt_executor = get_build_hyperopt_executor(
         executor[TYPE]
     )(hyperopt_sampler, output_feature, metric, split, **executor)
+
+    # Explicitly default to a local backend to avoid picking up Ray or Horovod
+    # backend from the environment.
+    backend = backend or config_dict.get('backend') or 'local'
+    backend = initialize_backend(backend)
+    if not (isinstance(backend, LocalBackend) or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))):
+        raise ValueError('Hyperopt requires using a `local` backend at this time.')
 
     if callbacks:
         for callback in callbacks:
