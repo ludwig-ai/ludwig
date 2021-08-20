@@ -10,6 +10,22 @@ from ludwig.utils.print_utils import print_boxed
 logger = logging.getLogger(__name__)
 
 
+ray_hparamspace_type_map = {
+    "uniform": "float",
+    "quniform": "float",
+    "loguniform": "float",
+    "qloguniform": "float",
+    "randn": "float",
+    "qrandn": "float",
+    "qlograndint": "int",
+    "lograndint": "int",
+    "qrandint": "int",
+    "randint": "int",
+    "grid": "category",
+    "choice": "category"
+}
+
+
 def print_hyperopt_results(hyperopt_results: HyperoptResults):
     print_boxed('HYPEROPT RESULTS', print_fun=logger.info)
     for trial_results in hyperopt_results.ordered_trials:

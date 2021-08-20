@@ -8,6 +8,7 @@ import signal
 import shutil
 from abc import ABC, abstractmethod
 from typing import Union
+import pdb
 
 from ray.tune.session import get_trial_dir, get_trial_id
 
@@ -16,13 +17,14 @@ from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
 from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
-from ludwig.hyperopt.utils import load_json_values
+from ludwig.hyperopt.utils import load_json_values, ray_hparamspace_type_map
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import (get_available_gpu_memory,
                                      get_from_registry,
                                      hash_dict)
+
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 try:
@@ -756,9 +758,6 @@ class RayTuneExecutor(HyperoptExecutor):
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
 
-        # Some config values may be JSON encoded as strings, so decode them here
-        config = RayTuneSampler.decode_values(config, decode_ctx)
-
         trial_id = tune.get_trial_id()
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config
@@ -768,6 +767,9 @@ class RayTuneExecutor(HyperoptExecutor):
         hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
 
         tune_executor = self
+
+        # Some config values may be JSON encoded as strings, so decode them here
+        config = RayTuneSampler.decode_values(config, decode_ctx)
 
         class RayTuneReportCallback(Callback):
             def on_epoch_end(self, trainer, progress_tracker, save_path):
@@ -862,6 +864,15 @@ class RayTuneExecutor(HyperoptExecutor):
             raise ValueError("Parameter `gpus` is not supported when using Ray Tune. "
                              "Configure GPU resources with Ray and set `gpu_resources_per_trial` in your "
                              "hyperopt config.")
+
+        # validate that type parameter is specified in parameter search space
+        for param, param_space in config['hyperopt']['parameters'].items():
+            if TYPE not in param_space.keys():
+                ray_param_space = param_space["space"]
+                param_space["type"] = ray_hparamspace_type_map[ray_param_space]
+                logger.warning(f"The type argument is not specified in the "
+                               f"hyperparameter optimization search space of {param}. "
+                               f"For {param}, type has been set to {param_space['type']}.")
 
         hyperopt_dict = dict(
             config=config,
