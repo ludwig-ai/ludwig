@@ -28,6 +28,7 @@ import subprocess
 import tempfile
 import numpy as np
 import pandas as pd
+import pytest
 
 from ludwig.constants import *
 from ludwig.api import LudwigModel
@@ -255,8 +256,9 @@ def test_visualization_compare_performance_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-
+@pytest.mark.parametrize('backend', ['local', 'dask'])
 def test_visualization_compare_classifiers_from_prob_csv_output_saved(
+        backend,
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -275,13 +277,18 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        dataset=rel_path
+        dataset=rel_path,
+        backend=backend
     )
 
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     output_feature_name = get_output_feature_name(exp_dir_name)
-    probability = os.path.join(exp_dir_name, 'predictions.parquet')
+    if backend == 'dask':
+        probability = os.path.join(exp_dir_name, 'predictions.parquet')
+    else:
+        probability = os.path.join(exp_dir_name, '{}_probabilities.csv').format(
+            output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.csv'
     split_file = get_split_path(csv_filename)
