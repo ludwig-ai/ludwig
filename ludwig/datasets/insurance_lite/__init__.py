@@ -56,7 +56,8 @@ class InsuranceLite(CSVLoadMixin, S3FileDownloadMixin, BaseDataset):
             file_name, header=0,
             names=['id', 'image_path', 'insurance_company',
                     'cost_of_vehicle', 'min_coverage', 'expiry_date',
-                    'max_coverage', 'condition', 'amount']
+                    'max_coverage', 'condition', 'amount'],
+            usecols=list(range(1, 9))
             )
         urls = df['image_path']
         # self.download_images(urls)

@@ -313,7 +313,6 @@ class ViTEncoder(ImageEncoder):
             image_size,
             patch_size: int = 16,
             num_layers: int = 8,
-            num_classes: int = 10,
             d_model: int = 64,
             num_heads: int = 4,
             mlp_dim: int = 128,
@@ -338,13 +337,7 @@ class ViTEncoder(ImageEncoder):
             TransformerBlock(d_model, num_heads, mlp_dim, dropout)
             for _ in range(num_layers)
         ]
-        self.mlp_head = tf.keras.Sequential(
-            [
-                Dense(mlp_dim, activation=tfa.activations.gelu),
-                Dropout(dropout),
-                Dense(num_classes),
-            ]
-        )
+        self.embedding_head = Dense(mlp_dim, activation=tfa.activations.gelu)
 
     def extract_patches(self, images):
         batch_size = tf.shape(images)[0]
@@ -374,5 +367,5 @@ class ViTEncoder(ImageEncoder):
             x = layer(x, training)
 
         # First (class token) is used for classification
-        x = self.mlp_head(x[:, 0])
+        x = self.embedding_head(x[:, 0])
         return x
