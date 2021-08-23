@@ -70,7 +70,7 @@ def get_horovod_kwargs():
 
     best_slots, best_resources = max(buckets.items(), key=get_total_resources)
     return dict(
-        num_slots=best_slots-2,
+        num_slots=best_slots,
         num_hosts=len(best_resources),
         use_gpu=use_gpu
     )
