@@ -1194,8 +1194,16 @@ def build_metadata(
         metadata, dataset_cols, features, global_preprocessing_parameters, backend
 ):
     for feature in features:
+        print('\n\n\n')
+        print(f'Feature: {feature}')
+        print(f'Type of feature: {type(feature)}')
+
+        print(f'Metadata: {metadata}')
+
         if feature[NAME] in metadata:
             continue
+
+        print(f'PREPROCESSING: {PREPROCESSING}')
 
         if PREPROCESSING in feature:
             preprocessing_parameters = merge_dict(
@@ -1213,7 +1221,9 @@ def build_metadata(
                 feature[TYPE],
                 input_type_registry
             ).encoder_registry
+            print(f'ENCODER REG: {encoders_registry}')
             encoder_class = encoders_registry[feature['encoder']]
+            print(f'ENCODER CLASS: {encoder_class}')
             if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
@@ -1295,6 +1305,7 @@ def build_data(
 
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
+    print(f'dataset_cols: {dataset_cols}')
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
