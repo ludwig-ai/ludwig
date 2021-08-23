@@ -60,8 +60,8 @@ output_features:
   -
     name: amount
     type: numerical
-training:
-  epochs: 2
+# training:
+#   epochs: 20
 preprocessing:
   force_split: false
   split_probabilities: [0.7, 0.1, 0.2]
