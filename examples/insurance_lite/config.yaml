@@ -60,5 +60,5 @@ output_features:
 training:
   - epochs: 2
 preprocessing:
-    force_split: false
-    split_probabilities: [0.7, 0.1, 0.2]
+  force_split: false
+  split_probabilities: [0.7, 0.1, 0.2]
