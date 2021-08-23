@@ -19,12 +19,12 @@ shutil.rmtree('./results', ignore_errors=True)
 
 # Download and prepare the dataset
 # dataset = insurance_lite.load()
-dataset = '/Users/shreyarajpal/.ludwig_cache/insurance_lite_1.0/processed/insurance_lite.csv'
+dataset = '/home/ray/.ludwig_cache/insurance_lite_1.0/processed/insurance_lite.csv'
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./config.yaml',
-                    logging_level=logging.INFO,)
-                    # backend='ray')
+                    logging_level=logging.INFO,
+                    backend='ray')
 
 
 # initiate model training
