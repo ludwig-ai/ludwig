@@ -1,4 +1,5 @@
 import datetime
+from ludwig.backend.ray import RayBackend, RayRemoteTrainer
 from ludwig.backend.horovod import HorovodBackend
 import os
 import uuid
@@ -9,7 +10,8 @@ import signal
 import shutil
 from abc import ABC, abstractmethod
 from typing import Union
-import logging
+import threading
+import time
 
 from ray.tune.session import get_trial_dir, get_trial_id
 
@@ -26,7 +28,6 @@ from ludwig.utils.misc_utils import (get_available_gpu_memory,
                                      get_from_registry,
                                      hash_dict)
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
-from .ray import DistributedTrainableCreator
 
 try:
     import ray
@@ -34,7 +35,7 @@ try:
     from ray.tune.utils.placement_groups import PlacementGroupFactory
     from ray.tune.utils import wait_for_gpu
     from ray.tune import register_trainable
-    from ray.tune.integration.horovod import DistributedTrainableCreator as HorovodDistributedTrainableCreator
+    from ray.util.queue import Queue as RayQueue
 except ImportError:
     ray = None
 
@@ -775,24 +776,9 @@ class RayTuneExecutor(HyperoptExecutor):
         hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
 
         tune_executor = self
+        ray_queue = RayQueue(actor_options={"num_cpus": 0})
 
-        class RayTuneReportCallback(Callback):
-            def on_epoch_end(self, trainer, progress_tracker, save_path):
-                print(f"on_epoch_end tune.is_session_enabled() {tune.is_session_enabled()}")
-                with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
-                    checkpoint_model = os.path.join(checkpoint_dir, 'model')
-                    # shutil.copytree(save_path, checkpoint_model)
-                    # Note: A previous implementation used shutil.copytree()
-                    # however, this copying method is non atomic
-                    if not os.path.isdir(checkpoint_model):
-                        copy_id = uuid.uuid4()
-                        tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
-                        shutil.copytree(save_path, tmp_dst)
-                        try:
-                            os.rename(tmp_dst, checkpoint_model)
-                        except:
-                            shutil.rmtree(tmp_dst)
-
+        def report(progress_tracker):
                 train_stats = {
                     TRAINING: progress_tracker.train_metrics,
                     VALIDATION: progress_tracker.vali_metrics,
@@ -811,16 +797,85 @@ class RayTuneExecutor(HyperoptExecutor):
                     trial_id=tune.get_trial_id(),
                     trial_dir=tune.get_trial_dir()
                 )
+    
+        class RayTuneReportCallback(Callback):
+            def on_epoch_end(self, trainer, progress_tracker, save_path):
+                print(f"on_epoch_end tune.is_session_enabled() {tune.is_session_enabled()} {os.getcwd()}")
+
+                if not trainer.is_coordinator():
+                    return
+
+                if isinstance(trainer, RayRemoteTrainer):
+                    ray_queue.put((progress_tracker, save_path))
+                    return
+
+                with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+                    checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                    # shutil.copytree(save_path, checkpoint_model)
+                    # Note: A previous implementation used shutil.copytree()
+                    # however, this copying method is non atomic
+                    print(save_path)
+                    print(checkpoint_model)
+                    if not os.path.isdir(checkpoint_model):
+                        copy_id = uuid.uuid4()
+                        tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                        shutil.copytree(save_path, tmp_dst)
+                        try:
+                            os.rename(tmp_dst, checkpoint_model)
+                        except:
+                            shutil.rmtree(tmp_dst)
+
+                report(progress_tracker)
 
         callbacks = hyperopt_dict.get('callbacks') or []
         hyperopt_dict['callbacks'] = callbacks + [RayTuneReportCallback()]
         print("_run_experiment 3")
-        train_stats, eval_stats = run_experiment(
-            **hyperopt_dict,
-            model_resume_path=checkpoint_dir,
-            parameters=config,
-        )
+
+        checkpoint_dir = checkpoint_dir or os.path.join(os.getcwd(), "model")
+
+        stats = []
+        def _run():
+            train_stats, eval_stats = run_experiment(
+                **hyperopt_dict,
+                model_resume_path=checkpoint_dir,
+                parameters=config,
+            )
+            stats.append((train_stats, eval_stats))
+
+        thread = threading.Thread(target=_run)
+        thread.daemon = True
+        thread.start()
+        while thread.is_alive():
+            thread.join(timeout=0)
+            qsize = ray_queue.qsize()
+            if qsize:
+                results = ray_queue.get_nowait_batch(qsize)
+                for progress_tracker, save_path in results:
+                    with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+                        checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                        # shutil.copytree(save_path, checkpoint_model)
+                        # Note: A previous implementation used shutil.copytree()
+                        # however, this copying method is non atomic
+                        print(f"tune actor checkpoint dir {os.path.abspath(save_path)} {checkpoint_model}")
+                        if not os.path.isdir(checkpoint_model):
+                            copy_id = uuid.uuid4()
+                            tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                            print(f"tmp_dst {tmp_dst}")
+                            shutil.copytree(save_path, tmp_dst)
+                            print("copy successfull")
+                            try:
+                                os.rename(tmp_dst, checkpoint_model)
+                                print(f"rename to {checkpoint_model} succesfull")
+                            except:
+                                print("exception when saving checkpoint")
+                                shutil.rmtree(tmp_dst)
+                    report(progress_tracker)
+            time.sleep(0.1)
+        thread.join()
+
         print("_run_experiment 4")
+
+        train_stats, eval_stats = stats.pop()
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
         tune.report(
@@ -946,16 +1001,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 tune_callbacks,
             )
 
-        #if isinstance(backend, HorovodBackend):
-        num_slots = (self.gpu_resources_per_trial if self.gpu_resources_per_trial else self.cpu_resources_per_trial) or 1
-        run_experiment_trial = DistributedTrainableCreator(
-            run_experiment_trial,
-            use_gpu=bool(self.gpu_resources_per_trial),
-            num_hosts=1,
-            num_slots=num_slots,
-            replicate_pem=False
-        )
-        resources_per_trial = None
+        if isinstance(backend, RayBackend):
+            resources_per_trial = {f"extra_{k}": v for k,v in resources_per_trial.items()}
 
         register_trainable(
             f"trainable_func_f{hash_dict(config).decode('ascii')}",

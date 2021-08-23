@@ -343,6 +343,7 @@ class LudwigModel:
                     experiment_name,
                     model_name
                 )
+                output_directory = os.path.join(os.getcwd(), output_directory)
             else:
                 output_directory = None
 
@@ -1133,19 +1134,22 @@ class LudwigModel:
                 batch_size = self.config[TRAINING]['batch_size']
 
             # predict
-            eval_stats, _, _ = self.evaluate(
-                eval_set,
-                data_format=data_format,
-                batch_size=batch_size,
-                output_directory=output_directory,
-                skip_save_unprocessed_output=skip_save_unprocessed_output,
-                skip_save_predictions=skip_save_predictions,
-                skip_save_eval_stats=skip_save_eval_stats,
-                collect_predictions=not skip_collect_predictions,
-                collect_overall_stats=not skip_collect_overall_stats,
-                return_type='dict',
-                debug=debug
-            )
+            try:
+                eval_stats, _, _ = self.evaluate(
+                    eval_set,
+                    data_format=data_format,
+                    batch_size=batch_size,
+                    output_directory=output_directory,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output,
+                    skip_save_predictions=skip_save_predictions,
+                    skip_save_eval_stats=skip_save_eval_stats,
+                    collect_predictions=not skip_collect_predictions,
+                    collect_overall_stats=not skip_collect_overall_stats,
+                    return_type='dict',
+                    debug=debug
+                )
+            except NotImplementedError:
+                eval_stats = None
         else:
             logger.warning(f"The evaluation set {eval_set} was not provided. "
                            f"Skipping evaluation")
