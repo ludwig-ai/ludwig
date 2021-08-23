@@ -60,7 +60,7 @@ class InsuranceLite(CSVLoadMixin, S3FileDownloadMixin, BaseDataset):
             usecols=list(range(1, 9))
             )
         urls = df['image_path']
-        # self.download_images(urls)
+        self.download_images(urls)
         df['image_path'] = df['image_path'].apply(
             lambda x: os.path.join(self.raw_dataset_path, 'images', x.split('/')[-1]))
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
