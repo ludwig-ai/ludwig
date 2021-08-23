@@ -22,7 +22,8 @@ ray_hparamspace_type_map = {
     "qrandint": "int",
     "randint": "int",
     "grid": "category",
-    "choice": "category"
+    "choice": "category",
+    "grid_search" : "category",
 }
 
 
