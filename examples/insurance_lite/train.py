@@ -18,15 +18,14 @@ from ludwig.datasets import insurance_lite
 shutil.rmtree('./results', ignore_errors=True)
 
 # Download and prepare the dataset
-dataset = insurance_lite.load()
+# dataset = insurance_lite.load()
+dataset = '/Users/shreyarajpal/.ludwig_cache/insurance_lite_1.0/processed/insurance_lite.csv'
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./config.yaml',
-                    logging_level=logging.INFO)
+                    logging_level=logging.INFO,)
+                    # backend='ray')
 
-training_set, val_set, test_set, train_metadata = model.preprocess(
-    dataset, random_seed=1
-)
 
 # initiate model training
 (
@@ -34,7 +33,7 @@ training_set, val_set, test_set, train_metadata = model.preprocess(
     preprocessed_data,  # tuple Ludwig Dataset objects of pre-processed training data
     output_directory # location of training results stored on disk
  ) = model.train(
-    dataset=training_set,
+    dataset=dataset,
     experiment_name='simple_experiment',
     model_name='simple_model'
 )
