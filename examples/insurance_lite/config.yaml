@@ -1,19 +1,19 @@
 input_features:
-  # -
-  #   name: image_path
-  #   type: image
-  #   preprocessing:
-  #     height: 32
-  #     width: 32
-  #   encoder: vit
-  #   image_size: 32
-  #   patch_size: 4
-  #   num_layers: 4
-  #   d_model: 64
-  #   num_heads: 4
-  #   mlp_dim: 128
-  #   channels: 3
-  #   dropout: 0.1
+  -
+    name: image_path
+    type: image
+    preprocessing:
+      height: 32
+      width: 32
+    encoder: vit
+    image_size: 32
+    patch_size: 4
+    num_layers: 4
+    d_model: 64
+    num_heads: 4
+    mlp_dim: 128
+    channels: 3
+    dropout: 0.1
   -
     name: insurance_company
     type: category
@@ -30,7 +30,9 @@ input_features:
     name: expiry_date
     type: date
     preprocessing:
-      missing_value_strategy: fill_with_mean
+      missing_value_strategy: fill_with_const
+      fill_value: ''
+      datetime_format: "%Y-%m-%d"
   -
     name: min_coverage
     type: numerical
@@ -58,7 +60,7 @@ output_features:
     name: amount
     type: numerical
 training:
-  - epochs: 2
+  epochs: 2
 preprocessing:
   force_split: false
   split_probabilities: [0.7, 0.1, 0.2]
