@@ -328,6 +328,7 @@ class ViTEncoder(ImageEncoder):
             mlp_dim: int = 128,
             channels: int = 3,
             dropout: float = 0.1,
+            **kwargs
     ):
         super().__init__()
         num_patches = (image_size // patch_size) ** 2
@@ -361,7 +362,8 @@ class ViTEncoder(ImageEncoder):
         patches = tf.reshape(patches, [batch_size, -1, self.patch_dim])
         return patches
 
-    def call(self, x, training):
+    def call(self, inputs, training=None, mask=None):
+        x = inputs
         batch_size = tf.shape(x)[0]
         x = self.rescale(x)
         patches = self.extract_patches(x)
@@ -378,4 +380,4 @@ class ViTEncoder(ImageEncoder):
 
         # First (class token) is used for classification
         x = self.embedding_head(x[:, 0])
-        return x
+        return {'encoder_output': x}
