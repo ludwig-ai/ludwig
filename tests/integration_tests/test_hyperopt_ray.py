@@ -51,7 +51,7 @@ HYPEROPT_CONFIG = {
             "upper": 6
         },
         "utterance.cell_type": {
-            "space": "grid_search",
+            "space": "grid",
             "values": ["rnn", "gru"]
         },
         "utterance.bidirectional": {
