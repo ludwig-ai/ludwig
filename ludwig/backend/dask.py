@@ -16,6 +16,7 @@
 # ==============================================================================
 
 import pandas as pd
+import ray
 from functools import partial
 
 from ludwig.backend.base import Backend, LocalTrainingMixin
