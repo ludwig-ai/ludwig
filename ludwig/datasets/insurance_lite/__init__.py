@@ -74,7 +74,9 @@ class InsuranceLite(CSVLoadMixin, S3FileDownloadMixin, BaseDataset):
     def download_images(self, image_urls: List[str]):
         # TODO(shreya): Parallelize this.
         makedirs(os.path.join(self.raw_dataset_path, 'images'), exist_ok=True)
-        for url in tqdm(image_urls):
+        t_urls = tqdm(image_urls)
+        t_urls.set_description('Image Download Progress')
+        for url in t_urls:
             file_name = url.split('/')[-1]
             urlretrieve(
                 url,
