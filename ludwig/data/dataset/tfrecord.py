@@ -189,7 +189,6 @@ class TFRecordDatasetManager(object):
         )
 
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
-        # TODO(shreya): Confirm if this needs to be updated to RayDatasets too.
         """We don't use TFRecord for inference."""
         if self.backend.df_engine.partitioned:
             raise ValueError('Batch inference not supported with TFRecord format at this time')
