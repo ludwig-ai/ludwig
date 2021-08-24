@@ -60,8 +60,11 @@ output_features:
   -
     name: amount
     type: numerical
-# training:
-#   epochs: 20
+    preprocessing:
+      normalization: zscore
+training:
+  epochs: 1000
+  early_stop: 0
 preprocessing:
   force_split: false
   split_probabilities: [0.7, 0.1, 0.2]
