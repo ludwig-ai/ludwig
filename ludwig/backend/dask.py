@@ -15,9 +15,13 @@
 # limitations under the License.
 # ==============================================================================
 
+import pandas as pd
+from functools import partial
+
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME, PARQUET, PREPROCESSING, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
+from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 
@@ -46,18 +50,18 @@ class DaskPredictor(BasePredictor):
         remote_model = DaskRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
-
-        def batch_predict_partition(dataset):
-            model = remote_model.load()
-            predictor = Predictor(**predictor_kwargs)
-            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
-            ordered_predictions = predictions[output_columns]
-            return ordered_predictions
-
-        return dataset.map_dataset_partitions(
-            batch_predict_partition,
-            meta=[(c, 'object') for c in output_columns]
+        batch_predictor = self.BatchInferModel(
+            remote_model, predictor_kwargs, output_columns, dataset.features,
+            dataset.data_hdf5_fp, *args, **kwargs
         )
+
+        num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
+        return dataset.ds.map_batches(
+            batch_predictor,
+            compute='actores',
+            batch_format='pandas',
+            num_gpus=num_gpus
+        ).to_dask()
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
@@ -78,6 +82,26 @@ class DaskPredictor(BasePredictor):
 
     def shutdown(self):
         pass
+
+    class BatchInferModel:
+        def __init__(
+                self, remote_model, predictor_kwargs, output_columns, features,
+                data_hdf5_fp, *args, **kwargs
+        ):
+            self.model = remote_model.load()
+            self.predictor = Predictor(**predictor_kwargs)
+            self.output_columns = output_columns
+            self.features = features
+            self.data_hdf5_fp = data_hdf5_fp
+            self.batch_predict = partial(self.predictor.batch_predict, *args,
+                                         **kwargs)
+
+        def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+            pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
+            predictions = self.predictor.batch_predict(
+                model=self.model, dataset=pd_ds)
+            ordered_predictions = predictions[self.output_columns]
+            return ordered_predictions
 
 
 class DaskBackend(LocalTrainingMixin, Backend):
