@@ -27,6 +27,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import traceback
 from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
@@ -477,7 +478,6 @@ class LudwigModel:
                                                       random_seed=random_seed)
 
             # init trainer
-            print("create trainer")
             with self.backend.create_trainer(
                 **self.config[TRAINING],
                 resume=model_resume_path is not None,
@@ -1149,6 +1149,11 @@ class LudwigModel:
                     debug=debug
                 )
             except NotImplementedError:
+                logger.warning(
+                    "Skipping evaluation as the necessary methods are not "
+                    "supported. Full exception below:\n"
+                    f"{traceback.format_exc()}"
+                )
                 eval_stats = None
         else:
             logger.warning(f"The evaluation set {eval_set} was not provided. "

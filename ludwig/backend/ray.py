@@ -34,7 +34,6 @@ from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
-from ray import tune
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +46,11 @@ def get_dask_kwargs():
     )
 
 
-def get_horovod_kwargs():
+def get_horovod_kwargs(use_gpu=None):
     # TODO ray: https://github.com/horovod/horovod/issues/2702
     resources = [node['Resources'] for node in ray.state.nodes()]
-    use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
+    if use_gpu is None:
+        use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
 
     # Our goal is to maximize the number of training resources we can
     # form into a homogenous configuration. The priority is GPUs, but
@@ -109,11 +109,9 @@ class RayRemoteModel:
 
 class RayRemoteTrainer(RemoteTrainer):
     def __init__(self, *args, **kwargs):
-        print(f"RayRemoteTrainer init tune.is_session_enabled() {tune.is_session_enabled()}")
         super().__init__(*args, **kwargs)
 
     def train(self, *args, **kwargs):
-        print(f"RayRemoteTrainer train tune.is_session_enabled() {tune.is_session_enabled()}")
         results = super().train(*args, **kwargs)
         if results is not None:
             model, *stats = results
@@ -121,7 +119,6 @@ class RayRemoteTrainer(RemoteTrainer):
         return results
 
     def train_online(self, *args, **kwargs):
-        print(f"RayRemoteTrainer train_online tune.is_session_enabled() {tune.is_session_enabled()}")
         results = super().train_online(*args, **kwargs)
         if results is not None:
             results = save_weights_to_buffer(results)
@@ -131,16 +128,11 @@ class RayRemoteTrainer(RemoteTrainer):
 class RayTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, trainer_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
-        print(f"RayTrainer init tune.is_session_enabled() {tune.is_session_enabled()}")
         setting = RayExecutor.create_settings(timeout_s=30)
-        print("RayTrainer executor")
         self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        print("RayTrainer executor start")
-        print(self.executor.driver.__dict__)
         self.executor.start(executable_cls=RayRemoteTrainer, executable_kwargs=trainer_kwargs)
 
     def train(self, model, *args, **kwargs):
-        print(f"RayTrainer train tune.is_session_enabled() {tune.is_session_enabled()}")
         remote_model = RayRemoteModel(model)
         results = self.executor.execute(
             lambda trainer: trainer.train(remote_model.load(), *args, **kwargs)
@@ -151,7 +143,6 @@ class RayTrainer(BaseTrainer):
         return (model, *stats)
 
     def train_online(self, model, *args, **kwargs):
-        print(f"RayTrainer train_online tune.is_session_enabled() {tune.is_session_enabled()}")
         remote_model = RayRemoteModel(model)
         results = self.executor.execute(
             lambda trainer: trainer.train_online(remote_model.load(), *args, **kwargs)
@@ -248,7 +239,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._tensorflow_kwargs = kwargs
 
     def create_trainer(self, **kwargs):
-        print("create trainer in ray backend")
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
         return RayTrainer(self._horovod_kwargs, executable_kwargs)
 

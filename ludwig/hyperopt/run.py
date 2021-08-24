@@ -277,7 +277,10 @@ def hyperopt(
     backend = backend or config_dict.get('backend') or 'local'
     backend = initialize_backend(backend)
     if not (isinstance(backend, LocalBackend) or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))):
-        raise ValueError('Hyperopt requires using a `local` backend at this time.')
+        raise ValueError(
+            'Hyperopt requires using a `local` backend at this time, or '
+            '`ray` backend with `ray` executor.'
+        )
 
     if callbacks:
         for callback in callbacks:
