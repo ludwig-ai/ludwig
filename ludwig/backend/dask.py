@@ -59,7 +59,7 @@ class DaskPredictor(BasePredictor):
         num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
         return dataset.ds.map_batches(
             batch_predictor,
-            compute='actores',
+            compute='actors',
             batch_format='pandas',
             num_gpus=num_gpus
         ).to_dask()
