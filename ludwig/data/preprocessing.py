@@ -1199,20 +1199,9 @@ def build_metadata(
         global_preprocessing_parameters: Dict[str, Any],
         backend: Backend
 ):
-    print(f'TYPE OF FEATURES: {type(features)}')
-    print(f'TYPE global_preprocessing_parameters: {type(global_preprocessing_parameters)}')
-    print(f'GLOBAL PREP: {global_preprocessing_parameters}')
     for feature in features:
-        print('\n\n\n')
-        print(f'Feature: {feature}')
-        print(f'Type of feature: {type(feature)}')
-
-        print(f'Metadata: {metadata}')
-
         if feature[NAME] in metadata:
             continue
-
-        print(f'PREPROCESSING: {PREPROCESSING}')
 
         if PREPROCESSING in feature:
             preprocessing_parameters = merge_dict(
@@ -1230,9 +1219,7 @@ def build_metadata(
                 feature[TYPE],
                 input_type_registry
             ).encoder_registry
-            print(f'ENCODER REG: {encoders_registry}')
             encoder_class = encoders_registry[feature['encoder']]
-            print(f'ENCODER CLASS: {encoder_class}')
             if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
@@ -1241,19 +1228,12 @@ def build_metadata(
                     resolve_pointers(encoder_fpp, feature, 'feature.')
                 )
 
-        print(f'DATASET COLS')
-        for col_name, vals in dataset_cols.items():
-            print(f'Feature Name: {col_name}')
-            print(f'Vals: {vals.head(1)}')
-            # print(f'dataset_cols: {dataset_cols.head(1)}')
-
         fill_value = precompute_fill_value(
             dataset_cols,
             feature,
             preprocessing_parameters,
             backend
         )
-        print(f'FILL VALUE IS: {fill_value}')
 
         if fill_value is not None:
             preprocessing_parameters = {
@@ -1322,12 +1302,10 @@ def build_data(
 
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
-    print(f'FEATURE[COLUMN]: {feature[COLUMN]}')
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
     if missing_value_strategy == FILL_WITH_CONST:
         return preprocessing_parameters['fill_value']
     elif missing_value_strategy == FILL_WITH_MODE:
-        print(f'DATA:\n\n{dataset_cols[feature[COLUMN]].head(10)}')
         return dataset_cols[feature[COLUMN]].value_counts().index[0]
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
