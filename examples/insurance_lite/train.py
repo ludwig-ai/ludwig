@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Simple Model Training Example
-#
-# This example is the API example for this Ludwig command line example
-# (https://ludwig-ai.github.io/ludwig-docs/examples/#kaggles-titanic-predicting-survivors).
+# # Simple Model Training Example on multi-modal data.
 
 # Import required libraries
 import logging
@@ -18,8 +15,7 @@ from ludwig.datasets import insurance_lite
 shutil.rmtree('./results', ignore_errors=True)
 
 # Download and prepare the dataset
-# dataset = insurance_lite.load()
-dataset = '/home/ray/.ludwig_cache/insurance_lite_1.0/processed/insurance_lite.csv'
+dataset = insurance_lite.load()
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./config.yaml',
