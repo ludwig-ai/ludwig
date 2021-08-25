@@ -33,8 +33,14 @@ from ludwig.utils.strings_utils import str2bool
 
 try:
     from ray import tune
+    from ray.tune.resources import Resources
+    from ray.tune.schedulers.resource_changing_scheduler import ResourceChangingScheduler, evenly_distribute_cpus_gpus_distributed
+    def ray_resource_allocation_function(*args, **kwargs):
+        pg = evenly_distribute_cpus_gpus_distributed(*args, **kwargs)
+        return Resources(0, 0, extra_cpu=int(pg.required_resources["CPU"]), extra_gpu=int(pg.required_resources["GPU"]))
     _HAS_RAY_TUNE = True
 except ImportError:
+    ray_resource_allocation_function = None
     _HAS_RAY_TUNE = False
 
 
@@ -332,6 +338,7 @@ class RayTuneSampler(HyperoptSampler):
             search_alg: dict = None,
             scheduler: dict = None,
             num_samples=1,
+            dynamic_resource_allocation: bool = False,
             **kwargs
     ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
@@ -339,6 +346,7 @@ class RayTuneSampler(HyperoptSampler):
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
         self.scheduler = self._create_scheduler(scheduler, parameters)
+        self.dynamic_resource_allocation = dynamic_resource_allocation
         self.num_samples = num_samples
         self.goal = goal
 
@@ -356,10 +364,14 @@ class RayTuneSampler(HyperoptSampler):
             scheduler_config.update(
                 {"hyperparam_mutations": self.search_space})
 
-        return tune.create_scheduler(
+        scheduler = tune.create_scheduler(
             scheduler_config.get("type"),
             **scheduler_config
         )
+
+        if self.dynamic_resource_allocation:
+            scheduler = ResourceChangingScheduler(scheduler, ray_resource_allocation_function)
+        return scheduler
 
     def _get_search_space(self, parameters):
         config = {}

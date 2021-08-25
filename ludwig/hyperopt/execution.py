@@ -842,6 +842,7 @@ class RayTuneExecutor(HyperoptExecutor):
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
 
             print(hyperopt_dict['backend']._horovod_kwargs)
+            logger.warning(str(hyperopt_dict['backend']._horovod_kwargs))
 
         checkpoint_dir = checkpoint_dir or os.path.join(os.getcwd(), "model")
 
