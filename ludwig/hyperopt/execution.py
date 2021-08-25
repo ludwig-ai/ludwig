@@ -828,21 +828,26 @@ class RayTuneExecutor(HyperoptExecutor):
         # set tune resources
         if is_using_ray_backend:
             resources = tune.get_trial_resources()
+            # check if we are using at least 1 gpu per trial
             use_gpu = bool(self.gpu_resources_per_trial)
+            # get the maximum resources a single trial can get
             max_resources = get_horovod_kwargs(use_gpu)
-            resource_limit = resources.gpu + resources.extra_gpu if use_gpu else resources.cpu + resources.extra_cpu
-            min_resource_limit = self.gpu_resources_per_trial if use_gpu else self.cpu_resources_per_trial
+            # get the resources assigned to the current trial
+            current_resources = resources.gpu + resources.extra_gpu if use_gpu else resources.cpu + resources.extra_cpu
+
             num_slots = max_resources['num_slots']
-            num_hosts = max(resource_limit, min_resource_limit) // num_slots
+            # first, try to reduce num_hosts, ensuring it stays above 0
+            num_hosts = current_resources // num_slots
             num_hosts = max(1, num_hosts)
-            if num_hosts==1:
-                num_slots = max(resource_limit, min_resource_limit)
+            # if we are at one host, modify slots
+            if num_hosts == 1:
+                num_slots = current_resources
+
             hyperopt_dict['backend']._horovod_kwargs['num_slots'] = int(num_slots)
             hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = int(num_hosts)
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
 
-            print(hyperopt_dict['backend']._horovod_kwargs)
-            logger.warning(str(hyperopt_dict['backend']._horovod_kwargs))
+            logger.debug(f"Trial horovod kwargs: {hyperopt_dict['backend']._horovod_kwargs}")
 
         checkpoint_dir = checkpoint_dir or os.path.join(os.getcwd(), "model")
 
