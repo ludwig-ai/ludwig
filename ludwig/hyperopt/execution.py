@@ -12,7 +12,6 @@ import threading
 import time
 
 from ludwig.api import LudwigModel
-from ludwig.backend.ray import RayBackend, RayRemoteTrainer, get_horovod_kwargs
 from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
@@ -33,8 +32,15 @@ try:
     from ray.tune.utils import wait_for_gpu
     from ray.tune import register_trainable
     from ray.util.queue import Queue as RayQueue
+    from ludwig.backend.ray import RayBackend, RayRemoteTrainer, get_horovod_kwargs
 except ImportError:
     ray = None
+    get_horovod_kwargs = None
+    class RayBackend:
+        pass
+
+    class RayRemoteTrainer:
+        pass
 
 
 class HyperoptExecutor(ABC):
