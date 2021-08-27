@@ -17,6 +17,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict
 
+import dask.dataframe as dd
 import pandas as pd
 import tensorflow as tf
 
@@ -496,6 +497,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         """ Converts the output of batch_predict to a 1D array. """
         return df
 
-    def unflatten(self, df: pd.DataFrame) -> pd.DataFrame:
+    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
         """ Reshapes a flattened 1D array into its original shape. """
         return df
+

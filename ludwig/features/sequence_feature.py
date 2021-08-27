@@ -16,7 +16,9 @@
 # ==============================================================================
 import os
 
+import dask.dataframe as dd
 import numpy as np
+import pandas as pd
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
@@ -549,5 +551,18 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'dependencies', [])
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
+
+    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
+        return df
+
+    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        df[probs_col] = df[probs_col].apply(
+            lambda x: x.reshape(-1, self.num_classes),
+            meta=(probs_col, 'object')
+        )
+        return df
 
     decoder_registry = DECODER_REGISTRY

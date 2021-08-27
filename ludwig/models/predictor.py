@@ -130,7 +130,13 @@ class Predictor(BasePredictor):
         for key, pred_value_list in predictions.items():
             predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
 
-        return from_numpy_dataset(predictions)
+        predictions = from_numpy_dataset(predictions)
+
+        for of_name, output_feature in model.output_features.items():
+            predictions = output_feature.flatten(
+                predictions,
+            )
+        return predictions
 
     def batch_evaluation(
             self,
