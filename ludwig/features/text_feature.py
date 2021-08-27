@@ -18,7 +18,9 @@ import logging
 from collections.abc import Iterable
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
+import dask.dataframe as dd
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY
@@ -507,3 +509,21 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def populate_defaults(output_feature):
         set_default_value(output_feature, 'level', 'word')
         SequenceOutputFeature.populate_defaults(output_feature)
+
+    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
+        return df
+
+    # def unflatten(self, df: pd.DataFrame) -> pd.DataFrame:
+    #     probs_col = f'{self.feature_name}_{PROBABILITIES}'
+    #     df[probs_col] = df[probs_col].apply(
+    #         lambda x: x.reshape(-1, self.max_sequence_length))
+
+    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+        probs_col = f'{self.feature_name}_{PROBABILITIES}'
+        df[probs_col] = df[probs_col].apply(
+            lambda x: x.reshape(-1, self.max_sequence_length),
+            meta=(probs_col, 'object')
+        )
+        return df

@@ -17,6 +17,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict
 
+import pandas as pd
 import tensorflow as tf
 
 from ludwig.constants import *
@@ -490,3 +491,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         )
 
         return feature_hidden
+
+    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Converts the output of batch_predict to a 1D array. """
+        return df
+
+    def unflatten(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Reshapes a flattened 1D array into its original shape. """
+        return df

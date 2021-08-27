@@ -173,23 +173,28 @@ class RayPredictor(BasePredictor):
         self.actor_handles = []
 
     def batch_predict(self, model, dataset, *args, **kwargs):
+        # Get training set metadata
+
         self._check_dataset(dataset)
 
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
-        output_columns = get_output_columns(model.output_features)
         batch_predictor = self.BatchInferModel(
-            remote_model, predictor_kwargs, output_columns, dataset.features,
-            dataset.data_hdf5_fp, *args, **kwargs
+            remote_model, predictor_kwargs, model.output_features,
+            dataset.features, dataset.data_hdf5_fp, *args, **kwargs
         )
 
         num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
-        return dataset.ds.map_batches(
+        dask_dataset = dataset.ds.map_batches(
             batch_predictor, 
             compute='actors',
             batch_format='pandas',
-            num_gpus=num_gpus
-        ).to_dask()
+            num_gpus=num_gpus).to_dask()
+
+        for of_feature in model.output_features.values():
+            dask_dataset = of_feature.unflatten(dask_dataset)
+
+        return dask_dataset
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
@@ -214,10 +219,11 @@ class RayPredictor(BasePredictor):
         self.actor_handles.clear()
 
     class BatchInferModel:
-        def __init__(self, remote_model, predictor_kwargs, output_columns, features, data_hdf5_fp, *args, **kwargs):
+        def __init__(self, remote_model, predictor_kwargs, output_features, features, data_hdf5_fp, *args, **kwargs):
             self.model = remote_model.load()
             self.predictor = Predictor(**predictor_kwargs)
-            self.output_columns = output_columns
+            self.output_features = output_features
+            self.output_columns = get_output_columns(output_features)
             self.features = features
             self.data_hdf5_fp = data_hdf5_fp
             self.batch_predict = partial(self.predictor.batch_predict, *args, **kwargs)
@@ -225,7 +231,12 @@ class RayPredictor(BasePredictor):
         def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
             pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
             predictions = self.predictor.batch_predict(model=self.model, dataset=pd_ds)
+
+            for output_feature in self.output_features.values():
+                predictions = output_feature.flatten(predictions)
+
             ordered_predictions = predictions[self.output_columns]
+
             return ordered_predictions
 
 
