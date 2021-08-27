@@ -173,8 +173,6 @@ class RayPredictor(BasePredictor):
         self.actor_handles = []
 
     def batch_predict(self, model, dataset, *args, **kwargs):
-        # Get training set metadata
-
         self._check_dataset(dataset)
 
         remote_model = RayRemoteModel(model)
