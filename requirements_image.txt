@@ -1,1 +1,2 @@
 scikit-image>=0.14.2,<=0.18.1
+torchvision==0.10.0
