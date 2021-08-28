@@ -78,67 +78,67 @@ def run_experiment(input_features, output_features, **kwargs):
     [
         # numerical features
         (numerical_feature(), numerical_feature(), None),
-        (
-                numerical_feature(normalization='minmax'),
-                numerical_feature(),
-                {'loss': {'type': 'mean_squared_error'}}
-        ),
-        (
-                numerical_feature(normalization='zscore'),
-                numerical_feature(),
-                {'loss': {'type': 'mean_absolute_error'}}
-        ),
-
-        # binary feature
-        (binary_feature(), binary_feature(), None),
-
-        # Categorical feature
-        (category_feature(), category_feature(), None),
-        (
-                category_feature(),
-                category_feature(),
-                {'loss': {'type': 'softmax_cross_entropy'}}
-        ),
-        (
-                category_feature(),
-                category_feature(),
-                {'loss': {
-                    'type': 'sampled_softmax_cross_entropy',
-                    'sampler': 'fixed_unigram',
-                    'negative_samples': 10
-                }
-                }
-        ),
-        (
-                category_feature(),
-                category_feature(),
-                {'loss': {
-                    'type': 'sampled_softmax_cross_entropy',
-                    'sampler': 'uniform',
-                    'negative_samples': 10
-                }
-                }
-        ),
-        (
-                category_feature(),
-                category_feature(),
-                {'loss': {
-                    'type': 'sampled_softmax_cross_entropy',
-                    'sampler': 'log_uniform',
-                    'negative_samples': 10
-                }
-                }
-        ),
-        (
-                category_feature(),
-                category_feature(),
-                {'loss': {
-                    'type': 'sampled_softmax_cross_entropy',
-                    'sampler': 'learned_unigram',
-                    'negative_samples': 10
-                }
-                }
-        )
+    #     (
+    #             numerical_feature(normalization='minmax'),
+    #             numerical_feature(),
+    #             {'loss': {'type': 'mean_squared_error'}}
+    #     ),
+    #     (
+    #             numerical_feature(normalization='zscore'),
+    #             numerical_feature(),
+    #             {'loss': {'type': 'mean_absolute_error'}}
+    #     ),
+    #
+    #     # binary feature
+    #     (binary_feature(), binary_feature(), None),
+    #
+    #     # Categorical feature
+    #     (category_feature(), category_feature(), None),
+    #     (
+    #             category_feature(),
+    #             category_feature(),
+    #             {'loss': {'type': 'softmax_cross_entropy'}}
+    #     ),
+    #     (
+    #             category_feature(),
+    #             category_feature(),
+    #             {'loss': {
+    #                 'type': 'sampled_softmax_cross_entropy',
+    #                 'sampler': 'fixed_unigram',
+    #                 'negative_samples': 10
+    #             }
+    #             }
+    #     ),
+    #     (
+    #             category_feature(),
+    #             category_feature(),
+    #             {'loss': {
+    #                 'type': 'sampled_softmax_cross_entropy',
+    #                 'sampler': 'uniform',
+    #                 'negative_samples': 10
+    #             }
+    #             }
+    #     ),
+    #     (
+    #             category_feature(),
+    #             category_feature(),
+    #             {'loss': {
+    #                 'type': 'sampled_softmax_cross_entropy',
+    #                 'sampler': 'log_uniform',
+    #                 'negative_samples': 10
+    #             }
+    #             }
+    #     ),
+    #     (
+    #             category_feature(),
+    #             category_feature(),
+    #             {'loss': {
+    #                 'type': 'sampled_softmax_cross_entropy',
+    #                 'sampler': 'learned_unigram',
+    #                 'negative_samples': 10
+    #             }
+    #             }
+    #     )
     ]
 )
 def test_feature(input_test_feature, output_test_feature,

@@ -15,6 +15,8 @@ tables
 fsspec
 dataclasses-json
 jsonschema
+tensorboard
+torchmetrics
 
 # new data format support
 xlwt            # excel

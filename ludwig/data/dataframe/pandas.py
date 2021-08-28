@@ -18,10 +18,8 @@ import os
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.tfrecord import get_compression_ext, get_part_filename
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.fs_utils import upload_output_file, makedirs
 
@@ -59,6 +57,8 @@ class PandasEngine(DataFrameEngine):
         df.to_parquet(path, engine='pyarrow')
 
     def to_tfrecord(self, df, path):
+        from ludwig.data.dataset.tfrecord import get_compression_ext, get_part_filename
+
         compression_type = "GZIP"
         compression_ext = get_compression_ext(compression_type)
 

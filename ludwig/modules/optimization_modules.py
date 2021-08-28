@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
 import torch
 
 from ludwig.utils.misc_utils import get_from_registry
@@ -98,8 +97,8 @@ def clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
             self.apply_gradients(zip(gradients, variables))
         '''
         def minimize(self, loss, variables):
-            if self.horovod:
-                tape = self.horovod.DistributedGradientTape(tape)
+            # if self.horovod:
+            #     tape = self.horovod.DistributedGradientTape(tape)
 
             loss.backward()
             if self.clipglobalnorm:
