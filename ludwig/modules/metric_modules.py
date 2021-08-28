@@ -492,10 +492,10 @@ class MAEMetric(LudwigMetric):
 '''
 class MAEMetric(MeanAbsoluteError):
     def __init__(self, name="MAE", **kwargs):
-        super(MAEMetric, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def update(self, preds, target):
-        super().update_state(
+        super().update(
             preds[PREDICTIONS].detach(), target
         )
 

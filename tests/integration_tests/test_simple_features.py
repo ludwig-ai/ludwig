@@ -78,16 +78,16 @@ def run_experiment(input_features, output_features, **kwargs):
     [
         # numerical features
         (numerical_feature(), numerical_feature(), None),
-    #     (
-    #             numerical_feature(normalization='minmax'),
-    #             numerical_feature(),
-    #             {'loss': {'type': 'mean_squared_error'}}
-    #     ),
-    #     (
-    #             numerical_feature(normalization='zscore'),
-    #             numerical_feature(),
-    #             {'loss': {'type': 'mean_absolute_error'}}
-    #     ),
+        (
+                numerical_feature(normalization='minmax'),
+                numerical_feature(),
+                {'loss': {'type': 'mean_squared_error'}}
+        ),
+        (
+                numerical_feature(normalization='zscore'),
+                numerical_feature(),
+                {'loss': {'type': 'mean_absolute_error'}}
+        ),
     #
     #     # binary feature
     #     (binary_feature(), binary_feature(), None),

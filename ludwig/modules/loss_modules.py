@@ -42,16 +42,16 @@ class MSELoss(_MSELoss):
         return loss
 
 
-# class MAELoss(L1Loss):
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
-#
-#     def __call__(self, y_true, y_pred, sample_weight=None):
-#         loss = super().__call__(
-#             y_true, y_pred[LOGITS], sample_weight=sample_weight)
-#         return loss
-#
-#
+class MAELoss(L1Loss):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def forward(self, input, target):
+        logits = input[LOGITS]
+        loss = super().forward(logits, target)
+        return loss
+
+
 # class RMSELoss(tf.keras.losses.Loss):
 #     def __init__(self, **kwargs):
 #         super().__init__(**kwargs)

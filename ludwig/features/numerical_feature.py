@@ -36,7 +36,7 @@ from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss #, MAELoss, RMSELoss, RMSPELoss
+from ludwig.modules.loss_modules import MSELoss, MAELoss #, RMSELoss, RMSPELoss
 from ludwig.modules.metric_modules import (
     MAEMetric,
     MSEMetric,
