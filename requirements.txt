@@ -1,4 +1,3 @@
-torch
 Cython>=0.25
 h5py>=2.6,!=3.0.0
 numpy>=1.15
@@ -7,6 +6,7 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
+torch>=1.9.0
 PyYAML>=3.12
 absl-py
 kaggle
