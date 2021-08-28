@@ -15,28 +15,17 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
-# import tensorflow as tf
 import torch
-'''
-from tensorflow.keras.metrics import (
-    MeanAbsoluteError as MeanAbsoluteErrorMetric,
-)
-from tensorflow.keras.metrics import (
-    MeanSquaredError as MeanSquaredErrorMetric,
-    RootMeanSquaredError as RootMeanSquaredErrorMetric,
-)
-'''
-from torchmetrics import (MeanAbsoluteError, MeanSquaredError)
+from torchmetrics import MeanAbsoluteError, MeanSquaredError
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss #, RMSELoss, RMSPELoss
+from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss
 from ludwig.modules.metric_modules import (
     MAEMetric,
     MSEMetric,
@@ -47,7 +36,6 @@ from ludwig.modules.metric_modules import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
-# from tensorflow.keras.metrics import RootMeanSquaredError
 
 logger = logging.getLogger(__name__)
 

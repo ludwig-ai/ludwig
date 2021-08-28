@@ -16,6 +16,7 @@
 import collections
 import numpy as np
 import torch
+from torch import nn
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
 from ludwig.constants import *
@@ -52,37 +53,25 @@ class MAELoss(L1Loss):
         return loss
 
 
-# class RMSELoss(tf.keras.losses.Loss):
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
-#
-#     def __call__(self, y_true, y_pred, sample_weight=None):
-#         preds = y_pred[LOGITS]
-#         loss = tf.math.sqrt(
-#             tf.math.reduce_mean(
-#                 tf.math.square(
-#                     tf.math.subtract(preds, y_true)
-#                 )
-#             )
-#         )
-#         return loss
-#
-#
-# class RMSPELoss(tf.keras.losses.Loss):
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
-#
-#     def __call__(self, y_true, y_pred, sample_weight=None):
-#         preds = y_pred[LOGITS]
-#         loss = rmspe_loss(y_true, preds)
-#         return loss
-#
-#     def forward(self, input, target):
-#         logits = input[LOGITS]
-#         loss = super().forward(logits, target)
-#         return loss
-#
-#
+class RMSELoss(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.mse = nn.MSELoss()
+
+    def forward(self, input, target):
+        return torch.sqrt(self.mse(input, target))
+
+
+class RMSPELoss(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def forward(self, input, target):
+        preds = input[LOGITS]
+        loss = rmspe_loss(target, preds)
+        return loss
+
+
 # class BWCEWLoss(tf.keras.losses.Loss):
 #     def __init__(
 #         self, positive_class_weight=1, robust_lambda=0, confidence_penalty=0
