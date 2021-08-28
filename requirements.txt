@@ -8,8 +8,8 @@ scikit-learn
 tqdm
 tensorflow>=2.3.1
 tensorflow-addons>=0.13.0
-torch==1.9.0
-pytorch-lightning==1.4.4
+torch>=1.9.0
+pytorch-lightning>=1.4.4
 PyYAML>=3.12
 absl-py
 kaggle
