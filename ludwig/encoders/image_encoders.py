@@ -17,8 +17,8 @@
 import logging
 from abc import ABC
 
-import tensorflow as tf
-from tensorflow.keras.layers import Flatten
+# import tensorflow as tf
+# from tensorflow.keras.layers import Flatten
 
 from ludwig.encoders.base import Encoder
 from ludwig.modules.mlp_mixer_modules import MLPMixer

@@ -16,10 +16,12 @@
 import logging
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Layer
-from tensorflow.keras.layers import Embedding
+
+# import tensorflow as tf
+# from tensorflow.keras.layers import Dropout
+# from tensorflow.keras.layers import Layer
+# from tensorflow.keras.layers import Embedding
+from torch.nn import Module
 
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
@@ -209,7 +211,7 @@ class Embed(LudwigModule):
         return embedded
 
 
-class EmbedWeighted(Layer):
+class EmbedWeighted(Module):
     def __init__(
             self,
             vocab,
@@ -278,7 +280,7 @@ class EmbedWeighted(Layer):
         return embedded_reduced
 
 
-class EmbedSparse(Layer):
+class EmbedSparse(Module):
     def __init__(
             self,
             vocab,
@@ -342,7 +344,7 @@ class EmbedSparse(Layer):
         return embedded_reduced
 
 
-class EmbedSequence(Layer):
+class EmbedSequence(Module):
     def __init__(
             self,
             vocab,
@@ -398,7 +400,7 @@ class EmbedSequence(Layer):
         return embedded
 
 
-class TokenAndPositionEmbedding(Layer):
+class TokenAndPositionEmbedding(Module):
     def __init__(self,
                  max_length,
                  vocab,

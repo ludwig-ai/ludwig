@@ -1880,7 +1880,7 @@ def get_experiment_description(
 
     description['config'] = config
 
-    import tensorflow as tf
-    description['tf_version'] = tf.__version__
+    import torch
+    description['torch_version'] = torch.__version__
 
     return description

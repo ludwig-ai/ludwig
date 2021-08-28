@@ -1,12 +1,14 @@
 from typing import List, Tuple
 
-import tensorflow as tf
+# import tensorflow as tf
+import torch
+from torch.nn import Module
 
 from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 
 
-class TabNet(tf.keras.Model):
+class TabNet(Module):
     def __init__(
             self,
             size: int,
@@ -93,10 +95,10 @@ class TabNet(tf.keras.Model):
 
     def call(
             self,
-            features: tf.Tensor,
+            features: torch.Tensor,
             training: bool = None,
             **kwargs
-    ) -> Tuple[tf.Tensor, tf.Tensor, List[tf.Tensor]]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, List[torch.Tensor]]:
         tf.assert_rank(features, 2)
 
         batch_size = tf.shape(features)[0]
@@ -159,7 +161,7 @@ class TabNet(tf.keras.Model):
         return final_output, aggregated_mask, masks
 
 
-class FeatureBlock(tf.keras.Model):
+class FeatureBlock(Module):
     def __init__(
             self,
             size: int,
@@ -167,7 +169,7 @@ class FeatureBlock(tf.keras.Model):
             bn_momentum: float = 0.9,
             bn_epsilon: float = 1e-3,
             bn_virtual_bs: int = None,
-            shared_fc_layer: tf.keras.layers.Layer = None,
+            shared_fc_layer: Module = None,
     ):
         super().__init__()
         self.apply_glu = apply_glu
@@ -193,7 +195,7 @@ class FeatureBlock(tf.keras.Model):
         return hidden
 
 
-class AttentiveTransformer(tf.keras.Model):
+class AttentiveTransformer(Module):
     def __init__(
             self,
             size: int,
@@ -234,11 +236,11 @@ class AttentiveTransformer(tf.keras.Model):
 
 
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
-class FeatureTransformer(tf.keras.Model):
+class FeatureTransformer(Module):
     def __init__(
             self,
             size: int,
-            shared_fc_layers: List[tf.keras.layers.Layer] = [],
+            shared_fc_layers: List[Module] = [],
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             bn_momentum: float = 0.9,
@@ -269,10 +271,10 @@ class FeatureTransformer(tf.keras.Model):
 
     def call(
             self,
-            inputs: tf.Tensor,
+            inputs: torch.Tensor,
             training: bool = None,
             **kwargs
-    ) -> tf.Tensor:
+    ) -> torch.Tensor:
         hidden = self.blocks[0](inputs, training=training)
         for n in range(1, self.num_total_blocks):
             hidden = (self.blocks[n](hidden, training=training) +
@@ -286,7 +288,7 @@ class FeatureTransformer(tf.keras.Model):
 
 # reimplementation of sparsemax to be more stable and fallback to softmax
 # adapted from https://github.com/tensorflow/addons/blob/v0.12.0/tensorflow_addons/activations/sparsemax.py#L21-L77
-class CustomSparsemax(tf.keras.layers.Layer):
+class CustomSparsemax(Module):
     """Sparsemax activation function.
 
     The output shape is the same as the input shape.
@@ -314,7 +316,7 @@ class CustomSparsemax(tf.keras.layers.Layer):
         return input_shape
 
 
-def sparsemax(logits, axis: int = -1) -> tf.Tensor:
+def sparsemax(logits, axis: int = -1) -> torch.Tensor:
     r"""Sparsemax activation function.
 
     For each batch $i$, and class $j$,

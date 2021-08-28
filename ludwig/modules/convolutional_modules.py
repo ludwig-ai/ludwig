@@ -15,19 +15,20 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
-from tensorflow import math, squeeze
-from tensorflow.keras.initializers import VarianceScaling
-from tensorflow.keras.layers import (Activation, AveragePooling1D,
-                                     AveragePooling2D, BatchNormalization,
-                                     Conv1D, Conv2D, Dropout, Layer,
-                                     LayerNormalization, MaxPool1D, MaxPool2D,
-                                     ZeroPadding2D)
+# import tensorflow as tf
+# from tensorflow import math, squeeze
+# from tensorflow.keras.initializers import VarianceScaling
+# from tensorflow.keras.layers import (Activation, AveragePooling1D,
+#                                      AveragePooling2D, BatchNormalization,
+#                                      Conv1D, Conv2D, Dropout, Layer,
+#                                      LayerNormalization, MaxPool1D, MaxPool2D,
+#                                      ZeroPadding2D)
+from torch.nn import Module
 
 logger = logging.getLogger(__name__)
 
 
-class Conv1DLayer(Layer):
+class Conv1DLayer(Module):
 
     def __init__(
             self,
@@ -105,7 +106,7 @@ class Conv1DLayer(Layer):
         return hidden
 
 
-class Conv1DStack(Layer):
+class Conv1DStack(Module):
 
     def __init__(
             self,
@@ -252,7 +253,7 @@ class Conv1DStack(Layer):
         return hidden
 
 
-class ParallelConv1D(Layer):
+class ParallelConv1D(Module):
 
     def __init__(
             self,
@@ -388,7 +389,7 @@ class ParallelConv1D(Layer):
         return hidden
 
 
-class ParallelConv1DStack(Layer):
+class ParallelConv1DStack(Module):
 
     def __init__(
             self,
@@ -519,7 +520,7 @@ class ParallelConv1DStack(Layer):
         return hidden
 
 
-class Conv2DLayer(Layer):
+class Conv2DLayer(Module):
 
     def __init__(
             self,
@@ -597,7 +598,7 @@ class Conv2DLayer(Layer):
         return hidden
 
 
-class Conv2DStack(Layer):
+class Conv2DStack(Module):
 
     def __init__(
             self,
@@ -727,7 +728,7 @@ class Conv2DStack(Layer):
         return hidden
 
 
-class Conv2DLayerFixedPadding(Layer):
+class Conv2DLayerFixedPadding(Module):
 
     def __init__(
             self,
@@ -767,7 +768,7 @@ class Conv2DLayerFixedPadding(Layer):
         return hidden
 
 
-class ResNetBlock(Layer):
+class ResNetBlock(Module):
 
     def __init__(
             self,
@@ -841,7 +842,7 @@ class ResNetBlock(Layer):
         return hidden + shortcut
 
 
-class ResNetBottleneckBlock(Layer):
+class ResNetBottleneckBlock(Module):
 
     def __init__(
             self,
@@ -937,7 +938,7 @@ class ResNetBottleneckBlock(Layer):
         return hidden + shortcut
 
 
-class ResNetBlockLayer(Layer):
+class ResNetBlockLayer(Module):
     def __init__(
             self,
             num_filters,
@@ -994,7 +995,7 @@ class ResNetBlockLayer(Layer):
         return hidden
 
 
-class ResNet(Layer):
+class ResNet(Module):
     def __init__(
             self,
             resnet_size,

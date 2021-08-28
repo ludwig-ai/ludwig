@@ -15,9 +15,10 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
-from tensorflow.keras.layers import Layer
+# import tensorflow as tf
+# from tensorflow.keras.layers import Layer
 
+import torch
 from torch.nn import Module
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer

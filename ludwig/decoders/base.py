@@ -17,14 +17,14 @@
 
 from abc import ABC, abstractmethod
 
-from tensorflow.keras.layers import Layer
+from torch.nn import Module
 
 from ludwig.utils.registry import DEFAULT_KEYS
 
 
-class Decoder(Layer, ABC):
+class Decoder(Module, ABC):
     @abstractmethod
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
 
     @classmethod

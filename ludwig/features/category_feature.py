@@ -18,19 +18,19 @@ import logging
 import os
 
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
 from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.modules.metric_modules import CategoryAccuracy
-from ludwig.modules.metric_modules import HitsAtKMetric
-from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
-    SampledSoftmaxCrossEntropyMetric
+# from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+# from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+# from ludwig.modules.metric_modules import CategoryAccuracy
+# from ludwig.modules.metric_modules import HitsAtKMetric
+# from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
+#     SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix

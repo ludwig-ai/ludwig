@@ -17,13 +17,13 @@
 import logging
 from functools import partial
 
-import tensorflow as tf
-from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Layer
+# import tensorflow as tf
+# from tensorflow.keras.layers import Activation
+# from tensorflow.keras.layers import Dense
+# from tensorflow.keras.layers import Layer
 
 import torch
-from torch.nn import Linear
+from torch.nn import Linear, Module
 from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.utils.torch_utils import (LudwigModule, initializers, activations, reg_loss)
@@ -100,7 +100,7 @@ class Regressor(LudwigModule):
         return output
 
 
-class Projector(Layer):
+class Projector(Module):
 
     def __init__(
             self,
@@ -156,7 +156,7 @@ class Projector(Layer):
         return values
 
 
-class Classifier(Layer):
+class Classifier(Module):
 
     def __init__(
             self,

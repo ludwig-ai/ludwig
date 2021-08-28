@@ -17,22 +17,23 @@ import inspect
 import logging
 import collections
 
-import tensorflow as tf
-import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
+# import tensorflow as tf
+# import tensorflow_addons as tfa
+# from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
+from torch.nn import Module
 
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
-    'rnn': SimpleRNN,
-    'gru': GRU,
-    'lstm': LSTM,
+    # 'rnn': SimpleRNN,
+    # 'gru': GRU,
+    # 'lstm': LSTM,
 }
 
 
-class RecurrentStack(Layer):
+class RecurrentStack(Module):
     def __init__(
             self,
             state_size=256,
@@ -121,7 +122,7 @@ class BasicDecoderOutput(
     pass
 
 
-class BasicDecoder(tfa.seq2seq.BasicDecoder):
+class BasicDecoder: #(tfa.seq2seq.BasicDecoder):
     def _projection_input_size(self):
         return tf.TensorShape(self.cell.output_size)
 

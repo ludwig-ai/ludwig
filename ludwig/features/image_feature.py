@@ -22,7 +22,7 @@ from multiprocessing import Pool
 from typing import Union
 
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY

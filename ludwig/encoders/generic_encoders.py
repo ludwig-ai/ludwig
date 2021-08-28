@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 
-from tensorflow.keras.layers import Layer
+# from tensorflow.keras.layers import Layer
 
 from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigModule

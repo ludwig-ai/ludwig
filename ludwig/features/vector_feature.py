@@ -18,10 +18,10 @@ import logging
 import os
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.metrics import \
-    MeanAbsoluteError as MeanAbsoluteErrorMetric
-from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
+# import tensorflow as tf
+# from tensorflow.keras.metrics import \
+#     MeanAbsoluteError as MeanAbsoluteErrorMetric
+# from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Projector
@@ -29,11 +29,11 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
-    MAELoss
-from ludwig.modules.metric_modules import (
-    SoftmaxCrossEntropyMetric, MSEMetric, MAEMetric
-)
+# from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
+#     MAELoss
+# from ludwig.modules.metric_modules import (
+#     SoftmaxCrossEntropyMetric, MSEMetric, MAEMetric
+# )
 from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.misc_utils import set_default_value
 

@@ -18,7 +18,7 @@ import logging
 from collections.abc import Iterable
 
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY

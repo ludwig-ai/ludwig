@@ -18,7 +18,7 @@ import logging
 import math
 from abc import ABC
 
-import tensorflow as tf
+# import tensorflow as tf
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register
