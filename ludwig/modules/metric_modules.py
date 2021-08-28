@@ -19,17 +19,22 @@ import numpy as np
 
 from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
-# from ludwig.modules.loss_modules import (
+from ludwig.modules.loss_modules import (
 #     BWCEWLoss,
 #     SequenceSoftmaxCrossEntropyLoss,
 #     SequenceSampledSoftmaxCrossEntropyLoss,
 #     SigmoidCrossEntropyLoss,
 #     SoftmaxCrossEntropyLoss,
 #     SampledSoftmaxCrossEntropyLoss,
-#     rmspe_loss,
-# )
+    rmspe_loss,
+)
 import torch
-from torchmetrics import MeanAbsoluteError, MeanSquaredError, Metric, AUROC
+from torchmetrics import (
+    MeanAbsoluteError,
+    MeanSquaredError,
+    Metric,
+    AUROC,
+)
 #from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {
@@ -80,16 +85,21 @@ class ROCAUCMetric(AUROC):
         )
 
 
-# class RMSPEMetric(tf.keras.metrics.Mean):
-#     def __init__(self, name="root_mean_squared_percentage_error"):
-#         super().__init__(name=name)
-#
-#     def update_state(self, y, y_preds):
-#         predictions = y_preds
-#         if isinstance(y_preds, dict) and PREDICTIONS in y_preds:
-#             predictions = y_preds[PREDICTIONS]
-#         rmspe = rmspe_loss(y, predictions)
-#         return super().update_state(rmspe)
+class RMSPEMetric(Metric):
+    def __init__(self, name="root_mean_squared_percentage_error"):
+        super().__init__()
+        self.add_state("sum_rmspe", default=torch.tensor(0, dtype=torch.float32))
+        self.add_state("n", default=torch.tensor(0, dtype=torch.float32))
+
+    def update(self, preds, target):
+        predictions = preds
+        if isinstance(preds, dict) and PREDICTIONS in preds:
+            predictions = preds[PREDICTIONS]
+        self.sum_rmspe += rmspe_loss(target, predictions)
+        self.n += target.shape[0]
+
+    def compute(self):
+        return self.sum_rmspe / self.n
 
 
 # class LudwigMetric:

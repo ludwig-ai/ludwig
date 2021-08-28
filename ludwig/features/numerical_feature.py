@@ -41,7 +41,7 @@ from ludwig.modules.metric_modules import (
     MAEMetric,
     MSEMetric,
     RMSEMetric,
-    # RMSPEMetric,
+    RMSPEMetric,
     R2Score,
 )
 from ludwig.utils.misc_utils import set_default_value

@@ -519,13 +519,13 @@ class MSELoss(_MSELoss):
 #     else:
 #         raise ValueError("Unsupported sampler {}".format(sampler))
 #     return sampled_values
-#
-#
-# def rmspe_loss(targets, predictions):
-#     loss = tf.math.sqrt(
-#         tf.math.reduce_mean(
-#             tf.math.square(tf.math.divide(
-#                 tf.math.subtract(targets, predictions), targets))
-#         )
-#     )
-#     return loss
+
+
+def rmspe_loss(targets, predictions):
+    loss = torch.sqrt(
+        torch.mean(
+            torch.square(torch.divide(
+                torch.subtract(targets, predictions), targets))
+        )
+    )
+    return loss
