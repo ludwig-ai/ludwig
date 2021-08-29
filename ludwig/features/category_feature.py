@@ -221,12 +221,15 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             PREDICTIONS, PROBABILITIES, LOGITS
         }
 
+    def get_input_shape(self):
+        return self.input_size
+
     @classmethod
     def get_output_dtype(cls):
         return torch.int64
 
     def get_output_shape(self):
-        return ()
+        return 1
 
     def _setup_loss(self):
         if self.loss[TYPE] == 'softmax_cross_entropy':

@@ -17,12 +17,11 @@
 
 from abc import ABC, abstractmethod
 
-from torch.nn import Module
-
 from ludwig.utils.registry import DEFAULT_KEYS
+from ludwig.utils.torch_utils import LudwigModule
 
 
-class Decoder(Module, ABC):
+class Decoder(LudwigModule, ABC):
     @abstractmethod
     def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
@@ -36,3 +35,7 @@ class Decoder(Module, ABC):
     def register_default(cls):
         for key in DEFAULT_KEYS:
             cls.register(name=key)
+
+    @property
+    def name(self):
+        return self.__class__.__name__

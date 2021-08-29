@@ -2,7 +2,7 @@ from torch.nn import Module, ModuleDict
 import torch
 from torch.nn.init import (uniform_, normal_, constant_, ones_,  zeros_, eye_, dirac_,
         xavier_uniform_, xavier_normal_, kaiming_uniform_, kaiming_normal_, orthogonal_, sparse_)
-from torch.nn import (ELU, LeakyReLU, LogSigmoid, ReLU, Sigmoid, Tanh, Softmax)
+from torch.nn import (ELU, LeakyReLU, LogSigmoid, ReLU, Sigmoid, Tanh, Softmax, Linear)
 
 def sequence_length_3D(sequence):
     used = torch.sign(torch.max(torch.abs(sequence), dim=2))
@@ -46,6 +46,11 @@ activations = {
         "tanh": Tanh,
         "softmax": Softmax
 }
+
+
+def get_activation(activation):
+    return activations[activation]()
+
 
 def reg_loss(input_tensor, regularizer, l1=0.01, l2=0.01):
     l1_reg = l1 * torch.sum(torch.abs(input_tensor))
@@ -114,3 +119,46 @@ class LudwigModule(Module):
     def add_loss(self, loss):
         if callable(loss):
             self._callable_losses.append(loss)
+
+
+class Dense(LudwigModule):
+    def __init__(
+        self,
+        input_size,
+        use_bias=True,
+        weights_initializer='xavier_uniform',
+        bias_initializer='zeros',
+        weights_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+    ):
+        super().__init__()
+        self.dense = Linear(
+            in_features=input_size,
+            out_features=1,
+            bias=use_bias
+        )
+        weights_initializer = initializers[weights_initializer]
+        weights_initializer(self.dense.weight)
+
+        bias_initializer = initializers[bias_initializer]
+        bias_initializer(self.dense.bias)
+
+        if weights_regularizer:
+            self.add_loss(lambda: reg_loss(self.dense.weight, weights_regularizer))
+
+        if bias_regularizer:
+            self.add_loss(lambda: reg_loss(self.dense.bias, bias_regularizer))
+
+        if activity_regularizer:
+            # Handle in forward call
+            self.add_loss(lambda: self.activation_loss)
+
+        self.activity_regularizer = activity_regularizer
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        batch_size = input.shape[0]
+        output = torch.squeeze(self.dense(input), dim=-1)
+        if self.activity_regularizer:
+            self.activation_loss = reg_loss(output, self.activity_regularizer) / batch_size
+        return output

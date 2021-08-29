@@ -352,7 +352,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return torch.float32
 
     def get_output_shape(self):
-        #return ()
         return 1
 
     @staticmethod
