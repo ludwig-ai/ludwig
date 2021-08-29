@@ -223,15 +223,10 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         return torch.float32
 
     def get_input_shape(self):
-        #return ()
         return 1
 
     def get_output_shape(self):
-        if isinstance(self.encoder_obj, DenseEncoder):
-            return self.encoder_obj.fc_stack.layers[-1]['fc_size']
-        else: # passthrough encoder
-            return self.get_input_shape()
-
+        return self.encoder_obj.get_output_shape(self.get_input_shape())
 
     @staticmethod
     def update_config_with_metadata(

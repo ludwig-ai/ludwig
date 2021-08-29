@@ -15,10 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
-# import tensorflow as tf
+import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
@@ -118,14 +117,14 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
-               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+    def forward(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
+               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
         assert len(inputs.shape) == 1
 
-        if inputs.dtype == tf.int8 or inputs.dtype == tf.int16:
-            inputs = tf.cast(inputs, tf.int32)
+        if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
+            inputs = inputs.type(torch.IntTensor)
         encoder_output = self.encoder_obj(
             inputs, training=training, mask=mask
         )
@@ -134,10 +133,13 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
     @classmethod
     def get_input_dtype(cls):
-        return tf.int32
+        return torch.int32
 
     def get_input_shape(self):
-        return ()
+        return 1
+
+    def get_output_shape(self):
+        return self.encoder_obj.get_output_shape(self.get_input_shape())
 
     @staticmethod
     def update_config_with_metadata(
@@ -192,17 +194,17 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     ):
         logits = inputs[LOGITS]
 
-        probabilities = tf.nn.softmax(
+        probabilities = torch.nn.softmax(
             logits,
             name='probabilities_{}'.format(self.feature_name)
         )
 
-        predictions = tf.argmax(
+        predictions = torch.argmax(
             logits,
             -1,
             name='predictions_{}'.format(self.feature_name)
         )
-        predictions = tf.cast(predictions, dtype=tf.int64)
+        predictions = torch.cast(predictions, dtype=torch.int64)
 
         # EXPECTED SHAPE OF RETURNED TENSORS
         # predictions: [batch_size]
@@ -221,7 +223,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.int64
+        return torch.int64
 
     def get_output_shape(self):
         return ()
