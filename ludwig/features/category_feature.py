@@ -31,7 +31,7 @@ from ludwig.features.base_feature import OutputFeature
 # from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
 #     SampledSoftmaxCrossEntropyMetric
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -252,10 +252,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # softmax_cross_entropy loss metric
         self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric()
         self.metric_functions[ACCURACY] = CategoryAccuracy()
-        self.metric_functions[HITS_AT_K] = HitsAtKMetric(
-            k=self.top_k,
-            name='metric_top_k_hits'
-        )
+        self.metric_functions[HITS_AT_K] = HitsAtKMetric(top_k=self.top_k)
 
     @staticmethod
     def update_config_with_metadata(

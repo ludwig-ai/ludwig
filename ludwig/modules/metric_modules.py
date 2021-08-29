@@ -451,14 +451,13 @@ class CategoryAccuracy(Accuracy):
         super().update(preds, target.type(torch.LongTensor))
 
 
-# class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
-#     def __init__(self, k=3, name=None):
-#         super().__init__(k=k, name=name)
-#
-#     def update_state(self, y_true, y_pred, sample_weight=None):
-#         super().update_state(
-#             y_true, y_pred[LOGITS], sample_weight=sample_weight
-#         )
+class HitsAtKMetric(Accuracy):
+    def __init__(self, top_k: int = 3, name: str = None):
+        super().__init__(top_k=top_k)
+
+    def update(self, preds: torch.Tensor, target: torch.Tensor):
+        super().update(preds[LOGITS], target)
+
 
 '''
 class MAEMetric(MeanAbsoluteErrorMetric):

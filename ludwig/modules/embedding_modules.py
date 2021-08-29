@@ -21,7 +21,7 @@ import numpy as np
 # from tensorflow.keras.layers import Dropout
 # from tensorflow.keras.layers import Layer
 # from tensorflow.keras.layers import Embedding
-from torch.nn import Module
+from torch import nn
 
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
@@ -89,8 +89,6 @@ def embedding_matrix(
         )
         '''
         embeddings = embedding_initializer_obj
-        if embeddings_trainable:
-            embeddings.requires_grad_()
 
     elif representation == 'sparse':
         embedding_size = vocab_size
@@ -111,6 +109,9 @@ def embedding_matrix(
             'Embedding representation {} not supported.'.format(
                 representation))
 
+    embeddings = nn.Embedding.from_pretrained(
+        embeddings, freeze=not embeddings_trainable
+    )
     return embeddings, embedding_size
 
 
