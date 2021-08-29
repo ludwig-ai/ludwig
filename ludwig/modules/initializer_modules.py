@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-# import tensorflow as tf
+
+import torch
 
 from ludwig.constants import TYPE
 from ludwig.utils.misc_utils import get_from_registry
@@ -25,7 +26,7 @@ initializers_registry = {
     # 'ones': tf.initializers.ones,
     # 'orthogonal': tf.initializers.orthogonal,
     # 'normal': tf.random_normal_initializer,
-    # 'uniform': tf.random_uniform_initializer,
+    'uniform': torch.nn.init.uniform_,
     # 'truncated_normal': tf.keras.initializers.TruncatedNormal,
     # 'variance_scaling': tf.keras.initializers.VarianceScaling,
     # 'glorot_normal': tf.initializers.glorot_normal,
@@ -40,19 +41,31 @@ initializers_registry = {
 }
 
 
+def _create_and_init(init_fn, init_kwargs, *args, **kwargs):
+    t = torch.empty(*args, **kwargs)
+    init_fn(t, **init_kwargs)
+    return t
+
+
 def get_initializer(parameters):
     if parameters is None:
-        return initializers_registry[parameters]()
+        return lambda *args, **kwargs: _create_and_init(
+            initializers_registry[parameters], {}, *args, **kwargs
+        )
     elif isinstance(parameters, str):
         initializer_fun = get_from_registry(
             parameters, initializers_registry)
-        return initializer_fun()
+        return lambda *args, **kwargs: _create_and_init(
+            initializer_fun, {}, *args, **kwargs
+        )
     elif isinstance(parameters, dict):
         initializer_fun = get_from_registry(
             parameters[TYPE], initializers_registry)
-        arguments = parameters.copy()
-        del arguments[TYPE]
-        return initializer_fun(**arguments)
+        init_kwargs = parameters.copy()
+        del init_kwargs[TYPE]
+        return lambda *args, **kwargs: _create_and_init(
+            initializer_fun, init_kwargs, *args, **kwargs
+        )
     else:
         raise ValueError(
             'Initializers parameters should be either strings or dictionaries, '
