@@ -18,6 +18,8 @@ import os
 
 import numpy as np
 
+import torch
+
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
 from ludwig.encoders.sequence_encoders import \
@@ -153,14 +155,14 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
-               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
+               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
         assert len(inputs.shape) == 2
 
-        inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        inputs_mask = tf.not_equal(inputs, 0)
-        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
+        inputs_exp = inputs.type(torch.int32)
+        inputs_mask = torch.not_equal(inputs, 0)
+        lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
@@ -169,7 +171,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @classmethod
     def get_input_dtype(cls):
-        return tf.int32
+        return torch.int32
 
     def get_input_shape(self):
         return None,
