@@ -107,26 +107,28 @@ class RMSPELoss(nn.Module):
 #             train_mean_loss += self.confidence_penalty * mean_penalty
 #
 #         return train_mean_loss
-#
-#
-# class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
-#     def __init__(self, num_classes=0, feature_loss=None, name=None):
-#         super().__init__(name=name)
-#         self.num_classes = num_classes
-#         self.feature_loss = feature_loss
-#
-#     def call(self, y, y_pred):
-#         vector_labels = tf.one_hot(
-#             tf.cast(y, dtype=tf.int64), self.num_classes
-#         )
-#
-#         loss = weighted_softmax_cross_entropy(
-#             y_pred[LOGITS], vector_labels, **self.feature_loss
-#         )
-#
-#         return loss
-#
-#
+
+
+# TODO torch: test behavior parity with tf
+class SoftmaxCrossEntropyLoss(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = nn.CrossEntropyLoss(**kwargs)
+
+    def forward(self, input: dict, target: torch.Tensor):
+        preds = input[LOGITS]
+        return self.loss_fn(preds, target)
+        # vector_labels = tf.one_hot(
+        #     tf.cast(y, dtype=tf.int64), self.num_classes
+        # )
+        #
+        # loss = weighted_softmax_cross_entropy(
+        #     y_pred[LOGITS], vector_labels, **self.feature_loss
+        # )
+        #
+        # return loss
+
+
 # # For Categorical Output Features
 # class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 #     def __init__(

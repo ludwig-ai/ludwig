@@ -30,6 +30,8 @@ from ludwig.features.base_feature import OutputFeature
 # from ludwig.modules.metric_modules import HitsAtKMetric
 # from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
 #     SampledSoftmaxCrossEntropyMetric
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -233,18 +235,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     def _setup_loss(self):
         if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SoftmaxCrossEntropyLoss(
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            self.train_loss_function = SoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
-                decoder_obj=self.decoder_obj,
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            self.train_loss_function = SampledSoftmaxCrossEntropyLoss()
         else:
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
@@ -252,22 +245,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SoftmaxCrossEntropyLoss(
-            num_classes=self.num_classes,
-            feature_loss=self.loss,
-            name='eval_loss')
+        self.eval_loss_function = SoftmaxCrossEntropyLoss()
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         # softmax_cross_entropy loss metric
-        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
-            num_classes=self.num_classes,
-            feature_loss=self.loss,
-            name='eval_loss'
-        )
-        self.metric_functions[ACCURACY] = CategoryAccuracy(
-            name='metric_accuracy'
-        )
+        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric()
+        self.metric_functions[ACCURACY] = CategoryAccuracy()
         self.metric_functions[HITS_AT_K] = HitsAtKMetric(
             k=self.top_k,
             name='metric_top_k_hits'

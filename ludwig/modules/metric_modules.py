@@ -20,20 +20,20 @@ import numpy as np
 from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
 from ludwig.modules.loss_modules import (
-#     BWCEWLoss,
-#     SequenceSoftmaxCrossEntropyLoss,
-#     SequenceSampledSoftmaxCrossEntropyLoss,
-#     SigmoidCrossEntropyLoss,
-#     SoftmaxCrossEntropyLoss,
-#     SampledSoftmaxCrossEntropyLoss,
-    rmspe_loss,
+    #     BWCEWLoss,
+    #     SequenceSoftmaxCrossEntropyLoss,
+    #     SequenceSampledSoftmaxCrossEntropyLoss,
+    #     SigmoidCrossEntropyLoss,
+    #     SoftmaxCrossEntropyLoss,
+    #     SampledSoftmaxCrossEntropyLoss,
+    rmspe_loss, SoftmaxCrossEntropyLoss,
 )
 import torch
 from torchmetrics import (
     MeanAbsoluteError,
     MeanSquaredError,
     Metric,
-    AUROC,
+    AUROC, Accuracy, AverageMeter,
 )
 #from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
@@ -85,21 +85,27 @@ class ROCAUCMetric(AUROC):
         )
 
 
-class RMSPEMetric(Metric):
-    def __init__(self, name="root_mean_squared_percentage_error"):
+class MeanMetric(Metric):
+    def __init__(self):
         super().__init__()
-        self.add_state("sum_rmspe", default=torch.tensor(0, dtype=torch.float32))
-        self.add_state("n", default=torch.tensor(0, dtype=torch.float32))
+        self.avg = AverageMeter()
 
     def update(self, preds, target):
-        predictions = preds
         if isinstance(preds, dict) and PREDICTIONS in preds:
-            predictions = preds[PREDICTIONS]
-        self.sum_rmspe += rmspe_loss(target, predictions)
-        self.n += target.shape[0]
+            preds = preds[PREDICTIONS]
+        self.avg.update(self.get_current_value(preds, target))
 
     def compute(self):
-        return self.sum_rmspe / self.n
+        return self.avg.compute()
+
+    @abstractmethod
+    def get_current_value(self, preds, target):
+        raise NotImplementedError()
+
+
+class RMSPEMetric(MeanMetric):
+    def get_current_value(self, preds, target):
+        return rmspe_loss(target, preds)
 
 
 # class LudwigMetric:
@@ -261,25 +267,17 @@ class ErrorScore(Metric):
 #
 #     def result(self):
 #         return self.sum_loss / self.N
-#
-#
-# class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
-#     def __init__(
-#             self,
-#             num_classes=0,
-#             feature_loss=None,
-#             name="softmax_cross_entropy_metric",
-#     ):
-#         super().__init__(name=name)
-#
-#         self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(
-#             num_classes=num_classes, feature_loss=feature_loss
-#         )
-#
-#     def update_state(self, y, y_hat):
-#         super().update_state(self.softmax_cross_entropy_function(y, y_hat))
-#
-#
+
+
+class SoftmaxCrossEntropyMetric(MeanMetric):
+    def __init__(self):
+        super().__init__()
+        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss()
+
+    def get_current_value(self, preds, target):
+        return self.softmax_cross_entropy_function(preds, target)
+
+
 # class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
 #     def __init__(
 #             self,
@@ -442,21 +440,17 @@ class ErrorScore(Metric):
 #         )
 #
 #         super().update_state(masked_sequence_corrected_preds)
-#
-#
-# class CategoryAccuracy(tf.keras.metrics.Accuracy):
-#     def __init__(self, name=None):
-#         super().__init__(name=name)
-#
-#     def update_state(self, y_true, y_pred, sample_weight=None):
-#         # make sure y_true is tf.int64
-#         super().update_state(
-#             tf.cast(y_true, dtype=tf.int64),
-#             y_pred,
-#             sample_weight=sample_weight,
-#         )
-#
-#
+
+
+class CategoryAccuracy(Accuracy):
+    def __init__(self, name=None):
+        super().__init__()
+
+    def update(self, preds: torch.Tensor, target: torch.Tensor):
+        # make sure y_true is tf.int64
+        super().update(preds, target.type(torch.LongTensor))
+
+
 # class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
 #     def __init__(self, k=3, name=None):
 #         super().__init__(k=k, name=name)
