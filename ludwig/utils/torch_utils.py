@@ -125,6 +125,7 @@ class Dense(LudwigModule):
     def __init__(
         self,
         input_size,
+        output_size,
         use_bias=True,
         weights_initializer='xavier_uniform',
         bias_initializer='zeros',
@@ -135,7 +136,7 @@ class Dense(LudwigModule):
         super().__init__()
         self.dense = Linear(
             in_features=input_size,
-            out_features=1,
+            out_features=output_size,
             bias=use_bias
         )
         weights_initializer = initializers[weights_initializer]

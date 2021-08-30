@@ -196,17 +196,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     ):
         logits = inputs[LOGITS]
 
-        probabilities = torch.nn.softmax(
-            logits,
-            name='probabilities_{}'.format(self.feature_name)
-        )
-
-        predictions = torch.argmax(
-            logits,
-            -1,
-            name='predictions_{}'.format(self.feature_name)
-        )
-        predictions = torch.cast(predictions, dtype=torch.int64)
+        probabilities = torch.softmax(logits, -1)
+        predictions = torch.argmax(logits, -1)
+        predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
         # predictions: [batch_size]

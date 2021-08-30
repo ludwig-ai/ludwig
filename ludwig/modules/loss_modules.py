@@ -13,62 +13,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import collections
-import numpy as np
+
 import torch
 from torch import nn
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
-from ludwig.constants import *
 from ludwig.constants import LOGITS
 # from ludwig.utils.tf_utils import sequence_length_2D
 
 # used for Laplace smoothing for candidate samplers
+
 EPSILON = 1.0e-10
 
 
-class MSELoss(_MSELoss):
+class LogitsLoss(nn.Module):
+    def __call__(self, input, target):
+        if isinstance(input, dict) and LOGITS in input:
+            input = input[LOGITS]
+        return super().__call__(input, target)
+
+
+class MSELoss(LogitsLoss, _MSELoss):
+    pass
+
+
+class MAELoss(LogitsLoss, L1Loss):
+    pass
+
+
+class RMSELoss(LogitsLoss):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    '''
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = super().__call__(
-            y_true, y_pred[LOGITS], sample_weight=sample_weight)
-        return loss
-    '''
-    def forward(self, input, target):
-        logits = input[LOGITS]
-        loss = super().forward(logits, target)
-        return loss
-
-
-class MAELoss(L1Loss):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def forward(self, input, target):
-        logits = input[LOGITS]
-        loss = super().forward(logits, target)
-        return loss
-
-
-class RMSELoss(nn.Module):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.mse = nn.MSELoss()
+        super().__init__()
+        self.mse = nn.MSELoss(**kwargs)
 
     def forward(self, input, target):
         return torch.sqrt(self.mse(input, target))
 
 
-class RMSPELoss(nn.Module):
+class RMSPELoss(LogitsLoss):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__()
 
     def forward(self, input, target):
-        preds = input[LOGITS]
-        loss = rmspe_loss(target, preds)
+        loss = rmspe_loss(target, input)
         return loss
 
 
@@ -110,14 +97,16 @@ class RMSPELoss(nn.Module):
 
 
 # TODO torch: test behavior parity with tf
-class SoftmaxCrossEntropyLoss(nn.Module):
+class SoftmaxCrossEntropyLoss(LogitsLoss):
     def __init__(self, **kwargs):
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss(**kwargs)
 
-    def forward(self, input: dict, target: torch.Tensor):
-        preds = input[LOGITS]
-        return self.loss_fn(preds, target)
+    def forward(self, input: torch.Tensor, target: torch.Tensor):
+        target = target.long()
+        print(f'preds: {input.shape} {input.dtype} {input}')
+        print(f'target: {target.shape} {target.dtype} {target}')
+        return self.loss_fn(input, target)
         # vector_labels = tf.one_hot(
         #     tf.cast(y, dtype=tf.int64), self.num_classes
         # )

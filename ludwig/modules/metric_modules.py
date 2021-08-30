@@ -91,8 +91,6 @@ class MeanMetric(Metric):
         self.avg = AverageMeter()
 
     def update(self, preds, target):
-        if isinstance(preds, dict) and PREDICTIONS in preds:
-            preds = preds[PREDICTIONS]
         self.avg.update(self.get_current_value(preds, target))
 
     def compute(self):
@@ -105,6 +103,8 @@ class MeanMetric(Metric):
 
 class RMSPEMetric(MeanMetric):
     def get_current_value(self, preds, target):
+        if isinstance(preds, dict) and PREDICTIONS in preds:
+            preds = preds[PREDICTIONS]
         return rmspe_loss(target, preds)
 
 
