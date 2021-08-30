@@ -99,13 +99,17 @@ class DaskPredictor(BasePredictor):
             self.output_columns = output_columns
             self.features = features
             self.data_hdf5_fp = data_hdf5_fp
-            self.batch_predict = partial(self.predictor.batch_predict, *args,
-                                         **kwargs)
+            self.batch_predict = partial(
+                self.predictor.batch_predict, *args, **kwargs)
 
         def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
             pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
             predictions = self.predictor.batch_predict(
-                model=self.model, dataset=pd_ds)
+                model=self.model,
+                dataset=pd_ds,
+            )
+            for output_feature in self.model.output_features.values():
+                predictions = output_feature.flatten(predictions)
             ordered_predictions = predictions[self.output_columns]
             return ordered_predictions
 

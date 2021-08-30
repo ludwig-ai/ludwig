@@ -234,11 +234,10 @@ class RayPredictor(BasePredictor):
             predictions = self.predictor.batch_predict(
                 model=self.model,
                 dataset=pd_ds,
-                is_distributed=True
             )
-
+            for output_feature in self.model.output_features.values():
+                predictions = output_feature.flatten(predictions)
             ordered_predictions = predictions[self.output_columns]
-
             return ordered_predictions
 
 
