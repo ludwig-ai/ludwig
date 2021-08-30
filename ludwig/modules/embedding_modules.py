@@ -73,14 +73,17 @@ def embedding_matrix(
                 embedding_size = vocab_size
 
             if embedding_initializer is not None:
-                embedding_initializer_obj_ref = get_initializer(
+                embedding_initializer_fn = get_initializer(
                     embedding_initializer)
             else:
-                embedding_initializer_obj_ref = get_initializer(
+                embedding_initializer_fn = get_initializer(
                     {TYPE: 'uniform', 'minval': -1.0, 'maxval': 1.0})
-            embedding_initializer_obj = embedding_initializer_obj_ref(
-                [vocab_size, embedding_size])
+            embedding_initializer_obj = torch.empty(
+                vocab_size, embedding_size
+            )
+            embedding_initializer_fn(embedding_initializer_obj)
 
+        # todo: clean up code
         '''
         embeddings = tf.Variable(
             embedding_initializer_obj,
@@ -88,9 +91,11 @@ def embedding_matrix(
             name='embeddings'
         )
         '''
-        torch.requires_grad_(embeddings_trainable)
+        # torch.requires_grad_(embeddings_trainable)
         embeddings = embedding_initializer_obj
-        embeddings.name = 'embeddings'
+
+        # todo: clean up, torch appears not to support naming a tensor
+        # embeddings.name = 'embeddings'
 
     elif representation == 'sparse':
         embedding_size = vocab_size
@@ -125,7 +130,7 @@ def embedding_matrix_on_device(
         embeddings_on_cpu=False,
         embedding_initializer=None
 ):
-    #with tf.device('/cpu:0'):
+    # with tf.device('/cpu:0'):
     embeddings, embedding_size = embedding_matrix(
         vocab,
         embedding_size,
@@ -135,8 +140,10 @@ def embedding_matrix_on_device(
         force_embedding_size=force_embedding_size,
         embedding_initializer=embedding_initializer
     )
-    if not embeddings_on_cpu:
-        embeddings.to(device='cuda:0')
+    # todo: reconfirm that hard-coded value for device is OK
+    #       fails on machine w/o gpu
+    # if not embeddings_on_cpu:
+    #     embeddings.to(device='cuda:0')
     '''
     else:
         embeddings, embedding_size = embedding_matrix(

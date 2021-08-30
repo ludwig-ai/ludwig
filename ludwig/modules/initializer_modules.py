@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 # import tensorflow as tf
+import torch.nn.init
 
 from ludwig.constants import TYPE
 from ludwig.utils.misc_utils import get_from_registry
@@ -30,8 +31,8 @@ initializers_registry = {
     # 'variance_scaling': tf.keras.initializers.VarianceScaling,
     # 'glorot_normal': tf.initializers.glorot_normal,
     # 'glorot_uniform': tf.initializers.glorot_uniform,
-    # 'xavier_normal': tf.initializers.glorot_normal,
-    # 'xavier_uniform': tf.initializers.glorot_uniform,
+    'xavier_normal': torch.nn.init.xavier_normal,
+    'xavier_uniform': torch.nn.init.xavier_uniform,
     # 'he_normal': tf.initializers.he_normal,
     # 'he_uniform': tf.initializers.he_uniform,
     # 'lecun_normal': tf.initializers.lecun_normal,
@@ -46,7 +47,7 @@ def get_initializer(parameters):
     elif isinstance(parameters, str):
         initializer_fun = get_from_registry(
             parameters, initializers_registry)
-        return initializer_fun()
+        return initializer_fun
     elif isinstance(parameters, dict):
         initializer_fun = get_from_registry(
             parameters[TYPE], initializers_registry)

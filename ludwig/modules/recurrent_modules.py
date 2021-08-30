@@ -20,31 +20,34 @@ import collections
 # import tensorflow as tf
 # import tensorflow_addons as tfa
 # from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
-from torch.nn import Module
+from torch.nn import Module, ModuleList
+from torch.nn import RNN, GRU, LSTM
 
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
-    # 'rnn': SimpleRNN,
-    # 'gru': GRU,
-    # 'lstm': LSTM,
+    'rnn': RNN,
+    'gru': GRU,
+    'lstm': LSTM,
 }
 
 
 class RecurrentStack(Module):
     def __init__(
             self,
+            input_size=None,
             state_size=256,
             cell_type='rnn',
             num_layers=1,
             bidirectional=False,
             activation='tanh',
-            recurrent_activation='sigmoid',
+            nonlinearity='tanh',
+            recurrent_activation='signmoid',
             use_bias=True,
             unit_forget_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             recurrent_initializer='orthogonal',
             bias_initializer='zeros',
             weights_regularizer=None,
@@ -62,45 +65,51 @@ class RecurrentStack(Module):
         self.supports_masking = True
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
-        self.layers = []
+        # todo: clean-up after torch port
+        # self.layers = []
 
         rnn_params = {
-            'units': state_size,
-            'activation': activation,
-            'recurrent_activation': recurrent_activation,
-            'use_bias': use_bias,
-            'kernel_initializer': weights_initializer,
-            'recurrent_initializer': recurrent_initializer,
-            'bias_initializer': bias_initializer,
-            'unit_forget_bias': unit_forget_bias,
-            'kernel_regularizer': weights_regularizer,
-            'recurrent_regularizer': recurrent_regularizer,
-            'bias_regularizer': bias_regularizer,
-            'activity_regularizer': activity_regularizer,
-            # 'kernel_constraint': weights_constraint,
-            # 'recurrent_constraint': recurrent_constraint,
-            # 'bias_constraint': bias_constraint,
+            #     'activation': activation,
+            'nonlinearity': nonlinearity,
+            #     'recurrent_activation': recurrent_activation,
+            'bias': use_bias,
+            #     'kernel_initializer': weights_initializer,
+            #     'recurrent_initializer': recurrent_initializer,
+            #     'bias_initializer': bias_initializer,
+            #     'unit_forget_bias': unit_forget_bias,
+            #     'kernel_regularizer': weights_regularizer,
+            #     'recurrent_regularizer': recurrent_regularizer,
+            #     'bias_regularizer': bias_regularizer,
+            #     'activity_regularizer': activity_regularizer,
+            #     # 'kernel_constraint': weights_constraint,
+            #     # 'recurrent_constraint': recurrent_constraint,
+            #     # 'bias_constraint': bias_constraint,
             'dropout': dropout,
-            'recurrent_dropout': recurrent_dropout,
-            'return_sequences': True,
-            'return_state': True,
+            #     'recurrent_dropout': recurrent_dropout,
+            #     'return_sequences': True,
+            #     'return_state': True,
         }
-        signature = inspect.signature(rnn_layer_class.__init__)
-        valid_args = set(signature.parameters.keys())
-        rnn_params = {k: v for k, v in rnn_params.items() if k in valid_args}
+        # signature = inspect.signature(rnn_layer_class.__init__)
+        # valid_args = set(signature.parameters.keys())
+        # rnn_params = {k: v for k, v in rnn_params.items() if k in valid_args}
 
-        for _ in range(num_layers):
-            layer = rnn_layer_class(**rnn_params)
+        # for _ in range(num_layers):
+        #     layer = rnn_layer_class(**rnn_params)
+        #
+        #     if bidirectional:
+        #         layer = Bidirectional(layer)
+        #
+        #     self.layers.append(layer)
+        #
+        # for layer in self.layers:
+        #     logger.debug('   {}'.format(layer.name))
 
-            if bidirectional:
-                layer = Bidirectional(layer)
+        self.layers = RNN(
+            input_size, state_size,
+            **rnn_params
+        )
 
-            self.layers.append(layer)
-
-        for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
-
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
         final_state = None
         for layer in self.layers:
