@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
 
 import numpy as np
 
@@ -286,7 +285,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if training and target is not None:
             return self.decoder_obj._logits_training(
                 inputs,
-                target=tf.cast(target, dtype=tf.int32),
+                target=target.type(torch.int32),
                 training=training
             )
         else:
@@ -301,7 +300,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.int32
+        return torch.int32
 
     def get_output_shape(self):
         return self.max_sequence_length,
