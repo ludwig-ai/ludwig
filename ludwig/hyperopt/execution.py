@@ -730,12 +730,12 @@ class RayTuneExecutor(HyperoptExecutor):
                              )
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
-        try:
-            ray.init('auto', ignore_reinit_error=True)
-        except ConnectionError:
-            logger.info('Initializing new Ray cluster...')
-            ray.init()
-
+        if not ray.is_initialized():
+            try:
+                ray.init('auto', ignore_reinit_error=True)
+            except ConnectionError:
+                logger.info('Initializing new Ray cluster...')
+                ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = hyperopt_sampler.num_samples
         self.goal = hyperopt_sampler.goal

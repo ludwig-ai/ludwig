@@ -224,11 +224,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
 
     def initialize(self):
-        try:
-            ray.init('auto', ignore_reinit_error=True)
-        except ConnectionError:
-            logger.info('Initializing new Ray cluster...')
-            ray.init(ignore_reinit_error=True)
+        if not ray.is_initialized():
+            try:
+                ray.init('auto', ignore_reinit_error=True)
+            except ConnectionError:
+                logger.info('Initializing new Ray cluster...')
+                ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
         self._df_engine.set_parallelism(**get_dask_kwargs())
