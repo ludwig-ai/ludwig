@@ -57,12 +57,17 @@ class DaskPredictor(BasePredictor):
         )
 
         num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
-        return dataset.ds.map_batches(
+        dask_dataset = dataset.ds.map_batches(
             batch_predictor,
             compute='actors',
             batch_format='pandas',
             num_gpus=num_gpus
         ).to_dask()
+
+        for of_feature in model.output_features.values():
+            dask_dataset = of_feature.unflatten(dask_dataset)
+
+        return dask_dataset
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
