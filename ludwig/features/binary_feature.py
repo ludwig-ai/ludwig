@@ -15,9 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-
 import numpy as np
-import tensorflow as tf
+import torch
 from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
@@ -128,12 +127,14 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.bool, tf.int64]
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.bool, torch.int64]
         assert len(inputs.shape) == 1
 
-        inputs = tf.cast(inputs, dtype=tf.float32)
-        inputs_exp = inputs[:, tf.newaxis]
+        # inputs = tf.cast(inputs, dtype=torch.float32)
+        inputs = torch.tensor.type(torch.tensor.float32)
+        # inputs_exp = inputs[:, tf.newaxis]
+        inputs_exp = inputs[:, None]
         encoder_outputs = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )
@@ -142,7 +143,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     @classmethod
     def get_input_dtype(cls):
-        return tf.bool
+        return torch.bool
 
     def get_input_shape(self):
         return ()
@@ -181,14 +182,17 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def predictions(self, inputs, **kwargs):  # hidden
         logits = inputs[LOGITS]
 
-        probabilities = tf.nn.sigmoid(
+        probabilities = torch.nn.sigmoid(
             logits, name="probabilities_{}".format(self.name)
         )
-        predictions = tf.greater_equal(
-            probabilities,
-            self.threshold,
-            name="predictions_{}".format(self.name),
-        )
+        # predictions = tf.greater_equal(
+        #    probabilities,
+        #    self.threshold,
+        #    name="predictions_{}".format(self.name),
+        # )
+
+        predictions = probabilities > self.threshold
+
 
         return {
             PROBABILITIES: probabilities,
@@ -229,7 +233,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.bool
+        return torch.bool
 
     def get_output_shape(self):
         return ()
