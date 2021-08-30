@@ -13,12 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import math
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
-from ludwig.constants import LOGITS
+from ludwig.constants import LOGITS, PROJECTION_INPUT
+
 # from ludwig.utils.tf_utils import sequence_length_2D
 
 # used for Laplace smoothing for candidate samplers
@@ -118,33 +121,34 @@ class SoftmaxCrossEntropyLoss(LogitsLoss):
         # return loss
 
 
-# # For Categorical Output Features
-# class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
-#     def __init__(
-#         self, decoder_obj=None, num_classes=0, feature_loss=None, name=None
-#     ):
-#         super().__init__(name=name)
-#
-#         self.decoder_obj = decoder_obj
-#         self.num_classes = num_classes
-#         self.feature_loss = feature_loss
-#
-#     def call(self, y, y_pred):
-#         decoder_weights = self.decoder_obj.weights[0]
-#         decoder_biases = self.decoder_obj.weights[1]
-#
-#         loss = sampled_softmax_cross_entropy(
-#             y,
-#             y_pred[PROJECTION_INPUT],
-#             num_classes=self.num_classes,
-#             decoder_weights=decoder_weights,
-#             decoder_biases=decoder_biases,
-#             **self.feature_loss
-#         )
-#
-#         return loss
-#
-#
+# TODO torch: test behavior parity with tf
+# For Categorical Output Features
+class SampledSoftmaxCrossEntropyLoss(nn.Module):
+    def __init__(
+        self,
+        decoder_obj=None,
+        num_classes=0,
+        negative_samples=0,
+        **kwargs
+    ):
+        super().__init__()
+        self.sampled_softmax = SampledSoftmax(
+            ntokens=num_classes,
+            nsampled=negative_samples,
+            nhid=64,
+        )
+        self.criterion = nn.CrossEntropyLoss()
+        self.num_classes = num_classes
+
+    def forward(self, input, target):
+        target = target.long()
+        logits, new_targets = self.sampled_softmax(
+            input[PROJECTION_INPUT], target
+        )
+        logits_flat = logits.view(-1, self.num_classes)
+        return self.criterion(logits_flat, target)
+
+
 # # For Sequence Output Feature
 # class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 #     def __init__(
@@ -283,8 +287,148 @@ class SoftmaxCrossEntropyLoss(LogitsLoss):
 #     entropy = tf.reduce_sum(entropy_per_class, -1)
 #     penalty = (max_entropy - entropy) / max_entropy
 #     return tf.reduce_mean(penalty)
-#
-#
+
+
+# https://github.com/leimao/Sampled-Softmax-PyTorch/blob/master/utils.py
+class LogUniformSampler(object):
+    def __init__(self, ntokens):
+
+        self.N = ntokens
+        self.prob = [0] * self.N
+
+        self.generate_distribution()
+
+    def generate_distribution(self):
+        for i in range(self.N):
+            self.prob[i] = (np.log(i+2) - np.log(i+1)) / np.log(self.N + 1)
+
+    def probability(self, idx):
+        return self.prob[idx]
+
+    def expected_count(self, num_tries, samples):
+        freq = list()
+        for sample_idx in samples:
+            freq.append(-(np.exp(num_tries * np.log(1-self.prob[sample_idx]))-1))
+        return freq
+
+    def accidental_match(self, labels, samples):
+        sample_dict = dict()
+
+        for idx in range(len(samples)):
+            sample_dict[samples[idx]] = idx
+
+        result = list()
+        for idx in range(len(labels)):
+            if labels[idx] in sample_dict:
+                result.append((idx, sample_dict[labels[idx]]))
+
+        return result
+
+    def sample(self, size, labels):
+        log_N = np.log(self.N)
+
+        x = np.random.uniform(low=0.0, high=1.0, size=size)
+        value = np.floor(np.exp(x * log_N)).astype(int) - 1
+        samples = value.tolist()
+
+        true_freq = self.expected_count(size, labels.tolist())
+        sample_freq = self.expected_count(size, samples)
+
+        return samples, true_freq, sample_freq
+
+    def sample_unique(self, size, labels):
+        # Slow. Not Recommended.
+        log_N = np.log(self.N)
+        samples = list()
+
+        while (len(samples) < size):
+            x = np.random.uniform(low=0.0, high=1.0, size=1)[0]
+            value = np.floor(np.exp(x * log_N)).astype(int) - 1
+            if value in samples:
+                continue
+            else:
+                samples.append(value)
+
+        true_freq = self.expected_count(size, labels.tolist())
+        sample_freq = self.expected_count(size, samples)
+
+        return samples, true_freq, sample_freq
+
+
+# https://github.com/rdspring1/PyTorch_GBW_LM/blob/master/lm/model.py
+class SampledSoftmax(nn.Module):
+    def __init__(self, ntokens, nsampled, nhid, tied_weight=None):
+        super(SampledSoftmax, self).__init__()
+
+        # Parameters
+        self.ntokens = ntokens
+        self.nsampled = nsampled
+
+        self.sampler = LogUniformSampler(self.ntokens)
+        self.params = nn.Linear(nhid, ntokens)
+
+        if tied_weight is not None:
+            self.params.weight = tied_weight
+        else:
+            in_, out_ = self.params.weight.size()
+            stdv = math.sqrt(3. / (in_ + out_))
+            self.params.weight.data.uniform_(-stdv, stdv)
+
+    def forward(self, inputs, labels):
+        if self.training:
+            # sample ids according to word distribution - Unique
+            sample_values = self.sampler.sample(self.nsampled, labels.data.cpu().numpy())
+            return self.sampled(inputs, labels, sample_values, remove_accidental_match=True)
+        else:
+            return self.full(inputs, labels)
+
+    def sampled(self, inputs, labels, sample_values, remove_accidental_match=False):
+        assert(inputs.data.get_device() == labels.data.get_device())
+        device_id = labels.data.get_device()
+
+        batch_size, d = inputs.size()
+        sample_ids, true_freq, sample_freq = sample_values
+
+        sample_ids = self._create_var(torch.LongTensor(sample_ids), device_id)
+        true_freq = self._create_var(torch.FloatTensor(true_freq), device_id)
+        sample_freq = self._create_var(torch.FloatTensor(sample_freq), device_id)
+
+        # gather true labels - weights and frequencies
+        true_weights = torch.index_select(self.params.weight, 0, labels)
+        true_bias = torch.index_select(self.params.bias, 0, labels)
+
+        # gather sample ids - weights and frequencies
+        sample_weights = torch.index_select(self.params.weight, 0, sample_ids)
+        sample_bias = torch.index_select(self.params.bias, 0, sample_ids)
+
+        # calculate logits
+        true_logits = torch.sum(torch.mul(inputs, true_weights), dim=1) + true_bias
+        sample_logits = torch.matmul(inputs, torch.t(sample_weights)) + sample_bias
+        # remove true labels from sample set
+        if remove_accidental_match:
+            acc_hits = self.sampler.accidental_match(labels.data.cpu().numpy(), sample_ids.data.cpu().numpy())
+            acc_hits = list(zip(*acc_hits))
+            sample_logits[acc_hits] = -1e37
+
+        # perform correction
+        true_logits = true_logits.sub(torch.log(true_freq))
+        sample_logits = sample_logits.sub(torch.log(sample_freq))
+
+        # return logits and new_labels
+        logits = torch.cat((torch.unsqueeze(true_logits, dim=1), sample_logits), dim=1)
+        new_targets = self._create_var(torch.zeros(batch_size).long(), device_id)
+        return logits, new_targets
+
+    def full(self, inputs, labels):
+        return self.params(inputs), labels
+
+    def _create_var(self, t, device_id):
+        v = torch.autograd.Variable(t)
+        if device_id >= 0:
+            v = v.cuda(device_id)
+        return v
+
+
 # # For categorical feature
 # def sampled_softmax_cross_entropy(
 #     labels,
@@ -321,8 +465,8 @@ class SoftmaxCrossEntropyLoss(LogitsLoss):
 #     )
 #
 #     return train_loss
-#
-#
+
+
 # # custom class to support Laplace smoothing of Fixed Unigram candidate sampler
 # # Required because of zeros returned in the true_expected_count for
 # # <PAD> and <UNK> tokens in loss['class_counts'] list
@@ -449,8 +593,8 @@ class SoftmaxCrossEntropyLoss(LogitsLoss):
 #             # labels_smoothing=labels_smoothing  # todo reintroduce
 #         )
 #     return loss
-#
-#
+
+
 # # used for categorical and sequence features
 # def sample_values_from_classes(
 #     labels,

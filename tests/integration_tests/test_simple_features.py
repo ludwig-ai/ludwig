@@ -99,16 +99,16 @@ def run_experiment(input_features, output_features, **kwargs):
                 category_feature(),
                 {'loss': {'type': 'softmax_cross_entropy'}}
         ),
-    #     (
-    #             category_feature(),
-    #             category_feature(),
-    #             {'loss': {
-    #                 'type': 'sampled_softmax_cross_entropy',
-    #                 'sampler': 'fixed_unigram',
-    #                 'negative_samples': 10
-    #             }
-    #             }
-    #     ),
+        (
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'fixed_unigram',
+                    'negative_samples': 10
+                }
+                }
+        ),
     #     (
     #             category_feature(),
     #             category_feature(),

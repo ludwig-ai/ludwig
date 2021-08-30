@@ -24,13 +24,7 @@ from ludwig.decoders.generic_decoders import Classifier
 from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-# from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-# from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
-# from ludwig.modules.metric_modules import CategoryAccuracy
-# from ludwig.modules.metric_modules import HitsAtKMetric
-# from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
-#     SampledSoftmaxCrossEntropyMetric
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
@@ -229,7 +223,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss()
+            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
+                decoder_obj=self.decoder_obj,
+                num_classes=self.num_classes,
+                **self.loss
+            )
         else:
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
