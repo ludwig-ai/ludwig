@@ -18,9 +18,8 @@
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME, PARQUET, PREPROCESSING, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.partitioned import RayDataset
-from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
+from ludwig.models.predictor import BasePredictor
 
 
 class DaskRemoteModel:

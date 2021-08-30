@@ -146,7 +146,6 @@ def test_dask_tabular(cache_format):
         date_feature(),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
-
     run_test_parquet(input_features, output_features, cache_format=cache_format)
 
 

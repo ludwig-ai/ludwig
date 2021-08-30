@@ -721,7 +721,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug('Preprocessing')
-        dataset, training_set_metadata = preprocess_for_prediction(
+        dataset, _ = preprocess_for_prediction(
             self.config,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
