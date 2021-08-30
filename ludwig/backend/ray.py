@@ -18,12 +18,12 @@
 import logging
 from collections import defaultdict
 from functools import partial
+from typing import Any, Dict, List
 
 import dask
 import pandas as pd
 import ray
 from horovod.ray import RayExecutor
-from ray.exceptions import RayActorError
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
@@ -32,9 +32,9 @@ from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.partitioned import RayDataset
+from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
-from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 
@@ -96,7 +96,7 @@ def _get_df_engine(engine_config):
 
 
 class RayRemoteModel:
-    def __init__(self, model):
+    def __init__(self, model: ECD):
         buf = save_weights_to_buffer(model)
         self.cls = type(model)
         self.args = model.get_args()
@@ -172,7 +172,7 @@ class RayPredictor(BasePredictor):
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
 
-    def batch_predict(self, model, dataset, *args, **kwargs):
+    def batch_predict(self, model: ECD, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
 
         remote_model = RayRemoteModel(model)
@@ -219,8 +219,15 @@ class RayPredictor(BasePredictor):
         self.actor_handles.clear()
 
     class BatchInferModel:
-        def __init__(self, remote_model, predictor_kwargs, output_columns,
-                     features, data_hdf5_fp, *args, **kwargs):
+        def __init__(
+                self,
+                remote_model: RayRemoteModel,
+                predictor_kwargs: Dict[str, Any],
+                output_columns: List[str],
+                features: List[Dict],
+                data_hdf5_fp: str,
+                *args, **kwargs
+        ):
             self.model = remote_model.load()
             self.predictor = Predictor(**predictor_kwargs)
             self.output_columns = output_columns
@@ -230,6 +237,7 @@ class RayPredictor(BasePredictor):
                 self.predictor.batch_predict, *args, **kwargs)
 
         def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+
             pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
             predictions = self.predictor.batch_predict(
                 model=self.model,

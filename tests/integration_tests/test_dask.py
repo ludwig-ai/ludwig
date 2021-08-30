@@ -62,11 +62,16 @@ def split(data_parquet):
 def run_api_experiment(config, data_parquet, cache_format):
     # Train on Parquet
     dask_backend = DaskBackend(cache_format=cache_format)
-    train_with_backend(dask_backend, config, dataset=data_parquet, evaluate=False)
+    train_with_backend(
+        dask_backend, config, dataset=data_parquet, evaluate=False,
+        predict=False
+    )
 
     # Train on DataFrame directly
     data_df = read_parquet(data_parquet, df_lib=dask_backend.df_engine.df_lib)
-    train_with_backend(dask_backend, config, dataset=data_df, evaluate=False)
+    train_with_backend(
+        dask_backend, config, dataset=data_df, evaluate=False, predict=False
+    )
 
 
 def run_split_api_experiment(config, data_parquet, cache_format):
@@ -77,20 +82,23 @@ def run_split_api_experiment(config, data_parquet, cache_format):
     # Train
     train_with_backend(backend, config,
                        training_set=train_fname,
-                       evaluate=False)
+                       evaluate=False,
+                       predict=False)
 
     # Train + Validation
     train_with_backend(backend, config,
                        training_set=train_fname,
                        validation_set=val_fname,
-                       evaluate=False)
+                       evaluate=False,
+                       predict=False)
 
     # Train + Validation + Test
     train_with_backend(backend, config,
                        training_set=train_fname,
                        validation_set=val_fname,
                        test_set=test_fname,
-                       evaluate=False)
+                       evaluate=False,
+                       predict=False)
 
 
 @spawn
@@ -138,6 +146,7 @@ def test_dask_tabular(cache_format):
         date_feature(),
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+
     run_test_parquet(input_features, output_features, cache_format=cache_format)
 
 

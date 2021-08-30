@@ -15,10 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import pandas as pd
-import ray
-from functools import partial
-
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME, PARQUET, PREPROCESSING, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
@@ -46,28 +42,9 @@ class DaskPredictor(BasePredictor):
         self.predictor_kwargs = predictor_kwargs
 
     def batch_predict(self, model, dataset, *args, **kwargs):
-        self._check_dataset(dataset)
-
-        remote_model = DaskRemoteModel(model)
-        predictor_kwargs = self.predictor_kwargs
-        output_columns = get_output_columns(model.output_features)
-        batch_predictor = self.BatchInferModel(
-            remote_model, predictor_kwargs, output_columns, dataset.features,
-            dataset.data_hdf5_fp, *args, **kwargs
+        raise NotImplementedError(
+            'Dask backend does not support batch evaluation at this time.'
         )
-
-        num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
-        dask_dataset = dataset.ds.map_batches(
-            batch_predictor,
-            compute='actors',
-            batch_format='pandas',
-            num_gpus=num_gpus
-        ).to_dask()
-
-        for of_feature in model.output_features.values():
-            dask_dataset = of_feature.unflatten(dask_dataset)
-
-        return dask_dataset
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
@@ -88,30 +65,6 @@ class DaskPredictor(BasePredictor):
 
     def shutdown(self):
         pass
-
-    class BatchInferModel:
-        def __init__(
-                self, remote_model, predictor_kwargs, output_columns, features,
-                data_hdf5_fp, *args, **kwargs
-        ):
-            self.model = remote_model.load()
-            self.predictor = Predictor(**predictor_kwargs)
-            self.output_columns = output_columns
-            self.features = features
-            self.data_hdf5_fp = data_hdf5_fp
-            self.batch_predict = partial(
-                self.predictor.batch_predict, *args, **kwargs)
-
-        def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-            pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
-            predictions = self.predictor.batch_predict(
-                model=self.model,
-                dataset=pd_ds,
-            )
-            for output_feature in self.model.output_features.values():
-                predictions = output_feature.flatten(predictions)
-            ordered_predictions = predictions[self.output_columns]
-            return ordered_predictions
 
 
 class DaskBackend(LocalTrainingMixin, Backend):
