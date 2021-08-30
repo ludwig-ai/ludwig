@@ -1272,7 +1272,7 @@ class StackedRNN(SequenceEncoder):
             num_fc_layers=0,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -1410,6 +1410,9 @@ class StackedRNN(SequenceEncoder):
             :type reduce_output: str
         """
         super().__init__()
+        # todo: work-around, determine how self.name is set in tf, appears name
+        #       is not set with torch
+        self.name = 'stacked_rnn'  # work-around code for now
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
