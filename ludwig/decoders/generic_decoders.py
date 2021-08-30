@@ -21,7 +21,7 @@ import torch
 
 from ludwig.decoders.base import Decoder
 
-from ludwig.utils.torch_utils import initializers, reg_loss, Dense, get_activation
+from ludwig.utils.torch_utils import Dense, get_activation
 
 from ludwig.constants import LOSS, TYPE
 
