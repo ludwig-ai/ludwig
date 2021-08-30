@@ -336,9 +336,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         # self.metric_functions[
         #     ROOT_MEAN_SQUARED_ERROR
         # ] = RootMeanSquaredErrorMetric(name="metric_rmse")
-        self.metric_functions[
-            ROOT_MEAN_SQUARED_PERCENTAGE_ERROR
-        ] = RMSPEMetric(name="metric_rmspe")
+        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric()
         self.metric_functions[R2] = R2Score(name="metric_r2")
 
     def get_prediction_set(self):

@@ -50,6 +50,7 @@ class Regressor(Decoder):
 
         self.dense = Dense(
             input_size=input_size,
+            output_size=1,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
