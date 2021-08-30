@@ -21,7 +21,7 @@ import numpy as np
 # from tensorflow.keras.layers import Dropout
 # from tensorflow.keras.layers import Layer
 # from tensorflow.keras.layers import Embedding
-from torch.nn import Module
+from torch import nn
 
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
@@ -77,7 +77,7 @@ def embedding_matrix(
                     embedding_initializer)
             else:
                 embedding_initializer_obj_ref = get_initializer(
-                    {TYPE: 'uniform', 'minval': -1.0, 'maxval': 1.0})
+                    {TYPE: 'uniform', 'a': -1.0, 'b': 1.0})
             embedding_initializer_obj = embedding_initializer_obj_ref(
                 [vocab_size, embedding_size])
 
@@ -88,9 +88,7 @@ def embedding_matrix(
             name='embeddings'
         )
         '''
-        torch.requires_grad_(embeddings_trainable)
         embeddings = embedding_initializer_obj
-        embeddings.name = 'embeddings'
 
     elif representation == 'sparse':
         embedding_size = vocab_size
@@ -105,13 +103,15 @@ def embedding_matrix(
             get_initializer('identity')([vocab_size, embedding_size]),
             requires_grad=False
         )
-        embeddings.name = 'embeddings'
 
     else:
         raise Exception(
             'Embedding representation {} not supported.'.format(
                 representation))
 
+    embeddings = nn.Embedding.from_pretrained(
+        embeddings, freeze=not embeddings_trainable
+    )
     return embeddings, embedding_size
 
 
@@ -135,7 +135,7 @@ def embedding_matrix_on_device(
         force_embedding_size=force_embedding_size,
         embedding_initializer=embedding_initializer
     )
-    if not embeddings_on_cpu:
+    if not embeddings_on_cpu and torch.cuda.is_available():
         embeddings.to(device='cuda:0')
     '''
     else:

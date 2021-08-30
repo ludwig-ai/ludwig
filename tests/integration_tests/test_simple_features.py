@@ -93,12 +93,12 @@ def run_experiment(input_features, output_features, **kwargs):
     #     (binary_feature(), binary_feature(), None),
     #
     #     # Categorical feature
-    #     (category_feature(), category_feature(), None),
-    #     (
-    #             category_feature(),
-    #             category_feature(),
-    #             {'loss': {'type': 'softmax_cross_entropy'}}
-    #     ),
+        (category_feature(), category_feature(), None),
+        (
+                category_feature(),
+                category_feature(),
+                {'loss': {'type': 'softmax_cross_entropy'}}
+        ),
     #     (
     #             category_feature(),
     #             category_feature(),

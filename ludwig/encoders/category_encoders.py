@@ -68,7 +68,7 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.int32
@@ -79,6 +79,9 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
             inputs, training=training, mask=mask
         )
         return embedded
+
+    def get_output_shape(self, input_shape):
+        return self.embedding_size
 
 
 @register(name='sparse')
@@ -113,7 +116,7 @@ class CategoricalSparseEncoder(CategoricalEncoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.int32
@@ -124,3 +127,6 @@ class CategoricalSparseEncoder(CategoricalEncoder):
             inputs, training=training, mask=mask
         )
         return embedded
+
+    def get_output_shape(self, input_shape):
+        return self.embedding_size
