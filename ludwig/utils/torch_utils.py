@@ -22,20 +22,20 @@ def sequence_mask(lengths, maxlen=None, dtype=torch.bool):
 
 
 initializer_registry = {
-    "uniform": torch.nn.init.uniform_,
-    "normal": torch.nn.init.normal_,
-    "constant": torch.nn.init.constant_,
-    "ones": torch.nn.init.ones_,
-    "zeros": torch.nn.init.zeros_,
-    "eye": torch.nn.init.eye_,
-    "dirac": torch.nn.init.dirac_,
-    "xavier_uniform": torch.nn.init.xavier_uniform_,
-    "xavier_normal": torch.nn.init.xavier_normal_,
-    "kaiming_uniform": torch.nn.init.kaiming_uniform_,
-    "kaiming_normal": torch.nn.init.kaiming_normal_,
-    "orthogonal": torch.nn.init.orthogonal_,
-    "sparse": torch.nn.init.sparse_,
-    None: torch.nn.init.xavier_uniform_,
+    "uniform": nn.init.uniform_,
+    "normal": nn.init.normal_,
+    "constant": nn.init.constant_,
+    "ones": nn.init.ones_,
+    "zeros": nn.init.zeros_,
+    "eye": nn.init.eye_,
+    "dirac": nn.init.dirac_,
+    "xavier_uniform": nn.init.xavier_uniform_,
+    "xavier_normal": nn.init.xavier_normal_,
+    "kaiming_uniform": nn.init.kaiming_uniform_,
+    "kaiming_normal": nn.init.kaiming_normal_,
+    "orthogonal": nn.init.orthogonal_,
+    "sparse": nn.init.sparse_,
+    None: nn.init.xavier_uniform_,
 
 }
 
