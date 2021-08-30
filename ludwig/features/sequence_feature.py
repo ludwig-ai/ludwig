@@ -175,6 +175,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def get_input_shape(self):
         return None,
 
+    def get_output_shape(self):
+        # todo: hard-coded for initial torch migration, need to generalize
+        return (8, 32)
+
     @staticmethod
     def update_config_with_metadata(
             input_feature,

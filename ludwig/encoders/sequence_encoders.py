@@ -1478,7 +1478,7 @@ class StackedRNN(SequenceEncoder):
                 default_dropout=fc_dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
