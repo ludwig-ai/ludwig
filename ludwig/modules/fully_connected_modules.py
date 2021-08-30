@@ -20,7 +20,7 @@ import logging
 
 from torch.nn import (Linear, LayerNorm, Module, Dropout, ModuleList)
 
-from ludwig.utils.torch_utils import (LudwigModule, initializers, activations, reg_loss)
+from ludwig.utils.torch_utils import LudwigModule, initializer_registry, activations, reg_loss
 
 logger = logging.getLogger(__name__)
 
@@ -71,10 +71,10 @@ class FCLayer(LudwigModule):
 
         self.layers.append(fc)
 
-        weights_initializer = initializers[weights_initializer]
+        weights_initializer = initializer_registry[weights_initializer]
         weights_initializer(fc.weight)
 
-        bias_initializer = initializers[bias_initializer]
+        bias_initializer = initializer_registry[bias_initializer]
         bias_initializer(fc.bias)
 
         self.activity_regularizer = None

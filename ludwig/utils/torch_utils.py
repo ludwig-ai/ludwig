@@ -1,14 +1,14 @@
 from torch.nn import Module, ModuleDict
 import torch
-from torch.nn.init import (uniform_, normal_, constant_, ones_,  zeros_, eye_, dirac_,
-        xavier_uniform_, xavier_normal_, kaiming_uniform_, kaiming_normal_, orthogonal_, sparse_)
-from torch.nn import (ELU, LeakyReLU, LogSigmoid, ReLU, Sigmoid, Tanh, Softmax)
+from torch import nn
+
 
 def sequence_length_3D(sequence):
     used = torch.sign(torch.max(torch.abs(sequence), dim=2))
     length = torch.sum(used, 1)
-    length = length.type(torch.int32)
+    length = length.int()
     return length
+
 
 def sequence_mask(lengths, maxlen=None, dtype=torch.bool):
     if maxlen is None:
@@ -21,31 +21,38 @@ def sequence_mask(lengths, maxlen=None, dtype=torch.bool):
     return mask
 
 
-initializers = {
-        "uniform": uniform_,
-        "normal": normal_,
-        "constant": constant_,
-        "ones": ones_,
-        "zeros": zeros_,
-        "eye": eye_,
-        "dirac": dirac_,
-        "xavier_uniform": xavier_uniform_,
-        "xavier_normal": xavier_normal_,
-        "kaiming_uniform": kaiming_uniform_,
-        "kaiming_normal": kaiming_normal_,
-        "orthogonal": orthogonal_,
-        "sparse": sparse_
+initializer_registry = {
+    "uniform": nn.init.uniform_,
+    "normal": nn.init.normal_,
+    "constant": nn.init.constant_,
+    "ones": nn.init.ones_,
+    "zeros": nn.init.zeros_,
+    "eye": nn.init.eye_,
+    "dirac": nn.init.dirac_,
+    "xavier_uniform": nn.init.xavier_uniform_,
+    "xavier_normal": nn.init.xavier_normal_,
+    "kaiming_uniform": nn.init.kaiming_uniform_,
+    "kaiming_normal": nn.init.kaiming_normal_,
+    "orthogonal": nn.init.orthogonal_,
+    "sparse": nn.init.sparse_,
+    None: nn.init.xavier_uniform_,
+
 }
 
 activations = {
-        "elu": ELU,
-        "leakyRelu": LeakyReLU,
-        "logSigmoid": LogSigmoid,
-        "relu": ReLU,
-        "sigmoid": Sigmoid,
-        "tanh": Tanh,
-        "softmax": Softmax
+    "elu": nn.ELU,
+    "leakyRelu": nn.LeakyReLU,
+    "logSigmoid": nn.LogSigmoid,
+    "relu": nn.ReLU,
+    "sigmoid": nn.Sigmoid,
+    "tanh": nn.Tanh,
+    "softmax": nn.Softmax
 }
+
+
+def get_activation(activation):
+    return activations[activation]()
+
 
 def reg_loss(input_tensor, regularizer, l1=0.01, l2=0.01):
     l1_reg = l1 * torch.sum(torch.abs(input_tensor))
@@ -114,3 +121,47 @@ class LudwigModule(Module):
     def add_loss(self, loss):
         if callable(loss):
             self._callable_losses.append(loss)
+
+
+class Dense(LudwigModule):
+    def __init__(
+        self,
+        input_size,
+        output_size,
+        use_bias=True,
+        weights_initializer='xavier_uniform',
+        bias_initializer='zeros',
+        weights_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+    ):
+        super().__init__()
+        self.dense = nn.Linear(
+            in_features=input_size,
+            out_features=output_size,
+            bias=use_bias
+        )
+        weights_initializer = initializer_registry[weights_initializer]
+        weights_initializer(self.dense.weight)
+
+        bias_initializer = initializer_registry[bias_initializer]
+        bias_initializer(self.dense.bias)
+
+        if weights_regularizer:
+            self.add_loss(lambda: reg_loss(self.dense.weight, weights_regularizer))
+
+        if bias_regularizer:
+            self.add_loss(lambda: reg_loss(self.dense.bias, bias_regularizer))
+
+        if activity_regularizer:
+            # Handle in forward call
+            self.add_loss(lambda: self.activation_loss)
+
+        self.activity_regularizer = activity_regularizer
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        batch_size = input.shape[0]
+        output = torch.squeeze(self.dense(input), dim=-1)
+        if self.activity_regularizer:
+            self.activation_loss = reg_loss(output, self.activity_regularizer) / batch_size
+        return output

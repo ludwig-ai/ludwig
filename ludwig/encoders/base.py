@@ -36,3 +36,11 @@ class Encoder(Module, ABC):
     def register_default(cls):
         for key in DEFAULT_KEYS:
             cls.register(name=key)
+
+    @abstractmethod
+    def get_output_shape(self, input_shape):
+        raise NotImplementedError
+
+    @property
+    def name(self):
+        return self.__class__.__name__
