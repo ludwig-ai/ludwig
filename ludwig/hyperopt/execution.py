@@ -37,6 +37,7 @@ try:
 except ImportError:
     ray = None
     get_horovod_kwargs = None
+
     class RayBackend:
         pass
 
@@ -797,25 +798,25 @@ class RayTuneExecutor(HyperoptExecutor):
                         shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
-                train_stats = {
-                    TRAINING: progress_tracker.train_metrics,
-                    VALIDATION: progress_tracker.vali_metrics,
-                    TEST: progress_tracker.test_metrics,
-                }
+            train_stats = {
+                TRAINING: progress_tracker.train_metrics,
+                VALIDATION: progress_tracker.vali_metrics,
+                TEST: progress_tracker.test_metrics,
+            }
 
-                metric_score = tune_executor.get_metric_score(
-                    train_stats, eval_stats=None)
-                tune.report(
-                    parameters=json.dumps(config, cls=NumpyEncoder),
-                    metric_score=metric_score,
-                    training_stats=json.dumps(
-                        train_stats[TRAINING], cls=NumpyEncoder),
-                    eval_stats=json.dumps(
-                        train_stats[VALIDATION], cls=NumpyEncoder),
-                    trial_id=tune.get_trial_id(),
-                    trial_dir=tune.get_trial_dir()
-                )
-    
+            metric_score = tune_executor.get_metric_score(
+                train_stats, eval_stats=None)
+            tune.report(
+                parameters=json.dumps(config, cls=NumpyEncoder),
+                metric_score=metric_score,
+                training_stats=json.dumps(
+                    train_stats[TRAINING], cls=NumpyEncoder),
+                eval_stats=json.dumps(
+                    train_stats[VALIDATION], cls=NumpyEncoder),
+                trial_id=tune.get_trial_id(),
+                trial_dir=tune.get_trial_dir()
+            )
+
         class RayTuneReportCallback(Callback):
             def on_epoch_end(self, trainer, progress_tracker, save_path):
 
@@ -840,7 +841,8 @@ class RayTuneExecutor(HyperoptExecutor):
             # get the maximum resources a single trial can get
             max_resources = get_horovod_kwargs(use_gpu)
             # get the resources assigned to the current trial
-            current_resources = resources.gpu + resources.extra_gpu if use_gpu else resources.cpu + resources.extra_cpu
+            current_resources = resources.gpu + \
+                resources.extra_gpu if use_gpu else resources.cpu + resources.extra_cpu
 
             num_slots = max_resources['num_slots']
             # first, try to reduce num_hosts, ensuring it stays above 0
@@ -850,13 +852,17 @@ class RayTuneExecutor(HyperoptExecutor):
             if num_hosts == 1:
                 num_slots = current_resources
 
-            hyperopt_dict['backend']._horovod_kwargs['num_slots'] = int(num_slots)
-            hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = int(num_hosts)
+            hyperopt_dict['backend']._horovod_kwargs['num_slots'] = int(
+                num_slots)
+            hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = int(
+                num_hosts)
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
 
-            logger.debug(f"Trial horovod kwargs: {hyperopt_dict['backend']._horovod_kwargs}")
+            logger.debug(
+                f"Trial horovod kwargs: {hyperopt_dict['backend']._horovod_kwargs}")
 
         stats = []
+
         def _run():
             train_stats, eval_stats = run_experiment(
                 **hyperopt_dict,
@@ -988,7 +994,8 @@ class RayTuneExecutor(HyperoptExecutor):
         if self.max_concurrent_trials:
             assert self.max_concurrent_trials > 0, f"`max_concurrent_trials` must be greater than 0, got {self.max_concurrent_trials}"
             if isinstance(search_alg, BasicVariantGenerator) or search_alg is None:
-                search_alg = BasicVariantGenerator(max_concurrent=self.max_concurrent_trials)
+                search_alg = BasicVariantGenerator(
+                    max_concurrent=self.max_concurrent_trials)
             elif isinstance(search_alg, ConcurrencyLimiter):
                 raise ValueError(
                     "You have specified `max_concurrent_trials`, but the search "
@@ -996,7 +1003,8 @@ class RayTuneExecutor(HyperoptExecutor):
                     "by setting `max_concurrent_trials=None`."
                 )
             else:
-                search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
+                search_alg = ConcurrencyLimiter(
+                    search_alg, max_concurrent=self.max_concurrent_trials)
 
         resources_per_trial = {
             "cpu": self.cpu_resources_per_trial or 1,
@@ -1016,7 +1024,8 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         if isinstance(backend, RayBackend):
-            resources_per_trial = {f"extra_{k}": v for k,v in resources_per_trial.items()}
+            resources_per_trial = {f"extra_{k}": v for k,
+                                   v in resources_per_trial.items()}
             resources_per_trial["cpu"] = 0
 
         with tempfile.TemporaryDirectory() as temp_dir_name:

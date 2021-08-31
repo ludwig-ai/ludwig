@@ -35,6 +35,7 @@ try:
     from ray import tune
     from ray.tune.resources import Resources
     from ray.tune.schedulers.resource_changing_scheduler import ResourceChangingScheduler, evenly_distribute_cpus_gpus_distributed
+
     def ray_resource_allocation_function(*args, **kwargs):
         pg = evenly_distribute_cpus_gpus_distributed(*args, **kwargs)
         return Resources(0, 0, extra_cpu=int(pg.required_resources["CPU"]), extra_gpu=int(pg.required_resources["GPU"]))
@@ -358,7 +359,8 @@ class RayTuneSampler(HyperoptSampler):
         if not scheduler_config:
             return None
 
-        dynamic_resource_allocation = scheduler_config.pop("dynamic_resource_allocation", False)
+        dynamic_resource_allocation = scheduler_config.pop(
+            "dynamic_resource_allocation", False)
 
         if scheduler_config.get("type") == "pbt":
             scheduler_config.update(
@@ -370,7 +372,8 @@ class RayTuneSampler(HyperoptSampler):
         )
 
         if dynamic_resource_allocation:
-            scheduler = ResourceChangingScheduler(scheduler, ray_resource_allocation_function)
+            scheduler = ResourceChangingScheduler(
+                scheduler, ray_resource_allocation_function)
         return scheduler
 
     def _get_search_space(self, parameters):
