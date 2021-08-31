@@ -165,20 +165,21 @@ def test_sequence_encoders(
 
                 assert 'encoder_output_state' in encoder_out
                 if enc_cell_type == 'lstm':
-                    assert isinstance(encoder_out['encoder_output_state'], list)
-                    assert encoder_out['encoder_output_state'][
-                               0].shape == \
+                    assert isinstance(encoder_out['encoder_output_state'],
+                                      tuple)
+                    assert isinstance(encoder_out['encoder_output_state'][0],
+                                      torch.Tensor)
+                    assert isinstance(encoder_out['encoder_output_state'][1],
+                                      torch.Tensor)
+                    assert encoder_out['encoder_output_state'][0].shape == \
                            (batch_size, TEST_HIDDEN_SIZE)
-                    assert encoder_out['encoder_output_state'][
-                               1].shape == \
+                    assert encoder_out['encoder_output_state'][1].shape == \
                            (batch_size, TEST_HIDDEN_SIZE)
                 else:
                     assert isinstance(encoder_out['encoder_output_state'],
                                       torch.Tensor)
                     assert encoder_out['encoder_output_state'].shape == \
-                           (1, batch_size,
-                            TEST_HIDDEN_SIZE)  # todo: added leading 1 for testing need to confirm
-                    #     Piero on how to handle num_layers to torch.
+                           (batch_size, TEST_HIDDEN_SIZE)
 
             elif enc_encoder == 'cnnrnn':
                 assert encoder_out['encoder_output'].shape.as_list() == \

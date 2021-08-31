@@ -1441,7 +1441,7 @@ class StackedRNN(SequenceEncoder):
         logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
             input_size=embedding_size,
-            state_size=state_size,
+            hidden_size=state_size,
             cell_type=cell_type,
             num_layers=num_layers,
             bidirectional=bidirectional,

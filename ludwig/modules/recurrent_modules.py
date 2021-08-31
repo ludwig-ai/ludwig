@@ -38,7 +38,7 @@ class RecurrentStack(Module):
     def __init__(
             self,
             input_size=None,
-            state_size=256,
+            hidden_size=256,
             cell_type='rnn',
             num_layers=1,
             bidirectional=False,
@@ -61,10 +61,12 @@ class RecurrentStack(Module):
             recurrent_dropout=0.0,
             **kwargs
     ):
+        # todo: Need to account for all the options, e.g., num_layers, bidirectional,
+        #       initializers, regularizers, etc.
         super().__init__()
         self.supports_masking = True
         self.input_size = input_size
-        self.state_size = state_size  # aka hidden_size
+        self.hidden_size = hidden_size
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
         # todo: clean-up after torch port
@@ -72,8 +74,9 @@ class RecurrentStack(Module):
 
         rnn_params = {
             #     'activation': activation,
-            'nonlinearity': nonlinearity,
+            # 'nonlinearity': nonlinearity,
             #     'recurrent_activation': recurrent_activation,
+            'num_layers': num_layers,
             'bias': use_bias,
             #     'kernel_initializer': weights_initializer,
             #     'recurrent_initializer': recurrent_initializer,
@@ -87,6 +90,7 @@ class RecurrentStack(Module):
             #     # 'recurrent_constraint': recurrent_constraint,
             #     # 'bias_constraint': bias_constraint,
             'dropout': dropout,
+            'bidirectional': bidirectional,
             #     'recurrent_dropout': recurrent_dropout,
             #     'return_sequences': True,
             #     'return_state': True,
@@ -106,14 +110,23 @@ class RecurrentStack(Module):
         # for layer in self.layers:
         #     logger.debug('   {}'.format(layer.name))
 
-        self.layers = RNN(
-            input_size, state_size,
+        self.layers = rnn_layer_class(
+            input_size, hidden_size,
             batch_first=True,
             **rnn_params
         )
 
     def forward(self, inputs, training=None, mask=None):
         hidden, final_state = self.layers(inputs)
+
+        # todo: confirm that this is correct handling
+        # extract final state for the last layer in the torch stacked rnn
+        if isinstance(final_state, tuple):
+            # lstm cell type
+            final_state = final_state[0][-1], final_state[1][-1]
+        else:
+            # rnn or gru cell type
+            final_state = final_state[-1]
 
         # todo: determine if needed for torch implementation
         # for layer in self.layers:
