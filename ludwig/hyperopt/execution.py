@@ -1023,10 +1023,10 @@ class RayTuneExecutor(HyperoptExecutor):
             sync_config = None
             if "://" in output_directory:
                 run_experiment_trial = tune.durable(run_experiment_trial)
-                sync_config = {
-                    "sync_to_driver": False,
-                    "upload_dir": output_directory,
-                }
+                sync_config = tune.SyncConfig(
+                    sync_to_driver=False,
+                    upload_dir=output_directory
+                )
                 output_directory = temp_dir_name
             elif self.kubernetes_namespace:
                 from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
