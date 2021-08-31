@@ -929,7 +929,7 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ) -> RayTuneResults:
-        if isinstance(dataset, str) and not os.path.isabs(dataset) and not "://" in dataset:
+        if isinstance(dataset, str) and not os.path.isabs(dataset) and "://" not in dataset:
             dataset = os.path.abspath(dataset)
 
         if gpus is not None:
