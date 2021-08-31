@@ -188,6 +188,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.embedding_size = embedding_size
 
         self.reduce_output = reduce_output
         if self.reduce_output is None:
@@ -208,7 +209,11 @@ class SequenceEmbedEncoder(SequenceEncoder):
             embedding_regularizer=weights_regularizer
         )
 
-    def call(self, inputs, training=None, mask=None):
+    def get_output_shape(self, input_shape):
+        # assume input shape (seq_size, )]\
+        return input_shape[0], self.embedding_size
+
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
@@ -218,6 +223,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :type training: Boolean
         """
         # ================ Embeddings ================
+        # todo: need to account for other options: training and mask
         embedded_sequence = self.embed_sequence(
             inputs, training=training, mask=mask
         )
@@ -1414,7 +1420,8 @@ class StackedRNN(SequenceEncoder):
         logger.debug(' {}'.format(self.name))
 
         self.max_sequence_length = max_sequence_length
-        self.state_size = state_size  # aka hidden size?
+        self.hidden_size = state_size
+        self.embedding_size = embedding_size
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1484,7 +1491,10 @@ class StackedRNN(SequenceEncoder):
             )
 
     def get_output_shape(self, input_shape):
-        return self.max_sequence_length, self.state_size
+        # assume input shape (seq_size,)
+        # todo: confirm how to handle when should_embed == False
+        # return (seq_size, hidden_size)
+        return input_shape[0], self.hidden_size
 
     def forward(self, inputs, training=None, mask=None):
         """

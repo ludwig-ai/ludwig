@@ -30,10 +30,8 @@ TEST_HIDDEN_SIZE = 8
 def generate_sequence_training_data():
     input_features = [
         sequence_feature(
-            vocab_size=100,
             min_len=5,
             max_len=10,
-            embedding_size=64,  # todo: testing
             encoder='rnn',
             cell_type='lstm',
             reduce_output=None
@@ -203,8 +201,8 @@ def test_sequence_encoders(
                        == [batch_size, 1, TEST_HIDDEN_SIZE]
 
             elif enc_encoder == 'transformer' or enc_encoder == 'embed':
-                assert encoder_out['encoder_output'].shape.as_list() \
-                       == [batch_size, seq_size, TEST_HIDDEN_SIZE]
+                assert encoder_out['encoder_output'].shape \
+                       == (batch_size, seq_size, TEST_HIDDEN_SIZE)
 
             else:
                 raise ValueError('{} is an invalid encoder specification' \
