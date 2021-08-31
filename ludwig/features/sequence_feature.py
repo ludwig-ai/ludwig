@@ -176,8 +176,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return None,
 
     def get_output_shape(self):
-        # todo: hard-coded for initial torch migration, need to generalize
-        return (8, 32)
+        return self.max_sequence_length
 
     @staticmethod
     def update_config_with_metadata(
@@ -216,59 +215,63 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self._setup_metrics()
 
     def _setup_loss(self):
-        if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
-        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            if self.decoder == 'generator':
-                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-                    dec_dense_layer=self.decoder_obj.dense_layer,
-                    dec_num_layers=self.decoder_obj.num_layers,
-                    num_classes=self.num_classes,
-                    feature_loss=self.loss,
-                    name='train_loss'
-                )
-            else:
-                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-                    dec_dense_layer=self.decoder_obj.projection_layer,
-                    dec_num_layers=None,
-                    num_classes=self.num_classes,
-                    feature_loss=self.loss,
-                    name='train_loss'
-                )
-        else:
-            raise ValueError(
-                "Loss type {} is not supported. Valid values are "
-                "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
-            )
-
-        # special handling for evaluation with Generator decoder and beam search
-        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
-            # beam search does not provide logits, need to use probabilities
-            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-                from_logits=False
-            )
-        else:
-            # all other cases
-            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss()
+        # todo: conver to torch
+        pass
+        # if self.loss[TYPE] == 'softmax_cross_entropy':
+        #     self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
+        # elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
+        #     if self.decoder == 'generator':
+        #         self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+        #             dec_dense_layer=self.decoder_obj.dense_layer,
+        #             dec_num_layers=self.decoder_obj.num_layers,
+        #             num_classes=self.num_classes,
+        #             feature_loss=self.loss,
+        #             name='train_loss'
+        #         )
+        #     else:
+        #         self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+        #             dec_dense_layer=self.decoder_obj.projection_layer,
+        #             dec_num_layers=None,
+        #             num_classes=self.num_classes,
+        #             feature_loss=self.loss,
+        #             name='train_loss'
+        #         )
+        # else:
+        #     raise ValueError(
+        #         "Loss type {} is not supported. Valid values are "
+        #         "'softmax_cross_entropy' or "
+        #         "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
+        #     )
+        #
+        # # special handling for evaluation with Generator decoder and beam search
+        # if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+        #     # beam search does not provide logits, need to use probabilities
+        #     self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+        #         from_logits=False
+        #     )
+        # else:
+        #     # all other cases
+        #     self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss()
 
     def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
-            # Generator Decoder w/ beam search
-            # beam search does not provide logits
-            self.metric_functions[LOSS] = SequenceLossMetric(
-                from_logits=False)
-        else:
-            # Generator Decoder w/ no beam search and Tagger Decoder
-            self.metric_functions[LOSS] = SequenceLossMetric(
-                from_logits=True)
-
-        self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
-        self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
-        self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
-        self.metric_functions[PERPLEXITY] = PerplexityMetric()
-        self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
+        # todo: conver to torch
+        pass
+        # self.metric_functions = {}  # needed to shadow class variable
+        # if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+        #     # Generator Decoder w/ beam search
+        #     # beam search does not provide logits
+        #     self.metric_functions[LOSS] = SequenceLossMetric(
+        #         from_logits=False)
+        # else:
+        #     # Generator Decoder w/ no beam search and Tagger Decoder
+        #     self.metric_functions[LOSS] = SequenceLossMetric(
+        #         from_logits=True)
+        #
+        # self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
+        # self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
+        # self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
+        # self.metric_functions[PERPLEXITY] = PerplexityMetric()
+        # self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
 
     # overrides super class OutputFeature.update_metrics() method
     def update_metrics(self, targets, predictions):
@@ -305,6 +308,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     @classmethod
     def get_output_dtype(cls):
         return torch.int32
+
+    def get_input_shape(self):
+        return ()
 
     def get_output_shape(self):
         return self.max_sequence_length,

@@ -13,7 +13,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import run_experiment
-from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import sequence_feature, numerical_feature
 
 #
 # this test is focused on testing input sequence features with all encoders
@@ -30,8 +30,10 @@ TEST_HIDDEN_SIZE = 8
 def generate_sequence_training_data():
     input_features = [
         sequence_feature(
+            vocab_size=100,
             min_len=5,
             max_len=10,
+            embedding_size=64,  # todo: testing
             encoder='rnn',
             cell_type='lstm',
             reduce_output=None
@@ -97,7 +99,7 @@ def setup_model_scaffolding(
 #   enc_cell_type: encoder cell types
 #   enc_encoder: sequence input feature encoder
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
-@pytest.mark.parametrize('enc_encoder', ['rnn'])  # ENCODERS)
+@pytest.mark.parametrize('enc_encoder', ENCODERS)
 def test_sequence_encoders(
         enc_encoder,
         enc_cell_type,
@@ -127,7 +129,7 @@ def test_sequence_encoders(
             # retrieve encoder to test
             encoder = model.model.input_features[input_feature_name].encoder_obj
             encoder_out = encoder(
-                inputs[input_feature_name].type(torch.int32)
+                torch.tensor(inputs[input_feature_name], dtype=torch.int32)
             )
             # check encoder output for proper content, type and shape
             proc_column = model.model.input_features[
@@ -158,23 +160,25 @@ def test_sequence_encoders(
                        [batch_size, seq_size, hidden_size]
 
             elif enc_encoder == 'rnn':
-                assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, seq_size, TEST_HIDDEN_SIZE]
+                assert encoder_out['encoder_output'].shape == \
+                       (batch_size, seq_size, TEST_HIDDEN_SIZE)
 
                 assert 'encoder_output_state' in encoder_out
                 if enc_cell_type == 'lstm':
                     assert isinstance(encoder_out['encoder_output_state'], list)
                     assert encoder_out['encoder_output_state'][
-                               0].shape.as_list() == \
-                           [batch_size, TEST_HIDDEN_SIZE]
+                               0].shape == \
+                           (batch_size, TEST_HIDDEN_SIZE)
                     assert encoder_out['encoder_output_state'][
-                               1].shape.as_list() == \
-                           [batch_size, TEST_HIDDEN_SIZE]
+                               1].shape == \
+                           (batch_size, TEST_HIDDEN_SIZE)
                 else:
                     assert isinstance(encoder_out['encoder_output_state'],
                                       torch.Tensor)
-                    assert encoder_out['encoder_output_state'].shape.as_list() == \
-                           [batch_size, TEST_HIDDEN_SIZE]
+                    assert encoder_out['encoder_output_state'].shape == \
+                           (1, batch_size,
+                            TEST_HIDDEN_SIZE)  # todo: added leading 1 for testing need to confirm
+                    #     Piero on how to handle num_layers to torch.
 
             elif enc_encoder == 'cnnrnn':
                 assert encoder_out['encoder_output'].shape.as_list() == \

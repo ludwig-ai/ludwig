@@ -1411,10 +1411,10 @@ class StackedRNN(SequenceEncoder):
             :type reduce_output: str
         """
         super().__init__()
-        # todo: work-around, determine how self.name is set in tf, appears name
-        #       is not set with torch
-        self.name = 'stacked_rnn'  # work-around code for now
         logger.debug(' {}'.format(self.name))
+
+        self.max_sequence_length = max_sequence_length
+        self.state_size = state_size  # aka hidden size?
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1440,7 +1440,7 @@ class StackedRNN(SequenceEncoder):
 
         logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
-            input_size=max_sequence_length,
+            input_size=embedding_size,
             state_size=state_size,
             cell_type=cell_type,
             num_layers=num_layers,
@@ -1483,6 +1483,9 @@ class StackedRNN(SequenceEncoder):
                 default_dropout=fc_dropout,
             )
 
+    def get_output_shape(self, input_shape):
+        return self.max_sequence_length, self.state_size
+
     def forward(self, inputs, training=None, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
@@ -1500,7 +1503,7 @@ class StackedRNN(SequenceEncoder):
         # ================ Embeddings ================
         if self.should_embed:
             embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
+                inputs
             )
         else:
             embedded_sequence = inputs

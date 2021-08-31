@@ -63,6 +63,8 @@ class RecurrentStack(Module):
     ):
         super().__init__()
         self.supports_masking = True
+        self.input_size = input_size
+        self.state_size = state_size  # aka hidden_size
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
         # todo: clean-up after torch port
@@ -106,18 +108,20 @@ class RecurrentStack(Module):
 
         self.layers = RNN(
             input_size, state_size,
+            batch_first=True,
             **rnn_params
         )
 
     def forward(self, inputs, training=None, mask=None):
-        hidden = inputs
-        final_state = None
-        for layer in self.layers:
-            outputs = layer(hidden, training=training, mask=mask)
-            hidden = outputs[0]
-            final_state = outputs[1:]
-        if final_state and len(final_state) == 1:
-            final_state = final_state[0]
+        hidden, final_state = self.layers(inputs)
+
+        # todo: determine if needed for torch implementation
+        # for layer in self.layers:
+        #     outputs = layer(hidden, training=training, mask=mask)
+        #     hidden = outputs[0]
+        #     final_state = outputs[1:]
+        # if final_state and len(final_state) == 1:
+        #     final_state = final_state[0]
         return hidden, final_state
 
 

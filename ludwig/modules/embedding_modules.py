@@ -382,17 +382,16 @@ class EmbedSequence(Module):
         else:
             self.dropout = None
 
-    def call(self, inputs, training=None, mask=None):
-        embedded = tf.nn.embedding_lookup(
-            self.embeddings, inputs, name='embeddings_lookup'
-        )
+    def forward(self, inputs, training=None, mask=None):
+        embedded = self.embeddings(inputs)
 
-        if mask is not None:
-            mask_matrix = tf.cast(
-                tf.expand_dims(mask, -1),
-                dtype=tf.float32
-            )
-            embedded = tf.multiply(embedded, mask_matrix)
+        # todo: convert to torch with mask support
+        # if mask is not None:
+        #     mask_matrix = tf.cast(
+        #         tf.expand_dims(mask, -1),
+        #         dtype=tf.float32
+        #     )
+        #     embedded = tf.multiply(embedded, mask_matrix)
 
         if self.dropout:
             embedded = self.dropout(embedded, training=training)
