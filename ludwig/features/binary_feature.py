@@ -182,7 +182,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def predictions(self, inputs, **kwargs):  # hidden
         logits = inputs[LOGITS]
 
-        probabilities = torch.nn.sigmoid(
+        probabilities = torch.sigmoid(
             logits, name="probabilities_{}".format(self.name)
         )
         # predictions = tf.greater_equal(
@@ -191,7 +191,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         #    name="predictions_{}".format(self.name),
         # )
 
-        predictions = probabilities > self.threshold
+        predictions = probabilities >= self.threshold
 
 
         return {

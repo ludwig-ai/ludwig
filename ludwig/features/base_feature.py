@@ -82,11 +82,9 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
-        # return tf.keras.Input(shape=self.get_input_shape(),
-        #                      dtype=self.get_input_dtype(),
-        #                      name=self.name + '_input')
-        return torch.Tensor(shape=self.get_input_shape(),
-                            dtype=self.get_input_dtype())
+        return tf.keras.Input(shape=self.get_input_shape(),
+                              dtype=self.get_input_dtype(),
+                              name=self.name + '_input')
 
     @classmethod
     @abstractmethod
