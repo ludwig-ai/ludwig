@@ -855,8 +855,6 @@ class RayTuneExecutor(HyperoptExecutor):
 
             logger.debug(f"Trial horovod kwargs: {hyperopt_dict['backend']._horovod_kwargs}")
 
-        checkpoint_dir = checkpoint_dir or os.path.join(os.getcwd(), "model")
-
         stats = []
         def _run():
             train_stats, eval_stats = run_experiment(
