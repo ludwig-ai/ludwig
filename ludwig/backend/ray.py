@@ -219,6 +219,7 @@ class RayPredictor(BasePredictor):
         self.actor_handles.clear()
 
     def get_batch_infer_model(
+            self,
             remote_model: RayRemoteModel,
             predictor_kwargs: Dict[str, Any],
             output_columns: List[str],
