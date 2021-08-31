@@ -985,11 +985,7 @@ class RayTuneExecutor(HyperoptExecutor):
             search_alg = None
 
         if self.max_concurrent_trials:
-            assert (
-                self.max_concurrent_trials > 0, 
-                "`max_concurrent_trials` must be greater than 0, got "
-                f"{self.max_concurrent_trials}"
-            )
+            assert self.max_concurrent_trials > 0, f"`max_concurrent_trials` must be greater than 0, got {self.max_concurrent_trials}"
             if isinstance(search_alg, BasicVariantGenerator) or search_alg is None:
                 search_alg = BasicVariantGenerator(max_concurrent=self.max_concurrent_trials)
             elif isinstance(search_alg, ConcurrencyLimiter):
