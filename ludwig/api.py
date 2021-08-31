@@ -344,7 +344,6 @@ class LudwigModel:
                     experiment_name,
                     model_name
                 )
-                output_directory = os.path.join(os.getcwd(), output_directory)
             else:
                 output_directory = None
 

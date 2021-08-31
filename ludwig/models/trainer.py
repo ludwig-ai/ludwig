@@ -632,7 +632,6 @@ class Trainer(BaseTrainer):
         training_checkpoints_path = training_checkpoints_prefix_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
-            save_path = os.path.abspath(save_path) if save_path else save_path
             os.makedirs(save_path, exist_ok=True)
             model_weights_path = os.path.join(save_path,
                                               MODEL_WEIGHTS_FILE_NAME)
