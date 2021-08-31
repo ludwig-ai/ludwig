@@ -338,7 +338,6 @@ class RayTuneSampler(HyperoptSampler):
             search_alg: dict = None,
             scheduler: dict = None,
             num_samples=1,
-            dynamic_resource_allocation: bool = False,
             **kwargs
     ) -> None:
         HyperoptSampler.__init__(self, goal, parameters)
@@ -346,7 +345,6 @@ class RayTuneSampler(HyperoptSampler):
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
         self.scheduler = self._create_scheduler(scheduler, parameters)
-        self.dynamic_resource_allocation = dynamic_resource_allocation
         self.num_samples = num_samples
         self.goal = goal
 
@@ -360,6 +358,8 @@ class RayTuneSampler(HyperoptSampler):
         if not scheduler_config:
             return None
 
+        dynamic_resource_allocation = scheduler_config.pop("dynamic_resource_allocation", False)
+
         if scheduler_config.get("type") == "pbt":
             scheduler_config.update(
                 {"hyperparam_mutations": self.search_space})
@@ -369,7 +369,7 @@ class RayTuneSampler(HyperoptSampler):
             **scheduler_config
         )
 
-        if self.dynamic_resource_allocation:
+        if dynamic_resource_allocation:
             scheduler = ResourceChangingScheduler(scheduler, ray_resource_allocation_function)
         return scheduler
 
