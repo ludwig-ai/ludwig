@@ -18,7 +18,6 @@
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME, PARQUET, PREPROCESSING, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.models.predictor import BasePredictor
 
 
@@ -56,11 +55,9 @@ class DaskPredictor(BasePredictor):
         )
 
     def _check_dataset(self, dataset):
-        if not isinstance(dataset, RayDataset):
-            raise RuntimeError(
-                f'Dask backend requires RayDataset for inference, '
-                f'found: {type(dataset)}'
-            )
+        raise NotImplementedError(
+            'Dask backend does not suppoer batch inference at this time. Try Ray.'
+        )
 
     def shutdown(self):
         pass
