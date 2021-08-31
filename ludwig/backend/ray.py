@@ -178,7 +178,7 @@ class RayPredictor(BasePredictor):
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
-        batch_predictor = self.BatchInferModel(
+        batch_predictor = self.get_batch_infer_model(
             remote_model, predictor_kwargs, output_columns, dataset.features,
             dataset.data_hdf5_fp, *args, **kwargs
         )
@@ -218,31 +218,33 @@ class RayPredictor(BasePredictor):
             ray.kill(handle)
         self.actor_handles.clear()
 
-    class BatchInferModel:
-        def __init__(
-                self,
-                remote_model: RayRemoteModel,
-                predictor_kwargs: Dict[str, Any],
-                output_columns: List[str],
-                features: List[Dict],
-                data_hdf5_fp: str,
-                *args, **kwargs
-        ):
-            self.model = remote_model.load()
-            self.output_columns = output_columns
-            self.features = features
-            self.data_hdf5_fp = data_hdf5_fp
-            predictor = Predictor(**predictor_kwargs)
-            self.batch_predict = partial(predictor.batch_predict, *args, **kwargs)
+    def get_batch_infer_model(
+            remote_model: RayRemoteModel,
+            predictor_kwargs: Dict[str, Any],
+            output_columns: List[str],
+            features: List[Dict],
+            data_hdf5_fp: str,
+            *args, **kwargs
+    ):
+        class BatchInferModel:
+            def __init__(self):
+                self.model = remote_model.load()
+                self.output_columns = output_columns
+                self.features = features
+                self.data_hdf5_fp = data_hdf5_fp
+                predictor = Predictor(**predictor_kwargs)
+                self.batch_predict = partial(predictor.batch_predict, *args, **kwargs)
 
-        def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-            pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
-            predictions = self.batch_predict(model=self.model, dataset=pd_ds)
+            def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+                pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
+                predictions = self.batch_predict(model=self.model, dataset=pd_ds)
 
-            for output_feature in self.model.output_features.values():
-                predictions = output_feature.flatten(predictions)
-            ordered_predictions = predictions[self.output_columns]
-            return ordered_predictions
+                for output_feature in self.model.output_features.values():
+                    predictions = output_feature.flatten(predictions)
+                ordered_predictions = predictions[self.output_columns]
+                return ordered_predictions
+
+        return BatchInferModel
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
