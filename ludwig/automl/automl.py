@@ -175,7 +175,7 @@ def _model_select(default_configs):
     Note: Current implementation returns tabnet by default. This will be
         improved in subsequent iterations
     """
-    return default_configs['tabnet']
+    return default_configs['concat']
 
 
 def _train(
