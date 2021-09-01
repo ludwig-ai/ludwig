@@ -12,6 +12,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import Union, Optional
 
+from ray.tune.utils.placement_groups import PlacementGroupFactory
+
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import *
@@ -1030,9 +1032,9 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         if isinstance(backend, RayBackend):
-            resources_per_trial = {f"extra_{k}": v for k,
-                                   v in resources_per_trial.items()}
-            resources_per_trial["cpu"] = 0
+            resources_per_trial = PlacementGroupFactory(
+                [{"CPU": 1}] + ([{"GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else ([{"CPU": 1}] * self.cpu_resources_per_trial)
+            )
 
         with tempfile.TemporaryDirectory() as temp_dir_name:
             sync_config = None
