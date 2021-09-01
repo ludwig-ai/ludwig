@@ -56,10 +56,10 @@ def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", t
     # create bundles
     if scheduler.base_trial_resources.required_resources["GPU"]:
         pgf._bundles = [{"CPU": 1, "GPU": 1}] * \
-            pgf.required_resources["GPU"]
+            int(pgf.required_resources["GPU"])
         pgf._bundles = [{"CPU": 1}] + pgf._bundles
     else:
-        pgf._bundles = [{"CPU": 1}] * pgf.required_resources["CPU"]
+        pgf._bundles = [{"CPU": 1}] * int(pgf.required_resources["CPU"])
     return pgf
 
 
