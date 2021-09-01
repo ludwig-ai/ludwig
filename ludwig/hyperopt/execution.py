@@ -843,24 +843,12 @@ class RayTuneExecutor(HyperoptExecutor):
             resources = tune.get_trial_resources()
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self.gpu_resources_per_trial)
-            # get the maximum resources a single trial can get
-            max_resources = get_horovod_kwargs(use_gpu)
             # get the resources assigned to the current trial
-            current_resources = resources.gpu + \
-                resources.extra_gpu if use_gpu else resources.cpu + resources.extra_cpu
+            current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
 
-            num_slots = max_resources['num_slots']
-            # first, try to reduce num_hosts, ensuring it stays above 0
-            num_hosts = current_resources // num_slots
-            num_hosts = max(1, num_hosts)
-            # if we are at one host, modify slots
-            if num_hosts == 1:
-                num_slots = current_resources
-
-            hyperopt_dict['backend']._horovod_kwargs['num_slots'] = int(
-                num_slots)
-            hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = int(
-                num_hosts)
+            hyperopt_dict['backend']._horovod_kwargs['num_slots'] = None
+            hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = None
+            hyperopt_dict['backend']._horovod_kwargs['num_workers'] = current_resources
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
 
             logger.debug(
