@@ -34,7 +34,7 @@ from ludwig.utils.strings_utils import str2bool
 try:
     from ray import tune
     from ray.tune.schedulers.resource_changing_scheduler import (
-        ResourceChangingScheduler, evenly_distribute_cpus_gpus)
+        ResourceChangingScheduler, evenly_distribute_cpus_gpus, PlacementGroupFactory)
     _HAS_RAY_TUNE = True
 except ImportError:
     evenly_distribute_cpus_gpus = None
@@ -45,21 +45,23 @@ def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", t
                                      result: Dict[str, Any], scheduler: "ResourceChangingScheduler"
                                      ):
     """Determine resources to allocate to running trials"""
-    base_trial_resources_bundles = scheduler.base_trial_resources._bundles.copy()
+    base_trial_resources = scheduler.base_trial_resources
     # remove the first bundle as it's just used for the trial
-    scheduler.base_trial_resources._bundles.pop(0)
+    scheduler.base_trial_resources = PlacementGroupFactory(base_trial_resources._bundles[1:])
     pgf = evenly_distribute_cpus_gpus(
         trial_runner, trial, result, scheduler)
     # restore original base trial resources
-    scheduler.base_trial_resources._bundles = base_trial_resources_bundles
+    scheduler.base_trial_resources = base_trial_resources
 
     # create bundles
     if scheduler.base_trial_resources.required_resources["GPU"]:
-        pgf._bundles = [{"CPU": 1, "GPU": 1}] * \
+        bundles = [{"CPU": 1, "GPU": 1}] * \
             int(pgf.required_resources["GPU"])
-        pgf._bundles = [{"CPU": 1}] + pgf._bundles
+        bundles = [{"CPU": 1}] + bundles
     else:
-        pgf._bundles = [{"CPU": 1}] * int(pgf.required_resources["CPU"])
+        bundles = [{"CPU": 1}] * int(pgf.required_resources["CPU"])
+    print(f"new bundles: {bundles}")
+    pgf = PlacementGroupFactory(bundles)
     return pgf
 
 
