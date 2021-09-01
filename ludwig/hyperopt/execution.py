@@ -780,7 +780,10 @@ class RayTuneExecutor(HyperoptExecutor):
         hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
 
         tune_executor = self
-        ray_queue = RayQueue(actor_options={"num_cpus": 0})
+        if is_using_ray_backend:
+            ray_queue = RayQueue(actor_options={"num_cpus": 0})
+        else:
+            ray_queue = None
 
         def checkpoint(progress_tracker, save_path):
             with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
@@ -872,6 +875,9 @@ class RayTuneExecutor(HyperoptExecutor):
             stats.append((train_stats, eval_stats))
 
         if is_using_ray_backend:
+            # We have to pull the results to the trial actor
+            # from worker actors, as the Tune session is running
+            # only on the trial actor
             thread = threading.Thread(target=_run)
             thread.daemon = True
             thread.start()
@@ -935,7 +941,7 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ) -> RayTuneResults:
-        if isinstance(dataset, str) and not os.path.isabs(dataset) and "://" not in dataset:
+        if isinstance(dataset, str) and "://" not in dataset and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
         if gpus is not None:
@@ -1061,7 +1067,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 keep_checkpoints_num=1,
                 resources_per_trial=resources_per_trial,
                 time_budget_s=self.time_budget_s,
-                queue_trials=True,
+                queue_trials=False,
                 sync_config=sync_config,
                 local_dir=output_directory,
                 metric=metric,
