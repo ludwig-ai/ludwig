@@ -851,7 +851,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
             hyperopt_dict['backend']._horovod_kwargs['num_slots'] = None
             hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = None
-            hyperopt_dict['backend']._horovod_kwargs['num_workers'] = current_resources
+            hyperopt_dict['backend']._horovod_kwargs['num_workers'] = int(current_resources)
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
 
             print(hyperopt_dict['backend']._horovod_kwargs)
@@ -1026,7 +1026,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         if isinstance(backend, RayBackend):
             resources_per_trial = PlacementGroupFactory(
-                [{"CPU": 1}] + ([{"GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else ([{"CPU": 1}] * self.cpu_resources_per_trial)
+                [{"CPU": 1}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else ([{"CPU": 1}] * self.cpu_resources_per_trial)
             )
 
             print(resources_per_trial._bundles)
