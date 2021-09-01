@@ -33,7 +33,8 @@ from ludwig.utils.strings_utils import str2bool
 
 try:
     from ray import tune
-    from ray.tune.schedulers.resource_changing_scheduler import ResourceChangingScheduler, evenly_distribute_cpus_gpus
+    from ray.tune.schedulers.resource_changing_scheduler import (
+        ResourceChangingScheduler, evenly_distribute_cpus_gpus)
     _HAS_RAY_TUNE = True
 except ImportError:
     evenly_distribute_cpus_gpus = None
