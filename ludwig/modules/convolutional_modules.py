@@ -23,7 +23,8 @@ import logging
 #                                      Conv1D, Conv2D, Dropout, Layer,
 #                                      LayerNormalization, MaxPool1D, MaxPool2D,
 #                                      ZeroPadding2D)
-from torch.nn import Module
+from torch.nn import Module, Conv1d, Dropout, MaxPool1d, AvgPool1d
+from ludwig.utils.torch_utils import get_activation
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +33,14 @@ class Conv1DLayer(Module):
 
     def __init__(
             self,
-            num_filters=256,
-            filter_size=3,
+            in_channels=1,
+            out_channels=256,
+            kernel_size=3,
             strides=1,
             padding='same',
-            dilation_rate=1,
+            dilation=1,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -58,50 +60,58 @@ class Conv1DLayer(Module):
 
         self.layers = []
 
-        self.layers.append(Conv1D(
-            filters=num_filters,
-            kernel_size=filter_size,
-            strides=strides,
+        self.layers.append(Conv1d(
+            # filters=num_filters,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=(kernel_size,),
+            stride=(strides,),
             padding=padding,
-            dilation_rate=dilation_rate,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
+            dilation=(dilation,),
+            # use_bias=use_bias,
+            # kernel_initializer=weights_initializer,
+            # bias_initializer=bias_initializer,
+            # kernel_regularizer=weights_regularizer,
+            # bias_regularizer=bias_regularizer,
+            # activity_regularizer=activity_regularizer,
             # kernel_constraint=None,
             # bias_constraint=None,
         ))
 
-        if norm and norm_params is None:
-            norm_params = {}
-        if norm == 'batch':
-            self.layers.append(BatchNormalization(**norm_params))
-        elif norm == 'layer':
-            self.layers.append(LayerNormalization(**norm_params))
+        # todo: re-insert batch/layer normalization
+        # if norm and norm_params is None:
+        #     norm_params = {}
+        # if norm == 'batch':
+        #     self.layers.append(BatchNormalization(**norm_params))
+        # elif norm == 'layer':
+        #     self.layers.append(LayerNormalization(**norm_params))
 
-        self.layers.append(Activation(activation))
+        self.layers.append(get_activation(activation))
 
         if dropout > 0:
             self.layers.append(Dropout(dropout))
 
         if pool_size is not None:
-            pool = MaxPool1D
+            pool = MaxPool1d
             if pool_function in {'average', 'avg', 'mean'}:
-                pool = AveragePooling1D
+                pool = AvgPool1d
             self.layers.append(pool(
-                pool_size=pool_size, strides=pool_strides, padding=pool_padding
+                kernel_size=pool_size,
+                stride=pool_strides,
+                padding=pool_padding
             ))
 
-        for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
+        # todo: determine how to handle layer.name
+        # for layer in self.layers:
+        #     logger.debug('   {}'.format(layer.name))
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
 
         for layer in self.layers:
-            hidden = layer(hidden, training=training)
+            # todo: determine how to handle training parameter in this call
+            #       commented out to avoid unexpected parameter error
+            hidden = layer(hidden)  # , training=training)
 
         return hidden
 
@@ -110,12 +120,14 @@ class Conv1DStack(Module):
 
     def __init__(
             self,
+            in_channels=1,
             layers=None,
             num_layers=None,
             default_num_filters=256,
             default_filter_size=3,
             default_strides=1,
-            default_padding='same',
+            # todo: determine equivalent to 'same', setting to zero for testing
+            default_padding=0,
             default_dilation_rate=1,
             default_use_bias=True,
             default_weights_initializer='glorot_uniform',
@@ -132,7 +144,8 @@ class Conv1DStack(Module):
             default_pool_function='max',
             default_pool_size=2,
             default_pool_strides=None,
-            default_pool_padding='same',
+            # todo: determine equivalent to 'same', setting to zero for testing
+            default_pool_padding=0,
             **kwargs
     ):
         super().__init__()
@@ -209,11 +222,12 @@ class Conv1DStack(Module):
             logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv1DLayer(
-                    num_filters=layer['num_filters'],
-                    filter_size=layer['filter_size'],
+                    in_channels=in_channels,
+                    out_channels=layer['num_filters'],
+                    kernel_size=layer['filter_size'],
                     strides=layer['strides'],
                     padding=layer['padding'],
-                    dilation_rate=layer['dilation_rate'],
+                    dilation=layer['dilation_rate'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
@@ -233,7 +247,7 @@ class Conv1DStack(Module):
                 )
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
 
         for layer in self.stack:

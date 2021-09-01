@@ -107,6 +107,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             reduce_output='sum',
             **kwargs
     ):
+        # todo: fixup docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -566,17 +567,19 @@ class StackedCNN(SequenceEncoder):
             num_filters=256,
             filter_size=5,
             strides=1,
-            padding='same',
+            # todo: assess how to specify padding for equivalent to 'same'
+            padding=0,
             dilation_rate=1,
             pool_function='max',
             pool_size=None,
             pool_strides=None,
-            pool_padding='same',
+            # todo: determine how to pool_padding equivalent of 'same'
+            pool_padding=0,
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -590,6 +593,7 @@ class StackedCNN(SequenceEncoder):
             reduce_output='max',
             **kwargs
     ):
+        # todo: fixup docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -815,6 +819,7 @@ class StackedCNN(SequenceEncoder):
 
         logger.debug('  Conv1DStack')
         self.conv1d_stack = Conv1DStack(
+            in_channels=embedding_size,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
@@ -859,7 +864,12 @@ class StackedCNN(SequenceEncoder):
                 default_dropout=dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def get_output_shape(self, input_shape):
+        # todo: finish implementation
+        return ()
+
+    def forward(self, inputs, training=None, mask=None):
+        # todo: fixup docstring
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
@@ -885,6 +895,10 @@ class StackedCNN(SequenceEncoder):
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
+
+        # shape at this point [batchs_size, seq_size, embedding_size]
+        # swap seq_size axis and embedding_size axis to make compatible for Torch
+        hidden = hidden.transpose(1, 2)
 
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
@@ -1293,6 +1307,7 @@ class StackedRNN(SequenceEncoder):
             reduce_output='last',
             **kwargs
     ):
+        # todo: fix up docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -1588,7 +1603,7 @@ class StackedCNNRNN(SequenceEncoder):
             num_fc_layers=0,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -1602,6 +1617,7 @@ class StackedCNNRNN(SequenceEncoder):
             reduce_output='last',
             **kwargs
     ):
+        # todo: fix up docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -1804,7 +1820,11 @@ class StackedCNNRNN(SequenceEncoder):
                 default_dropout=fc_dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def get_output_shape(self, input_shape):
+        # todo: finish implementation
+        return ()
+
+    def forward(self, inputs, training=None, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
@@ -1897,6 +1917,7 @@ class StackedTransformer(SequenceEncoder):
             reduce_output='last',
             **kwargs
     ):
+        # todo: update docstring as needed
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings

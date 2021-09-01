@@ -97,7 +97,7 @@ def setup_model_scaffolding(
 #   enc_cell_type: encoder cell types
 #   enc_encoder: sequence input feature encoder
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
-@pytest.mark.parametrize('enc_encoder', ENCODERS)
+@pytest.mark.parametrize('enc_encoder', ['stacked_cnn'])  # ENCODERS)
 def test_sequence_encoders(
         enc_encoder,
         enc_cell_type,
