@@ -34,32 +34,32 @@ from ludwig.utils.strings_utils import str2bool
 try:
     from ray import tune
     from ray.tune.schedulers.resource_changing_scheduler import ResourceChangingScheduler, evenly_distribute_cpus_gpus
-
-    def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", trial: "Trial",
-                                         result: Dict[str, Any], scheduler: "ResourceChangingScheduler"
-                                         ):
-        """Determine resources to allocate to running trials"""
-        base_trial_resources_bundles = scheduler.base_trial_resources._bundles.copy()
-        # remove the first bundle as it's just used for the trial
-        scheduler.base_trial_resources._bundles.pop(0)
-        pgf = evenly_distribute_cpus_gpus(
-            trial_runner, trial, result, scheduler)
-        # restore original base trial resources
-        scheduler.base_trial_resources._bundles = base_trial_resources_bundles
-
-        # create bundles
-        if scheduler.base_trial_resources.required_resources["GPU"]:
-            pgf._bundles = [{"CPU": 1, "GPU": 1}] * \
-                pgf.required_resources["GPU"]
-            pgf._bundles = [{"CPU": 1}] + pgf._bundles
-        else:
-            pgf._bundles = [{"CPU": 1}] * pgf.required_resources["CPU"]
-        return pgf
-
     _HAS_RAY_TUNE = True
 except ImportError:
-    ray_resource_allocation_function = None
+    evenly_distribute_cpus_gpus = None
     _HAS_RAY_TUNE = False
+
+
+def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", trial: "Trial",
+                                     result: Dict[str, Any], scheduler: "ResourceChangingScheduler"
+                                     ):
+    """Determine resources to allocate to running trials"""
+    base_trial_resources_bundles = scheduler.base_trial_resources._bundles.copy()
+    # remove the first bundle as it's just used for the trial
+    scheduler.base_trial_resources._bundles.pop(0)
+    pgf = evenly_distribute_cpus_gpus(
+        trial_runner, trial, result, scheduler)
+    # restore original base trial resources
+    scheduler.base_trial_resources._bundles = base_trial_resources_bundles
+
+    # create bundles
+    if scheduler.base_trial_resources.required_resources["GPU"]:
+        pgf._bundles = [{"CPU": 1, "GPU": 1}] * \
+            pgf.required_resources["GPU"]
+        pgf._bundles = [{"CPU": 1}] + pgf._bundles
+    else:
+        pgf._bundles = [{"CPU": 1}] * pgf.required_resources["CPU"]
+    return pgf
 
 
 logger = logging.getLogger(__name__)
