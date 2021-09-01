@@ -841,15 +841,20 @@ class RayTuneExecutor(HyperoptExecutor):
         # set tune resources
         if is_using_ray_backend:
             resources = tune.get_trial_resources()
+            print(resources._bundles)
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self.gpu_resources_per_trial)
             # get the resources assigned to the current trial
             current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
+            if not use_gpu:
+                current_resources -= 1
 
             hyperopt_dict['backend']._horovod_kwargs['num_slots'] = None
             hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = None
             hyperopt_dict['backend']._horovod_kwargs['num_workers'] = current_resources
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
+
+            print(hyperopt_dict['backend']._horovod_kwargs)
 
             logger.debug(
                 f"Trial horovod kwargs: {hyperopt_dict['backend']._horovod_kwargs}")
@@ -1024,6 +1029,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 [{"CPU": 1}] + ([{"GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else ([{"CPU": 1}] * self.cpu_resources_per_trial)
             )
 
+            print(resources_per_trial._bundles)
+
         with tempfile.TemporaryDirectory() as temp_dir_name:
             sync_config = None
             if "://" in output_directory:
@@ -1044,6 +1051,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
                 run_experiment_trial
             )
+
+            print(resources_per_trial)
 
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
