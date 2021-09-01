@@ -858,8 +858,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 num_hosts)
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
 
-            print(f"trial resources: {resources}")
-            print(
+            logger.debug(
                 f"Trial horovod kwargs: {hyperopt_dict['backend']._horovod_kwargs}")
 
         stats = []
@@ -1049,8 +1048,6 @@ class RayTuneExecutor(HyperoptExecutor):
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
                 run_experiment_trial
             )
-
-            print(f"resources per trial {resources_per_trial}")
 
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
