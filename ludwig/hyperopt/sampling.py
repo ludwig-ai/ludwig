@@ -45,13 +45,13 @@ def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", t
                                      result: Dict[str, Any], scheduler: "ResourceChangingScheduler"
                                      ):
     """Determine resources to allocate to running trials"""
-    base_trial_resources = scheduler.base_trial_resources
+    base_trial_resources = scheduler._base_trial_resources
     # remove the first bundle as it's just used for the trial
-    scheduler.base_trial_resources = PlacementGroupFactory(base_trial_resources._bundles[1:])
+    scheduler._base_trial_resources = PlacementGroupFactory(base_trial_resources._bundles[1:])
     pgf = evenly_distribute_cpus_gpus(
         trial_runner, trial, result, scheduler)
     # restore original base trial resources
-    scheduler.base_trial_resources = base_trial_resources
+    scheduler._base_trial_resources = base_trial_resources
 
     # create bundles
     if scheduler.base_trial_resources.required_resources["GPU"]:
