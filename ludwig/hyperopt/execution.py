@@ -1212,6 +1212,7 @@ def run_experiment(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
+        logging_level=10
     )
     eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,
