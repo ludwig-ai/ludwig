@@ -840,7 +840,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     save_path = pathlib.Path(save_path)
                     sync_client.sync_down(os.path.join(remote_checkpoint_dir, *save_path.parts[-2:]), str(save_path))
                     sync_client.wait()
-                    print(f"synced down from {os.path.join(remote_checkpoint_dir, checkpoint_dir, str(save_path.name))}")
+                    print(f"synced down from {os.path.join(remote_checkpoint_dir, *save_path.parts[-2:])}")
                     print(list(pathlib.Path(save_path).glob("*.*")))
                     return
 

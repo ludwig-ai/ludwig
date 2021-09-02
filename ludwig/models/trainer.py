@@ -644,12 +644,12 @@ class Trainer(BaseTrainer):
             # training_checkpoints_prefix_path = os.path.join(
             #    training_checkpoints_path, "ckpt"
             # )
-            training_progress_tracker_path = os.path.join(
-                save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
-            )
             tensorboard_log_dir = os.path.join(
                 save_path, 'logs'
             )
+        training_progress_tracker_path = os.path.join(
+            save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
+        )
 
         self.callback(lambda c: c.on_trainer_train_setup(
             self, save_path), coordinator_only=False)
