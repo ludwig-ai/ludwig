@@ -129,8 +129,10 @@ class RayTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, trainer_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         setting = RayExecutor.create_settings(timeout_s=30)
-        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RayRemoteTrainer, executable_kwargs=trainer_kwargs)
+        self.executor = RayExecutor(
+            setting, **{**get_horovod_kwargs(), **horovod_kwargs})
+        self.executor.start(executable_cls=RayRemoteTrainer,
+                            executable_kwargs=trainer_kwargs)
 
     def train(self, model, *args, **kwargs):
         remote_model = RayRemoteModel(model)
@@ -145,7 +147,8 @@ class RayTrainer(BaseTrainer):
     def train_online(self, model, *args, **kwargs):
         remote_model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda trainer: trainer.train_online(remote_model.load(), *args, **kwargs)
+            lambda trainer: trainer.train_online(
+                remote_model.load(), *args, **kwargs)
         )
 
         weights = results[0]
@@ -163,6 +166,7 @@ class RayTrainer(BaseTrainer):
     def shutdown(self):
         self.executor.shutdown()
 
+
 class RayPredictor(BasePredictor):
     def __init__(self, horovod_kwargs, predictor_kwargs):
         # TODO ray: use horovod_kwargs to allocate GPU model replicas
@@ -179,7 +183,8 @@ class RayPredictor(BasePredictor):
         def batch_predict_partition(dataset):
             model = remote_model.load()
             predictor = Predictor(**predictor_kwargs)
-            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
+            predictions = predictor.batch_predict(
+                model, dataset, *args, **kwargs)
             ordered_predictions = predictions[output_columns]
             return ordered_predictions
 
