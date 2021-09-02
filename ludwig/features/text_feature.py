@@ -20,7 +20,10 @@ from collections.abc import Iterable
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import dask.dataframe as dd
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pass
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY

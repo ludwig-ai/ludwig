@@ -16,7 +16,10 @@
 # ==============================================================================
 import os
 
-import dask.dataframe as dd
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pass
 import numpy as np
 import pandas as pd
 

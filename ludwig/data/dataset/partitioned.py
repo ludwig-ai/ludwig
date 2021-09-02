@@ -16,8 +16,11 @@
 # ==============================================================================
 from typing import Dict, List
 
-from dask.dataframe import DataFrame
-from ray.data import from_dask
+try:
+    from dask.dataframe import DataFrame
+    from ray.data import from_dask
+except ImportError:
+    pass
 
 
 class RayDataset(object):

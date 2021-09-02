@@ -17,7 +17,10 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict
 
-import dask.dataframe as dd
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pass
 import pandas as pd
 import tensorflow as tf
 
