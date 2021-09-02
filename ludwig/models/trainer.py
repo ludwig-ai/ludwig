@@ -652,7 +652,7 @@ class Trainer(BaseTrainer):
             )
 
         self.callback(lambda c: c.on_trainer_train_setup(
-            self, save_path))
+            self, save_path), coordinator_only=False)
 
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
@@ -1517,8 +1517,8 @@ class Trainer(BaseTrainer):
             return True
         return self.horovod.rank() == 0
 
-    def callback(self, fn):
-        if self.is_coordinator():
+    def callback(self, fn, coordinator_only=True):
+        if not coordinator_only or self.is_coordinator():
             for callback in self.callbacks:
                 fn(callback)
 

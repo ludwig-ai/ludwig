@@ -836,11 +836,11 @@ class RayTuneExecutor(HyperoptExecutor):
         class RayTuneReportCallback(Callback):
             def on_trainer_train_setup(self, trainer, save_path):
                 print(save_path)
-                if isinstance(trainer, RayRemoteTrainer):
+                if isinstance(trainer, RayRemoteTrainer) and checkpoint_dir:
                     save_path = pathlib.Path(save_path)
-                    sync_client.sync_down(os.path.join(remote_checkpoint_dir, str(save_path.name)), str(save_path))
+                    sync_client.sync_down(os.path.join(remote_checkpoint_dir, checkpoint_dir, str(save_path.name)), str(save_path))
                     sync_client.wait()
-                    print("synced down")
+                    print(f"synced down from {os.path.join(remote_checkpoint_dir, checkpoint_dir, str(save_path.name))}")
                     print(list(pathlib.Path(save_path).glob("*.*")))
                     return
 
