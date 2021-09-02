@@ -842,6 +842,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 if isinstance(trainer, RayRemoteTrainer):
                     print(os.getcwd())
                     print(list(pathlib.Path(".").glob("*.*")))
+                    print(save_path)
                     sync_client.sync_up(os.getcwd(), remote_checkpoint_dir)
                     sync_client.wait()
                     ray_queue.put((progress_tracker, save_path))
@@ -893,7 +894,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    sync_client.sync_down(remote_checkpoint_dir, trial_dir)
+                    sync_client.sync_down(remote_checkpoint_dir, str(trial_dir))
                     sync_client.wait()
                     for progress_tracker, save_path in results:
                         checkpoint(progress_tracker, save_path)
