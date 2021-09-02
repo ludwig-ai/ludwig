@@ -891,8 +891,9 @@ class RayTuneExecutor(HyperoptExecutor):
                     results = ray_queue.get_nowait_batch(qsize)
                     for progress_tracker, checkpoint_files in results:
                         for path, checkpoint_file in checkpoint_files:
+                            path = pathlib.Path(path)
                             print(path)
-                            pathlib.Path(path).parent.mkdir(exist_ok=True, parents=True)
+                            path.parent.mkdir(exist_ok=True, parents=True)
                             with open(path, "wb") as f:
                                 f.write(checkpoint_file)
                         checkpoint(progress_tracker, path.parts[0])
