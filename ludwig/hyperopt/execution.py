@@ -837,7 +837,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     checkpoint_files = []
                     for path in os.walk(save_path):
                         with open(path, "rb") as f:
-                            checkpoint_files.append((path, f))
+                            checkpoint_files.append((path, f.read()))
                     ray_queue.put((progress_tracker, save_path, checkpoint_files))
                     return
 
