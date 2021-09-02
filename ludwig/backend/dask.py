@@ -18,8 +18,7 @@
 from ludwig.backend.base import Backend, LocalTrainingMixin
 from ludwig.constants import NAME, PARQUET, PREPROCESSING, TFRECORD
 from ludwig.data.dataframe.dask import DaskEngine
-from ludwig.data.dataset.partitioned import PartitionedDataset
-from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
+from ludwig.models.predictor import BasePredictor
 
 
 class DaskRemoteModel:
@@ -41,22 +40,8 @@ class DaskPredictor(BasePredictor):
         self.predictor_kwargs = predictor_kwargs
 
     def batch_predict(self, model, dataset, *args, **kwargs):
-        self._check_dataset(dataset)
-
-        remote_model = DaskRemoteModel(model)
-        predictor_kwargs = self.predictor_kwargs
-        output_columns = get_output_columns(model.output_features)
-
-        def batch_predict_partition(dataset):
-            model = remote_model.load()
-            predictor = Predictor(**predictor_kwargs)
-            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
-            ordered_predictions = predictions[output_columns]
-            return ordered_predictions
-
-        return dataset.map_dataset_partitions(
-            batch_predict_partition,
-            meta=[(c, 'object') for c in output_columns]
+        raise NotImplementedError(
+            'Dask backend does not support batch evaluation at this time.'
         )
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
@@ -70,11 +55,9 @@ class DaskPredictor(BasePredictor):
         )
 
     def _check_dataset(self, dataset):
-        if not isinstance(dataset, PartitionedDataset):
-            raise RuntimeError(
-                f'Dask backend requires PartitionedDataset for inference, '
-                f'found: {type(dataset)}'
-            )
+        raise NotImplementedError(
+            'Dask backend does not suppoer batch inference at this time. Try Ray.'
+        )
 
     def shutdown(self):
         pass

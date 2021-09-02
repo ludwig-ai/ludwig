@@ -10,7 +10,6 @@ from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.fs_utils import to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
@@ -192,11 +191,7 @@ class TFRecordDatasetManager(object):
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
         """We don't use TFRecord for inference."""
         if self.backend.df_engine.partitioned:
-            return PartitionedDataset(
-                dataset,
-                get_proc_features(config),
-                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-            )
+            raise ValueError('Batch inference not supported with TFRecord format at this time')
         else:
             return PandasDataset(
                 dataset,
