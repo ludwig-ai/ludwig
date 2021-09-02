@@ -884,21 +884,26 @@ class RayTuneExecutor(HyperoptExecutor):
             thread = threading.Thread(target=_run)
             thread.daemon = True
             thread.start()
-            while thread.is_alive():
-                thread.join(timeout=0)
+
+            def check_queue():
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
                     for progress_tracker, save_path, checkpoint_files in results:
                         for path, checkpoint_file in checkpoint_files:
                             print(path)
-                            pathlib.Path(path.parent).mkdir(exist_ok=True)
+                            pathlib.Path(path).parent.mkdir(exist_ok=True)
                             with open(path, "wb") as f:
                                 f.write(checkpoint_file)
                         checkpoint(progress_tracker, save_path)
                         report(progress_tracker)
+
+            while thread.is_alive():
+                thread.join(timeout=0)
+                check_queue()
                 time.sleep(0.1)
             thread.join()
+            check_queue()
         else:
             # remove threading overhead
             _run()
