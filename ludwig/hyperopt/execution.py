@@ -793,6 +793,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
                 # however, this copying method is non atomic
+                print(checkpoint_model)
                 if not os.path.isdir(checkpoint_model):
                     copy_id = uuid.uuid4()
                     tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
