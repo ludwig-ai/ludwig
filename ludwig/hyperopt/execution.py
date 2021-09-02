@@ -834,6 +834,14 @@ class RayTuneExecutor(HyperoptExecutor):
         sync_client = get_cloud_sync_client(remote_checkpoint_dir)
         print(remote_checkpoint_dir)
         class RayTuneReportCallback(Callback):
+            def on_trainer_train_setup(self, trainer, save_path):
+                print(save_path)
+                if isinstance(trainer, RayRemoteTrainer):
+                    save_path = pathlib.Path(save_path)
+                    sync_client.sync_down(os.path.join(remote_checkpoint_dir, str(save_path.name)), str(save_path))
+                    sync_client.wait()
+                    return
+
             def on_epoch_end(self, trainer, progress_tracker, save_path):
 
                 if not trainer.is_coordinator():
@@ -1212,7 +1220,7 @@ def run_experiment(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
-        logging_level=10
+        #logging_level=10
     )
     eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,

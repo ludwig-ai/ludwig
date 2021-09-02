@@ -50,6 +50,9 @@ class Callback(ABC):
     def on_train_end(self, output_directory):
         pass
 
+    def on_trainer_train_setup(self, trainer, save_path):
+        pass
+
     def on_batch_start(self, trainer, progress_tracker, save_path):
         pass
 

@@ -651,6 +651,9 @@ class Trainer(BaseTrainer):
                 save_path, 'logs'
             )
 
+        self.callback(lambda c: c.on_trainer_train_setup(
+            self, save_path))
+
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
         if self.is_coordinator():
