@@ -1033,6 +1033,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 sync_to_driver=False,
                 upload_dir=output_directory
             )
+            output_directory = None
         elif self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
             sync_config = tune.SyncConfig(
