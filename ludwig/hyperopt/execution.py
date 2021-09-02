@@ -12,8 +12,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Optional
 
-from ray.tune.utils.placement_groups import PlacementGroupFactory
-
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import *
@@ -30,13 +28,14 @@ from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 try:
     import ray
-    from ray import tune
-    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
-    from ray.tune.utils import wait_for_gpu
-    from ray.tune import register_trainable
     from ray.util.queue import Queue as RayQueue
-    from ludwig.backend.ray import RayBackend, RayRemoteTrainer
+    from ray import tune
+    from ray.tune import register_trainable
+    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
     from ray.tune.syncer import get_cloud_sync_client
+    from ray.tune.utils import wait_for_gpu
+    from ray.tune.utils.placement_groups import PlacementGroupFactory
+    from ludwig.backend.ray import RayBackend, RayRemoteTrainer
 except ImportError:
     ray = None
     get_horovod_kwargs = None
@@ -848,10 +847,6 @@ class RayTuneExecutor(HyperoptExecutor):
                     return
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
-
-                if not trainer.is_coordinator():
-                    return
-
                 if isinstance(trainer, RayRemoteTrainer):
                     sync_client.sync_up(
                         str(Path(save_path).parent), remote_checkpoint_dir)

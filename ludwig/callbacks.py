@@ -51,7 +51,7 @@ class Callback(ABC):
         pass
 
     def on_trainer_train_setup(self, trainer, save_path):
-        """Called in the trainer before training starts."""
+        """Called in EVERY trainer before training starts."""
         pass
 
     def on_batch_start(self, trainer, progress_tracker, save_path):
