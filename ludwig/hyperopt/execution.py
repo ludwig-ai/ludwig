@@ -834,11 +834,11 @@ class RayTuneExecutor(HyperoptExecutor):
             def on_trainer_train_setup(self, trainer, save_path):
                 if isinstance(trainer, RayRemoteTrainer) and checkpoint_dir:
                     save_path = pathlib.Path(save_path)
-                    print(f"save path {list(save_path.parent.parent.glob('*.*'))}")
+                    print(f"save path {list(save_path.parent.parent.glob('*'))}")
                     sync_client.sync_down(os.path.join(
                         remote_checkpoint_dir, *save_path.parts[-2:]), str(save_path))
                     sync_client.wait()
-                    print(f"save path after sync {list(save_path.parent.parent.glob('*.*'))}")
+                    print(f"save path after sync {list(save_path.parent.parent.glob('*'))}")
                     return
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
