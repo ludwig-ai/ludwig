@@ -4,9 +4,9 @@ import uuid
 import copy
 import json
 import multiprocessing
+import pathlib
 import signal
 import shutil
-import tempfile
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -835,9 +835,9 @@ class RayTuneExecutor(HyperoptExecutor):
 
                 if isinstance(trainer, RayRemoteTrainer):
                     checkpoint_files = []
-                    for path in os.scandir(save_path):
+                    for path in pathlib.Path(save_path).rglob("*.*"):
                         with open(path, "rb") as f:
-                            checkpoint_files.append((path, f.read()))
+                            checkpoint_files.append((str(path), f.read()))
                     ray_queue.put((progress_tracker, save_path, checkpoint_files))
                     return
 
@@ -889,6 +889,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     results = ray_queue.get_nowait_batch(qsize)
                     for progress_tracker, save_path, checkpoint_files in results:
                         for path, checkpoint_file in checkpoint_files:
+                            pathlib.Path(path).mkdir(exist_ok=True)
                             with open(path, "wb") as f:
                                 f.write(checkpoint_file)
                         checkpoint(progress_tracker, save_path)
