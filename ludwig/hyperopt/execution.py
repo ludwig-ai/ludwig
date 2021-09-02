@@ -4,12 +4,12 @@ import uuid
 import copy
 import json
 import multiprocessing
-import pathlib
 import signal
 import shutil
 import threading
 import time
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Union, Optional
 
 from ray.tune.utils.placement_groups import PlacementGroupFactory
@@ -825,10 +825,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_dir=tune.get_trial_dir()
             )
 
-        def get_relative_checkpoints_dir_parts(path: pathlib.Path):
+        def get_relative_checkpoints_dir_parts(path: Path):
             return path.parts[-2:]
 
-        trial_dir = pathlib.Path(tune.get_trial_dir())
+        trial_dir = Path(tune.get_trial_dir())
         # os.path.join is used here as it works with remote protocols
         remote_checkpoint_dir = os.path.join(
             self.sync_config.upload_dir, *get_relative_checkpoints_dir_parts(trial_dir))
@@ -837,15 +837,14 @@ class RayTuneExecutor(HyperoptExecutor):
         class RayTuneReportCallback(Callback):
             def on_trainer_train_setup(self, trainer, save_path):
                 if isinstance(trainer, RayRemoteTrainer) and checkpoint_dir:
-                    save_path = pathlib.Path(save_path)
+                    save_path = Path(save_path)
                     for path in save_path.parent.parent.glob('*'):
+                        # remove any other paths that could have been synced before
                         if path != save_path:
                             shutil.rmtree(str(path), ignore_errors=True)
                     sync_client.sync_down(os.path.join(
                         remote_checkpoint_dir, *get_relative_checkpoints_dir_parts(save_path)), str(save_path))
                     sync_client.wait()
-                    print(
-                        f"save path after sync {list(save_path.parent.parent.glob('*'))}")
                     return
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
@@ -855,7 +854,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
                 if isinstance(trainer, RayRemoteTrainer):
                     sync_client.sync_up(
-                        str(pathlib.Path(save_path).parent), remote_checkpoint_dir)
+                        str(Path(save_path).parent), remote_checkpoint_dir)
                     sync_client.wait()
                     ray_queue.put((progress_tracker, save_path))
                     return
@@ -873,8 +872,6 @@ class RayTuneExecutor(HyperoptExecutor):
             use_gpu = bool(self.gpu_resources_per_trial)
             # get the resources assigned to the current trial
             current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
-            if not use_gpu:
-                current_resources -= 1
 
             hyperopt_dict['backend']._horovod_kwargs['num_slots'] = None
             hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = None
@@ -912,7 +909,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     sync_client.wait()
                     for progress_tracker, save_path in results:
                         checkpoint(progress_tracker, str(
-                            trial_dir.joinpath(pathlib.Path(save_path).name)))
+                            trial_dir.joinpath(Path(save_path).name)))
                         report(progress_tracker)
 
             while thread.is_alive():
@@ -973,6 +970,11 @@ class RayTuneExecutor(HyperoptExecutor):
     ) -> RayTuneResults:
         if isinstance(dataset, str) and "://" not in dataset and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
+
+        if isinstance(backend, RayBackend) and not ("://" in dataset and "://" in output_directory):
+            raise ValueError("Ray backend can only be used with Ray Tune if "
+                             "both the `dataset` and `output_directory` are remote "
+                             "(s3://, gs://, hdfs://).")
 
         if gpus is not None:
             raise ValueError("Parameter `gpus` is not supported when using Ray Tune. "
@@ -1061,7 +1063,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
         if isinstance(backend, RayBackend):
             resources_per_trial = PlacementGroupFactory(
-                [{"CPU": 1}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else (
+                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else (
                     [{"CPU": 1}] * self.cpu_resources_per_trial)
             )
 

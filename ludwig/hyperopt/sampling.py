@@ -46,7 +46,7 @@ def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", t
                                      ):
     """Determine resources to allocate to running trials"""
     base_trial_resources = scheduler._base_trial_resources
-    # remove the first bundle as it's just used for the trial
+    # remove the first bundle as it's just used for the trial actor
     bundles = base_trial_resources._bundles[1:]
     if scheduler.base_trial_resources.required_resources["GPU"]:
         bundles = [{"GPU": bundle["GPU"]} for bundle in bundles]
@@ -60,9 +60,9 @@ def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", t
     if scheduler.base_trial_resources.required_resources["GPU"]:
         bundles = [{"CPU": 1, "GPU": 1}] * \
             int(pgf.required_resources["GPU"])
-        bundles = [{"CPU": 1}] + bundles
     else:
-        bundles = [{"CPU": 1}] * int(pgf.required_resources["CPU"])
+        bundles = [{"CPU": 1}] * (int(pgf.required_resources["CPU"]) - 1)
+    bundles = [{"CPU": 0.001}] + bundles
     pgf = PlacementGroupFactory(bundles)
     return pgf
 
