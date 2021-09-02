@@ -800,7 +800,9 @@ class RayTuneExecutor(HyperoptExecutor):
                     shutil.copytree(save_path, tmp_dst)
                     try:
                         os.rename(tmp_dst, checkpoint_model)
-                    except:
+                        print("Rename success")
+                    except Exception:
+                        print("EXCEPTION DURING RENAMING")
                         shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
