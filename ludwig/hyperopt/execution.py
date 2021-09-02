@@ -832,7 +832,7 @@ class RayTuneExecutor(HyperoptExecutor):
         upload_dir = pathlib.Path(self.sync_config.upload_dir)
         remote_checkpoint_dir = upload_dir.joinpath(
             get_relative_checkpoints_dir(trial_dir))
-        sync_client = get_cloud_sync_client(remote_checkpoint_dir)
+        sync_client = get_cloud_sync_client(str(remote_checkpoint_dir))
 
         class RayTuneReportCallback(Callback):
             def on_trainer_train_setup(self, trainer, save_path):
