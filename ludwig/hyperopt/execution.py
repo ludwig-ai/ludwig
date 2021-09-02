@@ -829,8 +829,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_dir=tune.get_trial_dir()
             )
 
-        remote_checkpoint_dir = os.path.join(self.sync_config.upload_dir, tune.get_trial_name())
-        trial_dir = tune.get_trial_dir()
+        trial_dir = pathlib.Path(tune.get_trial_dir())
+        remote_checkpoint_dir = os.path.join(self.sync_config.upload_dir, trial_dir.parts[-2:])
         sync_client = get_cloud_sync_client(remote_checkpoint_dir)
         print(remote_checkpoint_dir)
         class RayTuneReportCallback(Callback):
@@ -840,7 +840,9 @@ class RayTuneExecutor(HyperoptExecutor):
                     return
 
                 if isinstance(trainer, RayRemoteTrainer):
-                    sync_client.sync_up(trial_dir, remote_checkpoint_dir)
+                    print(os.getcwd())
+                    print(list(pathlib.Path(".").glob("*.*")))
+                    sync_client.sync_up(os.getcwd(), remote_checkpoint_dir)
                     sync_client.wait()
                     ray_queue.put((progress_tracker, save_path))
                     return
