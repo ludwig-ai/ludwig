@@ -1026,48 +1026,46 @@ class RayTuneExecutor(HyperoptExecutor):
                 [{"CPU": 1}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else ([{"CPU": 1}] * self.cpu_resources_per_trial)
             )
 
-        with tempfile.TemporaryDirectory() as temp_dir_name:
-            sync_config = None
-            if "://" in output_directory:
-                run_experiment_trial = tune.durable(run_experiment_trial)
-                sync_config = tune.SyncConfig(
-                    sync_to_driver=False,
-                    upload_dir=output_directory
-                )
-                output_directory = temp_dir_name
-            elif self.kubernetes_namespace:
-                from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
-                sync_config = tune.SyncConfig(
-                    sync_to_driver=NamespacedKubernetesSyncer(
-                        self.kubernetes_namespace)
-                )
-
-            register_trainable(
-                f"trainable_func_f{hash_dict(config).decode('ascii')}",
-                run_experiment_trial
+        sync_config = None
+        if "://" in output_directory:
+            run_experiment_trial = tune.durable(run_experiment_trial)
+            sync_config = tune.SyncConfig(
+                sync_to_driver=False,
+                upload_dir=output_directory
+            )
+        elif self.kubernetes_namespace:
+            from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
+            sync_config = tune.SyncConfig(
+                sync_to_driver=NamespacedKubernetesSyncer(
+                    self.kubernetes_namespace)
             )
 
-            analysis = tune.run(
-                f"trainable_func_f{hash_dict(config).decode('ascii')}",
-                config={
-                    **self.search_space,
-                    **tune_config,
-                },
-                scheduler=self.scheduler,
-                search_alg=search_alg,
-                num_samples=self.num_samples,
-                keep_checkpoints_num=1,
-                resources_per_trial=resources_per_trial,
-                time_budget_s=self.time_budget_s,
-                queue_trials=False,
-                sync_config=sync_config,
-                local_dir=output_directory,
-                metric=metric,
-                mode=mode,
-                trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
-                trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
-                callbacks=tune_callbacks,
-            )
+        register_trainable(
+            f"trainable_func_f{hash_dict(config).decode('ascii')}",
+            run_experiment_trial
+        )
+
+        analysis = tune.run(
+            f"trainable_func_f{hash_dict(config).decode('ascii')}",
+            config={
+                **self.search_space,
+                **tune_config,
+            },
+            scheduler=self.scheduler,
+            search_alg=search_alg,
+            num_samples=self.num_samples,
+            keep_checkpoints_num=1,
+            resources_per_trial=resources_per_trial,
+            time_budget_s=self.time_budget_s,
+            queue_trials=False,
+            sync_config=sync_config,
+            local_dir=output_directory,
+            metric=metric,
+            mode=mode,
+            trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
+            trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
+            callbacks=tune_callbacks,
+        )
 
         ordered_trials = analysis.results_df.sort_values(
             "metric_score",
