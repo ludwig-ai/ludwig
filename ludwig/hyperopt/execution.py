@@ -843,7 +843,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     print(os.getcwd())
                     print(list(pathlib.Path(".").glob("*.*")))
                     print(save_path)
-                    sync_client.sync_up(os.getcwd(), remote_checkpoint_dir)
+                    sync_client.sync_up(str(pathlib.Path(save_path).parent), remote_checkpoint_dir)
                     sync_client.wait()
                     ray_queue.put((progress_tracker, save_path))
                     return
