@@ -834,6 +834,7 @@ class RayTuneExecutor(HyperoptExecutor):
             def on_trainer_train_setup(self, trainer, save_path):
                 if isinstance(trainer, RayRemoteTrainer) and checkpoint_dir:
                     save_path = pathlib.Path(save_path)
+                    print(f"save path {save_path}")
                     shutil.rmtree(save_path)
                     save_path.mkdir(parents=True, exist_ok=True)
                     sync_client.sync_down(os.path.join(
