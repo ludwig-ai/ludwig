@@ -35,7 +35,8 @@ try:
     from ray.tune.utils import wait_for_gpu
     from ray.tune import register_trainable
     from ray.util.queue import Queue as RayQueue
-    from ludwig.backend.ray import RayBackend, RayRemoteTrainer, get_horovod_kwargs
+    from ludwig.backend.ray import RayBackend, RayRemoteTrainer
+    from ray.tune.syncer import get_cloud_sync_client
 except ImportError:
     ray = None
     get_horovod_kwargs = None
@@ -765,6 +766,7 @@ class RayTuneExecutor(HyperoptExecutor):
         self.kubernetes_namespace = kubernetes_namespace
         self.time_budget_s = time_budget_s
         self.max_concurrent_trials = max_concurrent_trials
+        self.sync_config = None
 
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
@@ -793,8 +795,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
                 # however, this copying method is non atomic
-                print(checkpoint_model)
                 print(save_path)
+                print(checkpoint_dir)
                 if not os.path.isdir(checkpoint_model):
                     copy_id = uuid.uuid4()
                     tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
@@ -827,6 +829,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_dir=tune.get_trial_dir()
             )
 
+        remote_checkpoint_dir = os.path.join(self.sync_config.upload_dir, tune.get_trial_name())
+        trial_dir = tune.get_trial_dir()
+        sync_client = get_cloud_sync_client(remote_checkpoint_dir)
+        print(remote_checkpoint_dir)
         class RayTuneReportCallback(Callback):
             def on_epoch_end(self, trainer, progress_tracker, save_path):
 
@@ -834,13 +840,9 @@ class RayTuneExecutor(HyperoptExecutor):
                     return
 
                 if isinstance(trainer, RayRemoteTrainer):
-                    checkpoint_files = []
-                    save_path = pathlib.Path(save_path)
-                    for path in save_path.rglob("*.*"):
-                        print(path)
-                        with open(path, "rb") as f:
-                            checkpoint_files.append((str(path.relative_to(save_path.parent)), f.read()))
-                    ray_queue.put((progress_tracker, checkpoint_files))
+                    sync_client.sync_up(trial_dir, remote_checkpoint_dir)
+                    sync_client.wait()
+                    ray_queue.put((progress_tracker, save_path))
                     return
 
                 checkpoint(progress_tracker, save_path)
@@ -889,14 +891,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    for progress_tracker, checkpoint_files in results:
-                        for path, checkpoint_file in checkpoint_files:
-                            path = pathlib.Path(path)
-                            print(path)
-                            path.parent.mkdir(exist_ok=True, parents=True)
-                            with open(path, "wb") as f:
-                                f.write(checkpoint_file)
-                        checkpoint(progress_tracker, path.parts[0])
+                    sync_client.sync_down(remote_checkpoint_dir, trial_dir)
+                    sync_client.wait()
+                    for progress_tracker, save_path in results:
+                        checkpoint(progress_tracker, save_path)
                         report(progress_tracker)
 
             while thread.is_alive():
@@ -1048,17 +1046,16 @@ class RayTuneExecutor(HyperoptExecutor):
                 [{"CPU": 1}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else ([{"CPU": 1}] * self.cpu_resources_per_trial)
             )
 
-        sync_config = None
         if "://" in output_directory:
             run_experiment_trial = tune.durable(run_experiment_trial)
-            sync_config = tune.SyncConfig(
+            self.sync_config = tune.SyncConfig(
                 sync_to_driver=False,
                 upload_dir=output_directory
             )
             output_directory = None
         elif self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
-            sync_config = tune.SyncConfig(
+            self.sync_config = tune.SyncConfig(
                 sync_to_driver=NamespacedKubernetesSyncer(
                     self.kubernetes_namespace)
             )
@@ -1081,7 +1078,7 @@ class RayTuneExecutor(HyperoptExecutor):
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
             queue_trials=False,
-            sync_config=sync_config,
+            sync_config=self.sync_config,
             local_dir=output_directory,
             metric=metric,
             mode=mode,
