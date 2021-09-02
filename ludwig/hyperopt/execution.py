@@ -840,6 +840,8 @@ class RayTuneExecutor(HyperoptExecutor):
                     save_path = pathlib.Path(save_path)
                     sync_client.sync_down(os.path.join(remote_checkpoint_dir, str(save_path.name)), str(save_path))
                     sync_client.wait()
+                    print("synced down")
+                    print(list(pathlib.Path(save_path).glob("*.*")))
                     return
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
