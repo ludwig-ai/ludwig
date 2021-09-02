@@ -17,15 +17,13 @@
 import logging
 from abc import ABC
 
-# import tensorflow as tf
-# from tensorflow.keras.layers import Flatten
+import torch
 
 from ludwig.encoders.base import Encoder
 from ludwig.modules.mlp_mixer_modules import MLPMixer
 from ludwig.utils.registry import Registry, register, register_default
-from ludwig.modules.convolutional_modules import Conv2DStack, \
+from ludwig.modules.convolutional_modules import Conv2DStack, ResNet,\
     get_resnet_block_sizes
-from ludwig.modules.convolutional_modules import ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
@@ -45,19 +43,23 @@ class Stacked2DCNN(ImageEncoder):
 
     def __init__(
             self,
+            img_height,
+            img_width,
             conv_layers=None,
             num_conv_layers=None,
-            filter_size=3,
-            num_filters=32,
-            strides=(1, 1),
+            in_channels=None,
+            out_channels=32,
+            kernel_size=3,
+            stride=1,
             padding='valid',
-            dilation_rate=(1, 1),
-            conv_use_bias=True,
-            conv_weights_initializer='glorot_uniform',
-            conv_bias_initializer='zeros',
-            conv_weights_regularizer=None,
-            conv_bias_regularizer=None,
-            conv_activity_regularizer=None,
+            dilation=1,
+            conv_bias=True,
+            padding_mode='zeros',
+            # conv_weights_initializer='glorot_uniform',
+            # conv_bias_initializer='zeros',
+            # conv_weights_regularizer=None,
+            # conv_bias_regularizer=None,
+            # conv_activity_regularizer=None,
             # conv_weights_constraint=None,
             # conv_bias_constraint=None,
             conv_norm=None,
@@ -65,8 +67,10 @@ class Stacked2DCNN(ImageEncoder):
             conv_activation='relu',
             conv_dropout=0,
             pool_function='max',
-            pool_size=(2, 2),
-            pool_strides=None,
+            pool_kernel_size=2,
+            pool_stride=None,
+            pool_padding='valid',
+            pool_dilation=1,
             fc_layers=None,
             num_fc_layers=1,
             fc_size=128,
@@ -92,17 +96,19 @@ class Stacked2DCNN(ImageEncoder):
         self.conv_stack_2d = Conv2DStack(
             layers=conv_layers,
             num_layers=num_conv_layers,
-            default_num_filters=num_filters,
-            default_filter_size=filter_size,
-            default_strides=strides,
+            default_in_channels=in_channels,
+            default_out_channels=out_channels,
+            kernel_size=kernel_size,
+            default_stride=stride,
             default_padding=padding,
-            default_dilation_rate=dilation_rate,
-            default_use_bias=conv_use_bias,
-            default_weights_initializer=conv_weights_initializer,
-            default_bias_initializer=conv_bias_initializer,
-            default_weights_regularizer=conv_weights_regularizer,
-            default_bias_regularizer=conv_bias_regularizer,
-            default_activity_regularizer=conv_activity_regularizer,
+            default_dilation=dilation,
+            default_bias=conv_bias,
+            default_padding_mode=padding_mode,
+            # default_weights_initializer=conv_weights_initializer,
+            # default_bias_initializer=conv_bias_initializer,
+            # default_weights_regularizer=conv_weights_regularizer,
+            # default_bias_regularizer=conv_bias_regularizer,
+            # default_activity_regularizer=conv_activity_regularizer,
             # default_weights_constraint=conv_weights_constraint,
             # default_bias_constraint=conv_bias_constraint,
             default_norm=conv_norm,
@@ -110,11 +116,13 @@ class Stacked2DCNN(ImageEncoder):
             default_activation=conv_activation,
             default_dropout=conv_dropout,
             default_pool_function=pool_function,
-            default_pool_size=pool_size,
-            default_pool_strides=pool_strides,
+            default_pool_size=pool_kernel_size,
+            default_pool_stride=pool_stride,
+            default_pool_padding=pool_padding,
+            default_pool_dilation=pool_dilation,
         )
 
-        self.flatten = Flatten()
+        self.flatten = torch.nn.Flatten()
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
@@ -138,15 +146,16 @@ class Stacked2DCNN(ImageEncoder):
     def call(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
-                    Shape: [batch x height x width x channels], type tf.uint8
+                    Shape: [batch x height x width x channels], type torch.uint8
         """
 
         # ================ Conv Layers ================
+        # TODO(shreya): Where is module.training set?
         hidden = self.conv_stack_2d(
             inputs,
             training,
         )
-        hidden = self.flatten(hidden, training=training)
+        hidden = self.flatten(hidden)
 
         # ================ Fully Connected ================
         outputs = self.fc_stack(hidden)
@@ -210,7 +219,7 @@ class ResNetEncoder(ImageEncoder):
             batch_norm_epsilon
         )
 
-        self.flatten = Flatten()
+        self.flatten = torch.nn.Flatten()
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
@@ -233,8 +242,9 @@ class ResNetEncoder(ImageEncoder):
 
     def call(self, inputs, training=None, mask=None):
 
+        # TODO(shreya): Confirm if module.training flag set somewhere else
         hidden = self.resnet(inputs, training=training)
-        hidden = self.flatten(hidden, training=training)
+        hidden = self.flatten(hidden)
         hidden = self.fc_stack(hidden, training=training)
 
         return {'encoder_output': hidden}

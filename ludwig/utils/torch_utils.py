@@ -96,6 +96,10 @@ class LudwigModule(Module):
     def add_loss(self, loss):
         if callable(loss):
             self._callable_losses.append(loss)
+    
+    @property
+    def output_shape(self):
+        raise NotImplementedError('Abstract class.')
 
     @property
     @abstractmethod

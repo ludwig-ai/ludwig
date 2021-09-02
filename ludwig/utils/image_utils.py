@@ -20,6 +20,8 @@ import sys
 from math import ceil, floor
 
 import numpy as np
+# TODO(shreya): Import guard?
+import torch
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
@@ -62,9 +64,11 @@ def is_image(src_path, img_entry):
         return False
 
 
-def read_image(img):
+def read_image(img) -> torch.Tensor:
+    # TODO(shreya): Confirm that it's ok to switch image reader to support NCHW
+    # TODO(shreya): Confirm that it's ok to read all images as RGB
     try:
-        from skimage.io import imread
+        from torchvision.io import read_image, ImageReadMode
     except ImportError:
         logger.error(
             ' scikit-image is not installed. '
@@ -73,7 +77,7 @@ def read_image(img):
         )
         sys.exit(-1)
     if isinstance(img, str):
-        return imread(img)
+        return read_image(img, mode=ImageReadMode.RGB)
     return img
 
 
@@ -154,4 +158,4 @@ def num_channels_in_image(img):
     if img.ndim == 2:
         return 1
     else:
-        return img.shape[2]
+        return img.shape[0]
