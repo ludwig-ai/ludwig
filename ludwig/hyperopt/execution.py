@@ -825,14 +825,14 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_dir=tune.get_trial_dir()
             )
 
-        def get_relative_checkpoints_dir(path: pathlib.Path):
-            return path.relative_to(path.parent.parent)
+        def get_relative_checkpoints_dir_parts(path: pathlib.Path):
+            return path.parts[-2:]
 
         trial_dir = pathlib.Path(tune.get_trial_dir())
-        upload_dir = pathlib.Path(self.sync_config.upload_dir)
-        remote_checkpoint_dir = upload_dir.joinpath(
-            get_relative_checkpoints_dir(trial_dir))
-        sync_client = get_cloud_sync_client(str(remote_checkpoint_dir))
+        # os.path.join is used here as it works with remote protocols
+        remote_checkpoint_dir = os.path.join(
+            self.sync_config.upload_dir, *get_relative_checkpoints_dir_parts(trial_dir))
+        sync_client = get_cloud_sync_client(remote_checkpoint_dir)
 
         class RayTuneReportCallback(Callback):
             def on_trainer_train_setup(self, trainer, save_path):
@@ -841,8 +841,8 @@ class RayTuneExecutor(HyperoptExecutor):
                     for path in save_path.parent.parent.glob('*'):
                         if path != save_path:
                             shutil.rmtree(str(path), ignore_errors=True)
-                    sync_client.sync_down(str(remote_checkpoint_dir.joinpath(
-                        get_relative_checkpoints_dir(save_path))), str(save_path))
+                    sync_client.sync_down(os.path.join(
+                        remote_checkpoint_dir, *get_relative_checkpoints_dir_parts(save_path)), str(save_path))
                     sync_client.wait()
                     print(
                         f"save path after sync {list(save_path.parent.parent.glob('*'))}")
