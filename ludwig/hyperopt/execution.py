@@ -795,8 +795,6 @@ class RayTuneExecutor(HyperoptExecutor):
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
                 # however, this copying method is non atomic
-                print(save_path)
-                print(checkpoint_dir)
                 if not os.path.isdir(checkpoint_model):
                     copy_id = uuid.uuid4()
                     tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
@@ -804,9 +802,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     shutil.copytree(save_path, tmp_dst)
                     try:
                         os.rename(tmp_dst, checkpoint_model)
-                        print("Rename success")
                     except Exception:
-                        print("EXCEPTION DURING RENAMING")
                         shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
@@ -830,18 +826,17 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         trial_dir = pathlib.Path(tune.get_trial_dir())
-        remote_checkpoint_dir = os.path.join(self.sync_config.upload_dir, *trial_dir.parts[-2:])
+        remote_checkpoint_dir = os.path.join(
+            self.sync_config.upload_dir, *trial_dir.parts[-2:])
         sync_client = get_cloud_sync_client(remote_checkpoint_dir)
-        print(remote_checkpoint_dir)
+
         class RayTuneReportCallback(Callback):
             def on_trainer_train_setup(self, trainer, save_path):
-                print(save_path)
                 if isinstance(trainer, RayRemoteTrainer) and checkpoint_dir:
                     save_path = pathlib.Path(save_path)
-                    sync_client.sync_down(os.path.join(remote_checkpoint_dir, *save_path.parts[-2:]), str(save_path))
+                    sync_client.sync_down(os.path.join(
+                        remote_checkpoint_dir, *save_path.parts[-2:]), str(save_path))
                     sync_client.wait()
-                    print(f"synced down from {os.path.join(remote_checkpoint_dir, *save_path.parts[-2:])}")
-                    print(list(pathlib.Path(save_path).glob("*.*")))
                     return
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
@@ -850,10 +845,8 @@ class RayTuneExecutor(HyperoptExecutor):
                     return
 
                 if isinstance(trainer, RayRemoteTrainer):
-                    print(os.getcwd())
-                    print(list(pathlib.Path(".").glob("*.*")))
-                    print(save_path)
-                    sync_client.sync_up(str(pathlib.Path(save_path).parent), remote_checkpoint_dir)
+                    sync_client.sync_up(
+                        str(pathlib.Path(save_path).parent), remote_checkpoint_dir)
                     sync_client.wait()
                     ray_queue.put((progress_tracker, save_path))
                     return
@@ -876,7 +869,8 @@ class RayTuneExecutor(HyperoptExecutor):
 
             hyperopt_dict['backend']._horovod_kwargs['num_slots'] = None
             hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = None
-            hyperopt_dict['backend']._horovod_kwargs['num_workers'] = int(current_resources)
+            hyperopt_dict['backend']._horovod_kwargs['num_workers'] = int(
+                current_resources)
             hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
 
             logger.debug(
@@ -904,10 +898,12 @@ class RayTuneExecutor(HyperoptExecutor):
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    sync_client.sync_down(remote_checkpoint_dir, str(trial_dir))
+                    sync_client.sync_down(
+                        remote_checkpoint_dir, str(trial_dir))
                     sync_client.wait()
                     for progress_tracker, save_path in results:
-                        checkpoint(progress_tracker, str(trial_dir.joinpath(pathlib.Path(save_path).name)))
+                        checkpoint(progress_tracker, str(
+                            trial_dir.joinpath(pathlib.Path(save_path).name)))
                         report(progress_tracker)
 
             while thread.is_alive():
@@ -1056,7 +1052,8 @@ class RayTuneExecutor(HyperoptExecutor):
 
         if isinstance(backend, RayBackend):
             resources_per_trial = PlacementGroupFactory(
-                [{"CPU": 1}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else ([{"CPU": 1}] * self.cpu_resources_per_trial)
+                [{"CPU": 1}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else (
+                    [{"CPU": 1}] * self.cpu_resources_per_trial)
             )
 
         if "://" in output_directory:
@@ -1222,7 +1219,7 @@ def run_experiment(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
-        #logging_level=10
+        # logging_level=10
     )
     eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,

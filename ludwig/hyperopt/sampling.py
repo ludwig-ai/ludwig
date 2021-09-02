@@ -63,7 +63,6 @@ def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", t
         bundles = [{"CPU": 1}] + bundles
     else:
         bundles = [{"CPU": 1}] * int(pgf.required_resources["CPU"])
-    print(f"new bundles: {bundles}")
     pgf = PlacementGroupFactory(bundles)
     return pgf
 
