@@ -838,7 +838,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 print(save_path)
                 if isinstance(trainer, RayRemoteTrainer) and checkpoint_dir:
                     save_path = pathlib.Path(save_path)
-                    sync_client.sync_down(os.path.join(remote_checkpoint_dir, checkpoint_dir, str(save_path.name)), str(save_path))
+                    sync_client.sync_down(os.path.join(remote_checkpoint_dir, *save_path.parts[-2:]), str(save_path))
                     sync_client.wait()
                     print(f"synced down from {os.path.join(remote_checkpoint_dir, checkpoint_dir, str(save_path.name))}")
                     print(list(pathlib.Path(save_path).glob("*.*")))
