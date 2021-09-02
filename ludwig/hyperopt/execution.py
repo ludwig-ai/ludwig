@@ -798,6 +798,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 if not os.path.isdir(checkpoint_model):
                     copy_id = uuid.uuid4()
                     tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                    assert os.path.exists(save_path)
                     shutil.copytree(save_path, tmp_dst)
                     try:
                         os.rename(tmp_dst, checkpoint_model)
@@ -833,7 +834,11 @@ class RayTuneExecutor(HyperoptExecutor):
                     return
 
                 if isinstance(trainer, RayRemoteTrainer):
-                    ray_queue.put((progress_tracker, save_path))
+                    checkpoint_files = []
+                    for path in os.walk(save_path):
+                        with open(path, "rb") as f:
+                            checkpoint_files.append((path, f))
+                    ray_queue.put((progress_tracker, save_path, checkpoint_files))
                     return
 
                 checkpoint(progress_tracker, save_path)
@@ -882,7 +887,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    for progress_tracker, save_path in results:
+                    for progress_tracker, save_path, checkpoint_files in results:
+                        for path, checkpoint_file in checkpoint_files:
+                            with open(path, "wb") as f:
+                                f.write(checkpoint_file)
                         checkpoint(progress_tracker, save_path)
                         report(progress_tracker)
                 time.sleep(0.1)
