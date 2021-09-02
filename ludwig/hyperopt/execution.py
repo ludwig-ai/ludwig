@@ -835,9 +835,11 @@ class RayTuneExecutor(HyperoptExecutor):
 
                 if isinstance(trainer, RayRemoteTrainer):
                     checkpoint_files = []
+                    print(save_path)
                     for path in pathlib.Path(save_path).rglob("*.*"):
+                        print(path)
                         with open(path, "rb") as f:
-                            checkpoint_files.append((str(path), f.read()))
+                            checkpoint_files.append((str(path.relative_to(save_path)), f.read()))
                     ray_queue.put((progress_tracker, save_path, checkpoint_files))
                     return
 
@@ -889,6 +891,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     results = ray_queue.get_nowait_batch(qsize)
                     for progress_tracker, save_path, checkpoint_files in results:
                         for path, checkpoint_file in checkpoint_files:
+                            print(path)
                             pathlib.Path(path).mkdir(exist_ok=True)
                             with open(path, "wb") as f:
                                 f.write(checkpoint_file)
