@@ -18,6 +18,7 @@ import logging
 from collections.abc import Iterable
 
 import numpy as np
+import torch
 # import tensorflow as tf
 
 from ludwig.constants import *
@@ -350,8 +351,12 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def get_output_dtype(cls):
         return tf.int32
 
-    def get_output_shape(self):
-        return self.max_sequence_length,
+    # def get_output_shape(self):
+    #     return self.max_sequence_length,
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size((self.max_sequence_length, ))
 
     def overall_statistics_metadata(self):
         return {'level': self.level}

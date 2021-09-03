@@ -86,7 +86,7 @@ class ConcatCombiner(LudwigComponent):
         if fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                first_layer_input_size=self.get_input_shape(),
+                first_layer_input_size=self.input_shape,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -150,7 +150,7 @@ class ConcatCombiner(LudwigComponent):
 
     @property
     def input_shape(self) -> torch.Size:
-        shapes = [self.input_features[k].get_output_shape() for k in self.input_features] #output shape not input shape
+        shapes = [self.input_features[k].output_shape for k in self.input_features] #output shape not input shape
         return torch.Size([sum(shapes)])
 
     @property
@@ -158,7 +158,7 @@ class ConcatCombiner(LudwigComponent):
         if self.fc_layers is not None:
             return torch.Size([self.fc_layers[-1]['fc_size']])
         else:
-            return self.get_input_shape()
+            return self.input_shape
 
 
 class SequenceConcatCombiner(LudwigComponent):

@@ -130,8 +130,12 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return torch.float32
 
-    def get_input_shape(self):
-        return len(self.vocab),
+    # def get_input_shape(self):
+    #     return len(self.vocab),
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([len(self.vocab)])
 
     @staticmethod
     def update_config_with_metadata(

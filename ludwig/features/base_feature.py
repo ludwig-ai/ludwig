@@ -25,7 +25,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 #from ludwig.utils.tf_utils import sequence_length_3D
-from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigModule
+from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigComponent
 
 import numpy as np
 
@@ -72,14 +72,14 @@ class BaseFeature:
                     setattr(self, k, feature[k])
 
 
-class InputFeature(BaseFeature, LudwigModule, ABC):
+class InputFeature(BaseFeature, LudwigComponent, ABC):
     """Parent class for all input features."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_input_shape(),
+        return tf.keras.Input(shape=self.input_shape,
                               dtype=self.get_input_dtype(),
                               name=self.name + '_input')
 
@@ -89,15 +89,15 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         """Returns the Tensor data type this input accepts."""
         pass
 
-    @abstractmethod
-    def get_input_shape(self):
-        """Returns a tuple representing the Tensor shape this input accepts."""
-        pass
+    # @abstractmethod
+    # def get_input_shape(self):
+    #     """Returns a tuple representing the Tensor shape this input accepts."""
+    #     pass
 
-    @abstractmethod
-    def get_output_shape(self):
-        """Returns a tuple representing the Tensor shape this input outputs."""
-        pass
+    # @abstractmethod
+    # def get_output_shape(self):
+    #     """Returns a tuple representing the Tensor shape this input outputs."""
+    #     pass
 
     @staticmethod
     @abstractmethod
@@ -125,7 +125,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         )
 
 
-class OutputFeature(BaseFeature, LudwigModule, ABC):
+class OutputFeature(BaseFeature, LudwigComponent, ABC):
     """Parent class for all output features."""
 
     #train_loss_function = None
@@ -190,7 +190,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 )
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_output_shape(),
+        return tf.keras.Input(shape=self.output_shape,
                               dtype=self.get_output_dtype(),
                               name=self.name + '_input')
 
@@ -205,15 +205,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """Returns the Tensor data type feature outputs."""
         pass
 
-    @abstractmethod
-    def get_output_shape(self):
-        """Returns a tuple representing the Tensor shape this feature outputs."""
-        pass
+    # @abstractmethod
+    # def get_output_shape(self):
+    #     """Returns a tuple representing the Tensor shape this feature outputs."""
+    #     pass
 
-    @abstractmethod
-    def get_input_shape(self):
-        """Returns a tuple representing the Tensor shape this feature accepts."""
-        pass
+    # @abstractmethod
+    # def get_input_shape(self):
+    #     """Returns a tuple representing the Tensor shape this feature accepts."""
+    #     pass
 
     @property
     @abstractmethod

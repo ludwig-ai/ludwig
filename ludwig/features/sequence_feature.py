@@ -17,6 +17,7 @@
 import os
 
 import numpy as np
+import torch
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
@@ -301,8 +302,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return tf.int32
 
-    def get_output_shape(self):
-        return self.max_sequence_length,
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size((self.max_sequence_length, ))
 
     @staticmethod
     def update_config_with_metadata(
