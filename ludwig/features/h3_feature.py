@@ -118,12 +118,9 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return tf.uint8
 
-    # def get_input_shape(self):
-    #     return H3_VECTOR_LENGTH,
-
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size((H3_VECTOR_LENGTH, ))
+        return torch.Size([H3_VECTOR_LENGTH, ])
 
     @staticmethod
     def update_config_with_metadata(

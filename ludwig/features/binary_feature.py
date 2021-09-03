@@ -145,8 +145,9 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return tf.bool
 
-    # def get_input_shape(self):
-    #     return ()
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
     @staticmethod
     def update_config_with_metadata(
@@ -234,7 +235,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return super().output_shape
+        return torch.Size([1])
 
     @staticmethod
     def update_config_with_metadata(

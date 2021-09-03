@@ -89,16 +89,6 @@ class InputFeature(BaseFeature, LudwigComponent, ABC):
         """Returns the Tensor data type this input accepts."""
         pass
 
-    # @abstractmethod
-    # def get_input_shape(self):
-    #     """Returns a tuple representing the Tensor shape this input accepts."""
-    #     pass
-
-    # @abstractmethod
-    # def get_output_shape(self):
-    #     """Returns a tuple representing the Tensor shape this input outputs."""
-    #     pass
-
     @staticmethod
     @abstractmethod
     def update_config_with_metadata(
@@ -204,16 +194,6 @@ class OutputFeature(BaseFeature, LudwigComponent, ABC):
     def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
         pass
-
-    # @abstractmethod
-    # def get_output_shape(self):
-    #     """Returns a tuple representing the Tensor shape this feature outputs."""
-    #     pass
-
-    # @abstractmethod
-    # def get_input_shape(self):
-    #     """Returns a tuple representing the Tensor shape this feature accepts."""
-    #     pass
 
     @property
     @abstractmethod

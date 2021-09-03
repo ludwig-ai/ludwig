@@ -18,7 +18,6 @@ import logging
 # import tensorflow as tf
 # from tensorflow.keras import Sequential
 # from tensorflow.keras.layers import Dense, Dropout, Layer, LayerNormalization
-# from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigComponent
 
 logger = logging.getLogger(__name__)

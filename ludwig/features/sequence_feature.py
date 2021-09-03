@@ -172,9 +172,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return tf.int32
 
-    def get_input_shape(self):
-        return None,
-
     @staticmethod
     def update_config_with_metadata(
             input_feature,
@@ -304,7 +301,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size((self.max_sequence_length, ))
+        return torch.Size([self.max_sequence_length, ])
 
     @staticmethod
     def update_config_with_metadata(

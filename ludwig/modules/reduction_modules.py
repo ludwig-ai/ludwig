@@ -19,12 +19,11 @@ import logging
 # from tensorflow.keras.layers import Layer
 
 import torch
-# from torch.nn import Module
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
 #from ludwig.utils.tf_utils import sequence_length_3D
-from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule, LudwigComponent
+from ludwig.utils.torch_utils import sequence_length_3D, LudwigComponent
 
 logger = logging.getLogger(__name__)
 

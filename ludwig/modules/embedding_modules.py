@@ -26,7 +26,7 @@ from torch import nn
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
-from ludwig.utils.torch_utils import reg_loss, LudwigModule, LudwigComponent
+from ludwig.utils.torch_utils import reg_loss, LudwigComponent
 
 import torch
 from torch.nn import Module

@@ -137,9 +137,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return torch.int32
 
-    # def get_input_shape(self):
-    #     return 1
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
@@ -220,9 +217,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             PREDICTIONS, PROBABILITIES, LOGITS
         }
 
-    # def get_input_shape(self):
-    #     return self.input_size
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self.input_size)
@@ -230,9 +224,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     @classmethod
     def get_output_dtype(cls):
         return torch.int64
-
-    # def get_output_shape(self):
-    #     return 1
 
     @property
     def output_shape(self) -> torch.Size:

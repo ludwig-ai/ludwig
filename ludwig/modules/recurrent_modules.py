@@ -20,7 +20,6 @@ import collections
 # import tensorflow as tf
 # import tensorflow_addons as tfa
 # from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
-# from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigComponent
 
 from ludwig.utils.misc_utils import get_from_registry

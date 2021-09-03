@@ -23,7 +23,6 @@ import logging
 #                                      Conv1D, Conv2D, Dropout, Layer,
 #                                      LayerNormalization, MaxPool1D, MaxPool2D,
 #                                      ZeroPadding2D)
-# from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigComponent
 
 logger = logging.getLogger(__name__)

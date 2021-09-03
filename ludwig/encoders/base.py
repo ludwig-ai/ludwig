@@ -17,8 +17,6 @@
 
 from abc import ABC, abstractmethod
 
-# from torch.nn import Module
-
 from ludwig.utils.registry import DEFAULT_KEYS
 from ludwig.utils.torch_utils import LudwigComponent
 
@@ -37,10 +35,6 @@ class Encoder(LudwigComponent, ABC):
     def register_default(cls):
         for key in DEFAULT_KEYS:
             cls.register(name=key)
-
-    # @abstractmethod
-    # def get_output_shape(self, input_shape):
-    #     raise NotImplementedError
 
     @property
     def name(self):

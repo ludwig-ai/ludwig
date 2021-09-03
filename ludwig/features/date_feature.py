@@ -19,9 +19,8 @@ from datetime import date
 from datetime import datetime
 
 import numpy as np
-# import tensorflow as tf
-from dateutil.parser import parse
 import torch
+from dateutil.parser import parse
 
 from ludwig.constants import *
 from ludwig.encoders.date_encoders import ENCODER_REGISTRY
@@ -148,9 +147,6 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @classmethod
     def get_input_dtype(cls):
         return tf.int16
-
-    # def get_input_shape(self):
-    #     return DATE_VECTOR_LENGTH,
 
     @property
     def input_shape(self) -> torch.Size:

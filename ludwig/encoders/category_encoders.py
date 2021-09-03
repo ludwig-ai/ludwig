@@ -82,9 +82,6 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
         )
         return embedded
 
-    # def get_output_shape(self, input_shape):
-    #     return self.embedding_size
-
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
@@ -133,9 +130,6 @@ class CategoricalSparseEncoder(CategoricalEncoder):
             inputs, training=training, mask=mask
         )
         return embedded
-
-    # def get_output_shape(self, input_shape):
-    #     return self.embedding_size
 
     @property
     def output_shape(self) -> torch.Size:

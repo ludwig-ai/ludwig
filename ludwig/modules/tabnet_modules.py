@@ -2,7 +2,6 @@ from typing import List, Tuple
 
 # import tensorflow as tf
 import torch
-# from torch.nn import Module
 
 from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization

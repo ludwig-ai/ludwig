@@ -137,12 +137,9 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return tf.bool
 
-    # def get_input_shape(self):
-    #     return len(self.vocab),
-
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size((len(self.vocab), ))
+        return torch.Size([len(self.vocab), ])
 
     @staticmethod
     def update_config_with_metadata(
@@ -236,12 +233,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return tf.bool
 
-    # def get_output_shape(self):
-    #     return self.num_classes,
-
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size((self.num_classes, ))
+        return torch.Size([self.num_classes, ])
 
     @staticmethod
     def update_config_with_metadata(

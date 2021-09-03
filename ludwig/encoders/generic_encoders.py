@@ -40,9 +40,6 @@ class PassthroughEncoder(Encoder):
         """
         return {'encoder_output': inputs}
 
-    # def get_output_shape(self, input_shape):
-    #     return input_shape
-
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self.input_shape)
@@ -103,9 +100,6 @@ class DenseEncoder(Encoder):
                    Shape: [batch x 1], type tf.float32
         """
         return {'encoder_output': self.fc_stack(inputs)}
-
-    # def get_output_shape(self, input_shape):
-    #     return self.fc_stack.layers[-1]['fc_size']
 
     @property
     def output_shape(self) -> torch.Size:

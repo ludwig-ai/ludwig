@@ -146,12 +146,9 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return tf.float32
 
-    # def get_input_shape(self):
-    #     return self.vector_size,
-
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size((self.vector_size, ))
+        return torch.Size([self.vector_size, ])
 
     @staticmethod
     def update_config_with_metadata(
@@ -251,12 +248,9 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return tf.float32
 
-    # def get_output_shape(self):
-    #     return self.vector_size,
-
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size((self.vector_size, ))
+        return torch.Size([self.vector_size, ])
 
     @staticmethod
     def update_config_with_metadata(

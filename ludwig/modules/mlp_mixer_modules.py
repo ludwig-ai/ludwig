@@ -16,7 +16,6 @@
 # import tensorflow as tf
 # from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
 #     Conv2D, GlobalAveragePooling1D
-# from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigComponent
 
 from ludwig.modules.activation_modules import gelu

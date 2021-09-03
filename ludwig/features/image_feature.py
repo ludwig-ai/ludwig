@@ -425,9 +425,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return tf.uint8
 
-    # def get_input_shape(self):
-    #     return self.height, self.width, self.num_channels
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.height, self.width, self.num_channels])
