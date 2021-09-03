@@ -97,7 +97,7 @@ def setup_model_scaffolding(
 #   enc_cell_type: encoder cell types
 #   enc_encoder: sequence input feature encoder
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
-@pytest.mark.parametrize('enc_encoder', ['stacked_cnn'])  # ENCODERS)
+@pytest.mark.parametrize('enc_encoder', ENCODERS)
 def test_sequence_encoders(
         enc_encoder,
         enc_cell_type,
@@ -180,25 +180,25 @@ def test_sequence_encoders(
                            (batch_size, TEST_HIDDEN_SIZE)
 
             elif enc_encoder == 'cnnrnn':
-                assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, 1, TEST_HIDDEN_SIZE]
+                assert encoder_out['encoder_output'].shape == \
+                       (batch_size, 1, TEST_HIDDEN_SIZE)
                 assert 'encoder_output_state' in encoder_out
 
                 if enc_cell_type == 'lstm':
                     assert isinstance(encoder_out['encoder_output_state'], list)
-                    assert encoder_out['encoder_output_state'][0].shape.as_list() \
-                           == [batch_size, TEST_HIDDEN_SIZE]
-                    assert encoder_out['encoder_output_state'][1].shape.as_list() \
-                           == [batch_size, TEST_HIDDEN_SIZE]
+                    assert encoder_out['encoder_output_state'][0].shape \
+                           == (batch_size, TEST_HIDDEN_SIZE)
+                    assert encoder_out['encoder_output_state'][1].shape \
+                           == (batch_size, TEST_HIDDEN_SIZE)
                 else:
                     assert isinstance(encoder_out['encoder_output_state'],
                                       torch.Tensor)
-                    assert encoder_out['encoder_output_state'].shape.as_list() \
-                           == [batch_size, TEST_HIDDEN_SIZE]
+                    assert encoder_out['encoder_output_state'].shape \
+                           == (batch_size, TEST_HIDDEN_SIZE)
 
             elif enc_encoder == 'stacked_cnn':
-                assert encoder_out['encoder_output'].shape.as_list() \
-                       == [batch_size, 1, TEST_HIDDEN_SIZE]
+                assert encoder_out['encoder_output'].shape \
+                       == (batch_size, 1, TEST_HIDDEN_SIZE)
 
             elif enc_encoder == 'transformer' or enc_encoder == 'embed':
                 assert encoder_out['encoder_output'].shape \
