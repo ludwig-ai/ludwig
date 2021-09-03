@@ -575,7 +575,7 @@ class StackedCNN(SequenceEncoder):
             pool_size=None,
             pool_strides=None,
             # todo: determine how to pool_padding equivalent of 'same'
-            pool_padding=0,
+            pool_padding='same',
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
@@ -908,6 +908,9 @@ class StackedCNN(SequenceEncoder):
             training=training,
             mask=mask
         )
+
+        # swap back dimensions
+        hidden = hidden.transpose(1, 2)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
