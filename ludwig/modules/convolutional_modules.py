@@ -770,6 +770,8 @@ class Conv2DStack(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
+        # out = self.forward(input)
+        # return out.shape
         return torch.Size(self._output_shape)
 
 

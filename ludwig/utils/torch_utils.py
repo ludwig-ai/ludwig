@@ -97,10 +97,16 @@ class LudwigModule(Module):
     def add_loss(self, loss):
         if callable(loss):
             self._callable_losses.append(loss)
-    
+
+    @property
+    def input_shape(self) -> torch.Size:
+        raise NotImplementedError('Abtract method.')
+
     @property
     def output_shape(self) -> torch.Size:
-        raise NotImplementedError('Abstract class.')
+        # raise NotImplementedError('Abstract class.')
+        if self.input_shape:
+            return self.forward(torch.rand(shape)).shape
 
     @property
     @abstractmethod
