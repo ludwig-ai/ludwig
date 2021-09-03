@@ -24,7 +24,7 @@ from typing import List
 
 import torch
 from torch.nn import Module
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.utils.torch_utils import LudwigComponent
 
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
@@ -43,7 +43,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class ConcatCombiner(LudwigModule):
+class ConcatCombiner(LudwigComponent):
     def __init__(
             self,
             input_features=None,
@@ -148,19 +148,20 @@ class ConcatCombiner(LudwigModule):
 
         return return_data
 
-    def get_input_shape(self):
+    @property
+    def input_shape(self) -> torch.Size:
         shapes = [self.input_features[k].get_output_shape() for k in self.input_features] #output shape not input shape
-        return sum(shapes)
+        return torch.Size([sum(shapes)])
 
-    def get_output_shape(self):
+    @property
+    def output_shape(self) -> torch.Size:
         if self.fc_layers is not None:
-            return self.fc_layers[-1]['fc_size']
+            return torch.Size([self.fc_layers[-1]['fc_size']])
         else:
             return self.get_input_shape()
 
 
-
-class SequenceConcatCombiner(LudwigModule):
+class SequenceConcatCombiner(LudwigComponent):
     def __init__(
             self,
             reduce_output=None,
@@ -299,7 +300,7 @@ class SequenceConcatCombiner(LudwigModule):
         return return_data
 
 
-class SequenceCombiner(LudwigModule):
+class SequenceCombiner(LudwigComponent):
     def __init__(
             self,
             reduce_output=None,
