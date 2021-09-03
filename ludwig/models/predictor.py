@@ -10,7 +10,9 @@ import torch
 from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS, LAST_HIDDEN
+from ludwig.data.dataset.base import Dataset
 from ludwig.globals import is_progressbar_disabled
+from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
@@ -83,9 +85,9 @@ class Predictor(BasePredictor):
 
     def batch_predict(
             self,
-            model,
-            dataset,
-            dataset_name=None
+            model: ECD,
+            dataset: Dataset,
+            dataset_name: str = None,
     ):
         with dataset.initialize_batcher(
             self._batch_size,

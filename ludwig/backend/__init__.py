@@ -38,6 +38,9 @@ def _has_ray():
     if _ray is None:
         return False
 
+    if _ray.is_initialized():
+        return True
+
     try:
         _ray.init('auto', ignore_reinit_error=True)
         return True
