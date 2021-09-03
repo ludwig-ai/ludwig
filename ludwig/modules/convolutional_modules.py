@@ -62,7 +62,7 @@ class Conv1DLayer(Module):
         super().__init__()
 
         self.in_channels = in_channels
-        self.out_channcels = out_channels
+        self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = strides
         if padding == 'same' and kernel_size is not None:
@@ -143,7 +143,7 @@ class Conv1DLayer(Module):
                     * (self.pool_size - 1) - 1
             L_out = np.floor((numerator / self.pool_strides) + 1)
 
-        return self.out_channcels, np.int(L_out)
+        return self.out_channels, np.int(L_out)
 
 
     def forward(self, inputs, training=None, mask=None):
