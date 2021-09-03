@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import numpy as np
 
 # import tensorflow as tf
 # from tensorflow import math, squeeze
@@ -23,6 +24,7 @@ import logging
 #                                      Conv1D, Conv2D, Dropout, Layer,
 #                                      LayerNormalization, MaxPool1D, MaxPool2D,
 #                                      ZeroPadding2D)
+import torch
 from torch.nn import Module, Conv1d, Dropout, MaxPool1d, AvgPool1d
 from ludwig.utils.torch_utils import get_activation
 
@@ -39,6 +41,7 @@ class Conv1DLayer(Module):
             strides=1,
             padding='same',
             dilation=1,
+            groups=1,
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
@@ -57,6 +60,27 @@ class Conv1DLayer(Module):
             pool_padding='valid',
     ):
         super().__init__()
+
+        self.in_channels = in_channels
+        self.out_channcels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = strides
+        if padding == 'same' and kernel_size is not None:
+            self.padding = np.int(np.floor((self.kernel_size - 1) / 2.0))
+        else:
+            self.padding = 0
+        self.dilation = dilation
+        self.groups = groups
+        self.pool_size = pool_size
+        if pool_strides is None:
+            self.pool_strides = pool_size
+        else:
+            self.pool_strides = pool_strides
+        if pool_padding == 'same' and pool_size is not None:
+            self.pool_padding = np.int(np.floor((self.pool_size - 1) / 2.0))
+        else:
+            self.pool_padding = 0
+
 
         self.layers = []
 
@@ -96,19 +120,37 @@ class Conv1DLayer(Module):
             if pool_function in {'average', 'avg', 'mean'}:
                 pool = AvgPool1d
             self.layers.append(pool(
-                kernel_size=pool_size,
-                stride=pool_strides,
-                padding=pool_padding
+                kernel_size=self.pool_size,
+                stride=self.pool_strides,
+                padding=self.pool_padding
             ))
 
         # todo: determine how to handle layer.name
         # for layer in self.layers:
         #     logger.debug('   {}'.format(layer.name))
 
+    def get_output_shape(self, input_shape):
+        # input_shape ( C_in, L_in)
+        # calculation based on formula at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html#torch.nn.Conv1d
+        L_in = input_shape[1]
+        numerator = L_in + 2 * self.padding - self.dilation \
+                    * (self.kernel_size - 1) - 1
+        L_out = np.floor((numerator / self.stride) + 1)
+
+        if self.pool_size is not None:
+            # last layer is pooling layer, adjust L_out
+            numerator = L_out + 2 * self.pool_padding - self.dilation \
+                    * (self.pool_size - 1) - 1
+            L_out = np.floor((numerator / self.pool_strides) + 1)
+
+        return self.out_channcels, np.int(L_out)
+
+
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
 
-        for layer in self.layers:
+        # todo: enumerate for debugging, remove after testing
+        for i, layer in enumerate(self.layers):
             # todo: determine how to handle training parameter in this call
             #       commented out to avoid unexpected parameter error
             hidden = layer(hidden)  # , training=training)
@@ -121,13 +163,14 @@ class Conv1DStack(Module):
     def __init__(
             self,
             in_channels=1,
+            max_sequence_length=None,
             layers=None,
             num_layers=None,
             default_num_filters=256,
             default_filter_size=3,
             default_strides=1,
             # todo: determine equivalent to 'same', setting to zero for testing
-            default_padding=0,
+            default_padding='same',
             default_dilation_rate=1,
             default_use_bias=True,
             default_weights_initializer='glorot_uniform',
@@ -218,11 +261,14 @@ class Conv1DStack(Module):
 
         self.stack = []
 
+
+        num_channels = in_channels
+        L_in = max_sequence_length
         for i, layer in enumerate(self.layers):
             logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv1DLayer(
-                    in_channels=in_channels,
+                    in_channels=num_channels,
                     out_channels=layer['num_filters'],
                     kernel_size=layer['filter_size'],
                     strides=layer['strides'],
@@ -247,10 +293,18 @@ class Conv1DStack(Module):
                 )
             )
 
+            # retrieve number of channels from prior layer
+            input_shape = num_channels, L_in
+            output_shape = self.stack[i].get_output_shape(input_shape)
+            # todo: convert print to logger.debug() call after testing
+            print(f'input_shape {input_shape}, output shape {output_shape}')
+            num_channels, L_in = output_shape
+
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
 
-        for layer in self.stack:
+        # todo: enumerate for debugging, remove after testing
+        for i, layer in enumerate(self.stack):
             hidden = layer(hidden, training=training)
 
         if hidden.shape[1] == 0:

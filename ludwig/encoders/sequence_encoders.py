@@ -559,6 +559,7 @@ class StackedCNN(SequenceEncoder):
             vocab=None,
             representation='dense',
             embedding_size=256,
+            max_sequence_length=None,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
@@ -568,7 +569,7 @@ class StackedCNN(SequenceEncoder):
             filter_size=5,
             strides=1,
             # todo: assess how to specify padding for equivalent to 'same'
-            padding=0,
+            padding='same',
             dilation_rate=1,
             pool_function='max',
             pool_size=None,
@@ -820,6 +821,7 @@ class StackedCNN(SequenceEncoder):
         logger.debug('  Conv1DStack')
         self.conv1d_stack = Conv1DStack(
             in_channels=embedding_size,
+            max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
