@@ -23,12 +23,13 @@ import logging
 #                                      Conv1D, Conv2D, Dropout, Layer,
 #                                      LayerNormalization, MaxPool1D, MaxPool2D,
 #                                      ZeroPadding2D)
-from torch.nn import Module
+# from torch.nn import Module
+from ludwig.utils.torch_utils import LudwigComponent
 
 logger = logging.getLogger(__name__)
 
 
-class Conv1DLayer(Module):
+class Conv1DLayer(LudwigComponent):
 
     def __init__(
             self,
@@ -106,7 +107,7 @@ class Conv1DLayer(Module):
         return hidden
 
 
-class Conv1DStack(Module):
+class Conv1DStack(LudwigComponent):
 
     def __init__(
             self,
@@ -253,7 +254,7 @@ class Conv1DStack(Module):
         return hidden
 
 
-class ParallelConv1D(Module):
+class ParallelConv1D(LudwigComponent):
 
     def __init__(
             self,
@@ -389,7 +390,7 @@ class ParallelConv1D(Module):
         return hidden
 
 
-class ParallelConv1DStack(Module):
+class ParallelConv1DStack(LudwigComponent):
 
     def __init__(
             self,
@@ -520,7 +521,7 @@ class ParallelConv1DStack(Module):
         return hidden
 
 
-class Conv2DLayer(Module):
+class Conv2DLayer(LudwigComponent):
 
     def __init__(
             self,
@@ -598,7 +599,7 @@ class Conv2DLayer(Module):
         return hidden
 
 
-class Conv2DStack(Module):
+class Conv2DStack(LudwigComponent):
 
     def __init__(
             self,
@@ -728,7 +729,7 @@ class Conv2DStack(Module):
         return hidden
 
 
-class Conv2DLayerFixedPadding(Module):
+class Conv2DLayerFixedPadding(LudwigComponent):
 
     def __init__(
             self,
@@ -768,7 +769,7 @@ class Conv2DLayerFixedPadding(Module):
         return hidden
 
 
-class ResNetBlock(Module):
+class ResNetBlock(LudwigComponent):
 
     def __init__(
             self,
@@ -842,7 +843,7 @@ class ResNetBlock(Module):
         return hidden + shortcut
 
 
-class ResNetBottleneckBlock(Module):
+class ResNetBottleneckBlock(LudwigComponent):
 
     def __init__(
             self,
@@ -938,7 +939,7 @@ class ResNetBottleneckBlock(Module):
         return hidden + shortcut
 
 
-class ResNetBlockLayer(Module):
+class ResNetBlockLayer(LudwigComponent):
     def __init__(
             self,
             num_filters,
@@ -995,7 +996,7 @@ class ResNetBlockLayer(Module):
         return hidden
 
 
-class ResNet(Module):
+class ResNet(LudwigComponent):
     def __init__(
             self,
             resnet_size,

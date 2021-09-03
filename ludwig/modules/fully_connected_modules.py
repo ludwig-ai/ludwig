@@ -18,15 +18,16 @@ import logging
 # from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
 #                                      Dropout, Layer, LayerNormalization)
 
-from torch.nn import (Linear, LayerNorm, Module, Dropout, ModuleList)
+from torch.nn import (Linear, LayerNorm, Dropout, ModuleList)
 
-from ludwig.utils.torch_utils import LudwigModule, initializer_registry, activations, reg_loss
+from ludwig.utils.torch_utils import LudwigComponent, initializer_registry,\
+    activations, reg_loss
 
 logger = logging.getLogger(__name__)
 
 
 
-class FCLayer(LudwigModule):
+class FCLayer(LudwigComponent):
 
     def __init__(
             self,
@@ -128,7 +129,7 @@ class FCLayer(LudwigModule):
         return hidden
 
 
-class FCStack(LudwigModule):
+class FCStack(LudwigComponent):
 
     def __init__(
             self,

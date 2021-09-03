@@ -19,17 +19,17 @@ import logging
 # from tensorflow.keras.layers import Layer
 
 import torch
-from torch.nn import Module
+# from torch.nn import Module
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
 #from ludwig.utils.tf_utils import sequence_length_3D
-from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule
+from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule, LudwigComponent
 
 logger = logging.getLogger(__name__)
 
 
-class SequenceReducer(LudwigModule):
+class SequenceReducer(LudwigComponent):
 
     def __init__(self, reduce_mode=None):
         super().__init__()
@@ -46,7 +46,7 @@ class SequenceReducer(LudwigModule):
         return self._reduce_obj(inputs, training=training, mask=mask)
 
 
-class ReduceLast(LudwigModule):
+class ReduceLast(LudwigComponent):
 
     def forward(self, inputs, training=None, mask=None):
         #batch_size = tf.shape(inputs)[0]
@@ -72,28 +72,28 @@ class ReduceLast(LudwigModule):
         return gathered
 
 
-class ReduceSum(LudwigModule):
+class ReduceSum(LudwigComponent):
 
     def forward(self, inputs, training=None, mask=None):
         #return tf.reduce_sum(inputs, axis=1)
         return torch.sum(inputs, dim=1)
 
 
-class ReduceMean(LudwigModule):
+class ReduceMean(LudwigComponent):
 
     def forward(self, inputs, training=None, mask=None):
         #return tf.reduce_mean(inputs, axis=1)
         return torch.mean(inputs, dim=1)
 
 
-class ReduceMax(LudwigModule):
+class ReduceMax(LudwigComponent):
 
     def forward(self, inputs, training=None, mask=None):
         #return tf.reduce_max(inputs, axis=1)
         return torch.max(inputs, dim=1)
 
 
-class ReduceConcat(LudwigModule):
+class ReduceConcat(LudwigComponent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -128,7 +128,7 @@ class ReduceConcat(LudwigModule):
 
 
 
-class ReduceNone(LudwigModule):
+class ReduceNone(LudwigComponent):
 
     def forward(self, inputs, training=None, mask=None):
         return inputs

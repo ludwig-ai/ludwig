@@ -93,6 +93,23 @@ class LudwigModel(Module):
             collected_losses.extend(layer.losses)
         return collected_losses
 
+
+class LudwigComponent(Module):
+    def __init__(self):
+        super().__init__()
+
+    @property
+    def input_shape(self) -> torch.Size:
+        """ Returns the size of the input tensor without the batch dimension. """
+        raise NotImplementedError('Abstract class.')
+
+    @property
+    def output_shape(self) -> torch.Size:
+        """ Returns the size of the output tensor without the batch dimension."""
+        output_tensor = self.forward(torch.rand(*self.input_shape))
+        return output_tensor.size()[1:]
+
+
 # I think I need this instead of what I have above:
 class LudwigModule(Module):
     def __init__(self):

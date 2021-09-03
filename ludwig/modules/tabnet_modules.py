@@ -2,13 +2,14 @@ from typing import List, Tuple
 
 # import tensorflow as tf
 import torch
-from torch.nn import Module
+# from torch.nn import Module
 
 from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
+from ludwig.utils.torch_utils import LudwigComponent
 
 
-class TabNet(Module):
+class TabNet(LudwigComponent):
     def __init__(
             self,
             size: int,
@@ -161,7 +162,7 @@ class TabNet(Module):
         return final_output, aggregated_mask, masks
 
 
-class FeatureBlock(Module):
+class FeatureBlock(LudwigComponent):
     def __init__(
             self,
             size: int,
@@ -195,7 +196,7 @@ class FeatureBlock(Module):
         return hidden
 
 
-class AttentiveTransformer(Module):
+class AttentiveTransformer(LudwigComponent):
     def __init__(
             self,
             size: int,
@@ -236,7 +237,7 @@ class AttentiveTransformer(Module):
 
 
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
-class FeatureTransformer(Module):
+class FeatureTransformer(LudwigComponent):
     def __init__(
             self,
             size: int,
@@ -288,7 +289,7 @@ class FeatureTransformer(Module):
 
 # reimplementation of sparsemax to be more stable and fallback to softmax
 # adapted from https://github.com/tensorflow/addons/blob/v0.12.0/tensorflow_addons/activations/sparsemax.py#L21-L77
-class CustomSparsemax(Module):
+class CustomSparsemax(LudwigComponent):
     """Sparsemax activation function.
 
     The output shape is the same as the input shape.
