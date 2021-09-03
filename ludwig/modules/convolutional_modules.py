@@ -28,6 +28,7 @@ from ludwig.utils.torch_utils import LudwigModule
 import torch
 import torch.nn as nn
 
+from ludwig.utils.image_utils import get_img_output_shape
 from ludwig.utils.torch_utils import get_activation, LudwigModule
 
 logger = logging.getLogger(__name__)
@@ -548,12 +549,9 @@ class Conv2DLayer(LudwigModule):
             pool_kernel_size: Union[int, Tuple[int]] = 2,
             pool_stride: Optional[int] = None,
             pool_padding: str = 'valid',
-            pool_dilation: int = 1,
+            pool_dilation: Union[int, Tuple[int]] = 1,
     ):
         super().__init__()
-
-        self.img_height = img_height
-        self.img_width = img_width
 
         self.layers = []
 
@@ -568,6 +566,9 @@ class Conv2DLayer(LudwigModule):
             bias=bias,
             padding_mode=padding_mode
         ))
+        out_height, out_width = get_img_output_shape(
+            img_height, img_width, kernel_size, stride, padding, dilation
+        )
 
         if norm and norm_params is None:
             norm_params = {}
@@ -602,9 +603,15 @@ class Conv2DLayer(LudwigModule):
                 padding=pool_padding,
                 dilation=pool_dilation
             ))
+            out_height, out_width = get_img_output_shape(
+                out_height, out_width, pool_kernel_size, pool_stride,
+                pool_padding, pool_dilation
+            )
 
         for layer in self.layers:
             logger.debug('   {}'.format(layer.name))
+
+        self._output_shape = (out_channels, out_height, out_width)
 
     def forward(self, inputs):
         hidden = inputs
@@ -615,71 +622,59 @@ class Conv2DLayer(LudwigModule):
         return hidden
 
     @property
-    def output_shape(self):
-        pass
-
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
 
 class Conv2DStack(LudwigModule):
 
     def __init__(
             self,
+            img_height: int,
+            img_width: int,
             layers: Optional[List[Dict]] = None,
             num_layers: Optional[int] = None,
-            default_in_channels: Optional[int] = None,
-            default_out_channels=256,
-            default_kernel_size=3,
-            default_stride=1,
-            default_padding='valid',
-            default_dilation=1,
-            default_groups=1,
-            default_bias=True,
-            default_padding_mode='zeros',
-            # default_weights_initializer='glorot_uniform',
-            # default_bias_initializer='zeros',
-            # default_weights_regularizer=None,
-            # default_bias_regularizer=None,
-            # default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
-            default_norm=None,
-            default_norm_params=None,
-            default_activation='relu',
-            default_dropout=0,
-            default_pool_function='max',
-            default_pool_kernel_size=2,
-            default_pool_stride=None,
-            default_pool_padding='valid',
-            default_pool_dilation=1
+            first_in_channels: Optional[int] = None,
+            default_out_channels: int = 256,
+            default_kernel_size: Union[int, Tuple[int]] = 3,
+            default_stride: Union[int, Tuple[int]] = 1,
+            default_padding: Union[int, Tuple[int], str] = 'valid',
+            default_dilation: Union[int, Tuple[int]] = 1,
+            default_groups: int = 1,
+            default_bias: bool = True,
+            default_padding_mode: str = 'zeros',
+            default_norm: Optional[str] = None,
+            default_norm_params: Optional[Dict[str, Any]] = None,
+            default_activation: str = 'relu',
+            default_dropout: int = 0,
+            default_pool_function: int = 'max',
+            default_pool_kernel_size: Union[int, Tuple[int]] = 2,
+            default_pool_stride: Union[int, Tuple[int]] = None,
+            default_pool_padding: Union[int, Tuple[int], str] = 'valid',
+            default_pool_dilation: Union[int, Tuple[int]] = 1
     ):
         super().__init__()
 
-        # TODO(shreya): Why not all args here? E.g. in/out channels for 2nd if
-        # kernel_size, etc. for first if condition.
+        self._check_in_channels(first_in_channels, layers)
+
         if layers is None:
-            # TODO(shreya): Raise correct error.
-            assert default_in_channels is not None
             if num_layers is None:
                 self.layers = [
-                    {'in_channels': default_in_channels, 'out_channels': 32},
-                    {'in_channels': 32, 'out_channels': 64},
+                    {'out_channels': 32},
+                    {'out_channels': 64},
                 ]
             else:
                 self.layers = []
-                in_channels = default_in_channels
                 for i in range(num_layers):
                     self.layers.append(
                         {
                             'kernel_size': default_kernel_size,
-                            'in_channels': in_channels,
                             'out_channels': default_out_channels,
                             'pool_kernel_size': default_pool_kernel_size
                         }
                     )
-                    in_channels = default_out_channels
         else:
             self.layers = layers
 
-        # TODO(shreya): Check here that input/output channels line up.
         for layer in self.layers:
             if 'out_channels' not in layer:
                 layer['out_channels'] = default_out_channels
@@ -697,20 +692,6 @@ class Conv2DStack(LudwigModule):
                 layer['bias'] = default_bias
             if 'padding_mode' not in layer:
                 layer['padding_mode'] = default_padding_mode
-            # if 'weights_initializer' not in layer:
-            #     layer['weights_initializer'] = default_weights_initializer
-            # if 'bias_initializer' not in layer:
-            #     layer['bias_initializer'] = default_bias_initializer
-            # if 'weights_regularizer' not in layer:
-            #     layer['weights_regularizer'] = default_weights_regularizer
-            # if 'bias_regularizer' not in layer:
-            #     layer['bias_regularizer'] = default_bias_regularizer
-            # if 'activity_regularizer' not in layer:
-            #     layer['activity_regularizer'] = default_activity_regularizer
-            # if 'weights_constraint' not in layer:
-            #     layer['weights_constraint'] = default_weights_constraint
-            # if 'bias_constraint' not in layer:
-            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
             if 'norm_params' not in layer:
@@ -732,11 +713,14 @@ class Conv2DStack(LudwigModule):
 
         self.stack = []
 
+        in_channels = first_in_channels
         for i, layer in enumerate(self.layers):
             logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv2DLayer(
-                    in_channels=layer['in_channels'],
+                    img_height=img_height,
+                    img_width=img_width,
+                    in_channels=in_channels,
                     out_channels=layer['out_channels'],
                     kernel_size=layer['kernel_size'],
                     stride=layer['stride'],
@@ -745,13 +729,6 @@ class Conv2DStack(LudwigModule):
                     groups=layer['groups'],
                     bias=layer['bias'],
                     padding_mode=layer['padding_mode'],
-                    # weights_initializer=layer['weights_initializer'],
-                    # bias_initializer=layer['bias_initializer'],
-                    # weights_regularizer=layer['weights_regularizer'],
-                    # bias_regularizer=layer['bias_regularizer'],
-                    # activity_regularizer=layer['activity_regularizer'],
-                    # weights_constraint=layer['weights_constraint'],
-                    # bias_constraint=layer['bias_constraint'],
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
@@ -763,6 +740,9 @@ class Conv2DStack(LudwigModule):
                     pool_dilation=layer['pool_dilation'],
                 )
             )
+            in_channels, img_height, img_width = self.stack[-1].output_shape
+
+        self._output_shape = (in_channels, img_height, img_width)
 
     def forward(self, inputs):
         hidden = inputs
@@ -772,12 +752,34 @@ class Conv2DStack(LudwigModule):
 
         return hidden
 
+    def _check_in_channels(
+            self,
+            first_in_channels: Optional[int],
+            layers: Optional[List[Dict]]
+    ) -> None:
+        """ Confirms that in_channels for first layer of the stack exists. """
+
+        if first_in_channels is not None:
+            return
+        elif layers is not None and len(layers) > 0 and 'in_channels' in layers[0]:
+            return
+        raise ValueError(
+            'In_channels for first layer should be specified either via '
+            '`first_in_channels` or `layers` arguments.'
+        )
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
 
 class Conv2DLayerFixedPadding(LudwigModule):
 
     def __init__(
             self,
-            in_channels=256,
+            img_height: int,
+            img_width: int,
+            in_channels: int,
             out_channels=256,
             kernel_size=3,
             stride=1,
@@ -790,7 +792,10 @@ class Conv2DLayerFixedPadding(LudwigModule):
         self.layers = []
 
         if stride > 1:
-            self.layers.append(nn.ZeroPad2d(padding=((kernel_size - 1) // 2)))
+            padding = ((kernel_size - 1) // 2)
+            self.layers.append(nn.ZeroPad2d(padding=padding))
+            img_height += 2 * padding
+            img_width += 2 * padding
 
         self.layers.append(
             nn.Conv2d(
@@ -802,13 +807,16 @@ class Conv2DLayerFixedPadding(LudwigModule):
                 dilation=dilation,
                 groups=groups,
                 bias=bias,
-                # kernel_initializer=VarianceScaling(),
-                # kernel_regularizer=weights_regularizer,
             )
+        )
+        img_height, img_width = get_img_output_shape(
+            img_height, img_width, kernel_size, stride, padding, dilation
         )
 
         for layer in self.layers:
             logger.debug('   {}'.format(layer.name))
+
+        self._output_shape = (out_channels, img_height, img_width)
 
     def forard(self, inputs):
         hidden = inputs
@@ -818,15 +826,20 @@ class Conv2DLayerFixedPadding(LudwigModule):
 
         return hidden
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
 
 class ResNetBlock(LudwigModule):
 
     def __init__(
             self,
-            in_channels: int,
+            img_height: int,
+            img_width: int,
+            first_in_channels: int,
             out_channels: int,
             stride: int,
-            # weights_regularizer=None,
             batch_norm_momentum: float = 0.9,
             batch_norm_epsilon: float = 0.001,
             projection_shortcut: Optional[nn.LudwigModule] = None
@@ -836,7 +849,7 @@ class ResNetBlock(LudwigModule):
         self.projection_shortcut = projection_shortcut
 
         self.norm1 = nn.BatchNorm2d(
-            num_features=in_channels,
+            num_features=first_in_channels,
             eps=batch_norm_epsilon,
             momentum=batch_norm_momentum,
         )
@@ -844,14 +857,17 @@ class ResNetBlock(LudwigModule):
         self.activation1 = get_activation('relu')
 
         self.conv1 = Conv2DLayerFixedPadding(
-            in_channels=in_channels,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=first_in_channels,
             out_channels=out_channels,
             kernel_size=3,
             stride=stride,
         )
+        in_channels, img_height, img_width = self.conv1.output_shape
 
         self.norm2 = nn.BatchNorm2d(
-            num_features=out_channels,
+            num_features=in_channels,
             eps=batch_norm_epsilon,
             momentum=batch_norm_momentum,
         )
@@ -859,6 +875,8 @@ class ResNetBlock(LudwigModule):
         self.activation2 = get_activation('relu')
 
         self.conv2 = Conv2DLayerFixedPadding(
+            img_height=img_height,
+            img_width=img_width,
             in_channels=out_channels,
             out_channels=out_channels,
             kernel_size=3,
@@ -868,6 +886,10 @@ class ResNetBlock(LudwigModule):
         for layer in [self.norm1, self.activation1, self.conv1,
                       self.norm2, self.activation2, self.conv2]:
             logger.debug('   {}'.format(layer.name))
+
+        self._output_shape = self.conv2.output_shape
+        if self.projection_shortcut is not None:
+            assert self.projection_shortcut.output_shape == self._output_shape
 
     def forward(self, inputs):
         shortcut = inputs
@@ -887,16 +909,21 @@ class ResNetBlock(LudwigModule):
 
         return hidden + shortcut
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
 
-# TODO(shreya): See if this can be combined with ResNetBlock by adding a flag.
+
+# TODO(shreya): Combine with ResNetBlock by adding a flag.
 class ResNetBottleneckBlock(LudwigModule):
 
     def __init__(
             self,
-            in_channels: int,
+            img_height: int,
+            img_width: int,
+            first_in_channels: int,
             out_channels: int,
             stride: int,
-            # weights_regularizer=None,
             batch_norm_momentum: float = 0.9,
             batch_norm_epsilon: float = 0.001,
             projection_shortcut: Optional[nn.LudwigModule] = None
@@ -906,7 +933,7 @@ class ResNetBottleneckBlock(LudwigModule):
         self.projection_shortcut = projection_shortcut
 
         self.norm1 = nn.BatchNorm2d(
-            num_features=in_channels,
+            num_features=first_in_channels,
             eps=batch_norm_epsilon,
             momentum=batch_norm_momentum,
         )
@@ -914,14 +941,17 @@ class ResNetBottleneckBlock(LudwigModule):
         self.activation1 = get_activation('relu')
 
         self.conv1 = Conv2DLayerFixedPadding(
-            in_channels=in_channels,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=first_in_channels,
             out_channels=out_channels,
             kernel_size=1,
             stride=1,
         )
+        in_channels, img_height, img_width = self.conv1.output_shape
 
         self.norm2 = nn.BatchNorm2d(
-            num_features=out_channels,
+            num_features=in_channels,
             eps=batch_norm_epsilon,
             momentum=batch_norm_momentum,
         )
@@ -929,14 +959,17 @@ class ResNetBottleneckBlock(LudwigModule):
         self.activation2 = get_activation('relu')
 
         self.conv2 = Conv2DLayerFixedPadding(
-            in_channels=out_channels,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=in_channels,
             out_channels=out_channels,
             kernel_size=3,
             stride=stride,
         )
+        in_channels, img_height, img_width = self.conv2.output_shape
 
         self.norm3 = nn.BatchNorm2d(
-            num_features=out_channels,
+            num_features=in_channels,
             eps=batch_norm_epsilon,
             momentum=batch_norm_momentum,
         )
@@ -944,7 +977,9 @@ class ResNetBottleneckBlock(LudwigModule):
         self.activation3 = get_activation('relu')
 
         self.conv3 = Conv2DLayerFixedPadding(
-            in_channels=out_channels,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=in_channels,
             out_channels=4 * out_channels,
             kernel_size=1,
             stride=1,
@@ -954,6 +989,10 @@ class ResNetBottleneckBlock(LudwigModule):
                       self.norm2, self.activation2, self.conv2,
                       self.norm3, self.activation3, self.conv3]:
             logger.debug('   {}'.format(layer.name))
+        
+        self._output_shape = self.conv3.output_shape
+        if self.projection_shortcut:
+            assert self.projection_shortcut.output_shape == self._output_shape
 
     def forward(self, inputs):
         shortcut = inputs
@@ -976,26 +1015,33 @@ class ResNetBottleneckBlock(LudwigModule):
 
         return hidden + shortcut
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
 
 class ResNetBlockLayer(LudwigModule):
     def __init__(
             self,
-            in_channels,
-            out_channels,
-            is_bottleneck,
+            img_height: int,
+            img_width: int,
+            first_in_channels: int,
+            out_channels: int,
+            is_bottleneck: bool,
             block_fn: Union[ResNetBlock, ResNetBottleneckBlock],
-            num_blocks,
-            stride,
-            # weights_regularizer=None,
-            batch_norm_momentum=0.9,
-            batch_norm_epsilon=0.001
+            num_blocks: int,
+            stride: Union[int, Tuple[int]],
+            batch_norm_momentum: float = 0.9,
+            batch_norm_epsilon: float = 0.001
     ):
         super().__init__()
-        # Bottleneck blocks end with 4x the number of filters as they start with
+        # Bottleneck blocks end with 4x the number of channels as they start with
         projection_out_channels = out_channels * 4 if is_bottleneck else out_channels
 
         projection_shortcut = Conv2DLayerFixedPadding(
-            in_channels=in_channels,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=first_in_channels,
             out_channels=projection_out_channels,
             filter_size=1,
             stride=stride,
@@ -1003,7 +1049,9 @@ class ResNetBlockLayer(LudwigModule):
 
         self.layers = [
             block_fn(
-                in_channels=in_channels,
+                img_height=img_height,
+                img_width=img_width,
+                first_in_channels=first_in_channels,
                 out_channels=out_channels,
                 stride=stride,
                 batch_norm_momentum=batch_norm_momentum,
@@ -1011,20 +1059,26 @@ class ResNetBlockLayer(LudwigModule):
                 projection_shortcut=projection_shortcut
             )
         ]
+        in_channels, img_height, img_width = self.layers[-1].output_shape
 
         for _ in range(1, num_blocks):
             self.layers.append(
                 block_fn(
-                    in_channels=out_channels,
+                    img_height=img_height,
+                    img_width=img_width,
+                    first_in_channels=in_channels,
                     out_channels=out_channels,
                     stride=1,
                     batch_norm_momentum=batch_norm_momentum,
                     batch_norm_epsilon=batch_norm_epsilon
                 )
             )
+            in_channels, img_height, img_width = self.layers[-1].output_shape
 
         for layer in self.layers:
             logger.debug('   {}'.format(layer.name))
+
+        self._output_shape = (in_channels, img_height, img_width)
 
     def forward(self, inputs):
         hidden = inputs
@@ -1034,23 +1088,28 @@ class ResNetBlockLayer(LudwigModule):
 
         return hidden
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
 
 class ResNet(LudwigModule):
     def __init__(
             self,
+            img_height: int,
+            img_width: int,
             resnet_size: int,
             is_bottleneck: bool,
-            in_channels: int,
+            first_in_channels: int,
             out_channels: int,
-            kernel_size,
-            conv_stride,
-            first_pool_kernel_size,
-            first_pool_stride,
-            block_sizes,
-            block_strides,
-            # weights_regularizer=None,
-            batch_norm_momentum=0.9,
-            batch_norm_epsilon=0.001
+            kernel_size: Union[int, Tuple[int]],
+            conv_stride: Union[int, Tuple[int]],
+            first_pool_kernel_size: Union[int, Tuple[int]],
+            first_pool_stride: Union[int, Tuple[int]],
+            block_sizes: List[int],
+            block_strides: List[Union[int, Tuple[int]]],
+            batch_norm_momentum: float = 0.9,
+            batch_norm_epsilon: float = 0.001
     ):
         """Creates a model obtaining an image representation.
 
@@ -1100,13 +1159,15 @@ class ResNet(LudwigModule):
 
         self.layers = [
             Conv2DLayerFixedPadding(
-                in_channels=in_channels,
+                img_height=img_height,
+                img_width=img_width,
+                in_channels=first_in_channels,
                 out_channels=out_channels,
                 kernel_size=kernel_size,
                 stride=conv_stride,
-                # weights_regularizer=weights_regularizer
             )
         ]
+        in_channels, img_height, img_width = self.layers[-1].output_shape
 
         if first_pool_kernel_size:
             self.layers.append(
@@ -1116,27 +1177,37 @@ class ResNet(LudwigModule):
                     padding='same'
                 )
             )
+            img_height, img_width = get_img_output_shape(
+                img_height=img_height,
+                img_width=img_width,
+                kernel_size=first_pool_kernel_size,
+                stride=first_pool_stride,
+                padding='same',
+                dilation=1
+            )
 
         for i, num_blocks in enumerate(block_sizes):
-            block_out_channels = out_channels * (2 ** i)
-            block_in_channels = max(block_out_channels / 2, out_channels)
             self.layers.append(
                 ResNetBlockLayer(
-                    block_in_channels,
-                    block_out_channels,
-                    is_bottleneck,
-                    block_class,
-                    num_blocks,
-                    block_strides[i],
-                    # weights_regularizer=weights_regularizer,
+                    img_height=img_height,
+                    img_width=img_width,
+                    first_in_channels=in_channels,
+                    out_channels=out_channels,
+                    is_bottleneck=is_bottleneck,
+                    block_fn=block_class,
+                    num_blocks=num_blocks,
+                    stride=block_strides[i],
                     batch_norm_momentum=batch_norm_momentum,
                     batch_norm_epsilon=batch_norm_epsilon
                 )
             )
+            out_channels *= 2
+            in_channels, img_height, img_width = self.layers[-1].output_shape
+
         if pre_activation:
             self.layers.append(
                 nn.BatchNorm2d(
-                    num_features=block_out_channels,
+                    num_features=in_channels,
                     eps=batch_norm_epsilon,
                     momentum=batch_norm_momentum,
                 )
@@ -1145,6 +1216,8 @@ class ResNet(LudwigModule):
 
         for layer in self.layers:
             logger.debug('   {}'.format(layer.name))
+
+        self._output_shape = (in_channels, img_height, img_width)
 
     def forward(self, inputs):
         hidden = inputs
@@ -1157,6 +1230,9 @@ class ResNet(LudwigModule):
 
         return hidden
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
 
 ################################################################################
 # The following code for ResNet is adapted from the TensorFlow implementation

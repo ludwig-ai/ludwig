@@ -96,7 +96,7 @@ class Stacked2DCNN(ImageEncoder):
         self.conv_stack_2d = Conv2DStack(
             layers=conv_layers,
             num_layers=num_conv_layers,
-            default_in_channels=in_channels,
+            first_in_channels=in_channels,
             default_out_channels=out_channels,
             kernel_size=kernel_size,
             default_stride=stride,

@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 from math import ceil, floor
+from typing import Tuple, Union
 
 import numpy as np
 # TODO(shreya): Import guard?
@@ -159,3 +160,50 @@ def num_channels_in_image(img):
         return 1
     else:
         return img.shape[0]
+
+
+def img_prop_to_numpy(prop: Union[int, Tuple[int]]) -> np.ndarray:
+    """ Creates a np array of length 2 from a Conv2D property.
+
+    E.g., stride=(2, 3) gets converted into np.array([2, 3]), where the
+    height_stride = 2 and width_stride = 3.
+    """
+    if type(prop) == int:
+        return np.ones(2) * prop
+    elif type(prop) == tuple and len(prop) == 2:
+        return np.array(list(prop))
+    else:
+        raise TypeError(f'kernel_size must be int or tuple of length 2.')
+
+
+def get_img_output_shape(
+    img_height: int,
+    img_width: int,
+    kernel_size: Union[int, Tuple[int]],
+    stride: Union[int, Tuple[int]],
+    padding: Union[int, Tuple[int], str],
+    dilation: Union[int, Tuple[int]],
+) -> Tuple[int]:
+    """ Returns the height and width of an image after a 2D img op.
+
+    Currently supported for Conv2D, MaxPool2D and AvgPool2d ops.
+    """
+
+    if padding == 'same':
+        return (img_height, img_width)
+    elif padding == 'valid':
+        padding = np.zeros(2)
+    else:
+        padding = img2d_prop_to_numpy(padding)
+
+    kernel_size = img2d_prop_to_numpy(kernel_size)
+    stride = img2d_prop_to_numpy(stride)
+    dilation = img2d_prop_to_numpy(dilation)
+
+    shape = np.array([img_height, img_width])
+
+    out_shape = np.math.floor(
+        ((shape + 2 * padding - dilation * (kernel_size - 1) - 1) / stride) + 1
+    )
+
+    return tuple(out_shape.astype(int))

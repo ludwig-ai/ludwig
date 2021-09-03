@@ -4,6 +4,7 @@ from functools import lru_cache
 from torch.nn import Module, ModuleDict
 import torch
 from torch import nn
+from torch.nn import Module, ModuleDict
 
 
 def sequence_length_3D(sequence):
@@ -98,7 +99,7 @@ class LudwigModule(Module):
             self._callable_losses.append(loss)
     
     @property
-    def output_shape(self):
+    def output_shape(self) -> torch.Size:
         raise NotImplementedError('Abstract class.')
 
     @property
