@@ -16,23 +16,19 @@
 # ==============================================================================
 import logging
 
-from tensorflow.keras.layers import Layer
-
-from torch.nn import Module
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.encoders import Encoder
 
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-class PassthroughEncoder(LudwigModule):
+class PassthroughEncoder(Encoder):
 
     def __init__(
             self,
             **kwargs
     ):
-        self.name = "PassthroughEncoder"
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
@@ -43,8 +39,15 @@ class PassthroughEncoder(LudwigModule):
         """
         return {'encoder_output': inputs}
 
+    def get_output_shape(self, input_shape):
+        return input_shape
 
-class DenseEncoder(LudwigModule):
+    @classmethod
+    def register(cls, name):
+        pass
+
+
+class DenseEncoder(Encoder):
 
     def __init__(
             self,
@@ -67,7 +70,6 @@ class DenseEncoder(LudwigModule):
             **kwargs
     ):
         super().__init__()
-        self.name = 'DenseEncoder'
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  FCStack')
@@ -96,3 +98,10 @@ class DenseEncoder(LudwigModule):
                    Shape: [batch x 1], type tf.float32
         """
         return {'encoder_output': self.fc_stack(inputs)}
+
+    def get_output_shape(self, input_shape):
+        return self.fc_stack.layers[-1]['fc_size']
+
+    @classmethod
+    def register(cls, name):
+        pass

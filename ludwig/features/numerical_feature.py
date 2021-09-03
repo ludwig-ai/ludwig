@@ -15,21 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
-import tensorflow as tf
 import torch
-'''
-from tensorflow.keras.metrics import (
-    MeanAbsoluteError as MeanAbsoluteErrorMetric,
-)
-from tensorflow.keras.metrics import (
-    MeanSquaredError as MeanSquaredErrorMetric,
-    RootMeanSquaredError as RootMeanSquaredErrorMetric,
-)
-'''
-from torchmetrics import (MeanAbsoluteError, MeanSquaredError)
+from torchmetrics import MeanAbsoluteError, MeanSquaredError
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
@@ -47,7 +36,6 @@ from ludwig.modules.metric_modules import (
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
-from tensorflow.keras.metrics import RootMeanSquaredError
 
 logger = logging.getLogger(__name__)
 
@@ -235,15 +223,10 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         return torch.float32
 
     def get_input_shape(self):
-        #return ()
         return 1
 
     def get_output_shape(self):
-        if isinstance(self.encoder_obj, DenseEncoder):
-            return self.encoder_obj.fc_stack.layers[-1]['fc_size']
-        else: # passthrough encoder
-            return self.get_input_shape()
-
+        return self.encoder_obj.get_output_shape(self.get_input_shape())
 
     @staticmethod
     def update_config_with_metadata(
@@ -353,9 +336,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         # self.metric_functions[
         #     ROOT_MEAN_SQUARED_ERROR
         # ] = RootMeanSquaredErrorMetric(name="metric_rmse")
-        self.metric_functions[
-            ROOT_MEAN_SQUARED_PERCENTAGE_ERROR
-        ] = RMSPEMetric(name="metric_rmspe")
+        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric()
         self.metric_functions[R2] = R2Score(name="metric_r2")
 
     def get_prediction_set(self):
@@ -369,7 +350,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return torch.float32
 
     def get_output_shape(self):
-        #return ()
         return 1
 
     @staticmethod

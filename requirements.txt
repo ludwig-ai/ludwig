@@ -7,6 +7,7 @@ tabulate>=0.7
 scikit-learn
 tqdm
 tensorflow>=2.3.1
+torch>=1.9.0
 PyYAML>=3.12
 absl-py
 kaggle
@@ -15,6 +16,8 @@ tables
 fsspec
 dataclasses-json
 jsonschema
+tensorboard
+torchmetrics
 
 # new data format support
 xlwt            # excel

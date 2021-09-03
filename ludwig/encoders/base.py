@@ -17,8 +17,6 @@
 
 from abc import ABC, abstractmethod
 
-from tensorflow.keras.layers import Layer
-
 from torch.nn import Module
 
 from ludwig.utils.registry import DEFAULT_KEYS
@@ -38,3 +36,11 @@ class Encoder(Module, ABC):
     def register_default(cls):
         for key in DEFAULT_KEYS:
             cls.register(name=key)
+
+    @abstractmethod
+    def get_output_shape(self, input_shape):
+        raise NotImplementedError
+
+    @property
+    def name(self):
+        return self.__class__.__name__

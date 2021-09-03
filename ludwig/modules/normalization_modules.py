@@ -1,9 +1,10 @@
-import tensorflow as tf
+# import tensorflow as tf
+from torch.nn import Module
 
-from tensorflow.keras.layers import BatchNormalization
+# from tensorflow.keras.layers import BatchNormalization
 
 
-class GhostBatchNormalization(tf.keras.Model):
+class GhostBatchNormalization(Module):
     def __init__(
             self,
             momentum: float = 0.9,

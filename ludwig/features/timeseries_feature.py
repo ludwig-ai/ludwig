@@ -17,7 +17,7 @@
 import logging
 
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \

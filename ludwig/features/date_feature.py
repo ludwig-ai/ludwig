@@ -19,7 +19,7 @@ from datetime import date
 from datetime import datetime
 
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 from dateutil.parser import parse
 
 from ludwig.constants import *

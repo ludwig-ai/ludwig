@@ -16,15 +16,15 @@
 from abc import ABC
 import logging
 
-import tensorflow as tf
-import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
-    StackedRNNCells
-from tensorflow.keras.layers import Dense, Embedding
-from tensorflow.keras.layers import average
-from tensorflow_addons.seq2seq import AttentionWrapper
-from tensorflow_addons.seq2seq import BahdanauAttention
-from tensorflow_addons.seq2seq import LuongAttention
+# import tensorflow as tf
+# import tensorflow_addons as tfa
+# from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
+#     StackedRNNCells
+# from tensorflow.keras.layers import Dense, Embedding
+# from tensorflow.keras.layers import average
+# from tensorflow_addons.seq2seq import AttentionWrapper
+# from tensorflow_addons.seq2seq import BahdanauAttention
+# from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
 from ludwig.decoders.base import Decoder
@@ -38,9 +38,9 @@ from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
-    'rnn': SimpleRNNCell,
-    'gru': GRUCell,
-    'lstm': LSTMCell
+    # 'rnn': SimpleRNNCell,
+    # 'gru': GRUCell,
+    # 'lstm': LSTMCell
 }
 
 PAD_TOKEN = 0

@@ -17,10 +17,10 @@
 import logging
 from typing import List
 
-import tensorflow as tf
-from tensorflow.keras.layers import LayerNormalization
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import concatenate
+# import tensorflow as tf
+# from tensorflow.keras.layers import LayerNormalization
+# from tensorflow.keras.layers import Dense
+# from tensorflow.keras.layers import concatenate
 
 import torch
 from torch.nn import Module
@@ -355,7 +355,7 @@ class SequenceCombiner(LudwigModule):
         return return_data
 
 
-class TabNetCombiner(tf.keras.Model):
+class TabNetCombiner(Module):
     def __init__(
             self,
             size: int,  # N_a in the paper
@@ -441,7 +441,7 @@ class TabNetCombiner(tf.keras.Model):
         return return_data
 
 
-class TransformerCombiner(tf.keras.Model):
+class TransformerCombiner(Module):
     def __init__(
             self,
             input_features=None,
@@ -561,7 +561,7 @@ class TransformerCombiner(tf.keras.Model):
         return return_data
 
 
-class TabTransformerCombiner(tf.keras.Model):
+class TabTransformerCombiner(Module):
     def __init__(
             self,
             input_features=None,
@@ -745,7 +745,7 @@ class TabTransformerCombiner(tf.keras.Model):
         return return_data
 
 
-class ComparatorCombiner(tf.keras.Model):
+class ComparatorCombiner(Module):
     def __init__(
             self,
             entity_1: List[str],

@@ -22,7 +22,7 @@ import multiprocessing
 import warnings
 import zipfile
 
-import tensorflow as tf
+# import tensorflow as tf
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 
 _TF_INIT_PARAMS = None
@@ -55,63 +55,64 @@ def initialize_tensorflow(gpus=None,
                           gpu_memory_limit=None,
                           allow_parallel_threads=True,
                           horovod=None):
-    use_horovod = horovod is not None
-    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
-    if _TF_INIT_PARAMS is not None:
-        if _TF_INIT_PARAMS != param_tuple:
-            warnings.warn(
-                'TensorFlow has already been initialized. Changes to `gpus`, '
-                '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
-                'Start a new Python process to modify these values.')
-        return
-
-    # For reproducivility / determinism, set parallel threads to 1.
-    # For performance, set to 0 to allow TensorFlow to select the best value automatically.
-    tf.config.threading.set_intra_op_parallelism_threads(
-        0 if allow_parallel_threads else 1)
-    tf.config.threading.set_inter_op_parallelism_threads(
-        0 if allow_parallel_threads else 1)
-
-    gpu_devices = tf.config.list_physical_devices('GPU')
-    if horovod is not None and gpus is None:
-        if 0 < len(gpu_devices) < horovod.local_size():
-            warnings.warn(
-                f'Horovod: disabling GPU support! This host is running with '
-                f'{horovod.local_size()} worker processes but only {len(gpu_devices)} '
-                f'GPUs. To enable GPU training, reduce the number of worker processes '
-                f'on this host to match the number of GPUs.')
-            gpus = [-1]
-        else:
-            gpus = [horovod.local_rank()]
-
-    if isinstance(gpus, int):
-        gpus = [gpus]
-    elif isinstance(gpus, str):
-        gpus = gpus.strip()
-        gpus = [int(g) for g in gpus.split(",")]
-
-    if gpus and len(gpus) == 1 and gpus[0] == -1:
-        # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
-        tf.config.set_visible_devices([], 'GPU')
-    else:
-        # Allow memory growth and set memory limit. Regardless of whether we do this
-        # before or after setting visible devices, TensorFlow will allocate a small
-        # amount of memory per device.
-        for gpu in gpu_devices:
-            tf.config.experimental.set_memory_growth(gpu, True)
-            if gpu_memory_limit is not None:
-                tf.config.set_logical_device_configuration(
-                    gpu,
-                    [tf.config.LogicalDeviceConfiguration(
-                        memory_limit=gpu_memory_limit)])
-
-        # Set visible devices so GPU utilization is isolated
-        # (no GPU contention between workers).
-        if gpus and gpu_devices:
-            local_devices = [gpu_devices[g] for g in gpus]
-            tf.config.set_visible_devices(local_devices, 'GPU')
-
-    _set_tf_init_params(param_tuple)
+    pass
+    # use_horovod = horovod is not None
+    # param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
+    # if _TF_INIT_PARAMS is not None:
+    #     if _TF_INIT_PARAMS != param_tuple:
+    #         warnings.warn(
+    #             'TensorFlow has already been initialized. Changes to `gpus`, '
+    #             '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
+    #             'Start a new Python process to modify these values.')
+    #     return
+    #
+    # # For reproducivility / determinism, set parallel threads to 1.
+    # # For performance, set to 0 to allow TensorFlow to select the best value automatically.
+    # tf.config.threading.set_intra_op_parallelism_threads(
+    #     0 if allow_parallel_threads else 1)
+    # tf.config.threading.set_inter_op_parallelism_threads(
+    #     0 if allow_parallel_threads else 1)
+    #
+    # gpu_devices = tf.config.list_physical_devices('GPU')
+    # if horovod is not None and gpus is None:
+    #     if 0 < len(gpu_devices) < horovod.local_size():
+    #         warnings.warn(
+    #             f'Horovod: disabling GPU support! This host is running with '
+    #             f'{horovod.local_size()} worker processes but only {len(gpu_devices)} '
+    #             f'GPUs. To enable GPU training, reduce the number of worker processes '
+    #             f'on this host to match the number of GPUs.')
+    #         gpus = [-1]
+    #     else:
+    #         gpus = [horovod.local_rank()]
+    #
+    # if isinstance(gpus, int):
+    #     gpus = [gpus]
+    # elif isinstance(gpus, str):
+    #     gpus = gpus.strip()
+    #     gpus = [int(g) for g in gpus.split(",")]
+    #
+    # if gpus and len(gpus) == 1 and gpus[0] == -1:
+    #     # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
+    #     tf.config.set_visible_devices([], 'GPU')
+    # else:
+    #     # Allow memory growth and set memory limit. Regardless of whether we do this
+    #     # before or after setting visible devices, TensorFlow will allocate a small
+    #     # amount of memory per device.
+    #     for gpu in gpu_devices:
+    #         tf.config.experimental.set_memory_growth(gpu, True)
+    #         if gpu_memory_limit is not None:
+    #             tf.config.set_logical_device_configuration(
+    #                 gpu,
+    #                 [tf.config.LogicalDeviceConfiguration(
+    #                     memory_limit=gpu_memory_limit)])
+    #
+    #     # Set visible devices so GPU utilization is isolated
+    #     # (no GPU contention between workers).
+    #     if gpus and gpu_devices:
+    #         local_devices = [gpu_devices[g] for g in gpus]
+    #         tf.config.set_visible_devices(local_devices, 'GPU')
+    #
+    # _set_tf_init_params(param_tuple)
 
 
 def _set_tf_init_params(params):

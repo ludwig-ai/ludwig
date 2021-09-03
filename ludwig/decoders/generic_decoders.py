@@ -17,16 +17,11 @@
 import logging
 from functools import partial
 
-import tensorflow as tf
-from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Layer
-
 import torch
-from torch.nn import Linear
-from ludwig.utils.torch_utils import LudwigModule
 
-from ludwig.utils.torch_utils import (LudwigModule, initializers, activations, reg_loss)
+from ludwig.decoders.base import Decoder
+
+from ludwig.utils.torch_utils import Dense, get_activation
 
 from ludwig.constants import LOSS, TYPE
 
@@ -34,17 +29,14 @@ from ludwig.constants import LOSS, TYPE
 logger = logging.getLogger(__name__)
 
 
-class Regressor(LudwigModule):
+class Regressor(Decoder):
 
     def __init__(
             self,
             input_size,
             use_bias=True,
-            #kernel_initializer='glorot_uniform',
-            #bias_initializer='zeros',
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            #kernel_regularizer=None,
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
@@ -52,63 +44,38 @@ class Regressor(LudwigModule):
             **kwargs
     ):
         super().__init__()
-        self.name = "Regressor"
         logger.debug(' {}'.format(self.name))
 
-        #logger.debug('  Dense')
-        logger.debug('  Linear')
+        logger.debug('  Dense')
 
-        '''
         self.dense = Dense(
-            1,
+            input_size=input_size,
+            output_size=1,
             use_bias=use_bias,
-            kernel_initializer=kernel_initializer,
+            weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            kernel_regularizer=kernel_regularizer,
+            weights_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            activation=activation
         )
-        '''
-        self.dense = Linear(
-                in_features=input_size,
-                out_features=1,
-                bias=use_bias
-        )
-        weights_initializer = initializers[weights_initializer]
-        weights_initializer(self.dense.weight)
-
-        bias_initializer = initializers[bias_initializer]
-        bias_initializer(self.dense.bias)
-
-        if weights_regularizer:
-            self.add_loss(lambda: reg_loss(fc.weight, weights_regularizer))
-        if bias_regularizer:
-            self.add_loss(lambda: reg_loss(fc.bias, bias_regularizer))
-        if activity_regularizer:
-            # Handle in forward call
-            self.add_loss(lambda: self.activation_loss)
-
-        self.activity_regularizer = activity_regularizer
 
     def forward(self, inputs, **kwargs):
-        batch_size = inputs.shape[0]
-        output = torch.squeeze(self.dense(inputs), axis=-1)
-        if self.activity_regularizer:
-            self.activation_loss = reg_loss(output, self.activity_regularizer)/batch_size
+        return self.dense(inputs)
 
-        return output
+    @classmethod
+    def register(cls, name):
+        pass
 
 
-class Projector(Layer):
+class Projector(Decoder):
 
     def __init__(
             self,
-            vector_size,
+            input_size,
             use_bias=True,
-            kernel_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            kernel_regularizer=None,
+            weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
             activation=None,
@@ -120,23 +87,23 @@ class Projector(Layer):
 
         logger.debug('  Dense')
         self.dense = Dense(
-            vector_size,
+            input_size=input_size,
             use_bias=use_bias,
-            kernel_initializer=kernel_initializer,
+            weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            kernel_regularizer=kernel_regularizer,
+            weights_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            activity_regularizer=activity_regularizer,
         )
 
-        self.activation = Activation(activation)
+        self.activation = get_activation(activation)
 
         if clip is not None:
             if isinstance(clip, (list, tuple)) and len(clip) == 2:
                 self.clip = partial(
-                    tf.clip_by_value,
-                    clip_value_min=clip[0],
-                    clip_value_max=clip[1]
+                    torch.clip,
+                    min=clip[0],
+                    max=clip[1]
                 )
             else:
                 raise ValueError(
@@ -149,20 +116,25 @@ class Projector(Layer):
         else:
             self.clip = None
 
-    def call(self, inputs, **kwargs):
+    def forward(self, inputs, **kwargs):
         values = self.activation(self.dense(inputs))
         if self.clip:
             values = self.clip(values)
         return values
 
+    @classmethod
+    def register(cls, name):
+        pass
 
-class Classifier(Layer):
+
+class Classifier(Decoder):
 
     def __init__(
             self,
+            input_size,
             num_classes,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -174,13 +146,14 @@ class Classifier(Layer):
 
         logger.debug('  Dense')
         self.dense = Dense(
-            num_classes,
+            input_size=input_size,
+            output_size=num_classes,
             use_bias=use_bias,
-            kernel_initializer=weights_initializer,
+            weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
+            weights_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            activity_regularizer=activity_regularizer,
         )
 
         self.sampled_loss = False
@@ -192,14 +165,18 @@ class Classifier(Layer):
         # otherwise the weights of the Dense layer would not be initialized
         self.first_call = True
 
-    def call(self, inputs, training=None, **kwargs):
+    def forward(self, inputs, training=True, **kwargs):
         if training and self.sampled_loss and not self.first_call:
             # this is needed because at training time is the loss is sampled
             # we should not compute the last dense projection,
-            # otherwise we defet the purpose of the samples loss
+            # otherwise we defeat the purpose of the samples loss
             # which is not to compute the full final projection
             # returning empty tensor to pass graph execution validation test
-            return tf.zeros(0)
+            return torch.zeros(0)
         else:
             self.first_call = False
             return self.dense(inputs)
+
+    @classmethod
+    def register(cls, name):
+        pass

@@ -13,14 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
-    Conv2D, GlobalAveragePooling1D
+# import tensorflow as tf
+# from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
+#     Conv2D, GlobalAveragePooling1D
+from torch.nn import Module
 
 from ludwig.modules.activation_modules import gelu
 
 
-class MLP(Layer):
+class MLP(Module):
     def __init__(self, hidden_size, dropout=0.0):
         super().__init__()
         self.hidden_size = hidden_size
@@ -37,7 +38,7 @@ class MLP(Layer):
         return self.dropout2(self.dense2(hidden))
 
 
-class MixerBlock(Layer):
+class MixerBlock(Module):
     def __init__(self, token_dim, channel_dim, dropout=0.0):
         super().__init__()
         self.mlp1 = MLP(token_dim, dropout)
@@ -57,7 +58,7 @@ class MixerBlock(Layer):
         return hidden + mid
 
 
-class MLPMixer(Layer):
+class MLPMixer(Module):
     """MLPMixer
 
     Implements

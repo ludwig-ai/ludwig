@@ -15,22 +15,23 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
-import tensorflow as tf
+import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
 from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+# from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+# from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+# from ludwig.modules.metric_modules import CategoryAccuracy
+# from ludwig.modules.metric_modules import HitsAtKMetric
+# from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
+#     SampledSoftmaxCrossEntropyMetric
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.modules.metric_modules import CategoryAccuracy
-from ludwig.modules.metric_modules import HitsAtKMetric
-from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
-    SampledSoftmaxCrossEntropyMetric
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -118,14 +119,14 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
-               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+    def forward(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
+               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
         assert len(inputs.shape) == 1
 
-        if inputs.dtype == tf.int8 or inputs.dtype == tf.int16:
-            inputs = tf.cast(inputs, tf.int32)
+        if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
+            inputs = inputs.type(torch.IntTensor)
         encoder_output = self.encoder_obj(
             inputs, training=training, mask=mask
         )
@@ -134,10 +135,13 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
     @classmethod
     def get_input_dtype(cls):
-        return tf.int32
+        return torch.int32
 
     def get_input_shape(self):
-        return ()
+        return 1
+
+    def get_output_shape(self):
+        return self.encoder_obj.get_output_shape(self.get_input_shape())
 
     @staticmethod
     def update_config_with_metadata(
@@ -192,17 +196,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     ):
         logits = inputs[LOGITS]
 
-        probabilities = tf.nn.softmax(
-            logits,
-            name='probabilities_{}'.format(self.feature_name)
-        )
-
-        predictions = tf.argmax(
-            logits,
-            -1,
-            name='predictions_{}'.format(self.feature_name)
-        )
-        predictions = tf.cast(predictions, dtype=tf.int64)
+        probabilities = torch.softmax(logits, -1)
+        predictions = torch.argmax(logits, -1)
+        predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
         # predictions: [batch_size]
@@ -219,27 +215,21 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             PREDICTIONS, PROBABILITIES, LOGITS
         }
 
+    def get_input_shape(self):
+        return self.input_size
+
     @classmethod
     def get_output_dtype(cls):
-        return tf.int64
+        return torch.int64
 
     def get_output_shape(self):
-        return ()
+        return 1
 
     def _setup_loss(self):
         if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SoftmaxCrossEntropyLoss(
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            self.train_loss_function = SoftmaxCrossEntropyLoss()
         elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
-                decoder_obj=self.decoder_obj,
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            self.train_loss_function = SampledSoftmaxCrossEntropyLoss()
         else:
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
@@ -247,26 +237,14 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
-        self.eval_loss_function = SoftmaxCrossEntropyLoss(
-            num_classes=self.num_classes,
-            feature_loss=self.loss,
-            name='eval_loss')
+        self.eval_loss_function = SoftmaxCrossEntropyLoss()
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         # softmax_cross_entropy loss metric
-        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric(
-            num_classes=self.num_classes,
-            feature_loss=self.loss,
-            name='eval_loss'
-        )
-        self.metric_functions[ACCURACY] = CategoryAccuracy(
-            name='metric_accuracy'
-        )
-        self.metric_functions[HITS_AT_K] = HitsAtKMetric(
-            k=self.top_k,
-            name='metric_top_k_hits'
-        )
+        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric()
+        self.metric_functions[ACCURACY] = CategoryAccuracy()
+        self.metric_functions[HITS_AT_K] = HitsAtKMetric(top_k=self.top_k)
 
     @staticmethod
     def update_config_with_metadata(

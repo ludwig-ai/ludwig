@@ -211,7 +211,7 @@ class Predictor(BasePredictor):
             '''
             for key, pred_value_list in predictions.items():
                 #predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
-                predictions[key] = torch.cat(pred_value_list, dim=0).numpy()
+                predictions[key] = torch.cat(pred_value_list, dim=0).detach().numpy()
 
         metrics = model.get_metrics()
         metrics = self.merge_workers_metrics(metrics)
