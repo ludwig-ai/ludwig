@@ -66,7 +66,7 @@ class Conv1DLayer(Module):
         self.kernel_size = kernel_size
         self.stride = strides
         if padding == 'same' and kernel_size is not None:
-            self.padding = np.int(np.floor((self.kernel_size - 1) / 2.0))
+            self.padding = (self.kernel_size - 1) // 2
         else:
             self.padding = 0
         self.dilation = dilation
@@ -77,7 +77,7 @@ class Conv1DLayer(Module):
         else:
             self.pool_strides = pool_strides
         if pool_padding == 'same' and pool_size is not None:
-            self.pool_padding = np.int(np.floor((self.pool_size - 1) / 2.0))
+            self.pool_padding = (self.pool_size - 1) // 2
         else:
             self.pool_padding = 0
 
@@ -261,14 +261,13 @@ class Conv1DStack(Module):
 
         self.stack = []
 
-
-        num_channels = in_channels
-        L_in = max_sequence_length
+        prior_layer_channels = in_channels
+        l_in = max_sequence_length  # torch L_in
         for i, layer in enumerate(self.layers):
             logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv1DLayer(
-                    in_channels=num_channels,
+                    in_channels=prior_layer_channels,
                     out_channels=layer['num_filters'],
                     kernel_size=layer['filter_size'],
                     strides=layer['strides'],
@@ -293,12 +292,14 @@ class Conv1DStack(Module):
                 )
             )
 
+            # todo: discuss whether l_in should be an attribute variable
             # retrieve number of channels from prior layer
-            input_shape = num_channels, L_in
+            input_shape = prior_layer_channels, l_in
             output_shape = self.stack[i].get_output_shape(input_shape)
             # todo: convert print to logger.debug() call after testing
             print(f'input_shape {input_shape}, output shape {output_shape}')
-            num_channels, L_in = output_shape
+            # pass along shape for the input to the next layer
+            prior_layer_channels, l_in = output_shape
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
