@@ -169,7 +169,7 @@ class FeatureBlock(LudwigModule):
             bn_momentum: float = 0.9,
             bn_epsilon: float = 1e-3,
             bn_virtual_bs: int = None,
-            shared_fc_layer: Module = None,
+            shared_fc_layer: LudwigModule = None,
     ):
         super().__init__()
         self.apply_glu = apply_glu
@@ -240,7 +240,7 @@ class FeatureTransformer(LudwigModule):
     def __init__(
             self,
             size: int,
-            shared_fc_layers: List[Module] = [],
+            shared_fc_layers: List[LudwigModule] = [],
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             bn_momentum: float = 0.9,
