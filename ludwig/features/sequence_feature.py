@@ -171,11 +171,14 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return torch.int32
 
-    def get_input_shape(self):
-        return None,
+    @property
+    def input_shape(self):
+        return self.max_sequence_length,
 
-    def get_output_shape(self):
-        return self.max_sequence_length
+    @property
+    def output_shape(self) -> torch.Size:
+        """ Returns the size of the output tensor without the batch dimension."""
+        return torch.Size([self.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(
