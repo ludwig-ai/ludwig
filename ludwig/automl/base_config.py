@@ -21,7 +21,7 @@ from typing import List, Union
 import pandas as pd
 
 from ludwig.automl.data_source import DataSource, DataframeSource
-from ludwig.automl.utils import (FieldInfo, get_available_resources, _ray_init)
+from ludwig.automl.utils import (FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
 from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
 from ludwig.utils.data_utils import load_yaml, load_dataset
 
@@ -197,13 +197,13 @@ def get_features_config(
     return get_config_from_metadata(metadata, target_name)
 
 
-def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
+def get_config_from_metadata(metadata: List[FieldMetadata], target_name: str = None) -> dict:
     """
     Builds input/output feature sections of auto-train config using field
     metadata
 
     # Inputs
-    :param metadata: (List[dict]) field descriptions
+    :param metadata: (List[FieldMetadata]) field descriptions
     :param target_name (str) name of target feature
 
     # Return
@@ -215,17 +215,17 @@ def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
     }
 
     for field_meta in metadata:
-        if field_meta["name"] == target_name:
-            config["output_features"].append(field_meta[CONFIG])
-        elif not field_meta["excluded"] and field_meta["mode"] == "input":
-            config["input_features"].append(field_meta[CONFIG])
+        if field_meta.name == target_name:
+            config["output_features"].append(field_meta.config.to_dict())
+        elif not field_meta.excluded and field_meta.mode == "input":
+            config["input_features"].append(field_meta.config.to_dict())
 
     return config
 
 
 def get_field_metadata(
     fields: List[FieldInfo], row_count: int, resources: dict, target_name: str = None
-) -> list:
+) -> List[FieldMetadata]:
     """
     Computes metadata for each field in dataset
 
@@ -235,7 +235,7 @@ def get_field_metadata(
     :param target_name (str) name of target feature
 
     # Return
-    :return: (List) List of dictionaries containing metadata for each field
+    :return: (List[FieldMetadata]) list of objects containing metadata for each field
     """
 
     metadata = []
@@ -243,25 +243,25 @@ def get_field_metadata(
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
         dtype = infer_type(field)
         metadata.append(
-            {
-                "name": field.name,
-                "config": {
-                    "name": field.name,
-                    "column": field.name,
-                    "type": dtype,
-                },
-                "excluded": should_exclude(idx, field, dtype, row_count, target_name),
-                "mode": infer_mode(field, target_name),
-                "missing_values": missing_value_percent,
-            }
+            FieldMetadata(
+                name=field.name,
+                config=FieldConfig(
+                    name=field.name,
+                    column=field.name,
+                    type=dtype,
+                ),
+                excluded=should_exclude(idx, field, dtype, row_count, target_name),
+                mode=infer_mode(field, target_name),
+                missing_values=missing_value_percent,
+            )
         )
 
     # Count of number of initial non-text input features in the config, -1 for output
     input_count = (
         sum(
-            not meta["excluded"]
-            and meta["mode"] == "input"
-            and meta[CONFIG][TYPE] != TEXT
+            not meta.excluded
+            and meta.mode == "input"
+            and meta.config.type != TEXT
             for meta in metadata
         )
         - 1
@@ -270,9 +270,9 @@ def get_field_metadata(
     # Exclude text fields if no GPUs are available
     if resources['gpu'] == 0:
         for meta in metadata:
-            if input_count > 2 and meta[CONFIG][TYPE] == TEXT:
+            if input_count > 2 and meta.config.type == TEXT:
                 # By default, exclude text inputs when there are other candidate inputs
-                meta["excluded"] = True
+                meta.excluded = True
 
     return metadata
 
