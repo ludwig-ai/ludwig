@@ -144,8 +144,8 @@ def test_sequence_encoders(
                             input_feature_name].encoder_obj.conv_layers)
                 hidden_size = input_features[0][
                                   'state_size'] * number_parallel_cnn_layers
-                assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, seq_size, hidden_size]
+                assert encoder_out['encoder_output'].shape == \
+                       (batch_size, seq_size, hidden_size)
 
             elif enc_encoder == 'stacked_parallel_cnn':
                 number_parallel_cnn_layers = \
@@ -155,7 +155,7 @@ def test_sequence_encoders(
                 hidden_size = input_features[0][
                                   'state_size'] * number_parallel_cnn_layers
                 assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, seq_size, hidden_size]
+                       (batch_size, seq_size, hidden_size)
 
             elif enc_encoder == 'rnn':
                 assert encoder_out['encoder_output'].shape == \

@@ -353,6 +353,8 @@ class ParallelConv1D(LudwigModule):
 
     def __init__(
             self,
+            in_channels=1,
+            max_sequence_length=None,
             layers=None,
             default_num_filters=256,
             default_filter_size=3,
@@ -378,6 +380,9 @@ class ParallelConv1D(LudwigModule):
             **kwargs
     ):
         super().__init__()
+
+        self.in_channels = in_channels
+        self.max_sequence_length = max_sequence_length
 
         if layers is None:
             self.layers = [
@@ -439,11 +444,13 @@ class ParallelConv1D(LudwigModule):
             logger.debug('   parallel layer {}'.format(i))
             self.parallel_layers.append(
                 Conv1DLayer(
-                    num_filters=layer['num_filters'],
-                    filter_size=layer['filter_size'],
+                    in_channels=self.in_channels,
+                    out_channels=layer['num_filters'],
+                    sequence_size=self.max_sequence_length,
+                    kernel_size=layer['filter_size'],
                     strides=layer['strides'],
                     padding=layer['padding'],
-                    dilation_rate=layer['dilation_rate'],
+                    dilation=layer['dilation_rate'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
@@ -463,15 +470,15 @@ class ParallelConv1D(LudwigModule):
                 )
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
         hiddens = []
 
         for layer in self.parallel_layers:
             hiddens.append(layer(hidden, training=training))
-        hidden = tf.concat(hiddens, 2)
+        hidden = torch.cat(hiddens, 1)
 
-        if hidden.shape[1] == 0:
+        if hidden.shape[2] == 0:
             raise ValueError(
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '

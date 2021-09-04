@@ -245,6 +245,7 @@ class ParallelCNN(SequenceEncoder):
             vocab=None,
             representation='dense',
             embedding_size=256,
+            max_sequence_length=None,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
@@ -258,7 +259,7 @@ class ParallelCNN(SequenceEncoder):
             num_fc_layers=None,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -271,6 +272,7 @@ class ParallelCNN(SequenceEncoder):
             dropout=0,
             reduce_output='max',
             **kwargs):
+        # todo: revise docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -470,6 +472,8 @@ class ParallelCNN(SequenceEncoder):
 
         logger.debug('  ParallelConv1D')
         self.parallel_conv1d = ParallelConv1D(
+            in_channels=embedding_size,
+            max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
@@ -510,7 +514,7 @@ class ParallelCNN(SequenceEncoder):
                 default_dropout=dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int
@@ -531,12 +535,18 @@ class ParallelCNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
+        # swap dimensions for Torch compatibility
+        # [batch_size, embedding_size, seq_size]
+        hidden = hidden.transpose(1, 2)
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d(
             hidden,
             training=training,
             mask=mask
         )
+
+        # put back to [batch_size, seq_size, hidden]
+        hidden = hidden.transpose(1, 2)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1223,7 +1233,8 @@ class StackedParallelCNN(SequenceEncoder):
                 default_dropout=dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
+        # todo: fixup docstring
         """
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
@@ -1841,11 +1852,6 @@ class StackedCNNRNN(SequenceEncoder):
                 default_dropout=fc_dropout,
             )
 
-    # todo: clean up code
-    # @property
-    # def output_shape(self):
-    #     # todo: finish implementation
-    #     return ()
 
     def forward(self, inputs, training=None, mask=None):
         """
