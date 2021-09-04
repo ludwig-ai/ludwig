@@ -150,7 +150,8 @@ class ConcatCombiner(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        shapes = [self.input_features[k].output_shape for k in self.input_features] #output shape not input shape
+        shapes = [self.input_features[k].output_shape[-1] for k in
+                  self.input_features]  # output shape not input shape
         return torch.Size([sum(shapes)])
 
     @property
