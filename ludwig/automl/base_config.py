@@ -241,7 +241,7 @@ def get_field_metadata(
     metadata = []
     for idx, field in enumerate(fields):
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
-        dtype = infer_type(field, missing_value_percent, target_name)
+        dtype = infer_type(field)
         metadata.append(
             {
                 "name": field.name,
@@ -278,23 +278,19 @@ def get_field_metadata(
 
 
 def infer_type(
-    field: FieldInfo, missing_value_percent: float, target_name: str = None
+    field: FieldInfo
 ) -> str:
     """
     Perform type inference on field
 
     # Inputs
-    :param dataset: (FieldInfo) object describing field
-    :param missing_value_percent: (int) percentage of missing values
-    :param target_name (str) name of target feature
+    :param field: (FieldInfo) object describing field
 
     # Return
     :return: (str) feature type
     """
     distinct_values = field.distinct_values
-    if distinct_values == 2 and (
-        missing_value_percent == 0 or field.name == target_name
-    ):
+    if distinct_values == 2:
         return BINARY
 
     if field.image_values >= 3:
