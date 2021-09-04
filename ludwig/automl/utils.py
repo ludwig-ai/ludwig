@@ -29,6 +29,24 @@ class FieldInfo:
     avg_words: int = None
 
 
+@dataclass_json(letter_case=LetterCase.CAMEL)
+@dataclass
+class FieldConfig:
+    name: str
+    column: str
+    type: str
+
+
+@dataclass_json(letter_case=LetterCase.CAMEL)
+@dataclass
+class FieldMetadata:
+    name: str
+    config: FieldConfig
+    excluded: bool
+    mode: str
+    missing_values: float
+
+
 def avg_num_tokens(field: Series) -> int:
     # sample a subset if dataframe is large
     if len(field) > 5000:
