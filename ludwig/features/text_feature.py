@@ -350,7 +350,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length, ])
+        return torch.Size([self.max_sequence_length])
 
     def overall_statistics_metadata(self):
         return {'level': self.level}

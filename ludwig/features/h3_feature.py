@@ -120,7 +120,7 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([H3_VECTOR_LENGTH, ])
+        return torch.Size([H3_VECTOR_LENGTH])
 
     @staticmethod
     def update_config_with_metadata(

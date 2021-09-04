@@ -148,7 +148,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size, ])
+        return torch.Size([self.vector_size])
 
     @staticmethod
     def update_config_with_metadata(
@@ -250,7 +250,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size, ])
+        return torch.Size([self.vector_size])
 
     @staticmethod
     def update_config_with_metadata(

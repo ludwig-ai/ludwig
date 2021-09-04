@@ -66,7 +66,7 @@ class TabNet(LudwigModule):
         self.feature_transforms: List[FeatureTransformer] = [
             FeatureTransformer(**kargs)
         ]
-        self.attentive_transforms: List[AttentiveTransformer] = [None, ]
+        self.attentive_transforms: List[AttentiveTransformer] = [None]
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(

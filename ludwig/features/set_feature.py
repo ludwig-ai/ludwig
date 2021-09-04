@@ -139,7 +139,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.vocab), ])
+        return torch.Size([len(self.vocab)])
 
     @staticmethod
     def update_config_with_metadata(
@@ -235,7 +235,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.num_classes, ])
+        return torch.Size([self.num_classes])
 
     @staticmethod
     def update_config_with_metadata(
