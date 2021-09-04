@@ -17,6 +17,8 @@
 import logging
 from abc import ABC
 
+import torch
+
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.modules.embedding_modules import Embed
@@ -80,8 +82,9 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
         )
         return embedded
 
-    def get_output_shape(self, input_shape):
-        return self.embedding_size
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])
 
 
 @register(name='sparse')
@@ -128,5 +131,6 @@ class CategoricalSparseEncoder(CategoricalEncoder):
         )
         return embedded
 
-    def get_output_shape(self, input_shape):
-        return self.embedding_size
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])

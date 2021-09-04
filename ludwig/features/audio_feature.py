@@ -447,8 +447,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     def get_input_dtype(cls):
         return torch.float32
 
-    def get_input_shape(self):
-        return self.max_sequence_length, self.embedding_size
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length, self.embedding_size])
 
     @staticmethod
     def update_config_with_metadata(

@@ -16,7 +16,6 @@
 # ==============================================================================
 
 import numpy as np
-
 import torch
 
 from ludwig.constants import *
@@ -312,8 +311,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def get_input_shape(self):
         return ()
 
-    def get_output_shape(self):
-        return self.max_sequence_length,
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(

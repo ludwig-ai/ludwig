@@ -17,6 +17,7 @@
 import logging
 
 import numpy as np
+import torch
 # import tensorflow as tf
 
 from ludwig.constants import *
@@ -173,8 +174,9 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     def get_input_dtype(cls):
         return tf.float32
 
-    def get_input_shape(self):
-        return self.max_sequence_length,
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(

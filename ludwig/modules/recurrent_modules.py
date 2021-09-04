@@ -22,6 +22,7 @@ import collections
 # from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
 from torch.nn import Module, ModuleList
 from torch.nn import RNN, GRU, LSTM
+from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -34,7 +35,7 @@ rnn_layers_registry = {
 }
 
 
-class RecurrentStack(Module):
+class RecurrentStack(LudwigModule):
     def __init__(
             self,
             input_size=None,

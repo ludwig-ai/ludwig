@@ -1,10 +1,10 @@
 # import tensorflow as tf
-from torch.nn import Module
+from ludwig.utils.torch_utils import LudwigModule
 
 # from tensorflow.keras.layers import BatchNormalization
 
 
-class GhostBatchNormalization(Module):
+class GhostBatchNormalization(LudwigModule):
     def __init__(
             self,
             momentum: float = 0.9,
