@@ -25,7 +25,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 #from ludwig.utils.tf_utils import sequence_length_3D
-from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigComponent
+from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigModule
 
 import numpy as np
 
@@ -72,7 +72,7 @@ class BaseFeature:
                     setattr(self, k, feature[k])
 
 
-class InputFeature(BaseFeature, LudwigComponent, ABC):
+class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 
     def __init__(self, *args, **kwargs):
@@ -115,7 +115,7 @@ class InputFeature(BaseFeature, LudwigComponent, ABC):
         )
 
 
-class OutputFeature(BaseFeature, LudwigComponent, ABC):
+class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
     #train_loss_function = None

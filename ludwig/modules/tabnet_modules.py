@@ -5,10 +5,10 @@ import torch
 
 from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
-from ludwig.utils.torch_utils import LudwigComponent
+from ludwig.utils.torch_utils import LudwigModule
 
 
-class TabNet(LudwigComponent):
+class TabNet(LudwigModule):
     def __init__(
             self,
             size: int,
@@ -161,7 +161,7 @@ class TabNet(LudwigComponent):
         return final_output, aggregated_mask, masks
 
 
-class FeatureBlock(LudwigComponent):
+class FeatureBlock(LudwigModule):
     def __init__(
             self,
             size: int,
@@ -195,7 +195,7 @@ class FeatureBlock(LudwigComponent):
         return hidden
 
 
-class AttentiveTransformer(LudwigComponent):
+class AttentiveTransformer(LudwigModule):
     def __init__(
             self,
             size: int,
@@ -236,7 +236,7 @@ class AttentiveTransformer(LudwigComponent):
 
 
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
-class FeatureTransformer(LudwigComponent):
+class FeatureTransformer(LudwigModule):
     def __init__(
             self,
             size: int,
@@ -288,7 +288,7 @@ class FeatureTransformer(LudwigComponent):
 
 # reimplementation of sparsemax to be more stable and fallback to softmax
 # adapted from https://github.com/tensorflow/addons/blob/v0.12.0/tensorflow_addons/activations/sparsemax.py#L21-L77
-class CustomSparsemax(LudwigComponent):
+class CustomSparsemax(LudwigModule):
     """Sparsemax activation function.
 
     The output shape is the same as the input shape.

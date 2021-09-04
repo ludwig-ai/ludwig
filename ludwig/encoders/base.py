@@ -18,10 +18,10 @@
 from abc import ABC, abstractmethod
 
 from ludwig.utils.registry import DEFAULT_KEYS
-from ludwig.utils.torch_utils import LudwigComponent
+from ludwig.utils.torch_utils import LudwigModule
 
 
-class Encoder(LudwigComponent, ABC):
+class Encoder(LudwigModule, ABC):
     @abstractmethod
     def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError

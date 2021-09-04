@@ -26,7 +26,7 @@ from torch import nn
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
-from ludwig.utils.torch_utils import reg_loss, LudwigComponent
+from ludwig.utils.torch_utils import reg_loss, LudwigModule
 
 import torch
 from torch.nn import Module
@@ -155,7 +155,7 @@ def embedding_matrix_on_device(
     return embeddings, embedding_size
 
 
-class Embed(LudwigComponent):
+class Embed(LudwigModule):
     def __init__(
             self,
             vocab,
@@ -211,7 +211,7 @@ class Embed(LudwigComponent):
         return embedded
 
 
-class EmbedWeighted(LudwigComponent):
+class EmbedWeighted(LudwigModule):
     def __init__(
             self,
             vocab,
@@ -280,7 +280,7 @@ class EmbedWeighted(LudwigComponent):
         return embedded_reduced
 
 
-class EmbedSparse(LudwigComponent):
+class EmbedSparse(LudwigModule):
     def __init__(
             self,
             vocab,
@@ -344,7 +344,7 @@ class EmbedSparse(LudwigComponent):
         return embedded_reduced
 
 
-class EmbedSequence(LudwigComponent):
+class EmbedSequence(LudwigModule):
     def __init__(
             self,
             vocab,
@@ -400,7 +400,7 @@ class EmbedSequence(LudwigComponent):
         return embedded
 
 
-class TokenAndPositionEmbedding(LudwigComponent):
+class TokenAndPositionEmbedding(LudwigModule):
     def __init__(self,
                  max_length,
                  vocab,

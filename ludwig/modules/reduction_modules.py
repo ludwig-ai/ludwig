@@ -23,12 +23,12 @@ import torch
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
 #from ludwig.utils.tf_utils import sequence_length_3D
-from ludwig.utils.torch_utils import sequence_length_3D, LudwigComponent
+from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule
 
 logger = logging.getLogger(__name__)
 
 
-class SequenceReducer(LudwigComponent):
+class SequenceReducer(LudwigModule):
 
     def __init__(self, reduce_mode=None):
         super().__init__()
@@ -45,7 +45,7 @@ class SequenceReducer(LudwigComponent):
         return self._reduce_obj(inputs, training=training, mask=mask)
 
 
-class ReduceLast(LudwigComponent):
+class ReduceLast(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
         #batch_size = tf.shape(inputs)[0]
@@ -71,28 +71,28 @@ class ReduceLast(LudwigComponent):
         return gathered
 
 
-class ReduceSum(LudwigComponent):
+class ReduceSum(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
         #return tf.reduce_sum(inputs, axis=1)
         return torch.sum(inputs, dim=1)
 
 
-class ReduceMean(LudwigComponent):
+class ReduceMean(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
         #return tf.reduce_mean(inputs, axis=1)
         return torch.mean(inputs, dim=1)
 
 
-class ReduceMax(LudwigComponent):
+class ReduceMax(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
         #return tf.reduce_max(inputs, axis=1)
         return torch.max(inputs, dim=1)
 
 
-class ReduceConcat(LudwigComponent):
+class ReduceConcat(LudwigModule):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -127,7 +127,7 @@ class ReduceConcat(LudwigComponent):
 
 
 
-class ReduceNone(LudwigComponent):
+class ReduceNone(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
         return inputs

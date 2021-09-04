@@ -24,7 +24,7 @@ from typing import List
 
 import torch
 from torch.nn import Module
-from ludwig.utils.torch_utils import LudwigComponent
+from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
@@ -43,7 +43,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class ConcatCombiner(LudwigComponent):
+class ConcatCombiner(LudwigModule):
     def __init__(
             self,
             input_features=None,
@@ -161,7 +161,7 @@ class ConcatCombiner(LudwigComponent):
             return self.input_shape
 
 
-class SequenceConcatCombiner(LudwigComponent):
+class SequenceConcatCombiner(LudwigModule):
     def __init__(
             self,
             reduce_output=None,
@@ -300,7 +300,7 @@ class SequenceConcatCombiner(LudwigComponent):
         return return_data
 
 
-class SequenceCombiner(LudwigComponent):
+class SequenceCombiner(LudwigModule):
     def __init__(
             self,
             reduce_output=None,

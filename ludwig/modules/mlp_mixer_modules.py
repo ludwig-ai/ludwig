@@ -16,12 +16,12 @@
 # import tensorflow as tf
 # from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
 #     Conv2D, GlobalAveragePooling1D
-from ludwig.utils.torch_utils import LudwigComponent
+from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.modules.activation_modules import gelu
 
 
-class MLP(LudwigComponent):
+class MLP(LudwigModule):
     def __init__(self, hidden_size, dropout=0.0):
         super().__init__()
         self.hidden_size = hidden_size
@@ -38,7 +38,7 @@ class MLP(LudwigComponent):
         return self.dropout2(self.dense2(hidden))
 
 
-class MixerBlock(LudwigComponent):
+class MixerBlock(LudwigModule):
     def __init__(self, token_dim, channel_dim, dropout=0.0):
         super().__init__()
         self.mlp1 = MLP(token_dim, dropout)
@@ -58,7 +58,7 @@ class MixerBlock(LudwigComponent):
         return hidden + mid
 
 
-class MLPMixer(LudwigComponent):
+class MLPMixer(LudwigModule):
     """MLPMixer
 
     Implements

@@ -124,11 +124,6 @@ class LudwigModule(Module):
         if callable(loss):
             self._callable_losses.append(loss)
 
-
-class LudwigComponent(LudwigModule):
-    def __init__(self):
-        super().__init__()
-
     @property
     @abstractmethod
     def input_shape(self) -> torch.Size:

@@ -20,14 +20,14 @@ import logging
 
 from torch.nn import (Linear, LayerNorm, Dropout, ModuleList)
 
-from ludwig.utils.torch_utils import LudwigComponent, initializer_registry,\
+from ludwig.utils.torch_utils import LudwigModule, initializer_registry,\
     activations, reg_loss
 
 logger = logging.getLogger(__name__)
 
 
 
-class FCLayer(LudwigComponent):
+class FCLayer(LudwigModule):
 
     def __init__(
             self,
@@ -129,7 +129,7 @@ class FCLayer(LudwigComponent):
         return hidden
 
 
-class FCStack(LudwigComponent):
+class FCStack(LudwigModule):
 
     def __init__(
             self,
