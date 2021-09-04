@@ -239,7 +239,7 @@ def get_field_metadata(
     """
 
     metadata = []
-    for field in fields:
+    for idx, field in enumerate(fields):
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
         dtype = infer_type(field, missing_value_percent, target_name)
         metadata.append(
@@ -250,7 +250,7 @@ def get_field_metadata(
                     "column": field.name,
                     "type": dtype,
                 },
-                "excluded": should_exclude(field, row_count, target_name),
+                "excluded": should_exclude(idx, field, dtype, row_count, target_name),
                 "mode": infer_mode(field, target_name),
                 "missing_values": missing_value_percent,
             }
@@ -314,7 +314,7 @@ def infer_type(
     return NUMERICAL
 
 
-def should_exclude(field: FieldInfo, row_count: int, target_name: str) -> bool:
+def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, target_name: str) -> bool:
     if field.key == "PRI":
         return True
 
@@ -324,7 +324,7 @@ def should_exclude(field: FieldInfo, row_count: int, target_name: str) -> bool:
     distinct_value_percent = float(field.distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if upper_name == "ID" or upper_name.endswith("_ID"):
+        if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID"):
             return True
 
     return False
