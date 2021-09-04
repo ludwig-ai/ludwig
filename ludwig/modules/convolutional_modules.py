@@ -29,6 +29,7 @@ class Conv1DLayer(LudwigModule):
             self,
             in_channels=1,
             out_channels=256,
+            sequence_size=None,
             kernel_size=3,
             strides=1,
             padding='same',
@@ -55,6 +56,7 @@ class Conv1DLayer(LudwigModule):
 
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.sequence_size = sequence_size
         self.kernel_size = kernel_size
         self.stride = strides
         if padding == 'same' and kernel_size is not None:
@@ -128,21 +130,27 @@ class Conv1DLayer(LudwigModule):
         # for layer in self.layers:
         #     logger.debug('   {}'.format(layer.name))
 
-    def get_output_shape(self, input_shape):
+    @property
+    def input_shape(self):
+        """ Returns the size of the input tensor without the batch dimension. """
+        return (torch.Size([self.in_channels, self.sequence_size]))
+
+    @property
+    def output_shape(self):
         # input_shape ( C_in, L_in)
         # calculation based on formula at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html#torch.nn.Conv1d
-        L_in = input_shape[1]
+        L_in = self.input_shape[1]
         numerator = L_in + 2 * self.padding - self.dilation \
                     * (self.kernel_size - 1) - 1
-        L_out = np.floor((numerator / self.stride) + 1)
+        L_out = (numerator // self.stride) + 1
 
         if self.pool_size is not None:
             # last layer is pooling layer, adjust L_out
             numerator = L_out + 2 * self.pool_padding - self.dilation \
-                    * (self.pool_size - 1) - 1
-            L_out = np.floor((numerator / self.pool_strides) + 1)
+                        * (self.pool_size - 1) - 1
+            L_out = (numerator // self.pool_strides) + 1
 
-        return self.out_channels, np.int(L_out)
+        return torch.Size([self.out_channels, L_out])
 
 
     def forward(self, inputs, training=None, mask=None):
@@ -191,6 +199,8 @@ class Conv1DStack(LudwigModule):
             **kwargs
     ):
         super().__init__()
+
+        self.max_sequence_length = max_sequence_length
 
         if layers is None:
             if num_layers is None:
@@ -261,13 +271,14 @@ class Conv1DStack(LudwigModule):
         self.stack = []
 
         prior_layer_channels = in_channels
-        l_in = max_sequence_length  # torch L_in
+        l_in = self.max_sequence_length  # torch L_in
         for i, layer in enumerate(self.layers):
             logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv1DLayer(
                     in_channels=prior_layer_channels,
                     out_channels=layer['num_filters'],
+                    sequence_size=l_in,
                     kernel_size=layer['filter_size'],
                     strides=layer['strides'],
                     padding=layer['padding'],
@@ -293,8 +304,8 @@ class Conv1DStack(LudwigModule):
 
             # todo: discuss whether l_in should be an attribute variable
             # retrieve number of channels from prior layer
-            input_shape = prior_layer_channels, l_in
-            output_shape = self.stack[i].get_output_shape(input_shape)
+            input_shape = self.stack[i].input_shape
+            output_shape = self.stack[i].output_shape
             # todo: convert print to logger.debug() call after testing
             print(f'input_shape {input_shape}, output shape {output_shape}')
             # pass along shape for the input to the next layer
