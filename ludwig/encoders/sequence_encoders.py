@@ -17,6 +17,8 @@
 import logging
 from abc import ABC
 
+import torch
+
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register, register_default
 from ludwig.modules.attention_modules import TransformerStack
@@ -898,7 +900,7 @@ class StackedCNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
-        # shape at this point [batchs_size, seq_size, embedding_size]
+        # shape at this point [batch_size, seq_size, embedding_size]
         # swap seq_size axis and embedding_size axis to make compatible for Torch
         hidden = hidden.transpose(1, 2)
 
@@ -1465,11 +1467,13 @@ class StackedRNN(SequenceEncoder):
                 embedding_regularizer=weights_regularizer
             )
 
+
         logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
             input_size=embedding_size,
             hidden_size=state_size,
             cell_type=cell_type,
+            sequence_size=max_sequence_length,
             num_layers=num_layers,
             bidirectional=bidirectional,
             activation=activation,
@@ -1510,11 +1514,18 @@ class StackedRNN(SequenceEncoder):
                 default_dropout=fc_dropout,
             )
 
-    def get_output_shape(self, input_shape):
-        # assume input shape (seq_size,)
-        # todo: confirm how to handle when should_embed == False
-        # return (seq_size, hidden_size)
-        return input_shape[0], self.hidden_size
+    # todo: clean-up after done
+    # def get_output_shape(self, input_shape):
+    #     # assume input shape (seq_size,)
+    #     # todo: confirm how to handle when should_embed == False
+    #     # return (seq_size, hidden_size)
+    #     return input_shape[0], self.hidden_size
+
+    @property
+    def output_shape(self) -> torch.Size:
+        """ Returns the size of the output tensor without the batch dimension."""
+        output_tensor = self.forward(torch.rand(2, *self.input_shape))
+        return output_tensor.size()[1:]
 
     def forward(self, inputs, training=None, mask=None):
         """
@@ -1574,6 +1585,7 @@ class StackedCNNRNN(SequenceEncoder):
             self,
             should_embed=True,
             vocab=None,
+            max_sequence_length=None,
             representation='dense',
             embedding_size=256,
             embeddings_trainable=True,
@@ -1757,6 +1769,8 @@ class StackedCNNRNN(SequenceEncoder):
 
         logger.debug('  Conv1DStack')
         self.conv1d_stack = Conv1DStack(
+            in_channels=embedding_size,
+            max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
@@ -1783,7 +1797,9 @@ class StackedCNNRNN(SequenceEncoder):
 
         logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
-            state_size=state_size,
+            input_size=self.conv1d_stack.output_shape[0],
+            hidden_size=state_size,
+            sequence_size=self.conv1d_stack.output_shape[1],
             cell_type=cell_type,
             num_layers=num_rec_layers,
             bidirectional=bidirectional,
@@ -1825,9 +1841,11 @@ class StackedCNNRNN(SequenceEncoder):
                 default_dropout=fc_dropout,
             )
 
-    def get_output_shape(self, input_shape):
-        # todo: finish implementation
-        return ()
+    # todo: clean up code
+    # @property
+    # def output_shape(self):
+    #     # todo: finish implementation
+    #     return ()
 
     def forward(self, inputs, training=None, mask=None):
         """
@@ -1856,12 +1874,19 @@ class StackedCNNRNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
+        # shape at this point [batch_size, seq_size, embedding_size]
+        # swap seq_size axis and embedding_size axis to make compatible for Torch
+        hidden = hidden.transpose(1, 2)
+
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
             training=training,
             mask=mask
         )
+
+        # swap back dimensions
+        hidden = hidden.transpose(1, 2)
 
         # ================ Recurrent Layers ================
         hidden, final_state = self.recurrent_stack(

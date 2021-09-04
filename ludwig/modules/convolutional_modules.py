@@ -137,23 +137,29 @@ class Conv1DLayer(LudwigModule):
 
     @property
     def output_shape(self):
-        # input_shape ( C_in, L_in)
-        # calculation based on formula at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html#torch.nn.Conv1d
-        L_in = self.input_shape[1]
-        numerator = L_in + 2 * self.padding - self.dilation \
-                    * (self.kernel_size - 1) - 1
-        L_out = (numerator // self.stride) + 1
+        """ Returns the size of the output tensor without the batch dimension."""
+        output_tensor = self.forward(torch.rand(2, *self.input_shape))
+        return output_tensor.size()[1:]
 
-        if self.pool_size is not None:
-            # last layer is pooling layer, adjust L_out
-            numerator = L_out + 2 * self.pool_padding - self.dilation \
-                        * (self.pool_size - 1) - 1
-            L_out = (numerator // self.pool_strides) + 1
-
-        return torch.Size([self.out_channels, L_out])
+        # todo: closed form version...assessing
+        # # input_shape ( C_in, L_in)
+        # # calculation based on formula at https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html#torch.nn.Conv1d
+        # L_in = self.input_shape[1]
+        # numerator = L_in + 2 * self.padding - self.dilation \
+        #             * (self.kernel_size - 1) - 1
+        # L_out = (numerator // self.stride) + 1
+        #
+        # if self.pool_size is not None:
+        #     # last layer is pooling layer, adjust L_out
+        #     numerator = L_out + 2 * self.pool_padding - self.dilation \
+        #                 * (self.pool_size - 1) - 1
+        #     L_out = (numerator // self.pool_strides) + 1
+        #
+        # return torch.Size([self.out_channels, L_out])
 
 
     def forward(self, inputs, training=None, mask=None):
+        # inputs: [batch_size, sequ_size, hidden_size]
         hidden = inputs
 
         # todo: enumerate for debugging, remove after testing
@@ -201,6 +207,7 @@ class Conv1DStack(LudwigModule):
         super().__init__()
 
         self.max_sequence_length = max_sequence_length
+        self.in_channels = in_channels
 
         if layers is None:
             if num_layers is None:
@@ -302,7 +309,6 @@ class Conv1DStack(LudwigModule):
                 )
             )
 
-            # todo: discuss whether l_in should be an attribute variable
             # retrieve number of channels from prior layer
             input_shape = self.stack[i].input_shape
             output_shape = self.stack[i].output_shape
@@ -310,6 +316,17 @@ class Conv1DStack(LudwigModule):
             print(f'input_shape {input_shape}, output shape {output_shape}')
             # pass along shape for the input to the next layer
             prior_layer_channels, l_in = output_shape
+
+    @property
+    def input_shape(self):
+        """ Returns the size of the input tensor without the batch dimension. """
+        return (torch.Size([self.in_channels, self.max_sequence_length]))
+
+    @property
+    def output_shape(self):
+        """ Returns the size of the output tensor without the batch dimension."""
+        output_tensor = self.forward(torch.rand(2, *self.input_shape))
+        return output_tensor.size()[1:]
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs

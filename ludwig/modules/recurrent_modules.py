@@ -17,10 +17,7 @@ import inspect
 import logging
 import collections
 
-# import tensorflow as tf
-# import tensorflow_addons as tfa
-# from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
-from torch.nn import Module, ModuleList
+import torch
 from torch.nn import RNN, GRU, LSTM
 from ludwig.utils.torch_utils import LudwigModule
 
@@ -41,6 +38,7 @@ class RecurrentStack(LudwigModule):
             input_size=None,
             hidden_size=256,
             cell_type='rnn',
+            sequence_size=None,
             num_layers=1,
             bidirectional=False,
             activation='tanh',
@@ -66,13 +64,13 @@ class RecurrentStack(LudwigModule):
         #       initializers, regularizers, etc.
         super().__init__()
         self.supports_masking = True
-        self.input_size = input_size
-        self.hidden_size = hidden_size
+        self.input_size = input_size  # api doc: H_in
+        self.hidden_size = hidden_size  # api doc: H_out
+        self.sequence_size = sequence_size  # api doc: L (sequence length)
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
-        # todo: clean-up after torch port
-        # self.layers = []
 
+        # todo: need to discuss how to re-enable intializers, regularizer
         rnn_params = {
             #     'activation': activation,
             # 'nonlinearity': nonlinearity,
@@ -96,26 +94,27 @@ class RecurrentStack(LudwigModule):
             #     'return_sequences': True,
             #     'return_state': True,
         }
-        # signature = inspect.signature(rnn_layer_class.__init__)
-        # valid_args = set(signature.parameters.keys())
-        # rnn_params = {k: v for k, v in rnn_params.items() if k in valid_args}
 
-        # for _ in range(num_layers):
-        #     layer = rnn_layer_class(**rnn_params)
-        #
-        #     if bidirectional:
-        #         layer = Bidirectional(layer)
-        #
-        #     self.layers.append(layer)
-        #
-        # for layer in self.layers:
-        #     logger.debug('   {}'.format(layer.name))
-
+        # current design is delegating to PyTorch RNN/GRU/LSTM layer
+        # to do stacking and bidirectional based on the num_layers and
+        # bidirectional parameter values.
         self.layers = rnn_layer_class(
             input_size, hidden_size,
             batch_first=True,
             **rnn_params
         )
+
+    @property
+    def input_shape(self) -> torch.Size:
+        """ Returns the size of the input tensor without the batch dimension. """
+        return torch.Size([self.sequence_size, self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        """ Returns the size of the output tensor without the batch dimension."""
+        output_tensor = self.forward(torch.rand(2, *self.input_shape))
+        # output tensor is 2-tuple(hidden, final_state)
+        return output_tensor[0].size()[1:]
 
     def forward(self, inputs, training=None, mask=None):
         hidden, final_state = self.layers(inputs)
