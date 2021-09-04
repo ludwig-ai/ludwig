@@ -16,16 +16,8 @@
 import logging
 import numpy as np
 
-# import tensorflow as tf
-# from tensorflow import math, squeeze
-# from tensorflow.keras.initializers import VarianceScaling
-# from tensorflow.keras.layers import (Activation, AveragePooling1D,
-#                                      AveragePooling2D, BatchNormalization,
-#                                      Conv1D, Conv2D, Dropout, Layer,
-#                                      LayerNormalization, MaxPool1D, MaxPool2D,
-#                                      ZeroPadding2D)
 import torch
-from torch.nn import Module, Conv1d, Dropout, MaxPool1d, AvgPool1d
+from torch import nn
 from ludwig.utils.torch_utils import get_activation, LudwigModule
 
 logger = logging.getLogger(__name__)
@@ -84,7 +76,7 @@ class Conv1DLayer(LudwigModule):
 
         self.layers = []
 
-        self.layers.append(Conv1d(
+        self.layers.append(nn.Conv1d(
             # filters=num_filters,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -102,23 +94,30 @@ class Conv1DLayer(LudwigModule):
             # bias_constraint=None,
         ))
 
-        # todo: re-insert batch/layer normalization
-        # if norm and norm_params is None:
-        #     norm_params = {}
-        # if norm == 'batch':
-        #     self.layers.append(BatchNormalization(**norm_params))
-        # elif norm == 'layer':
-        #     self.layers.append(LayerNormalization(**norm_params))
+        if norm and norm_params is None:
+            norm_params = {}
+        if norm == 'batch':
+            self.layers.append(
+                nn.BatchNorm1d(
+                    num_features=out_channels,
+                    **norm_params)
+            )
+        elif norm == 'layer':
+            # todo(jmt): confirm the shape (N, C, L) or (N, L, C)
+            self.layers.append(nn.LayerNorm(
+                normalized_shape=out_channels,
+                **norm_params)
+            )
 
         self.layers.append(get_activation(activation))
 
         if dropout > 0:
-            self.layers.append(Dropout(dropout))
+            self.layers.append(nn.Dropout(dropout))
 
         if pool_size is not None:
-            pool = MaxPool1d
+            pool = nn.MaxPool1d
             if pool_function in {'average', 'avg', 'mean'}:
-                pool = AvgPool1d
+                pool = nn.AvgPool1d
             self.layers.append(pool(
                 kernel_size=self.pool_size,
                 stride=self.pool_strides,
@@ -312,7 +311,7 @@ class Conv1DStack(LudwigModule):
             raise ValueError(
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '
-                'This means that the compination of filter_size, padding, '
+                'This means that the combination of filter_size, padding, '
                 'stride, pool_size, pool_padding and pool_stride is reduces '
                 'the sequence length more than is possible. '
                 'Try using "same" padding and reducing or eliminating stride '
