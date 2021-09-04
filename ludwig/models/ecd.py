@@ -399,7 +399,7 @@ def build_outputs(
     output_features = {}
 
     for output_feature_def in output_features_def:
-        output_feature_def["input_size"] = combiner.get_output_shape()
+        output_feature_def["input_size"] = combiner.output_shape
         output_feature = build_single_output(
             output_feature_def,
             combiner,

@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from torch.nn import Module, ModuleDict
 import torch
 from torch import nn
@@ -93,6 +94,7 @@ class LudwigModel(Module):
             collected_losses.extend(layer.losses)
         return collected_losses
 
+
 # I think I need this instead of what I have above:
 class LudwigModule(Module):
     def __init__(self):
@@ -121,6 +123,18 @@ class LudwigModule(Module):
     def add_loss(self, loss):
         if callable(loss):
             self._callable_losses.append(loss)
+
+    @property
+    @abstractmethod
+    def input_shape(self) -> torch.Size:
+        """ Returns the size of the input tensor without the batch dimension. """
+        raise NotImplementedError('Abstract class.')
+
+    @property
+    def output_shape(self) -> torch.Size:
+        """ Returns the size of the output tensor without the batch dimension."""
+        output_tensor = self.forward(torch.rand(2, *self.input_shape))
+        return output_tensor.size()[1:]
 
 
 class Dense(LudwigModule):

@@ -18,12 +18,12 @@ import logging
 # import tensorflow as tf
 # from tensorflow.keras import Sequential
 # from tensorflow.keras.layers import Dense, Dropout, Layer, LayerNormalization
-from torch.nn import Module
+from ludwig.utils.torch_utils import LudwigModule
 
 logger = logging.getLogger(__name__)
 
 
-class FeedForwardAttentionReducer(Module):
+class FeedForwardAttentionReducer(LudwigModule):
     def __init__(self, hidden_size=256, activation='tanh'):
         super().__init__()
         self.layer1 = Dense(hidden_size, activation=activation)
@@ -38,7 +38,7 @@ class FeedForwardAttentionReducer(Module):
         return geated_inputs  # [b, h]
 
 
-class MultiHeadSelfAttention(Module):
+class MultiHeadSelfAttention(LudwigModule):
     def __init__(self, hidden_size, num_heads=8):
         super().__init__()
         self.embedding_size = hidden_size
@@ -98,7 +98,7 @@ class MultiHeadSelfAttention(Module):
         return projected_outputs
 
 
-class TransformerBlock(Module):
+class TransformerBlock(LudwigModule):
     def __init__(self, hidden_size, num_heads, fc_size, dropout=0.1):
         super().__init__()
         self.self_attention = MultiHeadSelfAttention(hidden_size, num_heads)
@@ -119,7 +119,7 @@ class TransformerBlock(Module):
         return self.layernorm2(ln1_output + fc_output)
 
 
-class TransformerStack(Module):
+class TransformerStack(LudwigModule):
     def __init__(
             self,
             hidden_size=256,

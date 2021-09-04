@@ -199,7 +199,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature['input_size'] = self.get_input_shape()
+        feature['input_size'] = self.input_shape
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -222,11 +222,13 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def get_input_dtype(cls):
         return torch.float32
 
-    def get_input_shape(self):
-        return 1
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
-    def get_output_shape(self):
-        return self.encoder_obj.get_output_shape(self.get_input_shape())
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self.encoder_obj.output_shape)
 
     @staticmethod
     def update_config_with_metadata(
@@ -265,7 +267,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature['input_size'] = self.get_input_shape()
+        feature['input_size'] = self.input_shape
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -342,15 +344,17 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
 
-    def get_input_shape(self):
-        return self.input_size
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self.input_size)
 
     @classmethod
     def get_output_dtype(cls):
         return torch.float32
 
-    def get_output_shape(self):
-        return 1
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([1])
 
     @staticmethod
     def update_config_with_metadata(
