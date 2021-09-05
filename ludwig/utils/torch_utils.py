@@ -1,4 +1,6 @@
 from abc import abstractmethod
+from functools import lru_cache
+
 from torch.nn import Module, ModuleDict
 import torch
 from torch import nn
@@ -67,35 +69,6 @@ def reg_loss(input_tensor, regularizer, l1=0.01, l2=0.01):
         return l1_reg + l2_reg
 
 
-class LudwigLayer(Module):
-    def __init__(self):
-        super(LudwigLayer, self).__init__()
-        self._callable_losses = []
-
-    @property
-    def losses(self):
-        collected_losses = []
-        for loss_fn in self._callable_losses:
-            collected_losses.append(loss_fn())
-        return collected_losses
-
-    def add_losses(self, loss):
-        if callable(loss):
-            self._callable_losses.append(loss)
-
-class LudwigModel(Module):
-    def __init__(self):
-        super(LudwigModel, self).__init__()
-
-    @property
-    def losses(self):
-        collected_losses = []
-        for layer in self.children():
-            collected_losses.extend(layer.losses)
-        return collected_losses
-
-
-# I think I need this instead of what I have above:
 class LudwigModule(Module):
     def __init__(self):
         super().__init__()
@@ -133,6 +106,10 @@ class LudwigModule(Module):
     @property
     def output_shape(self) -> torch.Size:
         """ Returns the size of the output tensor without the batch dimension."""
+        return self._compute_output_shape()
+
+    @lru_cache(maxsize=1)
+    def _compute_output_shape(self) -> torch.Size:
         output_tensor = self.forward(torch.rand(2, *self.input_shape))
         return output_tensor.size()[1:]
 
