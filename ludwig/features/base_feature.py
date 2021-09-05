@@ -206,7 +206,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_decoder(self, decoder_parameters):
-        print(f'DECODER PARAMS: {decoder_parameters}')
         return get_from_registry(self.decoder, self.decoder_registry)(
             **decoder_parameters
         )
