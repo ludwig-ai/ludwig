@@ -75,8 +75,9 @@ class FCLayer(LudwigModule):
         weights_initializer = initializer_registry[weights_initializer]
         weights_initializer(fc.weight)
 
-        bias_initializer = initializer_registry[bias_initializer]
-        bias_initializer(fc.bias)
+        if use_bias:
+            bias_initializer = initializer_registry[bias_initializer]
+            bias_initializer(fc.bias)
 
         self.activity_regularizer = None
 
