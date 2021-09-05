@@ -412,6 +412,8 @@ class ParallelCNN(SequenceEncoder):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        self.max_sequence_length = max_sequence_length
+
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
             self.conv_layers = conv_layers
@@ -473,7 +475,7 @@ class ParallelCNN(SequenceEncoder):
         logger.debug('  ParallelConv1D')
         self.parallel_conv1d = ParallelConv1D(
             in_channels=embedding_size,
-            max_sequence_length=max_sequence_length,
+            max_sequence_length=self.max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
@@ -947,6 +949,7 @@ class StackedParallelCNN(SequenceEncoder):
             vocab=None,
             representation='dense',
             embedding_size=256,
+            max_sequence_length=None,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
@@ -960,7 +963,7 @@ class StackedParallelCNN(SequenceEncoder):
             num_fc_layers=None,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -974,6 +977,7 @@ class StackedParallelCNN(SequenceEncoder):
             reduce_output='max',
             **kwargs
     ):
+        # todo: review docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -1120,6 +1124,9 @@ class StackedParallelCNN(SequenceEncoder):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        self.max_sequence_length = max_sequence_length
+        self.embedding_size = embedding_size
+
         if stacked_layers is not None and num_stacked_layers is None:
             # use custom-defined layers
             self.stacked_layers = stacked_layers
@@ -1194,7 +1201,9 @@ class StackedParallelCNN(SequenceEncoder):
 
         logger.debug('  ParallelConv1DStack')
         self.parallel_conv1d_stack = ParallelConv1DStack(
+            in_channels=embedding_size,
             stacked_layers=self.stacked_layers,
+            max_sequence_length=max_sequence_length,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
             default_use_bias=use_bias,
@@ -1261,6 +1270,8 @@ class StackedParallelCNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
+        # convert to [batch_size, embedding_size, seq_size] for Pytorch
+        hidden = hidden.transpose(1, 2)
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d_stack(
             hidden,
@@ -1268,6 +1279,8 @@ class StackedParallelCNN(SequenceEncoder):
             mask=mask
         )
 
+        # revert back to [batch_size, seq_size, hidden_size]
+        hidden = hidden.transpose(1, 2)
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
             hidden = self.reduce_sequence(hidden)

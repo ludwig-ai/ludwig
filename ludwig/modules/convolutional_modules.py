@@ -362,7 +362,7 @@ class ParallelConv1D(LudwigModule):
             default_padding='same',
             default_dilation_rate=1,
             default_use_bias=True,
-            default_weights_initializer='glorot_uniform',
+            default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
@@ -470,6 +470,16 @@ class ParallelConv1D(LudwigModule):
                 )
             )
 
+            # todo: turn into debugging messager
+            print(f'{self.__class__.__name__} layer {i}, input shape '
+                  f'{self.parallel_layers[i].input_shape}, output shape '
+                  f'{self.parallel_layers[i].output_shape}')
+
+    @property
+    def input_shape(self) -> torch.Size:
+        """ Returns the size of the input tensor without the batch dimension. """
+        return torch.Size([self.in_channels, self.max_sequence_length])
+
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
         hiddens = []
@@ -496,7 +506,9 @@ class ParallelConv1DStack(LudwigModule):
 
     def __init__(
             self,
+            in_channels=None,
             stacked_layers=None,
+            max_sequence_length=None,
             default_num_filters=64,
             default_filter_size=3,
             default_strides=1,
@@ -521,6 +533,9 @@ class ParallelConv1DStack(LudwigModule):
             **kwargs
     ):
         super().__init__()
+
+        self.max_sequence_length = max_sequence_length
+        self.in_channels = in_channels
 
         if stacked_layers is None:
             self.stacked_parallel_layers = [
@@ -598,18 +613,36 @@ class ParallelConv1DStack(LudwigModule):
                     layer['pool_padding'] = default_pool_padding
 
         self.stack = []
-
+        num_channels = self.in_channels
+        sequence_length = self.max_sequence_length
         for i, parallel_layers in enumerate(self.stacked_parallel_layers):
             logger.debug('   stack layer {}'.format(i))
-            self.stack.append(ParallelConv1D(layers=parallel_layers))
+            self.stack.append(ParallelConv1D(
+                num_channels,
+                sequence_length,
+                layers=parallel_layers)
+            )
+            # todo: turn to log at debugging level
+            print(f'{self.__class__.__name__} layer {i}, input shape '
+                  f'{self.stack[i].input_shape}, output shape '
+                  f'{self.stack[i].output_shape}')
 
-    def call(self, inputs, training=None, mask=None):
+            # set input specification for the layer
+            num_channels = self.stack[i].output_shape[0]
+            sequence_length = self.stack[i].output_shape[1]
+
+    @property
+    def input_shape(self):
+        """ Returns the size of the input tensor without the batch dimension. """
+        return torch.Size([self.in_channels, self.max_sequence_length])
+
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
 
         for layer in self.stack:
             hidden = layer(hidden, training=training)
 
-        if hidden.shape[1] == 0:
+        if hidden.shape[2] == 0:
             raise ValueError(
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '
