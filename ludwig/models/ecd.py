@@ -399,7 +399,7 @@ def build_outputs(
     output_features = {}
 
     for output_feature_def in output_features_def:
-        output_feature_def["input_size"] = combiner.output_shape
+        output_feature_def["input_size"] = combiner.output_shape[-1]
         output_feature = build_single_output(
             output_feature_def,
             combiner,
@@ -426,6 +426,7 @@ def build_single_output(
         output_feature_def[TYPE],
         output_type_registry
     )
+    print(f'OUTPUT FEATURE DEF: {output_feature_def}')
     output_feature_obj = output_feature_class(output_feature_def)
     # weighted_train_mean_loss, weighted_eval_loss, output_tensors = output_feature_obj.concat_dependencies_and_build_output(
     #    feature_hidden,

@@ -86,7 +86,7 @@ class ConcatCombiner(LudwigModule):
         if fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                first_layer_input_size=self.input_shape,
+                first_layer_input_size=self.input_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,

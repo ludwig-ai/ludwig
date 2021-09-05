@@ -171,6 +171,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     def __init__(self, feature):
         super().__init__(feature)
+        print(f'FEATURE: {feature}')
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()

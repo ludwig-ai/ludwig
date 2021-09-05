@@ -267,7 +267,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature['input_size'] = self.input_shape
+        feature['input_size'] = self.input_shape[-1]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -346,7 +346,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self.input_size)
+        return torch.Size([self.input_size])
 
     @classmethod
     def get_output_dtype(cls):
