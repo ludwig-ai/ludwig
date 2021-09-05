@@ -28,10 +28,12 @@ class PassthroughEncoder(Encoder):
 
     def __init__(
             self,
+            input_size,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.input_size = input_size
 
     def forward(self, inputs, training=None, mask=None):
         """
@@ -41,8 +43,12 @@ class PassthroughEncoder(Encoder):
         return {'encoder_output': inputs}
 
     @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self.input_size)
+
+    @property
     def output_shape(self) -> torch.Size:
-        return torch.Size(self.input_shape)
+        return self.input_shape
 
     @classmethod
     def register(cls, name):
@@ -73,6 +79,7 @@ class DenseEncoder(Encoder):
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.input_size = input_size
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
@@ -100,6 +107,10 @@ class DenseEncoder(Encoder):
                    Shape: [batch x 1], type tf.float32
         """
         return {'encoder_output': self.fc_stack(inputs)}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self.input_size)
 
     @property
     def output_shape(self) -> torch.Size:
