@@ -1545,12 +1545,6 @@ class StackedRNN(SequenceEncoder):
     #     # return (seq_size, hidden_size)
     #     return input_shape[0], self.hidden_size
 
-    @property
-    def output_shape(self) -> torch.Size:
-        """ Returns the size of the output tensor without the batch dimension."""
-        output_tensor = self.forward(torch.rand(2, *self.input_shape))
-        return output_tensor.size()[1:]
-
     def forward(self, inputs, training=None, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
