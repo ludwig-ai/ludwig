@@ -58,7 +58,7 @@ encoder_parameters = {
 }
 
 
-@pytest.mark.parametrize('enc_norm', ['None', 'batch', 'layer'])
+@pytest.mark.parametrize('enc_norm', [None, 'batch', 'layer'])
 @pytest.mark.parametrize('enc_num_layers', [1, 2])
 @pytest.mark.parametrize('enc_dropout', [0, 0.2])
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
