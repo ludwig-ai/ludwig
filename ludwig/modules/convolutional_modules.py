@@ -106,9 +106,17 @@ class Conv1DLayer(LudwigModule):
             )
         elif norm == 'layer':
             # todo(jmt): confirm the shape (N, C, L) or (N, L, C)
+            # convert from (N, C, L) -> (N, L, C) for layer norm
+            self.layers.append(
+                lambda x: x.transpose(1, 2)
+            )
             self.layers.append(nn.LayerNorm(
                 normalized_shape=out_channels,
                 **norm_params)
+            )
+            # convert from (N, L, C) -> (N, C, L) for remainder of processing
+            self.layers.append(
+                lambda x: x.transpose(1, 2)
             )
 
         self.layers.append(get_activation(activation))
@@ -287,8 +295,10 @@ class Conv1DStack(LudwigModule):
             input_shape = self.stack[i].input_shape
             output_shape = self.stack[i].output_shape
 
-            # todo: convert print to logger.debug() call after testing
-            print(f'input_shape {input_shape}, output shape {output_shape}')
+            logger.debug(
+                f'{self.__class__.__name__}: '
+                f'input_shape {input_shape}, output shape {output_shape}'
+            )
 
             # pass along shape for the input to the next layer
             prior_layer_channels, l_in = output_shape
@@ -440,10 +450,9 @@ class ParallelConv1D(LudwigModule):
                 )
             )
 
-            # todo: turn into debugging messager
-            print(f'{self.__class__.__name__} layer {i}, input shape '
-                  f'{self.parallel_layers[i].input_shape}, output shape '
-                  f'{self.parallel_layers[i].output_shape}')
+            logger.debug(f'{self.__class__.__name__} layer {i}, input shape '
+                         f'{self.parallel_layers[i].input_shape}, output shape '
+                         f'{self.parallel_layers[i].output_shape}')
 
     @property
     def input_shape(self) -> torch.Size:
@@ -592,10 +601,10 @@ class ParallelConv1DStack(LudwigModule):
                 sequence_length,
                 layers=parallel_layers)
             )
-            # todo: turn to log at debugging level
-            print(f'{self.__class__.__name__} layer {i}, input shape '
-                  f'{self.stack[i].input_shape}, output shape '
-                  f'{self.stack[i].output_shape}')
+
+            logger.debug(f'{self.__class__.__name__} layer {i}, input shape '
+                         f'{self.stack[i].input_shape}, output shape '
+                         f'{self.stack[i].output_shape}')
 
             # set input specification for the layer
             num_channels = self.stack[i].output_shape[0]
