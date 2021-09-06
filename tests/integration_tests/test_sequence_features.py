@@ -21,6 +21,7 @@ from tests.integration_tests.utils import sequence_feature, numerical_feature
 # configuration parameters all other parameters assume default values.
 #
 
+TEST_VOCAB_SIZE = 132
 TEST_HIDDEN_SIZE = 32
 TEST_STATE_SIZE = 16
 TEST_EMBEDDING_SIZE = 64
@@ -28,12 +29,11 @@ TEST_NUM_FILTERS = 24
 
 
 # generates dataset that can be used for rest of test
-# Note: sequence_feature function specifies hidden size to be 8
 @pytest.fixture(scope='module')
 def generate_sequence_training_data():
     input_features = [
         sequence_feature(
-            vocab_size=132,
+            vocab_size=TEST_VOCAB_SIZE,
             embedding_size=TEST_EMBEDDING_SIZE,
             state_size=TEST_STATE_SIZE,
             hidden_size=TEST_HIDDEN_SIZE,
@@ -209,9 +209,13 @@ def test_sequence_encoders(
                 assert encoder_out['encoder_output'].shape \
                        == (batch_size, 1, TEST_NUM_FILTERS)
 
-            elif enc_encoder == 'transformer' or enc_encoder == 'embed':
+            elif enc_encoder == 'embed':
                 assert encoder_out['encoder_output'].shape \
                        == (batch_size, seq_size, TEST_EMBEDDING_SIZE)
+
+            elif enc_encoder == 'transformer':
+                assert encoder_out['encoder_output'].shape \
+                       == (batch_size, seq_size, TEST_HIDDEN_SIZE)
 
             else:
                 raise ValueError('{} is an invalid encoder specification' \

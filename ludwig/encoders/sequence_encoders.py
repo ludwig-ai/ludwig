@@ -2124,7 +2124,9 @@ class StackedTransformer(SequenceEncoder):
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
-            input_size=max_sequence_length,
+            # todo: confirm that input_size should be hidden_size
+            #       prior value was embedding_size
+            input_size=hidden_size,
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,
