@@ -36,7 +36,7 @@ def generate_sequence_training_data():
             vocab_size=132,
             embedding_size=TEST_EMBEDDING_SIZE,
             state_size=TEST_STATE_SIZE,
-            hidden_size=TEST_STATE_SIZE,
+            hidden_size=TEST_HIDDEN_SIZE,
             num_filters=TEST_NUM_FILTERS,
             min_len=5,
             max_len=10,

@@ -18,6 +18,7 @@ import logging
 from abc import ABC
 
 import torch
+from torch import nn
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register, register_default
@@ -1946,7 +1947,7 @@ class StackedTransformer(SequenceEncoder):
             num_fc_layers=0,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -2113,7 +2114,8 @@ class StackedTransformer(SequenceEncoder):
 
             if embedding_size != hidden_size:
                 logger.debug('  project_to_embed_size Dense')
-                self.project_to_hidden_size = Dense(hidden_size)
+                self.project_to_hidden_size = nn.Linear(embedding_size,
+                                                        hidden_size)
                 self.should_project = True
         else:
             logger.debug('  project_to_embed_size Dense')
@@ -2122,6 +2124,7 @@ class StackedTransformer(SequenceEncoder):
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
+            input_size=max_sequence_length,
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,
@@ -2149,7 +2152,8 @@ class StackedTransformer(SequenceEncoder):
                 default_dropout=fc_dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
+        # todo: review docstring for updates
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
