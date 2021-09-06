@@ -21,7 +21,10 @@ from tests.integration_tests.utils import sequence_feature, numerical_feature
 # configuration parameters all other parameters assume default values.
 #
 
-TEST_HIDDEN_SIZE = 8
+TEST_HIDDEN_SIZE = 32
+TEST_STATE_SIZE = 16
+TEST_EMBEDDING_SIZE = 64
+TEST_NUM_FILTERS = 24
 
 
 # generates dataset that can be used for rest of test
@@ -30,6 +33,11 @@ TEST_HIDDEN_SIZE = 8
 def generate_sequence_training_data():
     input_features = [
         sequence_feature(
+            vocab_size=132,
+            embedding_size=TEST_EMBEDDING_SIZE,
+            state_size=TEST_STATE_SIZE,
+            hidden_size=TEST_STATE_SIZE,
+            num_filters=TEST_NUM_FILTERS,
             min_len=5,
             max_len=10,
             encoder='rnn',
@@ -143,7 +151,7 @@ def test_sequence_encoders(
                     len(model.model.input_features[
                             input_feature_name].encoder_obj.conv_layers)
                 hidden_size = input_features[0][
-                                  'state_size'] * number_parallel_cnn_layers
+                                  'num_filters'] * number_parallel_cnn_layers
                 assert encoder_out['encoder_output'].shape == \
                        (batch_size, seq_size, hidden_size)
 
@@ -153,13 +161,13 @@ def test_sequence_encoders(
                         .encoder_obj.parallel_conv1d_stack \
                         .stacked_parallel_layers[0])
                 hidden_size = input_features[0][
-                                  'state_size'] * number_parallel_cnn_layers
+                                  'num_filters'] * number_parallel_cnn_layers
                 assert encoder_out['encoder_output'].shape == \
                        (batch_size, seq_size, hidden_size)
 
             elif enc_encoder == 'rnn':
                 assert encoder_out['encoder_output'].shape == \
-                       (batch_size, seq_size, TEST_HIDDEN_SIZE)
+                       (batch_size, seq_size, TEST_STATE_SIZE)
 
                 assert 'encoder_output_state' in encoder_out
                 if enc_cell_type == 'lstm':
@@ -170,40 +178,40 @@ def test_sequence_encoders(
                     assert isinstance(encoder_out['encoder_output_state'][1],
                                       torch.Tensor)
                     assert encoder_out['encoder_output_state'][0].shape == \
-                           (batch_size, TEST_HIDDEN_SIZE)
+                           (batch_size, TEST_STATE_SIZE)
                     assert encoder_out['encoder_output_state'][1].shape == \
-                           (batch_size, TEST_HIDDEN_SIZE)
+                           (batch_size, TEST_STATE_SIZE)
                 else:
                     assert isinstance(encoder_out['encoder_output_state'],
                                       torch.Tensor)
                     assert encoder_out['encoder_output_state'].shape == \
-                           (batch_size, TEST_HIDDEN_SIZE)
+                           (batch_size, TEST_STATE_SIZE)
 
             elif enc_encoder == 'cnnrnn':
                 assert encoder_out['encoder_output'].shape == \
-                       (batch_size, 1, TEST_HIDDEN_SIZE)
+                       (batch_size, 1, TEST_STATE_SIZE)
                 assert 'encoder_output_state' in encoder_out
 
                 if enc_cell_type == 'lstm':
                     assert isinstance(encoder_out['encoder_output_state'],
                                       tuple)
                     assert encoder_out['encoder_output_state'][0].shape \
-                           == (batch_size, TEST_HIDDEN_SIZE)
+                           == (batch_size, TEST_STATE_SIZE)
                     assert encoder_out['encoder_output_state'][1].shape \
-                           == (batch_size, TEST_HIDDEN_SIZE)
+                           == (batch_size, TEST_STATE_SIZE)
                 else:
                     assert isinstance(encoder_out['encoder_output_state'],
                                       torch.Tensor)
                     assert encoder_out['encoder_output_state'].shape \
-                           == (batch_size, TEST_HIDDEN_SIZE)
+                           == (batch_size, TEST_STATE_SIZE)
 
             elif enc_encoder == 'stacked_cnn':
                 assert encoder_out['encoder_output'].shape \
-                       == (batch_size, 1, TEST_HIDDEN_SIZE)
+                       == (batch_size, 1, TEST_NUM_FILTERS)
 
             elif enc_encoder == 'transformer' or enc_encoder == 'embed':
                 assert encoder_out['encoder_output'].shape \
-                       == (batch_size, seq_size, TEST_HIDDEN_SIZE)
+                       == (batch_size, seq_size, TEST_EMBEDDING_SIZE)
 
             else:
                 raise ValueError('{} is an invalid encoder specification' \
