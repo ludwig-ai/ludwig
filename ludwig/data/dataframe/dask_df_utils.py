@@ -61,19 +61,18 @@ class file_lock(AbstractContextManager):
         self.path = Path(path) if "://" not in path else None
         self.timeout = timeout
         self.remove_file = remove_file
-        self.lock_name = f".lock_{self.path.name}" if path else None
-        self.lock_path = self.path.parent.joinpath(self.lock_name) if path else None
+        if self.path:
+            self.lock_name = f".lock_{self.path.name}"
+            self.lock_path = self.path.parent.joinpath(self.lock_name)
 
     def __enter__(self):
         if not self.path:
             return
         start_time = time.time()
         while self.lock_path.exists():
-            print(f"{self.lock_path} is locked")
             time.sleep(0.1)
             if self.timeout and (time.time() - start_time) > self.timeout:
                 raise TimeoutError()
-        print(f"creating lock on {self.lock_path}")
         open(self.lock_path, "w").close()
         if self.remove_file:
             if self.path.is_dir():
@@ -84,5 +83,4 @@ class file_lock(AbstractContextManager):
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.path:
             return
-        print(f"releasing lock on {self.lock_path}")
         os.remove(str(self.lock_path))
