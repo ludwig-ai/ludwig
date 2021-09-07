@@ -65,7 +65,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      figure_data_format, generate_kfold_splits,
                                      load_json, save_json, load_yaml, load_dataset)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.misc_utils import get_file_names, get_output_directory
+from ludwig.utils.misc_utils import get_file_names, get_output_directory, get_from_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
 
