@@ -257,7 +257,10 @@ class TextFeatureMixin:
         if metadata[PREPROCESSING]['lowercase']:
             t = tf.strings.lower(t)
 
-        t = Tokenize(dtype=tf.string)(t)
+        # TODO(ksbrar)
+        tokenizer = tokenizer_registry[metadata[PREPROCESSING]['word_tokenizer']]
+
+        t = Tokenize(dtype=tf.string, tokenizer=tokenizer)(t)
         t = VocabLookup(
             lookup_table=metadata['word_str2idx'],
             default_value=metadata['word_str2idx'][

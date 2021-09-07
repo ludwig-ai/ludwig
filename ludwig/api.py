@@ -1547,6 +1547,8 @@ class LudwigModel:
             for feature_name, feature in input_features.items()
         }
 
+        print(inputs)
+
         preproc_inputs = {
             feature_name: feature.preprocess_inference_graph(
                 inputs[feature_name], self.training_set_metadata[feature_name]

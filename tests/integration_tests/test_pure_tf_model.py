@@ -46,7 +46,7 @@ def test_pure_tf_model(csv_filename, tmpdir):
         numerical_feature(),
         category_feature(vocab_size=3),
         # sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3),
+        text_feature(vocab_size=3, token_regex=" "),
         # vector_feature(),
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
@@ -88,8 +88,10 @@ def test_pure_tf_model(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
+    # TODO(ksbrar) 
+    # print(input_features[0])
     ludwig_tf_model = ludwig_model.create_inference_graph()
-    print(ludwig_tf_model)
+    # print(ludwig_tf_model)
 
     pred_data = list(build_synthetic_dataset(1, input_features))
 

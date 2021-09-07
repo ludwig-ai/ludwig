@@ -21,6 +21,8 @@ from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
+import tensorflow_text as tf_text
+
 
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
@@ -282,31 +284,49 @@ class BaseTokenizer:
     def __call__(self, text):
         pass
 
-
 class CharactersToListTokenizer(BaseTokenizer):
     def __call__(self, text):
         return text
-
 
 class SpaceStringToListTokenizer(BaseTokenizer):
     def __call__(self, text):
         return SPLIT_REGEX.split(text.strip())
 
+    @staticmethod
+    def call(t):
+        # TODO(ksbrar)
+        splitter = tf_text.RegexSplitter(split_regex='\s+')
+        return splitter.split(t)
 
 class SpacePunctuationStringToListTokenizer(BaseTokenizer):
     def __call__(self, text):
         return SPACE_PUNCTUATION_REGEX.findall(text.strip())
 
+    @staticmethod
+    def call(t):
+        # TODO(ksbrar)
+        splitter = tf_text.RegexSplitter(split_regex='\w+|[^\w\s]')
+        return splitter.split(t)
 
 class UnderscoreStringToListTokenizer(BaseTokenizer):
     def __call__(self, text):
         return UNDERSCORE_REGEX.split(text.strip())
 
+    @staticmethod
+    def call(t):
+        # TODO(ksbrar)
+        splitter = tf_text.RegexSplitter(split_regex='\s*_\s*')
+        return splitter.split(t)
 
 class CommaStringToListTokenizer(BaseTokenizer):
     def __call__(self, text):
         return COMMA_REGEX.split(text.strip())
 
+    @staticmethod
+    def call(t):
+        # TODO(ksbrar)
+        splitter = tf_text.RegexSplitter(split_regex='\s*,\s*')
+        return splitter.split(t)
 
 class UntokenizedStringToListTokenizer(BaseTokenizer):
     def __call__(self, text):
