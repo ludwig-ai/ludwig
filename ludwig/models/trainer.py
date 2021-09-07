@@ -1132,8 +1132,6 @@ class Trainer(BaseTrainer):
             dataset_name=dataset_name
         )
 
-        print(f'EVAL METRICS {metrics}')
-
         self.append_metrics(model, dataset_name, metrics, metrics_log, tables)
 
         return metrics_log, tables
