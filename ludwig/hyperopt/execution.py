@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Union, Optional
 
 from ludwig.api import LudwigModel
-from ludwig.backend import RAY
+from ludwig.backend import RAY, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
@@ -52,6 +52,10 @@ def _is_ray_backend(backend) -> bool:
     if isinstance(backend, str):
         return backend == RAY
     return isinstance(backend, RayBackend)
+
+
+def _get_relative_checkpoints_dir_parts(path: Path):
+    return path.parts[-2:]
 
 
 class HyperoptExecutor(ABC):
@@ -782,6 +786,19 @@ class RayTuneExecutor(HyperoptExecutor):
     def _gpu_resources_per_trial_non_none(self):
         return self.gpu_resources_per_trial or 0
 
+    def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir: Path):
+        """Get the Ray sync client and path to remote checkpoint directory."""
+        remote_checkpoint_dir = os.path.join(
+            self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir))
+        return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
+
+    def _validate_remote_fs_for_ray_backend(self, backend, dataset, output_directory):
+        """Raise an exception if backend is Ray and dataset or output_directory aren't remote."""
+        if _is_ray_backend(backend) and not ("://" in dataset and "://" in output_directory):
+            raise ValueError("Ray backend can only be used with Ray Tune if "
+                             "both the `dataset` and `output_directory` are remote "
+                             "(s3://, gs://, hdfs://).")
+
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
@@ -802,6 +819,8 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = RayQueue(actor_options={"num_cpus": 0})
         else:
             ray_queue = None
+
+        trial_dir = Path(tune.get_trial_dir())
 
         def checkpoint(progress_tracker, save_path):
             with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
@@ -839,17 +858,11 @@ class RayTuneExecutor(HyperoptExecutor):
                 trial_dir=tune.get_trial_dir()
             )
 
-        def get_relative_checkpoints_dir_parts(path: Path):
-            return path.parts[-2:]
-
-        if is_using_ray_backend:
-            trial_dir = Path(tune.get_trial_dir())
-            # os.path.join is used here as it works with remote protocols
-            remote_checkpoint_dir = os.path.join(
-                self.sync_config.upload_dir, *get_relative_checkpoints_dir_parts(trial_dir))
-            sync_client = get_cloud_sync_client(remote_checkpoint_dir)
-
         class RayTuneReportCallback(Callback):
+            def _get_sync_client_and_remote_checkpoint_dir(self):
+                # sync client has to be recreated to avoid issues with serialization
+                return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
+
             def on_trainer_train_setup(self, trainer, save_path):
                 if is_using_ray_backend and checkpoint_dir:
                     save_path = Path(save_path)
@@ -857,12 +870,15 @@ class RayTuneExecutor(HyperoptExecutor):
                         # remove any other paths that could have been synced before
                         if path != save_path:
                             shutil.rmtree(str(path), ignore_errors=True)
+
+                    sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
                     sync_client.sync_down(os.path.join(
-                        remote_checkpoint_dir, *get_relative_checkpoints_dir_parts(save_path)), str(save_path))
+                        remote_checkpoint_dir, *_get_relative_checkpoints_dir_parts(save_path)), str(save_path))
                     sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
                 if is_using_ray_backend:
+                    sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
                     sync_client.sync_up(
                         str(Path(save_path).parent), remote_checkpoint_dir)
                     sync_client.wait()
@@ -873,7 +889,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 report(progress_tracker)
 
         callbacks = hyperopt_dict.get('callbacks') or []
-        hyperopt_dict['callbacks'] = callbacks + [RayTuneReportCallback()]
+        hyperopt_dict['callbacks'] = callbacks + \
+            [RayTuneReportCallback()]
 
         # set tune resources
         if is_using_ray_backend:
@@ -909,6 +926,9 @@ class RayTuneExecutor(HyperoptExecutor):
             thread = threading.Thread(target=_run)
             thread.daemon = True
             thread.start()
+
+            sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir(
+                trial_dir)
 
             def check_queue():
                 qsize = ray_queue.qsize()
@@ -981,10 +1001,11 @@ class RayTuneExecutor(HyperoptExecutor):
         if isinstance(dataset, str) and "://" not in dataset and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
-        if _is_ray_backend(backend) and not ("://" in dataset and "://" in output_directory):
-            raise ValueError("Ray backend can only be used with Ray Tune if "
-                             "both the `dataset` and `output_directory` are remote "
-                             "(s3://, gs://, hdfs://).")
+        if isinstance(backend, str):
+            backend = initialize_backend(backend)
+
+        self._validate_remote_fs_for_ray_backend(
+            backend, dataset, output_directory)
 
         if gpus is not None:
             raise ValueError("Parameter `gpus` is not supported when using Ray Tune. "
@@ -1074,7 +1095,7 @@ class RayTuneExecutor(HyperoptExecutor):
         if _is_ray_backend(backend):
             resources_per_trial = PlacementGroupFactory(
                 [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none) if self._gpu_resources_per_trial_non_none else (
-                    [{"CPU": 1}] * self._cpu_resources_per_trial_non_none)
+                    [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none)
             )
 
         if "://" in output_directory:
