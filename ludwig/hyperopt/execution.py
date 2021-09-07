@@ -43,6 +43,9 @@ class HyperoptExecutor(ABC):
         self.split = split
 
     def _has_metric(self, stats, split):
+        if not stats:
+            return False
+
         if split is not None:
             if split not in stats:
                 return False
@@ -72,11 +75,10 @@ class HyperoptExecutor(ABC):
         return isinstance(stats, float)
 
     def get_metric_score(self, train_stats, eval_stats) -> float:
-        if (train_stats is not None and
-                self._has_metric(train_stats, self.split) and
-                self._has_metric(train_stats, VALIDATION)):
-            logger.info("Returning metric score from training statistics")
-            return self.get_metric_score_from_train_stats(train_stats)
+        if self._has_metric(train_stats, TEST):
+            logger.info(
+                "Returning metric score from training (test) statistics")
+            return self.get_metric_score_from_train_stats(train_stats, TEST)
         elif self._has_eval_metric(eval_stats):
             logger.info("Returning metric score from eval statistics. "
                         "If skip_save_model is True, eval statistics "
@@ -84,10 +86,14 @@ class HyperoptExecutor(ABC):
                         "rather than the model at the epoch with "
                         "best validation performance")
             return self.get_metric_score_from_eval_stats(eval_stats)
+        elif self._has_metric(train_stats, VALIDATION):
+            logger.info(
+                "Returning metric score from training (validation) statistics")
+            return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
         elif self._has_metric(train_stats, TRAINING):
             logger.info("Returning metric score from training split statistics, "
-                        "as no validation / eval sets were given")
-            return self.get_metric_score_from_train_stats(train_stats, TRAINING, TRAINING)
+                        "as no test / validation / eval sets were given")
+            return self.get_metric_score_from_train_stats(train_stats, TRAINING)
         else:
             raise RuntimeError(
                 "Unable to obtain metric score from missing training / eval statistics")
@@ -115,6 +121,8 @@ class HyperoptExecutor(ABC):
     def get_metric_score_from_train_stats(self, train_stats, select_split=None, returned_split=None) -> float:
         select_split = select_split or VALIDATION
         returned_split = returned_split or self.split
+        if not self._has_metric(train_stats, returned_split):
+            returned_split = select_split
 
         # grab the results of the model with highest validation test performance
         train_valiset_stats = train_stats[select_split]
@@ -722,12 +730,12 @@ class RayTuneExecutor(HyperoptExecutor):
                              )
         HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
-        try:
-            ray.init('auto', ignore_reinit_error=True)
-        except ConnectionError:
-            logger.info('Initializing new Ray cluster...')
-            ray.init()
-
+        if not ray.is_initialized():
+            try:
+                ray.init('auto', ignore_reinit_error=True)
+            except ConnectionError:
+                logger.info('Initializing new Ray cluster...')
+                ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = hyperopt_sampler.num_samples
         self.goal = hyperopt_sampler.goal
@@ -929,12 +937,12 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         register_trainable(
-            f"trainable_func_f{hash_dict(config)}",
+            f"trainable_func_f{hash_dict(config).decode('ascii')}",
             run_experiment_trial
         )
 
         analysis = tune.run(
-            f"trainable_func_f{hash_dict(config)}",
+            f"trainable_func_f{hash_dict(config).decode('ascii')}",
             config={
                 **self.search_space,
                 **tune_config,
@@ -942,6 +950,7 @@ class RayTuneExecutor(HyperoptExecutor):
             scheduler=self.scheduler,
             search_alg=search_alg,
             num_samples=self.num_samples,
+            keep_checkpoints_num=1,
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
             queue_trials=True,

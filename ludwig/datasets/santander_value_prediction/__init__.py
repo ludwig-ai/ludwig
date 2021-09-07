@@ -19,7 +19,7 @@ import pandas as pd
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.mixins.process import IdentityProcessMixin
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
@@ -31,7 +31,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
     return dataset.load(split=split)
 
 
-class SantanderValuePrediction(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDownloadMixin, BaseDataset):
+class SantanderValuePrediction(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMixin, BaseDataset):
     """The Santander Value Prediction Challenge dataset.
 
     Additional details:
@@ -54,7 +54,8 @@ class SantanderValuePrediction(CSVLoadMixin, MultifileJoinProcessMixin, KaggleDo
                                                 self.csv_filename))
         # Ensure feature column names are strings (some are numeric); keep special names as is
         processed_df.columns = ['C' + str(col) for col in processed_df.columns]
-        processed_df.rename(columns={'CID': 'ID', 'Ctarget': 'target', 'Csplit': 'split'}, inplace=True)
+        processed_df.rename(
+            columns={'CID': 'ID', 'Ctarget': 'target', 'Csplit': 'split'}, inplace=True)
         processed_df.to_csv(
             os.path.join(self.processed_dataset_path, self.csv_filename),
             index=False

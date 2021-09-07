@@ -1,3 +1,7 @@
+preprocessing:
+  image:
+    infer_image_dimensions: True
+
 combiner:
   type: tabnet
   size: 32 # n_a

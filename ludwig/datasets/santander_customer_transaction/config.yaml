@@ -1,0 +1,7 @@
+version: 1.0
+competition: santander-customer-transaction-prediction
+archive_filename: santander-customer-transaction-prediction.zip
+split_filenames:
+  train_file: train.csv
+csv_filename: train.csv
+download_file_type: csv

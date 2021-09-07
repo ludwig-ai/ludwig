@@ -24,11 +24,14 @@
 import copy
 import logging
 import os
+import subprocess
+import sys
 import tempfile
+from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
@@ -49,7 +52,7 @@ from ludwig.features.feature_registries import \
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME,
-                            set_disable_progressbar)
+                            set_disable_progressbar, LUDWIG_VERSION)
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import (Predictor, calculate_overall_stats,
                                      print_evaluation_stats,
@@ -60,11 +63,9 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      DICT_FORMATS,
                                      external_data_reader_registry,
                                      figure_data_format, generate_kfold_splits,
-                                     load_json, save_json, load_yaml)
+                                     load_json, save_json, load_yaml, load_dataset)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.misc_utils import (get_experiment_description,
-                                     get_file_names, get_from_registry,
-                                     get_output_directory)
+from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
 
@@ -192,7 +193,8 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or self.config.get('backend'))
+        self.backend = initialize_backend(
+            backend or self.config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
@@ -367,7 +369,8 @@ class LudwigModel:
                     def on_epoch_end(self, trainer, progress_tracker, save_path):
                         upload_fn()
 
-                train_callbacks = train_callbacks + [UploadOnEpochEndCallback()]
+                train_callbacks = train_callbacks + \
+                    [UploadOnEpochEndCallback()]
 
             description_fn = training_stats_fn = model_dir = None
             if self.backend.is_coordinator():
@@ -720,7 +723,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug('Preprocessing')
-        dataset, training_set_metadata = preprocess_for_prediction(
+        dataset, _ = preprocess_for_prediction(
             self.config,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -873,9 +876,9 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 # TODO ray: support calculating stats on partitioned datasets
-                if isinstance(dataset, PartitionedDataset):
+                if isinstance(dataset, RayDataset):
                     raise ValueError(
-                        'Cannot calculate overall stats on a partitioned dataset at this time. '
+                        'Cannot calculate overall stats on a ray dataset at this time. '
                         'Set `calculate_overall_stats=False`.'
                     )
 
@@ -1766,30 +1769,18 @@ def kfold_cross_validate(
     if not data_format or data_format == 'auto':
         data_format = figure_data_format(dataset)
 
-    # use appropriate reader to create dataframe
-    if data_format in DATAFRAME_FORMATS:
-        data_df = dataset
-        data_dir = os.getcwd()
-    elif data_format in DICT_FORMATS:
-        data_df = pd.DataFrame(dataset)
-        data_dir = os.getcwd()
-    elif data_format in CACHEABLE_FORMATS:
-        data_reader = get_from_registry(data_format,
-                                        external_data_reader_registry)
-        data_df = data_reader(dataset, backend.df_engine.df_lib)
-        data_dir = os.path.dirname(dataset)
-    else:
-        ValueError(
-            "{} format is not supported for k_fold_cross_validate()"
-            .format(data_format)
-        )
+    data_df = load_dataset(
+        dataset,
+        data_format=data_format,
+        df_lib=backend.df_engine.df_lib
+    )
 
     kfold_cv_stats = {}
     kfold_split_indices = {}
 
     for train_indices, test_indices, fold_num in \
             generate_kfold_splits(data_df, num_folds, random_seed):
-        with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
+        with tempfile.TemporaryDirectory() as temp_dir_name:
             curr_train_df = data_df.iloc[train_indices]
             curr_test_df = data_df.iloc[test_indices]
 
@@ -1881,3 +1872,60 @@ def kfold_cross_validate(
     logger.info('completed {:d}-fold cross validation'.format(num_folds))
 
     return kfold_cv_stats, kfold_split_indices
+
+
+def get_experiment_description(
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        random_seed=None
+):
+    description = OrderedDict()
+    description['ludwig_version'] = LUDWIG_VERSION
+    description['command'] = ' '.join(sys.argv)
+
+    try:
+        with open(os.devnull, 'w') as devnull:
+            is_a_git_repo = subprocess.call(['git', 'branch'],
+                                            stderr=subprocess.STDOUT,
+                                            stdout=devnull) == 0
+        if is_a_git_repo:
+            description['commit_hash'] = \
+                subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
+                    'utf-8')[:12]
+    except:
+        pass
+
+    if random_seed is not None:
+        description['random_seed'] = random_seed
+
+    if isinstance(dataset, str):
+        description['dataset'] = dataset
+    if isinstance(training_set, str):
+        description['training_set'] = training_set
+    if isinstance(validation_set, str):
+        description['validation_set'] = validation_set
+    if isinstance(test_set, str):
+        description['test_set'] = test_set
+    if training_set_metadata is not None:
+        description['training_set_metadata'] = training_set_metadata
+
+    # determine data format if not provided or auto
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(
+            dataset, training_set, validation_set, test_set
+        )
+
+    if data_format:
+        description['data_format'] = str(data_format)
+
+    description['config'] = config
+
+    import tensorflow as tf
+    description['tf_version'] = tf.__version__
+
+    return description

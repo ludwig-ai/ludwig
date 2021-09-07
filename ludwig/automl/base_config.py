@@ -15,13 +15,15 @@ Builds base configuration file:
 """
 
 import os
+from dataclasses import dataclass
 from typing import List, Union
 
 import pandas as pd
-from ludwig.automl.utils import (FieldInfo, avg_num_tokens,
-                                 get_available_resources)
-from ludwig.constants import BINARY, CATEGORY, CONFIG, NUMERICAL, TEXT, TYPE
-from ludwig.utils.data_utils import load_yaml
+
+from ludwig.automl.data_source import DataSource, DataframeSource
+from ludwig.automl.utils import (FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
+from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
+from ludwig.utils.data_utils import load_yaml, load_dataset
 
 try:
     import dask.dataframe as dd
@@ -41,6 +43,12 @@ model_defaults = {
     'tabnet': os.path.join(CONFIG_DIR, 'tabnet_config.yaml'),
     'transformer': os.path.join(CONFIG_DIR, 'transformer_config.yaml')
 }
+
+
+@dataclass
+class DatasetInfo:
+    fields: List[FieldInfo]
+    row_count: int
 
 
 def allocate_experiment_resources(resources: dict) -> dict:
@@ -74,7 +82,7 @@ def allocate_experiment_resources(resources: dict) -> dict:
 
 
 def _create_default_config(
-    dataset: Union[str, dd.core.DataFrame, pd.DataFrame],
+    dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
     target_name: str = None,
     time_limit_s: Union[int, float] = None
 ) -> dict:
@@ -100,12 +108,20 @@ def _create_default_config(
     combiner types
 
     """
+    _ray_init()
     resources = get_available_resources()
     experiment_resources = allocate_experiment_resources(resources)
 
-    fields, row_count = get_field_info(dataset)
+    dataset_info = dataset
+    if not isinstance(dataset, DatasetInfo):
+        dataset_info = get_dataset_info(dataset)
+
     input_and_output_feature_config = get_features_config(
-        fields, row_count, resources, target_name)
+        dataset_info.fields,
+        dataset_info.row_count,
+        resources,
+        target_name
+    )
 
     model_configs = {}
     for model_name, path_to_defaults in model_defaults.items():
@@ -118,7 +134,7 @@ def _create_default_config(
     return model_configs
 
 
-def get_field_info(dataset: str):
+def get_dataset_info(dataset: str) -> DatasetInfo:
     """
     Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
@@ -130,24 +146,33 @@ def get_field_info(dataset: str):
     :return: (List[FieldInfo]) list of FieldInfo objects
 
     """
+    dataframe = load_dataset(dataset)
+    source = DataframeSource(dataframe)
+    return get_dataset_info_from_source(source)
 
-    # TODO (ASN): add more detailed logic for loading dataset. initial implementation
-    # assumes dataset is stored as a csv file and readable by pandas
-    dataframe = pd.read_csv(dataset)
-    row_count = len(dataframe)
+
+def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
+    row_count = len(source)
     fields = []
-    for field in dataframe.columns:
-        dtype = dataframe[field].dtype.name
-        distinct_values = len(dataframe[field].unique())
-        nonnull_values = len(dataframe[field].notnull())
+    for field in source.columns:
+        dtype = source.get_dtype(field)
+        distinct_values = source.get_distinct_values(field)
+        nonnull_values = source.get_nonnull_values(field)
+        image_values = source.get_image_values(field)
         avg_words = None
-        if dtype in ['str', 'string', 'object']:
-            avg_words = avg_num_tokens(dataframe[field])
+        if source.is_string_type(dtype):
+            avg_words = source.get_avg_num_tokens(field)
         fields.append(
-            FieldInfo(name=field, dtype=dtype,
-                      distinct_values=distinct_values, nonnull_values=nonnull_values, avg_words=avg_words)
+            FieldInfo(
+                name=field,
+                dtype=dtype,
+                distinct_values=distinct_values,
+                nonnull_values=nonnull_values,
+                image_values=image_values,
+                avg_words=avg_words
+            )
         )
-    return fields, row_count
+    return DatasetInfo(fields=fields, row_count=row_count)
 
 
 def get_features_config(
@@ -157,7 +182,7 @@ def get_features_config(
     target_name: str = None,
 ) -> dict:
     """
-    Constructs FeildInfo objects for each feature in dataset. These objects
+    Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
 
     # Inputs
@@ -172,13 +197,13 @@ def get_features_config(
     return get_config_from_metadata(metadata, target_name)
 
 
-def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
+def get_config_from_metadata(metadata: List[FieldMetadata], target_name: str = None) -> dict:
     """
     Builds input/output feature sections of auto-train config using field
     metadata
 
     # Inputs
-    :param metadata: (List[dict]) field descriptions
+    :param metadata: (List[FieldMetadata]) field descriptions
     :param target_name (str) name of target feature
 
     # Return
@@ -190,53 +215,53 @@ def get_config_from_metadata(metadata: list, target_name: str = None) -> dict:
     }
 
     for field_meta in metadata:
-        if field_meta["name"] == target_name:
-            config["output_features"].append(field_meta[CONFIG])
-        elif not field_meta["excluded"] and field_meta["mode"] == "input":
-            config["input_features"].append(field_meta[CONFIG])
+        if field_meta.name == target_name:
+            config["output_features"].append(field_meta.config.to_dict())
+        elif not field_meta.excluded and field_meta.mode == "input":
+            config["input_features"].append(field_meta.config.to_dict())
 
     return config
 
 
 def get_field_metadata(
     fields: List[FieldInfo], row_count: int, resources: dict, target_name: str = None
-) -> list:
+) -> List[FieldMetadata]:
     """
     Computes metadata for each field in dataset
 
     # Inputs
-    :param dataset: (List[FieldInfo]) FieldInfo objects for all fields in dataset
+    :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
     :param row_count: (int) total number of entries in original dataset
     :param target_name (str) name of target feature
 
     # Return
-    :return: (List) List of dictionaries containing metadata for each field
+    :return: (List[FieldMetadata]) list of objects containing metadata for each field
     """
 
     metadata = []
-    for field in fields:
+    for idx, field in enumerate(fields):
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
-        dtype = infer_type(field, missing_value_percent, target_name)
+        dtype = infer_type(field)
         metadata.append(
-            {
-                "name": field.name,
-                "config": {
-                    "name": field.name,
-                    "column": field.name,
-                    "type": dtype,
-                },
-                "excluded": should_exclude(field, row_count, target_name),
-                "mode": infer_mode(field, target_name),
-                "missing_values": missing_value_percent,
-            }
+            FieldMetadata(
+                name=field.name,
+                config=FieldConfig(
+                    name=field.name,
+                    column=field.name,
+                    type=dtype,
+                ),
+                excluded=should_exclude(idx, field, dtype, row_count, target_name),
+                mode=infer_mode(field, target_name),
+                missing_values=missing_value_percent,
+            )
         )
 
-    # Count of number of initial nonptext input features in the config, -1 for output
+    # Count of number of initial non-text input features in the config, -1 for output
     input_count = (
         sum(
-            not meta["excluded"]
-            and meta["mode"] == "input"
-            and meta[CONFIG][TYPE] != TEXT
+            not meta.excluded
+            and meta.mode == "input"
+            and meta.config.type != TEXT
             for meta in metadata
         )
         - 1
@@ -245,32 +270,31 @@ def get_field_metadata(
     # Exclude text fields if no GPUs are available
     if resources['gpu'] == 0:
         for meta in metadata:
-            if input_count > 2 and meta[CONFIG][TYPE] == TEXT:
+            if input_count > 2 and meta.config.type == TEXT:
                 # By default, exclude text inputs when there are other candidate inputs
-                meta["excluded"] = True
+                meta.excluded = True
 
     return metadata
 
 
 def infer_type(
-    field: FieldInfo, missing_value_percent: float, target_name: str = None
+    field: FieldInfo
 ) -> str:
     """
     Perform type inference on field
 
     # Inputs
-    :param dataset: (FieldInfo) object describing field
-    :param missing_value_percent: (int) percentage of missing values
-    :param target_name (str) name of target feature
+    :param field: (FieldInfo) object describing field
 
     # Return
     :return: (str) feature type
     """
     distinct_values = field.distinct_values
-    if distinct_values == 2 and (
-        missing_value_percent == 0 or field.name == target_name
-    ):
+    if distinct_values == 2:
         return BINARY
+
+    if field.image_values >= 3:
+        return IMAGE
 
     if distinct_values < 20:
         # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
@@ -286,7 +310,7 @@ def infer_type(
     return NUMERICAL
 
 
-def should_exclude(field: FieldInfo, row_count: int, target_name: str) -> bool:
+def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, target_name: str) -> bool:
     if field.key == "PRI":
         return True
 
@@ -296,7 +320,7 @@ def should_exclude(field: FieldInfo, row_count: int, target_name: str) -> bool:
     distinct_value_percent = float(field.distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if upper_name == "ID" or upper_name.endswith("_ID"):
+        if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID"):
             return True
 
     return False

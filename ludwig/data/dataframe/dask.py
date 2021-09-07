@@ -23,13 +23,7 @@ import dask.array as da
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 
-from ludwig.constants import NAME, PROC_COLUMN
-from ludwig.data.dataset.parquet import ParquetDataset
-from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import DATA_PROCESSED_CACHE_DIR, DATASET_SPLIT_URL, DATA_TRAIN_HDF5_FP
-from ludwig.utils.fs_utils import makedirs, to_url
-from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords
 
 
@@ -48,11 +42,15 @@ class DaskEngine(DataFrameEngine):
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism
 
-    def empty_df_like(self, df):
+    def df_like(self, df, proc_cols):
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
-        return df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
+        dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=[TMP_COLUMN])
+        # TODO: address if following results in fragmented DataFrame
+        for k, v in proc_cols.items():
+            dataset[k] = v
+        return dataset
 
     def parallelize(self, data):
         return data.repartition(self.parallelism)

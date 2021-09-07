@@ -51,9 +51,21 @@ def path_exists(url):
     return fs.exists(path)
 
 
+def rename(src, tgt):
+    protocol, _ = split_protocol(tgt)
+    if protocol is not None:
+        fs = fsspec.filesystem(protocol)
+        fs.mv(src, tgt, recursive=True)
+    else:
+        os.rename(src, tgt)
+
+
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
-    return fs.makedirs(path, exist_ok=exist_ok)
+    fs.makedirs(path, exist_ok=exist_ok)
+    if not path_exists(path):
+        with fsspec.open(url, mode="wb") as f:
+            pass
 
 
 def delete(url, recursive=False):
@@ -97,6 +109,7 @@ def upload_output_directory(url):
             # Upload to remote when finished
             put_fn()
     else:
+        makedirs(url, exist_ok=True)
         # Just use the output directory directly if using a local filesystem
         yield url, None
 
