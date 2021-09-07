@@ -23,7 +23,6 @@ from collections import Counter
 import numpy as np
 import tensorflow_text as tf_text
 
-
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type

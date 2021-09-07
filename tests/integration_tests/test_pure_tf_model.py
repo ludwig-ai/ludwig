@@ -46,7 +46,7 @@ def test_pure_tf_model(csv_filename, tmpdir):
         numerical_feature(),
         category_feature(vocab_size=3),
         # sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3, token_regex=" "),
+        text_feature(vocab_size=3),
         # vector_feature(),
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
