@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Union, Optional
 
 from ludwig.api import LudwigModel
+from ludwig.backend import RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
@@ -45,6 +46,12 @@ except ImportError:
 
     class RayRemoteTrainer:
         pass
+
+
+def _is_ray_backend(backend) -> bool:
+    if isinstance(backend, str):
+        return backend == RAY
+    return isinstance(backend, RayBackend)
 
 
 class HyperoptExecutor(ABC):
@@ -767,6 +774,14 @@ class RayTuneExecutor(HyperoptExecutor):
         self.max_concurrent_trials = max_concurrent_trials
         self.sync_config = None
 
+    @property
+    def _cpu_resources_per_trial_non_none(self):
+        return self.cpu_resources_per_trial or 1
+
+    @property
+    def _gpu_resources_per_trial_non_none(self):
+        return self.gpu_resources_per_trial or 0
+
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
@@ -827,15 +842,16 @@ class RayTuneExecutor(HyperoptExecutor):
         def get_relative_checkpoints_dir_parts(path: Path):
             return path.parts[-2:]
 
-        trial_dir = Path(tune.get_trial_dir())
-        # os.path.join is used here as it works with remote protocols
-        remote_checkpoint_dir = os.path.join(
-            self.sync_config.upload_dir, *get_relative_checkpoints_dir_parts(trial_dir))
-        sync_client = get_cloud_sync_client(remote_checkpoint_dir)
+        if is_using_ray_backend:
+            trial_dir = Path(tune.get_trial_dir())
+            # os.path.join is used here as it works with remote protocols
+            remote_checkpoint_dir = os.path.join(
+                self.sync_config.upload_dir, *get_relative_checkpoints_dir_parts(trial_dir))
+            sync_client = get_cloud_sync_client(remote_checkpoint_dir)
 
         class RayTuneReportCallback(Callback):
             def on_trainer_train_setup(self, trainer, save_path):
-                if isinstance(trainer, RayRemoteTrainer) and checkpoint_dir:
+                if is_using_ray_backend and checkpoint_dir:
                     save_path = Path(save_path)
                     for path in save_path.parent.parent.glob('*'):
                         # remove any other paths that could have been synced before
@@ -844,10 +860,9 @@ class RayTuneExecutor(HyperoptExecutor):
                     sync_client.sync_down(os.path.join(
                         remote_checkpoint_dir, *get_relative_checkpoints_dir_parts(save_path)), str(save_path))
                     sync_client.wait()
-                    return
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
-                if isinstance(trainer, RayRemoteTrainer):
+                if is_using_ray_backend:
                     sync_client.sync_up(
                         str(Path(save_path).parent), remote_checkpoint_dir)
                     sync_client.wait()
@@ -864,7 +879,7 @@ class RayTuneExecutor(HyperoptExecutor):
         if is_using_ray_backend:
             resources = tune.get_trial_resources()
             # check if we are using at least 1 gpu per trial
-            use_gpu = bool(self.gpu_resources_per_trial)
+            use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
             current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
 
@@ -966,7 +981,7 @@ class RayTuneExecutor(HyperoptExecutor):
         if isinstance(dataset, str) and "://" not in dataset and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
-        if isinstance(backend, RayBackend) and not ("://" in dataset and "://" in output_directory):
+        if _is_ray_backend(backend) and not ("://" in dataset and "://" in output_directory):
             raise ValueError("Ray backend can only be used with Ray Tune if "
                              "both the `dataset` and `output_directory` are remote "
                              "(s3://, gs://, hdfs://).")
@@ -1040,12 +1055,12 @@ class RayTuneExecutor(HyperoptExecutor):
                     search_alg, max_concurrent=self.max_concurrent_trials)
 
         resources_per_trial = {
-            "cpu": self.cpu_resources_per_trial or 1,
-            "gpu": self.gpu_resources_per_trial or 0,
+            "cpu": self._cpu_resources_per_trial_non_none,
+            "gpu": self._gpu_resources_per_trial_non_none,
         }
 
         def run_experiment_trial(config, checkpoint_dir=None):
-            return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx, isinstance(backend, RayBackend))
+            return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx, _is_ray_backend(backend))
 
         tune_config = {}
         tune_callbacks = []
@@ -1056,10 +1071,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 tune_callbacks,
             )
 
-        if isinstance(backend, RayBackend):
+        if _is_ray_backend(backend):
             resources_per_trial = PlacementGroupFactory(
-                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self.gpu_resources_per_trial) if self.gpu_resources_per_trial else (
-                    [{"CPU": 1}] * self.cpu_resources_per_trial)
+                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none) if self._gpu_resources_per_trial_non_none else (
+                    [{"CPU": 1}] * self._cpu_resources_per_trial_non_none)
             )
 
         if "://" in output_directory:
@@ -1225,7 +1240,6 @@ def run_experiment(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
-        # logging_level=10
     )
     eval_stats, train_stats, _, _ = model.experiment(
         dataset=dataset,
