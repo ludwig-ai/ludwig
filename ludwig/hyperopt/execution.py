@@ -811,16 +811,17 @@ class RayTuneExecutor(HyperoptExecutor):
             copy.deepcopy(hyperopt_dict["config"]), config
         )
 
+        trial_dir = Path(tune.get_trial_dir())
+
         hyperopt_dict['config'] = modified_config
         hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
+        hyperopt_dict['output_directory'] = str(trial_dir)
 
         tune_executor = self
         if is_using_ray_backend:
             ray_queue = RayQueue(actor_options={"num_cpus": 0})
         else:
             ray_queue = None
-
-        trial_dir = Path(tune.get_trial_dir())
 
         def checkpoint(progress_tracker, save_path):
             with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
@@ -866,23 +867,24 @@ class RayTuneExecutor(HyperoptExecutor):
             def on_trainer_train_setup(self, trainer, save_path):
                 if is_using_ray_backend and checkpoint_dir:
                     save_path = Path(save_path)
-                    for path in save_path.parent.parent.glob('*'):
-                        # remove any other paths that could have been synced before
-                        if path != save_path:
-                            shutil.rmtree(str(path), ignore_errors=True)
+
+                    for path in trial_dir.glob("checkpoint*"):
+                        if path != save_path.parent:
+                            shutil.rmtree(path, ignore_errors=True)
 
                     sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
-                    sync_client.sync_down(os.path.join(
-                        remote_checkpoint_dir, *_get_relative_checkpoints_dir_parts(save_path)), str(save_path))
+                    sync_client.sync_down(
+                        remote_checkpoint_dir, str(trial_dir))
                     sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
                 if is_using_ray_backend:
+                    save_path = Path(save_path)
                     sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
                     sync_client.sync_up(
-                        str(Path(save_path).parent), remote_checkpoint_dir)
+                        str(save_path.parent.parent), remote_checkpoint_dir)
                     sync_client.wait()
-                    ray_queue.put((progress_tracker, save_path))
+                    ray_queue.put((progress_tracker, str(save_path)))
                     return
 
                 checkpoint(progress_tracker, save_path)
@@ -939,7 +941,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     sync_client.wait()
                     for progress_tracker, save_path in results:
                         checkpoint(progress_tracker, str(
-                            trial_dir.joinpath(Path(save_path).name)))
+                            trial_dir.joinpath(Path(save_path))))
                         report(progress_tracker)
 
             while thread.is_alive():
