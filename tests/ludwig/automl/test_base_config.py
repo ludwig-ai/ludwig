@@ -8,14 +8,15 @@ ROW_COUNT = 100
 TARGET_NAME = 'target'
 
 
-@pytest.mark.parametrize("distinct_values,avg_words,img_values,expected", [
-    (ROW_COUNT, 0, 0, NUMERICAL),
-    (10, 0, 0, CATEGORY),
-    (2, 0, 0, BINARY),
-    (ROW_COUNT, 3, 0, TEXT),
-    (ROW_COUNT, 1, ROW_COUNT, IMAGE),
+@pytest.mark.parametrize("distinct_values,avg_words,img_values,missing_vals,expected", [
+    (ROW_COUNT, 0, 0, 0.0, NUMERICAL),
+    (10, 0, 0, 0.0, CATEGORY),
+    (2, 0, 0, 0.0, BINARY),
+    (2, 0, 0, 0.1, CATEGORY),
+    (ROW_COUNT, 3, 0, 0.0, TEXT),
+    (ROW_COUNT, 1, ROW_COUNT, 0.0, IMAGE),
 ])
-def test_infer_type(distinct_values, avg_words, img_values, expected):
+def test_infer_type(distinct_values, avg_words, img_values, missing_vals, expected):
     field = FieldInfo(
         name='foo',
         dtype='object',
@@ -23,7 +24,7 @@ def test_infer_type(distinct_values, avg_words, img_values, expected):
         avg_words=avg_words,
         image_values=img_values,
     )
-    assert infer_type(field) == expected
+    assert infer_type(field, missing_vals) == expected
 
 
 @pytest.mark.parametrize("idx,distinct_values,dtype,name,expected", [
