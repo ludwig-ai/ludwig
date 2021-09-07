@@ -539,19 +539,12 @@ class ParallelCNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
-        # swap dimensions for Torch compatibility
-        # [batch_size, seq_size, embedding_size] ->[batch_size, embedding_size, seq_size]
-        # hidden = hidden.transpose(1, 2)
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d(
             hidden,
             training=training,
             mask=mask
         )
-
-        # put back to [batch_size, num_conv_layers * num_filters, seq_size] ->
-        #     [batch_size, seq_size, num_conv_layers * num_filters]
-        # hidden = hidden.transpose(1, 2)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -916,19 +909,12 @@ class StackedCNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
-        # shape at this point [batch_size, seq_size, embedding_size]
-        # swap seq_size axis and embedding_size axis to make compatible for Torch
-        # hidden = hidden.transpose(1, 2)
-
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
             training=training,
             mask=mask
         )
-
-        # swap back dimensions
-        # hidden = hidden.transpose(1, 2)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -941,6 +927,8 @@ class StackedCNN(SequenceEncoder):
                 mask=mask
             )
 
+        # no reduction: hidden [batch_size, seq_size, num_filters]
+        # with reduction: hidden [batch_size, fc_size]
         return {'encoder_output': hidden}
 
 
@@ -1275,8 +1263,6 @@ class StackedParallelCNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
-        # convert to [batch_size, embedding_size, seq_size] for Pytorch
-        # hidden = hidden.transpose(1, 2)
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d_stack(
             hidden,
@@ -1284,8 +1270,6 @@ class StackedParallelCNN(SequenceEncoder):
             mask=mask
         )
 
-        # revert back to [batch_size, seq_size, hidden_size]
-        # hidden = hidden.transpose(1, 2)
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
             hidden = self.reduce_sequence(hidden)
@@ -1297,6 +1281,8 @@ class StackedParallelCNN(SequenceEncoder):
                 mask=mask
             )
 
+        # no reduction: hidden [batch_size, seq_size, num_filter]
+        # with reduction: hidden [batch_size, fc_size]
         return {'encoder_output': hidden}
 
 
@@ -1894,19 +1880,12 @@ class StackedCNNRNN(SequenceEncoder):
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
-        # shape at this point [batch_size, seq_size, embedding_size]
-        # swap seq_size axis and embedding_size axis to make compatible for Torch
-        # hidden = hidden.transpose(1, 2)
-
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
             training=training,
             mask=mask
         )
-
-        # swap back dimensions
-        # hidden = hidden.transpose(1, 2)
 
         # ================ Recurrent Layers ================
         hidden, final_state = self.recurrent_stack(
@@ -1925,6 +1904,10 @@ class StackedCNNRNN(SequenceEncoder):
                 mask=mask
             )
 
+        # no reduction: hidden [batch_size, seq_size, state_size]
+        # with reduction: hidden [batch_size, seq_size, fc_size]
+        # final_state: if rnn/gru [batch_size, state_size]
+        #              lstm ([batch_size, state_size], [batch_size, state_size])
         return {
             'encoder_output': hidden,
             'encoder_output_state': final_state

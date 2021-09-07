@@ -150,7 +150,8 @@ class Conv1DLayer(LudwigModule):
         # inputs: [batch_size, seq_size, in_channels]
         # in Torch nomenclature (N, L, C)
         hidden = inputs
-        # put in form compatible with Torch
+
+        # put in torch compatible form [batch_size, in_channels, seq_size]
         hidden = hidden.transpose(1, 2)
 
         for i, layer in enumerate(self.layers):
@@ -158,10 +159,10 @@ class Conv1DLayer(LudwigModule):
             #       commented out to avoid unexpected parameter error
             hidden = layer(hidden)  # , training=training)
 
-        # revert back to normal form
+        # revert back to normal form [batch_size, seq_size, out_channels]
         hidden = hidden.transpose(1, 2)
 
-        return hidden  # (batch_size, out_channels, seq_size)
+        return hidden  # (batch_size, seq_size, out_channels)
 
 
 class Conv1DStack(LudwigModule):
