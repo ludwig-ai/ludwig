@@ -23,12 +23,12 @@ import logging
 #                                      Conv1D, Conv2D, Dropout, Layer,
 #                                      LayerNormalization, MaxPool1D, MaxPool2D,
 #                                      ZeroPadding2D)
-from torch.nn import Module
+from ludwig.utils.torch_utils import LudwigModule
 
 logger = logging.getLogger(__name__)
 
 
-class Conv1DLayer(Module):
+class Conv1DLayer(LudwigModule):
 
     def __init__(
             self,
@@ -106,7 +106,7 @@ class Conv1DLayer(Module):
         return hidden
 
 
-class Conv1DStack(Module):
+class Conv1DStack(LudwigModule):
 
     def __init__(
             self,
@@ -253,7 +253,7 @@ class Conv1DStack(Module):
         return hidden
 
 
-class ParallelConv1D(Module):
+class ParallelConv1D(LudwigModule):
 
     def __init__(
             self,
@@ -389,7 +389,7 @@ class ParallelConv1D(Module):
         return hidden
 
 
-class ParallelConv1DStack(Module):
+class ParallelConv1DStack(LudwigModule):
 
     def __init__(
             self,
@@ -520,7 +520,7 @@ class ParallelConv1DStack(Module):
         return hidden
 
 
-class Conv2DLayer(Module):
+class Conv2DLayer(LudwigModule):
 
     def __init__(
             self,
@@ -598,7 +598,7 @@ class Conv2DLayer(Module):
         return hidden
 
 
-class Conv2DStack(Module):
+class Conv2DStack(LudwigModule):
 
     def __init__(
             self,
@@ -728,7 +728,7 @@ class Conv2DStack(Module):
         return hidden
 
 
-class Conv2DLayerFixedPadding(Module):
+class Conv2DLayerFixedPadding(LudwigModule):
 
     def __init__(
             self,
@@ -768,7 +768,7 @@ class Conv2DLayerFixedPadding(Module):
         return hidden
 
 
-class ResNetBlock(Module):
+class ResNetBlock(LudwigModule):
 
     def __init__(
             self,
@@ -842,7 +842,7 @@ class ResNetBlock(Module):
         return hidden + shortcut
 
 
-class ResNetBottleneckBlock(Module):
+class ResNetBottleneckBlock(LudwigModule):
 
     def __init__(
             self,
@@ -938,7 +938,7 @@ class ResNetBottleneckBlock(Module):
         return hidden + shortcut
 
 
-class ResNetBlockLayer(Module):
+class ResNetBlockLayer(LudwigModule):
     def __init__(
             self,
             num_filters,
@@ -995,7 +995,7 @@ class ResNetBlockLayer(Module):
         return hidden
 
 
-class ResNet(Module):
+class ResNet(LudwigModule):
     def __init__(
             self,
             resnet_size,

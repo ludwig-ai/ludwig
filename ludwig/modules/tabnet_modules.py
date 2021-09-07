@@ -2,13 +2,13 @@ from typing import List, Tuple
 
 # import tensorflow as tf
 import torch
-from torch.nn import Module
 
 from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
+from ludwig.utils.torch_utils import LudwigModule
 
 
-class TabNet(Module):
+class TabNet(LudwigModule):
     def __init__(
             self,
             size: int,
@@ -66,7 +66,7 @@ class TabNet(Module):
         self.feature_transforms: List[FeatureTransformer] = [
             FeatureTransformer(**kargs)
         ]
-        self.attentive_transforms: List[AttentiveTransformer] = [None, ]
+        self.attentive_transforms: List[AttentiveTransformer] = [None]
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
@@ -161,7 +161,7 @@ class TabNet(Module):
         return final_output, aggregated_mask, masks
 
 
-class FeatureBlock(Module):
+class FeatureBlock(LudwigModule):
     def __init__(
             self,
             size: int,
@@ -169,7 +169,7 @@ class FeatureBlock(Module):
             bn_momentum: float = 0.9,
             bn_epsilon: float = 1e-3,
             bn_virtual_bs: int = None,
-            shared_fc_layer: Module = None,
+            shared_fc_layer: LudwigModule = None,
     ):
         super().__init__()
         self.apply_glu = apply_glu
@@ -195,7 +195,7 @@ class FeatureBlock(Module):
         return hidden
 
 
-class AttentiveTransformer(Module):
+class AttentiveTransformer(LudwigModule):
     def __init__(
             self,
             size: int,
@@ -236,11 +236,11 @@ class AttentiveTransformer(Module):
 
 
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
-class FeatureTransformer(Module):
+class FeatureTransformer(LudwigModule):
     def __init__(
             self,
             size: int,
-            shared_fc_layers: List[Module] = [],
+            shared_fc_layers: List[LudwigModule] = [],
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             bn_momentum: float = 0.9,
@@ -288,7 +288,7 @@ class FeatureTransformer(Module):
 
 # reimplementation of sparsemax to be more stable and fallback to softmax
 # adapted from https://github.com/tensorflow/addons/blob/v0.12.0/tensorflow_addons/activations/sparsemax.py#L21-L77
-class CustomSparsemax(Module):
+class CustomSparsemax(LudwigModule):
     """Sparsemax activation function.
 
     The output shape is the same as the input shape.

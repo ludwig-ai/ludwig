@@ -78,7 +78,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_input_shape(),
+        return tf.keras.Input(shape=self.input_shape,
                               dtype=self.get_input_dtype(),
                               name=self.name + '_input')
 
@@ -86,16 +86,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def get_input_dtype(cls):
         """Returns the Tensor data type this input accepts."""
-        pass
-
-    @abstractmethod
-    def get_input_shape(self):
-        """Returns a tuple representing the Tensor shape this input accepts."""
-        pass
-
-    @abstractmethod
-    def get_output_shape(self):
-        """Returns a tuple representing the Tensor shape this input outputs."""
         pass
 
     @staticmethod
@@ -189,7 +179,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 )
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_output_shape(),
+        return tf.keras.Input(shape=self.output_shape,
                               dtype=self.get_output_dtype(),
                               name=self.name + '_input')
 
@@ -202,16 +192,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
-        pass
-
-    @abstractmethod
-    def get_output_shape(self):
-        """Returns a tuple representing the Tensor shape this feature outputs."""
-        pass
-
-    @abstractmethod
-    def get_input_shape(self):
-        """Returns a tuple representing the Tensor shape this feature accepts."""
         pass
 
     @property

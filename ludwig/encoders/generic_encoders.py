@@ -16,8 +16,9 @@
 # ==============================================================================
 import logging
 
-from ludwig.encoders import Encoder
+import torch
 
+from ludwig.encoders import Encoder
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,12 @@ class PassthroughEncoder(Encoder):
 
     def __init__(
             self,
+            input_size,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.input_size = input_size
 
     def forward(self, inputs, training=None, mask=None):
         """
@@ -39,8 +42,13 @@ class PassthroughEncoder(Encoder):
         """
         return {'encoder_output': inputs}
 
-    def get_output_shape(self, input_shape):
-        return input_shape
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self.input_size)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
 
     @classmethod
     def register(cls, name):
@@ -71,6 +79,7 @@ class DenseEncoder(Encoder):
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.input_size = input_size
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
@@ -99,8 +108,13 @@ class DenseEncoder(Encoder):
         """
         return {'encoder_output': self.fc_stack(inputs)}
 
-    def get_output_shape(self, input_shape):
-        return self.fc_stack.layers[-1]['fc_size']
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self.input_size)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.fc_stack.layers[-1]['fc_size']])
 
     @classmethod
     def register(cls, name):
