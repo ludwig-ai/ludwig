@@ -647,7 +647,7 @@ class Trainer(BaseTrainer):
             tensorboard_log_dir = os.path.join(
                 save_path, 'logs'
             )
-        if save_path and os.path.exists(save_path):
+        if save_path:
             training_progress_tracker_path = os.path.join(
                 save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
             )
@@ -1131,6 +1131,8 @@ class Trainer(BaseTrainer):
             collect_predictions=False,
             dataset_name=dataset_name
         )
+
+        print(f'EVAL METRICS {metrics}')
 
         self.append_metrics(model, dataset_name, metrics, metrics_log, tables)
 
