@@ -1,6 +1,4 @@
 import logging
-from ludwig.backend.ray import RayBackend
-from ludwig.backend.horovod import HorovodBackend
 from pprint import pformat
 from typing import Union, List
 
@@ -20,6 +18,13 @@ from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import open_file, makedirs
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values, get_class_attributes
+
+try:
+    from ludwig.backend.ray import RayBackend
+except ImportError:
+
+    class RayBackend:
+        pass
 
 logger = logging.getLogger(__name__)
 
