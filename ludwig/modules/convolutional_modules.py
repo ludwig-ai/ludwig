@@ -136,6 +136,7 @@ class Conv1DLayer(LudwigModule):
                 padding=self.pool_padding
             ))
 
+
         # todo: determine how to handle layer.name
         # for layer in self.layers:
         #     logger.debug('   {}'.format(layer.name))
@@ -143,17 +144,22 @@ class Conv1DLayer(LudwigModule):
     @property
     def input_shape(self):
         """ Returns the size of the input tensor without the batch dimension. """
-        return (torch.Size([self.in_channels, self.sequence_size]))
+        return (torch.Size([self.sequence_size, self.in_channels]))
 
     def forward(self, inputs, training=None, mask=None):
-        # inputs: [batch_size, in_channels, seq_size]
-        # in Torch nomenclature (N, C, L)
+        # inputs: [batch_size, seq_size, in_channels]
+        # in Torch nomenclature (N, L, C)
         hidden = inputs
+        # put in form compatible with Torch
+        hidden = hidden.transpose(1, 2)
 
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
             # todo: determine how to handle training parameter in this call
             #       commented out to avoid unexpected parameter error
             hidden = layer(hidden)  # , training=training)
+
+        # revert back to normal form
+        hidden = hidden.transpose(1, 2)
 
         return hidden  # (batch_size, out_channels, seq_size)
 
@@ -304,12 +310,12 @@ class Conv1DStack(LudwigModule):
             )
 
             # pass along shape for the input to the next layer
-            prior_layer_channels, l_in = output_shape
+            l_in, prior_layer_channels = output_shape
 
     @property
     def input_shape(self):
         """ Returns the size of the input tensor without the batch dimension. """
-        return (torch.Size([self.in_channels, self.max_sequence_length]))
+        return (torch.Size([self.max_sequence_length, self.in_channels]))
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -460,7 +466,7 @@ class ParallelConv1D(LudwigModule):
     @property
     def input_shape(self) -> torch.Size:
         """ Returns the size of the input tensor without the batch dimension. """
-        return torch.Size([self.in_channels, self.max_sequence_length])
+        return torch.Size([self.max_sequence_length, self.in_channels])
 
     def forward(self, inputs, training=None, mask=None):
         # inputs: [batch_size, in_channels, seq_size)
@@ -470,9 +476,9 @@ class ParallelConv1D(LudwigModule):
 
         for layer in self.parallel_layers:
             hiddens.append(layer(hidden, training=training))
-        hidden = torch.cat(hiddens, 1)
+        hidden = torch.cat(hiddens, 2)
 
-        if hidden.shape[2] == 0:
+        if hidden.shape[1] == 0:
             raise ValueError(
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '
@@ -612,8 +618,8 @@ class ParallelConv1DStack(LudwigModule):
                          f'{self.stack[i].output_shape}')
 
             # set input specification for the layer
-            num_channels = self.stack[i].output_shape[0]
-            sequence_length = self.stack[i].output_shape[1]
+            num_channels = self.stack[i].output_shape[1]
+            sequence_length = self.stack[i].output_shape[0]
 
     @property
     def input_shape(self):
