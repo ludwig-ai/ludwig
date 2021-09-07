@@ -2,4 +2,4 @@ ray[default,tune]
 pickle5
 tensorboardX<2.3
 GPUtil
-
+awscli
