@@ -500,7 +500,7 @@ class ParallelCNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                num_filters,
+                num_filters * self.num_conv_layers,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
