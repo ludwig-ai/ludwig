@@ -106,6 +106,8 @@ class Conv1DLayer(LudwigModule):
             )
         elif norm == 'layer':
             # todo(jmt): confirm the shape (N, C, L) or (N, L, C)
+            # following code sequence based on this posting:
+            #   https://discuss.pytorch.org/t/how-to-use-layer-norm-after-con-1d-layer/65284/9
             # convert from (N, C, L) -> (N, L, C) for layer norm
             self.layers.append(
                 lambda x: x.transpose(1, 2)
