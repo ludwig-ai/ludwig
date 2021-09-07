@@ -32,7 +32,7 @@ from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
@@ -722,7 +722,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug('Preprocessing')
-        dataset, training_set_metadata = preprocess_for_prediction(
+        dataset, _ = preprocess_for_prediction(
             self.config,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -875,9 +875,9 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 # TODO ray: support calculating stats on partitioned datasets
-                if isinstance(dataset, PartitionedDataset):
+                if isinstance(dataset, RayDataset):
                     raise ValueError(
-                        'Cannot calculate overall stats on a partitioned dataset at this time. '
+                        'Cannot calculate overall stats on a ray dataset at this time. '
                         'Set `calculate_overall_stats=False`.'
                     )
 
