@@ -647,9 +647,10 @@ class Trainer(BaseTrainer):
             tensorboard_log_dir = os.path.join(
                 save_path, 'logs'
             )
-        training_progress_tracker_path = os.path.join(
-            save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
-        )
+        if save_path and os.path.exists(save_path):
+            training_progress_tracker_path = os.path.join(
+                save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
+            )
 
         self.callback(lambda c: c.on_trainer_train_setup(
             self, save_path), coordinator_only=False)
