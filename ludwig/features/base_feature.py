@@ -546,11 +546,4 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         return feature_hidden
 
-    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
-        """ Converts the output of batch_predict to a 1D array. """
-        return df
-
-    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
-        """ Reshapes a flattened 1D array into its original shape. """
-        return df
 
