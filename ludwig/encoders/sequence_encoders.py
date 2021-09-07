@@ -500,6 +500,7 @@ class ParallelCNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                num_filters,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -864,6 +865,7 @@ class StackedCNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                num_filters,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1226,6 +1228,7 @@ class StackedParallelCNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                num_filters,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1522,6 +1525,7 @@ class StackedRNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                state_size,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1843,6 +1847,7 @@ class StackedCNNRNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.conv1d_stack.output_shape[0],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -2137,6 +2142,7 @@ class StackedTransformer(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                hidden_size,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
