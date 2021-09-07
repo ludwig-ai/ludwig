@@ -1093,6 +1093,7 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         if _is_ray_backend(backend):
+            # we can't set Trial actor's CPUs to 0 so we just go very low
             resources_per_trial = PlacementGroupFactory(
                 [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none) if self._gpu_resources_per_trial_non_none else (
                     [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none)
