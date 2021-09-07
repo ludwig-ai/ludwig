@@ -294,7 +294,7 @@ class SpaceStringToListTokenizer(BaseTokenizer):
     @staticmethod
     def call(t):
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex='\s+')
+        splitter = tf_text.RegexSplitter(split_regex=r'\s+')
         return splitter.split(t)
 
 class SpacePunctuationStringToListTokenizer(BaseTokenizer):
@@ -304,7 +304,7 @@ class SpacePunctuationStringToListTokenizer(BaseTokenizer):
     @staticmethod
     def call(t):
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex='\w+|[^\w\s]')
+        splitter = tf_text.RegexSplitter(split_regex=r'\w+|[^\w\s]')
         return splitter.split(t)
 
 class UnderscoreStringToListTokenizer(BaseTokenizer):
@@ -314,7 +314,7 @@ class UnderscoreStringToListTokenizer(BaseTokenizer):
     @staticmethod
     def call(t):
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex='\s*_\s*')
+        splitter = tf_text.RegexSplitter(split_regex=r'\s*_\s*')
         return splitter.split(t)
 
 class CommaStringToListTokenizer(BaseTokenizer):
@@ -324,7 +324,7 @@ class CommaStringToListTokenizer(BaseTokenizer):
     @staticmethod
     def call(t):
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex='\s*,\s*')
+        splitter = tf_text.RegexSplitter(split_regex=r'\s*,\s*')
         return splitter.split(t)
 
 class UntokenizedStringToListTokenizer(BaseTokenizer):
