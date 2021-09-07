@@ -540,7 +540,7 @@ class ParallelCNN(SequenceEncoder):
         hidden = embedded_sequence
 
         # swap dimensions for Torch compatibility
-        # [batch_size, embedding_size, seq_size]
+        # [batch_size, seq_size, embedding_size] ->[batch_size, embedding_size, seq_size]
         hidden = hidden.transpose(1, 2)
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d(
@@ -549,7 +549,8 @@ class ParallelCNN(SequenceEncoder):
             mask=mask
         )
 
-        # put back to [batch_size, seq_size, hidden]
+        # put back to [batch_size, num_conv_layers * num_filters, seq_size] ->
+        #     [batch_size, seq_size, num_conv_layers * num_filters]
         hidden = hidden.transpose(1, 2)
 
         # ================ Sequence Reduction ================

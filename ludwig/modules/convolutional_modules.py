@@ -146,7 +146,8 @@ class Conv1DLayer(LudwigModule):
         return (torch.Size([self.in_channels, self.sequence_size]))
 
     def forward(self, inputs, training=None, mask=None):
-        # inputs: [batch_size, sequ_size, hidden_size]
+        # inputs: [batch_size, in_channels, seq_size]
+        # in Torch nomenclature (N, C, L)
         hidden = inputs
 
         for layer in self.layers:
@@ -154,7 +155,7 @@ class Conv1DLayer(LudwigModule):
             #       commented out to avoid unexpected parameter error
             hidden = layer(hidden)  # , training=training)
 
-        return hidden
+        return hidden  # (batch_size, out_channels, seq_size)
 
 
 class Conv1DStack(LudwigModule):
@@ -462,6 +463,8 @@ class ParallelConv1D(LudwigModule):
         return torch.Size([self.in_channels, self.max_sequence_length])
 
     def forward(self, inputs, training=None, mask=None):
+        # inputs: [batch_size, in_channels, seq_size)
+
         hidden = inputs
         hiddens = []
 
@@ -480,7 +483,7 @@ class ParallelConv1D(LudwigModule):
                 'and pool.'
             )
 
-        return hidden
+        return hidden  # (batch_size, len(parallel_layers) * out_channels, seq_size)
 
 
 class ParallelConv1DStack(LudwigModule):
