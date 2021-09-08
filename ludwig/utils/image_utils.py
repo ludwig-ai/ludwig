@@ -18,11 +18,13 @@ import logging
 import os
 import sys
 from math import ceil, floor
-from typing import Tuple, Union
+from typing import BinaryIO, TextIO, Tuple, Union
 
 import numpy as np
 # TODO(shreya): Import guard?
 import torch
+import torchvision
+import torchvision.transforms.functional as F
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
@@ -31,7 +33,12 @@ from ludwig.utils.fs_utils import open_file, is_http
 logger = logging.getLogger(__name__)
 
 
-def get_image_from_path(src_path, img_entry, ret_bytes=False):
+# TODO(shreya): Confirm output type.
+def get_image_from_path(
+    src_path: str,
+    img_entry: Union[str, bytes],
+    ret_bytes: bool = False
+) -> Union[BinaryIO, TextIO, bytes]:
     """
     skimage.io.imread() can read filenames or urls
     imghdr.what() can read filenames or bytes
@@ -51,7 +58,7 @@ def get_image_from_path(src_path, img_entry, ret_bytes=False):
         return f
 
 
-def is_image(src_path, img_entry):
+def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
     if not isinstance(img_entry, str):
         return False
     try:
@@ -65,14 +72,15 @@ def is_image(src_path, img_entry):
         return False
 
 
-def read_image(img) -> torch.Tensor:
+def read_image(img: str) -> torch.Tensor:
+    """ Returns a tensor with CHW format. """
     # TODO(shreya): Confirm that it's ok to switch image reader to support NCHW
     # TODO(shreya): Confirm that it's ok to read all images as RGB
     try:
         from torchvision.io import read_image, ImageReadMode
     except ImportError:
         logger.error(
-            ' scikit-image is not installed. '
+            ' torchvision is not installed. '
             'In order to install all image feature dependencies run '
             'pip install ludwig[image]'
         )
@@ -82,56 +90,59 @@ def read_image(img) -> torch.Tensor:
     return img
 
 
-def pad(img, size, axis):
-    old_size = img.shape[axis]
-    pad_size = float(size - old_size) / 2
-    pads = [(0, 0), (0, 0), (0, 0)]
-    pads[axis] = (floor(pad_size), ceil(pad_size))
-    return np.pad(img, pads, 'edge')
+def pad(
+        img: torch.Tensor,
+        size: Union[int, Tuple[int]],
+) -> torch.Tensor:
+    old_size = np.array(img.shape[1:])
+    pad_size = float(to_np_tuple(size) - old_size) / 2
+    padding = np.concatenate((np.floor(pad_size), np.ceil(pad_size))).tolist()
+    padding[padding < 0] = 0
+    return F.pad(img, padding=padding, padding_mode='edge')
 
 
-def crop(img, size, axis):
-    y_min = 0
-    y_max = img.shape[0]
-    x_min = 0
-    x_max = img.shape[1]
-    if axis == 0:
-        y_min = int(float(y_max - size) / 2)
-        y_max = y_min + size
-    else:
-        x_min = int(float(x_max - size) / 2)
-        x_max = x_min + size
-
-    return img[y_min: y_max, x_min: x_max, :]
+def crop(
+        img: torch.Tensor,
+        size: Union[int, Tuple[int]],
+) -> torch.Tensor:
+    return F.center_crop(img, output_size=size)
 
 
-def crop_or_pad(img, new_size_tuple):
-    for axis in range(2):
-        if new_size_tuple[axis] != img.shape[axis]:
-            if new_size_tuple[axis] > img.shape[axis]:
-                img = pad(img, new_size_tuple[axis], axis)
-            else:
-                img = crop(img, new_size_tuple[axis], axis)
+def crop_or_pad(
+        img: torch.Tensor,
+        new_size: Union[int, Tuple[int]]
+):
+    new_size = to_np_tuple(new_size)
+    if new_size.tolist() == list(img.shape[1:]):
+        return img
+
+    img = pad(img, new_size)
+    img = crop(img, new_size)
     return img
 
 
-def resize_image(img, new_size_typle, resize_method):
+def resize_image(
+        img: torch.Tensor,
+        new_size: Union[int, Tuple[int]],
+        resize_method: str
+):
     try:
-        from skimage import img_as_ubyte
-        from skimage.transform import resize
+        import torchvision
+        import torchvision.transforms.functional as F
     except ImportError:
         logger.error(
-            ' scikit-image is not installed. '
+            'torchvision is not installed. '
             'In order to install all image feature dependencies run '
             'pip install ludwig[image]'
         )
         sys.exit(-1)
 
-    if tuple(img.shape[:2]) != new_size_typle:
+    new_size = to_np_tuple(new_size)
+    if list(img.shape[:1]) != new_size.tolist():
         if resize_method == CROP_OR_PAD:
-            return crop_or_pad(img, new_size_typle)
+            return crop_or_pad(img, new_size.tolist())
         elif resize_method == INTERPOLATE:
-            return img_as_ubyte(resize(img, new_size_typle))
+            return F.resize(img, new_size.tolist())
         raise ValueError(
             'Invalid image resize method: {}'.format(resize_method))
     return img
@@ -139,20 +150,19 @@ def resize_image(img, new_size_typle, resize_method):
 
 def greyscale(img):
     try:
-        from skimage import img_as_ubyte
-        from skimage.color import rgb2gray
+        import torchvision.transforms.functional as F
     except ImportError:
         logger.error(
-            ' scikit-image is not installed. '
+            'torchvision is not installed. '
             'In order to install all image feature dependencies run '
             'pip install ludwig[image]'
         )
         sys.exit(-1)
 
-    return np.expand_dims(img_as_ubyte(rgb2gray(img)), axis=2)
+    return F.to_grayscale(img)
 
 
-def num_channels_in_image(img):
+def num_channels_in_image(img: torch.Tensor):
     if img is None or img.ndim < 2:
         raise ValueError('Invalid image data')
 
@@ -162,7 +172,7 @@ def num_channels_in_image(img):
         return img.shape[0]
 
 
-def img_prop_to_numpy(prop: Union[int, Tuple[int]]) -> np.ndarray:
+def to_np_tuple(prop: Union[int, Tuple[int]]) -> np.ndarray:
     """ Creates a np array of length 2 from a Conv2D property.
 
     E.g., stride=(2, 3) gets converted into np.array([2, 3]), where the
@@ -194,11 +204,11 @@ def get_img_output_shape(
     elif padding == 'valid':
         padding = np.zeros(2)
     else:
-        padding = img2d_prop_to_numpy(padding)
+        padding = to_np_tuple(padding)
 
-    kernel_size = img2d_prop_to_numpy(kernel_size)
-    stride = img2d_prop_to_numpy(stride)
-    dilation = img2d_prop_to_numpy(dilation)
+    kernel_size = to_np_tuple(kernel_size)
+    stride = to_np_tuple(stride)
+    dilation = to_np_tuple(dilation)
 
     shape = np.array([img_height, img_width])
 

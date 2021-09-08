@@ -261,30 +261,28 @@ class MLPMixerEncoder(ImageEncoder):
 
     def __init__(
             self,
-            patch_size=16,
-            embed_size=512,
-            token_size=2048,
-            channel_dim=256,
-            num_layers=8,
-            dropout=0.0,
-            avg_pool=True,
-            # weights_initializer='glorot_uniform',
-            # bias_initializer='zeros',
-            # weights_regularizer=None,
-            # bias_regularizer=None,
-            # activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            # norm=None,
-            # norm_params=None,
-            # activation='gelu',
+            img_height: int,
+            img_width: int,
+            in_channels: int,
+            patch_size: int = 16,
+            embed_size: int = 512,
+            token_size: int = 2048,
+            channel_dim: int = 256,
+            num_layers: int = 8,
+            dropout: float = 0.0,
+            avg_pool: bool = True,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        self._input_shape = (in_channels, img_height, img_width)
+
         logger.debug('  MLPMixer')
         self.mlp_mixer = MLPMixer(
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=in_channels,
             patch_size=patch_size,
             embed_size=embed_size,
             token_size=token_size,
@@ -294,6 +292,16 @@ class MLPMixerEncoder(ImageEncoder):
             avg_pool=avg_pool,
         )
 
-    def call(self, inputs, training=None, mask=None):
-        hidden = self.mlp_mixer(inputs, training=training)
+        self._output_shape = self.mlp_mixer.output_shape
+
+    def forward(self, inputs):
+        hidden = self.mlp_mixer(inputs)
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return self._input_shape
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self._output_shape
