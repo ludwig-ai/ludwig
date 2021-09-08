@@ -175,7 +175,8 @@ class TransformerStack(LudwigModule):
         super().__init__()
         self.supports_masking = True
 
-        self.layers = []
+        self.layers = nn.ModuleList()
+
         for _ in range(num_layers):
             layer = TransformerBlock(
                 input_size=input_size,

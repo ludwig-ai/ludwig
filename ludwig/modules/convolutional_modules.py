@@ -76,7 +76,7 @@ class Conv1DLayer(LudwigModule):
             self.pool_padding = 0
 
 
-        self.layers = []
+        self.layers = nn.ModuleList()
 
         self.layers.append(nn.Conv1d(
             # filters=num_filters,
@@ -105,20 +105,10 @@ class Conv1DLayer(LudwigModule):
                     **norm_params)
             )
         elif norm == 'layer':
-            # todo(jmt): confirm the shape (N, C, L) or (N, L, C)
-            # following code sequence based on this posting:
-            #   https://discuss.pytorch.org/t/how-to-use-layer-norm-after-con-1d-layer/65284/9
-            # convert from (N, C, L) -> (N, L, C) for layer norm
-            self.layers.append(
-                lambda x: x.transpose(1, 2)
-            )
+            # todo(jmt): confirm correct interpretation of LayerNorm paramters
             self.layers.append(nn.LayerNorm(
-                normalized_shape=out_channels,
+                normalized_shape=[out_channels, self.sequence_size],
                 **norm_params)
-            )
-            # convert from (N, L, C) -> (N, C, L) for remainder of processing
-            self.layers.append(
-                lambda x: x.transpose(1, 2)
             )
 
         self.layers.append(get_activation(activation))
@@ -267,7 +257,7 @@ class Conv1DStack(LudwigModule):
             if 'pool_padding' not in layer:
                 layer['pool_padding'] = default_pool_padding
 
-        self.stack = []
+        self.stack = nn.ModuleList()
 
         prior_layer_channels = in_channels
         l_in = self.max_sequence_length  # torch L_in
@@ -428,7 +418,7 @@ class ParallelConv1D(LudwigModule):
             if 'pool_padding' not in layer:
                 layer['pool_padding'] = default_pool_padding
 
-        self.parallel_layers = []
+        self.parallel_layers = nn.ModuleList()
 
         for i, layer in enumerate(self.layers):
             logger.debug('   parallel layer {}'.format(i))
@@ -603,7 +593,7 @@ class ParallelConv1DStack(LudwigModule):
                 if 'pool_padding' not in layer:
                     layer['pool_padding'] = default_pool_padding
 
-        self.stack = []
+        self.stack = nn.ModuleList()
         num_channels = self.in_channels
         sequence_length = self.max_sequence_length
         for i, parallel_layers in enumerate(self.stacked_parallel_layers):
@@ -675,7 +665,7 @@ class Conv2DLayer(LudwigModule):
     ):
         super().__init__()
 
-        self.layers = []
+        self.layers = nn.ModuleList()
 
         self.layers.append(Conv2D(
             filters=num_filters,
@@ -816,7 +806,7 @@ class Conv2DStack(LudwigModule):
             if 'pool_padding' not in layer:
                 layer['pool_padding'] = default_pool_padding
 
-        self.stack = []
+        self.stack = nn.ModuleList()
 
         for i, layer in enumerate(self.layers):
             logger.debug('   stack layer {}'.format(i))
