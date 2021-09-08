@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 from math import ceil, floor
-from typing import BinaryIO, TextIO, Tuple, Union
+from typing import BinaryIO, Optional, TextIO, Tuple, Union
 
 import numpy as np
 # TODO(shreya): Import guard?
@@ -72,10 +72,12 @@ def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
         return False
 
 
-def read_image(img: str) -> torch.Tensor:
-    """ Returns a tensor with CHW format. """
-    # TODO(shreya): Confirm that it's ok to switch image reader to support NCHW
-    # TODO(shreya): Confirm that it's ok to read all images as RGB
+def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None) -> torch.Tensor:
+    """ Returns a tensor with CHW format.
+    
+    If num_channels is not provided, he image is read in unchanged format.
+    """
+
     try:
         from torchvision.io import read_image, ImageReadMode
     except ImportError:
@@ -86,7 +88,16 @@ def read_image(img: str) -> torch.Tensor:
         )
         sys.exit(-1)
     if isinstance(img, str):
-        return read_image(img, mode=ImageReadMode.RGB)
+        if num_channels == 1:
+            return read_image(img, mode=ImageReadMode.GRAY)
+        elif num_channels == 2:
+            return read_image(img, mode=ImageReadMode.GRAY_ALPHA)
+        elif num_channels == 3:
+            return read_image(img, mode=ImageReadMode.RGB)
+        elif num_channels == 4:
+            return read_image(img, mode=ImageReadMode.RGB_ALPHA)
+        else:
+            raise ValueError(f'Invalid num_channels={num_channels}, value must be one of 1, 2, 3, 4.')
     return img
 
 
@@ -127,7 +138,6 @@ def resize_image(
         resize_method: str
 ):
     try:
-        import torchvision
         import torchvision.transforms.functional as F
     except ImportError:
         logger.error(

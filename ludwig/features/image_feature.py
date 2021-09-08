@@ -89,13 +89,13 @@ class ImageFeatureMixin:
 
     @staticmethod
     def _read_image_and_resize(
-            img_entry: Union[str, np.ndarray],
+            img_entry: Union[str, torch.Tensor],
             img_width: int,
             img_height: int,
             should_resize: bool,
             num_channels: int,
             resize_method: str,
-            user_specified_num_channels: int
+            user_specified_num_channels: bool
     ):
         """
         :param img_entry Union[str, 'numpy.array']: if str file path to the
@@ -117,15 +117,16 @@ class ImageFeatureMixin:
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
+
         img = read_image(img_entry)
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = greyscale(img)
 
         if should_resize:
             img = resize_image(img, (img_height, img_width), resize_method)
 
-        if user_specified_num_channels is True:
+        if user_specified_num_channels:
 
             # convert to greyscale if needed
             if num_channels == 1 and (
@@ -134,11 +135,15 @@ class ImageFeatureMixin:
                 img_num_channels = 1
 
             # Number of channels is specified by the user
-            img_padded = np.zeros((img_height, img_width, num_channels),
-                                  dtype=np.uint8)
-            min_num_channels = min(num_channels, img_num_channels)
-            img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
-            img = img_padded
+            # img_padded = np.zeros((img_height, img_width, num_channels),
+            #                       dtype=np.uint8)
+            # min_num_channels = min(num_channels, img_num_channels)
+            # img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
+            # img = img_padded
+            if num_channels > img_num_channels:
+                extra_channels = num_channels - img_num_channels
+                img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
+
 
             if img_num_channels != num_channels:
                 logger.warning(
@@ -156,7 +161,7 @@ class ImageFeatureMixin:
                     'image preprocessing'.format(img_num_channels,
                                                  num_channels))
 
-        if img.shape[0] != img_height or img.shape[1] != img_width:
+        if img.shape[1] != img_height or img.shape[2] != img_width:
             raise ValueError(
                 "Images are not of the same size. "
                 "Expected size is {0}, "
