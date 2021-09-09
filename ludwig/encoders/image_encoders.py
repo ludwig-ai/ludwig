@@ -16,16 +16,15 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-# import tensorflow as tf
-# from tensorflow.keras.layers import Flatten
+import torch
 
 from ludwig.encoders.base import Encoder
 from ludwig.modules.mlp_mixer_modules import MLPMixer
 from ludwig.utils.registry import Registry, register, register_default
-from ludwig.modules.convolutional_modules import Conv2DStack, \
+from ludwig.modules.convolutional_modules import Conv2DStack, ResNet,\
     get_resnet_block_sizes
-from ludwig.modules.convolutional_modules import ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
@@ -40,84 +39,90 @@ class ImageEncoder(Encoder, ABC):
         ENCODER_REGISTRY[name] = cls
 
 
+# TODO(shreya): Add type hints for missing args
 @register_default(name='stacked_cnn')
 class Stacked2DCNN(ImageEncoder):
 
     def __init__(
             self,
-            conv_layers=None,
-            num_conv_layers=None,
-            filter_size=3,
-            num_filters=32,
-            strides=(1, 1),
-            padding='valid',
-            dilation_rate=(1, 1),
-            conv_use_bias=True,
-            conv_weights_initializer='glorot_uniform',
-            conv_bias_initializer='zeros',
-            conv_weights_regularizer=None,
-            conv_bias_regularizer=None,
-            conv_activity_regularizer=None,
-            # conv_weights_constraint=None,
-            # conv_bias_constraint=None,
-            conv_norm=None,
-            conv_norm_params=None,
-            conv_activation='relu',
-            conv_dropout=0,
-            pool_function='max',
-            pool_size=(2, 2),
-            pool_strides=None,
-            fc_layers=None,
-            num_fc_layers=1,
-            fc_size=128,
-            fc_use_bias=True,
-            fc_weights_initializer='glorot_uniform',
-            fc_bias_initializer='zeros',
+            img_height: int,
+            img_width: int,
+            conv_layers: Optional[List[Dict]] = None,
+            num_conv_layers: Optional[int] = None,
+            first_in_channels: int = None,
+            out_channels: int = 32,
+            kernel_size: Union[int, Tuple[int]] = 3,
+            stride: Union[int, Tuple[int]] = 1,
+            padding: Union[int, Tuple[int], str] = 'valid',
+            dilation: Union[int, Tuple[int]] = 1,
+            conv_bias: bool = True,
+            padding_mode: str ='zeros',
+            conv_norm: Optional[str] = None,
+            conv_norm_params: Optional[Dict[str, Any]] = None,
+            conv_activation: str = 'relu',
+            conv_dropout: int = 0,
+            pool_function: str = 'max',
+            pool_kernel_size: Union[int, Tuple[int]] = 2,
+            pool_stride: Union[int, Tuple[int]] = None,
+            pool_padding: Union[int, Tuple[int], str]  ='valid',
+            pool_dilation: Union[int, Tuple[int]] = 1,
+            groups: int = 1,
+            fc_layers: Optional[List[Dict]] = None,
+            num_fc_layers: Optional[int] = 1,
+            fc_size: int = 128,
+            fc_use_bias: bool = True,
+            fc_weights_initializer: str = 'glorot_uniform',
+            fc_bias_initializer: str = 'zeros',
             fc_weights_regularizer=None,
             fc_bias_regularizer=None,
             fc_activity_regularizer=None,
-            # fc_weights_constraint=None,
-            # fc_bias_constraint=None,
-            fc_norm=None,
-            fc_norm_params=None,
-            fc_activation='relu',
-            fc_dropout=0,
+            fc_norm: Optional[str] = None,
+            fc_norm_params: Optional[Dict[str, Any]] = None,
+            fc_activation: str = 'relu',
+            fc_dropout: float = 0,
             **kwargs
     ):
         super().__init__()
 
         logger.debug(' {}'.format(self.name))
 
+        if first_in_channels is None:
+            raise ValueError('first_in_channels must not be None.')
+
         logger.debug('  Conv2DStack')
         self.conv_stack_2d = Conv2DStack(
+            img_height=img_height,
+            img_width=img_width,
             layers=conv_layers,
             num_layers=num_conv_layers,
-            default_num_filters=num_filters,
-            default_filter_size=filter_size,
-            default_strides=strides,
+            first_in_channels=first_in_channels,
+            default_out_channels=out_channels,
+            default_kernel_size=kernel_size,
+            default_stride=stride,
             default_padding=padding,
-            default_dilation_rate=dilation_rate,
-            default_use_bias=conv_use_bias,
-            default_weights_initializer=conv_weights_initializer,
-            default_bias_initializer=conv_bias_initializer,
-            default_weights_regularizer=conv_weights_regularizer,
-            default_bias_regularizer=conv_bias_regularizer,
-            default_activity_regularizer=conv_activity_regularizer,
-            # default_weights_constraint=conv_weights_constraint,
-            # default_bias_constraint=conv_bias_constraint,
+            default_dilation=dilation,
+            default_groups=groups,
+            default_bias=conv_bias,
+            default_padding_mode=padding_mode,
             default_norm=conv_norm,
             default_norm_params=conv_norm_params,
             default_activation=conv_activation,
             default_dropout=conv_dropout,
             default_pool_function=pool_function,
-            default_pool_size=pool_size,
-            default_pool_strides=pool_strides,
+            default_pool_size=pool_kernel_size,
+            default_pool_stride=pool_stride,
+            default_pool_padding=pool_padding,
+            default_pool_dilation=pool_dilation,
         )
+        out_channels, img_height, img_width = self.conv_stack_2d.output_shape
+        first_fc_layer_input_size = out_channels * img_height * img_width
 
-        self.flatten = Flatten()
+        self.flatten = torch.nn.Flatten()
 
         logger.debug('  FCStack')
+        # TODO(shreya): Confirm that FCStack params are OK.
         self.fc_stack = FCStack(
+            first_layer_input_size=first_fc_layer_input_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -127,61 +132,64 @@ class Stacked2DCNN(ImageEncoder):
             default_weights_regularizer=fc_weights_regularizer,
             default_bias_regularizer=fc_bias_regularizer,
             default_activity_regularizer=fc_activity_regularizer,
-            # default_weights_constraint=fc_weights_constraint,
-            # default_bias_constraint=fc_bias_constraint,
             default_norm=fc_norm,
             default_norm_params=fc_norm_params,
             default_activation=fc_activation,
             default_dropout=fc_dropout,
         )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         """
             :param inputs: The inputs fed into the encoder.
-                    Shape: [batch x height x width x channels], type tf.uint8
+                    Shape: [batch x channels x height x width], type torch.uint8
         """
 
         # ================ Conv Layers ================
         hidden = self.conv_stack_2d(
             inputs,
-            training,
         )
-        hidden = self.flatten(hidden, training=training)
+        hidden = self.flatten(hidden)
 
         # ================ Fully Connected ================
         outputs = self.fc_stack(hidden)
 
         return {'encoder_output': outputs}
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
 
+
+# TODO(shreya): Add type hints for missing args.
 @register(name='resnet')
 class ResNetEncoder(ImageEncoder):
 
     def __init__(
             self,
-            resnet_size=50,
-            num_filters=16,
-            kernel_size=3,
-            conv_stride=1,
-            first_pool_size=None,
-            first_pool_stride=None,
-            batch_norm_momentum=0.9,
-            batch_norm_epsilon=0.001,
-            fc_layers=None,
-            num_fc_layers=1,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
+            img_height: int,
+            img_width: int,
+            resnet_size: int = 50,
+            first_in_channels: int = 3,
+            out_channels: int = 16,
+            kernel_size: Union[int, Tuple[int]] = 3,
+            conv_stride: Union[int, Tuple[int]] = 1,
+            first_pool_kernel_size: Union[int, Tuple[int]] = None,
+            first_pool_stride: Union[int, Tuple[int]] = None,
+            batch_norm_momentum: float = 0.9,
+            batch_norm_epsilon: float = 0.001,
+            fc_layers: Optional[List[Dict]] = None,
+            num_fc_layers: Optional[int] = 1,
+            fc_size: int = 256,
+            use_bias: bool = True,
+            weights_initializer: str = 'glorot_uniform',
+            bias_initializer: str = 'zeros',
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict[str, Any]] = None,
+            activation: str = 'relu',
+            dropout: float = 0,
             **kwargs
     ):
         super().__init__()
@@ -197,23 +205,30 @@ class ResNetEncoder(ImageEncoder):
 
         logger.debug('  ResNet')
         self.resnet = ResNet(
-            resnet_size,
-            bottleneck,
-            num_filters,
-            kernel_size,
-            conv_stride,
-            first_pool_size,
-            first_pool_stride,
-            block_sizes,
-            block_strides,
-            batch_norm_momentum,
-            batch_norm_epsilon
+            img_height=img_height,
+            img_width=img_width,
+            resnet_size=resnet_size,
+            is_bottleneck=bottleneck,
+            first_in_channels=first_in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            conv_stride=conv_stride,
+            first_pool_kernel_size=first_pool_kernel_size,
+            first_pool_stride=first_pool_stride,
+            block_sizes=block_sizes,
+            block_strides=block_strides,
+            batch_norm_momentum=batch_norm_momentum,
+            batch_norm_epsilon=batch_norm_epsilon
         )
+        out_channels, img_height, img_width = self.resnet.output_shape
+        first_fc_layer_input_size = out_channels * img_height * img_width
 
-        self.flatten = Flatten()
+        self.flatten = torch.nn.Flatten()
 
+        # TODO(shreya): Confirm that arguments of FCStack are OK.
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
+            first_layer_input_size=first_fc_layer_input_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -223,21 +238,23 @@ class ResNetEncoder(ImageEncoder):
             default_weights_regularizer=weights_regularizer,
             default_bias_regularizer=bias_regularizer,
             default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=fc_weights_constraint,
-            # default_bias_constraint=fc_bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
             default_dropout=dropout,
         )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
 
-        hidden = self.resnet(inputs, training=training)
-        hidden = self.flatten(hidden, training=training)
-        hidden = self.fc_stack(hidden, training=training)
+        hidden = self.resnet(inputs)
+        hidden = self.flatten(hidden)
+        hidden = self.fc_stack(hidden)
 
         return {'encoder_output': hidden}
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
 
 
 @register(name='mlp_mixer')
@@ -245,30 +262,28 @@ class MLPMixerEncoder(ImageEncoder):
 
     def __init__(
             self,
-            patch_size=16,
-            embed_size=512,
-            token_size=2048,
-            channel_dim=256,
-            num_layers=8,
-            dropout=0.0,
-            avg_pool=True,
-            # weights_initializer='glorot_uniform',
-            # bias_initializer='zeros',
-            # weights_regularizer=None,
-            # bias_regularizer=None,
-            # activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            # norm=None,
-            # norm_params=None,
-            # activation='gelu',
+            img_height: int,
+            img_width: int,
+            in_channels: int,
+            patch_size: int = 16,
+            embed_size: int = 512,
+            token_size: int = 2048,
+            channel_dim: int = 256,
+            num_layers: int = 8,
+            dropout: float = 0.0,
+            avg_pool: bool = True,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        self._input_shape = (in_channels, img_height, img_width)
+
         logger.debug('  MLPMixer')
         self.mlp_mixer = MLPMixer(
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=in_channels,
             patch_size=patch_size,
             embed_size=embed_size,
             token_size=token_size,
@@ -278,6 +293,16 @@ class MLPMixerEncoder(ImageEncoder):
             avg_pool=avg_pool,
         )
 
-    def call(self, inputs, training=None, mask=None):
-        hidden = self.mlp_mixer(inputs, training=training)
+        self._output_shape = self.mlp_mixer.output_shape
+
+    def forward(self, inputs):
+        hidden = self.mlp_mixer(inputs)
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return self._input_shape
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self._output_shape

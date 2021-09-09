@@ -16,13 +16,13 @@
 # ==============================================================================
 import logging
 import os
-import sys
 from functools import partial
 from multiprocessing import Pool
 from typing import Union
 
 import numpy as np
 import torch
+import torchvision
 # import tensorflow as tf
 
 from ludwig.constants import *
@@ -30,19 +30,21 @@ from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
-from ludwig.utils.image_utils import greyscale
-from ludwig.utils.image_utils import num_channels_in_image
-from ludwig.utils.image_utils import resize_image
-from ludwig.utils.image_utils import get_image_from_path, read_image
+from ludwig.utils.image_utils import greyscale, num_channels_in_image,\
+    resize_image, get_image_from_path, read_image
 from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 
-
+# TODO(shreya): Confirm if it's ok to do per channel normalization
+# TODO(shreya): Also confirm if this is being used anywhere
+# TODO(shreya): Confirm if ok to use imagenet means and std devs
 image_scaling_registry = {
     'pixel_normalization': lambda x: x * 1.0 / 255,
-    'pixel_standardization': lambda x: tf.map_fn(
-        lambda f: tf.image.per_image_standardization(f), x)
+    'pixel_standardization': partial(
+        torchvision.transforms.functional.normalize,
+        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    )
 }
 
 
@@ -87,13 +89,13 @@ class ImageFeatureMixin:
 
     @staticmethod
     def _read_image_and_resize(
-            img_entry: Union[str, 'numpy.array'],
+            img_entry: Union[str, torch.Tensor],
             img_width: int,
             img_height: int,
             should_resize: bool,
             num_channels: int,
             resize_method: str,
-            user_specified_num_channels: int
+            user_specified_num_channels: bool
     ):
         """
         :param img_entry Union[str, 'numpy.array']: if str file path to the
@@ -115,15 +117,16 @@ class ImageFeatureMixin:
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
+
         img = read_image(img_entry)
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = greyscale(img)
 
         if should_resize:
             img = resize_image(img, (img_height, img_width), resize_method)
 
-        if user_specified_num_channels is True:
+        if user_specified_num_channels:
 
             # convert to greyscale if needed
             if num_channels == 1 and (
@@ -132,11 +135,15 @@ class ImageFeatureMixin:
                 img_num_channels = 1
 
             # Number of channels is specified by the user
-            img_padded = np.zeros((img_height, img_width, num_channels),
-                                  dtype=np.uint8)
-            min_num_channels = min(num_channels, img_num_channels)
-            img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
-            img = img_padded
+            # img_padded = np.zeros((img_height, img_width, num_channels),
+            #                       dtype=np.uint8)
+            # min_num_channels = min(num_channels, img_num_channels)
+            # img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
+            # img = img_padded
+            if num_channels > img_num_channels:
+                extra_channels = num_channels - img_num_channels
+                img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
+
 
             if img_num_channels != num_channels:
                 logger.warning(
@@ -154,7 +161,7 @@ class ImageFeatureMixin:
                     'image preprocessing'.format(img_num_channels,
                                                  num_channels))
 
-        if img.shape[0] != img_height or img.shape[1] != img_width:
+        if img.shape[1] != img_height or img.shape[2] != img_width:
             raise ValueError(
                 "Images are not of the same size. "
                 "Expected size is {0}, "
@@ -172,7 +179,7 @@ class ImageFeatureMixin:
     @staticmethod
     def _finalize_preprocessing_parameters(
             preprocessing_parameters: dict,
-            first_img_entry: Union[str, 'numpy.array'],
+            first_img_entry: Union[str, np.ndarray],
             src_path: str,
             input_feature_col: np.array
     ):
@@ -380,11 +387,11 @@ class ImageFeatureMixin:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
                     feature[PROC_COLUMN] + '_data',
-                    (num_images, height, width, num_channels),
+                    (num_images, num_channels, height, width),
                     dtype=np.uint8
                 )
                 for i, img_entry in enumerate(all_img_entries):
-                    image_dataset[i, :height, :width, :] = (
+                    image_dataset[i, :, :height, :width] = (
                         read_image_and_resize(img_entry)
                     )
                 h5_file.flush()
@@ -408,22 +415,20 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.uint8, tf.int64]
+    def forward(self, inputs):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.uint8, torch.int64]
 
         # casting and rescaling
-        inputs = tf.cast(inputs, tf.float32) / 255
+        inputs = inputs.type(torch.float32) / 255
 
-        inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 
     @classmethod
     def get_input_dtype(cls):
-        return tf.uint8
+        return torch.uint8
 
     @property
     def input_shape(self) -> torch.Size:
