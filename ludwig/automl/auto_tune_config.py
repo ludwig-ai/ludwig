@@ -14,7 +14,7 @@ except ImportError:
     )
 
 from ludwig.api import LudwigModel
-from ludwig.automl.utils import get_available_resources
+from ludwig.automl.utils import get_available_resources, get_model_name
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
@@ -120,7 +120,7 @@ def memory_tune_config(config, dataset):
     training_set_metadata = get_trainingset_metadata(raw_config, dataset)
     modified_hyperparam_search_space = copy.deepcopy(
         raw_config[HYPEROPT]['parameters'])
-    params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[raw_config[COMBINER][TYPE]]
+    params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[get_model_name(raw_config)]
     param_list = list(params_to_modify.keys())
     current_param_values = {}
     max_memory = get_machine_memory()

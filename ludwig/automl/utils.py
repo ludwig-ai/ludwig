@@ -1,8 +1,11 @@
 import logging
-from dataclasses import dataclass
 
+from dataclasses import dataclass
 from dataclasses_json import LetterCase, dataclass_json
 from pandas import Series
+
+from ludwig.constants import COMBINER, TYPE
+from ludwig.utils.defaults import default_combiner_type
 
 try:
     import ray
@@ -56,7 +59,7 @@ def avg_num_tokens(field: Series) -> int:
     return avg_words
 
 
-def get_available_resources():
+def get_available_resources() -> dict:
     # returns total number of gpus and cpus
     resources = ray.cluster_resources()
     gpus = resources.get('GPU', 0)
@@ -66,6 +69,12 @@ def get_available_resources():
         'cpu': cpus
     }
     return resources
+
+
+def get_model_name(config: dict) -> str:
+    if COMBINER in config and TYPE in config[COMBINER]:
+        return config[COMBINER][TYPE]
+    return default_combiner_type
 
 
 def _ray_init():
