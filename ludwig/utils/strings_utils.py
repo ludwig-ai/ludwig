@@ -21,6 +21,7 @@ from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
+import tensorflow as tf
 import tensorflow_text as tf_text
 
 from ludwig.data.dataframe.pandas import PANDAS
@@ -283,6 +284,10 @@ class BaseTokenizer:
     def __call__(self, text):
         pass
 
+    @staticmethod
+    def call_inference(t: tf.Tensor) -> tf.Tensor:
+        raise RuntimeError(f'Graph inference not supported for tokenizer: {self.__class__.__name__}')
+
 class CharactersToListTokenizer(BaseTokenizer):
     def __call__(self, text):
         return text
@@ -292,9 +297,9 @@ class SpaceStringToListTokenizer(BaseTokenizer):
         return SPLIT_REGEX.split(text.strip())
 
     @staticmethod
-    def call(t):
+    def call_inference(t: tf.Tensor) -> tf.Tensor:
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex=r'\s+')
+        splitter = tf_text.RegexSplitter(split_regex=SPLIT_REGEX.pattern)
         return splitter.split(t)
 
 class SpacePunctuationStringToListTokenizer(BaseTokenizer):
@@ -302,9 +307,9 @@ class SpacePunctuationStringToListTokenizer(BaseTokenizer):
         return SPACE_PUNCTUATION_REGEX.findall(text.strip())
 
     @staticmethod
-    def call(t):
+    def call_inference(t: tf.Tensor) -> tf.Tensor:
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex=r'\w+|[^\w\s]')
+        splitter = tf_text.RegexSplitter(split_regex=SPACE_PUNCTUATION_REGEX.pattern)
         return splitter.split(t)
 
 class UnderscoreStringToListTokenizer(BaseTokenizer):
@@ -312,9 +317,9 @@ class UnderscoreStringToListTokenizer(BaseTokenizer):
         return UNDERSCORE_REGEX.split(text.strip())
 
     @staticmethod
-    def call(t):
+    def call_inference(t: tf.Tensor) -> tf.Tensor:
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex=r'\s*_\s*')
+        splitter = tf_text.RegexSplitter(split_regex=UNDERSCORE_REGEX.pattern)
         return splitter.split(t)
 
 class CommaStringToListTokenizer(BaseTokenizer):
@@ -322,9 +327,9 @@ class CommaStringToListTokenizer(BaseTokenizer):
         return COMMA_REGEX.split(text.strip())
 
     @staticmethod
-    def call(t):
+    def call_inference(t: tf.Tensor) -> tf.Tensor:
         # TODO(ksbrar)
-        splitter = tf_text.RegexSplitter(split_regex=r'\s*,\s*')
+        splitter = tf_text.RegexSplitter(split_regex=COMMA_REGEX.pattern)
         return splitter.split(t)
 
 class UntokenizedStringToListTokenizer(BaseTokenizer):
