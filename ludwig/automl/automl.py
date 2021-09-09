@@ -8,8 +8,10 @@ Driver script which:
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
-from typing import Dict, Union
+
+import os
 import warnings
+from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +19,7 @@ import pandas as pd
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config, DatasetInfo
 from ludwig.automl.auto_tune_config import memory_tune_config
-from ludwig.automl.utils import _ray_init
+from ludwig.automl.utils import _ray_init, get_model_name
 from ludwig.constants import COMBINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 
@@ -54,7 +56,7 @@ class AutoTrainResults:
 
     @property
     def best_model(self) -> LudwigModel:
-        return LudwigModel.load(self.path_to_best_model)
+        return LudwigModel.load(os.path.join(self.path_to_best_model, 'model'))
 
 
 def auto_train(
@@ -146,7 +148,7 @@ def train_with_config(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     _ray_init()
-    model_name = config[COMBINER][TYPE]
+    model_name = get_model_name(config)
     hyperopt_results = _train(
         config,
         dataset,
