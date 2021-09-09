@@ -149,7 +149,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
     )
 
 
-def test_experiment_seq_seq_train_test_valid(csv_filename):
+def test_experiment_seq_seq_train_test_valid(tmpdir):
     # seq-to-seq test to use train, test, validation files
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
     output_features = [
@@ -157,13 +157,13 @@ def test_experiment_seq_seq_train_test_valid(csv_filename):
     ]
 
     train_csv = generate_data(
-        input_features, output_features, 'tr_' + csv_filename
+        input_features, output_features, os.path.join(tmpdir, 'train.csv')
     )
     test_csv = generate_data(
-        input_features, output_features, 'test_' + csv_filename, 20
+        input_features, output_features, os.path.join(tmpdir, 'test.csv'), 20
     )
     valdation_csv = generate_data(
-        input_features, output_features, 'val_' + csv_filename, 20
+        input_features, output_features, os.path.join(tmpdir, 'val.csv'), 20
     )
 
     run_experiment(
@@ -183,12 +183,6 @@ def test_experiment_seq_seq_train_test_valid(csv_filename):
         test_set=test_csv,
         validation_set=valdation_csv
     )
-
-    # Delete the temporary data created
-    # This test is saving the processed data to hdf5
-    for prefix in ['tr_', 'test_', 'val_']:
-        if os.path.isfile(prefix + csv_filename):
-            os.remove(prefix + csv_filename)
 
 
 def test_experiment_multi_input_intent_classification(csv_filename):
