@@ -88,10 +88,7 @@ def test_pure_tf_model(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
-    # TODO(ksbrar) 
-    # print(input_features[0])
     ludwig_tf_model = ludwig_model.create_inference_graph()
-    # print(ludwig_tf_model)
 
     pred_data = list(build_synthetic_dataset(1, input_features))
 
@@ -107,6 +104,12 @@ def test_pure_tf_model(csv_filename, tmpdir):
         )
         for c, v in zip(pred_data[0], pred_data[1])
     }
-    print(inputs)
+    # print(inputs)
 
-    print(ludwig_tf_model(inputs))
+    # tf.print(ludwig_tf_model(inputs))
+
+    # print('\n\n\n\n')
+
+    # print(inputs)
+    # print('\n')
+    # tf.print(ludwig_tf_model.inputs)

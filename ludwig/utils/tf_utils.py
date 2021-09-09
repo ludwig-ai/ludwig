@@ -200,7 +200,6 @@ class VocabLookup(tf.keras.layers.Layer):
 
 
 class Tokenize(tf.keras.layers.Layer):
-    #TODO(ksbrar): default?
     def __init__(self, dtype, tokenizer=None):
         super(Tokenize, self).__init__(trainable=False, dtype=dtype)
         self.tokenizer = tokenizer
@@ -209,7 +208,7 @@ class Tokenize(tf.keras.layers.Layer):
         pass
 
     def call(self, t):
-        return self.tokenizer.call(t)
+        return self.tokenizer.call_inference(t)
 
     def get_config(self):
         config = super(Tokenize, self).get_config()
