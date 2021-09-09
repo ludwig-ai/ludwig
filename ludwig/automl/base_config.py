@@ -163,7 +163,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         image_values = source.get_image_values(field)
         avg_words = None
         if source.is_string_type(dtype):
-            avg_words = round(source.get_avg_num_tokens(field))
+            avg_words = source.get_avg_num_tokens(field)
         fields.append(
             FieldInfo(
                 name=field,

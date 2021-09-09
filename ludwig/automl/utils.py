@@ -55,7 +55,7 @@ def avg_num_tokens(field: Series) -> int:
     if len(field) > 5000:
         field = field.sample(n=5000, random_state=40)
     unique_entries = field.unique()
-    avg_words = Series(unique_entries).str.split().str.len().mean()
+    avg_words = round(Series(unique_entries).str.split().str.len().mean())
     return avg_words
 
 
