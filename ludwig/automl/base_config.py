@@ -16,6 +16,7 @@ Builds base configuration file:
 
 import os
 from dataclasses import dataclass
+from dataclasses_json import LetterCase, dataclass_json
 from typing import List, Union
 
 import pandas as pd
@@ -45,6 +46,7 @@ model_defaults = {
 }
 
 
+@dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class DatasetInfo:
     fields: List[FieldInfo]
