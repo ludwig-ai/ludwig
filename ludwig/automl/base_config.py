@@ -16,6 +16,7 @@ Builds base configuration file:
 
 import os
 from dataclasses import dataclass
+from dataclasses_json import LetterCase, dataclass_json
 from typing import List, Union
 
 import pandas as pd
@@ -45,6 +46,7 @@ model_defaults = {
 }
 
 
+@dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class DatasetInfo:
     fields: List[FieldInfo]
@@ -161,7 +163,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         image_values = source.get_image_values(field)
         avg_words = None
         if source.is_string_type(dtype):
-            avg_words = source.get_avg_num_tokens(field)
+            avg_words = round(source.get_avg_num_tokens(field))
         fields.append(
             FieldInfo(
                 name=field,
