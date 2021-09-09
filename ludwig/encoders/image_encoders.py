@@ -86,7 +86,8 @@ class Stacked2DCNN(ImageEncoder):
 
         logger.debug(' {}'.format(self.name))
 
-        assert first_in_channels is not None
+        if first_in_channels is None:
+            raise ValueError('first_in_channels must not be None.')
 
         logger.debug('  Conv2DStack')
         self.conv_stack_2d = Conv2DStack(
@@ -137,10 +138,10 @@ class Stacked2DCNN(ImageEncoder):
             default_dropout=fc_dropout,
         )
 
-    def call(self, inputs):
+    def forward(self, inputs):
         """
             :param inputs: The inputs fed into the encoder.
-                    Shape: [batch x height x width x channels], type torch.uint8
+                    Shape: [batch x channels x height x width], type torch.uint8
         """
 
         # ================ Conv Layers ================
@@ -154,8 +155,8 @@ class Stacked2DCNN(ImageEncoder):
 
         return {'encoder_output': outputs}
 
-    def get_output_shape(self, input_shape):
-        # TODO(shreya): Confirm that this is implemented
+    @property
+    def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
 
 
@@ -243,7 +244,7 @@ class ResNetEncoder(ImageEncoder):
             default_dropout=dropout,
         )
 
-    def call(self, inputs):
+    def forward(self, inputs):
 
         hidden = self.resnet(inputs)
         hidden = self.flatten(hidden)
