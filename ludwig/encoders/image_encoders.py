@@ -252,8 +252,8 @@ class ResNetEncoder(ImageEncoder):
 
         return {'encoder_output': hidden}
 
-    def get_output_shape(self, input_shape):
-        # TODO(shreya): Confirm that this is implemented
+    @property
+    def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
 
 
