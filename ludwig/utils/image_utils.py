@@ -21,9 +21,7 @@ from math import ceil, floor
 from typing import BinaryIO, Optional, TextIO, Tuple, Union
 
 import numpy as np
-# TODO(shreya): Import guard?
 import torch
-import torchvision
 import torchvision.transforms.functional as F
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
