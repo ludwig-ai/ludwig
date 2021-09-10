@@ -298,7 +298,6 @@ class SpaceStringToListTokenizer(BaseTokenizer):
 
     @staticmethod
     def call_inference(t: tf.Tensor) -> tf.Tensor:
-        # TODO(ksbrar)
         splitter = tf_text.RegexSplitter(split_regex=SPLIT_REGEX.pattern)
         return splitter.split(t)
 
@@ -308,7 +307,6 @@ class SpacePunctuationStringToListTokenizer(BaseTokenizer):
 
     @staticmethod
     def call_inference(t: tf.Tensor) -> tf.Tensor:
-        # TODO(ksbrar)
         splitter = tf_text.RegexSplitter(split_regex=SPACE_PUNCTUATION_REGEX.pattern)
         return splitter.split(t)
 
@@ -318,7 +316,6 @@ class UnderscoreStringToListTokenizer(BaseTokenizer):
 
     @staticmethod
     def call_inference(t: tf.Tensor) -> tf.Tensor:
-        # TODO(ksbrar)
         splitter = tf_text.RegexSplitter(split_regex=UNDERSCORE_REGEX.pattern)
         return splitter.split(t)
 
@@ -328,7 +325,6 @@ class CommaStringToListTokenizer(BaseTokenizer):
 
     @staticmethod
     def call_inference(t: tf.Tensor) -> tf.Tensor:
-        # TODO(ksbrar)
         splitter = tf_text.RegexSplitter(split_regex=COMMA_REGEX.pattern)
         return splitter.split(t)
 
