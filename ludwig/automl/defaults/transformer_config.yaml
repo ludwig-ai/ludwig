@@ -4,12 +4,6 @@ preprocessing:
 
 combiner:
   type: transformer
-  num_layers: 6
-  num_heads: 8
-  hidden_size: 32
-  dropout: 0.1
-  fc_dropout: 0.2
-  num_fc_layers: 1
 
 training:
   batch_size: auto #256
@@ -22,13 +16,13 @@ hyperopt:
     training.learning_rate:
       space: loguniform
       lower: 0.00001
-      upper: 0.01
+      upper: 0.001
     training.batch_size:
       space: choice
-      categories: [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+      categories: [8, 16, 32, 64, 128, 256, 512]
     combiner.num_heads:
       space: choice
-      categories: [2, 4, 8]
+      categories: [2, 4]
     combiner.dropout:
       space: uniform
       type: float
