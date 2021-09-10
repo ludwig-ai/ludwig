@@ -21,15 +21,11 @@ from copy import deepcopy
 import numpy as np
 import pytest
 import tensorflow as tf
-from tensorflow.python.client import session
 
 from ludwig.api import LudwigModel
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.utils.strings_utils import SpaceStringToListTokenizer, \
-    SpacePunctuationStringToListTokenizer, UnderscoreStringToListTokenizer, \
-    CommaStringToListTokenizer
 
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, vector_feature, image_feature, \
@@ -38,36 +34,14 @@ from tests.integration_tests.utils import category_feature, binary_feature, \
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
-import tensorflow.keras.backend as keras_backend
-
-# def test_pure_tf_tokenizers():
-#     tokenizersToTest = {
-#         'space': SpaceStringToListTokenizer,
-#         'space_punct': SpacePunctuationStringToListTokenizer,
-#         'underscore': UnderscoreStringToListTokenizer,
-#         'comma': CommaStringToListTokenizer,
-#     }
-#     for tokenizer in tokenizersToTest:     
-#         tokenizerFlag = {
-#             'preprocessing': {
-#                 'word_tokenizer': '',
-#             },
-#         }
-#     text_feature(vocab_size=3
-
-def test_pure_tf_model_tokenizers(jjj):
-    pass
-
+# TODO: test different tokenizers, (maybe) layer-by-layer validation
 def test_pure_tf_model(csv_filename, tmpdir):
-    tf.config.run_functions_eagerly(True)
-    tf.compat.v1.enable_eager_execution() 
-
     dir_path = tmpdir
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # image_dest_folder = os.path.join(tmpdir, 'generated_images')
     # audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
 
-    # Single sequence input, single category output
+    # Configure features to be tested:
     input_features = [
         binary_feature(),
         numerical_feature(),
@@ -83,7 +57,6 @@ def test_pure_tf_model(csv_filename, tmpdir):
         # set_feature(vocab_size=3),
         # bag_feature(vocab_size=3),
     ]
-
     output_features = [
         category_feature(vocab_size=3),
         binary_feature(),
@@ -93,23 +66,22 @@ def test_pure_tf_model(csv_filename, tmpdir):
         # set_feature(vocab_size=3),
         # vector_feature()
     ]
-
-    # Generate test data
-    data_csv_path = generate_data(input_features, output_features,
-                                  data_csv_path)
-
-    # load into datafram
-    # take column of text data -> convert to text of type to be tokenized
-
     backend = LocalTestBackend()
     config = {
         'input_features': input_features,
         'output_features': output_features,
         'training': {'epochs': 2}
     }
+
+    # Generate training data
+    training_data_csv_path = generate_data(input_features, output_features,
+                                  data_csv_path)
+
+
+    # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
-        dataset=data_csv_path,
+        dataset=training_data_csv_path,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
         skip_save_model=True,
@@ -118,16 +90,20 @@ def test_pure_tf_model(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
+    # Create graph inference model (Tensorflow) from trained Ludwig model.
+    # Note that Tensorflow is running with eager execution enabled:
     ludwig_tf_model = ludwig_model.create_inference_graph()
+    ludwig_tf_model.compile()
 
+    # Generate test data:
     pred_data = list(build_synthetic_dataset(1, input_features))
-
-    # needed because ludwig_tf_model binary features expect strings
+    # Note: needed because graph model's binary feature input expects strings:
     pred_data[1] = [str(v) + ""
                     if isinstance(v, np.bool_) else v
                     for v in pred_data[1]]
 
-    inputs = {
+    # Convert test dataset to a dict to be consumed:
+    tensor_inputs_dict = {
         c: tf.convert_to_tensor(
             [v],
             dtype=ludwig_model.model.input_features[c].get_inference_input_dtype()
@@ -135,26 +111,35 @@ def test_pure_tf_model(csv_filename, tmpdir):
         for c, v in zip(pred_data[0], pred_data[1])
     }
 
-    ludwig_tf_model.compile()
+    # Apply both models to the test data and compare their output:
+    ludwig_model_predictions_df = ludwig_model.predict(tensor_inputs_dict)[0]
+    ludwig_tf_model_predictions_dict = ludwig_tf_model(tensor_inputs_dict)
+    # for k, v in results.items():
+    #     print(k, v)
+    #     print(v['predictions'].numpy())
 
+    print("\n\n\n" + "-"*100 + "LUDWIG PREDICTIONS" + "-"*100)
+    print(ludwig_model_predictions_df)
+    # print(ludwig_model_predictions[0].keys())
+    print()
+    print(ludwig_model_predictions_df[f'{list(ludwig_tf_model_predictions_dict.keys())[0]}_predictions'])
+    # print(type(ludwig_model_predictions[0]))
+    # print(type(ludwig_model_predictions[1]))
+    print("\n\n\n" + "-"*100 + "TF PREDICTIONS" + "-"*100)
+    print(ludwig_tf_model_predictions_dict.items())
+    print()
+    print(ludwig_tf_model_predictions_dict[list(ludwig_tf_model_predictions_dict.keys())[0]]["predictions"].numpy())
+
+    t1 = ludwig_model_predictions_df[f'{list(ludwig_tf_model_predictions_dict.keys())[0]}_predictions'].to_numpy()
+    t2 = np.array([s.decode('UTF-8') for s in ludwig_tf_model_predictions_dict[list(ludwig_tf_model_predictions_dict.keys())[0]]["predictions"].numpy()])
+
+    assert(t1 == t2)
+
+
+    # Print statements for debugging:
+    # print("\n\n\n" + "-"*100 + "INPUT FEATURES" + "-"*100)
     # print(inputs)
-    print("\n\n\n" + "-"*100 + "INPUT FEATURES" + "-"*100)
-    print(inputs)
-    print("\n\n\n" + "-"*100 + "MODEL APPLIED TO INPUT FEATURES)" + "-"*100)
-    tf.print(ludwig_tf_model.predict(inputs))
-    print("\n\n\n" + "-"*100 + "MODEL.INPUTS" + "-"*100)
-    print(ludwig_tf_model.inputs)
-    print("\n\n\n" + "-"*100 + "NUMPY TEST" + "-"*100)
-    # print(keras_backend.eval(ludwig_tf_model.inputs[3]))
-    # print(keras_backend.eval(ludwig_tf_model.inputs[3]))
-    #func = keras_backend.function(ludwig_tf_model.inputs[3], [ludwig_tf_model.inputs[3].output])
-    #result = func(inputs[3])
-    results = ludwig_tf_model(inputs)
-    for k, v in results.items():
-        print(k, v)
-        print(v['predictions'].numpy())
-
-
-    ### VALIDATE TOKENIZERS - DIFFERENT ONES, and INVALID CASE
-
-    ### COMPARE MODEL OUTPUTS
+    # print("\n\n\n" + "-"*100 + "GRAPH APPLIED TO INPUT FEATURES)" + "-"*100)
+    # tf.print(ludwig_tf_model.predict(inputs))
+    # print("\n\n\n" + "-"*100 + "GRAPH_MODEL.INPUTS" + "-"*100)
+    # print(ludwig_tf_model.inputs)
