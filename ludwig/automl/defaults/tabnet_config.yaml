@@ -4,13 +4,6 @@ preprocessing:
 
 combiner:
   type: tabnet
-  size: 32 # n_a
-  output_size: 32 # n_d
-  num_steps: 5
-  sparsity: 0.0001 # lambda_sparse
-  bn_virtual_bs: 512 # b_v
-  bn_momentum: 0.7 # m_b
-  relaxation_factor: 1.5 # gamma
 
 training:
   # validation_metric: accuracy
@@ -36,7 +29,7 @@ hyperopt:
       categories: [0.005, 0.01, 0.02, 0.025]
     training.batch_size:
       space: choice
-      categories: [256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
+      categories: [256, 512, 1024]
     training.decay_rate:
       space: choice
       categories: [0.4, 0.8, 0.9, 0.95]
