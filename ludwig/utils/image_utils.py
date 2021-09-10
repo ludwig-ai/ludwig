@@ -17,7 +17,6 @@
 import logging
 import os
 import sys
-from math import ceil, floor
 from typing import BinaryIO, Optional, TextIO, Tuple, Union
 
 import numpy as np
@@ -184,7 +183,8 @@ def to_np_tuple(prop: Union[int, Tuple[int]]) -> np.ndarray:
     """ Creates a np array of length 2 from a Conv2D property.
 
     E.g., stride=(2, 3) gets converted into np.array([2, 3]), where the
-    height_stride = 2 and width_stride = 3.
+    height_stride = 2 and width_stride = 3. stride=2 gets converted into
+    np.array([2, 2]).
     """
     if type(prop) == int:
         return np.ones(2) * prop
@@ -217,10 +217,9 @@ def get_img_output_shape(
     kernel_size = to_np_tuple(kernel_size)
     stride = to_np_tuple(stride)
     dilation = to_np_tuple(dilation)
-
     shape = np.array([img_height, img_width])
 
-    out_shape = np.math.floor(
+    out_shape = np.floor(
         ((shape + 2 * padding - dilation * (kernel_size - 1) - 1) / stride) + 1
     )
 
