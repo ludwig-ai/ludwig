@@ -4,6 +4,7 @@ from functools import lru_cache
 from torch.nn import Module, ModuleDict
 import torch
 from torch import nn
+from torch.nn import Module, ModuleDict
 
 
 def sequence_length_3D(sequence):
