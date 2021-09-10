@@ -15,9 +15,6 @@
 # ==============================================================================
 import logging
 
-# from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
-#                                      Dropout, Layer, LayerNormalization)
-
 from torch.nn import (Linear, LayerNorm, Dropout, ModuleList,
                       BatchNorm1d, BatchNorm2d)
 
@@ -33,6 +30,7 @@ class FCLayer(LudwigModule):
     def __init__(
             self,
             input_size,
+            input_rank=2,
             output_size=256,
             use_bias=True,
             weights_initializer='xavier_uniform',
@@ -97,10 +95,15 @@ class FCLayer(LudwigModule):
         if norm == 'batch':
             #self.layers.append(BatchNormalization(**norm_params))
             # might need if statement for 1d vs 2d? like images
-            if len(input_size) > 3:
+            if input_rank == 2:
                 self.layers.append(BatchNorm1d(**norm_params))
-            else:
+            elif input_rank == 3:
                 self.layers.append(BatchNorm2d(**norm_params))
+            else:
+                ValueError(
+                    f'input_rank parameter expected to be either 2 or 3, '
+                    f'however valued found to be {input_rank}.'
+                )
         elif norm == 'layer':
             self.layers.append(LayerNorm(**norm_params))
 
