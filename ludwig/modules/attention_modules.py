@@ -18,11 +18,8 @@ import logging
 import torch
 from torch import nn
 from torch.nn import functional as F
-# import tensorflow as tf
-# from tensorflow.keras import Sequential
-# from tensorflow.keras.layers import Dense, Dropout, Layer, LayerNormalization
+
 from ludwig.utils.torch_utils import LudwigModule, get_activation
-from ludwig.modules.fully_connected_modules import FCLayer
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +28,14 @@ logger = logging.getLogger(__name__)
 class FeedForwardAttentionReducer(LudwigModule):
     def __init__(self, input_size, hidden_size=256, activation='tanh'):
         super().__init__()
-        self.fc_layer1 = FCLayer(input_size, output_size=hidden_size,
-                                 activation=activation)
-        self.fc_layer2 = FCLayer(hidden_size, output_size=1,
-                                 use_bias=False)
+        self.fc_layer1 = nn.Linear(input_size, hidden_size)
+        self.fc_layer1_activation = get_activation(activation)
+        self.fc_layer2 = nn.Linear(hidden_size, 1, bias=False)
 
     def forward(self, inputs, training=None, mask=None):
         # current_inputs shape [b, s, h]
         hidden = self.fc_layer1(inputs, training=training)  # [b, s, h']
+        hidden = self.fc_layer1_activation(hidden)
         hidden = self.fc_layer2(hidden, training=training)  # [b, s, 1]
         attention = F.softmax(hidden, dim=1)
         geated_inputs = torch.sum(attention * inputs, dim=1)
@@ -57,13 +54,13 @@ class MultiHeadSelfAttention(LudwigModule):
             )
         self.projection_dim = hidden_size // num_heads
         # self.query_dense = Dense(hidden_size)
-        self.query_dense = FCLayer(input_size, hidden_size)
+        self.query_dense = nn.Linear(input_size, hidden_size)
         # self.key_dense = Dense(hidden_size)
-        self.key_dense = FCLayer(input_size, hidden_size)
+        self.key_dense = nn.Linear(input_size, hidden_size)
         # self.value_dense = Dense(hidden_size)
-        self.value_dense = FCLayer(input_size, hidden_size)
+        self.value_dense = nn.Linear(input_size, hidden_size)
         # self.combine_heads = Dense(hidden_size)
-        self.combine_heads = FCLayer(hidden_size, hidden_size)
+        self.combine_heads = nn.Linear(hidden_size, hidden_size)
 
     def attention(self, query, key, value, mask=None):
         # score = tf.matmul(query, key, transpose_b=True)
