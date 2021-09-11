@@ -1,4 +1,6 @@
 import pytest
+from typing import Union
+import numpy as np
 import torch
 
 from ludwig.utils.misc_utils import get_from_registry
@@ -30,6 +32,17 @@ encoder_parameters = {
     "reduce_output": None,
 }
 
+
+@pytest.fixture(scope='module')
+def input_sequence() -> torch.Tensor:
+    input_tensor = torch.zeros([BATCH_SIZE, SEQ_SIZE], dtype=torch.int32)
+    sequence_lengths = np.random.randint(1, SEQ_SIZE, size=BATCH_SIZE)
+    for i in range(input_tensor.shape[0]):
+        input_tensor[i, :sequence_lengths[i]] = torch.tensor(
+            np.random.randint(2, TEST_VOCAB_SIZE, size=sequence_lengths[i]))
+    return input_tensor
+
+
 @pytest.mark.parametrize('enc_reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('enc_norm', [None, 'batch', 'layer'])
 @pytest.mark.parametrize('enc_num_layers', [1, 2])
@@ -37,12 +50,13 @@ encoder_parameters = {
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
 @pytest.mark.parametrize('enc_encoder', ENCODERS)
 def test_sequence_encoders(
-        enc_encoder,
-        enc_cell_type,
-        enc_dropout,
-        enc_num_layers,
-        enc_norm,
-        enc_reduce_output
+        enc_encoder: str,
+        enc_cell_type: str,
+        enc_dropout: float,
+        enc_num_layers: int,
+        enc_norm: Union[None, str],
+        enc_reduce_output: Union[None, str],
+        input_sequence: torch.Tensor
 ):
     # update encoder parameters for specific unit test case
     encoder_parameters['cell_type'] = enc_cell_type
@@ -56,9 +70,7 @@ def test_sequence_encoders(
         **encoder_parameters
     )
 
-    INPUT_SEQUENCE = torch.zeros([BATCH_SIZE, SEQ_SIZE], dtype=torch.int32)
-
-    encoder_out = encoder_obj(INPUT_SEQUENCE)
+    encoder_out = encoder_obj(input_sequence)
 
     assert 'encoder_output' in encoder_out
     assert isinstance(encoder_out['encoder_output'], torch.Tensor)
