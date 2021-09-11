@@ -96,16 +96,16 @@ class FCLayer(LudwigModule):
             #self.layers.append(BatchNormalization(**norm_params))
             # might need if statement for 1d vs 2d? like images
             if input_rank == 2:
-                self.layers.append(BatchNorm1d(**norm_params))
+                self.layers.append(BatchNorm1d(output_size, **norm_params))
             elif input_rank == 3:
-                self.layers.append(BatchNorm2d(**norm_params))
+                self.layers.append(BatchNorm2d(output_size, **norm_params))
             else:
                 ValueError(
                     f'input_rank parameter expected to be either 2 or 3, '
                     f'however valued found to be {input_rank}.'
                 )
         elif norm == 'layer':
-            self.layers.append(LayerNorm(**norm_params))
+            self.layers.append(LayerNorm(output_size, **norm_params))
 
         # Dict for activation objects in pytorch?
         #self.layers.append(Activations(activation))
