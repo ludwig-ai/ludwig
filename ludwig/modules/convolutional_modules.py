@@ -16,15 +16,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-# import tensorflow as tf
-# from tensorflow import math, squeeze
-# from tensorflow.keras.initializers import VarianceScaling
-# from tensorflow.keras.layers import (Activation, AveragePooling1D,
-#                                      AveragePooling2D, BatchNormalization,
-#                                      Conv1D, Conv2D, Dropout, Layer,
-#                                      LayerNormalization, MaxPool1D, MaxPool2D,
-#                                      ZeroPadding2D)
-from ludwig.utils.torch_utils import LudwigModule
 import torch
 import torch.nn as nn
 
@@ -626,7 +617,7 @@ class ParallelConv1DStack(LudwigModule):
     @property
     def input_shape(self):
         """ Returns the size of the input tensor without the batch dimension. """
-        return torch.Size([self.in_channels, self.max_sequence_length])
+        return torch.Size([self.max_sequence_length, self.in_channels])
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
