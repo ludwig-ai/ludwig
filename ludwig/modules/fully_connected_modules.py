@@ -15,9 +15,6 @@
 # ==============================================================================
 import logging
 
-# from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
-#                                      Dropout, Layer, LayerNormalization)
-
 from torch.nn import (Linear, LayerNorm, Dropout, ModuleList,
                       BatchNorm1d, BatchNorm2d)
 
@@ -33,6 +30,7 @@ class FCLayer(LudwigModule):
     def __init__(
             self,
             input_size,
+            input_rank=2,
             output_size=256,
             use_bias=True,
             weights_initializer='xavier_uniform',
@@ -97,12 +95,17 @@ class FCLayer(LudwigModule):
         if norm == 'batch':
             #self.layers.append(BatchNormalization(**norm_params))
             # might need if statement for 1d vs 2d? like images
-            if len(input_size) > 3:
-                self.layers.append(BatchNorm1d(**norm_params))
+            if input_rank == 2:
+                self.layers.append(BatchNorm1d(output_size, **norm_params))
+            elif input_rank == 3:
+                self.layers.append(BatchNorm2d(output_size, **norm_params))
             else:
-                self.layers.append(BatchNorm2d(**norm_params))
+                ValueError(
+                    f'input_rank parameter expected to be either 2 or 3, '
+                    f'however valued found to be {input_rank}.'
+                )
         elif norm == 'layer':
-            self.layers.append(LayerNorm(**norm_params))
+            self.layers.append(LayerNorm(output_size, **norm_params))
 
         # Dict for activation objects in pytorch?
         #self.layers.append(Activations(activation))
@@ -138,6 +141,7 @@ class FCStack(LudwigModule):
             first_layer_input_size,
             layers=None,
             num_layers=1,
+            default_input_rank=2,
             default_fc_size=256,
             default_use_bias=True,
             default_weights_initializer='xavier_uniform',
@@ -168,7 +172,9 @@ class FCStack(LudwigModule):
             self.layers[0]['input_size'] = first_layer_input_size
         for i, layer in enumerate(self.layers):
             if i != 0:
-                layer['input_size'] = self.layers[i-1]['fc_size']
+                layer['input_size'] = self.layers[i - 1]['fc_size']
+            if 'input_rank' not in layer:
+                layer['input_rank'] = default_input_rank
             if 'fc_size' not in layer:
                 layer['fc_size'] = default_fc_size
             if 'use_bias' not in layer:
@@ -203,6 +209,7 @@ class FCStack(LudwigModule):
             self.stack.append(
                 FCLayer(
                     input_size=layer['input_size'],
+                    input_rank=layer['input_rank'],
                     output_size=layer['fc_size'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
