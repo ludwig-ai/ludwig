@@ -185,7 +185,7 @@ class Conv1DStack(LudwigModule):
             default_pool_function='max',
             default_pool_size=2,
             default_pool_strides=None,
-            default_pool_padding=0,
+            default_pool_padding='same',
             **kwargs
     ):
         super().__init__()
@@ -322,7 +322,7 @@ class Conv1DStack(LudwigModule):
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '
                 'This means that the combination of filter_size, padding, '
-                'stride, pool_size, pool_padding and pool_stride is reduces '
+                'stride, pool_size, pool_padding and pool_stride reduces '
                 'the sequence length more than is possible. '
                 'Try using "same" padding and reducing or eliminating stride '
                 'and pool.'
@@ -462,7 +462,7 @@ class ParallelConv1D(LudwigModule):
         return torch.Size([self.max_sequence_length, self.in_channels])
 
     def forward(self, inputs, training=None, mask=None):
-        # inputs: [batch_size, in_channels, seq_size)
+        # inputs: [batch_size, seq_size, in_channels)
 
         hidden = inputs
         hiddens = []
@@ -482,7 +482,7 @@ class ParallelConv1D(LudwigModule):
                 'and pool.'
             )
 
-        return hidden  # (batch_size, len(parallel_layers) * out_channels, seq_size)
+        return hidden  # (batch_size, seq_size, len(parallel_layers) * out_channels)
 
 
 class ParallelConv1DStack(LudwigModule):
