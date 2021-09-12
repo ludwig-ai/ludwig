@@ -25,11 +25,14 @@ encoder_parameters = {
     "max_sequence_length": SEQ_SIZE,
     "state_size": TEST_STATE_SIZE,
     "cell_type": 'rnn',
+    "should_embed": True,
     "dropout": 0.0,
     "norm": None,
     "reduce_output": None,
 }
 
+
+@pytest.mark.parametrize('enc_should_embed', [True, False])
 @pytest.mark.parametrize('enc_reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('enc_norm', [None, 'batch', 'layer'])
 @pytest.mark.parametrize('enc_num_layers', [1, 2])
@@ -42,6 +45,7 @@ def test_sequence_encoders(
         enc_dropout,
         enc_num_layers,
         enc_norm,
+        enc_should_embed,
         enc_reduce_output
 ):
     # update encoder parameters for specific unit test case

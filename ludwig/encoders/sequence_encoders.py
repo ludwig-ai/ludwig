@@ -70,7 +70,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
         if self.reduce_output is None:
             self.supports_masking = True
 
-    def call(
+    def forward(
             self,
             input_sequence,
             training=True,
@@ -84,11 +84,9 @@ class SequencePassthroughEncoder(SequenceEncoder):
                    (important for dropout)
             :type is_training: Tensor
         """
-        input_sequence = tf.cast(input_sequence, tf.float32)
+        input_sequence = input_sequence.type(torch.float32)
         while len(input_sequence.shape) < 3:
-            input_sequence = tf.expand_dims(
-                input_sequence, -1
-            )
+            input_sequence = input_sequence.unsqueeze(-1)
         hidden = self.reduce_sequence(input_sequence)
 
         return {'encoder_output': hidden}
@@ -569,7 +567,7 @@ class ParallelCNN(SequenceEncoder):
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -953,7 +951,7 @@ class StackedCNN(SequenceEncoder):
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -1325,7 +1323,7 @@ class StackedParallelCNN(SequenceEncoder):
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -1637,7 +1635,7 @@ class StackedRNN(SequenceEncoder):
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -1970,7 +1968,7 @@ class StackedCNNRNN(SequenceEncoder):
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -2203,13 +2201,11 @@ class StackedTransformer(SequenceEncoder):
                 self.should_project = True
         else:
             logger.debug('  project_to_embed_size Dense')
-            self.project_to_hidden_size = Dense(hidden_size)
+            self.project_to_hidden_size = nn.Linear(1, hidden_size)
             self.should_project = True
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
-            # todo: confirm that input_size should be hidden_size
-            #       prior value was embedding_size
             input_size=hidden_size,
             hidden_size=hidden_size,
             num_heads=num_heads,
@@ -2280,7 +2276,7 @@ class StackedTransformer(SequenceEncoder):
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         if self.should_project:
