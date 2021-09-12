@@ -100,6 +100,7 @@ def setup_model_scaffolding(
         yield model, batcher
 
 
+# todo: retire this version if test_sequence_encoders.py is accepted
 # test sequence input features
 # pytest parameters:
 #   enc_cell_type: encoder cell types
