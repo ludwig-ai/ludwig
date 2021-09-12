@@ -36,6 +36,15 @@ encoder_parameters = {
 
 @pytest.fixture(scope='module')
 def input_sequence() -> torch.Tensor:
+    # generates a realistic looking synthetic sequence tensor, i.e.
+    # each sequence will have non-zero tokens at the beginning with
+    # trailing zero tokens, including a max length token with a single
+    # zero token at the end.  Example:
+    # [
+    #   [3, 5, 6, 0, 0, 0],
+    #   [10, 11, 12, 13, 14, 0],   # max length sequence
+    #   [32, 0, 0, 0, 0, 0]        # minimum length sequence
+    # ]
     input_tensor = torch.zeros([BATCH_SIZE, SEQ_SIZE], dtype=torch.int32)
     sequence_lengths = np.random.randint(1, SEQ_SIZE, size=BATCH_SIZE)
     for i in range(input_tensor.shape[0]):
@@ -58,6 +67,7 @@ def test_sequence_encoders(
         enc_num_layers: int,
         enc_norm: Union[None, str],
         enc_reduce_output: Union[None, str],
+        enc_should_embed: bool,
         input_sequence: torch.Tensor
 ):
     # update encoder parameters for specific unit test case
