@@ -842,6 +842,7 @@ class StackedCNN(SequenceEncoder):
                 'num_fc_layers only. Not both.'
             )
 
+        self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
@@ -1834,6 +1835,7 @@ class StackedCNNRNN(SequenceEncoder):
                 'num_conv_layers'
             )
 
+        self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
@@ -2169,6 +2171,8 @@ class StackedTransformer(SequenceEncoder):
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
+
+        self.max_sequence_length = max_sequence_length
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
