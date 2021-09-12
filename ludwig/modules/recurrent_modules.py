@@ -119,8 +119,6 @@ class RecurrentStack(LudwigModule):
     def forward(self, inputs, training=None, mask=None):
         hidden, final_state = self.layers(inputs)
 
-        # todo: confirm that this is correct handling
-        # extract final state for the last layer in the torch stacked rnn
         if isinstance(final_state, tuple):
             # lstm cell type
             final_state = final_state[0][-1], final_state[1][-1]
@@ -128,13 +126,6 @@ class RecurrentStack(LudwigModule):
             # rnn or gru cell type
             final_state = final_state[-1]
 
-        # todo: determine if needed for torch implementation
-        # for layer in self.layers:
-        #     outputs = layer(hidden, training=training, mask=mask)
-        #     hidden = outputs[0]
-        #     final_state = outputs[1:]
-        # if final_state and len(final_state) == 1:
-        #     final_state = final_state[0]
         return hidden, final_state
 
 
