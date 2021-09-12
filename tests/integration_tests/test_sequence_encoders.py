@@ -9,11 +9,11 @@ from ludwig.encoders.sequence_encoders import \
     ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 
 TEST_VOCAB_SIZE = 132
-TEST_HIDDEN_SIZE = 32
+TEST_HIDDEN_SIZE = 128
 TEST_STATE_SIZE = 16
 TEST_EMBEDDING_SIZE = 64
 TEST_NUM_FILTERS = 24
-BATCH_SIZE = 128
+BATCH_SIZE = 100
 SEQ_SIZE = 10
 PARALLEL_CNN_LAYERS = 4
 
@@ -27,6 +27,7 @@ encoder_parameters = {
     "max_sequence_length": SEQ_SIZE,
     "state_size": TEST_STATE_SIZE,
     "cell_type": 'rnn',
+    "should_embed": True,
     "dropout": 0.0,
     "norm": None,
     "reduce_output": None,
@@ -43,6 +44,7 @@ def input_sequence() -> torch.Tensor:
     return input_tensor
 
 
+@pytest.mark.parametrize('enc_should_embed', [True, False])
 @pytest.mark.parametrize('enc_reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('enc_norm', [None, 'batch', 'layer'])
 @pytest.mark.parametrize('enc_num_layers', [1, 2])

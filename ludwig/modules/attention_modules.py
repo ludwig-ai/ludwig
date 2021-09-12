@@ -38,8 +38,8 @@ class FeedForwardAttentionReducer(LudwigModule):
         hidden = self.fc_layer1_activation(hidden)
         hidden = self.fc_layer2(hidden, training=training)  # [b, s, 1]
         attention = F.softmax(hidden, dim=1)
-        geated_inputs = torch.sum(attention * inputs, dim=1)
-        return geated_inputs  # [b, h]
+        gated_inputs = torch.sum(attention * inputs, dim=1)
+        return gated_inputs  # [b, h]
 
 
 class MultiHeadSelfAttention(LudwigModule):
@@ -149,12 +149,10 @@ class TransformerBlock(LudwigModule):
     def forward(self, inputs, training=None, mask=None):
         # inputs [b, s, h]
         attn_output = self.self_attention(inputs)  # [b, s, h]
-        attn_output = self.dropout1(
-            attn_output)  # [b, s, h] # todo: do we need this..., training=training)
+        attn_output = self.dropout1(attn_output)  # [b, s, h]
         ln1_output = self.layernorm1(inputs + attn_output)  # [b, s, h]
         fc_output = self.fully_connected(ln1_output)  # [b, s, h]
-        fc_output = self.dropout2(
-            fc_output)  # [b, s, h] # todo: do we need this..., training=training)
+        fc_output = self.dropout2(fc_output)  # [b, s, h]
         return self.layernorm2(ln1_output + fc_output)  # [b, s, h]
 
 
