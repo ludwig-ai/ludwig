@@ -12,7 +12,7 @@ from dask.utils import apply
 
 from ludwig.data.dataframe.pandas import pandas_df_to_tfrecords, write_meta
 from ludwig.data.dataset.tfrecord import get_part_filename, get_compression_ext
-from ludwig.utils.fs_utils import makedirs
+from ludwig.utils.fs_utils import makedirs, has_remote_protocol
 
 
 def dask_to_tfrecords(
@@ -57,8 +57,10 @@ def dask_to_tfrecords(
 
 
 class file_lock(AbstractContextManager):
+    """Simple file lock based on creating and removing a lock file."""
+
     def __init__(self, path, timeout=None, remove_file=False) -> None:
-        self.path = Path(path) if "://" not in path else None
+        self.path = Path(path) if not has_remote_protocol(path) else None
         self.timeout = timeout
         self.remove_file = remove_file
         if self.path:

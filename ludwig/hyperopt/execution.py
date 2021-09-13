@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import uuid
 import copy
@@ -8,6 +9,7 @@ import signal
 import shutil
 import threading
 import time
+import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Optional
@@ -25,6 +27,7 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import (get_available_gpu_memory,
                                      get_from_registry,
                                      hash_dict)
+from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 try:
@@ -36,7 +39,7 @@ try:
     from ray.tune.syncer import get_cloud_sync_client
     from ray.tune.utils import wait_for_gpu
     from ray.tune.utils.placement_groups import PlacementGroupFactory
-    from ludwig.backend.ray import RayBackend, RayRemoteTrainer
+    from ludwig.backend.ray import RayBackend
 except ImportError:
     ray = None
     get_horovod_kwargs = None
@@ -48,6 +51,7 @@ except ImportError:
         pass
 
 
+# TODO: refactor this into an interface
 def _is_ray_backend(backend) -> bool:
     if isinstance(backend, str):
         return backend == RAY
@@ -793,11 +797,11 @@ class RayTuneExecutor(HyperoptExecutor):
         return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
 
     def _validate_remote_fs_for_ray_backend(self, backend, dataset, output_directory):
-        """Raise an exception if backend is Ray and dataset or output_directory aren't remote."""
-        if _is_ray_backend(backend) and not ("://" in dataset and "://" in output_directory):
-            raise ValueError("Ray backend can only be used with Ray Tune if "
-                             "both the `dataset` and `output_directory` are remote "
-                             "(s3://, gs://, hdfs://).")
+        """Raise a warning if backend is Ray and dataset or output_directory aren't remote."""
+        if _is_ray_backend(backend) and not (has_remote_protocol(dataset) and has_remote_protocol(output_directory)):
+            warnings.warn("Ray backend with Ray Tune is designed to be used with "
+                          "both the `dataset` and `output_directory` are remote "
+                          "(s3://, gs://, hdfs://).")
 
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
@@ -1000,7 +1004,7 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ) -> RayTuneResults:
-        if isinstance(dataset, str) and "://" not in dataset and not os.path.isabs(dataset):
+        if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
         if isinstance(backend, str):
@@ -1101,7 +1105,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none)
             )
 
-        if "://" in output_directory:
+        if has_remote_protocol(output_directory):
             run_experiment_trial = tune.durable(run_experiment_trial)
             self.sync_config = tune.SyncConfig(
                 sync_to_driver=False,

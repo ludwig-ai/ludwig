@@ -31,6 +31,11 @@ def get_fs_and_path(url):
     return fs, path
 
 
+def has_remote_protocol(url):
+    protocol, _ = split_protocol(url)
+    return protocol and protocol != "file"
+
+
 def is_http(urlpath):
     protocol, _ = split_protocol(urlpath)
     return protocol == "http" or protocol == "https"
