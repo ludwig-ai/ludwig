@@ -123,9 +123,13 @@ class MultiHeadSelfAttention(LudwigModule):
 
 
 class TransformerBlock(LudwigModule):
-    def __init__(self, input_size, hidden_size, num_heads, fc_size,
+    def __init__(self, input_size, sequence_size, hidden_size, num_heads,
+                 fc_size,
                  dropout=0.1):
         super().__init__()
+        self.input_size = input_size
+        self.sequence_size = sequence_size
+
         self.self_attention = MultiHeadSelfAttention(
             input_size, hidden_size, num_heads=num_heads
         )
@@ -146,6 +150,10 @@ class TransformerBlock(LudwigModule):
         # self.layernorm2 = LayerNormalization(epsilon=1e-6)
         self.layernorm2 = nn.LayerNorm(hidden_size, eps=1e-6)
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.sequence_size, self.input_size])
+
     def forward(self, inputs, training=None, mask=None):
         # inputs [b, s, h]
         attn_output = self.self_attention(inputs)  # [b, s, h]
@@ -160,6 +168,7 @@ class TransformerStack(LudwigModule):
     def __init__(
             self,
             input_size,
+            sequence_size,
             hidden_size=256,
             num_heads=8,
             fc_size=256,
@@ -172,15 +181,18 @@ class TransformerStack(LudwigModule):
 
         self.layers = nn.ModuleList()
 
-        for _ in range(num_layers):
+        prior_input_size = input_size
+        for i in range(num_layers):
             layer = TransformerBlock(
-                input_size=input_size,
+                input_size=prior_input_size,
+                sequence_size=sequence_size,
                 hidden_size=hidden_size,
                 num_heads=num_heads,
                 fc_size=fc_size,
                 dropout=dropout
             )
             self.layers.append(layer)
+            prior_input_size = self.layers[i].output_shape[-1]
 
         # todo: revisit with solution on how to name layers for logging purposes
         # for layer in self.layers:

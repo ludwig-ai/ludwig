@@ -2211,6 +2211,7 @@ class StackedTransformer(SequenceEncoder):
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
             input_size=hidden_size,
+            sequence_size=max_sequence_length,
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,
