@@ -133,9 +133,9 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.bool
+    @property
+    def input_dtype(self):
+        return torch.bool
 
     @property
     def input_shape(self) -> torch.Size:
