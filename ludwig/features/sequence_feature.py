@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
 
 import numpy as np
 import torch
@@ -167,20 +168,9 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    @classmethod
-    def get_input_dtype(cls):
+    @property
+    def input_dtype(self):
         return torch.int32
-
-    @property
-    def input_shape(self) -> torch.Size:
-        """ Returns the size of the input tensor without the batch dimension. """
-        return torch.Size([self.max_sequence_length])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        """ Returns the size of the output tensor without the batch dimension."""
-        return self.encoder_obj.output_shape
-
 
     @staticmethod
     def update_config_with_metadata(

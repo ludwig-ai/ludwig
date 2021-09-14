@@ -133,8 +133,8 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    @classmethod
-    def get_input_dtype(cls):
+    @property
+    def input_dtype(self):
         return torch.int32
 
     @property

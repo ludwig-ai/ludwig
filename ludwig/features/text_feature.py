@@ -283,9 +283,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.int32
+    @property
+    def input_dtype(self):
+        return torch.int32
 
     @staticmethod
     def update_config_with_metadata(

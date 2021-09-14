@@ -426,8 +426,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
+    @property
+    def input_dtype(self):
         return torch.uint8
 
     @property

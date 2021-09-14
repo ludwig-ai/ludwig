@@ -114,9 +114,9 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.uint8
+    @property
+    def input_dtype(self):
+        return torch.uint8
 
     @property
     def input_shape(self) -> torch.Size:
