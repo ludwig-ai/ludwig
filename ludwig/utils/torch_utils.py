@@ -75,10 +75,6 @@ class LudwigModule(Module):
         super().__init__()
         self._callable_losses = []
 
-    @property
-    def input_dtype(self):
-        return torch.float32
-
     def losses(self):
         collected_losses = []
         for loss_fn in self._callable_losses:
@@ -101,6 +97,10 @@ class LudwigModule(Module):
     def add_loss(self, loss):
         if callable(loss):
             self._callable_losses.append(loss)
+
+    @property
+    def input_dtype(self):
+        return torch.float32
 
     @property
     @abstractmethod
