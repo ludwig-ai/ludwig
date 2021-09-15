@@ -18,12 +18,11 @@ import logging
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Union
+from typing import Tuple, Union
 
 import numpy as np
 import torch
 import torchvision
-# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
@@ -96,7 +95,7 @@ class ImageFeatureMixin:
             num_channels: int,
             resize_method: str,
             user_specified_num_channels: bool
-    ):
+    ) -> torch.Tensor:
         """
         :param img_entry Union[str, 'numpy.array']: if str file path to the
                 image else numpy.array of the image itself
@@ -182,7 +181,7 @@ class ImageFeatureMixin:
             first_img_entry: Union[str, np.ndarray],
             src_path: str,
             input_feature_col: np.array
-    ):
+    ) -> Tuple:
         """
         Helper method to determine the height, width and number of channels for
         preprocessing the image data. This is achieved by looking at the
@@ -415,7 +414,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.uint8, torch.int64]
 
