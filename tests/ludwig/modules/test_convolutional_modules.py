@@ -5,12 +5,12 @@ import torch
 
 from ludwig.modules.convolutional_modules import Conv2DLayer, Conv2DStack,\
     Conv2DLayerFixedPadding, ResNetBlock, ResNetBottleneckBlock,\
-    ResNetBlockLayer, ResNet, get_resnet_block_sizes
+    ResNetBlockLayer, ResNet
 
 
 @pytest.mark.parametrize(
-    ('img_height,img_width,in_channels,out_channels,pool_kernel_size,pool_stride,'
-     'pool_padding,pool_dilation'),
+    ('img_height,img_width,in_channels,out_channels,pool_kernel_size,'
+     'pool_stride,pool_padding,pool_dilation'),
     [(224, 224, 3, 16, 2, 2, 0, 1)]
 )
 @pytest.mark.parametrize(
@@ -38,8 +38,9 @@ def test_conv2d_layer(
     conv2d_layer = Conv2DLayer(
         img_height=img_height, img_width=img_width, in_channels=in_channels,
         out_channels=out_channels, kernel_size=kernel_size, stride=stride,
-        padding=padding, dilation=dilation, norm=norm, pool_kernel_size=pool_kernel_size,
-        pool_stride=pool_stride, pool_padding=pool_padding, pool_dilation=pool_dilation
+        padding=padding, dilation=dilation, norm=norm,
+        pool_kernel_size=pool_kernel_size, pool_stride=pool_stride,
+        pool_padding=pool_padding, pool_dilation=pool_dilation
     )
     input_tensor = torch.rand(2, in_channels, img_height, img_width)
     output_tensor = conv2d_layer(input_tensor)
@@ -93,14 +94,14 @@ def test_conv2d_layer_fixed_padding(
 
 @pytest.mark.parametrize(
     'img_height,img_width,first_in_channels,out_channels',
-    [(224, 224, 3, 64)]
+    [(224, 224, 64, 64)]
 )
 @pytest.mark.parametrize(
     'projection_shortcut',
     [   
         None,
         Conv2DLayerFixedPadding(
-            img_height=224, img_width=224, in_channels=3, out_channels=64
+            img_height=224, img_width=224, in_channels=64, out_channels=64
         )
     ]
 )
@@ -112,8 +113,9 @@ def test_resnet_block(
         projection_shortcut: Callable
 ) -> None:
     resnet_block = ResNetBlock(
-        img_height=img_height, img_width=img_width, first_in_channels=first_in_channels,
-        out_channels=out_channels, projection_shortcut=projection_shortcut
+        img_height=img_height, img_width=img_width,
+        first_in_channels=first_in_channels, out_channels=out_channels,
+        projection_shortcut=projection_shortcut
     )
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet_block(input_tensor)
@@ -122,14 +124,14 @@ def test_resnet_block(
 
 @pytest.mark.parametrize(
     'img_height,img_width,first_in_channels,out_channels',
-    [(224, 224, 3, 64)]
+    [(224, 224, 64, 64)]
 )
 @pytest.mark.parametrize(
     'projection_shortcut',
     [   
         None,
         Conv2DLayerFixedPadding(
-            img_height=224, img_width=224, in_channels=3, out_channels=256
+            img_height=224, img_width=224, in_channels=64, out_channels=256
         )
     ]
 )
@@ -141,8 +143,9 @@ def test_resnet_bottleneck_block(
         projection_shortcut: Callable
 ) -> None:
     resnet_block = ResNetBottleneckBlock(
-        img_height=img_height, img_width=img_width, first_in_channels=first_in_channels,
-        out_channels=out_channels, projection_shortcut=projection_shortcut
+        img_height=img_height, img_width=img_width,
+        first_in_channels=first_in_channels, out_channels=out_channels,
+        projection_shortcut=projection_shortcut
     )
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet_block(input_tensor)
@@ -167,10 +170,31 @@ def test_resnet_block_layer(
         num_blocks: int,
 ):
     resnet_block_layer = ResNetBlockLayer(
-        img_height=img_height, img_width=img_width, first_in_channels=first_in_channels,
-        out_channels=out_channels, is_bottleneck=is_bottleneck, block_fn=block_fn,
-        num_blocks=num_blocks
+        img_height=img_height, img_width=img_width,
+        first_in_channels=first_in_channels, out_channels=out_channels,
+        is_bottleneck=is_bottleneck, block_fn=block_fn, num_blocks=num_blocks
     )
     input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
     output_tensor = resnet_block_layer(input_tensor)
     assert output_tensor.shape[1:] == resnet_block_layer.output_shape
+
+
+@pytest.mark.parametrize(
+    'img_height,img_width,first_in_channels,out_channels', [(224, 224, 3, 64)]
+)
+@pytest.mark.parametrize('resnet_size', [18, 34, 50])
+def test_resnet(
+        img_height: int,
+        img_width: int,
+        first_in_channels: int,
+        out_channels: int,
+        resnet_size: int,
+):
+    resnet = ResNet(
+        img_height=img_height, img_width=img_width,
+        first_in_channels=first_in_channels, out_channels=out_channels,
+        resnet_size=resnet_size
+    )
+    input_tensor = torch.rand(2, first_in_channels, img_height, img_width)
+    output_tensor = resnet(input_tensor)
+    assert output_tensor.shape[1:] == resnet.output_shape
