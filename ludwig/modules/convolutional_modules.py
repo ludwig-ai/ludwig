@@ -844,7 +844,7 @@ class ResNetBlock(LudwigModule):
             stride: int,
             batch_norm_momentum: float = 0.9,
             batch_norm_epsilon: float = 0.001,
-            projection_shortcut: Optional[nn.LudwigModule] = None
+            projection_shortcut: Optional[LudwigModule] = None
     ):
         super().__init__()
 
@@ -928,7 +928,7 @@ class ResNetBottleneckBlock(LudwigModule):
             stride: int,
             batch_norm_momentum: float = 0.9,
             batch_norm_epsilon: float = 0.001,
-            projection_shortcut: Optional[nn.LudwigModule] = None
+            projection_shortcut: Optional[LudwigModule] = None
     ):
         super().__init__()
 

@@ -77,28 +77,28 @@ def run_experiment(input_features, output_features, **kwargs):
     'input_test_feature, output_test_feature, output_loss_parameter',
     [
         # numerical features
-        (numerical_feature(), numerical_feature(), None),
-        (
-                numerical_feature(normalization='minmax'),
-                numerical_feature(),
-                {'loss': {'type': 'mean_squared_error'}}
-        ),
-        (
-                numerical_feature(normalization='zscore'),
-                numerical_feature(),
-                {'loss': {'type': 'mean_absolute_error'}}
-        ),
+        #(numerical_feature(), numerical_feature(), None),
+        #(
+        #        numerical_feature(normalization='minmax'),
+        #        numerical_feature(),
+        #        {'loss': {'type': 'mean_squared_error'}}
+        #),
+        #(
+        #        numerical_feature(normalization='zscore'),
+        #        numerical_feature(),
+        #        {'loss': {'type': 'mean_absolute_error'}}
+        #),
     #
-    #     # binary feature
-    #     (binary_feature(), binary_feature(), None),
-    #
+         # binary feature
+         (binary_feature(), binary_feature(), None),
+
     #     # Categorical feature
-        (category_feature(), category_feature(), None),
-        (
-                category_feature(),
-                category_feature(),
-                {'loss': {'type': 'softmax_cross_entropy'}}
-        ),
+        #(category_feature(), category_feature(), None),
+        #(
+        #        category_feature(),
+        #        category_feature(),
+        #        {'loss': {'type': 'softmax_cross_entropy'}}
+        #),
     #     (
     #             category_feature(),
     #             category_feature(),
@@ -164,18 +164,18 @@ def test_feature(input_test_feature, output_test_feature,
     [
         ([category_feature()],
          [binary_feature(), binary_feature()]),
-        ([category_feature()],
-         [category_feature(vocab_size=5), category_feature(vocab_size=7)]),
-        ([category_feature()],
-         [numerical_feature(), numerical_feature()]),
-        ([category_feature()],
-         [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
-        ([category_feature()],
-         [set_feature(vocab_size=5), set_feature(vocab_size=7)]),
-        ([category_feature()],
-         [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
-        ([category_feature()],
-         [vector_feature(), vector_feature()]),
+        #([category_feature()],
+        # [category_feature(vocab_size=5), category_feature(vocab_size=7)]),
+        #([category_feature()],
+        # [numerical_feature(), numerical_feature()]),
+        #([category_feature()],
+        # [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
+        #([category_feature()],
+        # [set_feature(vocab_size=5), set_feature(vocab_size=7)]),
+        #([category_feature()],
+        # [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
+        #([category_feature()],
+        # [vector_feature(), vector_feature()]),
     ]
 )
 def test_feature_multiple_outputs(input_test_feature, output_test_feature,

@@ -59,41 +59,17 @@ class RMSPELoss(LogitsLoss):
         return loss
 
 
-# class BWCEWLoss(tf.keras.losses.Loss):
-#     def __init__(
-#         self, positive_class_weight=1, robust_lambda=0, confidence_penalty=0
-#     ):
-#         super().__init__()
-#
-#         self.positive_class_weight = positive_class_weight
-#         self.robust_lambda = robust_lambda
-#         self.confidence_penalty = confidence_penalty
-#
-#     def call(self, y_true, y_pred):
-#         logits = y_pred[LOGITS]
-#
-#         # weighted cross entropy
-#         train_loss = tf.nn.weighted_cross_entropy_with_logits(
-#             labels=tf.cast(y_true, tf.float32),
-#             logits=logits,
-#             pos_weight=self.positive_class_weight,
-#         )
-#
-#         # robust lambda
-#         if self.robust_lambda > 0:
-#             train_loss = (
-#                 1 - self.robust_lambda
-#             ) * train_loss + self.robust_lambda / 2
-#
-#         train_mean_loss = tf.reduce_mean(train_loss)
-#
-#         # confidence penalty
-#         if self.confidence_penalty > 0:
-#             probabilities = tf.nn.sigmoid(logits)
-#             mean_penalty = mean_confidence_penalty(probabilities, 2)
-#             train_mean_loss += self.confidence_penalty * mean_penalty
-#
-#         return train_mean_loss
+class BWCEWLoss:
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
+
+    def forward(self, input: torch.Tensor, target: torch.Tensor):
+        target = target.long()
+        print(f'preds: {input.shape} {input.dtype} {input}')
+        print(f'target: {target.shape} {target.dtype} {target}')
+        output = self.loss_fn(input, target)
+        return output.backward()
 
 
 # TODO torch: test behavior parity with tf
