@@ -163,3 +163,25 @@ def test_sequence_encoders(
     else:
         raise ValueError('{} is an invalid encoder specification'
                          .format(enc_encoder))
+
+@pytest.mark.parametrize('enc_reduce_output',
+                         [None, 'sum', 'last', 'mean', 'max'])
+def test_passthrough_encoder(
+        enc_reduce_output,
+        input_sequence
+):
+    encoder_parameters = {
+        'reduce_output': enc_reduce_output
+    }
+
+    # retrieve encoder to test
+    encoder_obj = get_from_registry("passthrough", SEQUENCE_ENCODER_REGISTRY)(
+        **encoder_parameters
+    )
+
+    encoder_out = encoder_obj(input_sequence)
+
+    assert 'encoder_output' in encoder_out
+    assert encoder_out['encoder_output'].shape \
+           == (BATCH_SIZE, SEQ_SIZE, 1) \
+        if enc_reduce_output is None else (BATCH_SIZE, 1)
