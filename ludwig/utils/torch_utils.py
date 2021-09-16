@@ -8,7 +8,7 @@ from torch.nn import Module, ModuleDict
 
 
 def sequence_length_3D(sequence):
-    used = torch.sign(torch.max(torch.abs(sequence), dim=2))
+    used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
     length = torch.sum(used, 1)
     length = length.int()
     return length
