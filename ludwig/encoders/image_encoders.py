@@ -64,14 +64,14 @@ class Stacked2DCNN(ImageEncoder):
             pool_function: str = 'max',
             pool_kernel_size: Union[int, Tuple[int]] = 2,
             pool_stride: Union[int, Tuple[int]] = None,
-            pool_padding: Union[int, Tuple[int], str]  ='valid',
+            pool_padding: Union[int, Tuple[int]]  = 0,
             pool_dilation: Union[int, Tuple[int]] = 1,
             groups: int = 1,
             fc_layers: Optional[List[Dict]] = None,
             num_fc_layers: Optional[int] = 1,
             fc_size: int = 128,
             fc_use_bias: bool = True,
-            fc_weights_initializer: str = 'glorot_uniform',
+            fc_weights_initializer: str = 'xavier_uniform',
             fc_bias_initializer: str = 'zeros',
             fc_weights_regularizer=None,
             fc_bias_regularizer=None,
@@ -85,6 +85,8 @@ class Stacked2DCNN(ImageEncoder):
         super().__init__()
 
         logger.debug(' {}'.format(self.name))
+
+        self._input_shape = (first_in_channels, img_height, img_width)
 
         if first_in_channels is None:
             raise ValueError('first_in_channels must not be None.')
@@ -109,7 +111,7 @@ class Stacked2DCNN(ImageEncoder):
             default_activation=conv_activation,
             default_dropout=conv_dropout,
             default_pool_function=pool_function,
-            default_pool_size=pool_kernel_size,
+            default_pool_kernel_size=pool_kernel_size,
             default_pool_stride=pool_stride,
             default_pool_padding=pool_padding,
             default_pool_dilation=pool_dilation,
@@ -120,7 +122,6 @@ class Stacked2DCNN(ImageEncoder):
         self.flatten = torch.nn.Flatten()
 
         logger.debug('  FCStack')
-        # TODO(shreya): Confirm that FCStack params are OK.
         self.fc_stack = FCStack(
             first_layer_input_size=first_fc_layer_input_size,
             layers=fc_layers,
@@ -138,19 +139,14 @@ class Stacked2DCNN(ImageEncoder):
             default_dropout=fc_dropout,
         )
 
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The inputs fed into the encoder.
                     Shape: [batch x channels x height x width], type torch.uint8
         """
 
-        # ================ Conv Layers ================
-        hidden = self.conv_stack_2d(
-            inputs,
-        )
+        hidden = self.conv_stack_2d(inputs)
         hidden = self.flatten(hidden)
-
-        # ================ Fully Connected ================
         outputs = self.fc_stack(hidden)
 
         return {'encoder_output': outputs}
@@ -159,8 +155,11 @@ class Stacked2DCNN(ImageEncoder):
     def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
 
-# TODO(shreya): Add type hints for missing args.
+
 @register(name='resnet')
 class ResNetEncoder(ImageEncoder):
 
@@ -181,7 +180,7 @@ class ResNetEncoder(ImageEncoder):
             num_fc_layers: Optional[int] = 1,
             fc_size: int = 256,
             use_bias: bool = True,
-            weights_initializer: str = 'glorot_uniform',
+            weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -195,37 +194,24 @@ class ResNetEncoder(ImageEncoder):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        if resnet_size < 50:
-            bottleneck = False
-        else:
-            bottleneck = True
-
-        block_sizes = get_resnet_block_sizes(resnet_size)
-        block_strides = [1, 2, 2, 2][:len(block_sizes)]
+        self._input_shape = (first_in_channels, img_height, img_width)
 
         logger.debug('  ResNet')
         self.resnet = ResNet(
             img_height=img_height,
             img_width=img_width,
-            resnet_size=resnet_size,
-            is_bottleneck=bottleneck,
             first_in_channels=first_in_channels,
             out_channels=out_channels,
+            resnet_size=resnet_size,            
             kernel_size=kernel_size,
             conv_stride=conv_stride,
             first_pool_kernel_size=first_pool_kernel_size,
             first_pool_stride=first_pool_stride,
-            block_sizes=block_sizes,
-            block_strides=block_strides,
             batch_norm_momentum=batch_norm_momentum,
             batch_norm_epsilon=batch_norm_epsilon
         )
-        out_channels, img_height, img_width = self.resnet.output_shape
-        first_fc_layer_input_size = out_channels * img_height * img_width
+        first_fc_layer_input_size = self.resnet.output_shape[0]
 
-        self.flatten = torch.nn.Flatten()
-
-        # TODO(shreya): Confirm that arguments of FCStack are OK.
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
             first_layer_input_size=first_fc_layer_input_size,
@@ -244,17 +230,19 @@ class ResNetEncoder(ImageEncoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
 
         hidden = self.resnet(inputs)
-        hidden = self.flatten(hidden)
         hidden = self.fc_stack(hidden)
-
         return {'encoder_output': hidden}
 
     @property
     def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
 
 
 @register(name='mlp_mixer')
@@ -295,7 +283,7 @@ class MLPMixerEncoder(ImageEncoder):
 
         self._output_shape = self.mlp_mixer.output_shape
 
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = self.mlp_mixer(inputs)
         return {'encoder_output': hidden}
 

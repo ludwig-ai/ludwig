@@ -29,7 +29,7 @@ from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
-from ludwig.utils.image_utils import greyscale, num_channels_in_image,\
+from ludwig.utils.image_utils import grayscale, num_channels_in_image,\
     resize_image, get_image_from_path, read_image
 from ludwig.utils.misc_utils import set_default_value
 
@@ -120,17 +120,17 @@ class ImageFeatureMixin:
         img = read_image(img_entry)
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
-            img = greyscale(img)
+            img = grayscale(img)
 
         if should_resize:
             img = resize_image(img, (img_height, img_width), resize_method)
 
         if user_specified_num_channels:
 
-            # convert to greyscale if needed
+            # convert to grayscale if needed
             if num_channels == 1 and (
                     img_num_channels == 3 or img_num_channels == 4):
-                img = greyscale(img)
+                img = grayscale(img)
                 img_num_channels = 1
 
             # Number of channels is specified by the user
@@ -431,7 +431,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.height, self.width, self.num_channels])
+        return torch.Size([self.num_channels, self.height, self.width])
 
     @staticmethod
     def update_config_with_metadata(

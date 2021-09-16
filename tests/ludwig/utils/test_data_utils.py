@@ -15,7 +15,7 @@
 # ==============================================================================
 import pandas as pd
 
-from ludwig.utils.data_utils import add_sequence_feature_column
+from ludwig.utils.data_utils import add_sequence_feature_column, get_abs_path
 
 
 def test_add_sequence_feature_column():
@@ -53,3 +53,8 @@ def test_add_sequence_feature_column():
 
     add_sequence_feature_column(df, 'y', 2)
     assert df.equals(pd.DataFrame([1, 2, 3, 4, 5], columns=['x']))
+
+
+def test_get_abs_path():
+    assert get_abs_path('a', 'b.jpg') == 'a/b.jpg'
+    assert get_abs_path(None, 'b.jpg') == 'b.jpg'
