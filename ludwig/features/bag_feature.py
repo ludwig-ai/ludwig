@@ -126,10 +126,6 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    @classmethod
-    def get_input_dtype(cls):
-        return torch.float32
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([len(self.vocab)])

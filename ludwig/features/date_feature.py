@@ -144,9 +144,9 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.int16
+    @property
+    def input_dtype(self):
+        return torch.int16
 
     @property
     def input_shape(self) -> torch.Size:
