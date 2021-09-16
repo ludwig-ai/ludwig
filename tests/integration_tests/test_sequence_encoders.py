@@ -165,7 +165,7 @@ def test_sequence_encoders(
                          .format(enc_encoder))
 
 @pytest.mark.parametrize('enc_reduce_output',
-                         [None, 'sum', 'last', 'mean', 'max'])
+                         [None, 'sum', 'last', 'mean', 'max', 'concat'])
 def test_passthrough_encoder(
         enc_reduce_output,
         input_sequence

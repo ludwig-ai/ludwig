@@ -15,14 +15,10 @@
 # ==============================================================================
 import logging
 
-# import tensorflow as tf
-# from tensorflow.keras.layers import Layer
-
 import torch
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
-#from ludwig.utils.tf_utils import sequence_length_3D
 from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule
 
 logger = logging.getLogger(__name__)
@@ -48,9 +44,9 @@ class SequenceReducer(LudwigModule):
 class ReduceLast(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
-        #batch_size = tf.shape(inputs)[0]
+        # inputs: [batch_size, seq_size, hidden_size]
         batch_size = inputs.shape[0]
-        sequence_length = sequence_length_3D(inputs)
+        # todo: clean out tf code
         # gather the correct outputs from the the RNN outputs (the outputs after sequence_length are all 0s)
         '''
         gathered = tf.gather_nd(
@@ -61,13 +57,11 @@ class ReduceLast(LudwigModule):
             )
         )
         '''
-        gathered = SOME_FUNC_HERE(
-            inputs,
-            torch.stack(
-                [torch.range(batch_size), torch.maximum(sequence_length - 1, 0)],
-                dim=1
-            )
-        )
+        # todo: review for generality
+        sequence_length = sequence_length_3D(inputs) - 1
+        sequence_length[sequence_length < 0] = 0
+        gathered = inputs[
+            torch.arange(batch_size), sequence_length.type(torch.int64)]
         return gathered
 
 
@@ -89,7 +83,7 @@ class ReduceMax(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
         #return tf.reduce_max(inputs, axis=1)
-        return torch.max(inputs, dim=1)
+        return torch.amax(inputs, dim=1)
 
 
 class ReduceConcat(LudwigModule):
@@ -103,8 +97,8 @@ class ReduceConcat(LudwigModule):
         if (inputs.shape.as_list()[-2] is None or
                 inputs.shape.as_list()[-1] is None):
         '''
-        if (list(inputs.shape)[-2] is None or
-                list(inputs.shape.as_list()[-1] is None)):
+        if (list(inputs.shape)[-2] is None) or \
+                (list(inputs.shape)[-1] is None):
             # this the case of outputs coming from rnn encoders
             logger.warning('  WARNING: '
                            'The sequence length dimension is undefined '
