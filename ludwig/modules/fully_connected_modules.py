@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 
+import torch
 from torch.nn import (Linear, LayerNorm, Dropout, ModuleList,
                       BatchNorm1d, BatchNorm2d)
 
@@ -249,3 +250,7 @@ class FCStack(LudwigModule):
             #prev_fc_layer_size = layer.layers[0].units
             prev_fc_layer_size = layer.layers[0].out_features
         return hidden
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
