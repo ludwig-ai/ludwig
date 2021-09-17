@@ -17,6 +17,7 @@
 import logging
 import os
 import sys
+from io import BytesIO
 from math import ceil, floor
 
 import numpy as np
@@ -38,7 +39,7 @@ def get_image_from_path(src_path, img_entry, ret_bytes=False):
     if is_http(img_entry):
         if ret_bytes:
             import requests
-            return requests.get(img_entry, stream=True).raw.read()
+            return BytesIO(requests.get(img_entry, stream=True).raw.read())
         return img_entry
     if src_path or os.path.isabs(img_entry):
         return get_abs_path(src_path, img_entry)
