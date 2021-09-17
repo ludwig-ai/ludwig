@@ -1,11 +1,109 @@
 import pytest
 from typing import Callable, Dict, List, Optional, Tuple, Union
-
+import numpy as np
 import torch
 
-from ludwig.modules.convolutional_modules import Conv2DLayer, Conv2DStack,\
-    Conv2DLayerFixedPadding, ResNetBlock, ResNetBottleneckBlock,\
-    ResNetBlockLayer, ResNet
+from ludwig.modules.convolutional_modules import Conv2DLayer, Conv2DStack, \
+    Conv2DLayerFixedPadding, ResNetBlock, ResNetBottleneckBlock, \
+    ResNetBlockLayer, ResNet, Conv1DLayer, Conv1DStack, ParallelConv1DStack, \
+    ParallelConv1D
+
+BATCH_SIZE = 2
+SEQ_SIZE = 100
+HIDDEN_SIZE = 64
+
+
+###
+# Helper function to compute expected output shape
+# for Conv1D related layers
+###
+def expected_seq_size(
+        seq_size: int,  # input sequence size
+        padding: str,  # conv1d padding: 'same' or 'valid'
+        kernel_size: int,  # conv1d kernel size
+        stride: int,  # conv1d stride
+        dilation: int,  # conv1d dilation rate
+        pool_size: Union[None, int],  # pooling layer kernel size
+        pool_padding: str,  # pooling layer padding: 'same' or 'valid'
+        pool_stride: int,  # pooling layer stride
+) -> int:
+    # output size calculation based on this paper
+    # https://github.com/vdumoulin/conv_arithmetic
+    # https://arxiv.org/abs/1603.07285
+    # @misc{dumoulin2018guide,
+    #  title = {A guide to convolution arithmetic for deep learning},
+    # author={Vincent Dumoulin and Francesco Visin},
+    # year={2018},
+    # eprint={1603.07285},
+    # archivePrefix={arXiv},
+    # primaryClass={stat.ML}
+    # }
+
+    # compute output for conv1D
+    num_padding = (dilation * (
+                kernel_size - 1)) // 2 if padding == 'same' else 0
+    numerator = seq_size + 2 * num_padding - dilation * (kernel_size - 1) - 1
+    L_out = np.floor(numerator / stride + 1)
+
+    if pool_size is not None:
+        # last layer is pooling layer, adjust L_out
+        num_pool_padding = (pool_size - 1) // 2 if pool_padding == 'same' else 0
+        numerator = L_out + 2 * num_pool_padding - (pool_size - 1) - 1
+        L_out = np.floor((numerator / pool_stride) + 1)
+
+    return np.int(L_out)
+
+
+@pytest.mark.parametrize('pool_function', ['max', 'mean'])
+@pytest.mark.parametrize('pool_size, pool_padding, pool_stride',
+                         [(None, None, None), (3, 'same', 1), (5, 'same', 1),
+                          (3, 'valid', 2), (5, 'valid', 2)])
+@pytest.mark.parametrize('dilation', [1, 2, 3])
+@pytest.mark.parametrize('strides, padding',
+                         [(1, 'same'), (1, 'valid'), (2, 'valid'),
+                          (3, 'valid')])
+@pytest.mark.parametrize('kernel_size', [3, 5, 7])
+def test_conv1d_layer(
+        kernel_size: int,
+        strides: int,
+        padding: str,
+        dilation: int,
+        pool_size: Union[None, int],
+        pool_padding: str,
+        pool_stride: int,
+        pool_function: str
+) -> None:
+    input = torch.randn([BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
+                        dtype=torch.float32)
+
+    conv1_layer = Conv1DLayer(
+        in_channels=HIDDEN_SIZE,
+        out_channels=256,
+        sequence_size=SEQ_SIZE,
+        kernel_size=kernel_size,
+        strides=strides,
+        padding=padding,
+        dilation=dilation,
+        pool_function=pool_function,
+        pool_size=pool_size,
+        pool_strides=pool_stride,
+        pool_padding=pool_padding
+    )
+
+    out_tensor = conv1_layer(input)
+
+    assert isinstance(out_tensor, torch.Tensor)
+    output_seq_size = expected_seq_size(
+        SEQ_SIZE,
+        padding,
+        kernel_size,
+        strides,
+        dilation,
+        pool_size,
+        pool_padding,
+        pool_stride
+    )
+    assert out_tensor.size() == (2, output_seq_size, 256)
 
 
 @pytest.mark.parametrize(
@@ -98,7 +196,7 @@ def test_conv2d_layer_fixed_padding(
 )
 @pytest.mark.parametrize(
     'projection_shortcut',
-    [   
+    [
         None,
         Conv2DLayerFixedPadding(
             img_height=224, img_width=224, in_channels=64, out_channels=64
@@ -128,7 +226,7 @@ def test_resnet_block(
 )
 @pytest.mark.parametrize(
     'projection_shortcut',
-    [   
+    [
         None,
         Conv2DLayerFixedPadding(
             img_height=224, img_width=224, in_channels=64, out_channels=256
