@@ -1,7 +1,3 @@
-preprocessing:
-  image:
-    infer_image_dimensions: True
-
 combiner:
   type: transformer
 
