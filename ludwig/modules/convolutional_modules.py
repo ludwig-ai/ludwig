@@ -17,11 +17,6 @@ import logging
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-# import tensorflow as tf
-# from tensorflow.keras.layers import (Activation, AveragePooling1D,
-#                                      BatchNormalization,Conv1D, Dropout,
-#                                      LayerNormalization, MaxPool1D)
-from ludwig.utils.torch_utils import LudwigModule
 import torch
 import torch.nn as nn
 
@@ -35,13 +30,16 @@ class Conv1DLayer(LudwigModule):
 
     def __init__(
             self,
-            num_filters=256,
-            filter_size=3,
+            in_channels=1,
+            out_channels=256,
+            sequence_size=None,
+            kernel_size=3,
             strides=1,
             padding='same',
-            dilation_rate=1,
+            dilation=1,
+            groups=1,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -59,20 +57,44 @@ class Conv1DLayer(LudwigModule):
     ):
         super().__init__()
 
-        self.layers = []
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.sequence_size = sequence_size
+        self.kernel_size = kernel_size
+        self.stride = strides
+        if padding == 'same' and kernel_size is not None:
+            self.padding = (self.kernel_size - 1) // 2
+        else:
+            self.padding = 0
+        self.dilation = dilation
+        self.groups = groups
+        self.pool_size = pool_size
+        if pool_strides is None:
+            self.pool_strides = pool_size
+        else:
+            self.pool_strides = pool_strides
+        if pool_padding == 'same' and pool_size is not None:
+            self.pool_padding = (self.pool_size - 1) // 2
+        else:
+            self.pool_padding = 0
 
-        self.layers.append(Conv1D(
-            filters=num_filters,
-            kernel_size=filter_size,
-            strides=strides,
+
+        self.layers = nn.ModuleList()
+
+        self.layers.append(nn.Conv1d(
+            # filters=num_filters,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=(kernel_size,),
+            stride=(strides,),
             padding=padding,
-            dilation_rate=dilation_rate,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
+            dilation=(dilation,),
+            # use_bias=use_bias,
+            # kernel_initializer=weights_initializer,
+            # bias_initializer=bias_initializer,
+            # kernel_regularizer=weights_regularizer,
+            # bias_regularizer=bias_regularizer,
+            # activity_regularizer=activity_regularizer,
             # kernel_constraint=None,
             # bias_constraint=None,
         ))
@@ -80,39 +102,70 @@ class Conv1DLayer(LudwigModule):
         if norm and norm_params is None:
             norm_params = {}
         if norm == 'batch':
-            self.layers.append(BatchNormalization(**norm_params))
+            self.layers.append(
+                nn.BatchNorm1d(
+                    num_features=out_channels,
+                    **norm_params)
+            )
         elif norm == 'layer':
-            self.layers.append(LayerNormalization(**norm_params))
+            # todo(jmt): confirm correct interpretation of LayerNorm paramters
+            self.layers.append(nn.LayerNorm(
+                normalized_shape=[out_channels, self.sequence_size],
+                **norm_params)
+            )
 
-        self.layers.append(Activation(activation))
+        self.layers.append(get_activation(activation))
 
         if dropout > 0:
-            self.layers.append(Dropout(dropout))
+            self.layers.append(nn.Dropout(dropout))
 
         if pool_size is not None:
-            pool = MaxPool1D
+            pool = nn.MaxPool1d
             if pool_function in {'average', 'avg', 'mean'}:
-                pool = AveragePooling1D
+                pool = nn.AvgPool1d
             self.layers.append(pool(
-                pool_size=pool_size, strides=pool_strides, padding=pool_padding
+                kernel_size=self.pool_size,
+                stride=self.pool_strides,
+                padding=self.pool_padding
             ))
 
         for layer in self.layers:
             logger.debug('   {}'.format(layer._get_name()))
 
-    def call(self, inputs, training=None, mask=None):
+        # todo: determine how to handle layer.name
+        # for layer in self.layers:
+        #     logger.debug('   {}'.format(layer.name))
+
+    @property
+    def input_shape(self):
+        """ Returns the size of the input tensor without the batch dimension. """
+        return (torch.Size([self.sequence_size, self.in_channels]))
+
+    def forward(self, inputs, training=None, mask=None):
+        # inputs: [batch_size, seq_size, in_channels]
+        # in Torch nomenclature (N, L, C)
         hidden = inputs
 
-        for layer in self.layers:
-            hidden = layer(hidden, training=training)
+        # put in torch compatible form [batch_size, in_channels, seq_size]
+        hidden = hidden.transpose(1, 2)
 
-        return hidden
+        for i, layer in enumerate(self.layers):
+            # todo: determine how to handle training parameter in this call
+            #       commented out to avoid unexpected parameter error
+            hidden = layer(hidden)  # , training=training)
+
+        # revert back to normal form [batch_size, seq_size, out_channels]
+        hidden = hidden.transpose(1, 2)
+
+        return hidden  # (batch_size, seq_size, out_channels)
 
 
 class Conv1DStack(LudwigModule):
 
     def __init__(
             self,
+            in_channels=1,
+            max_sequence_length=None,
             layers=None,
             num_layers=None,
             default_num_filters=256,
@@ -139,6 +192,9 @@ class Conv1DStack(LudwigModule):
             **kwargs
     ):
         super().__init__()
+
+        self.max_sequence_length = max_sequence_length
+        self.in_channels = in_channels
 
         if layers is None:
             if num_layers is None:
@@ -206,17 +262,21 @@ class Conv1DStack(LudwigModule):
             if 'pool_padding' not in layer:
                 layer['pool_padding'] = default_pool_padding
 
-        self.stack = []
+        self.stack = nn.ModuleList()
 
+        prior_layer_channels = in_channels
+        l_in = self.max_sequence_length  # torch L_in
         for i, layer in enumerate(self.layers):
             logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv1DLayer(
-                    num_filters=layer['num_filters'],
-                    filter_size=layer['filter_size'],
+                    in_channels=prior_layer_channels,
+                    out_channels=layer['num_filters'],
+                    sequence_size=l_in,
+                    kernel_size=layer['filter_size'],
                     strides=layer['strides'],
                     padding=layer['padding'],
-                    dilation_rate=layer['dilation_rate'],
+                    dilation=layer['dilation_rate'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
@@ -236,18 +296,36 @@ class Conv1DStack(LudwigModule):
                 )
             )
 
-    def call(self, inputs, training=None, mask=None):
+            # retrieve number of channels from prior layer
+            input_shape = self.stack[i].input_shape
+            output_shape = self.stack[i].output_shape
+
+            logger.debug(
+                f'{self.__class__.__name__}: '
+                f'input_shape {input_shape}, output shape {output_shape}'
+            )
+
+            # pass along shape for the input to the next layer
+            l_in, prior_layer_channels = output_shape
+
+    @property
+    def input_shape(self):
+        """ Returns the size of the input tensor without the batch dimension. """
+        return (torch.Size([self.max_sequence_length, self.in_channels]))
+
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
 
-        for layer in self.stack:
+        # todo: enumerate for debugging, remove after testing
+        for i, layer in enumerate(self.stack):
             hidden = layer(hidden, training=training)
 
         if hidden.shape[1] == 0:
             raise ValueError(
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '
-                'This means that the compination of filter_size, padding, '
-                'stride, pool_size, pool_padding and pool_stride is reduces '
+                'This means that the combination of filter_size, padding, '
+                'stride, pool_size, pool_padding and pool_stride reduces '
                 'the sequence length more than is possible. '
                 'Try using "same" padding and reducing or eliminating stride '
                 'and pool.'
@@ -260,6 +338,8 @@ class ParallelConv1D(LudwigModule):
 
     def __init__(
             self,
+            in_channels=1,
+            max_sequence_length=None,
             layers=None,
             default_num_filters=256,
             default_filter_size=3,
@@ -267,7 +347,7 @@ class ParallelConv1D(LudwigModule):
             default_padding='same',
             default_dilation_rate=1,
             default_use_bias=True,
-            default_weights_initializer='glorot_uniform',
+            default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
@@ -285,6 +365,9 @@ class ParallelConv1D(LudwigModule):
             **kwargs
     ):
         super().__init__()
+
+        self.in_channels = in_channels
+        self.max_sequence_length = max_sequence_length
 
         if layers is None:
             self.layers = [
@@ -340,17 +423,19 @@ class ParallelConv1D(LudwigModule):
             if 'pool_padding' not in layer:
                 layer['pool_padding'] = default_pool_padding
 
-        self.parallel_layers = []
+        self.parallel_layers = nn.ModuleList()
 
         for i, layer in enumerate(self.layers):
             logger.debug('   parallel layer {}'.format(i))
             self.parallel_layers.append(
                 Conv1DLayer(
-                    num_filters=layer['num_filters'],
-                    filter_size=layer['filter_size'],
+                    in_channels=self.in_channels,
+                    out_channels=layer['num_filters'],
+                    sequence_size=self.max_sequence_length,
+                    kernel_size=layer['filter_size'],
                     strides=layer['strides'],
                     padding=layer['padding'],
-                    dilation_rate=layer['dilation_rate'],
+                    dilation=layer['dilation_rate'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
@@ -370,13 +455,24 @@ class ParallelConv1D(LudwigModule):
                 )
             )
 
-    def call(self, inputs, training=None, mask=None):
+            logger.debug(f'{self.__class__.__name__} layer {i}, input shape '
+                         f'{self.parallel_layers[i].input_shape}, output shape '
+                         f'{self.parallel_layers[i].output_shape}')
+
+    @property
+    def input_shape(self) -> torch.Size:
+        """ Returns the size of the input tensor without the batch dimension. """
+        return torch.Size([self.max_sequence_length, self.in_channels])
+
+    def forward(self, inputs, training=None, mask=None):
+        # inputs: [batch_size, seq_size, in_channels)
+
         hidden = inputs
         hiddens = []
 
         for layer in self.parallel_layers:
             hiddens.append(layer(hidden, training=training))
-        hidden = tf.concat(hiddens, 2)
+        hidden = torch.cat(hiddens, 2)
 
         if hidden.shape[1] == 0:
             raise ValueError(
@@ -389,14 +485,16 @@ class ParallelConv1D(LudwigModule):
                 'and pool.'
             )
 
-        return hidden
+        return hidden  # (batch_size, seq_size, len(parallel_layers) * out_channels)
 
 
 class ParallelConv1DStack(LudwigModule):
 
     def __init__(
             self,
+            in_channels=None,
             stacked_layers=None,
+            max_sequence_length=None,
             default_num_filters=64,
             default_filter_size=3,
             default_strides=1,
@@ -421,6 +519,9 @@ class ParallelConv1DStack(LudwigModule):
             **kwargs
     ):
         super().__init__()
+
+        self.max_sequence_length = max_sequence_length
+        self.in_channels = in_channels
 
         if stacked_layers is None:
             self.stacked_parallel_layers = [
@@ -497,19 +598,37 @@ class ParallelConv1DStack(LudwigModule):
                 if 'pool_padding' not in layer:
                     layer['pool_padding'] = default_pool_padding
 
-        self.stack = []
-
+        self.stack = nn.ModuleList()
+        num_channels = self.in_channels
+        sequence_length = self.max_sequence_length
         for i, parallel_layers in enumerate(self.stacked_parallel_layers):
             logger.debug('   stack layer {}'.format(i))
-            self.stack.append(ParallelConv1D(layers=parallel_layers))
+            self.stack.append(ParallelConv1D(
+                num_channels,
+                sequence_length,
+                layers=parallel_layers)
+            )
 
-    def call(self, inputs, training=None, mask=None):
+            logger.debug(f'{self.__class__.__name__} layer {i}, input shape '
+                         f'{self.stack[i].input_shape}, output shape '
+                         f'{self.stack[i].output_shape}')
+
+            # set input specification for the layer
+            num_channels = self.stack[i].output_shape[1]
+            sequence_length = self.stack[i].output_shape[0]
+
+    @property
+    def input_shape(self):
+        """ Returns the size of the input tensor without the batch dimension. """
+        return torch.Size([self.max_sequence_length, self.in_channels])
+
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
 
         for layer in self.stack:
             hidden = layer(hidden, training=training)
 
-        if hidden.shape[1] == 0:
+        if hidden.shape[2] == 0:
             raise ValueError(
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '
@@ -1026,6 +1145,7 @@ class ResNetBottleneckBlock(LudwigModule):
                       self.conv3, self.norm3, self.relu3]:
             logger.debug('   {}'.format(layer._get_name()))
         
+
         self._output_shape = self.conv3.output_shape
 
         self.projection_shortcut = projection_shortcut

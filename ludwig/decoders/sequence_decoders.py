@@ -107,56 +107,57 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         self.GO_SYMBOL = self.vocab_size
         self.END_SYMBOL = 0
 
-        logger.debug('  project input Dense')
-        self.project = Dense(
-            state_size,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
-        )
-
-        logger.debug('  Embedding')
-        self.decoder_embedding = Embedding(
-            input_dim=self.num_classes + 1,  # account for GO_SYMBOL
-            output_dim=embedding_size,
-            embeddings_initializer=weights_initializer,
-            embeddings_regularizer=weights_regularizer,
-            activity_regularizer=activity_regularizer
-        )
-        logger.debug('  project output Dense')
-        self.dense_layer = Dense(
-            num_classes,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
-        )
-        rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
-        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
-        self.decoder_rnncell = StackedRNNCells(rnn_cells)
-        logger.debug('  {}'.format(self.decoder_rnncell))
-
-        # Sampler
-        self.sampler = tfa.seq2seq.sampler.TrainingSampler()
-
-        logger.debug('setting up attention for', attention)
-        if attention is not None:
-            if attention == 'luong':
-                self.attention_mechanism = LuongAttention(units=state_size)
-            elif attention == 'bahdanau':
-                self.attention_mechanism = BahdanauAttention(units=state_size)
-            logger.debug('  {}'.format(self.attention_mechanism))
-            self.decoder_rnncell = AttentionWrapper(
-                self.decoder_rnncell,
-                [self.attention_mechanism] * num_layers,
-                attention_layer_size=[state_size] * num_layers
-            )
-            logger.debug('  {}'.format(self.decoder_rnncell))
+        # todo: convert following code to torch
+        # logger.debug('  project input Dense')
+        # self.project = Dense(
+        #     state_size,
+        #     use_bias=use_bias,
+        #     kernel_initializer=weights_initializer,
+        #     bias_initializer=bias_initializer,
+        #     kernel_regularizer=weights_regularizer,
+        #     bias_regularizer=bias_regularizer,
+        #     activity_regularizer=activity_regularizer
+        # )
+        #
+        # logger.debug('  Embedding')
+        # self.decoder_embedding = Embedding(
+        #     input_dim=self.num_classes + 1,  # account for GO_SYMBOL
+        #     output_dim=embedding_size,
+        #     embeddings_initializer=weights_initializer,
+        #     embeddings_regularizer=weights_regularizer,
+        #     activity_regularizer=activity_regularizer
+        # )
+        # logger.debug('  project output Dense')
+        # self.dense_layer = Dense(
+        #     num_classes,
+        #     use_bias=use_bias,
+        #     kernel_initializer=weights_initializer,
+        #     bias_initializer=bias_initializer,
+        #     kernel_regularizer=weights_regularizer,
+        #     bias_regularizer=bias_regularizer,
+        #     activity_regularizer=activity_regularizer
+        # )
+        # rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
+        # rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        # self.decoder_rnncell = StackedRNNCells(rnn_cells)
+        # logger.debug('  {}'.format(self.decoder_rnncell))
+        #
+        # # Sampler
+        # self.sampler = tfa.seq2seq.sampler.TrainingSampler()
+        #
+        # logger.debug('setting up attention for', attention)
+        # if attention is not None:
+        #     if attention == 'luong':
+        #         self.attention_mechanism = LuongAttention(units=state_size)
+        #     elif attention == 'bahdanau':
+        #         self.attention_mechanism = BahdanauAttention(units=state_size)
+        #     logger.debug('  {}'.format(self.attention_mechanism))
+        #     self.decoder_rnncell = AttentionWrapper(
+        #         self.decoder_rnncell,
+        #         [self.attention_mechanism] * num_layers,
+        #         attention_layer_size=[state_size] * num_layers
+        #     )
+        #     logger.debug('  {}'.format(self.decoder_rnncell))
 
     def _logits_training(self, inputs, target, training=None):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
@@ -582,7 +583,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         # shape [batch_size, seq_size, state_size]
         encoder_output = inputs['hidden']
         # form dependent on cell_type
