@@ -18,19 +18,18 @@ import logging
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Union
+from typing import Tuple, Union
 
 import numpy as np
 import torch
 import torchvision
-# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
-from ludwig.utils.image_utils import greyscale, num_channels_in_image,\
+from ludwig.utils.image_utils import grayscale, num_channels_in_image,\
     resize_image, get_image_from_path, read_image
 from ludwig.utils.misc_utils import set_default_value
 
@@ -96,7 +95,7 @@ class ImageFeatureMixin:
             num_channels: int,
             resize_method: str,
             user_specified_num_channels: bool
-    ):
+    ) -> torch.Tensor:
         """
         :param img_entry Union[str, 'numpy.array']: if str file path to the
                 image else numpy.array of the image itself
@@ -121,17 +120,17 @@ class ImageFeatureMixin:
         img = read_image(img_entry)
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
-            img = greyscale(img)
+            img = grayscale(img)
 
         if should_resize:
             img = resize_image(img, (img_height, img_width), resize_method)
 
         if user_specified_num_channels:
 
-            # convert to greyscale if needed
+            # convert to grayscale if needed
             if num_channels == 1 and (
                     img_num_channels == 3 or img_num_channels == 4):
-                img = greyscale(img)
+                img = grayscale(img)
                 img_num_channels = 1
 
             # Number of channels is specified by the user
@@ -182,7 +181,7 @@ class ImageFeatureMixin:
             first_img_entry: Union[str, np.ndarray],
             src_path: str,
             input_feature_col: np.array
-    ):
+    ) -> Tuple:
         """
         Helper method to determine the height, width and number of channels for
         preprocessing the image data. This is achieved by looking at the
@@ -415,7 +414,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.uint8, torch.int64]
 
@@ -432,7 +431,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.height, self.width, self.num_channels])
+        return torch.Size([self.num_channels, self.height, self.width])
 
     @staticmethod
     def update_config_with_metadata(

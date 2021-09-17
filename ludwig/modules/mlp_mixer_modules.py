@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-# import tensorflow as tf
-# from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
-#     Conv2D, GlobalAveragePooling1D
 from typing import Union, Tuple
 
 import torch
@@ -37,14 +34,15 @@ class MLP(LudwigModule):
         """
         super().__init__()
 
+        out_features = out_features or in_features
+
         self._input_shape = in_features
         self._output_shape = out_features
 
-        if self._output_shape is None:
-            self._output_shape = self._input_shape
-
-        self.linear1 = nn.Linear(in_features=in_features, out_features=hidden_size)
-        self.linear2 = nn.Linear(in_features=hidden_size, out_features=out_features)
+        self.linear1 = nn.Linear(
+            in_features=in_features, out_features=hidden_size)
+        self.linear2 = nn.Linear(
+            in_features=hidden_size, out_features=out_features)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
 
@@ -81,7 +79,7 @@ class MixerBlock(LudwigModule):
         )
 
         self.mlp2 = MLP(
-            in_features=n_patches,
+            in_features=embed_size,
             hidden_size=channel_dim,
             dropout=dropout
         )
@@ -102,8 +100,7 @@ class MixerBlock(LudwigModule):
         hidden = self.mlp2(hidden)
 
         output = hidden + mid
-        assert output.shape == self.output_shape
-
+        assert output.shape[1:] == self.output_shape
         return output
 
     @property
@@ -140,7 +137,7 @@ class MLPMixer(LudwigModule):
         assert (img_height % patch_size == 0) and (img_width % patch_size == 0)
 
         self._input_shape = (in_channels, img_height, img_width)
-        n_patches = img_height * img_width / (patch_size ** 2)
+        n_patches = int(img_height * img_width / (patch_size ** 2))
 
         self.patch_conv = nn.Conv2d(
             in_channels=in_channels,
@@ -150,9 +147,15 @@ class MLPMixer(LudwigModule):
         )
 
         self.mixer_blocks = [
-            MixerBlock(embed_size, n_patches, token_size, channel_dim, dropout)
+            MixerBlock(
+                embed_size=embed_size,
+                n_patches=n_patches,
+                token_dim=token_size,
+                channel_dim=channel_dim,
+                dropout=dropout)
             for _ in range(num_layers)
         ]
+
         self.layer_norm = nn.LayerNorm(normalized_shape=embed_size)
 
         self.avg_pool = avg_pool
@@ -161,7 +164,7 @@ class MLPMixer(LudwigModule):
         else:
             self._output_shape = (n_patches, embed_size)
 
-    def forward(self, inputs: torch.Tensor, **kwargs):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert inputs.shape[1:] == self.input_shape
         hidden = self.patch_conv(inputs)
         hidden = hidden.flatten(2).transpose(1, 2)
