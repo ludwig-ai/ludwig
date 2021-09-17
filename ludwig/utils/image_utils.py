@@ -194,7 +194,7 @@ def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
     elif type(prop) == np.ndarray and prop.size == 2:
         return prop.astype(int)
     else:
-        raise TypeError(f'prop must be int or tuple of length 2, but is {prop}.')
+        raise TypeError(f'prop must be int or iterable of length 2, but is {prop}.')
 
 
 def get_img_output_shape(

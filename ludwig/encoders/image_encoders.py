@@ -233,6 +233,8 @@ class ResNetEncoder(ImageEncoder):
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
 
         hidden = self.resnet(inputs)
+        axes = [2, 3]
+        hidden = torch.mean(hidden, axes)
         hidden = self.fc_stack(hidden)
         return {'encoder_output': hidden}
 

@@ -68,7 +68,7 @@ class MixerBlock(LudwigModule):
             channel_dim: int,
             dropout: float = 0.0
     ):
-        super().__init__()        
+        super().__init__()
         self._input_shape = (n_patches, embed_size)
         self._output_shape = (n_patches, embed_size)
 
@@ -147,7 +147,12 @@ class MLPMixer(LudwigModule):
         )
 
         self.mixer_blocks = [
-            MixerBlock(embed_size, n_patches, token_size, channel_dim, dropout)
+            MixerBlock(
+                embed_size=embed_size,
+                n_patches=n_patches,
+                token_dim=token_size,
+                channel_dim=channel_dim,
+                dropout=dropout)
             for _ in range(num_layers)
         ]
 
@@ -159,7 +164,7 @@ class MLPMixer(LudwigModule):
         else:
             self._output_shape = (n_patches, embed_size)
 
-    def forward(self, inputs: torch.Tensor, **kwargs):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert inputs.shape[1:] == self.input_shape
         hidden = self.patch_conv(inputs)
         hidden = hidden.flatten(2).transpose(1, 2)

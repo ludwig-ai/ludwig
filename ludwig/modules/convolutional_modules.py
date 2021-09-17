@@ -555,8 +555,15 @@ class Conv2DLayer(LudwigModule):
         pool_stride = pool_stride or pool_kernel_size
 
         self.layers.append(nn.Conv2d(
-            in_channels, out_channels, kernel_size, stride, padding, dilation,
-            groups, bias, padding_mode))
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias,
+            padding_mode=padding_mode))
         out_height, out_width = get_img_output_shape(
             img_height, img_width, kernel_size, stride, padding, dilation
         )
@@ -590,8 +597,12 @@ class Conv2DLayer(LudwigModule):
                 padding=pool_padding
             ))
             out_height, out_width = get_img_output_shape(
-                out_height, out_width, pool_kernel_size, pool_stride,
-                pool_padding, pool_dilation
+                img_height=out_height,
+                img_width=out_width,
+                kernel_size=pool_kernel_size,
+                stride=pool_stride,
+                padding=pool_padding,
+                dilation=pool_dilation
             )
 
         for layer in self.layers:
@@ -822,7 +833,12 @@ class Conv2DLayerFixedPadding(LudwigModule):
             )
         )
         img_height, img_width = get_img_output_shape(
-            img_height, img_width, kernel_size, stride, padding, dilation
+            img_height=img_height,
+            img_width=img_width,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation
         )
 
         for layer in self.layers:
@@ -869,18 +885,29 @@ class ResNetBlock(LudwigModule):
         self._input_shape = (first_in_channels, img_height, img_width)
 
         self.conv1 = Conv2DLayerFixedPadding(
-            img_height, img_width, first_in_channels, out_channels,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=first_in_channels,
+            out_channels=out_channels,
             kernel_size=3, stride=stride)
         in_channels, img_height, img_width = self.conv1.output_shape
         self.norm1 = nn.BatchNorm2d(
-            in_channels, batch_norm_epsilon, batch_norm_momentum)
+            num_features=in_channels,
+            eps=batch_norm_epsilon,
+            momentum=batch_norm_momentum)
         self.relu1 = get_activation('relu')
 
         self.conv2 = Conv2DLayerFixedPadding(
-            img_height, img_width, out_channels, out_channels, kernel_size=3,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=3,
             stride=1)
         self.norm2 = nn.BatchNorm2d(
-            out_channels, batch_norm_epsilon, batch_norm_momentum)
+            num_features=out_channels,
+            eps=batch_norm_epsilon,
+            momentum=batch_norm_momentum)
         self.relu2 = get_activation('relu')
 
         for layer in [self.conv1, self.norm1, self.relu1,
@@ -900,8 +927,12 @@ class ResNetBlock(LudwigModule):
         if self.projection_shortcut is None and \
            self._input_shape != self._output_shape:
             self.projection_shortcut = Conv2DLayer(
-                self._input_shape[1], self._input_shape[2], first_in_channels,
-                out_channels, kernel_size=1, stride=stride)
+                img_height=self._input_shape[1],
+                img_width=self._input_shape[2],
+                in_channels=first_in_channels,
+                out_channels=out_channels,
+                kernel_size=1,
+                stride=stride)
 
     def forward(self, inputs):
         shortcut = inputs
@@ -950,26 +981,44 @@ class ResNetBottleneckBlock(LudwigModule):
         self._input_shape = (first_in_channels, img_height, img_width)
 
         self.conv1 = Conv2DLayerFixedPadding(
-            img_height, img_width, first_in_channels, out_channels,
-            kernel_size=1, stride=1)
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=first_in_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1)
         in_channels, img_height, img_width = self.conv1.output_shape
         self.norm1 = nn.BatchNorm2d(
-            in_channels, batch_norm_epsilon, batch_norm_momentum)
+            num_features=in_channels,
+            eps=batch_norm_epsilon,
+            momentum=batch_norm_momentum)
         self.relu1 = get_activation('relu')
 
         self.conv2 = Conv2DLayerFixedPadding(
-            img_height, img_width, in_channels, out_channels, kernel_size=3,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=3,
             stride=stride)
         in_channels, img_height, img_width = self.conv2.output_shape
         self.norm2 = nn.BatchNorm2d(
-            in_channels, batch_norm_epsilon, batch_norm_momentum)
+            num_features=in_channels,
+            eps=batch_norm_epsilon,
+            momentum=batch_norm_momentum)
         self.relu2 = get_activation('relu')
 
         self.conv3 = Conv2DLayerFixedPadding(
-            img_height, img_width, in_channels, 4 * out_channels, kernel_size=1,
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=in_channels,
+            out_channels=4 * out_channels,
+            kernel_size=1,
             stride=1)
         self.norm3 = nn.BatchNorm2d(
-            4 * out_channels, batch_norm_epsilon, batch_norm_momentum)
+            num_features=4 * out_channels,
+            eps=batch_norm_epsilon,
+            momentum=batch_norm_momentum)
         self.relu3 = get_activation('relu')
 
         for layer in [self.conv1, self.norm1, self.relu1,
@@ -990,11 +1039,14 @@ class ResNetBottleneckBlock(LudwigModule):
         if self.projection_shortcut is None and \
            self._input_shape != self._output_shape:
             self.projection_shortcut = Conv2DLayer(
-                self._input_shape[1], self._input_shape[2], first_in_channels,
-                4 * out_channels, kernel_size=1, stride=stride)
+                img_height=self._input_shape[1],
+                img_width=self._input_shape[2],
+                in_channels=first_in_channels,
+                out_channels=4 * out_channels,
+                kernel_size=1,
+                stride=stride)
 
     def forward(self, inputs):
-
         shortcut = inputs
 
         if self.projection_shortcut is not None:
@@ -1041,8 +1093,12 @@ class ResNetBlockLayer(LudwigModule):
         # Bottleneck blocks end with 4x the number of channels as they start with
         projection_out_channels = out_channels * 4 if is_bottleneck else out_channels
         projection_shortcut = Conv2DLayerFixedPadding(
-            img_height, img_width, first_in_channels, projection_out_channels,
-            kernel_size=1, stride=stride)
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=first_in_channels,
+            out_channels=projection_out_channels,
+            kernel_size=1,
+            stride=stride)
 
         self.layers = [
             block_fn(
@@ -1055,9 +1111,13 @@ class ResNetBlockLayer(LudwigModule):
         for _ in range(1, num_blocks):
             self.layers.append(
                 block_fn(
-                    img_height, img_width, in_channels, out_channels, stride=1,
+                    img_height=img_height,
+                    img_width=img_width,
+                    first_in_channels=in_channels,
+                    out_channels=out_channels,
+                    stride=1,
                     batch_norm_momentum=batch_norm_momentum,
-                    batch_norm_epsilon=batch_norm_epsilon
+                    batch_norm_epsilon=batch_norm_epsilon,
                 )
             )
             in_channels, img_height, img_width = self.layers[-1].output_shape
@@ -1135,43 +1195,65 @@ class ResNet(LudwigModule):
         block_sizes, block_strides = self.get_blocks(
             resnet_size, block_sizes, block_strides)
 
-        self.layers = [
-            Conv2DLayerFixedPadding(
-                img_height, img_width, first_in_channels, out_channels,
-                kernel_size, conv_stride)
-        ]
+        self.layers = []
+        self.layers.append(Conv2DLayerFixedPadding(
+            img_height=img_height,
+            img_width=img_width,
+            in_channels=first_in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=conv_stride))
         in_channels, img_height, img_width = self.layers[-1].output_shape
         self.layers.append(nn.BatchNorm2d(
-            out_channels, batch_norm_epsilon, batch_norm_momentum))
+            num_features=out_channels,
+            eps=batch_norm_epsilon,
+            momentum=batch_norm_momentum))
         self.layers.append(get_activation('relu'))
 
         if first_pool_kernel_size:
             self.layers.append(nn.MaxPool2d(
-                first_pool_kernel_size, first_pool_stride, padding=1))
+                kernel_size=first_pool_kernel_size,
+                stride=first_pool_stride,
+                padding=1))
             img_height, img_width = get_img_output_shape(
-                img_height, img_width, first_pool_kernel_size, first_pool_stride,
-                padding=1, dilation=1)
+                img_height=img_height,
+                img_width=img_width,
+                kernel_size=first_pool_kernel_size,
+                stride=first_pool_stride,
+                padding=1,
+                dilation=1)
 
         for i, num_blocks in enumerate(block_sizes):
             self.layers.append(ResNetBlockLayer(
-                img_height, img_width, in_channels, out_channels, is_bottleneck,
-                block_class, num_blocks, block_strides[i], batch_norm_momentum,
-                batch_norm_epsilon))
+                img_height=img_height,
+                img_width=img_width,
+                first_in_channels=in_channels,
+                out_channels=out_channels,
+                is_bottleneck=is_bottleneck,
+                block_fn=block_class,
+                num_blocks=num_blocks,
+                stride=block_strides[i],
+                batch_norm_momentum=batch_norm_momentum,
+                batch_norm_epsilon=batch_norm_epsilon))
             out_channels *= 2
             in_channels, img_height, img_width = self.layers[-1].output_shape
 
         for layer in self.layers:
             logger.debug('   {}'.format(layer._get_name()))
 
-        self._output_shape = (in_channels, )
+        self._output_shape = (in_channels, img_height, img_width)
 
-    def get_is_bottleneck(self, resnet_size: int, block_sizes: List[int]):
+    def get_is_bottleneck(
+            self, resnet_size: int, block_sizes: List[int]
+    ) -> bool:
         if (resnet_size is not None and resnet_size >= 50) or \
            (block_sizes is not None and sum(block_sizes) >= 16):
             return True
         return False
 
-    def get_block_fn(self, is_bottleneck: bool):
+    def get_block_fn(
+            self, is_bottleneck: bool
+    ) -> Union[ResNetBlock, ResNetBottleneckBlock]:
         if is_bottleneck:
             return ResNetBottleneckBlock
         return ResNetBlock
@@ -1179,20 +1261,17 @@ class ResNet(LudwigModule):
     def get_blocks(
             self, resnet_size: int, block_sizes: List[int],
             block_strides: List[int]
-    ):
+    ) -> Tuple[List[int]]:
         if block_sizes is None:
             block_sizes = get_resnet_block_sizes(resnet_size)
         if block_strides is None:
             block_strides = [1] + [2 for _ in range(len(block_sizes) - 1)]
         return block_sizes, block_strides
 
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         hidden = inputs
         for layer in self.layers:
             hidden = layer(hidden)
-
-        axes = [2, 3]
-        hidden = torch.mean(hidden, axes)
 
         return hidden
 
