@@ -53,7 +53,7 @@ class ImageFeatureMixin:
         'resize_method': 'interpolate',
         'scaling': 'pixel_normalization',
         'num_processes': 1,
-        'infer_image_dimensions': False,
+        'infer_image_dimensions': True,
         'infer_image_max_height': 256,
         'infer_image_max_width': 256,
         'infer_image_sample_size': 100
