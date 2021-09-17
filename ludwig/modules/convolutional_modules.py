@@ -62,10 +62,7 @@ class Conv1DLayer(LudwigModule):
         self.sequence_size = sequence_size
         self.kernel_size = kernel_size
         self.stride = strides
-        if padding == 'same' and kernel_size is not None:
-            self.padding = (self.kernel_size - 1) // 2
-        else:
-            self.padding = 0
+        self.padding = padding
         self.dilation = dilation
         self.groups = groups
         self.pool_size = pool_size
