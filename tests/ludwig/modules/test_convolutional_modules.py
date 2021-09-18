@@ -280,8 +280,7 @@ def test_parallel_conv1d_stack(
     assert isinstance(out_tensor, torch.Tensor)
 
     # check output shape
-    assert out_tensor.size() == (
-    BATCH_SIZE, *parallel_conv1d_stack.output_shape)
+    assert out_tensor.size() == (BATCH_SIZE, *parallel_conv1d_stack.output_shape)
 
 
 ###
