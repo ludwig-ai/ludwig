@@ -15,31 +15,35 @@
 # ==============================================================================
 import logging
 
-# import tensorflow as tf
-# from tensorflow.keras import Sequential
-# from tensorflow.keras.layers import Dense, Dropout, Layer, LayerNormalization
-from ludwig.utils.torch_utils import LudwigModule
+import torch
+from torch import nn
+from torch.nn import functional as F
+
+from ludwig.utils.torch_utils import LudwigModule, get_activation
 
 logger = logging.getLogger(__name__)
 
 
+# todo: clean out commented out tf code
 class FeedForwardAttentionReducer(LudwigModule):
-    def __init__(self, hidden_size=256, activation='tanh'):
+    def __init__(self, input_size, hidden_size=256, activation='tanh'):
         super().__init__()
-        self.layer1 = Dense(hidden_size, activation=activation)
-        self.layer2 = Dense(1, activation='linear', use_bias=False)
+        self.fc_layer1 = nn.Linear(input_size, hidden_size)
+        self.fc_layer1_activation = get_activation(activation)
+        self.fc_layer2 = nn.Linear(hidden_size, 1, bias=False)
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         # current_inputs shape [b, s, h]
-        hidden = self.layer1(inputs, training=training)  # [b, s, h']
-        hidden = self.layer2(hidden, training=training)  # [b, s, 1]
-        attention = tf.nn.softmax(hidden, axis=1)
-        geated_inputs = tf.reduce_sum(attention * inputs, 1)  # [b, h]
-        return geated_inputs  # [b, h]
+        hidden = self.fc_layer1(inputs, training=training)  # [b, s, h']
+        hidden = self.fc_layer1_activation(hidden)
+        hidden = self.fc_layer2(hidden, training=training)  # [b, s, 1]
+        attention = F.softmax(hidden, dim=1)
+        gated_inputs = torch.sum(attention * inputs, dim=1)
+        return gated_inputs  # [b, h]
 
 
 class MultiHeadSelfAttention(LudwigModule):
-    def __init__(self, hidden_size, num_heads=8):
+    def __init__(self, input_size, hidden_size, num_heads=8):
         super().__init__()
         self.embedding_size = hidden_size
         self.num_heads = num_heads
@@ -49,30 +53,44 @@ class MultiHeadSelfAttention(LudwigModule):
                 f"should be divisible by number of heads = {num_heads}"
             )
         self.projection_dim = hidden_size // num_heads
-        self.query_dense = Dense(hidden_size)
-        self.key_dense = Dense(hidden_size)
-        self.value_dense = Dense(hidden_size)
-        self.combine_heads = Dense(hidden_size)
+        # self.query_dense = Dense(hidden_size)
+        self.query_dense = nn.Linear(input_size, hidden_size)
+        # self.key_dense = Dense(hidden_size)
+        self.key_dense = nn.Linear(input_size, hidden_size)
+        # self.value_dense = Dense(hidden_size)
+        self.value_dense = nn.Linear(input_size, hidden_size)
+        # self.combine_heads = Dense(hidden_size)
+        self.combine_heads = nn.Linear(hidden_size, hidden_size)
 
     def attention(self, query, key, value, mask=None):
-        score = tf.matmul(query, key, transpose_b=True)
-        dim_key = tf.cast(tf.shape(key)[-1], tf.float32)
-        scaled_score = score / tf.math.sqrt(dim_key)
+        # score = tf.matmul(query, key, transpose_b=True)
+        score = torch.matmul(query, key.permute(0, 1, 3, 2))
+        # dim_key = tf.cast(tf.shape(key)[-1], tf.float32)
+        dim_key = torch.tensor(key.shape[-1]).type(torch.float32)
+        # scaled_score = score / tf.math.sqrt(dim_key)
+        scaled_score = score / torch.sqrt(dim_key)
         if mask:
             scaled_score = mask * scaled_score
-        weights = tf.nn.softmax(scaled_score, axis=-1)
-        output = tf.matmul(weights, value)
+        # weights = tf.nn.softmax(scaled_score, axis=-1)
+        weights = F.softmax(scaled_score, dim=-1)
+        # output = tf.matmul(weights, value)
+        output = torch.matmul(weights, value)
         return output, weights
 
     def separate_heads(self, inputs, batch_size):
-        inputs = tf.reshape(
+        # inputs = tf.reshape(
+        #     inputs, (batch_size, -1, self.num_heads, self.projection_dim)
+        # )
+        inputs = torch.reshape(
             inputs, (batch_size, -1, self.num_heads, self.projection_dim)
         )
-        return tf.transpose(inputs, perm=[0, 2, 1, 3])
+        # return tf.transpose(inputs, perm=[0, 2, 1, 3])
+        return torch.permute(inputs, (0, 2, 1, 3))
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         # x.shape = [batch_size, seq_len, embedding_dim]
-        batch_size = tf.shape(inputs)[0]
+        # batch_size = tf.shape(inputs)[0]
+        batch_size = inputs.shape[0]
         query = self.query_dense(inputs)  # (batch_size, seq_len, h)
         key = self.key_dense(inputs)  # (batch_size, seq_len, h)
         value = self.value_dense(inputs)  # (batch_size, seq_len, h)
@@ -86,10 +104,16 @@ class MultiHeadSelfAttention(LudwigModule):
             value, batch_size
         )  # (batch_size, num_heads, seq_len, projection_dim)
         outputs, weights = self.attention(query, key, value, mask=mask)
-        outputs = tf.transpose(
-            outputs, perm=[0, 2, 1, 3]
+        # outputs = tf.transpose(
+        #     outputs, perm=[0, 2, 1, 3]
+        # )  # (batch_size, seq_len, num_heads, projection_dim)
+        outputs = torch.permute(
+            outputs, (0, 2, 1, 3)
         )  # (batch_size, seq_len, num_heads, projection_dim)
-        concat_outputs = tf.reshape(
+        # concat_outputs = tf.reshape(
+        #     outputs, (batch_size, -1, self.embedding_size)
+        # )  # (batch_size, seq_len, h)
+        concat_outputs = torch.reshape(
             outputs, (batch_size, -1, self.embedding_size)
         )  # (batch_size, seq_len, h)
         projected_outputs = self.combine_heads(
@@ -99,29 +123,52 @@ class MultiHeadSelfAttention(LudwigModule):
 
 
 class TransformerBlock(LudwigModule):
-    def __init__(self, hidden_size, num_heads, fc_size, dropout=0.1):
+    def __init__(self, input_size, sequence_size, hidden_size, num_heads,
+                 fc_size,
+                 dropout=0.1):
         super().__init__()
-        self.self_attention = MultiHeadSelfAttention(hidden_size, num_heads)
-        self.dropout1 = Dropout(dropout)
-        self.layernorm1 = LayerNormalization(epsilon=1e-6)
-        self.fully_connected = Sequential(
-            [Dense(fc_size, activation="relu"), Dense(hidden_size)]
-        )
-        self.dropout2 = Dropout(dropout)
-        self.layernorm2 = LayerNormalization(epsilon=1e-6)
+        self.input_size = input_size
+        self.sequence_size = sequence_size
 
-    def call(self, inputs, training=None, mask=None):
-        attn_output = self.self_attention(inputs)
-        attn_output = self.dropout1(attn_output, training=training)
-        ln1_output = self.layernorm1(inputs + attn_output)
-        fc_output = self.fully_connected(ln1_output)
-        fc_output = self.dropout2(fc_output, training=training)
-        return self.layernorm2(ln1_output + fc_output)
+        self.self_attention = MultiHeadSelfAttention(
+            input_size, hidden_size, num_heads=num_heads
+        )
+        # self.dropout1 = Dropout(dropout)
+        self.dropout1 = nn.Dropout(dropout)
+        # self.layernorm1 = LayerNormalization(epsilon=1e-6)
+        self.layernorm1 = nn.LayerNorm(hidden_size, eps=1e-6)
+        # self.fully_connected = Sequential(
+        #     [Dense(fc_size, activation="relu"), Dense(hidden_size)]
+        # )
+        self.fully_connected = nn.Sequential(
+            nn.Linear(input_size, fc_size),
+            get_activation('relu'),
+            nn.Linear(fc_size, hidden_size)
+        )
+        # self.dropout2 = Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout)
+        # self.layernorm2 = LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = nn.LayerNorm(hidden_size, eps=1e-6)
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.sequence_size, self.input_size])
+
+    def forward(self, inputs, training=None, mask=None):
+        # inputs [b, s, h]
+        attn_output = self.self_attention(inputs)  # [b, s, h]
+        attn_output = self.dropout1(attn_output)  # [b, s, h]
+        ln1_output = self.layernorm1(inputs + attn_output)  # [b, s, h]
+        fc_output = self.fully_connected(ln1_output)  # [b, s, h]
+        fc_output = self.dropout2(fc_output)  # [b, s, h]
+        return self.layernorm2(ln1_output + fc_output)  # [b, s, h]
 
 
 class TransformerStack(LudwigModule):
     def __init__(
             self,
+            input_size,
+            sequence_size,
             hidden_size=256,
             num_heads=8,
             fc_size=256,
@@ -132,20 +179,26 @@ class TransformerStack(LudwigModule):
         super().__init__()
         self.supports_masking = True
 
-        self.layers = []
-        for _ in range(num_layers):
+        self.layers = nn.ModuleList()
+
+        prior_input_size = input_size
+        for i in range(num_layers):
             layer = TransformerBlock(
+                input_size=prior_input_size,
+                sequence_size=sequence_size,
                 hidden_size=hidden_size,
                 num_heads=num_heads,
                 fc_size=fc_size,
                 dropout=dropout
             )
             self.layers.append(layer)
+            prior_input_size = self.layers[i].output_shape[-1]
 
-        for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
+        # todo: revisit with solution on how to name layers for logging purposes
+        # for layer in self.layers:
+        #     logger.debug('   {}'.format(layer.name))
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         hidden = inputs
         for layer in self.layers:
             hidden = layer(hidden, training=training, mask=mask)

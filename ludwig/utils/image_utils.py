@@ -19,6 +19,7 @@ import os
 import sys
 from io import BytesIO
 from math import ceil, floor
+from collections.abc import Iterable
 from typing import BinaryIO, Optional, TextIO, Tuple, Union
 
 import numpy as np
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 # TODO(shreya): Confirm output type.
 def get_image_from_path(
-    src_path: str,
+    src_path: Union[str, torch.Tensor],
     img_entry: Union[str, bytes],
     ret_bytes: bool = False
 ) -> Union[BinaryIO, TextIO, bytes]:
@@ -105,9 +106,10 @@ def pad(
         size: Union[int, Tuple[int]],
 ) -> torch.Tensor:
     old_size = np.array(img.shape[1:])
-    pad_size = float(to_np_tuple(size) - old_size) / 2
-    padding = np.concatenate((np.floor(pad_size), np.ceil(pad_size))).tolist()
+    pad_size = (to_np_tuple(size) - old_size) / 2
+    padding = np.concatenate((np.floor(pad_size), np.ceil(pad_size)))
     padding[padding < 0] = 0
+    padding = tuple(padding.astype(int).tolist())
     return F.pad(img, padding=padding, padding_mode='edge')
 
 
@@ -125,7 +127,6 @@ def crop_or_pad(
     new_size = to_np_tuple(new_size)
     if new_size.tolist() == list(img.shape[1:]):
         return img
-
     img = pad(img, new_size)
     img = crop(img, new_size)
     return img
@@ -157,7 +158,7 @@ def resize_image(
     return img
 
 
-def greyscale(img):
+def grayscale(img: torch.Tensor) -> torch.Tensor:
     try:
         import torchvision.transforms.functional as F
     except ImportError:
@@ -168,7 +169,7 @@ def greyscale(img):
         )
         sys.exit(-1)
 
-    return F.to_grayscale(img)
+    return F.rgb_to_grayscale(img)
 
 
 def num_channels_in_image(img: torch.Tensor):
@@ -181,18 +182,21 @@ def num_channels_in_image(img: torch.Tensor):
         return img.shape[0]
 
 
-def to_np_tuple(prop: Union[int, Tuple[int]]) -> np.ndarray:
+def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
     """ Creates a np array of length 2 from a Conv2D property.
 
     E.g., stride=(2, 3) gets converted into np.array([2, 3]), where the
-    height_stride = 2 and width_stride = 3.
+    height_stride = 2 and width_stride = 3. stride=2 gets converted into
+    np.array([2, 2]).
     """
     if type(prop) == int:
-        return np.ones(2) * prop
-    elif type(prop) == tuple and len(prop) == 2:
-        return np.array(list(prop))
+        return np.ones(2).astype(int) * prop
+    elif isinstance(prop, Iterable) and len(prop) == 2:
+        return np.array(list(prop)).astype(int)
+    elif type(prop) == np.ndarray and prop.size == 2:
+        return prop.astype(int)
     else:
-        raise TypeError(f'kernel_size must be int or tuple of length 2.')
+        raise TypeError(f'prop must be int or iterable of length 2, but is {prop}.')
 
 
 def get_img_output_shape(
@@ -218,10 +222,9 @@ def get_img_output_shape(
     kernel_size = to_np_tuple(kernel_size)
     stride = to_np_tuple(stride)
     dilation = to_np_tuple(dilation)
-
     shape = np.array([img_height, img_width])
 
-    out_shape = np.math.floor(
+    out_shape = np.floor(
         ((shape + 2 * padding - dilation * (kernel_size - 1) - 1) / stride) + 1
     )
 
