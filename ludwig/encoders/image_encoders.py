@@ -15,25 +15,17 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import sys
 from abc import ABC
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-# import tensorflow as tf
-# import tensorflow_addons as tfa
-# from tensorflow.keras.layers import Dense, Dropout, Flatten
-# from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 
 from ludwig.encoders.base import Encoder
-from ludwig.modules.attention_modules import TransformerBlock
-from ludwig.modules.convolutional_modules import (Conv2DStack, ResNet,
-                                                  get_resnet_block_sizes)
+from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
 from ludwig.utils.registry import Registry, register, register_default
-from ludwig.modules.convolutional_modules import Conv2DStack, ResNet,\
-    get_resnet_block_sizes
-from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
@@ -310,64 +302,82 @@ class MLPMixerEncoder(ImageEncoder):
 class ViTEncoder(ImageEncoder):
     def __init__(
             self,
-            image_size,
-            patch_size: int = 16,
-            num_layers: int = 8,
-            d_model: int = 64,
-            num_heads: int = 4,
-            mlp_dim: int = 128,
-            channels: int = 3,
-            dropout: float = 0.1,
-            **kwargs
+            img_height: int,
+            img_width: int = None,
+            in_channels: int = 3,
+            use_pretrained: bool = True,
+            pretrained_model: str = 'google/vit-base-patch16-224',
+            hidden_size: int = 768,
+            num_hidden_layers: int = 12,
+            num_attention_heads: int = 12,
+            intermediate_size: int = 3072,
+            hidden_act: str = 'gelu',
+            hidden_dropout_prob: float = 0.1,
+            attention_probs_dropout_prob: float = 0.1,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            gradient_checkpointing: bool = False,
+            patch_size: int = 16
     ):
+        """ Creates a ViT encoder using transformers.ViTModel.
+
+        use_pretrained: If True, uses a pretrained transformer based on the 
+            pretrained_model argument.
+        pretrained: If str, expects the path to a pretrained model or the id of
+            a model on huggingface.co, and ignores the configuration provided in
+            the arguments.
+        """
         super().__init__()
-        num_patches = (image_size // patch_size) ** 2
-        self.patch_dim = channels * patch_size ** 2
+        try:
+            from transformers import ViTConfig, ViTModel
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all image feature dependencies run '
+                'pip install ludwig[image]'
+            )
+            sys.exit(-1)
 
-        self.patch_size = patch_size
-        self.d_model = d_model
-        self.num_layers = num_layers
+        img_width = img_width or img_height
+        if not img_width == img_height:
+            raise ValueError(f'img_height and img_width should be identical.')
+        self._input_shape = (in_channels, img_height, img_width)
 
-        self.rescale = Rescaling(1./255)
-        self.pos_emb = self.add_weight(
-            "pos_emb", shape=(1, num_patches + 1, d_model)
-        )
-        self.class_emb = self.add_weight("class_emb", shape=(1, 1, d_model))
-        self.patch_proj = Dense(d_model)
-        self.enc_layers = [
-            TransformerBlock(d_model, num_heads, mlp_dim, dropout)
-            for _ in range(num_layers)
-        ]
-        self.embedding_head = Dense(mlp_dim, activation=tfa.activations.gelu)
+        if use_pretrained:
+            self.model = ViTModel.from_pretrained(pretrained_model)
+            self.model.train()
+        else:
+            config = ViTConfig(
+                image_size=img_height,
+                num_channels=in_channels,
+                patch_size=patch_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=num_hidden_layers,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                hidden_act=hidden_act,
+                hidden_dropout_prob=hidden_dropout_prob,
+                attention_probs_dropout_prob=attention_probs_dropout_prob,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                gradient_checkpointing=gradient_checkpointing
+            )
+            self.model = ViTModel(config)
+        
+        self._output_shape = (self.model.config.hidden_size,)
 
-    def extract_patches(self, images):
-        batch_size = tf.shape(images)[0]
-        patches = tf.image.extract_patches(
-            images=images,
-            sizes=[1, self.patch_size, self.patch_size, 1],
-            strides=[1, self.patch_size, self.patch_size, 1],
-            rates=[1, 1, 1, 1],
-            padding="VALID",
-        )
-        patches = tf.reshape(patches, [batch_size, -1, self.patch_dim])
-        return patches
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            head_mask: torch.Tensor = None
+    ) -> Dict[str, torch.Tensor]:
+        output = self.model(inputs, head_mask=head_mask)
+        return {'encoder_output': output.pooler_output}
 
-    def call(self, inputs, training=None, mask=None):
-        x = inputs
-        batch_size = tf.shape(x)[0]
-        x = self.rescale(x)
-        patches = self.extract_patches(x)
-        x = self.patch_proj(patches)
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
 
-        class_emb = tf.broadcast_to(
-            self.class_emb, [batch_size, 1, self.d_model]
-        )
-        x = tf.concat([class_emb, x], axis=1)
-        x = x + self.pos_emb
-
-        for layer in self.enc_layers:
-            x = layer(x, training)
-
-        # First (class token) is used for classification
-        x = self.embedding_head(x[:, 0])
-        return {'encoder_output': x}
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)

@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from ludwig.encoders.image_encoders import Stacked2DCNN, ResNetEncoder,\
-    MLPMixerEncoder
+    MLPMixerEncoder, ViTEncoder
 
 
 @pytest.mark.parametrize(
@@ -38,3 +38,12 @@ def test_mlp_mixer_encoder(img_height: int, img_width: int, in_channels:int):
     inputs = torch.rand(2, in_channels, img_height, img_width)
     outputs = mlp_mixer(inputs)
     assert outputs['encoder_output'].shape[1:] == mlp_mixer.output_shape
+
+
+@pytest.mark.parametrize('img_height,in_channels', [(224, 3)])
+@pytest.mark.parametrize('use_pretrained', [True, False])
+def test_vit_encoder(img_height: int, in_channels: int, use_pretrained: bool):
+    vit = ViTEncoder(img_height=img_height, use_pretrained=use_pretrained)
+    inputs = torch.rand(2, in_channels, img_height, img_height)
+    outputs = vit(inputs)
+    assert outputs['encoder_output'].shape[1:] == vit.output_shape
