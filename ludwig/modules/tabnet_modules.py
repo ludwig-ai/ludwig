@@ -191,7 +191,7 @@ class FeatureBlock(LudwigModule):
         hidden = self.fc_layer(inputs)
         hidden = self.batch_norm(hidden, training=training)
         if self.apply_glu:
-            hidden = glu(hidden, self.size)
+            hidden = glu(hidden)
         return hidden
 
 

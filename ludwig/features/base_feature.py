@@ -82,11 +82,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
                               dtype=self.get_input_dtype(),
                               name=self.name + '_input')
 
-    @classmethod
-    @abstractmethod
-    def get_input_dtype(cls):
-        """Returns the Tensor data type this input accepts."""
-        pass
 
     @staticmethod
     @abstractmethod

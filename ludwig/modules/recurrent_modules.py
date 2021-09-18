@@ -17,9 +17,8 @@ import inspect
 import logging
 import collections
 
-# import tensorflow as tf
-# import tensorflow_addons as tfa
-# from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
+import torch
+from torch.nn import RNN, GRU, LSTM
 from ludwig.utils.torch_utils import LudwigModule
 
 from ludwig.utils.misc_utils import get_from_registry
@@ -27,24 +26,27 @@ from ludwig.utils.misc_utils import get_from_registry
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
-    # 'rnn': SimpleRNN,
-    # 'gru': GRU,
-    # 'lstm': LSTM,
+    'rnn': RNN,
+    'gru': GRU,
+    'lstm': LSTM,
 }
 
 
 class RecurrentStack(LudwigModule):
     def __init__(
             self,
-            state_size=256,
+            input_size=None,
+            hidden_size=256,
             cell_type='rnn',
+            sequence_size=None,
             num_layers=1,
             bidirectional=False,
             activation='tanh',
-            recurrent_activation='sigmoid',
+            nonlinearity='tanh',
+            recurrent_activation='signmoid',
             use_bias=True,
             unit_forget_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             recurrent_initializer='orthogonal',
             bias_initializer='zeros',
             weights_regularizer=None,
@@ -58,57 +60,72 @@ class RecurrentStack(LudwigModule):
             recurrent_dropout=0.0,
             **kwargs
     ):
+        # todo: Need to account for all the options, e.g., num_layers, bidirectional,
+        #       initializers, regularizers, etc.
         super().__init__()
         self.supports_masking = True
+        self.input_size = input_size  # api doc: H_in
+        self.hidden_size = hidden_size  # api doc: H_out
+        self.sequence_size = sequence_size  # api doc: L (sequence length)
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
-        self.layers = []
 
+        # todo: need to discuss how to re-enable intializers, regularizer
         rnn_params = {
-            'units': state_size,
-            'activation': activation,
-            'recurrent_activation': recurrent_activation,
-            'use_bias': use_bias,
-            'kernel_initializer': weights_initializer,
-            'recurrent_initializer': recurrent_initializer,
-            'bias_initializer': bias_initializer,
-            'unit_forget_bias': unit_forget_bias,
-            'kernel_regularizer': weights_regularizer,
-            'recurrent_regularizer': recurrent_regularizer,
-            'bias_regularizer': bias_regularizer,
-            'activity_regularizer': activity_regularizer,
-            # 'kernel_constraint': weights_constraint,
-            # 'recurrent_constraint': recurrent_constraint,
-            # 'bias_constraint': bias_constraint,
+            #     'activation': activation,
+            # 'nonlinearity': nonlinearity,
+            #     'recurrent_activation': recurrent_activation,
+            'num_layers': num_layers,
+            'bias': use_bias,
+            #     'kernel_initializer': weights_initializer,
+            #     'recurrent_initializer': recurrent_initializer,
+            #     'bias_initializer': bias_initializer,
+            #     'unit_forget_bias': unit_forget_bias,
+            #     'kernel_regularizer': weights_regularizer,
+            #     'recurrent_regularizer': recurrent_regularizer,
+            #     'bias_regularizer': bias_regularizer,
+            #     'activity_regularizer': activity_regularizer,
+            #     # 'kernel_constraint': weights_constraint,
+            #     # 'recurrent_constraint': recurrent_constraint,
+            #     # 'bias_constraint': bias_constraint,
             'dropout': dropout,
-            'recurrent_dropout': recurrent_dropout,
-            'return_sequences': True,
-            'return_state': True,
+            'bidirectional': bidirectional,
+            #     'recurrent_dropout': recurrent_dropout,
+            #     'return_sequences': True,
+            #     'return_state': True,
         }
-        signature = inspect.signature(rnn_layer_class.__init__)
-        valid_args = set(signature.parameters.keys())
-        rnn_params = {k: v for k, v in rnn_params.items() if k in valid_args}
 
-        for _ in range(num_layers):
-            layer = rnn_layer_class(**rnn_params)
+        # current design is delegating to PyTorch RNN/GRU/LSTM layer
+        # to do stacking and bidirectional based on the num_layers and
+        # bidirectional parameter values.
+        self.layers = rnn_layer_class(
+            input_size, hidden_size,
+            batch_first=True,
+            **rnn_params
+        )
 
-            if bidirectional:
-                layer = Bidirectional(layer)
+    @property
+    def input_shape(self) -> torch.Size:
+        """ Returns the size of the input tensor without the batch dimension. """
+        return torch.Size([self.sequence_size, self.input_size])
 
-            self.layers.append(layer)
+    @property
+    def output_shape(self) -> torch.Size:
+        """ Returns the size of the output tensor without the batch dimension."""
+        output_tensor = self.forward(torch.rand(2, *self.input_shape))
+        # output tensor is 2-tuple(hidden, final_state)
+        return output_tensor[0].size()[1:]
 
-        for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
+    def forward(self, inputs, training=None, mask=None):
+        hidden, final_state = self.layers(inputs)
 
-    def call(self, inputs, training=None, mask=None):
-        hidden = inputs
-        final_state = None
-        for layer in self.layers:
-            outputs = layer(hidden, training=training, mask=mask)
-            hidden = outputs[0]
-            final_state = outputs[1:]
-        if final_state and len(final_state) == 1:
-            final_state = final_state[0]
+        if isinstance(final_state, tuple):
+            # lstm cell type
+            final_state = final_state[0][-1], final_state[1][-1]
+        else:
+            # rnn or gru cell type
+            final_state = final_state[-1]
+
         return hidden, final_state
 
 

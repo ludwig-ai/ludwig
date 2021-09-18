@@ -1,14 +1,13 @@
 from abc import abstractmethod
 from functools import lru_cache
 
-from torch.nn import Module, ModuleDict
 import torch
 from torch import nn
 from torch.nn import Module, ModuleDict
 
 
 def sequence_length_3D(sequence):
-    used = torch.sign(torch.max(torch.abs(sequence), dim=2))
+    used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
     length = torch.sum(used, 1)
     length = length.int()
     return length
@@ -99,6 +98,10 @@ class LudwigModule(Module):
             self._callable_losses.append(loss)
 
     @property
+    def input_dtype(self):
+        return torch.float32
+
+    @property
     @abstractmethod
     def input_shape(self) -> torch.Size:
         """ Returns the size of the input tensor without the batch dimension. """
@@ -111,7 +114,8 @@ class LudwigModule(Module):
 
     @lru_cache(maxsize=1)
     def _compute_output_shape(self) -> torch.Size:
-        output_tensor = self.forward(torch.rand(2, *self.input_shape))
+        output_tensor = self.forward(torch.rand(2, *self.input_shape,
+                                                dtype=self.input_dtype))
         return output_tensor.size()[1:]
 
 

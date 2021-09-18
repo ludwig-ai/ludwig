@@ -378,24 +378,24 @@ class EmbedSequence(LudwigModule):
             self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
         if dropout > 0:
-            self.dropout = Dropout(dropout)
+            self.dropout = nn.Dropout(dropout)
         else:
             self.dropout = None
 
-    def call(self, inputs, training=None, mask=None):
-        embedded = tf.nn.embedding_lookup(
-            self.embeddings, inputs, name='embeddings_lookup'
-        )
+    def forward(self, inputs, training=None, mask=None):
+        embedded = self.embeddings(inputs)
 
-        if mask is not None:
-            mask_matrix = tf.cast(
-                tf.expand_dims(mask, -1),
-                dtype=tf.float32
-            )
-            embedded = tf.multiply(embedded, mask_matrix)
+        # todo: convert to torch with mask support
+        # if mask is not None:
+        #     mask_matrix = tf.cast(
+        #         tf.expand_dims(mask, -1),
+        #         dtype=tf.float32
+        #     )
+        #     embedded = tf.multiply(embedded, mask_matrix)
 
         if self.dropout:
-            embedded = self.dropout(embedded, training=training)
+            embedded = self.dropout(
+                embedded)  # todo: neeeded for torch? ...., training=training)
 
         return embedded
 
@@ -427,14 +427,14 @@ class TokenAndPositionEmbedding(LudwigModule):
             embedding_initializer=embedding_initializer,
             embedding_regularizer=embedding_regularizer
         )
-        self.position_embed = Embedding(
-            input_dim=max_length,
-            output_dim=self.token_embed.embedding_size
+        self.position_embed = nn.Embedding(
+            num_embeddings=len(vocab),
+            embedding_dim=self.token_embed.embedding_size
         )
 
-    def call(self, inputs, training=None, mask=None):
-        max_length = tf.shape(inputs)[-1]
-        positions = tf.range(start=0, limit=max_length, delta=1)
+    def forward(self, inputs, training=None, mask=None):
+        max_length = inputs.shape[-1]
+        positions = torch.arange(start=0, end=max_length, step=1)
         positions_hidden = self.position_embed(positions)
         token_hidden = self.token_embed(inputs)
         return token_hidden + positions_hidden

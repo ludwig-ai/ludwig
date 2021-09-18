@@ -218,10 +218,6 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return torch.float32
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])

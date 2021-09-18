@@ -142,10 +142,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.float32
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.vector_size])

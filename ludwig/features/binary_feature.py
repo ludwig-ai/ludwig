@@ -143,8 +143,9 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         return encoder_outputs
 
-    @classmethod
-    def get_input_dtype(cls):
+
+    @property
+    def input_dtype(self):
         return torch.bool
 
     @property
@@ -153,7 +154,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
+            input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
