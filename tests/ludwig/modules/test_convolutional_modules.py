@@ -51,6 +51,9 @@ def expected_seq_size(
     return output_seq_size[1]
 
 
+###
+# 1D Convolutional Tests
+###
 @pytest.mark.parametrize('pool_function', ['max', 'mean'])
 @pytest.mark.parametrize('pool_size, pool_padding, pool_stride',
                          [(None, None, None), (3, 'same', 1), (5, 'same', 1),
@@ -158,11 +161,69 @@ def test_conv1d_stack(
         pool_stride=last_module.pool_strides
     )
     if layers is None:
+        # default stack setup
         assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
     else:
+        # custom stack setup
         assert out_tensor.size() == (
         BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
 
+
+@pytest.mark.parametrize(
+    'layers', [
+        None,  # setup up default number of layers with default values
+        [{'filter_size': 3}, {'filter_size': 4}]  # custom parallel layers
+    ]
+)
+def test_parallel_conv1d(
+        layers: Union[None, list]
+) -> None:
+    input = torch.randn([BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
+                        dtype=torch.float32)
+
+    parallel_conv1d = ParallelConv1D(
+        in_channels=HIDDEN_SIZE,
+        out_channels=NUM_FILTERS,
+        max_sequence_length=SEQ_SIZE,
+        layers=layers,
+        default_num_filters=NUM_FILTERS
+    )
+
+    # check for correct stack formation
+    if layers is None:
+        assert len(parallel_conv1d.parallel_layers) == 4
+    else:
+        # custom layer specification
+        assert len(parallel_conv1d.parallel_layers) == len(layers)
+        assert parallel_conv1d.parallel_layers[0].kernel_size == 3
+        assert parallel_conv1d.parallel_layers[1].kernel_size == 4
+
+    # generate output tensor
+    out_tensor = parallel_conv1d(input)
+
+    # check for correct output class
+    assert isinstance(out_tensor, torch.Tensor)
+
+    # check for correct output shape
+    parallel_module = parallel_conv1d.parallel_layers[0]
+    output_seq_size = expected_seq_size(
+        seq_size=parallel_module.input_shape[0],
+        padding=parallel_module.padding,
+        kernel_size=parallel_module.kernel_size,
+        stride=parallel_module.stride,
+        dilation=parallel_module.dilation,
+        pool_size=parallel_module.pool_size,
+        pool_padding=parallel_module.pool_padding,
+        pool_stride=parallel_module.pool_strides
+    )
+
+    assert out_tensor.size() == (BATCH_SIZE, output_seq_size,
+                                 len(parallel_conv1d.parallel_layers) * NUM_FILTERS)
+
+
+###
+#  2D Convolutional Tests
+###
 @pytest.mark.parametrize(
     ('img_height,img_width,in_channels,out_channels,pool_kernel_size,'
      'pool_stride,pool_padding,pool_dilation'),
