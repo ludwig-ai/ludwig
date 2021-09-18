@@ -3,14 +3,16 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 
+from ludwig.utils.image_utils import get_img_output_shape
 from ludwig.modules.convolutional_modules import Conv2DLayer, Conv2DStack, \
     Conv2DLayerFixedPadding, ResNetBlock, ResNetBottleneckBlock, \
     ResNetBlockLayer, ResNet, Conv1DLayer, Conv1DStack, ParallelConv1DStack, \
     ParallelConv1D
 
 BATCH_SIZE = 2
-SEQ_SIZE = 100
+SEQ_SIZE = 50
 HIDDEN_SIZE = 64
+NUM_FILTERS = 32
 
 
 ###
@@ -27,31 +29,26 @@ def expected_seq_size(
         pool_padding: str,  # pooling layer padding: 'same' or 'valid'
         pool_stride: int,  # pooling layer stride
 ) -> int:
-    # output size calculation based on this paper
-    # https://github.com/vdumoulin/conv_arithmetic
-    # https://arxiv.org/abs/1603.07285
-    # @misc{dumoulin2018guide,
-    #  title = {A guide to convolution arithmetic for deep learning},
-    # author={Vincent Dumoulin and Francesco Visin},
-    # year={2018},
-    # eprint={1603.07285},
-    # archivePrefix={arXiv},
-    # primaryClass={stat.ML}
-    # }
-
-    # compute output for conv1D
-    num_padding = (dilation * (
-                kernel_size - 1)) // 2 if padding == 'same' else 0
-    numerator = seq_size + 2 * num_padding - dilation * (kernel_size - 1) - 1
-    L_out = np.floor(numerator / stride + 1)
-
+    # output shape for the convolutional layer
+    output_seq_size = get_img_output_shape(
+        img_height=0,  # img_height set to zero for 1D structure
+        img_width=seq_size,  # img_width equates to sequence size
+        kernel_size=kernel_size,
+        stride=stride,
+        padding=padding,
+        dilation=dilation
+    )
     if pool_size is not None:
-        # last layer is pooling layer, adjust L_out
-        num_pool_padding = (pool_size - 1) // 2 if pool_padding == 'same' else 0
-        numerator = L_out + 2 * num_pool_padding - (pool_size - 1) - 1
-        L_out = np.floor((numerator / pool_stride) + 1)
-
-    return np.int(L_out)
+        # pooling layer present, adjust expected output shape for pooling layer
+        output_seq_size = get_img_output_shape(
+            img_height=0,  # img_height set to zero for 1D structure
+            img_width=output_seq_size[1],  # img_width equates to sequence size
+            kernel_size=pool_size,
+            stride=pool_stride,
+            padding=pool_padding,
+            dilation=1  # pooling layer only support unit dilation
+        )
+    return output_seq_size[1]
 
 
 @pytest.mark.parametrize('pool_function', ['max', 'mean'])
@@ -78,7 +75,7 @@ def test_conv1d_layer(
 
     conv1_layer = Conv1DLayer(
         in_channels=HIDDEN_SIZE,
-        out_channels=256,
+        out_channels=NUM_FILTERS,
         sequence_size=SEQ_SIZE,
         kernel_size=kernel_size,
         strides=strides,
@@ -92,19 +89,79 @@ def test_conv1d_layer(
 
     out_tensor = conv1_layer(input)
 
+    # check for correct output class
     assert isinstance(out_tensor, torch.Tensor)
-    output_seq_size = expected_seq_size(
-        SEQ_SIZE,
-        padding,
-        kernel_size,
-        strides,
-        dilation,
-        pool_size,
-        pool_padding,
-        pool_stride
-    )
-    assert out_tensor.size() == (2, output_seq_size, 256)
 
+    # check for correct output shape
+    output_seq_size = expected_seq_size(
+        seq_size=SEQ_SIZE,
+        padding=padding,
+        kernel_size=kernel_size,
+        stride=strides,
+        dilation=dilation,
+        pool_size=pool_size,
+        pool_padding=pool_padding,
+        pool_stride=pool_stride
+    )
+    assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
+
+
+@pytest.mark.parametrize(
+    'layers, num_layers', [
+        (None, None),  # setup up default number of layers with default values
+        (None, 4),  # setup of 4 layers with default values
+        ([{'num_filters': NUM_FILTERS - 2}, {'num_filters': NUM_FILTERS + 2}],
+         None)  # 2 custom layers
+    ]
+)
+def test_conv1d_stack(
+        layers: Union[None, list],
+        num_layers: Union[None, int]
+) -> None:
+    input = torch.randn([BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
+                        dtype=torch.float32)
+
+    conv1_stack = Conv1DStack(
+        in_channels=HIDDEN_SIZE,
+        out_channels=NUM_FILTERS,
+        max_sequence_length=SEQ_SIZE,
+        layers=layers,
+        num_layers=num_layers,
+        default_num_filters=NUM_FILTERS
+    )
+
+    # check for correct stack formation
+    if layers is None:
+        assert len(conv1_stack.stack) == 6 if num_layers is None else num_layers
+    else:
+        # custom layer specification
+        assert len(conv1_stack.stack) == len(layers)
+        assert conv1_stack.stack[0].out_channels == NUM_FILTERS - 2
+        assert conv1_stack.stack[1].out_channels == NUM_FILTERS + 2
+
+    # generate output tensor
+    out_tensor = conv1_stack(input)
+
+    # check for correct output class
+    assert isinstance(out_tensor, torch.Tensor)
+
+    # check for correct output shape
+    last_module = conv1_stack.stack[-1]
+    output_seq_size = expected_seq_size(
+        seq_size=last_module.input_shape[0],
+        padding=last_module.padding,
+        kernel_size=last_module.kernel_size,
+        stride=last_module.stride,
+        dilation=last_module.dilation,
+        pool_size=last_module.pool_size,
+        pool_padding=last_module.pool_padding,
+        pool_stride=last_module.pool_strides
+    )
+    if layers is None:
+        assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
+    else:
+        assert out_tensor.size() == (
+        BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
 
 @pytest.mark.parametrize(
     ('img_height,img_width,in_channels,out_channels,pool_kernel_size,'
