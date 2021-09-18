@@ -171,7 +171,7 @@ class Conv1DStack(LudwigModule):
             default_padding='same',
             default_dilation_rate=1,
             default_use_bias=True,
-            default_weights_initializer='glorot_uniform',
+            default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
