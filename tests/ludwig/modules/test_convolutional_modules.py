@@ -221,6 +221,69 @@ def test_parallel_conv1d(
                                  len(parallel_conv1d.parallel_layers) * NUM_FILTERS)
 
 
+TEST_FILTER_SIZE0 = 7
+TEST_FILTER_SIZE1 = 5
+
+
+@pytest.mark.parametrize(
+    'stacked_layers', [
+        None,  # setup up default number of layers with default values
+        # custom stacked parallel layers
+        [
+            [  # parallel_conv1d_stack.stack[0]
+                {'filter_size': 3},
+                {'filter_size': 5},
+                {'filter_size': TEST_FILTER_SIZE0},
+            ],
+            [  # parallel_conv1d_stack.stack[1]
+                {'filter_size': 2},
+                {'filter_size': 3},
+                {'filter_size': 4},
+                {'filter_size': TEST_FILTER_SIZE1}
+            ],
+        ]
+    ]
+)
+def test_parallel_conv1d_stack(
+        stacked_layers: Union[None, list]
+) -> None:
+    input = torch.randn([BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
+                        dtype=torch.float32)
+
+    parallel_conv1d_stack = ParallelConv1DStack(
+        in_channels=HIDDEN_SIZE,
+        out_channels=NUM_FILTERS,
+        max_sequence_length=SEQ_SIZE,
+        stacked_layers=stacked_layers,
+        default_num_filters=NUM_FILTERS
+    )
+
+    # check for correct stack formation
+    if stacked_layers is None:
+        assert len(parallel_conv1d_stack.stack) == 3
+        for i in range(len(parallel_conv1d_stack.stack)):
+            assert len(parallel_conv1d_stack.stack[i].parallel_layers) == 4
+    else:
+        # spot check custom layer specification
+        assert len(parallel_conv1d_stack.stack) == len(stacked_layers)
+        assert len(parallel_conv1d_stack.stack[0].parallel_layers) == 3
+        assert parallel_conv1d_stack.stack[0].parallel_layers[2].kernel_size \
+               == TEST_FILTER_SIZE0
+        assert len(parallel_conv1d_stack.stack[1].parallel_layers) == 4
+        assert parallel_conv1d_stack.stack[1].parallel_layers[3].kernel_size \
+               == TEST_FILTER_SIZE1
+
+    # generate output tensor
+    out_tensor = parallel_conv1d_stack(input)
+
+    # check for correct output class
+    assert isinstance(out_tensor, torch.Tensor)
+
+    # check output shape
+    assert out_tensor.size() == (
+    BATCH_SIZE, *parallel_conv1d_stack.output_shape)
+
+
 ###
 #  2D Convolutional Tests
 ###
