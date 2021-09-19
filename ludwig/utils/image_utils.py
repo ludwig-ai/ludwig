@@ -95,9 +95,11 @@ def read_image(img):
             upgraded = upgrade_http(img)
             if upgraded:
                 logger.info(f'reading image url {img} failed. upgrading to https and retrying')
-                return imread(upgraded)
+                return read_image(upgraded)
             logger.info(f'reading image url {img} failed and cannot be upgraded to https')
-            raise
+            return None
+        except:
+            return None
     return img
 
 
