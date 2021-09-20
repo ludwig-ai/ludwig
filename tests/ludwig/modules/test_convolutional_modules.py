@@ -10,9 +10,9 @@ from ludwig.modules.convolutional_modules import Conv2DLayer, Conv2DStack, \
     ParallelConv1D
 
 BATCH_SIZE = 2
-SEQ_SIZE = 50
-HIDDEN_SIZE = 64
-NUM_FILTERS = 32
+SEQ_SIZE = 17
+HIDDEN_SIZE = 8
+NUM_FILTERS = 4
 
 
 ###
@@ -58,11 +58,10 @@ def expected_seq_size(
 @pytest.mark.parametrize('pool_size, pool_padding, pool_stride',
                          [(None, None, None), (3, 'same', 1), (5, 'same', 1),
                           (3, 'valid', 2), (5, 'valid', 2)])
-@pytest.mark.parametrize('dilation', [1, 2, 3])
+@pytest.mark.parametrize('dilation', [1, 2])
 @pytest.mark.parametrize('strides, padding',
-                         [(1, 'same'), (1, 'valid'), (2, 'valid'),
-                          (3, 'valid')])
-@pytest.mark.parametrize('kernel_size', [3, 5, 7])
+                         [(1, 'same'), (1, 'valid'), (2, 'valid')])
+@pytest.mark.parametrize('kernel_size', [3, 5])
 def test_conv1d_layer(
         kernel_size: int,
         strides: int,
