@@ -91,14 +91,15 @@ def read_image(img):
     if isinstance(img, str):
         try:
             return imread(img)
-        except HTTPError:
+        except HTTPError as e:
             upgraded = upgrade_http(img)
             if upgraded:
-                logger.info(f'reading image url {img} failed. upgrading to https and retrying')
+                logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
                 return read_image(upgraded)
-            logger.info(f'reading image url {img} failed and cannot be upgraded to https')
+            logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
             return None
-        except:
+        except Exception as e:
+            logger.info(f'reading image url {img} failed', e)
             return None
     return img
 
