@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import logging
 import os
 import sys
@@ -30,6 +31,7 @@ from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
 logger = logging.getLogger(__name__)
 
 
+@functools.lru_cache(maxsize=32)
 def get_image_from_http_bytes(img_entry):
     import requests
     data = requests.get(img_entry, stream=True)
@@ -78,6 +80,7 @@ def is_image(src_path, img_entry):
         return False
 
 
+@functools.lru_cache(maxsize=32)
 def read_image(img):
     try:
         from skimage.io import imread
