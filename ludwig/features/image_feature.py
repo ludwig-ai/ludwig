@@ -248,7 +248,7 @@ class ImageFeatureMixin:
             elif first_image is not None:
                 num_channels = num_channels_in_image(first_image)
             else:
-                raise ValueError("First image cannot be read, explicit image num channels are not set, and"
+                raise ValueError("First image cannot be read, explicit image num channels is not set, and"
                                  " infer_image_num_channels is false, so image num channels is unknown")
 
         assert isinstance(num_channels, int), ValueError(
