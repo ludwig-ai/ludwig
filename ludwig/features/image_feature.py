@@ -190,18 +190,19 @@ class ImageFeatureMixin:
         """
         first_image = read_image(first_img_entry)
 
+        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters
+
         inferred_sample = None
-        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] or preprocessing_parameters[INFER_IMAGE_NUM_CHANNELS]:
+        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
             sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
             sample = [read_image(get_image_from_path(src_path, img)) for img in input_feature_col.head(sample_size)]
             inferred_sample = [img for img in sample if img is not None]
             if len(inferred_sample) == 0:
-                raise ValueError("No readable images in sample, "
-                                 "image dimensions and/or num channels cannot be inferred")
+                raise ValueError("No readable images in sample, image dimensions cannot be inferred")
 
         should_resize = False
-        if (HEIGHT in preprocessing_parameters or
-                WIDTH in preprocessing_parameters):
+        if explicit_height_width:
             should_resize = True
             try:
                 height = int(preprocessing_parameters[HEIGHT])
@@ -217,7 +218,7 @@ class ImageFeatureMixin:
                 )
         else:
             # User hasn't specified height and width.
-            # Default to first image, or infer from sample.
+            # Default to inferring from sample or first image.
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 should_resize = True
 
@@ -233,23 +234,23 @@ class ImageFeatureMixin:
             elif first_image is not None:
                 height, width = first_image.shape[0], first_image.shape[1]
             else:
-                raise ValueError("First image cannot be read, explicit image dimensions are not set, and"
-                                 " infer_image_dimensions is false, so image dimensions are unknown")
+                raise ValueError("Explicit image width/height are not set, infer_image_dimensions is false, "
+                                 "and first image cannot be read, so image dimensions are unknown")
 
-        if NUM_CHANNELS in preprocessing_parameters:
+        if explicit_num_channels:
             # User specified num_channels in the model/feature config
             user_specified_num_channels = True
             num_channels = preprocessing_parameters[NUM_CHANNELS]
         else:
             user_specified_num_channels = False
-            if preprocessing_parameters[INFER_IMAGE_NUM_CHANNELS]:
+            if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 user_specified_num_channels = True
                 num_channels = round(sum(num_channels_in_image(x) for x in inferred_sample) / len(inferred_sample))
             elif first_image is not None:
                 num_channels = num_channels_in_image(first_image)
             else:
-                raise ValueError("First image cannot be read, explicit image num channels is not set, and"
-                                 " infer_image_num_channels is false, so image num channels is unknown")
+                raise ValueError("Explicit image num channels is not set, infer_image_dimensions is false, "
+                                 "and first image cannot be read, so image num channels is unknown")
 
         assert isinstance(num_channels, int), ValueError(
             'Number of image channels needs to be an integer'
