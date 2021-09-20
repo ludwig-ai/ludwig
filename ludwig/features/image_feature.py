@@ -193,7 +193,7 @@ class ImageFeatureMixin:
         inferred_sample = None
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] or preprocessing_parameters[INFER_IMAGE_NUM_CHANNELS]:
             sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-            sample = [read_image(get_image_from_path(src_path, img)) for img in input_feature_col[:sample_size]]
+            sample = [read_image(get_image_from_path(src_path, img)) for img in input_feature_col.iloc[:sample_size]]
             inferred_sample = [img for img in sample if img is not None]
             if len(inferred_sample) == 0:
                 raise ValueError("No readable images in sample, "
