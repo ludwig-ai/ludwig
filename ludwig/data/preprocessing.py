@@ -18,10 +18,10 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 
+from . import Column
 from ludwig.backend import LOCAL_BACKEND, Backend
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -1194,7 +1194,7 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
 
 def build_metadata(
         metadata: Dict[str, Any],
-        dataset_cols: Dict[str, dd.Series],
+        dataset_cols: Dict[str, Column],
         features: List[Dict[str, Any]],
         global_preprocessing_parameters: Dict[str, Any],
         backend: Backend

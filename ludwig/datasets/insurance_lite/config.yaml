@@ -1,3 +1,4 @@
 version: 1.0
-s3_download_urls: s3://datasets.us-west-2.predibase.com/insurance.csv
+download_urls:
+  - s3://datasets.us-west-2.predibase.com/insurance.csv
 csv_filename: insurance_lite.csv

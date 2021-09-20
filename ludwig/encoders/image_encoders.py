@@ -317,7 +317,8 @@ class ViTEncoder(ImageEncoder):
             initializer_range: float = 0.02,
             layer_norm_eps: float = 1e-12,
             gradient_checkpointing: bool = False,
-            patch_size: int = 16
+            patch_size: int = 16,
+            trainable: bool = True
     ):
         """ Creates a ViT encoder using transformers.ViTModel.
 
@@ -331,21 +332,21 @@ class ViTEncoder(ImageEncoder):
         try:
             from transformers import ViTConfig, ViTModel
         except ModuleNotFoundError:
-            logger.error(
+            raise RuntimeError(
                 ' transformers is not installed. '
                 'In order to install all image feature dependencies run '
                 'pip install ludwig[image]'
             )
-            sys.exit(-1)
 
         img_width = img_width or img_height
-        if not img_width == img_height:
+        if img_width != img_height:
             raise ValueError(f'img_height and img_width should be identical.')
         self._input_shape = (in_channels, img_height, img_width)
 
         if use_pretrained:
             self.model = ViTModel.from_pretrained(pretrained_model)
-            self.model.train()
+            if trainable:
+                self.model.train()
         else:
             config = ViTConfig(
                 image_size=img_height,

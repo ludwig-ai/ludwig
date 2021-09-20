@@ -14,19 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import boto3
 import gzip
 import os
 import shutil
 import tarfile
-import tempfile
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
-from ludwig.utils.fs_utils import upload_output_directory
+from ludwig.utils.fs_utils import get_fs_and_path, upload_output_directory
 from tqdm import tqdm
 
 
@@ -48,51 +46,6 @@ class TqdmUpTo(tqdm):
         if tsize is not None:
             self.total = tsize
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
-
- 
-class S3Url(object):
-    """
-    From https://stackoverflow.com/questions/42641315/s3-urls-get-bucket-name-and-path.
-    >>> s = S3Url("s3://bucket/hello/world")
-    >>> s.bucket
-    'bucket'
-    >>> s.key
-    'hello/world'
-    >>> s.url
-    's3://bucket/hello/world'
-
-    >>> s = S3Url("s3://bucket/hello/world?qwe1=3#ddd")
-    >>> s.bucket
-    'bucket'
-    >>> s.key
-    'hello/world?qwe1=3#ddd'
-    >>> s.url
-    's3://bucket/hello/world?qwe1=3#ddd'
-
-    >>> s = S3Url("s3://bucket/hello/world#foo?bar=2")
-    >>> s.key
-    'hello/world#foo?bar=2'
-    >>> s.url
-    's3://bucket/hello/world#foo?bar=2'
-    """
-
-    def __init__(self, url):
-        self._parsed = urlparse(url, allow_fragments=False)
-
-    @property
-    def bucket(self):
-        return self._parsed.netloc
-
-    @property
-    def key(self):
-        if self._parsed.query:
-            return self._parsed.path.lstrip('/') + '?' + self._parsed.query
-        else:
-            return self._parsed.path.lstrip('/')
-
-    @property
-    def url(self):
-        return self._parsed.geturl()
 
 
 class ZipDownloadMixin:
@@ -206,39 +159,9 @@ class UncompressedFileDownloadMixin:
         with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
             for url in self.download_url:
                 filename = url.split('/')[-1]
-                urllib.request.urlretrieve(url, os.path.join(tmpdir,
-                                                             filename))
+                fs, _ = get_fs_and_path(url)
+                fs.get(url, os.path.join(tmpdir, filename), recursive=True)
 
     @property
     def download_url(self):
         return self.config["download_urls"]
-
-
-class S3FileDownloadMixin:
-    """Downloads an uncompressed file from S3."""
-
-    config: dict
-    raw_dataset_path: str
-    raw_temp_path: str
-
-    def download_raw_dataset(self):
-        """
-        Download the raw dataset files and store in the cache location.
-        """
-        s3_client = boto3.client('s3')
-
-        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
-            temp_dir = tmpdir
-            # for url in self.download_url:
-            url = self.download_url
-            s3_url = S3Url(url)
-            filename = url.split('/')[-1]
-            s3_client.download_file(
-                s3_url.bucket,
-                s3_url.key,
-                os.path.join(tmpdir, filename)
-            )
-
-    @property
-    def download_url(self):
-        return self.config['s3_download_urls']
