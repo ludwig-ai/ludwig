@@ -39,9 +39,7 @@ def get_image_from_http_bytes(img_entry):
         upgraded = upgrade_http(img_entry)
         if upgraded:
             logger.info(f'reading image url {img_entry} failed. upgrading to https and retrying')
-            data = requests.get(upgraded, stream=True)
-            if data.status_code == 404:
-                raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed for both http and https')
+            return get_image_from_http_bytes(upgraded)
         else:
             raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed and cannot be upgraded to https')
     return BytesIO(data.raw.read())
