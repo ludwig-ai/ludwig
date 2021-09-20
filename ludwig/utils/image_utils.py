@@ -80,8 +80,14 @@ def is_image(src_path, img_entry):
         return False
 
 
-@functools.lru_cache(maxsize=32)
 def read_image(img):
+    if isinstance(img, str):
+        return read_image_from_str(img)
+    return img
+
+
+@functools.lru_cache(maxsize=32)
+def read_image_from_str(img):
     try:
         from skimage.io import imread
     except ImportError:
@@ -91,20 +97,19 @@ def read_image(img):
             'pip install ludwig[image]'
         )
         sys.exit(-1)
-    if isinstance(img, str):
-        try:
-            return imread(img)
-        except HTTPError as e:
-            upgraded = upgrade_http(img)
-            if upgraded:
-                logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
-                return read_image(upgraded)
-            logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
-            return None
-        except Exception as e:
-            logger.info(f'reading image url {img} failed', e)
-            return None
-    return img
+
+    try:
+        return imread(img)
+    except HTTPError as e:
+        upgraded = upgrade_http(img)
+        if upgraded:
+            logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
+            return read_image(upgraded)
+        logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
+        return None
+    except Exception as e:
+        logger.info(f'reading image url {img} failed', e)
+        return None
 
 
 def pad(img, size, axis):
