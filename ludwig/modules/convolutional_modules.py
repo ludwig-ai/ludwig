@@ -62,10 +62,7 @@ class Conv1DLayer(LudwigModule):
         self.sequence_size = sequence_size
         self.kernel_size = kernel_size
         self.stride = strides
-        if padding == 'same' and kernel_size is not None:
-            self.padding = (self.kernel_size - 1) // 2
-        else:
-            self.padding = 0
+        self.padding = padding
         self.dilation = dilation
         self.groups = groups
         self.pool_size = pool_size
@@ -174,7 +171,7 @@ class Conv1DStack(LudwigModule):
             default_padding='same',
             default_dilation_rate=1,
             default_use_bias=True,
-            default_weights_initializer='glorot_uniform',
+            default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
