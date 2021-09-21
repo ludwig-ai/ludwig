@@ -18,14 +18,16 @@ import gzip
 import os
 import shutil
 import tarfile
+from typing import List
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
-from urllib.parse import urlparse
 from zipfile import ZipFile
 
-from ludwig.utils.fs_utils import get_fs_and_path, upload_output_directory
+from kaggle.api.kaggle_api_extended import KaggleApi
 from tqdm import tqdm
+
+from ludwig.utils.fs_utils import get_fs_and_path, upload_output_directory
 
 
 class TqdmUpTo(tqdm):
@@ -165,3 +167,30 @@ class UncompressedFileDownloadMixin:
     @property
     def download_url(self):
         return self.config["download_urls"]
+
+
+class KaggleDatasetDownloadMixin:
+    """Downloads files in a Kaggle dataset."""
+
+    config: dict
+    raw_dataset_path: str
+    raw_temp_path: str
+
+    def download_raw_dataset(self):
+        api = KaggleApi()
+        api.authenticate()
+
+        for file_name in self.kaggle_dataset_files:
+            api.dataset_download_file(
+                dataset=self.kaggle_dataset_name,
+                file_name=file_name,
+                path=self.raw_dataset_path
+            )
+
+    @property
+    def kaggle_dataset_files(self) -> List[str]:
+        return self.config['kaggle_dataset_files']
+
+    @property
+    def kaggle_dataset_name(self) -> str:
+        return self.config('kaggle_dataset_name')

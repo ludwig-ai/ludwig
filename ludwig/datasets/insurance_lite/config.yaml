@@ -1,4 +1,6 @@
 version: 1.0
-download_urls:
-  - s3://datasets.us-west-2.predibase.com/insurance.csv
+kaggle_dataset_name: infernape/fast-furious-and-insured
+kaggle_dataset_files:
+  - train.csv
+  - test.csv
 csv_filename: insurance_lite.csv

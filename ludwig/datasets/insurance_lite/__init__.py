@@ -15,16 +15,13 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from sys import path
 import pandas as pd
-import re
-from collections import defaultdict
 from tqdm import tqdm
 from typing import List
 from urllib.request import urlretrieve
 
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
-from ludwig.datasets.mixins.download import S3FileDownloadMixin
+from ludwig.datasets.mixins.download import KaggleDatasetDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.utils.fs_utils import makedirs, rename
 
@@ -34,7 +31,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
-class InsuranceLite(CSVLoadMixin, S3FileDownloadMixin, BaseDataset):
+class InsuranceLite(CSVLoadMixin, KaggleDatasetDownloadMixin, BaseDataset):
     """The InsuranceLite dataset.
 
     This pulls in an array of mixins for different types of functionality
@@ -47,26 +44,29 @@ class InsuranceLite(CSVLoadMixin, S3FileDownloadMixin, BaseDataset):
 
     def process_downloaded_dataset(self):
         makedirs(self.processed_temp_path, exist_ok=True)
-        
-        url = self.config['s3_download_urls']
-        file_name = os.path.join(self.raw_dataset_path, url.split('/')[-1])
-        # TODO(shreya): DataFrame created twice: here + CSVMixin. Figure out
-        # options for using it once.
-        df = pd.read_csv(
-            file_name, header=0,
-            names=['id', 'image_path', 'insurance_company',
-                    'cost_of_vehicle', 'min_coverage', 'expiry_date',
-                    'max_coverage', 'condition', 'amount'],
-            usecols=list(range(1, 9))
+
+        for url in self.config['kaggle_dataset_files']:
+            file_name = os.path.join(self.raw_dataset_path, url.split('/')[-1])
+            # TODO(shreya): DataFrame created twice: here + CSVMixin. Figure out
+            # options for using it once.
+            df = pd.read_csv(
+                file_name, header=0,
+                names=['id', 'image_path', 'insurance_company',
+                        'cost_of_vehicle', 'min_coverage', 'expiry_date',
+                        'max_coverage', 'condition', 'amount'],
+                usecols=list(range(1, 9))
+                )
+            img_urls = df['image_path']
+            self.download_images(img_urls)
+            df['image_path'] = df['image_path'].apply(
+                lambda x: os.path.join(
+                    self.raw_dataset_path, 'images', x.split('/')[-1]
+                )
             )
-        urls = df['image_path']
-        self.download_images(urls)
-        df['image_path'] = df['image_path'].apply(
-            lambda x: os.path.join(self.raw_dataset_path, 'images', x.split('/')[-1]))
-        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
-                  columns=['image_path', 'insurance_company',
-                           'cost_of_vehicle', 'min_coverage', 'expiry_date',
-                           'max_coverage', 'condition', 'amount'])
+            df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
+                    columns=['image_path', 'insurance_company',
+                            'cost_of_vehicle', 'min_coverage', 'expiry_date',
+                            'max_coverage', 'condition', 'amount'])
 
         # Note: csv is stored in /processed while images are stored in /raw
         rename(self.processed_temp_path, self.processed_dataset_path)
