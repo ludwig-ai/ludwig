@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import logging
 import os
 import sys
@@ -30,6 +31,7 @@ from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
 logger = logging.getLogger(__name__)
 
 
+@functools.lru_cache(maxsize=32)
 def get_image_from_http_bytes(img_entry):
     import requests
     data = requests.get(img_entry, stream=True)
@@ -37,9 +39,7 @@ def get_image_from_http_bytes(img_entry):
         upgraded = upgrade_http(img_entry)
         if upgraded:
             logger.info(f'reading image url {img_entry} failed. upgrading to https and retrying')
-            data = requests.get(upgraded, stream=True)
-            if data.status_code == 404:
-                raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed for both http and https')
+            return get_image_from_http_bytes(upgraded)
         else:
             raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed and cannot be upgraded to https')
     return BytesIO(data.raw.read())
@@ -79,6 +79,13 @@ def is_image(src_path, img_entry):
 
 
 def read_image(img):
+    if isinstance(img, str):
+        return read_image_from_str(img)
+    return img
+
+
+@functools.lru_cache(maxsize=32)
+def read_image_from_str(img):
     try:
         from skimage.io import imread
     except ImportError:
@@ -88,17 +95,19 @@ def read_image(img):
             'pip install ludwig[image]'
         )
         sys.exit(-1)
-    if isinstance(img, str):
-        try:
-            return imread(img)
-        except HTTPError:
-            upgraded = upgrade_http(img)
-            if upgraded:
-                logger.info(f'reading image url {img} failed. upgrading to https and retrying')
-                return imread(upgraded)
-            logger.info(f'reading image url {img} failed and cannot be upgraded to https')
-            raise
-    return img
+
+    try:
+        return imread(img)
+    except HTTPError as e:
+        upgraded = upgrade_http(img)
+        if upgraded:
+            logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
+            return read_image(upgraded)
+        logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
+        return None
+    except Exception as e:
+        logger.info(f'reading image url {img} failed', e)
+        return None
 
 
 def pad(img, size, axis):

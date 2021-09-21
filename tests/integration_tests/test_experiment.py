@@ -860,9 +860,8 @@ def test_image_resizing_num_channel_handling(csv_filename):
 
     del input_features[0]['preprocessing']['num_channels']
 
-    # User now doesn't specify num channels. Should throw exception
-    with pytest.raises(ValueError):
-        run_experiment(input_features, output_features, dataset=rel_path)
+    # User doesn't specify num channels, but num channels is inferred. Exception shouldn't be thrown
+    run_experiment(input_features, output_features, dataset=rel_path)
 
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)

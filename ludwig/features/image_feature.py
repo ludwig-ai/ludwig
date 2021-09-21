@@ -53,6 +53,7 @@ class ImageFeatureMixin:
         'resize_method': 'interpolate',
         'scaling': 'pixel_normalization',
         'num_processes': 1,
+        'infer_image_num_channels': True,
         'infer_image_dimensions': True,
         'infer_image_max_height': 256,
         'infer_image_max_width': 256,
@@ -68,6 +69,7 @@ class ImageFeatureMixin:
         'height': {'type': 'integer', 'minimum': 0},
         'width': {'type': 'integer', 'minimum': 0},
         'num_channels': {'type': 'integer', 'minimum': 0},
+        'infer_image_num_channels': {'type': 'boolean'},
         'infer_image_dimensions': {'type': 'boolean'},
         'infer_image_max_height': {'type': 'integer', 'minimum': 0},
         'infer_image_max_width': {'type': 'integer', 'minimum': 0},
@@ -115,6 +117,9 @@ class ImageFeatureMixin:
         images to the specifications by dropping channels/padding 0 channels
         """
         img = read_image(img_entry)
+        if img is None:
+            logger.info(f"{img_entry} cannot be read")
+            return None
         img_num_channels = num_channels_in_image(img)
         if img_num_channels == 1:
             img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -184,13 +189,20 @@ class ImageFeatureMixin:
         the same number of channels
         """
         first_image = read_image(first_img_entry)
-        first_img_height = first_image.shape[0]
-        first_img_width = first_image.shape[1]
-        first_img_num_channels = num_channels_in_image(first_image)
+
+        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters
+
+        inferred_sample = None
+        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
+            sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
+            sample = [read_image(get_image_from_path(src_path, img)) for img in input_feature_col.head(sample_size)]
+            inferred_sample = [img for img in sample if img is not None]
+            if len(inferred_sample) == 0:
+                raise ValueError("No readable images in sample, image dimensions cannot be inferred")
 
         should_resize = False
-        if (HEIGHT in preprocessing_parameters or
-                WIDTH in preprocessing_parameters):
+        if explicit_height_width:
             should_resize = True
             try:
                 height = int(preprocessing_parameters[HEIGHT])
@@ -206,36 +218,39 @@ class ImageFeatureMixin:
                 )
         else:
             # User hasn't specified height and width.
-            # Default to first image, or infer from sample.
-            height, width = first_img_height, first_img_width
-
+            # Default to inferring from sample or first image.
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 should_resize = True
-                sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-                sample_images = [read_image(get_image_from_path(src_path, img))
-                                 for img in input_feature_col[:sample_size]]
 
-                if sample_images:
-                    height_avg = min(
-                        sum(x.shape[0] for x in sample_images) / len(sample_images),
-                        preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT])
-                    width_avg = min(
-                        sum(x.shape[1] for x in sample_images) / len(sample_images),
-                        preprocessing_parameters[INFER_IMAGE_MAX_WIDTH])
+                height_avg = min(
+                    sum(x.shape[0] for x in inferred_sample) / len(inferred_sample),
+                    preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT])
+                width_avg = min(
+                    sum(x.shape[1] for x in inferred_sample) / len(inferred_sample),
+                    preprocessing_parameters[INFER_IMAGE_MAX_WIDTH])
 
-                    height, width = round(height_avg), round(width_avg)
+                height, width = round(height_avg), round(width_avg)
+                logger.debug("Inferring height: {0} and width: {1}".format(height, width))
+            elif first_image is not None:
+                height, width = first_image.shape[0], first_image.shape[1]
+            else:
+                raise ValueError("Explicit image width/height are not set, infer_image_dimensions is false, "
+                                 "and first image cannot be read, so image dimensions are unknown")
 
-                    logger.debug("Inferring height: {0} and width: {1}".format(height, width))
-                else:
-                    logger.warning("Sample set for inference is empty, default to height and width of first image")
-
-        if NUM_CHANNELS in preprocessing_parameters:
+        if explicit_num_channels:
             # User specified num_channels in the model/feature config
             user_specified_num_channels = True
             num_channels = preprocessing_parameters[NUM_CHANNELS]
         else:
             user_specified_num_channels = False
-            num_channels = first_img_num_channels
+            if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
+                user_specified_num_channels = True
+                num_channels = round(sum(num_channels_in_image(x) for x in inferred_sample) / len(inferred_sample))
+            elif first_image is not None:
+                num_channels = num_channels_in_image(first_image)
+            else:
+                raise ValueError("Explicit image num channels is not set, infer_image_dimensions is false, "
+                                 "and first image cannot be read, so image num channels is unknown")
 
         assert isinstance(num_channels, int), ValueError(
             'Number of image channels needs to be an integer'
