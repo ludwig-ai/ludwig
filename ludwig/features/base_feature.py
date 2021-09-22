@@ -215,7 +215,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 metric_fn.update(predictions, targets)
             else:
                 #metric_fn.update_state(targets, predictions[PREDICTIONS])
-                metric_fn.update(predictions[PREDICTIONS], targets)
+                metric_fn.update(predictions, targets)
 
     def get_metrics(self):
         metric_vals = {}
