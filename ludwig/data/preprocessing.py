@@ -21,7 +21,6 @@ from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 
-from . import Column
 from ludwig.backend import LOCAL_BACKEND, Backend
 from ludwig.constants import *
 from ludwig.constants import TEXT
@@ -41,19 +40,19 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
                                      SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
                                      TFRECORD_FORMATS, TSV_FORMATS, figure_data_format,
-                                     override_in_memory_flag, read_csv,
-                                     read_excel, read_feather, read_fwf,
+                                     get_split_path, override_in_memory_flag,
+                                     read_csv, read_excel, read_feather, read_fwf,
                                      read_html, read_json, read_jsonl,
                                      read_orc, read_parquet, read_pickle,
                                      read_sas, read_spss, read_stata, read_tsv,
-                                     split_dataset_ttv)
-from ludwig.utils.data_utils import save_array, get_split_path
+                                     save_array, split_dataset_ttv)
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      get_proc_features_from_lists)
+from ludwig.utils.type_utils import Column
 
 logger = logging.getLogger(__name__)
 
