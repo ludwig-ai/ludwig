@@ -15,7 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
 import torch
