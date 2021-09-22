@@ -172,7 +172,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 )
 
     def create_input(self):
-        return torch.rand(shape=self.output_shape, dtype=self.get_output_dtype())
+        return torch.rand(self.output_shape, dtype=self.get_output_dtype())
 
     @abstractmethod
     def get_prediction_set(self):

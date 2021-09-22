@@ -123,7 +123,7 @@ class Dense(LudwigModule):
     def __init__(
         self,
         input_size,
-        output_size,
+        output_size=64,
         use_bias=True,
         weights_initializer='xavier_uniform',
         bias_initializer='zeros',
