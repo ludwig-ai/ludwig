@@ -16,11 +16,13 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
 
-from ludwig.backend import LOCAL_BACKEND
+from . import Column
+from ludwig.backend import LOCAL_BACKEND, Backend
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
@@ -1191,7 +1193,11 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
 
 
 def build_metadata(
-        metadata, dataset_cols, features, global_preprocessing_parameters, backend
+        metadata: Dict[str, Any],
+        dataset_cols: Dict[str, Column],
+        features: List[Dict[str, Any]],
+        global_preprocessing_parameters: Dict[str, Any],
+        backend: Backend
 ):
     for feature in features:
         if feature[NAME] in metadata:
@@ -1228,6 +1234,7 @@ def build_metadata(
             preprocessing_parameters,
             backend
         )
+
         if fill_value is not None:
             preprocessing_parameters = {
                 'computed_fill_value': fill_value,
@@ -1303,8 +1310,8 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
-                'Filling missing values with mean is supported '
-                'only for numerical types',
+                f'Filling missing values with mean is supported '
+                f'only for numerical types, not for type {feature[TYPE]}.',
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
     # Otherwise, we cannot precompute the fill value for this dataset

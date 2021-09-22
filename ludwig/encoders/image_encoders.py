@@ -21,11 +21,10 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 
 from ludwig.encoders.base import Encoder
+from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
+from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
 from ludwig.utils.registry import Registry, register, register_default
-from ludwig.modules.convolutional_modules import Conv2DStack, ResNet,\
-    get_resnet_block_sizes
-from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
@@ -296,3 +295,89 @@ class MLPMixerEncoder(ImageEncoder):
     @property
     def output_shape(self) -> torch.Size:
         return self._output_shape
+
+
+@register(name='vit')
+class ViTEncoder(ImageEncoder):
+    def __init__(
+            self,
+            img_height: int,
+            img_width: int = None,
+            in_channels: int = 3,
+            use_pretrained: bool = True,
+            pretrained_model: str = 'google/vit-base-patch16-224',
+            hidden_size: int = 768,
+            num_hidden_layers: int = 12,
+            num_attention_heads: int = 12,
+            intermediate_size: int = 3072,
+            hidden_act: str = 'gelu',
+            hidden_dropout_prob: float = 0.1,
+            attention_probs_dropout_prob: float = 0.1,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            gradient_checkpointing: bool = False,
+            patch_size: int = 16,
+            trainable: bool = True
+    ):
+        """ Creates a ViT encoder using transformers.ViTModel.
+
+        use_pretrained: If True, uses a pretrained transformer based on the 
+            pretrained_model argument.
+        pretrained: If str, expects the path to a pretrained model or the id of
+            a model on huggingface.co, and ignores the configuration provided in
+            the arguments.
+        """
+        super().__init__()
+        try:
+            from transformers import ViTConfig, ViTModel
+        except ModuleNotFoundError:
+            raise RuntimeError(
+                ' transformers is not installed. '
+                'In order to install all image feature dependencies run '
+                'pip install ludwig[image]'
+            )
+
+        img_width = img_width or img_height
+        if img_width != img_height:
+            raise ValueError(f'img_height and img_width should be identical.')
+        self._input_shape = (in_channels, img_height, img_width)
+
+        if use_pretrained:
+            self.model = ViTModel.from_pretrained(pretrained_model)
+            if trainable:
+                self.model.train()
+        else:
+            config = ViTConfig(
+                image_size=img_height,
+                num_channels=in_channels,
+                patch_size=patch_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=num_hidden_layers,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                hidden_act=hidden_act,
+                hidden_dropout_prob=hidden_dropout_prob,
+                attention_probs_dropout_prob=attention_probs_dropout_prob,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                gradient_checkpointing=gradient_checkpointing
+            )
+            self.model = ViTModel(config)
+        
+        self._output_shape = (self.model.config.hidden_size,)
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            head_mask: torch.Tensor = None
+    ) -> Dict[str, torch.Tensor]:
+        output = self.model(inputs, head_mask=head_mask)
+        return {'encoder_output': output.pooler_output}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)

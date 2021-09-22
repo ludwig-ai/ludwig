@@ -1,0 +1,70 @@
+input_features:
+  -
+    name: image_path
+    type: image
+    preprocessing:
+      height: 32
+      width: 32
+      in_memory: true
+    encoder: vit
+    image_size: 32
+    patch_size: 4
+    num_layers: 4
+    d_model: 64
+    num_heads: 4
+    mlp_dim: 128
+    channels: 3
+    dropout: 0.1
+  -
+    name: insurance_company
+    type: category
+    preprocessing:
+      missing_value_strategy: fill_with_const
+      fill_value: UNKNOWN
+  -
+    name: cost_of_vehicle
+    type: numerical
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
+  -
+    name: expiry_date
+    type: date
+    preprocessing:
+      missing_value_strategy: fill_with_const
+      fill_value: ''
+      datetime_format: "%Y-%m-%d"
+  -
+    name: min_coverage
+    type: numerical
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
+  -
+    name: max_coverage
+    type: numerical
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
+  -
+    name: condition
+    type: category
+    preprocessing:
+      missing_value_strategy: fill_with_const
+      fill_value: UNKNOWN
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 256
+output_features:
+  -
+    name: amount
+    type: numerical
+    preprocessing:
+      normalization: zscore
+training:
+  epochs: 1000
+  early_stop: 0
+preprocessing:
+  force_split: false
+  split_probabilities: [0.7, 0.1, 0.2]
