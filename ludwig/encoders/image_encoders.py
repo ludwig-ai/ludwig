@@ -15,7 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import sys
 from abc import ABC
 from typing import Any, Dict, List, Optional, Tuple, Union
 

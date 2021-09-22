@@ -18,7 +18,6 @@ import gzip
 import os
 import shutil
 import tarfile
-from typing import List
 import urllib.request
 from io import BytesIO
 from urllib.request import urlopen
