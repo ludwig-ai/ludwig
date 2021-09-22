@@ -49,7 +49,7 @@ class VectorFeatureMixin:
     }
 
     preprocessing_schema = {
-        'vector_size': {'type': 'integer', 'minimum': 0},
+        'output_size': {'type': 'integer', 'minimum': 0},
         'missing_value_strategy': {'type': 'string',
                                    'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': fill_value_schema,
@@ -97,26 +97,26 @@ class VectorFeatureMixin:
             raise
 
         # Determine vector size
-        vector_size = backend.df_engine.compute(
+        output_size = backend.df_engine.compute(
             proc_df[feature[PROC_COLUMN]].map(len).max())
-        if 'vector_size' in preprocessing_parameters:
-            if vector_size != preprocessing_parameters['vector_size']:
+        if 'output_size' in preprocessing_parameters:
+            if output_size != preprocessing_parameters['output_size']:
                 raise ValueError(
                     'The user provided value for vector size ({}) does not '
                     'match the value observed in the data: {}'.format(
-                        preprocessing_parameters, vector_size
+                        preprocessing_parameters, output_size
                     )
                 )
         else:
-            logger.debug('Observed vector size: {}'.format(vector_size))
+            logger.debug('Observed vector size: {}'.format(output_size))
 
-        metadata[feature[NAME]]['vector_size'] = vector_size
+        metadata[feature[NAME]]['output_size'] = output_size
         return proc_df
 
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = 'dense'
-    vector_size = 0
+    output_size = 0
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -139,7 +139,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size])
+        return torch.Size([self.output_size])
 
     @staticmethod
     def update_config_with_metadata(
@@ -148,7 +148,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
             *args,
             **kwargs
     ):
-        for key in ['vector_size']:
+        for key in ['output_size']:
             input_feature[key] = feature_metadata[key]
 
     @staticmethod
@@ -172,7 +172,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None,
                         MEAN_ABSOLUTE_ERROR: None, R2: None}
     default_validation_metric = MEAN_SQUARED_ERROR
-    vector_size = 0
+    output_size = 0
 
     def __init__(self, feature):
         super().__init__(feature)
@@ -205,12 +205,12 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             self.eval_loss_function = MAEMetric(name='eval_loss')
         elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
             self.train_loss_function = SoftmaxCrossEntropyLoss(
-                num_classes=self.vector_size,
+                num_classes=self.output_size,
                 feature_loss=self.loss,
                 name='train_loss'
             )
             self.eval_loss_function = SoftmaxCrossEntropyMetric(
-                num_classes=self.vector_size,
+                num_classes=self.output_size,
                 feature_loss=self.loss,
                 name='eval_loss'
             )
@@ -237,7 +237,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size])
+        return torch.Size([self.output_size])
 
     @staticmethod
     def update_config_with_metadata(
@@ -246,7 +246,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             *args,
             **kwargs
     ):
-        output_feature['vector_size'] = feature_metadata['vector_size']
+        output_feature['output_size'] = feature_metadata['output_size']
 
     @staticmethod
     def calculate_overall_stats(

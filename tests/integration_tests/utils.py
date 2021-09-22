@@ -334,7 +334,7 @@ def h3_feature(**kwargs):
 def vector_feature(**kwargs):
     feature = {
         'type': VECTOR,
-        'vector_size': 5,
+        'output_size': 5,
         'name': 'vector_' + random_string()
     }
     feature.update(kwargs)

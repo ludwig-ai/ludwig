@@ -379,7 +379,7 @@ def generate_vector(feature):
     # Space delimited string with floating point numbers
     return ' '.join(
         [str(100 * random.random())
-         for _ in range(feature.get('vector_size', 10))]
+         for _ in range(feature.get('output_size', 10))]
     )
 
 
