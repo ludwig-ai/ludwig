@@ -49,7 +49,8 @@ activations = {
     "relu": nn.ReLU,
     "sigmoid": nn.Sigmoid,
     "tanh": nn.Tanh,
-    "softmax": nn.Softmax
+    "softmax": nn.Softmax,
+    None: nn.Identity
 }
 
 
@@ -123,7 +124,7 @@ class Dense(LudwigModule):
     def __init__(
         self,
         input_size,
-        output_size=64,
+        output_size,
         use_bias=True,
         weights_initializer='xavier_uniform',
         bias_initializer='zeros',
