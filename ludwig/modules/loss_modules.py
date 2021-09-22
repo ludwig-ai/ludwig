@@ -17,6 +17,7 @@
 import torch
 from torch import nn
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
+import numpy as np
 
 from ludwig.constants import LOGITS
 # from ludwig.utils.tf_utils import sequence_length_2D
@@ -64,12 +65,36 @@ class BWCEWLoss:
         super().__init__()
         self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
 
+    def mean_confidence_penalty(self, probabilities, num_classes):
+       max_entropy = tf.constant(np.log(num_classes), dtype=torch.float32)
+       # clipping needed for avoiding log(0) = -inf
+       entropy_per_class = torch.maximum(-probabilities * torch.log(torch.clamp(probabilities, 1e-10, 1)),0,)
+       entropy = torch.sum(entropy_per_class, -1)
+       penalty = (max_entropy - entropy) / max_entropy
+       return torch.mean(penalty)
+
     def forward(self, input: torch.Tensor, target: torch.Tensor):
         target = target.long()
         print(f'preds: {input.shape} {input.dtype} {input}')
         print(f'target: {target.shape} {target.dtype} {target}')
         output = self.loss_fn(input, target)
-        return output.backward()
+        output = output.backward()
+        # robust lambda
+        if self.robust_lambda > 0:
+                     train_loss = (
+                         1 - self.robust_lambda
+                     ) * output + self.robust_lambda / 2
+
+        train_mean_loss = torch.mean(train_loss)
+        #
+        # confidence penalty
+        if self.confidence_penalty > 0:
+            # need to define logits
+            probabilities = torch.sigmoid(logits)
+            mean_penalty = self.mean_confidence_penalty(probabilities, 2)
+            train_mean_loss += self.confidence_penalty * mean_penalty
+
+        return train_mean_loss
 
 
 # TODO torch: test behavior parity with tf

@@ -16,8 +16,7 @@
 # ==============================================================================
 import logging
 from abc import ABC
-
-# import tensorflow as tf
+import torch
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register_default
@@ -48,9 +47,10 @@ class BinaryPassthroughEncoder(BinaryEncoder):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
         """
-        return {'encoder_output': tf.cast(inputs, dtype=tf.float32)}
+        inputs = inputs.type(torch.float32)
+        return {'encoder_output': inputs}
