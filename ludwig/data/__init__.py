@@ -8,7 +8,7 @@ except ImportError:
 import pandas as pd
 
 
-if 'dask.dataframe' in sys.modules:
+if dd is not None:
     Column: Union[str, pd.Series, dd.Series]
 else:
     Column: Union[str, pd.Series]

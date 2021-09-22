@@ -1,6 +1,6 @@
 version: 1.0
-kaggle_dataset_name: infernape/fast-furious-and-insured
+kaggle_dataset_name: Fast_Furious_Insured
+kaggle_dataset_id: infernape/fast-furious-and-insured
 kaggle_dataset_files:
   - train.csv
-  - test.csv
 csv_filename: insurance_lite.csv

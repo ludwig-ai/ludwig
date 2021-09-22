@@ -45,22 +45,21 @@ class InsuranceLite(CSVLoadMixin, KaggleDatasetDownloadMixin, BaseDataset):
     def process_downloaded_dataset(self):
         makedirs(self.processed_temp_path, exist_ok=True)
 
+        dataset_name = self.config['kaggle_dataset_name']
         for url in self.config['kaggle_dataset_files']:
-            file_name = os.path.join(self.raw_dataset_path, url.split('/')[-1])
+            file_name = os.path.join(self.raw_dataset_path, dataset_name, url)
             # TODO(shreya): DataFrame created twice: here + CSVMixin. Figure out
             # options for using it once.
             df = pd.read_csv(
                 file_name, header=0,
-                names=['id', 'image_path', 'insurance_company',
-                        'cost_of_vehicle', 'min_coverage', 'expiry_date',
-                        'max_coverage', 'condition', 'amount'],
-                usecols=list(range(1, 9))
+                names=['image_path', 'insurance_company', 'cost_of_vehicle',
+                       'min_coverage', 'expiry_date', 'max_coverage',
+                       'condition', 'amount']
                 )
-            img_urls = df['image_path']
-            self.download_images(img_urls)
             df['image_path'] = df['image_path'].apply(
                 lambda x: os.path.join(
-                    self.raw_dataset_path, 'images', x.split('/')[-1]
+                    self.raw_dataset_path, dataset_name, 'trainImages',
+                    os.path.basename(x)
                 )
             )
             df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
@@ -70,14 +69,3 @@ class InsuranceLite(CSVLoadMixin, KaggleDatasetDownloadMixin, BaseDataset):
 
         # Note: csv is stored in /processed while images are stored in /raw
         rename(self.processed_temp_path, self.processed_dataset_path)
-
-    def download_images(self, image_urls: List[str]):
-        # TODO(shreya): Parallelize this.
-        makedirs(os.path.join(self.raw_dataset_path, 'images'), exist_ok=True)
-        t_urls = tqdm(image_urls)
-        t_urls.set_description('Image Download Progress')
-        for url in t_urls:
-            file_name = url.split('/')[-1]
-            urlretrieve(
-                url,
-                os.path.join(self.raw_dataset_path, 'images', file_name))

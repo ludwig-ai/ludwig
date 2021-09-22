@@ -180,17 +180,12 @@ class KaggleDatasetDownloadMixin:
         api = KaggleApi()
         api.authenticate()
 
-        for file_name in self.kaggle_dataset_files:
-            api.dataset_download_file(
-                dataset=self.kaggle_dataset_name,
-                file_name=file_name,
-                path=self.raw_dataset_path
-            )
+        api.dataset_download_files(
+            dataset=self.kaggle_dataset_id,
+            path=self.raw_dataset_path,
+            unzip=True
+        )
 
     @property
-    def kaggle_dataset_files(self) -> List[str]:
-        return self.config['kaggle_dataset_files']
-
-    @property
-    def kaggle_dataset_name(self) -> str:
-        return self.config('kaggle_dataset_name')
+    def kaggle_dataset_id(self) -> str:
+        return self.config['kaggle_dataset_id']
