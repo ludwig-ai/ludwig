@@ -11,7 +11,7 @@ from tests.integration_tests.utils import audio_feature
 BATCH_SIZE = 2
 SEQ_SIZE = 20
 AUDIO_W_SIZE = 16
-FC_SIZE = 32
+DEFAULT_FC_SIZE = 256
 
 
 @pytest.mark.parametrize(
@@ -43,4 +43,5 @@ def test_audio_feature(enc_encoder):
     assert isinstance(encoder_output, dict)
     assert 'encoder_output' in encoder_output
     assert isinstance(encoder_output['encoder_output'], torch.Tensor)
-    assert encoder_output['encoder_output'].shape == (BATCH_SIZE, 256)
+    assert encoder_output['encoder_output'].shape == (
+    BATCH_SIZE, DEFAULT_FC_SIZE)
