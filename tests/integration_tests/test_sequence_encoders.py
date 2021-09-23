@@ -59,7 +59,7 @@ def input_sequence() -> torch.Tensor:
 @pytest.mark.parametrize('enc_num_layers', [1, 2])
 @pytest.mark.parametrize('enc_dropout', [0, 0.2])
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
-@pytest.mark.parametrize('enc_encoder', ENCODERS)
+@pytest.mark.parametrize('enc_encoder', ENCODERS + ['passthrough'])
 def test_sequence_encoders(
         enc_encoder: str,
         enc_cell_type: str,
@@ -159,6 +159,11 @@ def test_sequence_encoders(
         assert encoder_out['encoder_output'].shape \
                == (BATCH_SIZE, SEQ_SIZE, TEST_HIDDEN_SIZE) \
             if enc_reduce_output is None else (BATCH_SIZE, TEST_HIDDEN_SIZE)
+
+    elif enc_encoder == 'passthrough':
+        assert encoder_out['encoder_output'].shape \
+               == (BATCH_SIZE, SEQ_SIZE, 1) \
+            if enc_reduce_output is None else (BATCH_SIZE, 1)
 
     else:
         raise ValueError('{} is an invalid encoder specification'
