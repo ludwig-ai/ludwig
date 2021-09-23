@@ -8,6 +8,6 @@ import pandas as pd
 
 
 if dd is not None:
-    Column: Union[str, pd.Series, dd.Series]
+    Column = Union[str, pd.Series, dd.Series]
 else:
-    Column: Union[str, pd.Series]
+    Column = Union[str, pd.Series]
