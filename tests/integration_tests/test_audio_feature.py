@@ -7,7 +7,6 @@ import torch
 
 from ludwig.features.audio_feature import AudioInputFeature
 from tests.integration_tests.utils import audio_feature
-from tests.integration_tests.utils import ENCODERS
 
 BATCH_SIZE = 2
 SEQ_SIZE = 20
@@ -18,8 +17,7 @@ FC_SIZE = 32
 @pytest.mark.parametrize(
     'enc_encoder',
     [
-        'stacked_cnn', 'parallel_cnn', 'stacked_parallel_cnn', 'rnn', 'cnnrnn',
-        'passthrough', 'null', 'none', 'None', None
+        'stacked_cnn', 'parallel_cnn', 'stacked_parallel_cnn', 'rnn', 'cnnrnn'
     ]
 )
 def test_audio_feature(enc_encoder):

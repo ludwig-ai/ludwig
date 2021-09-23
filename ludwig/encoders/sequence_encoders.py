@@ -1610,7 +1610,7 @@ class StackedCNNRNN(SequenceEncoder):
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
             conv_layers=None,
-            num_conv_layers=1,
+            num_conv_layers=None,
             num_filters=256,
             filter_size=5,
             strides=1,
