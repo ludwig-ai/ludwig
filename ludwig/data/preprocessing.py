@@ -52,7 +52,7 @@ from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      get_proc_features_from_lists)
-# from ludwig.utils.type_utils import Column
+from ludwig.utils.type_utils import Column
 
 logger = logging.getLogger(__name__)
 
@@ -1193,8 +1193,7 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
 
 def build_metadata(
         metadata: Dict[str, Any],
-        dataset_cols,
-        # dataset_cols: Dict[str, Column],
+        dataset_cols: Dict[str, Column],
         features: List[Dict[str, Any]],
         global_preprocessing_parameters: Dict[str, Any],
         backend: Backend
