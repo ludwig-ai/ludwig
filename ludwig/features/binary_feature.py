@@ -114,7 +114,7 @@ class BinaryFeatureMixin:
         proc_df[feature[PROC_COLUMN]] = column.astype(np.bool_).values
         return proc_df
 
-
+# output feature
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     encoder = "passthrough"
     norm = None
