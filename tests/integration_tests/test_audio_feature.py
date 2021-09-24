@@ -17,7 +17,8 @@ DEFAULT_FC_SIZE = 256
 @pytest.mark.parametrize(
     'enc_encoder',
     [
-        'stacked_cnn', 'parallel_cnn', 'stacked_parallel_cnn', 'rnn', 'cnnrnn'
+        'stacked_cnn', 'parallel_cnn', 'stacked_parallel_cnn', 'rnn', 'cnnrnn',
+        'passthrough'
     ]
 )
 def test_audio_feature(enc_encoder):
@@ -43,5 +44,9 @@ def test_audio_feature(enc_encoder):
     assert isinstance(encoder_output, dict)
     assert 'encoder_output' in encoder_output
     assert isinstance(encoder_output['encoder_output'], torch.Tensor)
-    assert encoder_output['encoder_output'].shape == (
-    BATCH_SIZE, DEFAULT_FC_SIZE)
+    if enc_encoder == 'passthrough':
+        assert encoder_output['encoder_output'].shape \
+               == (BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE)
+    else:
+        assert encoder_output['encoder_output'].shape \
+               == (BATCH_SIZE, DEFAULT_FC_SIZE)
