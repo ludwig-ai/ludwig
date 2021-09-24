@@ -127,7 +127,7 @@ def test_sequence_encoders(
 
     elif enc_encoder == 'cnnrnn':
         assert encoder_out['encoder_output'].shape == \
-               (BATCH_SIZE, 1, TEST_STATE_SIZE) \
+               (BATCH_SIZE, 4, TEST_STATE_SIZE) \
             if enc_reduce_output is None else (BATCH_SIZE, TEST_STATE_SIZE)
 
         assert 'encoder_output_state' in encoder_out
