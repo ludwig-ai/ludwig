@@ -59,6 +59,42 @@ class RMSPELoss(LogitsLoss):
         return loss
 
 
+class BWCEWLoss:
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
+
+    def mean_confidence_penalty(self, probabilities, num_classes):
+        max_entropy = tf.constant(np.log(num_classes), dtype=torch.float32)
+        # clipping needed for avoiding log(0) = -inf
+        entropy_per_class = torch.maximum(-probabilities * torch.log(torch.clamp(probabilities, 1e-10, 1)), 0, )
+        entropy = torch.sum(entropy_per_class, -1)
+        penalty = (max_entropy - entropy) / max_entropy
+        return torch.mean(penalty)
+
+    def forward(self, input: torch.Tensor, target: torch.Tensor):
+        target = target.long()
+        print(f'preds: {input.shape} {input.dtype} {input}')
+        print(f'target: {target.shape} {target.dtype} {target}')
+        output = self.loss_fn(input, target)
+        output = output.backward()
+        # robust lambda
+        if self.robust_lambda > 0:
+            train_loss = (
+                                 1 - self.robust_lambda
+                         ) * output + self.robust_lambda / 2
+
+        train_mean_loss = torch.mean(train_loss)
+        #
+        # confidence penalty
+        if self.confidence_penalty > 0:
+            # need to define logits
+            probabilities = torch.sigmoid(logits)
+            mean_penalty = self.mean_confidence_penalty(probabilities, 2)
+            train_mean_loss += self.confidence_penalty * mean_penalty
+
+        return train_mean_loss
+
 # class BWCEWLoss(tf.keras.losses.Loss):
 #     def __init__(
 #         self, positive_class_weight=1, robust_lambda=0, confidence_penalty=0
