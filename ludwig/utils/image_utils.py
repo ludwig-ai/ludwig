@@ -31,6 +31,14 @@ from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
 logger = logging.getLogger(__name__)
 
 
+def get_gray_default_image(height, width, num_channels):
+    return np.full((height, width, num_channels), 128)
+
+
+def get_average_image(image_lst):
+    return np.mean([x for x in image_lst if x is not None], axis=(0))
+
+
 @functools.lru_cache(maxsize=32)
 def get_image_from_http_bytes(img_entry):
     import requests
