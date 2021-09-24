@@ -59,7 +59,7 @@ class RMSPELoss(LogitsLoss):
         loss = rmspe_loss(target, input)
         return loss
 
-
+# this is the new loss class for binary_feature
 class BWCEWLoss:
     def __init__(self, **kwargs):
         super().__init__()
