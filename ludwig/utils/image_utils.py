@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_gray_default_image(height, width, num_channels):
-    return np.full((height, width, num_channels), 128)
+    return np.full((height, width, num_channels), 128, dtype=np.uint8)
 
 
 def get_average_image(image_lst):

@@ -375,17 +375,17 @@ class ImageFeatureMixin:
                 # helper function for handling single image
                 def _get_processed_image(img_store):
                     if isinstance(img_store, str):
-                        return read_image_and_resize(
+                        res_single = read_image_and_resize(
                             get_abs_path(src_path, img_store)
                         )
                     else:
-                        return read_image_and_resize(img_store)
+                        res_single = read_image_and_resize(img_store)
+                    return res_single if res_single is not None else default_image
 
-                res = backend.df_engine.map_objects(
+                proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                     input_df[feature[COLUMN]],
                     _get_processed_image
                 )
-                proc_df[feature[PROC_COLUMN]] = res if res is not None else default_image
         else:
 
             all_img_entries = [get_abs_path(src_path, img_entry)
