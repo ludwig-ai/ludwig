@@ -16,6 +16,9 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from typing import List, Optional
+
+import torch
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register_default
@@ -39,18 +42,18 @@ class SetSparseEncoder(SetEncoder):
 
     def __init__(
             self,
-            vocab,
-            representation='dense',
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
+            vocab: List[str],
+            representation: str = 'dense',
+            embedding_size: int = 50,
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            embeddings_on_cpu: bool = False,
             fc_layers=None,
-            num_fc_layers=0,
-            fc_size=10,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
+            num_fc_layers: int = 0,
+            fc_size: int = 10,
+            use_bias: bool = True,
+            weights_initializer: str = 'glorot_uniform',
+            bias_initializer: str = 'zeros',
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
@@ -81,6 +84,7 @@ class SetSparseEncoder(SetEncoder):
         )
 
         logger.debug('  FCStack')
+        # TODO(shreya): Make sure this is updated when FCStack is updated
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -99,7 +103,7 @@ class SetSparseEncoder(SetEncoder):
             default_dropout=dropout,
         )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.int32
@@ -110,3 +114,11 @@ class SetSparseEncoder(SetEncoder):
         hidden = self.fc_stack(hidden, training=training, mask=mask)
 
         return hidden
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape

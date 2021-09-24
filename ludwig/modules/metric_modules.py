@@ -27,15 +27,11 @@ from ludwig.modules.loss_modules import (
     #     SigmoidCrossEntropyLoss,
     #     SoftmaxCrossEntropyLoss,
     #     SampledSoftmaxCrossEntropyLoss,
-    rmspe_loss, SoftmaxCrossEntropyLoss,
+    rmspe_loss, SoftmaxCrossEntropyLoss, SigmoidCrossEntropyLoss
 )
 import torch
-from torchmetrics import (
-    MeanAbsoluteError,
-    MeanSquaredError,
-    Metric,
-    AUROC, Accuracy, AverageMeter,
-)
+from torchmetrics import Accuracy, AUROC, AverageMeter, IoU, MeanAbsoluteError,\
+    MeanSquaredError, Metric
 #from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {
@@ -301,16 +297,14 @@ class SoftmaxCrossEntropyMetric(MeanMetric):
 #         super().update_state(self.metric_function(y, y_hat))
 #
 #
-# class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
-#     def __init__(self, feature_loss=None, name="sigmoid_cross_entropy_metric"):
-#         super().__init__(name=name)
-#         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(
-#             feature_loss
-#         )
-#
-#     def update_state(self, y, y_hat):
-#         super().update_state(self.sigmoid_cross_entropy_function(y, y_hat))
-#
+class SigmoidCrossEntropyMetric(Metric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
+
+    def update(self, y, y_hat):
+        super().update(self.sigmoid_cross_entropy_function(y, y_hat))
+
 #
 # class SequenceLossMetric(tf.keras.metrics.Mean):
 #     def __init__(self, from_logits=True, name=None):
@@ -529,44 +523,15 @@ class MSEMetric(MeanSquaredError):
         )
 
 
-# class JaccardMetric(tf.keras.metrics.Metric):
-#     def __init__(self, name=None):
-#         super().__init__(name=name)
-#         self.jaccard_total = self.add_weight(
-#             "jaccard_numerator", initializer="zeros", dtype=tf.float32
-#         )
-#         self.N = self.add_weight(
-#             "jaccard_denomerator", initializer="zeros", dtype=tf.float32
-#         )
-#
-#     def update_state(self, y_true, y_pred):
-#         # notation: b is batch size and nc is number of unique elements
-#         #           in the set
-#         # y_true: shape [b, nc] bit-mapped set representation
-#         # y_pred: shape [b, nc] bit-mapped set representation
-#
-#         batch_size = tf.cast(tf.shape(y_true)[0], tf.float32)
-#
-#         y_true_bool = tf.cast(y_true, tf.bool)
-#         y_pred_bool = tf.cast(y_pred, tf.bool)
-#
-#         intersection = tf.reduce_sum(
-#             tf.cast(tf.logical_and(y_true_bool, y_pred_bool), tf.float32),
-#             axis=1,
-#         )
-#         union = tf.reduce_sum(
-#             tf.cast(tf.logical_or(y_true_bool, y_pred_bool), tf.float32),
-#             axis=1,
-#         )
-#
-#         jaccard_index = intersection / union  # shape [b]
-#
-#         # update metric state tensors
-#         self.jaccard_total.assign_add(tf.reduce_sum(jaccard_index))
-#         self.N.assign_add(batch_size)
-#
-#     def result(self):
-#         return self.jaccard_total / self.N
+class JaccardMetric(Metric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.jaccard_metric = IoU(num_classes=2, **kwargs)
+
+    def update(self, y_true, y_pred):
+        return self.jaccard_metric(
+            y_pred.type(torch.bool), y_true.type(torch.bool)
+        )
 
 
 def get_improved_fun(metric):

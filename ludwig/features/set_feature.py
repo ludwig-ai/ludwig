@@ -15,11 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
 import torch
-# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
@@ -27,11 +25,12 @@ from ludwig.encoders.set_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-# from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
-# from ludwig.modules.metric_modules import JaccardMetric
-# from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
+from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
+from ludwig.modules.metric_modules import JaccardMetric
+from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry,\
+    UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -124,8 +123,8 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.bool, tf.int64]
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.bool, torch.int64]
 
         encoder_output = self.encoder_obj(
             inputs, training=training, mask=mask
@@ -190,17 +189,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     ):
         logits = inputs[LOGITS]
 
-        probabilities = tf.nn.sigmoid(
-            logits,
-            name='probabilities_{}'.format(self.feature_name)
-        )
+        probabilities = torch.sigmoid(logits)
 
-        predictions = tf.greater_equal(
-            probabilities,
-            self.threshold,
-            name='predictions_{}'.format(self.feature_name)
-        )
-        predictions = tf.cast(predictions, dtype=tf.int64)
+        predictions = torch.greater_equal(probabilities, self.threshold)
+        predictions = predictions.type(torch.int64)
 
         return {
             PREDICTIONS: predictions,
@@ -231,7 +223,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.bool
+        return torch.bool
 
     @property
     def output_shape(self) -> torch.Size:
