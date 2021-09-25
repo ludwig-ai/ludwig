@@ -29,7 +29,7 @@ from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
-from ludwig.utils.image_utils import greyscale
+from ludwig.utils.image_utils import greyscale, get_gray_default_image
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
 from ludwig.utils.image_utils import get_image_from_path, read_image
@@ -333,6 +333,9 @@ class ImageFeatureMixin:
             user_specified_num_channels=user_specified_num_channels
         )
 
+        # TODO: alternatively use get_average_image() for unreachable images
+        default_image = get_gray_default_image(height, width, num_channels)
+
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
         backend.check_lazy_load_supported(feature)
@@ -358,9 +361,10 @@ class ImageFeatureMixin:
                             num_processes
                         )
                     )
-                    proc_df[feature[PROC_COLUMN]] = pool.map(
+                    res = pool.map(
                         read_image_and_resize, all_img_entries
                     )
+                    proc_df[feature[PROC_COLUMN]] = [x if x is not None else default_image for x in res]
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -371,11 +375,12 @@ class ImageFeatureMixin:
                 # helper function for handling single image
                 def _get_processed_image(img_store):
                     if isinstance(img_store, str):
-                        return read_image_and_resize(
+                        res_single = read_image_and_resize(
                             get_abs_path(src_path, img_store)
                         )
                     else:
-                        return read_image_and_resize(img_store)
+                        res_single = read_image_and_resize(img_store)
+                    return res_single if res_single is not None else default_image
 
                 proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                     input_df[feature[COLUMN]],
@@ -398,9 +403,8 @@ class ImageFeatureMixin:
                     dtype=np.uint8
                 )
                 for i, img_entry in enumerate(all_img_entries):
-                    image_dataset[i, :height, :width, :] = (
-                        read_image_and_resize(img_entry)
-                    )
+                    res = read_image_and_resize(img_entry)
+                    image_dataset[i, :height, :width, :] = res if res is not None else default_image
                 h5_file.flush()
 
             proc_df[feature[PROC_COLUMN]] = np.arange(num_images)
