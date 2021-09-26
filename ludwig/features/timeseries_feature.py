@@ -157,13 +157,13 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float16 or inputs.dtype == tf.float32 or \
-               inputs.dtype == tf.float64
+    def forward(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.float16 or inputs.dtype == torch.float32 \
+               or inputs.dtype == torch.float64
         assert len(inputs.shape) == 2
 
-        inputs_exp = tf.cast(inputs, dtype=tf.float32)
+        inputs_exp = inputs.type(torch.float32)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )
