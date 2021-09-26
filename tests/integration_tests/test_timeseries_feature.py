@@ -1,7 +1,4 @@
-import os
-import shutil
 import pytest
-import pandas as pd
 
 import torch
 
@@ -21,11 +18,11 @@ DEFAULT_FC_SIZE = 256
     ]
 )
 def test_timeseries_feature(enc_encoder):
-    # synthetic timeseries tensor
+    # synthetic time series tensor
     timeseries_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE],
                                     dtype=torch.float32)
 
-    # generate audio feature config
+    # generate feature config
     timeseries_feature_config = timeseries_feature(
         encoder=enc_encoder,
         max_len=SEQ_SIZE,
@@ -35,13 +32,13 @@ def test_timeseries_feature(enc_encoder):
         should_embed=False
     )
 
-    # instantiate audio input feature object
+    # instantiate input feature object
     timeseries_input_feature = TimeseriesInputFeature(timeseries_feature_config)
 
-    # pass synthetic audio tensor through the audio input feature
+    # pass synthetic tensor through input feature
     encoder_output = timeseries_input_feature(timeseries_tensor)
 
-    # confirm correctness of the the audio encoder output
+    # confirm correctness of the encoder output
     assert isinstance(encoder_output, dict)
     assert 'encoder_output' in encoder_output
     assert isinstance(encoder_output['encoder_output'], torch.Tensor)
