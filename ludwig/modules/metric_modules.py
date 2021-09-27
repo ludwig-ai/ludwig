@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 from abc import abstractmethod
+from typing import Dict
 
 import numpy as np
 
@@ -166,7 +167,7 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
         self.add_state("sum_y_y_hat", default=torch.tensor(0, dtype=torch.float32))
         self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update(self, y_hat, y):
+    def update(self, y_hat: Dict[str, torch.Tensor], y: torch.Tensor):
         '''
         y = tf.cast(y, dtype=tf.float32)
         y_hat = tf.cast(y_hat, dtype=tf.float32)
@@ -177,6 +178,8 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
         self.sum_y_y_hat.assign_add(tf.reduce_sum(y * y_hat))
         self.N.assign_add(y.shape[0])
         '''
+        y_hat = y_hat[PREDICTIONS]
+
         y = y.type(torch.float32)
         y_hat = y_hat.type(torch.float32)
         self.sum_y += torch.sum(y)
@@ -520,7 +523,7 @@ class MSEMetric(MeanSquaredError):
     def __init__(self, name="MSE", **kwargs):
         super(MSEMetric, self).__init__(**kwargs)
 
-    def update(self, preds, target):
+    def update(self, preds: torch.Tensor, target):
         super().update(
             preds[PREDICTIONS].detach(), target
         )

@@ -49,7 +49,8 @@ activations = {
     "relu": nn.ReLU,
     "sigmoid": nn.Sigmoid,
     "tanh": nn.Tanh,
-    "softmax": nn.Softmax
+    "softmax": nn.Softmax,
+    None: nn.Identity
 }
 
 
