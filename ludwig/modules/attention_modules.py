@@ -178,6 +178,8 @@ class TransformerStack(LudwigModule):
     ):
         super().__init__()
         self.supports_masking = True
+        self.sequence_size = sequence_size
+        self.input_size = input_size
 
         self.layers = nn.ModuleList()
 
@@ -197,6 +199,10 @@ class TransformerStack(LudwigModule):
         # todo: revisit with solution on how to name layers for logging purposes
         # for layer in self.layers:
         #     logger.debug('   {}'.format(layer.name))
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.sequence_size, self.input_size])
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs

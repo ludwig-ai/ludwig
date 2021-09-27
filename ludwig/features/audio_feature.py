@@ -432,7 +432,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
                 'max_sequence_length has to be defined - '
                 'check "update_config_with_metadata()"')
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32
         assert len(inputs.shape) == 3
