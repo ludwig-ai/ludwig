@@ -7,7 +7,7 @@ from tests.integration_tests.utils import timeseries_feature
 
 BATCH_SIZE = 2
 SEQ_SIZE = 10
-DEFAULT_FC_SIZE = 256
+DEFAULT_FC_SIZE = 4
 
 
 @pytest.mark.parametrize(
@@ -26,6 +26,7 @@ def test_timeseries_feature(enc_encoder):
     timeseries_feature_config = timeseries_feature(
         encoder=enc_encoder,
         max_len=SEQ_SIZE,
+        fc_layers=[{'fc_size': DEFAULT_FC_SIZE}],
         # simulated parameters determined by pre-processing
         max_sequence_length=SEQ_SIZE,
         embedding_size=1,
