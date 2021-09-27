@@ -72,6 +72,7 @@ class Projector(Decoder):
     def __init__(
             self,
             input_size,
+            output_size,
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
@@ -88,6 +89,7 @@ class Projector(Decoder):
         logger.debug('  Dense')
         self.dense = Dense(
             input_size=input_size,
+            output_size=output_size,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,

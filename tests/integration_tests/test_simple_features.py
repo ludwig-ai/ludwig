@@ -176,6 +176,8 @@ def test_feature(input_test_feature, output_test_feature,
          [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
         ([category_feature()],
          [vector_feature(), vector_feature()]),
+        ([vector_feature()],
+         [vector_feature(), vector_feature()]),
     ]
 )
 def test_feature_multiple_outputs(input_test_feature, output_test_feature,

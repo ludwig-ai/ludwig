@@ -15,28 +15,22 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
+
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
-# import tensorflow as tf
-# from tensorflow.keras.metrics import \
-#     MeanAbsoluteError as MeanAbsoluteErrorMetric
-# from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Projector
-from ludwig.encoders.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
-# from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
-#     MAELoss
-# from ludwig.modules.metric_modules import (
-#     SoftmaxCrossEntropyMetric, MSEMetric, MAEMetric
-# )
-from ludwig.modules.metric_modules import R2Score
+from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
+from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss,\
+    MAELoss
+from ludwig.modules.metric_modules import MSEMetric, MAEMetric, R2Score,\
+    SoftmaxCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.torch_utils import LudwigModule
 
 logger = logging.getLogger(__name__)
 
@@ -123,21 +117,26 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = 'dense'
     vector_size = 0
 
-    def __init__(self, feature, encoder_obj=None):
+    def __init__(
+            self,
+            feature: Dict[str, Any],
+            encoder_obj: Optional[LudwigModule]=None
+    ):
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        feature['input_size'] = feature['vector_size']
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.float32, torch.float64]
         assert len(inputs.shape) == 2
 
         inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
+            inputs
         )
 
         return inputs_encoded
@@ -145,6 +144,10 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.vector_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(
@@ -182,6 +185,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        self._input_shape = feature['input_size']
+        feature['output_size'] = feature['vector_size']
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -227,12 +232,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
-            name='metric_mse'
-        )
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
-            name='metric_mae'
-        )
+        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric(name='metric_mse')
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric(name='metric_mae')
         self.metric_functions[R2] = R2Score(name='metric_r2')
 
     def get_prediction_set(self):
@@ -242,11 +243,15 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.float32
+        return torch.float32
 
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.vector_size])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self._input_shape])
 
     @staticmethod
     def update_config_with_metadata(

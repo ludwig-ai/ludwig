@@ -127,8 +127,7 @@ class ECD(LudwigModule):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
-            encoder_output = encoder(input_values, training=training,
-                                     mask=mask)
+            encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
 
         combiner_outputs = self.combiner(encoder_outputs)
