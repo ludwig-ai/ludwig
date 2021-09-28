@@ -17,11 +17,6 @@
 import logging
 from typing import List
 
-# import tensorflow as tf
-# from tensorflow.keras.layers import LayerNormalization
-# from tensorflow.keras.layers import Dense
-# from tensorflow.keras.layers import concatenate
-
 import torch
 from torch.nn import Module
 from ludwig.utils.torch_utils import LudwigModule
@@ -150,7 +145,7 @@ class ConcatCombiner(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        shapes = [self.input_features[k].output_shape[-1] for k in
+        shapes = [self.input_features[k].shape[-1] for k in
                   self.input_features]  # output shape not input shape
         return torch.Size([sum(shapes)])
 

@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-import tensorflow as tf
+import torch
 
 from ludwig.combiners.combiners import (
     ConcatCombiner,
@@ -46,12 +46,12 @@ def encoder_outputs():
 
     for feature_name, batch_shape in zip(feature_names, shapes_list):
         encoder_outputs[feature_name] = {
-            "encoder_output": tf.random.normal(batch_shape, dtype=tf.float32)
+            "encoder_output": torch.randn(batch_shape, dtype=torch.float32)
         }
         if len(batch_shape) > 2:
             encoder_outputs[feature_name][
-                "encoder_output_state"] = tf.random.normal(
-                [batch_shape[0], batch_shape[2]], dtype=tf.float32
+                "encoder_output_state"] = torch.randn(
+                [batch_shape[0], batch_shape[2]], dtype=torch.float32
             )
 
     return encoder_outputs
@@ -85,13 +85,13 @@ def encoder_comparator_outputs():
         if i == 0 or i == 3:
             dot_product_shape = [batch_shape[0], BASE_FC_SIZE]
             encoder_outputs[feature_name] = {
-                "encoder_output": tf.random.normal(dot_product_shape,
-                                                   dtype=tf.float32)
+                "encoder_output": torch.randn(dot_product_shape,
+                                              dtype=torch.float32)
             }
         else:
             encoder_outputs[feature_name] = {
-                "encoder_output": tf.random.normal(batch_shape,
-                                                   dtype=tf.float32)
+                "encoder_output": torch.randn(batch_shape,
+                                              dtype=torch.float32)
             }
 
     for i, (feature_name, batch_shape) in enumerate(
@@ -100,13 +100,13 @@ def encoder_comparator_outputs():
         if i == 0 or i == 3:
             dot_product_shape = [batch_shape[0], BASE_FC_SIZE]
             encoder_outputs[feature_name] = {
-                "encoder_output": tf.random.normal(dot_product_shape,
-                                                   dtype=tf.float32)
+                "encoder_output": torch.randn(dot_product_shape,
+                                              dtype=torch.float32)
             }
         else:
             encoder_outputs[feature_name] = {
-                "encoder_output": tf.random.normal(batch_shape,
-                                                   dtype=tf.float32)
+                "encoder_output": torch.randn(batch_shape,
+                                              dtype=torch.float32)
             }
 
     return encoder_outputs
@@ -131,16 +131,14 @@ def test_concat_combiner(encoder_outputs, fc_layer):
 
     # confirm correct output shapes
     if fc_layer:
-        assert results["combiner_output"].shape.as_list() == [BATCH_SIZE,
-                                                              FC_SIZE]
+        assert results["combiner_output"].shape == (BATCH_SIZE, FC_SIZE)
     else:
         # calculate expected hidden size for concatenated tensors
         hidden_size = 0
         for k in encoder_outputs:
             hidden_size += encoder_outputs[k]["encoder_output"].shape[1]
 
-        assert results["combiner_output"].shape.as_list() == [BATCH_SIZE,
-                                                              hidden_size]
+        assert results["combiner_output"].shape == (BATCH_SIZE, hidden_size)
 
 
 # test for sequence concatenation combiner
@@ -227,15 +225,15 @@ def tabnet_encoder_outputs():
     return {
         'batch_128': {
             'feature_1': {
-                'encoder_output': tf.random.normal(
+                'encoder_output': torch.randn(
                     [128, 1],
-                    dtype=tf.float32
+                    dtype=torch.float32
                 )
             },
             'feature_2': {
-                'encoder_output': tf.random.normal(
+                'encoder_output': torch.randn(
                     [128, 1],
-                    dtype=tf.float32
+                    dtype=torch.float32
                 )
             },
         },
@@ -243,14 +241,14 @@ def tabnet_encoder_outputs():
             'feature_1': {
                 'encoder_output': tf.keras.Input(
                     (),
-                    dtype=tf.float32,
+                    dtype=torch.float32,
                     name='feature_1',
                 )
             },
             'feature_2': {
                 'encoder_output': tf.keras.Input(
                     (),
-                    dtype=tf.float32,
+                    dtype=torch.float32,
                     name='feature_2',
                 )
             },
@@ -317,15 +315,15 @@ def test_transformer_combiner(encoder_outputs):
     # clean out unneeded encoder outputs
     encoder_outputs = {}
     encoder_outputs['feature_1'] = {
-        'encoder_output': tf.random.normal(
+        'encoder_output': torch.randn(
             [128, 1],
-            dtype=tf.float32
+            dtype=torch.float32
         )
     }
     encoder_outputs['feature_2'] = {
-        'encoder_output': tf.random.normal(
+        'encoder_output': torch.randn(
             [128, 1],
-            dtype=tf.float32
+            dtype=torch.float32
         )
     }
 
@@ -350,15 +348,15 @@ def test_tabtransformer_combiner(encoder_outputs):
     # clean out unneeded encoder outputs
     encoder_outputs = {}
     encoder_outputs['feature_1'] = {
-        'encoder_output': tf.random.normal(
+        'encoder_output': torch.randn(
             [128, 1],
-            dtype=tf.float32
+            dtype=torch.float32
         )
     }
     encoder_outputs['feature_2'] = {
-        'encoder_output': tf.random.normal(
+        'encoder_output': torch.randn(
             [128, 16],
-            dtype=tf.float32
+            dtype=torch.float32
         )
     }
 
