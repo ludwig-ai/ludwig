@@ -118,17 +118,21 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         # assert inputs.dtype == tf.bool # this fails
 
-        encoder_output = self.encoder_obj(inputs, training=training, mask=mask)
+        encoder_output = self.encoder_obj(inputs)
 
         return {'encoder_output': encoder_output}
 
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([len(self.vocab)])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(

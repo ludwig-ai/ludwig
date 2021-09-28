@@ -785,7 +785,7 @@ class TabTransformerCombiner(Module):
             embedded_i_f_names = tf.expand_dims(embedded_i_f_names, axis=0)
             embedded_i_f_names = tf.tile(embedded_i_f_names, [batch_size, 1, 1])
             if self.embed_input_feature_name == 'add':
-               hidden = hidden + embedded_i_f_names
+                hidden = hidden + embedded_i_f_names
             else:
                 hidden = tf.concat([hidden, embedded_i_f_names], axis=-1)
 
