@@ -191,18 +191,23 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
 def test_sequence_concat_combiner(
         encoder_outputs, main_sequence_feature, reduce_output
 ):
+    # extract encoder outputs and input feature dictionaries
+    encoder_outputs_dict, input_feature_dict = encoder_outputs
+
+    # setup combiner for testing
     combiner = SequenceConcatCombiner(
+        input_feature_dict,
         main_sequence_feature=main_sequence_feature,
         reduce_output=reduce_output
     )
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
-    for k in encoder_outputs:
-        hidden_size += encoder_outputs[k]["encoder_output"].shape[-1]
+    for k in encoder_outputs_dict:
+        hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
     # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    results = combiner(encoder_outputs_dict)
 
     # required key present
     assert "combiner_output" in results

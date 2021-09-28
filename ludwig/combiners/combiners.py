@@ -35,7 +35,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
@@ -165,14 +165,16 @@ class ConcatCombiner(LudwigModule):
 class SequenceConcatCombiner(LudwigModule):
     def __init__(
             self,
-            reduce_output=None,
-            main_sequence_feature=None,
+            input_features: dict,
+            reduce_output: Union[None, str] = None,
+            main_sequence_feature: Union[None, str] = None,
             **kwargs
     ):
         super().__init__()
         self.name = 'SequenceConcatCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
@@ -258,9 +260,9 @@ class SequenceConcatCombiner(LudwigModule):
                     representations.append(if_representation)
 
                 elif len(if_representation.shape) == 2:
-                    multipliers = tf.constant([1, sequence_max_length, 1])
-                    tiled_representation = tf.tile(
-                        tf.expand_dims(if_representation, 1),
+                    multipliers = (1, sequence_max_length, 1)
+                    tiled_representation = torch.tile(
+                        torch.unsqueeze(if_representation, 1),
                         multipliers
                     )
                     representations.append(tiled_representation)
@@ -275,7 +277,7 @@ class SequenceConcatCombiner(LudwigModule):
                         )
                     )
 
-        hidden = tf.concat(representations, 2)
+        hidden = torch.cat(representations, 2)
         logger.debug('  concat_hidden: {0}'.format(hidden))
 
         # ================ Mask ================
