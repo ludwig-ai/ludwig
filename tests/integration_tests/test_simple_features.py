@@ -23,7 +23,7 @@ import pytest
 from ludwig.constants import NAME
 from ludwig.experiment import experiment_cli
 
-from tests.integration_tests.utils import binary_feature, sequence_feature, \
+from tests.integration_tests.utils import bag_feature, binary_feature, sequence_feature, \
     set_feature, text_feature, vector_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -49,6 +49,7 @@ def run_experiment(input_features, output_features, **kwargs):
         # This if is necessary so that the caller can call with
         # config_file (and not config)
         config = {
+            'backend': 'local',
             'input_features': input_features,
             'output_features': output_features,
             'combiner': {
@@ -177,6 +178,8 @@ def test_feature(input_test_feature, output_test_feature,
         ([category_feature()],
          [vector_feature(), vector_feature()]),
         ([vector_feature()],
+         [vector_feature(), vector_feature()]),
+        ([bag_feature()],
          [vector_feature(), vector_feature()]),
     ]
 )
