@@ -29,8 +29,6 @@ def test_timeseries_feature(enc_encoder):
         fc_layers=[{'fc_size': DEFAULT_FC_SIZE}],
         # simulated parameters determined by pre-processing
         max_sequence_length=SEQ_SIZE,
-        embedding_size=1,
-        should_embed=False
     )
 
     # instantiate input feature object
