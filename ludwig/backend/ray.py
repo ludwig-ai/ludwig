@@ -16,22 +16,25 @@
 # ==============================================================================
 
 import logging
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
+from functools import partial
+from typing import Any, Dict, List
 
 import dask
+import pandas as pd
 import ray
 from horovod.ray import RayExecutor
-from ray.exceptions import RayActorError
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
-from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.data.dataset.pandas import PandasDataset
+from ludwig.data.dataset.partitioned import RayDataset
+from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
-from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 
@@ -93,7 +96,7 @@ def _get_df_engine(engine_config):
 
 
 class RayRemoteModel:
-    def __init__(self, model):
+    def __init__(self, model: ECD):
         buf = save_weights_to_buffer(model)
         self.cls = type(model)
         self.args = model.get_args()
@@ -169,24 +172,29 @@ class RayPredictor(BasePredictor):
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
 
-    def batch_predict(self, model, dataset, *args, **kwargs):
+    def batch_predict(self, model: ECD, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
 
         remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
-
-        def batch_predict_partition(dataset):
-            model = remote_model.load()
-            predictor = Predictor(**predictor_kwargs)
-            predictions = predictor.batch_predict(model, dataset, *args, **kwargs)
-            ordered_predictions = predictions[output_columns]
-            return ordered_predictions
-
-        return dataset.map_dataset_partitions(
-            batch_predict_partition,
-            meta=[(c, 'object') for c in output_columns]
+        batch_predictor = self.get_batch_infer_model(
+            remote_model, predictor_kwargs, output_columns, dataset.features,
+            dataset.data_hdf5_fp, *args, **kwargs
         )
+
+        num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
+        dask_dataset = dataset.ds.map_batches(
+            batch_predictor, 
+            compute='actors',
+            batch_format='pandas',
+            num_gpus=num_gpus
+        ).to_dask()
+
+        for of_feature in model.output_features.values():
+            dask_dataset = of_feature.unflatten(dask_dataset)
+
+        return dask_dataset
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
@@ -199,9 +207,9 @@ class RayPredictor(BasePredictor):
         )
 
     def _check_dataset(self, dataset):
-        if not isinstance(dataset, PartitionedDataset):
+        if not isinstance(dataset, RayDataset):
             raise RuntimeError(
-                f'Ray backend requires PartitionedDataset for inference, '
+                f'Ray backend requires RayDataset for inference, '
                 f'found: {type(dataset)}'
             )
 
@@ -209,6 +217,35 @@ class RayPredictor(BasePredictor):
         for handle in self.actor_handles:
             ray.kill(handle)
         self.actor_handles.clear()
+
+    def get_batch_infer_model(
+            self,
+            remote_model: RayRemoteModel,
+            predictor_kwargs: Dict[str, Any],
+            output_columns: List[str],
+            features: List[Dict],
+            data_hdf5_fp: str,
+            *args, **kwargs
+    ):
+        class BatchInferModel:
+            def __init__(self):
+                self.model = remote_model.load()
+                self.output_columns = output_columns
+                self.features = features
+                self.data_hdf5_fp = data_hdf5_fp
+                predictor = Predictor(**predictor_kwargs)
+                self.batch_predict = partial(predictor.batch_predict, *args, **kwargs)
+
+            def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+                pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
+                predictions = self.batch_predict(model=self.model, dataset=pd_ds)
+
+                for output_feature in self.model.output_features.values():
+                    predictions = output_feature.flatten(predictions)
+                ordered_predictions = predictions[self.output_columns]
+                return ordered_predictions
+
+        return BatchInferModel
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
@@ -224,11 +261,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
 
     def initialize(self):
-        try:
-            ray.init('auto', ignore_reinit_error=True)
-        except ConnectionError:
-            logger.info('Initializing new Ray cluster...')
-            ray.init(ignore_reinit_error=True)
+        if not ray.is_initialized():
+            try:
+                ray.init('auto', ignore_reinit_error=True)
+            except ConnectionError:
+                logger.info('Initializing new Ray cluster...')
+                ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
         self._df_engine.set_parallelism(**get_dask_kwargs())

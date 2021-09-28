@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+import copy
 import logging
 
 from ludwig.constants import *
@@ -186,12 +188,15 @@ def _set_proc_column(config: dict) -> None:
 
 
 def _merge_hyperopt_with_training(config: dict) -> None:
-    if 'hyperopt' not in config or TRAINING not in config:
+    if 'hyperopt' not in config:
         return
 
     scheduler = config['hyperopt'].get('sampler', {}).get('scheduler')
     if not scheduler:
         return
+
+    if TRAINING not in config:
+        config[TRAINING] = {}
 
     # Disable early stopping when using a scheduler. We achieve this by setting the parameter
     # to -1, which ensures the condition to apply early stopping is never met.
@@ -220,6 +225,7 @@ def _merge_hyperopt_with_training(config: dict) -> None:
 
 
 def merge_with_defaults(config):
+    config = copy.deepcopy(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)

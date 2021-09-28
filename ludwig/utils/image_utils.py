@@ -14,11 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import logging
 import os
 import sys
 from collections.abc import Iterable
 from typing import BinaryIO, Optional, TextIO, Tuple, Union
+from io import BytesIO
+from urllib.error import HTTPError
 
 import numpy as np
 import torch
@@ -26,9 +29,31 @@ import torchvision.transforms.functional as F
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import open_file, is_http
+from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
 
 logger = logging.getLogger(__name__)
+
+  
+def get_gray_default_image(height, width, num_channels):
+    return np.full((height, width, num_channels), 128, dtype=np.uint8)
+
+
+def get_average_image(image_lst):
+    return np.mean([x for x in image_lst if x is not None], axis=(0))
+
+
+@functools.lru_cache(maxsize=32)
+def get_image_from_http_bytes(img_entry):
+    import requests
+    data = requests.get(img_entry, stream=True)
+    if data.status_code == 404:
+        upgraded = upgrade_http(img_entry)
+        if upgraded:
+            logger.info(f'reading image url {img_entry} failed. upgrading to https and retrying')
+            return get_image_from_http_bytes(upgraded)
+        else:
+            raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed and cannot be upgraded to https')
+    return BytesIO(data.raw.read())
 
 
 # TODO(shreya): Confirm output type.
@@ -37,16 +62,11 @@ def get_image_from_path(
     img_entry: Union[str, bytes],
     ret_bytes: bool = False
 ) -> Union[BinaryIO, TextIO, bytes]:
-    """
-    skimage.io.imread() can read filenames or urls
-    imghdr.what() can read filenames or bytes
-    """
     if not isinstance(img_entry, str):
         return img_entry
     if is_http(img_entry):
         if ret_bytes:
-            import requests
-            return requests.get(img_entry, stream=True).raw.read()
+            return get_image_from_http_bytes(img_entry)
         return img_entry
     if src_path or os.path.isabs(img_entry):
         return get_abs_path(src_path, img_entry)
@@ -70,12 +90,19 @@ def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
         return False
 
 
+@functools.lru_cache(maxsize=32)
 def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None) -> torch.Tensor:
     """ Returns a tensor with CHW format.
     
     If num_channels is not provided, he image is read in unchanged format.
     """
+    if isinstance(img, str):
+        return read_image_from_str(img, num_channels)
+    return img
 
+
+@functools.lru_cache(maxsize=32)
+def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.Tensor:
     try:
         from torchvision.io import read_image, ImageReadMode
     except ImportError:
@@ -85,7 +112,8 @@ def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None
             'pip install ludwig[image]'
         )
         sys.exit(-1)
-    if isinstance(img, str):
+    
+    try:
         if num_channels == 1:
             return read_image(img, mode=ImageReadMode.GRAY)
         elif num_channels == 2:
@@ -96,7 +124,16 @@ def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None
             return read_image(img, mode=ImageReadMode.RGB_ALPHA)
         else:
             raise ValueError(f'Invalid num_channels={num_channels}, value must be one of 1, 2, 3, 4.')
-    return img
+    except HTTPError as e:
+        upgraded = upgrade_http(img)
+        if upgraded:
+            logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
+            return read_image(upgraded)
+        logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
+        return None
+    except Exception as e:
+        logger.info(f'reading image url {img} failed', e)
+        return None
 
 
 def pad(

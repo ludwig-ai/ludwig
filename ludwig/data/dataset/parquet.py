@@ -19,7 +19,7 @@ import math
 
 import tensorflow as tf
 from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.partitioned import PartitionedDataset
+from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 
 from petastorm import make_batch_reader
@@ -109,10 +109,10 @@ class ParquetDatasetManager(object):
 
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
         if self.backend.df_engine.partitioned:
-            return PartitionedDataset(
-                dataset,
-                get_proc_features(config),
-                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            return RayDataset(
+                df=dataset,
+                features=get_proc_features(config),
+                data_hdf5_fp=training_set_metadata.get(DATA_TRAIN_HDF5_FP)
             )
         else:
             return PandasDataset(
