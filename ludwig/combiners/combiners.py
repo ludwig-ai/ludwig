@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 from typing import List
+import numpy as np
 
 import torch
 from torch.nn import Module
@@ -114,15 +115,14 @@ class ConcatCombiner(LudwigModule):
 
         # ================ Flatten ================
         if self.flatten_inputs:
-            batch_size = tf.shape(encoder_outputs[0])[0]
+            batch_size = encoder_outputs[0].shape[0]
             encoder_outputs = [
-                tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+                torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
             ]
 
         # ================ Concat ================
         if len(encoder_outputs) > 1:
             hidden = torch.cat(encoder_outputs, 1)
-            #hidden = concatenate(encoder_outputs, -1)
         else:
             hidden = list(encoder_outputs)[0]
 
@@ -145,8 +145,12 @@ class ConcatCombiner(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        shapes = [self.input_features[k].output_shape[-1] for k in
-                  self.input_features]  # output shape not input shape
+        if self.flatten_inputs:
+            shapes = [np.prod(self.input_features[k].output_shape) for k in
+                      self.input_features]
+        else:
+            shapes = [self.input_features[k].output_shape[-1] for k in
+                      self.input_features]  # output shape not input shape
         return torch.Size([sum(shapes)])
 
     @property

@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 
 import pytest
 import torch
@@ -26,7 +27,8 @@ FC_SIZE = 64
 BASE_FC_SIZE = 256
 
 
-# emulate Input Feature class.  Needed to provide output_shape property.
+# emulate Input Feature class.  Need to provide output_shape property to
+# mimic what happens during ECD.forward() processing.
 class PseudoInputFeature:
     def __init__(self, feature_name, output_shape):
         self.name = feature_name
@@ -47,7 +49,7 @@ def encoder_outputs():
     #   feature_4: shape [b, sh, h2] tensor
 
     encoder_outputs = {}
-    input_features = {}
+    input_features = OrderedDict()
     shapes_list = [
         [BATCH_SIZE, HIDDEN_SIZE],
         [BATCH_SIZE, OTHER_HIDDEN_SIZE],
@@ -66,6 +68,7 @@ def encoder_outputs():
                 [batch_shape[0], batch_shape[2]], dtype=torch.float32
             )
 
+        # create pseudo input feature object
         input_features[feature_name] = PseudoInputFeature(feature_name,
                                                           batch_shape)
 
@@ -128,17 +131,33 @@ def encoder_comparator_outputs():
 
 
 # test for simple concatenation combiner
+@pytest.mark.parametrize("number_inputs", [None, 1])
+@pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer",
                          [None, [{"fc_size": 64}, {"fc_size": 64}]])
-def test_concat_combiner(encoder_outputs, fc_layer):
+def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
+                         number_inputs):
     encoder_outputs_dict, input_features_dict = encoder_outputs
-    # clean out unneeded encoder outputs
-    for feature in ['feature_3', 'feature_4']:
-        del encoder_outputs_dict[feature]
-        del input_features_dict[feature]
 
-    # setup combiner to test
-    combiner = ConcatCombiner(input_features_dict, fc_layers=fc_layer)
+    # setup encoder inputs to combiner based on test case
+    if not flatten_inputs:
+        # clean out rank-3 encoder outputs
+        for feature in ['feature_3', 'feature_4']:
+            del encoder_outputs_dict[feature]
+            del input_features_dict[feature]
+        if number_inputs == 1:
+            # need only one encoder output for the test
+            del encoder_outputs_dict['feature_2']
+            del input_features_dict['feature_2']
+    elif number_inputs == 1:
+        # require only one rank-3 encoder output for testing
+        for feature in ['feature_1', 'feature_2', 'feature_3']:
+            del encoder_outputs_dict[feature]
+            del input_features_dict[feature]
+
+    # setup combiner to test with pseudo input features
+    combiner = ConcatCombiner(input_features_dict, fc_layers=fc_layer,
+                              flatten_inputs=flatten_inputs)
 
     # concatenate encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -157,10 +176,13 @@ def test_concat_combiner(encoder_outputs, fc_layer):
         # calculate expected hidden size for concatenated tensors
         hidden_size = 0
         for k in encoder_outputs_dict:
-            hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[1]
+            hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[1] \
+                if not flatten_inputs else \
+                encoder_outputs_dict[k]["encoder_output"] \
+                    .reshape(BATCH_SIZE, -1).shape[1]
 
-        assert combiner_output["combiner_output"].shape == (
-        BATCH_SIZE, hidden_size)
+        assert combiner_output["combiner_output"].shape == \
+               (BATCH_SIZE, hidden_size)
 
 
 # test for sequence concatenation combiner
