@@ -301,9 +301,17 @@ class SigmoidCrossEntropyMetric(Metric):
     def __init__(self, **kwargs):
         super().__init__()
         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
+        self.add_state(
+            name='loss',
+            default=[],
+            dist_reduce_fx='mean'
+        )
 
-    def update(self, y, y_hat):
-        super().update(self.sigmoid_cross_entropy_function(y, y_hat))
+    def update(self, y: torch.Tensor, y_hat: torch.Tensor) -> None:
+        self.loss.append(self.sigmoid_cross_entropy_function(y, y_hat))
+
+    def compute(self) -> torch.Tensor:
+        return torch.mean(torch.stack(self.loss))
 
 #
 # class SequenceLossMetric(tf.keras.metrics.Mean):
@@ -527,11 +535,15 @@ class JaccardMetric(Metric):
     def __init__(self, **kwargs):
         super().__init__()
         self.jaccard_metric = IoU(num_classes=2, **kwargs)
+        self.add_state(name='loss', default=[], dist_reduce_fx='mean')
 
-    def update(self, y_true, y_pred):
-        return self.jaccard_metric(
+    def update(self, y_true: torch.Tensor, y_pred: torch.Tensor) -> None:
+        self.loss.append(self.jaccard_metric(
             y_pred.type(torch.bool), y_true.type(torch.bool)
-        )
+        ))
+
+    def compute(self) -> torch.Tensor:
+        return torch.mean(torch.stack(self.loss))
 
 
 def get_improved_fun(metric):

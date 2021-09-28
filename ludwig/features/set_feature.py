@@ -122,13 +122,11 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.bool, torch.int64]
 
-        encoder_output = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        encoder_output = self.encoder_obj(inputs)
 
         return {'encoder_output': encoder_output}
 
@@ -203,12 +201,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def _setup_loss(self):
         self.train_loss_function = SigmoidCrossEntropyLoss(
             feature_loss=self.loss,
-            name='train_loss'
         )
 
         self.eval_loss_function = SigmoidCrossEntropyMetric(
             feature_loss=self.loss,
-            name='eval_loss'
         )
 
     def _setup_metrics(self):

@@ -19,12 +19,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 # import tensorflow as tf
-# from tensorflow.keras.layers import Dropout
-# from tensorflow.keras.layers import Layer
-# from tensorflow.keras.layers import Embedding
 from torch import nn
-from torch._C import float32
-from torch.nn.modules import sparse
 
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
@@ -117,7 +112,9 @@ def embedding_matrix_on_device(
         force_embedding_size=force_embedding_size,
         embedding_initializer=embedding_initializer
     )
-    if not embeddings_on_cpu and torch.cuda.is_available():
+    if embeddings_on_cpu:
+        embeddings.to('cpu')
+    elif not embeddings_on_cpu and torch.cuda.is_available():
         embeddings.to(device='cuda:0')
 
     return embeddings, embedding_size
@@ -160,7 +157,6 @@ class Embed(LudwigModule):
             self.add_loss(lambda: reg_loss(self.embeddings, embedding_regularizer))
 
         if dropout > 0:
-            #self.dropout = Dropout(dropout)
             self.dropout = torch.nn.Dropout(p=dropout)
         else:
             self.dropout = None
@@ -178,6 +174,13 @@ class Embed(LudwigModule):
 
         return embedded
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])
 
 class EmbedWeighted(LudwigModule):
     def __init__(
@@ -191,7 +194,6 @@ class EmbedWeighted(LudwigModule):
             embeddings_on_cpu: bool = False,
             dropout: float = 0.0,
             embedding_initializer: Optional[str] = None,
-            # embedding_regularizer: Optional[str] = None
     ):
         super().__init__()
 
@@ -206,11 +208,6 @@ class EmbedWeighted(LudwigModule):
             embedding_initializer=embedding_initializer,
         )
         self.vocab_length = len(vocab)
-
-        # if embedding_regularizer:
-        #     embedding_regularizer_obj = tf.keras.regularizers.get(
-        #         embedding_regularizer)
-        #     self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
         if dropout > 0:
             self.dropout = nn.Dropout(dropout)
@@ -247,73 +244,68 @@ class EmbedWeighted(LudwigModule):
         return torch.Size([self.embedding_size])
 
 
-class EmbedSparse(LudwigModule):
-    def __init__(
-            self,
-            vocab: List[str],
-            embedding_size: int = 50,
-            representation: str = 'dense',
-            embeddings_trainable: bool = True,
-            pretrained_embeddings: Optional[str] = None,
-            force_embedding_size: bool = False,
-            embeddings_on_cpu: bool = False,
-            dropout: float = 0.0,
-            embedding_initializer: Optional[str] = None,
-            # embedding_regularizer=None,
-            reduce_output: str = 'sum'
-    ):
-        super().__init__()
+# TODO(shreya): Implement sparse embedding lookup.
+# class EmbedSparse(LudwigModule):
+#     def __init__(
+#             self,
+#             vocab: List[str],
+#             embedding_size: int = 50,
+#             representation: str = 'dense',
+#             embeddings_trainable: bool = True,
+#             pretrained_embeddings: Optional[str] = None,
+#             force_embedding_size: bool = False,
+#             embeddings_on_cpu: bool = False,
+#             dropout: float = 0.0,
+#             embedding_initializer: Optional[str] = None,
+#             reduce_output: str = 'sum'
+#     ):
+#         super().__init__()
 
-        self.embeddings, self.embedding_size = embedding_matrix_on_device(
-            vocab,
-            embedding_size,
-            representation=representation,
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            force_embedding_size=force_embedding_size,
-            embeddings_on_cpu=embeddings_on_cpu,
-            embedding_initializer=embedding_initializer,
-        )
+#         self.embeddings, self.embedding_size = embedding_matrix_on_device(
+#             vocab,
+#             embedding_size,
+#             representation=representation,
+#             embeddings_trainable=embeddings_trainable,
+#             pretrained_embeddings=pretrained_embeddings,
+#             force_embedding_size=force_embedding_size,
+#             embeddings_on_cpu=embeddings_on_cpu,
+#             embedding_initializer=embedding_initializer,
+#         )
 
-        # if embedding_regularizer:
-        #     embedding_regularizer_obj = tf.keras.regularizers.get(
-        #         embedding_regularizer)
-        #     self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
+#         if dropout > 0:
+#             self.dropout = nn.Dropout(dropout)
+#         else:
+#             self.dropout = None
 
-        if dropout > 0:
-            self.dropout = nn.Dropout(dropout)
-        else:
-            self.dropout = None
+#         self.reduce_output = reduce_output
 
-        self.reduce_output = reduce_output
+#     def forward(self, inputs: torch.Tensor):
+#         # idx = tf.where(tf.equal(inputs, True))
+#         # TODO(shreya): Check if this is equivalent
+#         idx = torch.nonzero(inputs)
 
-    def forward(self, inputs: torch.Tensor):
-        # idx = tf.where(tf.equal(inputs, True))
-        # TODO(shreya): Check if this is equivalent
-        idx = torch.nonzero(inputs)
+#         # sparse_multiple_hot_indexes = tf.SparseTensor(
+#         #     idx,
+#         #     idx[:, 1],
+#         #     tf.shape(inputs, out_type=tf.int64)
+#         # )
+#         sparse_multiple_hot_index = torch.sparse_coo_tensor(
+#             idx, idx[:, 1], inputs.shape
+#         )
 
-        # sparse_multiple_hot_indexes = tf.SparseTensor(
-        #     idx,
-        #     idx[:, 1],
-        #     tf.shape(inputs, out_type=tf.int64)
-        # )
-        sparse_multiple_hot_index = torch.sparse_coo_tensor(
-            idx, idx[:, 1], inputs.shape
-        )
+#         # TODO(shreya): Check if supported in torch
+#         # embedded_reduced = tf.nn.embedding_lookup_sparse(
+#         #     self.embeddings,
+#         #     sparse_multiple_hot_indexes,
+#         #     sp_weights=None,
+#         #     combiner=self.reduce_output
+#         # )
 
-        # TODO(shreya): Check if supported in torch
-        # embedded_reduced = tf.nn.embedding_lookup_sparse(
-        #     self.embeddings,
-        #     sparse_multiple_hot_indexes,
-        #     sp_weights=None,
-        #     combiner=self.reduce_output
-        # )
+#         # if self.dropout:
+#         #     embedded_reduced = self.dropout(embedded_reduced)
 
-        # if self.dropout:
-        #     embedded_reduced = self.dropout(embedded_reduced)
-
-        # return embedded_reduced
-        return None
+#         # return embedded_reduced
+#         return None
 
 class EmbedSequence(LudwigModule):
     def __init__(

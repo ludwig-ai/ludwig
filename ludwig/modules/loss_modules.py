@@ -97,7 +97,7 @@ class RMSPELoss(LogitsLoss):
 
 
 # TODO torch: test behavior parity with tf
-class SoftmaxCrossEntropyLoss():
+class SoftmaxCrossEntropyLoss(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss(**kwargs)
@@ -511,9 +511,13 @@ def rmspe_loss(targets, predictions):
     return loss
 
 
-class SigmoidCrossEntropyLoss:
+class SigmoidCrossEntropyLoss(nn.Module):
     def __init__(self, **kwargs):
-        self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
+        super().__init__()
+        self.loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(self, y: torch.Tensor, y_pred: torch.Tensor):
-        return self.loss_fn(y_pred[LOGITS], y.type(torch.float32))
+        return self.loss_fn(
+            y_pred.type(torch.float32),
+            y[LOGITS].type(torch.float32)
+        )
