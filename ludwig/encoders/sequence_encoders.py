@@ -1843,7 +1843,7 @@ class StackedCNNRNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                self.conv1d_stack.output_shape[0],
+                self.conv1d_stack.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
