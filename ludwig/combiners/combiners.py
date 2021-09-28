@@ -17,6 +17,7 @@
 import logging
 from typing import List
 import numpy as np
+from typing import Union
 
 import torch
 from torch.nn import Module
@@ -42,24 +43,24 @@ logger = logging.getLogger(__name__)
 class ConcatCombiner(LudwigModule):
     def __init__(
             self,
-            input_features=None,
-            fc_layers=None,
-            num_fc_layers=None,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
+            input_features: dict = None,
+            fc_layers: Union[list, None] = None,
+            num_fc_layers: Union[None, int] = None,
+            fc_size: int = 256,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Union[None, str] = None,
+            bias_regularizer: Union[None, str] = None,
+            activity_regularizer: Union[None, str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
-            flatten_inputs=False,
-            residual=False,
+            norm: Union[None, str] = None,
+            norm_params: Union[None, dict] = None,
+            activation: str = 'relu',
+            dropout: float = 0,
+            flatten_inputs: bool = False,
+            residual: bool = False,
             **kwargs
     ):
         super().__init__()
@@ -169,6 +170,7 @@ class SequenceConcatCombiner(LudwigModule):
             **kwargs
     ):
         super().__init__()
+        self.name = 'SequenceConcatCombiner'
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -177,7 +179,7 @@ class SequenceConcatCombiner(LudwigModule):
             self.supports_masking = True
         self.main_sequence_feature = main_sequence_feature
 
-    def __call__(
+    def forward(
             self,
             inputs,  # encoder outputs
             training=None,
