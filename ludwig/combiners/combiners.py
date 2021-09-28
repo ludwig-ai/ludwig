@@ -21,7 +21,8 @@ from typing import Union
 
 import torch
 from torch.nn import Module
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.utils.torch_utils import LudwigModule, \
+    sequence_mask as torch_sequence_mask
 
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
@@ -282,13 +283,13 @@ class SequenceConcatCombiner(LudwigModule):
 
         # ================ Mask ================
         # todo future: maybe modify this with TF2 mask mechanics
-        sequence_mask = tf.sequence_mask(
+        sequence_mask = torch_sequence_mask(
             sequence_length,
             sequence_max_length
         )
-        hidden = tf.multiply(
+        hidden = torch.multiply(
             hidden,
-            tf.cast(tf.expand_dims(sequence_mask, -1), dtype=tf.float32)
+            torch.unsqueeze(sequence_mask, -1).type(torch.float32)
         )
 
         # ================ Reduce ================

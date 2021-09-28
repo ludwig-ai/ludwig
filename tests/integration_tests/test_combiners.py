@@ -207,21 +207,25 @@ def test_sequence_concat_combiner(
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
     # concatenate encoder outputs
-    results = combiner(encoder_outputs_dict)
+    combiner_output = combiner(encoder_outputs_dict)
 
-    # required key present
-    assert "combiner_output" in results
+    # correct data structure
+    assert isinstance(combiner_output, dict)
+
+    # required key present and correct data type
+    assert "combiner_output" in combiner_output
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
 
     # confirm correct shape
     if reduce_output is None:
-        assert results["combiner_output"].shape.as_list() == [
+        assert combiner_output["combiner_output"].shape == (
             BATCH_SIZE,
             SEQ_SIZE,
             hidden_size,
-        ]
+        )
     else:
-        assert results["combiner_output"].shape.as_list() == [BATCH_SIZE,
-                                                              hidden_size]
+        assert combiner_output["combiner_output"].shape == (
+        BATCH_SIZE, hidden_size)
 
 
 # test for sequence combiner
