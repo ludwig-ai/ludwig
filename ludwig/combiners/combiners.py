@@ -15,9 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import List
 import numpy as np
-from typing import Union
+import typing
+from typing import Union, Optional, List
 
 import torch
 from torch.nn import Module
@@ -44,20 +44,20 @@ logger = logging.getLogger(__name__)
 class ConcatCombiner(LudwigModule):
     def __init__(
             self,
-            input_features: dict = None,
+            input_features: typing.Dict = None,
             fc_layers: Union[list, None] = None,
-            num_fc_layers: Union[None, int] = None,
+            num_fc_layers: Optional[int] = None,
             fc_size: int = 256,
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Union[None, str] = None,
-            bias_regularizer: Union[None, str] = None,
-            activity_regularizer: Union[None, str] = None,
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm: Union[None, str] = None,
-            norm_params: Union[None, dict] = None,
+            norm: Optional[str] = None,
+            norm_params: Optional[dict] = None,
             activation: str = 'relu',
             dropout: float = 0,
             flatten_inputs: bool = False,
@@ -167,8 +167,8 @@ class SequenceConcatCombiner(LudwigModule):
     def __init__(
             self,
             input_features: dict,
-            reduce_output: Union[None, str] = None,
-            main_sequence_feature: Union[None, str] = None,
+            reduce_output: Optional[str] = None,
+            main_sequence_feature: Optional[str] = None,
             **kwargs
     ):
         super().__init__()
@@ -309,9 +309,9 @@ class SequenceCombiner(LudwigModule):
     def __init__(
             self,
             input_features: dict,
-            reduce_output: Union[None, str] = None,
-            main_sequence_feature: Union[None, str] = None,
-            encoder: Union[None, str] = None,
+            reduce_output: Optional[str] = None,
+            main_sequence_feature: Optional[str] = None,
+            encoder: Optional[str] = None,
             **kwargs
     ):
         super().__init__()
