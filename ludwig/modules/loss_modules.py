@@ -72,13 +72,12 @@ class BWCEWLoss:
         penalty = (max_entropy - entropy) / max_entropy
         return torch.mean(penalty)
 
-    def forward(self, input: torch.Tensor, target: torch.Tensor):
-        logits = target[LOGITS]
+    def forward(self, predictions: torch.Tensor, target: torch.Tensor):
+        logits = predictions[LOGITS]
         target = target.long()
-        print(f'preds: {input.shape} {input.dtype} {input}')
+        print(f'preds: {predictions.shape} {predictions.dtype} {input}')
         print(f'target: {target.shape} {target.dtype} {target}')
         output = self.loss_fn(input, target)
-        output = output.backward()
         # robust lambda
         if self.robust_lambda > 0:
             train_loss = (
