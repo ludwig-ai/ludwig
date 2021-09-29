@@ -308,15 +308,20 @@ class SequenceConcatCombiner(LudwigModule):
 class SequenceCombiner(LudwigModule):
     def __init__(
             self,
-            reduce_output=None,
-            main_sequence_feature=None,
-            encoder=None,
+            input_features: dict,
+            reduce_output: Union[None, str] = None,
+            main_sequence_feature: Union[None, str] = None,
+            encoder: Union[None, str] = None,
             **kwargs
     ):
         super().__init__()
+        self.name = 'SequenceCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
+
         self.combiner = SequenceConcatCombiner(
+            input_features,
             reduce_output=None,
             main_sequence_feature=main_sequence_feature
         )
@@ -332,7 +337,7 @@ class SequenceCombiner(LudwigModule):
                 self.encoder_obj.supports_masking):
             self.supports_masking = True
 
-    def __call__(
+    def forward(
             self,
             inputs,  # encoder outputs
             training=None,

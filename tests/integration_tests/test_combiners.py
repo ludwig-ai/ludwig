@@ -235,7 +235,10 @@ def test_sequence_concat_combiner(
 def test_sequence_combiner(
         encoder_outputs, main_sequence_feature, encoder, reduce_output
 ):
+    encoder_outputs_dict, input_features_dict = encoder_outputs
+
     combiner = SequenceCombiner(
+        input_features_dict,
         main_sequence_feature=main_sequence_feature,
         encoder=encoder,
         reduce_output=reduce_output,
