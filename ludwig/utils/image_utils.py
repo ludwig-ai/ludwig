@@ -86,6 +86,16 @@ def is_image(src_path, img_entry):
         return False
 
 
+# For image inference, want to bias towards both readable images, but also account for unreadable (i.e. expired) urls
+# with image extensions
+def is_image_score(src_path, img_entry):
+    if is_image(src_path, img_entry):
+        return 1
+    elif isinstance(img_entry, str) and img_entry.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+        return 0.5
+    return 0
+
+
 def read_image(img):
     if isinstance(img, str):
         return read_image_from_str(img)
