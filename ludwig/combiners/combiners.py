@@ -16,15 +16,13 @@
 # ==============================================================================
 import logging
 from typing import List
-
-# import tensorflow as tf
-# from tensorflow.keras.layers import LayerNormalization
-# from tensorflow.keras.layers import Dense
-# from tensorflow.keras.layers import concatenate
+import numpy as np
+from typing import Union
 
 import torch
 from torch.nn import Module
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.utils.torch_utils import LudwigModule, \
+    sequence_mask as torch_sequence_mask
 
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
@@ -38,7 +36,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
@@ -46,24 +44,24 @@ logger = logging.getLogger(__name__)
 class ConcatCombiner(LudwigModule):
     def __init__(
             self,
-            input_features=None,
-            fc_layers=None,
-            num_fc_layers=None,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
+            input_features: dict = None,
+            fc_layers: Union[list, None] = None,
+            num_fc_layers: Union[None, int] = None,
+            fc_size: int = 256,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Union[None, str] = None,
+            bias_regularizer: Union[None, str] = None,
+            activity_regularizer: Union[None, str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
-            flatten_inputs=False,
-            residual=False,
+            norm: Union[None, str] = None,
+            norm_params: Union[None, dict] = None,
+            activation: str = 'relu',
+            dropout: float = 0,
+            flatten_inputs: bool = False,
+            residual: bool = False,
             **kwargs
     ):
         super().__init__()
@@ -119,15 +117,14 @@ class ConcatCombiner(LudwigModule):
 
         # ================ Flatten ================
         if self.flatten_inputs:
-            batch_size = tf.shape(encoder_outputs[0])[0]
+            batch_size = encoder_outputs[0].shape[0]
             encoder_outputs = [
-                tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+                torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
             ]
 
         # ================ Concat ================
         if len(encoder_outputs) > 1:
             hidden = torch.cat(encoder_outputs, 1)
-            #hidden = concatenate(encoder_outputs, -1)
         else:
             hidden = list(encoder_outputs)[0]
 
@@ -150,8 +147,12 @@ class ConcatCombiner(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        shapes = [self.input_features[k].output_shape[-1] for k in
-                  self.input_features]  # output shape not input shape
+        if self.flatten_inputs:
+            shapes = [np.prod(self.input_features[k].output_shape) for k in
+                      self.input_features]
+        else:
+            shapes = [self.input_features[k].output_shape[-1] for k in
+                      self.input_features]  # output shape not input shape
         return torch.Size([sum(shapes)])
 
     @property
@@ -165,20 +166,23 @@ class ConcatCombiner(LudwigModule):
 class SequenceConcatCombiner(LudwigModule):
     def __init__(
             self,
-            reduce_output=None,
-            main_sequence_feature=None,
+            input_features: dict,
+            reduce_output: Union[None, str] = None,
+            main_sequence_feature: Union[None, str] = None,
             **kwargs
     ):
         super().__init__()
+        self.name = 'SequenceConcatCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
         self.main_sequence_feature = main_sequence_feature
 
-    def __call__(
+    def forward(
             self,
             inputs,  # encoder outputs
             training=None,
@@ -257,9 +261,9 @@ class SequenceConcatCombiner(LudwigModule):
                     representations.append(if_representation)
 
                 elif len(if_representation.shape) == 2:
-                    multipliers = tf.constant([1, sequence_max_length, 1])
-                    tiled_representation = tf.tile(
-                        tf.expand_dims(if_representation, 1),
+                    multipliers = (1, sequence_max_length, 1)
+                    tiled_representation = torch.tile(
+                        torch.unsqueeze(if_representation, 1),
                         multipliers
                     )
                     representations.append(tiled_representation)
@@ -274,18 +278,18 @@ class SequenceConcatCombiner(LudwigModule):
                         )
                     )
 
-        hidden = tf.concat(representations, 2)
+        hidden = torch.cat(representations, 2)
         logger.debug('  concat_hidden: {0}'.format(hidden))
 
         # ================ Mask ================
         # todo future: maybe modify this with TF2 mask mechanics
-        sequence_mask = tf.sequence_mask(
+        sequence_mask = torch_sequence_mask(
             sequence_length,
             sequence_max_length
         )
-        hidden = tf.multiply(
+        hidden = torch.multiply(
             hidden,
-            tf.cast(tf.expand_dims(sequence_mask, -1), dtype=tf.float32)
+            torch.unsqueeze(sequence_mask, -1).type(torch.float32)
         )
 
         # ================ Reduce ================
@@ -304,15 +308,20 @@ class SequenceConcatCombiner(LudwigModule):
 class SequenceCombiner(LudwigModule):
     def __init__(
             self,
-            reduce_output=None,
-            main_sequence_feature=None,
-            encoder=None,
+            input_features: dict,
+            reduce_output: Union[None, str] = None,
+            main_sequence_feature: Union[None, str] = None,
+            encoder: Union[None, str] = None,
             **kwargs
     ):
         super().__init__()
+        self.name = 'SequenceCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
+
         self.combiner = SequenceConcatCombiner(
+            input_features,
             reduce_output=None,
             main_sequence_feature=main_sequence_feature
         )
@@ -328,7 +337,7 @@ class SequenceCombiner(LudwigModule):
                 self.encoder_obj.supports_masking):
             self.supports_masking = True
 
-    def __call__(
+    def forward(
             self,
             inputs,  # encoder outputs
             training=None,
