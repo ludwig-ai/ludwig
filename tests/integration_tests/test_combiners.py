@@ -21,10 +21,10 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 BATCH_SIZE = 16
 SEQ_SIZE = 12
-HIDDEN_SIZE = 128
+HIDDEN_SIZE = 24
 OTHER_HIDDEN_SIZE = 32
-FC_SIZE = 64
-BASE_FC_SIZE = 256
+FC_SIZE = 8
+BASE_FC_SIZE = 16
 
 
 # emulate Input Feature class.  Need to provide output_shape property to
@@ -134,7 +134,7 @@ def encoder_comparator_outputs():
 @pytest.mark.parametrize("number_inputs", [None, 1])
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer",
-                         [None, [{"fc_size": 64}, {"fc_size": 64}]])
+                         [None, [{"fc_size": FC_SIZE}, {"fc_size": FC_SIZE}]])
 def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
                          number_inputs):
     encoder_outputs_dict, input_features_dict = encoder_outputs
