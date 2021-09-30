@@ -158,6 +158,7 @@ class Embed(LudwigModule):
 
     def forward(self, inputs: torch.Tensor):
         embedded = self.embeddings(inputs.long())
+        embedded = torch.sum(embedded, dim=1)
         if self.dropout:
             embedded = self.dropout(embedded)
         return embedded
@@ -168,7 +169,7 @@ class Embed(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.vocab_size, self.embedding_size])
+        return torch.Size([self.embedding_size])
 
 class EmbedWeighted(LudwigModule):
     def __init__(
@@ -229,7 +230,7 @@ class EmbedWeighted(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.vocab_size, self.embedding_size])
+        return torch.Size([self.embedding_size])
 
 
 # TODO(shreya): Implement sparse embedding lookup.
