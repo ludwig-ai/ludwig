@@ -65,7 +65,7 @@ class SetSparseEncoder(SetEncoder):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        logger.debug('  EmbedSparse')
+        logger.debug('  Embed')
         self.embed = Embed(
             vocab,
             embedding_size,
@@ -81,7 +81,7 @@ class SetSparseEncoder(SetEncoder):
         logger.debug('  FCStack')
         # TODO(shreya): Make sure this is updated when FCStack is updated
         self.fc_stack = FCStack(
-            first_layer_input_size=self.embed.output_shape,
+            first_layer_input_size=self.embed.output_shape[0],
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,

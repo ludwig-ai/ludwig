@@ -519,7 +519,7 @@ class SigmoidCrossEntropyLoss(nn.Module):
         self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
 
     def forward(self, y: torch.Tensor, y_pred: torch.Tensor):
-        if y.ndim != 2:
+        if y_pred.ndim != 2:
             raise RuntimeError(
                 'SigmoidCrossEntropyLoss currently supported for 2D tensors.')
 

@@ -14,20 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
-import numpy as np
-
-# import tensorflow as tf
+import torch
 from torch import nn
 
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
 from ludwig.utils.torch_utils import reg_loss, LudwigModule
-
-import torch
-from torch.nn import Module
 
 logger = logging.getLogger(__name__)
 
@@ -39,32 +34,36 @@ def embedding_matrix(
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
         force_embedding_size: bool = False,
-        embedding_initializer: Optional[str] = None,
+        embedding_initializer: Optional[Union[str, Dict]] = None,
 ) -> Tuple[nn.Module, int]:
+    """ Returns initialized torch.nn.Embedding module and embedding size. """
+
     vocab_size = len(vocab)
     if representation == 'dense':
-        if pretrained_embeddings is not None and pretrained_embeddings is not False:
+        if pretrained_embeddings:
             embeddings_matrix = load_pretrained_embeddings(
                 pretrained_embeddings, vocab
             )
             if embeddings_matrix.shape[-1] != embedding_size:
-                raise ValueError(
-                    'The size of the pretrained embeddings is {}, '
-                    'but the specified embedding_size is {}. '
-                    'Please change the embedding_size accordingly.'.format(
-                        embeddings_matrix.shape[-1],
-                        embedding_size
-                    ))
+                if not force_embedding_size:
+                    embedding_size = embeddings_matrix.shape[-1]
+                    logger.info(
+                        f'Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.')
+                else:
+                    raise ValueError(
+                        f'The size of the pretrained embeddings is '
+                        f'{embeddings_matrix.shape[-1]}, but the specified '
+                        f'embedding_size is {embedding_size}. Please change '
+                        f'the embedding_size accordingly.')
             embedding_initializer_obj = torch.tensor(
                 embeddings_matrix, dtype=torch.float32)
 
         else:
             if vocab_size < embedding_size and not force_embedding_size:
                 logger.info(
-                    '  embedding_size ({}) is greater than vocab_size ({}). '
-                    'Setting embedding size to be equal to vocab_size.'.format(
-                        embedding_size, vocab_size
-                    ))
+                    f'  embedding_size ({embedding_size}) is greater than '
+                    f'vocab_size ({vocab_size}). Setting embedding size to be '
+                    f'equal to vocab_size.')
                 embedding_size = vocab_size
 
             if embedding_initializer is not None:
@@ -167,7 +166,7 @@ class Embed(LudwigModule):
             self.embeddings, inputs, name='embeddings_lookup'
         )
         '''
-        embedded = self.embeddings(inputs)
+        embedded = self.embeddings(inputs.long())
 
         if self.dropout:
             embedded = self.dropout(embedded, training=training)
