@@ -120,6 +120,7 @@ def embedding_matrix_on_device(
 
 
 class Embed(LudwigModule):
+    """ Module to embed Category, Date and H3 data types. """
     def __init__(
             self,
             vocab: List[str],
@@ -156,8 +157,73 @@ class Embed(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         embedded = self.embeddings(inputs.long())
+        embedded = torch.squeeze(embedded, dim=1)
+        if self.dropout:
+            embedded = self.dropout(embedded)
+        return embedded
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])
+
+
+class EmbedSet(LudwigModule):
+    """ Module to embed Set data types, works on multi-hot encoded input. """
+    def __init__(
+            self,
+            vocab: List[str],
+            embedding_size: int,
+            representation: str = 'dense',
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            force_embedding_size: bool = False,
+            embeddings_on_cpu: bool = False,
+            dropout: float = 0.0,
+            embedding_initializer: Optional[Union[str, Dict]] = None,
+            embedding_regularizer: str = None
+    ):
+        super().__init__()
+        self.supports_masking = True
+
+        self.vocab_size = len(vocab)
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            embedding_initializer=embedding_initializer,
+        )
+
+        if embedding_regularizer:
+            self.add_loss(lambda: reg_loss(self.embeddings, embedding_regularizer))
+
+        if dropout > 0:
+            self.dropout = torch.nn.Dropout(p=dropout)
+        else:
+            self.dropout = None
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        """
+        Params:
+            inputs: Boolean multi-hot tensor of size [batch x vocab_size], where
+                    inputs[b, i] indicates that token i is present in sample b.
+        """
+        # Convert multi-hot input to input of indices
+        inputs = inputs.int() * torch.arange(self.vocab_size)
+        embedded = self.embeddings(inputs.long())
+        # Mask out the 0th embedding
+        mask = torch.unsqueeze(inputs, -1)
+        embedded = embedded * mask
+        # Sum over all positive tokens
         embedded = torch.sum(embedded, dim=1)
         if self.dropout:
             embedded = self.dropout(embedded)
@@ -171,7 +237,13 @@ class Embed(LudwigModule):
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
 
+    @property
+    def input_dtype(self):
+        return torch.bool
+
+
 class EmbedWeighted(LudwigModule):
+    """ Module to embed Bag data type, works on input of token frequencies. """
     def __init__(
             self,
             vocab: List[str],
@@ -203,25 +275,24 @@ class EmbedWeighted(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        """
+        Params:
+            inputs: Tensor of frequences, where inputs[b, i] represents
+                    frequency of token i in sample b of batch.
+        """
+        # Convert to multi-hot input
         signed_input = (inputs != 0).type(torch.int32)
-
-        # TODO(shreya): Check correctness
         multiple_hot_indexes = (
             signed_input * torch.arange(self.vocab_size, dtype=torch.int32))
-
         embedded = self.embeddings(multiple_hot_indexes)
-
-        # Get the multipliers to embeddings
-        weights_mask = torch.unsqueeze(inputs, -1)
-
-        weighted_embedded = embedded * weights_mask
-
+        # Mask out the 0th embedding
+        mask = torch.unsqueeze(inputs, -1)
+        weighted_embedded = embedded * mask
+        # Sum over the all the positive indices
         embedded_reduced = torch.sum(weighted_embedded, dim=1)
-
         if self.dropout:
             embedded_reduced = self.dropout(embedded_reduced)
-
         return embedded_reduced
 
     @property
@@ -295,6 +366,7 @@ class EmbedWeighted(LudwigModule):
 
 #         # return embedded_reduced
 #         return None
+
 
 class EmbedSequence(LudwigModule):
     def __init__(

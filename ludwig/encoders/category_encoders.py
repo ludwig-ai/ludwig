@@ -70,22 +70,23 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.int32
 
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
-        embedded = self.embed(
-            inputs, training=training, mask=mask
-        )
+        embedded = self.embed(inputs)
         return embedded
 
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
 @register(name='sparse')
 class CategoricalSparseEncoder(CategoricalEncoder):
@@ -119,18 +120,20 @@ class CategoricalSparseEncoder(CategoricalEncoder):
         )
         self.embedding_size = self.embed.embedding_size
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.int32
 
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
-        embedded = self.embed(
-            inputs, training=training, mask=mask
-        )
+        embedded = self.embed(inputs)
         return embedded
 
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.embedding_size])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
