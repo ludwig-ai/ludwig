@@ -539,7 +539,7 @@ class JaccardMetric(Metric):
 
     def update(self, y_true: torch.Tensor, y_pred: torch.Tensor) -> None:
         self.loss.append(self.jaccard_metric(
-            y_pred.type(torch.bool), y_true.type(torch.bool)
+            y_pred.type(torch.bool), y_true[PREDICTIONS].type(torch.bool)
         ))
 
     def compute(self) -> torch.Tensor:

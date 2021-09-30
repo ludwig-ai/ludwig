@@ -153,6 +153,10 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     encoder_registry = ENCODER_REGISTRY
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
+
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = 'classifier'
