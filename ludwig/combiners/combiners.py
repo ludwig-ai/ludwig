@@ -364,6 +364,7 @@ class SequenceCombiner(LudwigModule):
             encoder, sequence_encoder_registry)(
             should_embed=False,
             reduce_output=reduce_output,
+            embedding_size=self.combiner.output_shape[1],
             max_sequence_length=self.combiner.output_shape[0],
             **kwargs
         )

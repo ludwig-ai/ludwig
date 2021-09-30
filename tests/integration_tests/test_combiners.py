@@ -246,16 +246,20 @@ def test_sequence_combiner(
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
-    for k in encoder_outputs:
-        hidden_size += encoder_outputs[k]["encoder_output"].shape[-1]
+    for k in encoder_outputs_dict:
+        hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
     # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    combiner_output = combiner(encoder_outputs_dict)
 
-    # required key present
-    assert "combiner_output" in results
+    # correct data structure
+    assert isinstance(combiner_output, dict)
 
-    combiner_shape = results["combiner_output"].shape
+    # required key present and correct data type
+    assert "combiner_output" in combiner_output
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+
+    combiner_shape = combiner_output["combiner_output"].shape
     # test for correct dimension
     if reduce_output:
         assert len(combiner_shape) == 2
@@ -270,9 +274,9 @@ def test_sequence_combiner(
     default_fc_size = 256
 
     if "parallel" in encoder:
-        combiner_shape[-1] == default_layer * default_fc_size
+        assert combiner_shape[-1] == default_layer * default_fc_size
     else:
-        combiner_shape[-1] == default_fc_size
+        assert combiner_shape[-1] == default_fc_size
 
 
 def tabnet_encoder_outputs():
