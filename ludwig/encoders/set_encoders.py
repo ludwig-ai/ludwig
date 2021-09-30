@@ -65,6 +65,8 @@ class SetSparseEncoder(SetEncoder):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        self.vocab_size = len(vocab)
+
         logger.debug('  Embed')
         self.embed = Embed(
             vocab,
@@ -81,7 +83,7 @@ class SetSparseEncoder(SetEncoder):
         logger.debug('  FCStack')
         # TODO(shreya): Make sure this is updated when FCStack is updated
         self.fc_stack = FCStack(
-            first_layer_input_size=self.embed.output_shape[0],
+            first_layer_input_size=self.embed.output_shape[-1],
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -97,21 +99,23 @@ class SetSparseEncoder(SetEncoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor):
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
+        Params:
+            inputs: The inputs fed into the encoder.
+                    Shape: [batch x vocab_size], type tf.int32.
 
-            :param return: embeddings of shape [batch x embed size], type tf.float32
+        Returns:
+            Embeddings of shape [batch x vocab_size x embed size], type float32.
         """
-        hidden = self.embed(inputs, training=training, mask=mask)
-        hidden = self.fc_stack(hidden, training=training, mask=mask)
+        hidden = self.embed(inputs)
+        hidden = self.fc_stack(hidden)
 
         return hidden
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([1])
+        return torch.Size([self.vocab_size])
 
     @property
     def output_shape(self) -> torch.Size:

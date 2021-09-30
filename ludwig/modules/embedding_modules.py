@@ -122,20 +122,21 @@ def embedding_matrix_on_device(
 class Embed(LudwigModule):
     def __init__(
             self,
-            vocab,
-            embedding_size,
-            representation='dense',
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            force_embedding_size=False,
-            embeddings_on_cpu=False,
-            dropout=0.0,
-            embedding_initializer=None,
-            embedding_regularizer=None
+            vocab: List[str],
+            embedding_size: int,
+            representation: str = 'dense',
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            force_embedding_size: bool = False,
+            embeddings_on_cpu: bool = False,
+            dropout: float = 0.0,
+            embedding_initializer: Optional[Union[str, Dict]] = None,
+            embedding_regularizer: str = None
     ):
         super().__init__()
         self.supports_masking = True
 
+        self.vocab_size = len(vocab)
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
@@ -148,11 +149,6 @@ class Embed(LudwigModule):
         )
 
         if embedding_regularizer:
-            '''
-            embedding_regularizer_obj = tf.keras.regularizers.get(
-                embedding_regularizer)
-            self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
-            '''
             self.add_loss(lambda: reg_loss(self.embeddings, embedding_regularizer))
 
         if dropout > 0:
@@ -160,26 +156,19 @@ class Embed(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs, training=None, mask=None):
-        '''
-        embedded = tf.nn.embedding_lookup(
-            self.embeddings, inputs, name='embeddings_lookup'
-        )
-        '''
+    def forward(self, inputs: torch.Tensor):
         embedded = self.embeddings(inputs.long())
-
         if self.dropout:
-            embedded = self.dropout(embedded, training=training)
-
+            embedded = self.dropout(embedded)
         return embedded
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([1])
+        return torch.Size([self.vocab_size])
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.embedding_size])
+        return torch.Size([self.vocab_size, self.embedding_size])
 
 class EmbedWeighted(LudwigModule):
     def __init__(
@@ -206,7 +195,7 @@ class EmbedWeighted(LudwigModule):
             embeddings_on_cpu=embeddings_on_cpu,
             embedding_initializer=embedding_initializer,
         )
-        self.vocab_length = len(vocab)
+        self.vocab_size = len(vocab)
 
         if dropout > 0:
             self.dropout = nn.Dropout(dropout)
@@ -218,7 +207,7 @@ class EmbedWeighted(LudwigModule):
 
         # TODO(shreya): Check correctness
         multiple_hot_indexes = (
-            signed_input * torch.arange(self.vocab_length, dtype=torch.int32))
+            signed_input * torch.arange(self.vocab_size, dtype=torch.int32))
 
         embedded = self.embeddings(multiple_hot_indexes)
 
@@ -236,11 +225,11 @@ class EmbedWeighted(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([1])
+        return torch.Size([self.vocab_size])
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.embedding_size])
+        return torch.Size([self.vocab_size, self.embedding_size])
 
 
 # TODO(shreya): Implement sparse embedding lookup.
