@@ -18,6 +18,7 @@ import logging
 import numpy as np
 import typing
 from typing import Union, Optional, List
+from functools import lru_cache
 
 import torch
 from torch.nn import Module
@@ -182,6 +183,33 @@ class SequenceConcatCombiner(LudwigModule):
             self.supports_masking = True
         self.main_sequence_feature = main_sequence_feature
 
+    @property
+    def input_shape(self) -> torch.Size:
+        seq_size = None
+        for k in self.input_features:
+            # dim-2 output_shape implies a sequence [seq_size, hidden]
+            if len(self.input_features[k].output_shape) == 2:
+                seq_size = self.input_features[k].output_shape[0]
+                break
+
+        shapes = [self.input_features[k].output_shape[-1] for k in
+                  self.input_features]  # output shape not input shape
+        return torch.Size([seq_size, sum(shapes)])
+
+    @property
+    @lru_cache(maxsize=1)
+    def output_shape(self) -> torch.Size:
+        simulated_encoder_output = {}
+        for k in self.input_features:
+            simulated_encoder_output[k] = {
+                'encoder_output': torch.rand(2, *self.input_features[
+                    k].output_shape,
+                                             dtype=torch.float32)
+            }
+
+        output_tensor = self.forward(simulated_encoder_output)
+        return output_tensor['combiner_output'].size()[1:]
+
     def forward(
             self,
             inputs,  # encoder outputs
@@ -326,10 +354,17 @@ class SequenceCombiner(LudwigModule):
             main_sequence_feature=main_sequence_feature
         )
 
+        # todo: turn into logger.debug()
+        print(
+            f'combiner input shape {self.combiner.input_shape}, '
+            f'output shape {self.combiner.output_shape}'
+        )
+
         self.encoder_obj = get_from_registry(
             encoder, sequence_encoder_registry)(
             should_embed=False,
             reduce_output=reduce_output,
+            max_sequence_length=self.combiner.output_shape[0],
             **kwargs
         )
 
