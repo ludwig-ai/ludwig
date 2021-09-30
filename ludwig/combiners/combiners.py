@@ -185,6 +185,9 @@ class SequenceConcatCombiner(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
+        # determine sequence size by finding the first sequence tensor
+        # assume all the sequences are of the same size, if not true
+        # this will be caught during processing
         seq_size = None
         for k in self.input_features:
             # dim-2 output_shape implies a sequence [seq_size, hidden]
@@ -192,6 +195,8 @@ class SequenceConcatCombiner(LudwigModule):
                 seq_size = self.input_features[k].output_shape[0]
                 break
 
+        # collect the size of the last dimension for all input feature
+        # encoder outputs
         shapes = [self.input_features[k].output_shape[-1] for k in
                   self.input_features]  # output shape not input shape
         return torch.Size([seq_size, sum(shapes)])
@@ -199,6 +204,7 @@ class SequenceConcatCombiner(LudwigModule):
     @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
+        # generate simulated input tensor
         simulated_encoder_output = {}
         for k in self.input_features:
             simulated_encoder_output[k] = {
@@ -207,7 +213,10 @@ class SequenceConcatCombiner(LudwigModule):
                                              dtype=torch.float32)
             }
 
+        # run tensor input through forward() method to generate output tensor
         output_tensor = self.forward(simulated_encoder_output)
+
+        # return shape of the output tensor
         return output_tensor['combiner_output'].size()[1:]
 
     def forward(
@@ -355,7 +364,7 @@ class SequenceCombiner(LudwigModule):
         )
 
         # todo: turn into logger.debug()
-        print(
+        logger.debug(
             f'combiner input shape {self.combiner.input_shape}, '
             f'output shape {self.combiner.output_shape}'
         )
@@ -372,6 +381,42 @@ class SequenceCombiner(LudwigModule):
         if (hasattr(self.encoder_obj, 'supports_masking') and
                 self.encoder_obj.supports_masking):
             self.supports_masking = True
+
+    @property
+    def input_shape(self) -> torch.Size:
+        # determine sequence size by finding the first sequence tensor
+        # assume all the sequences are of the same size, if not true
+        # this will be caught during processing
+        seq_size = None
+        for k in self.input_features:
+            # dim-2 output_shape implies a sequence [seq_size, hidden]
+            if len(self.input_features[k].output_shape) == 2:
+                seq_size = self.input_features[k].output_shape[0]
+                break
+
+        # collect the size of the last dimension for all input feature
+        # encoder outputs
+        shapes = [self.input_features[k].output_shape[-1] for k in
+                  self.input_features]
+        return torch.Size([seq_size, sum(shapes)])
+
+    @property
+    @lru_cache(maxsize=1)
+    def output_shape(self) -> torch.Size:
+        # generate simulated input tensor
+        simulated_encoder_output = {}
+        for k in self.input_features:
+            simulated_encoder_output[k] = {
+                'encoder_output': torch.rand(2, *self.input_features[
+                    k].output_shape,
+                                             dtype=torch.float32)
+            }
+
+        # run tensor input through forward() method to generate output tensor
+        output_tensor = self.forward(simulated_encoder_output)
+
+        # return shape of the output tensor
+        return output_tensor['combiner_output'].size()[1:]
 
     def forward(
             self,

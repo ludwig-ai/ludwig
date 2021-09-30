@@ -25,6 +25,7 @@ HIDDEN_SIZE = 24
 OTHER_HIDDEN_SIZE = 32
 FC_SIZE = 8
 BASE_FC_SIZE = 16
+NUM_FILTERS = 20
 
 
 # emulate Input Feature class.  Need to provide output_shape property to
@@ -242,6 +243,9 @@ def test_sequence_combiner(
         main_sequence_feature=main_sequence_feature,
         encoder=encoder,
         reduce_output=reduce_output,
+        # following emulates encoder parameters passed in from config file
+        fc_size=FC_SIZE,
+        num_fc_layers=3,
     )
 
     # calculate expected hidden size for concatenated tensors
@@ -259,24 +263,9 @@ def test_sequence_combiner(
     assert "combiner_output" in combiner_output
     assert isinstance(combiner_output['combiner_output'], torch.Tensor)
 
-    combiner_shape = combiner_output["combiner_output"].shape
     # test for correct dimension
-    if reduce_output:
-        assert len(combiner_shape) == 2
-    else:
-        assert len(combiner_shape) == 3
-
-    # Shape test assumes on Ludwig sequence encoder defaults
-    #   parallel encoders: # layers = 4, fc_size=256
-    #   non-parallel encoders: fc_size=256
-    # if defaults change, then this test has to be updated
-    default_layer = 4
-    default_fc_size = 256
-
-    if "parallel" in encoder:
-        assert combiner_shape[-1] == default_layer * default_fc_size
-    else:
-        assert combiner_shape[-1] == default_fc_size
+    assert combiner_output['combiner_output'].shape \
+           == (BATCH_SIZE, *combiner.output_shape)
 
 
 def tabnet_encoder_outputs():
