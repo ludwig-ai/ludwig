@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from typing import Dict, List, Optional, Union
 
 import torch
 
@@ -43,14 +44,14 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
 
     def __init__(
             self,
-            vocab,
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
-            dropout=0.0,
-            embedding_initializer=None,
-            embedding_regularizer=None,
+            vocab: List[str],
+            embedding_size: int = 50,
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            embeddings_on_cpu: bool = False,
+            dropout: float = 0.0,
+            embedding_initializer: Optional[Union[str, Dict]] = None,
+            embedding_regularizer: str = None,
             **kwargs
     ):
         super().__init__()
@@ -93,14 +94,14 @@ class CategoricalSparseEncoder(CategoricalEncoder):
 
     def __init__(
             self,
-            vocab,
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
-            dropout=0.0,
-            embedding_initializer=None,
-            embedding_regularizer=None,
+            vocab: List[str],
+            embedding_size: int = 50,
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            embeddings_on_cpu: bool = False,
+            dropout: float = 0.0,
+            embedding_initializer: Optional[Union[str, Dict]] = None,
+            embedding_regularizer: str = None,
             **kwargs
     ):
         super().__init__()

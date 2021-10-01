@@ -158,6 +158,8 @@ class Embed(LudwigModule):
             self.dropout = None
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        if inputs.ndim != 2 or inputs.shape[1] != 1:
+            raise RuntimeError(f'Embed only takes inputs of shape [batch x 1].')
         embedded = self.embeddings(inputs.long())
         embedded = torch.squeeze(embedded, dim=1)
         if self.dropout:

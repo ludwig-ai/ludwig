@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 from abc import ABC
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import torch
 
@@ -53,13 +53,13 @@ class SetSparseEncoder(SetEncoder):
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0.0,
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict[str, Any]] = None,
+            activation: str = 'relu',
+            dropout: float=0.0,
             **kwargs
     ):
         super().__init__()
@@ -99,7 +99,7 @@ class SetSparseEncoder(SetEncoder):
             default_dropout=dropout,
         )
 
-    def forward(self, inputs: torch.Tensor):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
         Params:
             inputs: The inputs fed into the encoder.
