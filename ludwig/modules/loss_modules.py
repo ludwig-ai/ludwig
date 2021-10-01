@@ -14,50 +14,52 @@
 # limitations under the License.
 # ==============================================================================
 
-from typing import Dict
 
 import torch
 from torch import nn
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
-import numpy as np
+
+import ludwig.utils.loss_utils as utils
 from ludwig.constants import LOGITS
-# from ludwig.utils.tf_utils import sequence_length_2D
 
 # used for Laplace smoothing for candidate samplers
-
 EPSILON = 1.0e-10
 
 
-class LogitsLoss(nn.Module):
-    def __call__(self, input, target):
-        if isinstance(input, dict) and LOGITS in input:
-            input = input[LOGITS]
-        return super().__call__(input, target)
+# class LogitsLoss(nn.Module):
+#     def __call__(self, input, target):
+#         if isinstance(input, dict) and LOGITS in input:
+#             input = input[LOGITS]
+#         return super().__call__(input, target)
 
 
-class MSELoss(LogitsLoss, _MSELoss):
+class MSELoss(_MSELoss):
+    """ Mean squared error. """
     pass
 
 
-class MAELoss(LogitsLoss, L1Loss):
+class MAELoss(L1Loss):
+    """ Mean absolute error. """
     pass
 
 
-class RMSELoss(LogitsLoss):
+class RMSELoss(nn.Module):
+    """ Root mean square error. """
     def __init__(self, **kwargs):
         super().__init__()
         self.mse = nn.MSELoss(**kwargs)
 
-    def forward(self, input, target):
+    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return torch.sqrt(self.mse(input, target))
 
 
-class RMSPELoss(LogitsLoss):
+class RMSPELoss(nn.Module):
+    """ Root mean square percentage error. """
     def __init__(self, **kwargs):
         super().__init__()
 
-    def forward(self, input, target):
-        loss = rmspe_loss(target, input)
+    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        loss = utils.rmspe_loss(target, input)
         return loss
 
 
@@ -99,6 +101,7 @@ class BWCEWLoss:
         return train_mean_loss
 
 # TODO torch: test behavior parity with tf
+# TODO(shreya): Support use case with class weights
 class SoftmaxCrossEntropyLoss(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
@@ -177,16 +180,26 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 #         return loss
 #
 #
-# class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
-#     def __init__(self, feature_loss=None, name=None):
-#         super().__init__(name=name)
-#         self.feature_loss = feature_loss
-#
-#     def call(self, y, y_pred):
-#         loss = weighted_sigmoid_cross_entropy(
-#             y_pred[LOGITS], tf.cast(y, tf.float32), **self.feature_loss
-#         )
-#         return loss
+# TODO(shreya): Support use case with class weights
+class SigmoidCrossEntropyLoss(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
+
+    def forward(self, y: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
+        if y_pred.ndim != 2:
+            raise RuntimeError(
+                'SigmoidCrossEntropyLoss currently supported for 2D tensors.')
+
+        element_loss = self.loss_fn(
+            y_pred.type(torch.float32),
+            y[LOGITS].type(torch.float32)
+        )
+
+        # Reduce by sum along column dimension, mean along batch dimension.
+        loss = torch.sum(element_loss, dim=1)
+        loss = torch.mean(loss)
+        return loss
 #
 #
 # class SequenceSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
@@ -501,34 +514,3 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 #     else:
 #         raise ValueError("Unsupported sampler {}".format(sampler))
 #     return sampled_values
-
-
-def rmspe_loss(targets, predictions):
-    loss = torch.sqrt(
-        torch.mean(
-            torch.square(torch.divide(
-                torch.subtract(targets, predictions), targets))
-        )
-    )
-    return loss
-
-
-class SigmoidCrossEntropyLoss(nn.Module):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
-
-    def forward(self, y: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
-        if y_pred.ndim != 2:
-            raise RuntimeError(
-                'SigmoidCrossEntropyLoss currently supported for 2D tensors.')
-
-        element_loss = self.loss_fn(
-            y_pred.type(torch.float32),
-            y[LOGITS].type(torch.float32)
-        )
-
-        # Reduce by sum along column dimension, mean along batch dimension.
-        loss = torch.sum(element_loss, dim=1)
-        loss = torch.mean(loss)
-        return loss
