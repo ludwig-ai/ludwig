@@ -85,7 +85,7 @@ class ConcatCombiner(LudwigModule):
         if fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                first_layer_input_size=self.input_shape[-1],
+                first_layer_input_size=self._input_last_dimension_size,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -107,11 +107,39 @@ class ConcatCombiner(LudwigModule):
         if input_features and len(input_features) == 1 and fc_layers is None:
             self.supports_masking = True
 
+    @property
+    def _input_last_dimension_size(self) -> int:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        if self.flatten_inputs:
+            shapes = [np.prod(self.input_features[k].output_shape) for k in
+                      self.input_features]
+        else:
+            shapes = [self.input_features[k].output_shape[-1] for k in
+                      self.input_features]
+        return sum(shapes)
+
+    @property
+    def input_shape(self) -> dict:
+        # input to combiner is a dictionary of the input features encoder
+        # outputs, this property returns dictionary of output shapes for each
+        # input feature's encoder output shapes.
+        return {k: self.input_features[k].output_shape
+                for k in self.input_features}
+
+    @property
+    def output_shape(self) -> torch.Size:
+        psuedo_input = {k: torch.rand(2, *self.input_features[k].output_shape,
+                                      dtype=self.input_dtype)
+                        for k in self.input_features}
+        output_tensor = self.forward(psuedo_input)
+        return output_tensor['combiner_output'].size()[1:]
+
     def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
+            inputs: dict,  # encoder outputs
+            training: Optional[bool] = None,
+            mask: Optional[bool] = None,
             **kwargs
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
@@ -145,23 +173,6 @@ class ConcatCombiner(LudwigModule):
                     return_data[key] = value
 
         return return_data
-
-    @property
-    def input_shape(self) -> torch.Size:
-        if self.flatten_inputs:
-            shapes = [np.prod(self.input_features[k].output_shape) for k in
-                      self.input_features]
-        else:
-            shapes = [self.input_features[k].output_shape[-1] for k in
-                      self.input_features]  # output shape not input shape
-        return torch.Size([sum(shapes)])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        if self.fc_layers is not None:
-            return torch.Size([self.fc_layers[-1]['fc_size']])
-        else:
-            return self.input_shape
 
 
 class SequenceConcatCombiner(LudwigModule):
