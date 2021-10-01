@@ -139,7 +139,8 @@ class FCLayer(LudwigModule):
             # hidden = layer(hidden, training=training)
             hidden = layer(hidden)
             if i == self.activation_index and self.activity_regularizer:
-                self.activation_loss = reg_loss(hidden, self.activity_regularizer) / batch_size
+                self.activation_loss = reg_loss(
+                    hidden, self.activity_regularizer) / batch_size
 
         return hidden
 
