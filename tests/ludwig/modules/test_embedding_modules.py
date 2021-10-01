@@ -24,8 +24,8 @@ def test_embed(
     assert outputs.shape[1:] == embed.output_shape
 
 
-@pytest.mark.parametrize('vocab', [['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']])
-@pytest.mark.parametrize('embedding_size', [5, 10])
+@pytest.mark.parametrize('vocab', [['a', 'b', 'c', 'd']])
+@pytest.mark.parametrize('embedding_size', [3])
 @pytest.mark.parametrize('representation', ['dense', 'sparse'])
 def test_embed_set(
         vocab: List[str],

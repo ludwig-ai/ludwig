@@ -188,7 +188,8 @@ class EmbedSet(LudwigModule):
             embeddings_on_cpu: bool = False,
             dropout: float = 0.0,
             embedding_initializer: Optional[Union[str, Dict]] = None,
-            embedding_regularizer: str = None
+            embedding_regularizer: str = None,
+            aggregation_function: str = 'sum'
     ):
         super().__init__()
         self.supports_masking = True
@@ -213,6 +214,14 @@ class EmbedSet(LudwigModule):
         else:
             self.dropout = None
 
+        if aggregation_function == 'sum':
+            self.aggregation_function = torch.sum
+        elif aggregation_function == 'avg':
+            self.aggregation_function = torch.mean
+        else:
+            raise ValueError(
+                f'Unsupported aggregation function {aggregation_function}')
+
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
         Params:
@@ -226,7 +235,7 @@ class EmbedSet(LudwigModule):
         mask = torch.unsqueeze(inputs, -1)
         embedded = embedded * mask
         # Sum over all positive tokens
-        embedded = torch.sum(embedded, dim=1)
+        embedded = self.aggregation_function(embedded, dim=1)
         if self.dropout:
             embedded = self.dropout(embedded)
         return embedded
