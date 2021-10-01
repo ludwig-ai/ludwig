@@ -110,7 +110,6 @@ class LudwigModule(Module):
         raise NotImplementedError('Abstract class.')
 
     @property
-    @abstractmethod
     def output_shape(self) -> torch.Size:
         """ Returns size of the output tensor without the batch dimension."""
         return self._compute_output_shape()
