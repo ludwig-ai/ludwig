@@ -19,14 +19,21 @@ import torch
 from torch.nn import (Linear, LayerNorm, Dropout, ModuleList,
                       BatchNorm1d, BatchNorm2d)
 
-from ludwig.utils.torch_utils import LudwigModule, initializer_registry,\
+from ludwig.utils.torch_utils import LudwigModule, initializer_registry, \
     activations, reg_loss
 
 logger = logging.getLogger(__name__)
 
 
-
 class FCLayer(LudwigModule):
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.output_size])
 
     def __init__(
             self,
@@ -48,8 +55,11 @@ class FCLayer(LudwigModule):
     ):
         super().__init__()
 
-        #self.layers = []
+        # self.layers = []
         self.layers = ModuleList()
+
+        self.input_size = input_size
+        self.output_size = output_size
 
         '''
         self.layers.append(Dense(
@@ -90,11 +100,10 @@ class FCLayer(LudwigModule):
             self.activity_regularizer = activity_regularizer
             self.add_loss(lambda: self.activation_loss)
 
-
         if norm and norm_params is None:
             norm_params = {}
         if norm == 'batch':
-            #self.layers.append(BatchNormalization(**norm_params))
+            # self.layers.append(BatchNormalization(**norm_params))
             # might need if statement for 1d vs 2d? like images
             if input_rank == 2:
                 self.layers.append(BatchNorm1d(output_size, **norm_params))
@@ -109,7 +118,7 @@ class FCLayer(LudwigModule):
             self.layers.append(LayerNorm(output_size, **norm_params))
 
         # Dict for activation objects in pytorch?
-        #self.layers.append(Activations(activation))
+        # self.layers.append(Activations(activation))
         self.layers.append(activations[activation]())
         self.activation_index = len(self.layers) - 1
 
@@ -127,10 +136,10 @@ class FCLayer(LudwigModule):
         hidden = inputs
 
         for i, layer in enumerate(self.layers):
-            #hidden = layer(hidden, training=training)
+            # hidden = layer(hidden, training=training)
             hidden = layer(hidden)
             if i == self.activation_index and self.activity_regularizer:
-                self.activation_loss = reg_loss(hidden, self.activity_regularizer)/batch_size
+                self.activation_loss = reg_loss(hidden, self.activity_regularizer) / batch_size
 
         return hidden
 
@@ -203,7 +212,6 @@ class FCStack(LudwigModule):
             if 'dropout' not in layer:
                 layer['dropout'] = default_dropout
 
-        #self.stack = []
         self.stack = ModuleList()
 
         for i, layer in enumerate(self.layers):
@@ -228,15 +236,6 @@ class FCStack(LudwigModule):
             )
         self.residual = residual
 
-    '''
-    def build(
-            self,
-            input_shape,
-    ):
-        super().build(input_shape)
-        self.input_size = input_shape[-1]
-    '''
-
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
         prev_fc_layer_size = self.input_size
@@ -247,10 +246,14 @@ class FCStack(LudwigModule):
             else:
                 hidden = out
             # layers[0] is the dense layer in a FC layer
-            #prev_fc_layer_size = layer.layers[0].units
+            # prev_fc_layer_size = layer.layers[0].units
             prev_fc_layer_size = layer.layers[0].out_features
         return hidden
 
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.stack[-1].output_shape

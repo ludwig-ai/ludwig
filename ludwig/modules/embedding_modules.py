@@ -120,7 +120,7 @@ def embedding_matrix_on_device(
 
 
 class Embed(LudwigModule):
-    """ Module to embed Category, Date and H3 data types. """
+    """ Module to embed Category, Date and H3 data types."""
     def __init__(
             self,
             vocab: List[str],
@@ -168,7 +168,7 @@ class Embed(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([1])
+        return torch.Size([self.vocab])
 
     @property
     def output_shape(self) -> torch.Size:

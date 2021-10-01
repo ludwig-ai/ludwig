@@ -17,6 +17,7 @@
 import logging
 import math
 from abc import ABC
+from typing import Dict, List, Optional
 
 import torch
 
@@ -28,6 +29,16 @@ from ludwig.modules.fully_connected_modules import FCStack
 logger = logging.getLogger(__name__)
 
 ENCODER_REGISTRY = Registry()
+
+# YYYY (year)
+# MM (month)
+# DD (day)
+# W (weekday)
+# YDYD (yearday)
+# HH (hour)
+# MM (minutes)
+# SS (seconds)
+DATE_INPUT_SIZE = 19
 
 
 class DateEncoder(Encoder, ABC):
@@ -41,21 +52,21 @@ class DateEmbed(DateEncoder):
 
     def __init__(
             self,
-            embedding_size=10,
-            embeddings_on_cpu=False,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=10,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
+            embedding_size: int = 10,
+            embeddings_on_cpu: bool = False,
+            fc_layers: Optional[List[Dict]] = None,
+            num_fc_layers: int = 1,
+            fc_size: int = 10,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict] = None,
+            activation: str = 'relu',
+            dropout: float = 0,
             **kwargs
     ):
         """
@@ -109,7 +120,7 @@ class DateEmbed(DateEncoder):
 
         logger.debug('  year FCStack')
         self.year_fc = FCStack(
-            first_layer_input_size=embedding_size,
+            first_layer_input_size=1,
             num_layers=1,
             default_fc_size=1,
             default_use_bias=use_bias,
@@ -215,9 +226,22 @@ class DateEmbed(DateEncoder):
             embedding_regularizer=weights_regularizer
         )
 
+        # Summed sizes of all of the embeddings.
+        fc_layer_input_size = (
+                self.year_fc.output_shape[0] +
+                self.embed_month.output_shape[0] +
+                self.embed_day.output_shape[0] +
+                self.embed_weekday.output_shape[0] +
+                self.embed_yearday.output_shape[0] +
+                self.embed_hour.output_shape[0] +
+                self.embed_minute.output_shape[0] +
+                self.embed_second.output_shape[0]
+                + 1  # for periodic_second_of_day.
+        )
+
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
-            first_layer_input_size=embedding_size,
+            first_layer_input_size=fc_layer_input_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -235,13 +259,13 @@ class DateEmbed(DateEncoder):
 
     def forward(
             self,
-            inputs,
-            training=None,
-            mask=None
-    ):
+            inputs: torch.Tensor,
+            training: Optional[bool] = None,
+            mask: Optional[bool] = None
+    ) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
-                   Shape: [batch x 19], type torch.int8
+                   Shape: [batch x DATE_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
             :param training: bool specifying if in training mode (important for dropout)
             :type training: bool
@@ -318,7 +342,11 @@ class DateEmbed(DateEncoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([19])
+        return torch.Size([DATE_INPUT_SIZE])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
 
 
 @register(name='wave')
@@ -326,19 +354,19 @@ class DateWave(DateEncoder):
 
     def __init__(
             self,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=10,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
+            fc_layers: Optional[List[FCStack]] = None,
+            num_fc_layers: int = 1,
+            fc_size: int = 10,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict] = None,
+            activation: str = 'relu',
+            dropout: int = 0,
             **kwargs
     ):
         """
@@ -379,7 +407,7 @@ class DateWave(DateEncoder):
 
         logger.debug('  year FCStack')
         self.year_fc = FCStack(
-            first_layer_input_size=fc_size,
+            first_layer_input_size=1,
             num_layers=1,
             default_fc_size=1,
             default_use_bias=use_bias,
@@ -394,9 +422,15 @@ class DateWave(DateEncoder):
             default_dropout=dropout,
         )
 
+        # Summed sizes of all of the embeddings.
+        fc_layer_input_size = (
+                self.year_fc.output_shape[0] +
+                8  # for periodic_[month,day,weekday,yearday,hours,minutes,seconds,second_of_day].
+        )
+
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
-            first_layer_input_size=fc_size,
+            first_layer_input_size=fc_layer_input_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -414,13 +448,13 @@ class DateWave(DateEncoder):
 
     def forward(
             self,
-            inputs,
-            training=None,
-            mask=None
-    ):
+            inputs: torch.Tensor,
+            training: bool = None,
+            mask: bool = None
+    ) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
-                   Shape: [batch x 19], type torch.int8
+                   Shape: [batch x DATE_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
             :param training: bool specifying if in training mode (important for dropout)
             :type training: bool
@@ -465,4 +499,8 @@ class DateWave(DateEncoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([19])
+        return torch.Size([DATE_INPUT_SIZE])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
