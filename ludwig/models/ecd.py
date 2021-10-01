@@ -203,7 +203,7 @@ class ECD(LudwigModule):
                    regularization_lambda=0.0):
         #with tf.GradientTape() as tape:
         optimizer.zero_grad()
-        model_outputs = self((inputs, targets), training=True)
+        model_outputs = self((inputs, targets))
         loss, all_losses = self.train_loss(
             targets, model_outputs, regularization_lambda
         )
