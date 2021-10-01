@@ -128,6 +128,7 @@ class ConcatCombiner(LudwigModule):
                 for k in self.input_features}
 
     @property
+    @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
         psuedo_input = {k: torch.rand(2, *self.input_features[k].output_shape,
                                       dtype=self.input_dtype)
@@ -195,7 +196,9 @@ class SequenceConcatCombiner(LudwigModule):
         self.main_sequence_feature = main_sequence_feature
 
     @property
-    def input_shape(self) -> torch.Size:
+    def effective_input_shape(self) -> torch.Size:
+        # computes the effective shape of the input tensor after combining
+        # all the encoder outputs
         # determine sequence size by finding the first sequence tensor
         # assume all the sequences are of the same size, if not true
         # this will be caught during processing
@@ -213,21 +216,20 @@ class SequenceConcatCombiner(LudwigModule):
         return torch.Size([seq_size, sum(shapes)])
 
     @property
+    def input_shape(self) -> dict:
+        # input to combiner is a dictionary of the input features encoder
+        # outputs, this property returns dictionary of output shapes for each
+        # input feature's encoder output shapes.
+        return {k: self.input_features[k].output_shape
+                for k in self.input_features}
+
+    @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
-        # generate simulated input tensor
-        simulated_encoder_output = {}
-        for k in self.input_features:
-            simulated_encoder_output[k] = {
-                'encoder_output': torch.rand(2, *self.input_features[
-                    k].output_shape,
-                                             dtype=torch.float32)
-            }
-
-        # run tensor input through forward() method to generate output tensor
-        output_tensor = self.forward(simulated_encoder_output)
-
-        # return shape of the output tensor
+        psuedo_input = {k: torch.rand(2, *self.input_features[k].output_shape,
+                                      dtype=self.input_dtype)
+                        for k in self.input_features}
+        output_tensor = self.forward(psuedo_input)
         return output_tensor['combiner_output'].size()[1:]
 
     def forward(
