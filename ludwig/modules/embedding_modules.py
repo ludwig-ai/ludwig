@@ -168,7 +168,7 @@ class Embed(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.vocab])
+        return torch.Size([1])
 
     @property
     def output_shape(self) -> torch.Size:

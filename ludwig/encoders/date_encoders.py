@@ -283,42 +283,14 @@ class DateEmbed(DateEncoder):
             training=training,
             mask=mask
         )
-        embedded_month = self.embed_month(
-            input_vector[:, 1] - 1,
-            training=training,
-            mask=mask
-        )
-        embedded_day = self.embed_day(
-            input_vector[:, 2] - 1,
-            training=training,
-            mask=mask
-        )
-        embedded_weekday = self.embed_weekday(
-            input_vector[:, 3],
-            training=training,
-            mask=mask
-        )
+        embedded_month = self.embed_month(input_vector[:, 1].unsqueeze(1) - 1)
+        embedded_day = self.embed_day(input_vector[:, 2].unsqueeze(1) - 1)
+        embedded_weekday = self.embed_weekday(input_vector[:, 3].unsqueeze(1))
         embedded_yearday = self.embed_yearday(
-            input_vector[:, 4] - 1,
-            training=training,
-            mask=mask
-        )
-        embedded_hour = self.embed_hour(
-            input_vector[:, 5],
-            training=training,
-            mask=mask
-        )
-        embedded_minute = self.embed_minute(
-            input_vector[:, 6],
-            training=training,
-            mask=mask
-        )
-        embedded_second = self.embed_second(
-            input_vector[:, 7],
-            training=training,
-            mask=mask
-        )
-
+            input_vector[:, 4].unsqueeze(1) - 1)
+        embedded_hour = self.embed_hour(input_vector[:, 5].unsqueeze(1))
+        embedded_minute = self.embed_minute(input_vector[:, 6].unsqueeze(1))
+        embedded_second = self.embed_second(input_vector[:, 7].unsqueeze(1))
         periodic_second_of_day = torch.sin(
             input_vector[:, 8:9].type(torch.float32)
             * (2 * math.pi / 86400)
