@@ -70,49 +70,51 @@ class DateEmbed(DateEncoder):
             **kwargs
     ):
         """
-            :param embedding_size: The maximum embedding size, the actual size will be
-                `min(vocabulary_size, embedding_size)` for `dense` representations and
-                exactly `vocabulary_size` for the `sparse` encoding, where
-                `vocabulary_size` is the number of different strings appearing in the
-                training set in the column the feature is named after (plus 1 for `<UNK>`).
+            :param embedding_size: The maximum embedding size, the actual size
+                will be `min(vocabulary_size, embedding_size)` for `dense`
+                representations and exactly `vocabulary_size` for the `sparse`
+                encoding, where `vocabulary_size` is the number of different
+                strings appearing in the training set in the column the feature
+                is named after (plus 1 for `<UNK>`).
             :type embedding_size: Integer
             :param embeddings_on_cpu: by default embeddings matrices are stored
-                   on GPU memory if a GPU is used, as it allows
-                   for faster access, but in some cases the embedding matrix
-                   may be really big and this parameter forces the placement
-                   of the embedding matrix in regular memory and the CPU is used
-                   to resolve them, slightly slowing down the process
-                   as a result of data transfer between CPU and GPU memory.
+                on GPU memory if a GPU is used, as it allows for faster access,
+                but in some cases the embedding matrix may be really big and
+                this parameter forces the placement of the embedding matrix in
+                regular memory and the CPU is used to resolve them, slightly
+                slowing down the process as a result of data transfer between
+                CPU and GPU memory.
             :param fc_layers: list of dictionaries containing the parameters of
-                    all the fully connected layers
+                all the fully connected layers.
             :type fc_layers: List
-            :param num_fc_layers: Number of stacked fully connected layers
+            :param num_fc_layers: Number of stacked fully connected layers.
             :type num_fc_layers: Integer
-            :param fc_size: Size of each layer
+            :param fc_size: Size of each layer.
             :type fc_size: Integer
-            :param use_bias: bool determines where to use a bias vector
+            :param use_bias: bool determines where to use a bias vector.
             :type use_bias: bool
             :param weights_initializer: Initializer for the weights (aka kernel)
-                   matrix
+                matrix.
             :type weights_initializer: string
-            :param bias_initializer: Initializer for the bias vector
+            :param bias_initializer: Initializer for the bias vector.
             :type bias_initializer: string
             :param weights_regularizer: regularizer applied to the weights
-                   (kernel) matrix
+                (kernel) matrix.
             :type weights_regularizer: string
-            :param bias_regularizer: regularizer function applied to bias vector.
+            :param bias_regularizer: regularizer function applied to bias
+                vector.
             :type bias_regularizer: string
-            :param activity_regularizer: Regularizer applied to the output of the
-                   layer (activation)
+            :param activity_regularizer: Regularizer applied to the output of
+                the layer (activation).
             :type activity_regularizer: string
-            :param norm: type of normalization to use 'batch' or 'layer'
+            :param norm: type of normalization to use 'batch' or 'layer'.
             :type norm: string, default None
-            :param norm_params: parameters to pass to normalization function
+            :param norm_params: parameters to pass to normalization function.
             :type norm_params: dictionary
             :param activation: Activation function to use.
             :type activation: string
             :param dropout: determines if there should be a dropout layer before
-                   returning the encoder output.
+                returning the encoder output.
             :type dropout: float
         """
         super().__init__()
@@ -265,11 +267,12 @@ class DateEmbed(DateEncoder):
     ) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
-                   Shape: [batch x DATE_INPUT_SIZE], type torch.int8
+                Shape: [batch x DATE_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
-            :param training: bool specifying if in training mode (important for dropout)
+            :param training: bool specifying if in training mode (important for
+                dropout).
             :type training: bool
-            :param mask: bool specifying masked values
+            :param mask: bool specifying masked values.
             :type mask: bool
          """
         # ================ Embeddings ================
@@ -371,35 +374,36 @@ class DateWave(DateEncoder):
     ):
         """
             :param fc_layers: list of dictionaries containing the parameters of
-                    all the fully connected layers
+                all the fully connected layers.
             :type fc_layers: List
-            :param num_fc_layers: Number of stacked fully connected layers
+            :param num_fc_layers: Number of stacked fully connected layers.
             :type num_fc_layers: Integer
-            :param fc_size: Size of each layer
+            :param fc_size: Size of each layer.
             :type fc_size: Integer
-            :param use_bias: bool determines where to use a bias vector
+            :param use_bias: bool determines where to use a bias vector.
             :type use_bias: bool
             :param weights_initializer: Initializer for the weights (aka kernel)
-                   matrix
+                matrix.
             :type weights_initializer: string
-            :param bias_initializer: Initializer for the bias vector
+            :param bias_initializer: Initializer for the bias vector.
             :type bias_initializer: string
             :param weights_regularizer: regularizer applied to the weights
-                   (kernel) matrix
+                (kernel) matrix.
             :type weights_regularizer: string
-            :param bias_regularizer: regularizer function applied to bias vector.
+            :param bias_regularizer: regularizer function applied to bias
+                vector.
             :type bias_regularizer: string
-            :param activity_regularizer: Regularizer applied to the output of the
-                   layer (activation)
+            :param activity_regularizer: Regularizer applied to the output of
+                the layer (activation).
             :type activity_regularizer: string
-            :param norm: type of normalization to use 'batch' or 'layer'
+            :param norm: type of normalization to use 'batch' or 'layer'.
             :type norm: string, default None
-            :param norm_params: parameters to pass to normalization function
+            :param norm_params: parameters to pass to normalization function.
             :type norm_params: dictionary
             :param activation: Activation function to use.
             :type activation: string
             :param dropout: determines if there should be a dropout layer before
-                   returning the encoder output.
+                returning the encoder output.
             :type dropout: float
         """
         super().__init__()
@@ -423,9 +427,10 @@ class DateWave(DateEncoder):
         )
 
         # Summed sizes of all of the embeddings.
+        # Additional 8 for periodic_[month, day, ..., second_of_day].
         fc_layer_input_size = (
                 self.year_fc.output_shape[0] +
-                8  # for periodic_[month,day,weekday,yearday,hours,minutes,seconds,second_of_day].
+                8
         )
 
         logger.debug('  FCStack')
@@ -454,11 +459,12 @@ class DateWave(DateEncoder):
     ) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
-                   Shape: [batch x DATE_INPUT_SIZE], type torch.int8
+                Shape: [batch x DATE_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
-            :param training: bool specifying if in training mode (important for dropout)
+            :param training: bool specifying if in training mode (important for
+                dropout).
             :type training: bool
-            :param mask: bool specifying masked values
+            :param mask: bool specifying masked values.
             :type mask: bool
          """
         # ================ Embeddings ================

@@ -207,7 +207,8 @@ class EmbedSet(LudwigModule):
         )
 
         if embedding_regularizer:
-            self.add_loss(lambda: reg_loss(self.embeddings, embedding_regularizer))
+            self.add_loss(lambda: reg_loss(
+                self.embeddings, embedding_regularizer))
 
         if dropout > 0:
             self.dropout = torch.nn.Dropout(p=dropout)
