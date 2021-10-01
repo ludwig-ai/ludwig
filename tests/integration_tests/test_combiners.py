@@ -160,7 +160,14 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
     combiner = ConcatCombiner(input_features_dict, fc_layers=fc_layer,
                               flatten_inputs=flatten_inputs)
 
-    # concatenate encoder outputs
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
+
+    # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
     # correct data structure
@@ -191,12 +198,22 @@ def test_sequence_concat_combiner(
         reduce_output=reduce_output
     )
 
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
+
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
-    # concatenate encoder outputs
+    # confirm correctness of effective_input_shape
+    assert combiner.effective_input_shape[-1] == hidden_size
+
+    # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
     # correct data structure
@@ -230,12 +247,22 @@ def test_sequence_combiner(
         num_fc_layers=3,
     )
 
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
+
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
-    # concatenate encoder outputs
+    # confirm correctness of effective_input_shape
+    assert combiner.effective_input_shape[-1] == hidden_size
+
+    # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
     # correct data structure
