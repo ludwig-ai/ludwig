@@ -259,30 +259,16 @@ class DateEmbed(DateEncoder):
             default_dropout=dropout,
         )
 
-    def forward(
-            self,
-            inputs: torch.Tensor,
-            training: Optional[bool] = None,
-            mask: Optional[bool] = None
-    ) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
                 Shape: [batch x DATE_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
-            :param training: bool specifying if in training mode (important for
-                dropout).
-            :type training: bool
-            :param mask: bool specifying masked values.
-            :type mask: bool
          """
         # ================ Embeddings ================
         input_vector = inputs.type(torch.int32)
 
-        scaled_year = self.year_fc(
-            input_vector[:, 0:1].type(torch.float32),
-            training=training,
-            mask=mask
-        )
+        scaled_year = self.year_fc(input_vector[:, 0:1].type(torch.float32))
         embedded_month = self.embed_month(input_vector[:, 1].unsqueeze(1) - 1)
         embedded_day = self.embed_day(input_vector[:, 2].unsqueeze(1) - 1)
         embedded_weekday = self.embed_weekday(input_vector[:, 3].unsqueeze(1))
@@ -307,12 +293,7 @@ class DateEmbed(DateEncoder):
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
 
-        hidden = self.fc_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
-
+        hidden = self.fc_stack(hidden)
         return {'encoder_output': hidden}
 
     @property
@@ -423,29 +404,15 @@ class DateWave(DateEncoder):
             default_dropout=dropout,
         )
 
-    def forward(
-            self,
-            inputs: torch.Tensor,
-            training: bool = None,
-            mask: bool = None
-    ) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
                 Shape: [batch x DATE_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
-            :param training: bool specifying if in training mode (important for
-                dropout).
-            :type training: bool
-            :param mask: bool specifying masked values.
-            :type mask: bool
          """
         # ================ Embeddings ================
         input_vector = inputs.type(torch.float32)
-        scaled_year = self.year_fc(
-            input_vector[:, 0:1],
-            training=training,
-            mask=mask
-        )
+        scaled_year = self.year_fc(input_vector[:, 0:1])
         periodic_month = torch.sin(input_vector[:, 1:2] * (2 * math.pi / 12))
         periodic_day = torch.sin(input_vector[:, 2:3] * (2 * math.pi / 31))
         periodic_weekday = torch.sin(input_vector[:, 3:4] * (2 * math.pi / 7))
@@ -467,12 +434,7 @@ class DateWave(DateEncoder):
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
 
-        hidden = self.fc_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
-
+        hidden = self.fc_stack(hidden)
         return {'encoder_output': hidden}
 
     @property
