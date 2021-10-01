@@ -38,6 +38,7 @@ initializer_registry = {
     "kaiming_normal": nn.init.kaiming_normal_,
     "orthogonal": nn.init.orthogonal_,
     "sparse": nn.init.sparse_,
+    'identity': nn.init.eye_,
     None: nn.init.xavier_uniform_,
 
 }
