@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import pandas as pd
 from typing import Dict, List
 
 try:
@@ -26,7 +27,7 @@ except ImportError:
 class RayDataset(object):
     """ Wrapper around ray.data.Dataset. """
 
-    def __init__(self, df: DataFrame, features: List[Dict], data_hdf5_fp: str):
+    def __init__(self, df: pd.DataFrame, features: List[Dict], data_hdf5_fp: str):
         self.ds = from_dask(df)
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
