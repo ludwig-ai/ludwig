@@ -44,7 +44,7 @@ class DateFeatureMixin:
         'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'string'},
         'computed_fill_value': {'type': 'string'},
-        'datetime_format': {'type': 'string'},
+        'datetime_format': {'type': ['string', 'null']},
     }
 
     @staticmethod

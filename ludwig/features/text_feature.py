@@ -67,12 +67,12 @@ class TextFeatureMixin:
 
     preprocessing_schema = {
         'char_tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
-        'char_vocab_file': {'type': 'string'},
+        'char_vocab_file': {'type': ['string', 'null']},
         'char_sequence_length_limit': {'type': 'integer', 'minimum': 0},
         'char_most_common': {'type': 'integer', 'minimum': 0},
         'word_tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
-        'pretrained_model_name_or_path': {'type': 'string'},
-        'word_vocab_file': {'type': 'string'},
+        'pretrained_model_name_or_path': {'type': ['string', 'null']},
+        'word_vocab_file': {'type': ['string', 'null']},
         'word_sequence_length_limit': {'type': 'integer', 'minimum': 0},
         'word_most_common': {'type': 'integer', 'minimum': 0},
         'padding_symbol': {'type': 'string'},
