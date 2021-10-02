@@ -20,7 +20,7 @@ from typing import Union, Optional, List, Dict
 from functools import lru_cache
 
 import torch
-from torch.nn import Module
+from torch.nn import Module, ModuleList, Linear
 from ludwig.utils.torch_utils import LudwigModule, \
     sequence_mask as torch_sequence_mask
 
@@ -522,7 +522,7 @@ class TabNetCombiner(Module):
         return return_data
 
 
-class TransformerCombiner(Module):
+class TransformerCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict = None,
@@ -551,6 +551,7 @@ class TransformerCombiner(Module):
             **kwargs
     ):
         super().__init__()
+        self.name = 'TransformerCombiner'
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
@@ -559,7 +560,11 @@ class TransformerCombiner(Module):
             self.supports_masking = True
 
         logger.debug('  Projectors')
-        self.projectors = [Dense(hidden_size) for _ in input_features]
+        self.projectors = ModuleList(
+            [Linear(input_features[inp]['encoder_output'].shape[-1],
+                    hidden_size)
+             for inp in input_features]
+        )
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
