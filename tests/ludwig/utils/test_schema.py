@@ -296,4 +296,3 @@ def test_validate_with_preprocessing_defaults():
     validate_config(config)
     config = merge_with_defaults(config)
     validate_config(config)
-    print(config['input_features'][0]['preprocessing'])
