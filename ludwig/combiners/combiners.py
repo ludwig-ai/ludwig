@@ -565,7 +565,9 @@ class TransformerCombiner(CombinerClass):
 
         logger.debug('  Projectors')
         self.projectors = ModuleList(
-            [Linear(input_features[inp]['encoder_output'].shape[-1],
+            # regardless of rank-2 or rank-3 input, np.prod() calculates size
+            # after flattening the encoder output tensor
+            [Linear(np.int(np.prod(input_features[inp].output_shape)),
                     hidden_size)
              for inp in input_features]
         )
