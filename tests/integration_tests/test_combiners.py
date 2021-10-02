@@ -369,7 +369,13 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     assert results["combiner_output"].shape.as_list() == [BATCH_SIZE, size]
 
 
-def test_transformer_combiner(encoder_outputs):
+@pytest.mark.parametrize('fc_size', [8, 16])
+@pytest.mark.parametrize('transformer_fc_size', [4, 12])
+def test_transformer_combiner(
+        encoder_outputs: tuple,
+        transformer_fc_size: int,
+        fc_size: int
+) -> None:
     encoder_outputs_dict, input_feature_dict = encoder_outputs
 
     # setup combiner to test
