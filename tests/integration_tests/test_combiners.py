@@ -384,15 +384,23 @@ def test_transformer_combiner(encoder_outputs):
             dtype=torch.float32
         )
     }
+    encoder_outputs['feature_3'] = {
+        'encoder_output': torch.randn(
+            [128, 8],
+            dtype=torch.float32
+        )
+    }
 
     input_features_def = [
         {'name': 'feature_1', 'type': 'numerical'},
-        {'name': 'feature_2', 'type': 'numerical'}
+        {'name': 'feature_2', 'type': 'numerical'},
+        {'name': 'feature_3', 'type': 'numerical'},
+
     ]
 
     # setup combiner to test
     combiner = TransformerCombiner(
-        input_features=input_features_def
+        input_features=encoder_outputs
     )
 
     # concatenate encoder outputs

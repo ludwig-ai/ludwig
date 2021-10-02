@@ -554,10 +554,14 @@ class TransformerCombiner(CombinerClass):
         self.name = 'TransformerCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
+
+        # sequence size for Transformer layer is number of input features
+        self.sequence_size = len(self.input_features)
 
         logger.debug('  Projectors')
         self.projectors = ModuleList(
@@ -568,6 +572,8 @@ class TransformerCombiner(CombinerClass):
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
+            input_size=hidden_size,
+            sequence_size=self.sequence_size,
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,
@@ -578,6 +584,7 @@ class TransformerCombiner(CombinerClass):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.transformer_stack.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -596,7 +603,7 @@ class TransformerCombiner(CombinerClass):
                 fc_residual=fc_residual,
             )
 
-    def call(
+    def forward(
             self,
             inputs,  # encoder outputs
             training=None,
@@ -606,9 +613,9 @@ class TransformerCombiner(CombinerClass):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
         # ================ Flatten ================
-        batch_size = tf.shape(encoder_outputs[0])[0]
+        batch_size = encoder_outputs[0].shape[0]
         encoder_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
         ]
 
         # ================ Project & Concat ================
@@ -616,8 +623,8 @@ class TransformerCombiner(CombinerClass):
             self.projectors[i](eo)
             for i, eo in enumerate(encoder_outputs)
         ]
-        hidden = tf.stack(projected)  # num_eo, bs, h
-        hidden = tf.transpose(hidden, perm=[1, 0, 2])  # bs, num_eo, h
+        hidden = torch.stack(projected)  # shape [num_eo, bs, h]
+        hidden = torch.permute(hidden, (1, 0, 2))  # shape [bs, num_eo, h]
 
         # ================ Transformer Layers ================
         hidden = self.transformer_stack(
