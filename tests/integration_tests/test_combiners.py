@@ -370,44 +370,41 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
 
 
 def test_transformer_combiner(encoder_outputs):
-    # clean out unneeded encoder outputs
-    encoder_outputs = {}
-    encoder_outputs['feature_1'] = {
-        'encoder_output': torch.randn(
-            [128, 1],
-            dtype=torch.float32
-        )
-    }
-    encoder_outputs['feature_2'] = {
-        'encoder_output': torch.randn(
-            [128, 1],
-            dtype=torch.float32
-        )
-    }
-    encoder_outputs['feature_3'] = {
-        'encoder_output': torch.randn(
-            [128, 8],
-            dtype=torch.float32
-        )
-    }
-
-    input_features_def = [
-        {'name': 'feature_1', 'type': 'numerical'},
-        {'name': 'feature_2', 'type': 'numerical'},
-        {'name': 'feature_3', 'type': 'numerical'},
-
-    ]
+    encoder_outputs_dict, input_feature_dict = encoder_outputs
 
     # setup combiner to test
     combiner = TransformerCombiner(
-        input_features=encoder_outputs
+        input_features=input_feature_dict
     )
 
-    # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
 
-    # required key present
-    assert 'combiner_output' in results
+    # calculate expected hidden size for concatenated tensors
+    hidden_size = 0
+    for k in encoder_outputs_dict:
+        hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
+
+    # confirm correctness of effective_input_shape
+    assert combiner.effective_input_shape[-1] == hidden_size
+
+    # concatenate encoder outputs
+    combiner_output = combiner(encoder_outputs_dict)
+
+    # correct data structure
+    assert isinstance(combiner_output, dict)
+
+    # required key present and correct data type
+    assert "combiner_output" in combiner_output
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+
+    # confirm correct shape
+    assert combiner_output['combiner_output'].shape == \
+           (BATCH_SIZE, *combiner.output_shape)
 
 
 def test_tabtransformer_combiner(encoder_outputs):
