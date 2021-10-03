@@ -858,7 +858,7 @@ class ComparatorCombiner(Module):
             num_fc_layers=1,
             fc_size=256,
             use_bias=True,
-            weights_initializer="glorot_uniform",
+            weights_initializer="xavier_uniform",
             bias_initializer="zeros",
             weights_regularizer=None,
             bias_regularizer=None,
@@ -874,6 +874,12 @@ class ComparatorCombiner(Module):
         super().__init__()
         self.name = "ComparatorCombiner"
         logger.debug(" {}".format(self.name))
+
+        self.input_features = input_features
+        self.entity_1 = entity_1
+        self.entity_2 = entity_2
+        self.required_inputs = set(entity_1 + entity_2)
+        self.fc_size = fc_size
 
         self.fc_stack = None
 
@@ -928,12 +934,6 @@ class ComparatorCombiner(Module):
         self.bilinear_weights = torch.randn([fc_size, fc_size],
                                             dtype=torch.float32)
 
-        self.input_features = input_features
-        self.entity_1 = entity_1
-        self.entity_2 = entity_2
-        self.required_inputs = set(entity_1 + entity_2)
-        self.fc_size = fc_size
-
     def get_entity_shape(self, entity: dict) -> torch.Size:
         size = 0
         for k in entity:
@@ -943,11 +943,10 @@ class ComparatorCombiner(Module):
     def forward(
             self,
             inputs: typing.Dict,
-            reduce_output: Optional[str] = None,
-            main_sequence_feature: Optional[str] = None,
-            encoder: Optional[str] = None,
+            training: Optional[bool] = None,
+            mask: Optional[bool] = None,
             **kwargs
-    ) -> torch.Tensor:  # encoder outputs
+    ) -> typing.Dict[str, torch.Tensor]:  # encoder outputs
         assert (
                 inputs.keys() == self.required_inputs
         ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
@@ -978,14 +977,14 @@ class ComparatorCombiner(Module):
         e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
 
         # ================ Flatten ================
-        batch_size = tf.shape(e2_enc_outputs[0])[0]
+        batch_size = e2_enc_outputs[0].shape[0]
         e2_enc_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
         ]
 
         # ================ Concat ================
         if len(e2_enc_outputs) > 1:
-            e2_hidden = concatenate(e2_enc_outputs, 1)
+            e2_hidden = torch.cat(e2_enc_outputs, 1)
         else:
             e2_hidden = list(e2_enc_outputs)[0]
 
@@ -1002,14 +1001,15 @@ class ComparatorCombiner(Module):
                 f"entity2 shape: {e2_hidden.shape.as_list()}"
             )
 
-        dot_product = tf.matmul(e1_hidden, tf.transpose(e2_hidden))
-        element_wise_mul = tf.math.multiply(e1_hidden, e2_hidden)
-        abs_diff = tf.abs(e1_hidden - e2_hidden)
-        bilinear_prod = tf.matmul(
+        dot_product = torch.matmul(e1_hidden, torch.transpose(e2_hidden, 0, 1))
+        element_wise_mul = e1_hidden * e2_hidden
+        abs_diff = torch.abs(e1_hidden - e2_hidden)
+        bilinear_prod = torch.matmul(
             e1_hidden,
-            tf.matmul(self.bilinear_weights, tf.transpose(e2_hidden))
+            torch.matmul(self.bilinear_weights,
+                         torch.transpose(e2_hidden, 0, 1))
         )
-        hidden = concatenate(
+        hidden = torch.cat(
             [dot_product, element_wise_mul, abs_diff, bilinear_prod], 1
         )
 

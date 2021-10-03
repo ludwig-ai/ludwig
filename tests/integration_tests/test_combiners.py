@@ -86,6 +86,7 @@ def encoder_comparator_outputs():
     #   feature_4: shape [b, sh, h2] tensor
 
     encoder_outputs = {}
+    input_features = {}
     shapes_list = [
         [BATCH_SIZE, HIDDEN_SIZE],
         [BATCH_SIZE, OTHER_HIDDEN_SIZE],
@@ -107,11 +108,15 @@ def encoder_comparator_outputs():
                 "encoder_output": torch.randn(dot_product_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              dot_product_shape)
         else:
             encoder_outputs[feature_name] = {
                 "encoder_output": torch.randn(batch_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              batch_shape)
 
     for i, (feature_name, batch_shape) in enumerate(
             zip(image_feature_names, shapes_list)
@@ -122,13 +127,17 @@ def encoder_comparator_outputs():
                 "encoder_output": torch.randn(dot_product_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              dot_product_shape)
         else:
             encoder_outputs[feature_name] = {
                 "encoder_output": torch.randn(batch_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              batch_shape)
 
-    return encoder_outputs
+    return encoder_outputs, input_features
 
 
 # test for simple concatenation combiner
@@ -342,20 +351,22 @@ def test_tabnet_combiner(encoder_outputs_key):
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
                              entity_2):
+    encoder_comparator_outputs_dict, input_features_dict = encoder_comparator_outputs
     # clean out unneeded encoder outputs since we only have 2 layers
-    del encoder_comparator_outputs["text_feature_3"]
-    del encoder_comparator_outputs["image_feature_3"]
-    del encoder_comparator_outputs["text_feature_4"]
-    del encoder_comparator_outputs["image_feature_4"]
+    del encoder_comparator_outputs_dict["text_feature_3"]
+    del encoder_comparator_outputs_dict["image_feature_3"]
+    del encoder_comparator_outputs_dict["text_feature_4"]
+    del encoder_comparator_outputs_dict["image_feature_4"]
 
     # setup combiner to test set to 256 for case when none as it's the default size
     fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
     combiner = ComparatorCombiner(
-        entity_1, entity_2, fc_layers=fc_layer, fc_size=fc_size
+        input_features_dict, entity_1, entity_2,
+        fc_layers=fc_layer, fc_size=fc_size
     )
 
     # concatenate encoder outputs
-    results = combiner(encoder_comparator_outputs)
+    results = combiner(encoder_comparator_outputs_dict)
 
     # required key present
     assert "combiner_output" in results
