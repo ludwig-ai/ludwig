@@ -851,6 +851,7 @@ class TabTransformerCombiner(Module):
 class ComparatorCombiner(Module):
     def __init__(
             self,
+            input_features: dict,
             entity_1: List[str],
             entity_2: List[str],
             # fc_layers=None,
@@ -885,6 +886,7 @@ class ComparatorCombiner(Module):
         if fc_layers is not None:
             logger.debug("  FCStack")
             self.e1_fc_stack = FCStack(
+                self.get_entity_shape(entity_1)[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -902,6 +904,7 @@ class ComparatorCombiner(Module):
                 default_dropout=dropout,
             )
             self.e2_fc_stack = FCStack(
+                self.get_entity_shape(entity_2)[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -922,13 +925,20 @@ class ComparatorCombiner(Module):
         # todo: this should actually be the size of the last fc layer,
         #  not just fc_size
         # todo: set initializer and regularization
-        self.bilinear_weights = tf.random.normal([fc_size, fc_size],
-                                                 dtype=tf.float32)
+        self.bilinear_weights = torch.randn([fc_size, fc_size],
+                                            dtype=torch.float32)
 
+        self.input_features = input_features
         self.entity_1 = entity_1
         self.entity_2 = entity_2
         self.required_inputs = set(entity_1 + entity_2)
         self.fc_size = fc_size
+
+    def get_entity_shape(self, entity: dict) -> torch.Size:
+        size = 0
+        for k in entity:
+            size += np.prod(self.input_features[k].output_shape)
+        return torch.Size([size])
 
     def forward(
             self,

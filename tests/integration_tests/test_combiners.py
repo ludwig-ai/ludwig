@@ -366,7 +366,7 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     #   other 2 will be of shape BATCH_SIZE
     # this assumes dimensionality = 2
     size = BATCH_SIZE * 2 + fc_size * 2
-    assert results["combiner_output"].shape.as_list() == [BATCH_SIZE, size]
+    assert results["combiner_output"].shape == (BATCH_SIZE, size)
 
 
 @pytest.mark.parametrize('fc_size', [8, 16])
