@@ -79,11 +79,11 @@ class BERTEncoder(TextEncoder):
     def forward(self, inputs, training=None, mask=None):
         if mask is not None:
             mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer({
-            "input_ids": inputs,
-            "attention_mask": mask,
-            "token_type_ids": torch.zeros_like(inputs),
-        })
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
