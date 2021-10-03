@@ -227,7 +227,7 @@ class SequenceConcatCombiner(CombinerClass):
 
     def forward(
             self,
-            inputs: dict,  # encoder outputs
+            inputs: Dict,  # encoder outputs
             training: Optional[bool] = None,
             mask: Optional[bool] = None,
             **kwargs
@@ -871,6 +871,7 @@ class ComparatorCombiner(Module):
             **kwargs,
     ):
         super().__init__()
+        self.name = "ComparatorCombiner"
         logger.debug(" {}".format(self.name))
 
         self.fc_stack = None
@@ -929,8 +930,14 @@ class ComparatorCombiner(Module):
         self.required_inputs = set(entity_1 + entity_2)
         self.fc_size = fc_size
 
-    def call(self, inputs, training=None, mask=None,
-             **kwargs):  # encoder outputs
+    def forward(
+            self,
+            inputs: typing.Dict,
+            reduce_output: Optional[str] = None,
+            main_sequence_feature: Optional[str] = None,
+            encoder: Optional[str] = None,
+            **kwargs
+    ) -> torch.Tensor:  # encoder outputs
         assert (
                 inputs.keys() == self.required_inputs
         ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
@@ -941,14 +948,14 @@ class ComparatorCombiner(Module):
         e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
 
         # ================ Flatten ================
-        batch_size = tf.shape(e1_enc_outputs[0])[0]
+        batch_size = e1_enc_outputs[0].shape[0]
         e1_enc_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
         ]
 
         # ================ Concat ================
         if len(e1_enc_outputs) > 1:
-            e1_hidden = concatenate(e1_enc_outputs, 1)
+            e1_hidden = torch.cat(e1_enc_outputs, 1)
         else:
             e1_hidden = list(e1_enc_outputs)[0]
 
