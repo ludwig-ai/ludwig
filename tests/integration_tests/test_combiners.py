@@ -1,6 +1,6 @@
 import logging
 from collections import OrderedDict
-
+import numpy as np
 import pytest
 import torch
 
@@ -393,10 +393,11 @@ def test_transformer_combiner(
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
-        hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
+        hidden_size += np.prod(
+            encoder_outputs_dict[k]["encoder_output"].shape[1:])
 
     # confirm correctness of effective_input_shape
-    assert combiner.effective_input_shape[-1] == hidden_size
+    assert combiner.concatenated_shape[-1] == hidden_size
 
     # concatenate encoder outputs
     combiner_output = combiner(encoder_outputs_dict)

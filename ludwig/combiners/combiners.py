@@ -605,6 +605,14 @@ class TransformerCombiner(CombinerClass):
                 fc_residual=fc_residual,
             )
 
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        shapes = [np.prod(self.input_features[k].output_shape) for k in
+                  self.input_features]
+        return torch.Size([sum(shapes)])
+
     def forward(
             self,
             inputs,  # encoder outputs
