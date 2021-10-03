@@ -210,8 +210,8 @@ def test_sequence_concat_combiner(
     for k in encoder_outputs_dict:
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
-    # confirm correctness of effective_input_shape
-    assert combiner.effective_input_shape[-1] == hidden_size
+    # confirm correctness of concatenated_shape
+    assert combiner.concatenated_shape[-1] == hidden_size
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -259,8 +259,8 @@ def test_sequence_combiner(
     for k in encoder_outputs_dict:
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
-    # confirm correctness of effective_input_shape
-    assert combiner.effective_input_shape[-1] == hidden_size
+    # confirm correctness of concatenated_shape
+    assert combiner.concatenated_shape[-1] == hidden_size
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
