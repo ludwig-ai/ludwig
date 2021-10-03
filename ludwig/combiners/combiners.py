@@ -848,7 +848,7 @@ class TabTransformerCombiner(Module):
         return return_data
 
 
-class ComparatorCombiner(Module):
+class ComparatorCombiner(CombinerClass):
     def __init__(
             self,
             input_features: dict,
@@ -939,6 +939,20 @@ class ComparatorCombiner(Module):
         for k in entity:
             size += np.prod(self.input_features[k].output_shape)
         return torch.Size([size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([2 * self.fc_size])
+        # todo: deterimine if we want to use this method
+        # psuedo_encoder_outputs = {}
+        # for f in self.entity_1 + self.entity_2:
+        #     psuedo_encoder_outputs[f] = {
+        #         'encoder_output':
+        #         torch.randn(2, *self.input_features[f].output_shape,
+        #                     dtype=self.input_dtype)
+        #     }
+        # combiner_output = self.forward(psuedo_encoder_outputs)
+        # return combiner_output['combiner_output'].size()[1:]
 
     def forward(
             self,

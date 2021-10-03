@@ -366,10 +366,19 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     )
 
     # concatenate encoder outputs
-    results = combiner(encoder_comparator_outputs_dict)
+    combiner_output = combiner(encoder_comparator_outputs_dict)
 
-    # required key present
-    assert "combiner_output" in results
+    # correct data structure
+    assert isinstance(combiner_output, dict)
+
+    # required key present and correct data type
+    assert "combiner_output" in combiner_output
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+
+    # todo: decide which approach for testing output shape
+    # confirm correct shape
+    assert combiner_output['combiner_output'].shape == \
+           (BATCH_SIZE, (2 * BATCH_SIZE) + combiner.output_shape[-1])
 
     # confirm correct output shapes
     # concat on axis=1
@@ -377,7 +386,7 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     #   other 2 will be of shape BATCH_SIZE
     # this assumes dimensionality = 2
     size = BATCH_SIZE * 2 + fc_size * 2
-    assert results["combiner_output"].shape == (BATCH_SIZE, size)
+    assert combiner_output["combiner_output"].shape == (BATCH_SIZE, size)
 
 
 @pytest.mark.parametrize('fc_size', [8, 16])
