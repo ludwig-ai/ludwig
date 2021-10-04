@@ -16,9 +16,7 @@
 # ==============================================================================
 from abc import abstractmethod
 import logging
-import typing
-import numpy as np
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict
 from functools import lru_cache
 
 import torch
@@ -77,7 +75,7 @@ class CombinerClass(LudwigModule):
 class ConcatCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: typing.Dict = None,
+            input_features: Dict = None,
             fc_layers: Union[list, None] = None,
             num_fc_layers: Optional[int] = None,
             fc_size: int = 256,
@@ -143,9 +141,10 @@ class ConcatCombiner(CombinerClass):
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup the fully connected layer
-        shapes = [np.prod(self.input_features[k].output_shape) for k in
-                  self.input_features]
-        return torch.Size([sum(shapes)])
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
             self,
@@ -190,7 +189,7 @@ class ConcatCombiner(CombinerClass):
 class SequenceConcatCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: dict,
+            input_features: Dict,
             reduce_output: Optional[str] = None,
             main_sequence_feature: Optional[str] = None,
             **kwargs
@@ -352,7 +351,7 @@ class SequenceConcatCombiner(CombinerClass):
 class SequenceCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: dict,
+            input_features: Dict,
             reduce_output: Optional[str] = None,
             main_sequence_feature: Optional[str] = None,
             encoder: Optional[str] = None,
@@ -526,29 +525,29 @@ class TabNetCombiner(Module):
 class TransformerCombiner(Module):
     def __init__(
             self,
-            input_features=None,
-            num_layers=1,
-            hidden_size=256,
-            num_heads=8,
-            transformer_fc_size=256,
-            dropout=0.1,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
+            input_features: Dict = None,
+            num_layers: int = 1,
+            hidden_size: int = 256,
+            num_heads: int = 8,
+            transformer_fc_size: int = 256,
+            dropout: float = 0.1,
+            fc_layers: Optional[list] = None,
+            num_fc_layers: int = 0,
+            fc_size: int = 256,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            fc_activation='relu',
-            fc_dropout=0,
-            fc_residual=False,
-            reduce_output='mean',
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict] = None,
+            fc_activation: str = 'relu',
+            fc_dropout: float = 0,
+            fc_residual: bool = False,
+            reduce_output: Optional[str] = 'mean',
             **kwargs
     ):
         super().__init__()
