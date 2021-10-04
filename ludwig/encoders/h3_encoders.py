@@ -21,7 +21,7 @@ from typing import Dict
 import torch
 
 from ludwig.encoders.base import Encoder
-from ludwig.encoders import encoder_utils
+from ludwig.utils import torch_utils
 from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
@@ -32,6 +32,9 @@ from ludwig.modules.reduction_modules import SequenceReducer
 logger = logging.getLogger(__name__)
 
 ENCODER_REGISTRY = Registry()
+
+# TODO: Share this with h3_feature.H3_VECTOR_LENGTH
+H3_INPUT_SIZE = 19
 
 
 class H3Encoder(Encoder, ABC):
@@ -51,64 +54,43 @@ class H3Embed(H3Encoder):
             num_fc_layers=0,
             fc_size=10,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
             dropout=0,
             reduce_output='sum',
-            **kwargs
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
-                   in the column the feature is named after (plus 1 for `<UNK>`).
+                   in the column the feature is named after (plus 1 for
+                   `<UNK>`).
             :type embedding_size: Integer
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
-                   of the embedding matrix in regular memroy and the CPU is used
+                   of the embedding matrix in regular memory and the CPU is used
                    to resolve them, slightly slowing down the process
                    as a result of data transfer between CPU and GPU memory.
             :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
             :type dropout: Boolean
-            :param initializer: the initializer to use. If `None`, the default
-                   initialized of each variable is used (`glorot_uniform`
-                   in most cases). Options are: `constant`, `identity`, `zeros`,
-                    `ones`, `orthogonal`, `normal`, `uniform`,
-                    `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                    `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
-                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-                    Alternatively it is possible to specify a dictionary with
-                    a key `type` that identifies the type of initialzier and
-                    other keys for its parameters, e.g.
-                    `{type: normal, mean: 0, stddev: 0}`.
-                    To know the parameters of each initializer, please refer to
-                    TensorFlow's documentation.
-            :type initializer: str
-            :param regularize: if `True` the embedding wieghts are added to
-                   the set of weights that get reularized by a regularization
-                   loss (if the `regularization_lambda` in `training`
-                   is greater than 0).
-            :type regularize: Boolean
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.embedding_size = embedding_size
         self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.sum_sequence_reducer = SequenceReducer(reduce_mode=reduce_output)
 
         logger.debug('  mode Embed')
         self.embed_mode = Embed(
@@ -181,7 +163,9 @@ class H3Embed(H3Encoder):
         )
 
         logger.debug('  FCStack')
+        self.fc_size = fc_size
         self.fc_stack = FCStack(
+            first_layer_input_size=H3_INPUT_SIZE,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -191,8 +175,6 @@ class H3Embed(H3Encoder):
             default_weights_regularizer=weights_regularizer,
             default_bias_regularizer=bias_regularizer,
             default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -202,10 +184,10 @@ class H3Embed(H3Encoder):
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
-                   Shape: [batch x 19], type torch.int8
+                   Shape: [batch x H3_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
          """
-        input_vector = inputs.type(torch.int32)
+        input_vector = inputs.type(torch.IntTensor)
 
         # ================ Embeddings ================
         embedded_mode = self.embed_mode(
@@ -221,14 +203,23 @@ class H3Embed(H3Encoder):
             input_vector[:, 3:4],
         )
         embedded_cells = self.embed_cells(
-            input_vector[:, 4:],
+            input_vector[:, 4:].unsqueeze(1),
         )
 
         # ================ Masking ================
         resolution = input_vector[:, 2]
         mask = torch.unsqueeze(
-            encoder_utils.sequence_mask(resolution, 15), -1).type(torch.float32)
+            torch_utils.sequence_mask(resolution, 15), -1).type(
+            torch.FloatTensor)
         masked_embedded_cells = embedded_cells * mask
+        logger.error(
+            f'resolution.size(): {resolution.size()}')
+        logger.error(
+            f'mask.size(): {mask.size()}')
+        logger.error(
+            f'embedded_cells.size(): {embedded_cells.size()}')
+        logger.error(
+            f'masked_embedded_cells.size(): {masked_embedded_cells.size()}')
 
         # ================ Reduce ================
         concatenated = torch.cat(
@@ -236,13 +227,21 @@ class H3Embed(H3Encoder):
              embedded_base_cell, masked_embedded_cells],
             dim=1)
 
-        hidden = self.reduce_sequence(concatenated)
+        hidden = self.sum_sequence_reducer(concatenated)
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
         hidden = self.fc_stack(hidden)
 
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([H3_INPUT_SIZE])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
 
 
 @register(name='weighted_sum')
@@ -257,7 +256,7 @@ class H3WeightedSum(H3Encoder):
             num_fc_layers=0,
             fc_size=10,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -266,51 +265,32 @@ class H3WeightedSum(H3Encoder):
             norm_params=None,
             activation='relu',
             dropout=0,
-            **kwargs
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
-                   in the column the feature is named after (plus 1 for `<UNK>`).
+                   in the column the feature is named after (plus 1 for
+                   `<UNK>`).
             :type embedding_size: Integer
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
-                   of the embedding matrix in regular memroy and the CPU is used
+                   of the embedding matrix in regular memory and the CPU is used
                    to resolve them, slightly slowing down the process
                    as a result of data transfer between CPU and GPU memory.
             :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
             :type dropout: Boolean
-            :param initializer: the initializer to use. If `None`, the default
-                   initialized of each variable is used (`glorot_uniform`
-                   in most cases). Options are: `constant`, `identity`, `zeros`,
-                    `ones`, `orthogonal`, `normal`, `uniform`,
-                    `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                    `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
-                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-                    Alternatively it is possible to specify a dictionary with
-                    a key `type` that identifies the type of initialzier and
-                    other keys for its parameters, e.g.
-                    `{type: normal, mean: 0, stddev: 0}`.
-                    To know the parameters of each initializer, please refer to
-                    TensorFlow's documentation.
-            :type initializer: str
-            :param regularize: if `True` the embedding wieghts are added to
-                   the set of weights that get reularized by a regularization
-                   loss (if the `regularization_lambda` in `training`
-                   is greater than 0).
-            :type regularize: Boolean
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.should_softmax = should_softmax
-        self.reduce_sequence = SequenceReducer(reduce_mode='sum')
+        self.sum_sequence_reducer = SequenceReducer(reduce_mode='sum')
 
         self.h3_embed = H3Embed(
             embedding_size,
@@ -321,15 +301,16 @@ class H3WeightedSum(H3Encoder):
             weights_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            reduce_output=None
+            reduce_output='None'
         )
 
-        self.aggregation_weights = torch.Variable(
-            get_initializer(weights_initializer)([19, 1])
+        self.aggregation_weights = torch.Tensor(
+            get_initializer(weights_initializer)([H3_INPUT_SIZE, 1])
         )
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
+            first_layer_input_size=self.h3_embed.fc_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -348,7 +329,7 @@ class H3WeightedSum(H3Encoder):
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
-                   Shape: [batch x 19], type torch.int8
+                   Shape: [batch x H3_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
          """
         # ================ Embeddings ================
@@ -357,11 +338,12 @@ class H3WeightedSum(H3Encoder):
 
         # ================ Weighted Sum ================
         if self.should_softmax:
-            weights = torch.nn.softmax(self.aggregation_weights)
+            weights = torch.softmax(self.aggregation_weights, dim=None)
         else:
             weights = self.aggregation_weights
 
-        hidden = self.reduce_sequence(embedded_h3['encoder_output'] * weights)
+        hidden = self.sum_sequence_reducer(
+            embedded_h3['encoder_output'] * weights)
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
@@ -371,7 +353,7 @@ class H3WeightedSum(H3Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([19])
+        return torch.Size([H3_INPUT_SIZE])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -393,7 +375,7 @@ class H3RNN(H3Encoder):
             recurrent_activation='sigmoid',
             use_bias=True,
             unit_forget_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             recurrent_initializer='orthogonal',
             bias_initializer='zeros',
             weights_regularizer=None,
@@ -402,31 +384,31 @@ class H3RNN(H3Encoder):
             activity_regularizer=None,
             dropout=0.0,
             recurrent_dropout=0.0,
-            reduce_output='last',
-            **kwargs
+            reduce_output='last'
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
-                   in the column the feature is named after (plus 1 for `<UNK>`).
+                   in the column the feature is named after (plus 1 for
+                   `<UNK>`).
             :type embedding_size: Integer
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
-                   of the embedding matrix in regular memroy and the CPU is used
+                   of the embedding matrix in regular memory and the CPU is used
                    to resolve them, slightly slowing down the process
                    as a result of data transfer between CPU and GPU memory.
             :param num_layers: the number of stacked recurrent layers.
             :type num_layers: Integer
             :param cell_type: the type of recurrent cell to use.
-                   Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
+                   Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                    `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                    For reference about the differences between the cells please
-                   refer to TensorFlow's documentstion. We suggest to use the
+                   refer to TensorFlow's documentation. We suggest to use the
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
@@ -455,15 +437,16 @@ class H3RNN(H3Encoder):
             :param bias_initializer: Initializer for the bias vector
             :type bias_initializer: string
             :param weights_regularizer: regularizer applied to the weights
-                   (kernal) matrix
+                   (kernel) matrix
             :type weights_regularizer: string
             :param recurrent_regularizer: Regularizer for the recurrent weights
                    matrix
             :type recurrent_regularizer: string
-            :param bias_regularizer: reguralizer function applied to biase vector.
+            :param bias_regularizer: regularized function applied to bias
+                vector.
             :type bias_regularizer: string
-            :param activity_regularizer: Regularizer applied to the output of the
-                   layer (activation)
+            :param activity_regularizer: Regularizer applied to the output of
+                the layer (activation)
             :type activity_regularizer: string
             :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
@@ -472,25 +455,6 @@ class H3RNN(H3Encoder):
                    the units to drop for the linear transformation of the
                    recurrent state.
             :type recurrent_dropout: float
-            :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
-                   `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
-                   `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-                   Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
-                   other keys for its parameters,
-                   e.g. `{type: normal, mean: 0, stddev: 0}`.
-                   To know the parameters of each initializer, please refer
-                   to TensorFlow's documentation.
-            :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
                    dimension if the rank of the tensor is greater than 2.
@@ -514,7 +478,7 @@ class H3RNN(H3Encoder):
             weights_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            reduce_output=None
+            reduce_output='None'
         )
 
         logger.debug('  RecurrentStack')
@@ -542,7 +506,7 @@ class H3RNN(H3Encoder):
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
             :param inputs: The input vector fed into the encoder.
-                   Shape: [batch x 19], type torch.int8
+                   Shape: [batch x H3_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
          """
 
@@ -561,7 +525,7 @@ class H3RNN(H3Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([19])
+        return torch.Size([H3_INPUT_SIZE])
 
     @property
     def output_shape(self) -> torch.Size:

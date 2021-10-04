@@ -47,8 +47,8 @@ def embedding_matrix(
             if embeddings_matrix.shape[-1] != embedding_size:
                 if not force_embedding_size:
                     embedding_size = embeddings_matrix.shape[-1]
-                    logger.info(
-                        f'Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.')
+                    logger.info(f'Setting embedding size to be equal to ' +
+                                '{embeddings_matrix.shape[-1]}.')
                 else:
                     raise ValueError(
                         f'The size of the pretrained embeddings is '
@@ -150,7 +150,8 @@ class Embed(LudwigModule):
         )
 
         if embedding_regularizer:
-            self.add_loss(lambda: reg_loss(self.embeddings, embedding_regularizer))
+            self.add_loss(lambda: reg_loss(
+                self.embeddings, embedding_regularizer))
 
         if dropout > 0:
             self.dropout = torch.nn.Dropout(p=dropout)
