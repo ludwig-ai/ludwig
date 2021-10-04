@@ -119,7 +119,7 @@ class ImageFeatureMixin:
         images to the specifications by dropping channels/padding 0 channels
         """
 
-        img = read_image(img_entry)
+        img = read_image(img_entry, num_channels)
         if img is None:
             logger.info(f"{img_entry} cannot be read")
             return None
@@ -195,10 +195,14 @@ class ImageFeatureMixin:
         that all the images in the data are expected be of the same size with
         the same number of channels
         """
-        first_image = read_image(first_img_entry)
 
         explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
-        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
+
+        if explicit_num_channels:
+            first_image = read_image(first_img_entry, preprocessing_parameters[NUM_CHANNELS])
+        else:
+            first_image = read_image(first_img_entry)
 
         inferred_sample = None
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):

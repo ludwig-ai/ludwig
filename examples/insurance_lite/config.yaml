@@ -6,6 +6,7 @@ input_features:
       height: 32
       width: 32
       in_memory: true
+      num_channels: 3
     encoder: vit
     image_size: 32
     patch_size: 4
