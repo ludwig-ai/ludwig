@@ -16,10 +16,12 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from typing import Dict
 
-# import tensorflow as tf
+import torch
 
 from ludwig.encoders.base import Encoder
+from ludwig.encoders import encoder_utils
 from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
@@ -28,7 +30,6 @@ from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 
 logger = logging.getLogger(__name__)
-
 
 ENCODER_REGISTRY = Registry()
 
@@ -198,74 +199,48 @@ class H3Embed(H3Encoder):
             default_dropout=dropout,
         )
 
-    def call(
-            self,
-            inputs,
-            training=None,
-            mask=None
-    ):
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-            :param input_vector: The input vector fed into the encoder.
-                   Shape: [batch x 19], type tf.int8
-            :type input_vector: Tensor
-            :param training: bool specifying if in training mode (important for dropout)
-            :type training: bool
-            :param mask: bool tensor encoding masked timesteps in the input
-            :type mask: bool
+            :param inputs: The input vector fed into the encoder.
+                   Shape: [batch x 19], type torch.int8
+            :type inputs: Tensor
          """
-        input_vector = tf.cast(inputs, tf.int32)
+        input_vector = inputs.type(torch.int32)
 
         # ================ Embeddings ================
         embedded_mode = self.embed_mode(
             input_vector[:, 0:1],
-            training=training,
-            mask=mask
         )
         embedded_edge = self.embed_edge(
             input_vector[:, 1:2],
-            training=training,
-            mask=mask
         )
         embedded_resolution = self.embed_resolution(
             input_vector[:, 2:3],
-            training=training,
-            mask=mask
         )
         embedded_base_cell = self.embed_base_cell(
             input_vector[:, 3:4],
-            training=training,
-            mask=mask
         )
         embedded_cells = self.embed_cells(
             input_vector[:, 4:],
-            training=training,
-            mask=mask
         )
 
         # ================ Masking ================
         resolution = input_vector[:, 2]
-        mask = tf.cast(
-            tf.expand_dims(tf.sequence_mask(resolution, 15),
-                           -1),
-            dtype=tf.float32
-        )
+        mask = torch.unsqueeze(
+            encoder_utils.sequence_mask(resolution, 15), -1).type(torch.float32)
         masked_embedded_cells = embedded_cells * mask
 
         # ================ Reduce ================
-        concatenated = tf.concat(
+        concatenated = torch.cat(
             [embedded_mode, embedded_edge, embedded_resolution,
              embedded_base_cell, masked_embedded_cells],
-            axis=1)
+            dim=1)
 
         hidden = self.reduce_sequence(concatenated)
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
-        hidden = self.fc_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        hidden = self.fc_stack(hidden)
 
         return {'encoder_output': hidden}
 
@@ -287,8 +262,6 @@ class H3WeightedSum(H3Encoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -348,12 +321,10 @@ class H3WeightedSum(H3Encoder):
             weights_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            # weights_constraint=weights_constraint,
-            # bias_constraint=bias_constraint,
             reduce_output=None
         )
 
-        self.aggregation_weights = tf.Variable(
+        self.aggregation_weights = torch.Variable(
             get_initializer(weights_initializer)([19, 1])
         )
 
@@ -368,40 +339,25 @@ class H3WeightedSum(H3Encoder):
             default_weights_regularizer=weights_regularizer,
             default_bias_regularizer=bias_regularizer,
             default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
             default_dropout=dropout,
         )
 
-    def call(
-            self,
-            inputs,
-            training=None,
-            mask=None
-    ):
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-            :param input_vector: The input vector fed into the encoder.
-                   Shape: [batch x 19], type tf.int8
-            :type input_vector: Tensor
-            :param training: bool specifying if in training mode (important for dropout)
-            :type training: bool
-            :param mask: bool tensor encoding masked timesteps in the input
-            :type mask: bool
+            :param inputs: The input vector fed into the encoder.
+                   Shape: [batch x 19], type torch.int8
+            :type inputs: Tensor
          """
         # ================ Embeddings ================
         input_vector = inputs
-        embedded_h3 = self.h3_embed(
-            input_vector,
-            training=training,
-            mask=mask
-        )
+        embedded_h3 = self.h3_embed(input_vector)
 
         # ================ Weighted Sum ================
         if self.should_softmax:
-            weights = tf.nn.softmax(self.aggregation_weights)
+            weights = torch.nn.softmax(self.aggregation_weights)
         else:
             weights = self.aggregation_weights
 
@@ -409,13 +365,17 @@ class H3WeightedSum(H3Encoder):
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
-        hidden = self.fc_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        hidden = self.fc_stack(hidden)
 
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([19])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
 
 
 @register(name='rnn')
@@ -533,7 +493,7 @@ class H3RNN(H3Encoder):
             :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -554,8 +514,6 @@ class H3RNN(H3Encoder):
             weights_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            # weights_constraint=weights_constraint,
-            # bias_constraint=bias_constraint,
             reduce_output=None
         )
 
@@ -581,37 +539,30 @@ class H3RNN(H3Encoder):
             reduce_output=reduce_output
         )
 
-    def call(
-            self,
-            inputs,
-            training=None,
-            mask=None
-    ):
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-            :param input_vector: The input vector fed into the encoder.
-                   Shape: [batch x 19], type tf.int8
-            :type input_vector: Tensor
-            :param training: bool specifying if in training mode (important for dropout)
-            :type training: bool
-            :param mask: bool tensor encoding masked timesteps in the input
-            :type mask: bool
+            :param inputs: The input vector fed into the encoder.
+                   Shape: [batch x 19], type torch.int8
+            :type inputs: Tensor
          """
 
         # ================ Embeddings ================
-        embedded_h3 = self.h3_embed(
-            inputs,
-            training=training,
-            mask=mask
-        )
+        embedded_h3 = self.h3_embed(inputs)
 
         # ================ RNN ================
         hidden, final_state = self.recurrent_stack(
-            embedded_h3['encoder_output'],
-            training=training,
-            mask=mask
+            embedded_h3['encoder_output']
         )
 
         return {
             'encoder_output': hidden,
             'encoder_output_state': final_state
         }
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([19])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape

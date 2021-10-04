@@ -18,7 +18,6 @@ import logging
 
 import numpy as np
 import torch
-# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.h3_encoders import ENCODER_REGISTRY
@@ -104,8 +103,8 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.uint8, tf.int64]
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.uint8, torch.int64]
         assert len(inputs.shape) == 2
 
         inputs_encoded = self.encoder_obj(
