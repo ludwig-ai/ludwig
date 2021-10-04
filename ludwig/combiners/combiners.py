@@ -15,7 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import List
+from typing import List, Dict, Optional, Type
+
+from pydantic import BaseModel, NonNegativeInt, PositiveInt, confloat
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
@@ -45,64 +47,66 @@ temp_bias_initializer_registry = ['zeros']
 temp_activation_registry = ['relu']
 temp_reduce_output_registry = ['mean', 'concat']
 
+
+class ConcatCombinerParams(BaseModel):
+    fc_layers: Optional[List[Dict]] = None
+    num_fc_layers: Optional[NonNegativeInt] = None
+    fc_size: PositiveInt = 256
+    use_bias: bool = True
+    weights_initializer: str = 'glorot_uniform'
+    bias_initializer: str = 'zeros'
+    weights_regularizer: Optional[str] = None
+    bias_regularizer: Optional[str] = None
+    activity_regularizer: Optional[str] = None
+    norm: Optional[str] = None
+    norm_params: Optional[str] = None
+    activation: str = 'relu'
+    dropout: confloat(ge=0.0, le=1.0) = 0.0
+    flatten_inputs: bool = False
+    residual: bool = False
+
+
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features=None,
-            fc_layers=None,
-            num_fc_layers=None,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
-            flatten_inputs=False,
-            residual=False,
-            **kwargs
+            input_features: List,
+            config_params: ConcatCombinerParams,
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        self.flatten_inputs = flatten_inputs
+        self.flatten_inputs = config_params.flatten_inputs
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if fc_layers is None and \
-                num_fc_layers is not None:
+        if config_params.fc_layers is None and \
+                config_params.num_fc_layers is not None:
             fc_layers = []
-            for i in range(num_fc_layers):
-                fc_layers.append({'fc_size': fc_size})
+            for i in range(config_params.num_fc_layers):
+                fc_layers.append({'fc_size': config_params.fc_size})
 
-        if fc_layers is not None:
+        if config_params.fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                layers=config_params.fc_layers,
+                num_layers=config_params.num_fc_layers,
+                default_fc_size=config_params.fc_size,
+                default_use_bias=config_params.use_bias,
+                default_weights_initializer=config_params.weights_initializer,
+                default_bias_initializer=config_params.bias_initializer,
+                default_weights_regularizer=config_params.weights_regularizer,
+                default_bias_regularizer=config_params.bias_regularizer,
+                default_activity_regularizer=config_params.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout=dropout,
-                residual=residual,
+                default_norm=config_params.norm,
+                default_norm_params=config_params.norm_params,
+                default_activation=config_params.activation,
+                default_dropout=config_params.dropout,
+                residual=config_params.residual,
             )
 
-        if input_features and len(input_features) == 1 and fc_layers is None:
+        if input_features and len(input_features) == 1 and config_params.fc_layers is None:
             self.supports_masking = True
 
     def call(
@@ -143,7 +147,11 @@ class ConcatCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
-    
+
+    @staticmethod
+    def get_params_cls() -> Type[BaseModel]:
+        return ConcatCombinerParams
+
     # TODO: correct ranges?
     validation_schema = {
         'fc_size': {
