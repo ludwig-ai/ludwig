@@ -31,6 +31,7 @@ from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.initializer_modules import initializers_registry
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: Where should these go? Are they complete?
-temp_weights_initializer_registry = ['glorot_uniform']
+weights_initializer_registry = list(initializers_registry.keys())
 temp_bias_initializer_registry = ['zeros']
 temp_activation_registry = ['relu']
 temp_reduce_output_registry = ['mean', 'concat']
@@ -648,7 +649,7 @@ class TransformerCombiner(tf.keras.Model):
             'maximum': 256
         },
         'use_bias': { 'type': 'boolean' },
-        'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
+        'weights_initializer': { 'type': 'string', 'enum': initializer_registry },
         'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
         'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
         'fc_dropout': {
