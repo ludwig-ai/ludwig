@@ -194,6 +194,11 @@ def test_config_bad_combiner():
     # config is valid at this point
     validate_config(config)
 
+    # combiner without type
+    del config['combiner']['type']
+    with pytest.raises(ValidationError, match=r"^'type' is a required .*"):
+        validate_config(config)
+
     # bad combiner
     config['combiner']['type'] = 'fake'
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
@@ -201,7 +206,15 @@ def test_config_bad_combiner():
 
     # bad combiner format (list instead of dict)
     config['combiner'] = [{'type': 'tabnet'}]
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match=r"^\[\{'type': 'tabnet'\}\] is not of .*"):
+        validate_config(config)
+    
+    config['combiner'] = {
+        'type': 'tabtransformer',
+        'num_layers': 10,
+        'dropout': False,
+    }
+    with pytest.raises(ValidationError, match=r"^False is not of type.*"):
         validate_config(config)
 
 
