@@ -23,7 +23,7 @@ import torch
 from ludwig.encoders.base import Encoder
 from ludwig.utils import torch_utils
 from ludwig.utils.registry import Registry, register
-from ludwig.modules.embedding_modules import Embed
+from ludwig.modules.embedding_modules import Embed, EmbedSequence
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.modules.recurrent_modules import RecurrentStack
@@ -149,7 +149,7 @@ class H3Embed(H3Encoder):
         )
 
         logger.debug('  cells Embed')
-        self.embed_cells = Embed(
+        self.embed_cells = EmbedSequence(
             [str(i) for i in range(8)],
             embedding_size,
             representation='dense',
@@ -165,7 +165,7 @@ class H3Embed(H3Encoder):
         logger.debug('  FCStack')
         self.fc_size = fc_size
         self.fc_stack = FCStack(
-            first_layer_input_size=H3_INPUT_SIZE,
+            first_layer_input_size=embedding_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -190,38 +190,24 @@ class H3Embed(H3Encoder):
         input_vector = inputs.type(torch.IntTensor)
 
         # ================ Embeddings ================
-        embedded_mode = self.embed_mode(
-            input_vector[:, 0:1],
-        )
-        embedded_edge = self.embed_edge(
-            input_vector[:, 1:2],
-        )
+        embedded_mode = self.embed_mode(input_vector[:, 0:1]).unsqueeze(1)
+        embedded_edge = self.embed_edge(input_vector[:, 1:2]).unsqueeze(1)
         embedded_resolution = self.embed_resolution(
-            input_vector[:, 2:3],
-        )
+            input_vector[:, 2:3]).unsqueeze(1)
         embedded_base_cell = self.embed_base_cell(
-            input_vector[:, 3:4],
-        )
-        embedded_cells = self.embed_cells(
-            input_vector[:, 4:].unsqueeze(1),
-        )
+            input_vector[:, 3:4]).unsqueeze(1)
+        embedded_cells = self.embed_cells(input_vector[:, 4:])
 
         # ================ Masking ================
         resolution = input_vector[:, 2]
         mask = torch.unsqueeze(
             torch_utils.sequence_mask(resolution, 15), -1).type(
             torch.FloatTensor)
+        # Batch size X 15(max resolution) X embedding size
         masked_embedded_cells = embedded_cells * mask
-        logger.error(
-            f'resolution.size(): {resolution.size()}')
-        logger.error(
-            f'mask.size(): {mask.size()}')
-        logger.error(
-            f'embedded_cells.size(): {embedded_cells.size()}')
-        logger.error(
-            f'masked_embedded_cells.size(): {masked_embedded_cells.size()}')
 
         # ================ Reduce ================
+        # Batch size X H3_INPUT_SIZE X Embedding size
         concatenated = torch.cat(
             [embedded_mode, embedded_edge, embedded_resolution,
              embedded_base_cell, masked_embedded_cells],
@@ -232,6 +218,8 @@ class H3Embed(H3Encoder):
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
         hidden = self.fc_stack(hidden)
+        logger.error(
+            f'hidden (after fc stack).size(): {hidden.size()}')
 
         return {'encoder_output': hidden}
 

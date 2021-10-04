@@ -25,8 +25,15 @@ from ludwig.utils.torch_utils import LudwigModule, initializer_registry,\
 logger = logging.getLogger(__name__)
 
 
-
 class FCLayer(LudwigModule):
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.output_size])
 
     def __init__(
             self,
@@ -50,6 +57,8 @@ class FCLayer(LudwigModule):
 
         #self.layers = []
         self.layers = ModuleList()
+        self.input_size = input_size
+        self.output_size = output_size
 
         '''
         self.layers.append(Dense(
@@ -90,11 +99,10 @@ class FCLayer(LudwigModule):
             self.activity_regularizer = activity_regularizer
             self.add_loss(lambda: self.activation_loss)
 
-
         if norm and norm_params is None:
             norm_params = {}
         if norm == 'batch':
-            #self.layers.append(BatchNormalization(**norm_params))
+            # self.layers.append(BatchNormalization(**norm_params))
             # might need if statement for 1d vs 2d? like images
             if input_rank == 2:
                 self.layers.append(BatchNorm1d(output_size, **norm_params))
@@ -109,7 +117,7 @@ class FCLayer(LudwigModule):
             self.layers.append(LayerNorm(output_size, **norm_params))
 
         # Dict for activation objects in pytorch?
-        #self.layers.append(Activations(activation))
+        # self.layers.append(Activations(activation))
         self.layers.append(activations[activation]())
         self.activation_index = len(self.layers) - 1
 
@@ -130,7 +138,8 @@ class FCLayer(LudwigModule):
             #hidden = layer(hidden, training=training)
             hidden = layer(hidden)
             if i == self.activation_index and self.activity_regularizer:
-                self.activation_loss = reg_loss(hidden, self.activity_regularizer)/batch_size
+                self.activation_loss = reg_loss(
+                    hidden, self.activity_regularizer)/batch_size
 
         return hidden
 
@@ -253,4 +262,10 @@ class FCStack(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if len(self.stack) > 0:
+            return self.stack[-1].output_shape
         return torch.Size([self.input_size])
