@@ -263,14 +263,14 @@ class DateEmbed(DateEncoder):
         input_vector = inputs.type(torch.IntTensor)
 
         scaled_year = self.year_fc(input_vector[:, 0:1].type(torch.FloatTensor))
-        embedded_month = self.embed_month(input_vector[:, 1].unsqueeze(1) - 1)
-        embedded_day = self.embed_day(input_vector[:, 2].unsqueeze(1) - 1)
-        embedded_weekday = self.embed_weekday(input_vector[:, 3].unsqueeze(1))
+        embedded_month = self.embed_month(input_vector[:, 1:2] - 1)
+        embedded_day = self.embed_day(input_vector[:, 2:3] - 1)
+        embedded_weekday = self.embed_weekday(input_vector[:, 3:4])
         embedded_yearday = self.embed_yearday(
-            input_vector[:, 4].unsqueeze(1) - 1)
-        embedded_hour = self.embed_hour(input_vector[:, 5].unsqueeze(1))
-        embedded_minute = self.embed_minute(input_vector[:, 6].unsqueeze(1))
-        embedded_second = self.embed_second(input_vector[:, 7].unsqueeze(1))
+            input_vector[:, 4:5] - 1)
+        embedded_hour = self.embed_hour(input_vector[:, 5:6])
+        embedded_minute = self.embed_minute(input_vector[:, 6:7])
+        embedded_second = self.embed_second(input_vector[:, 7:8])
         periodic_second_of_day = torch_utils.periodic(
             input_vector[:, 8:9], 86400)
 
