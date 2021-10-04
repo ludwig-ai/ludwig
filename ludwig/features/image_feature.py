@@ -197,7 +197,7 @@ class ImageFeatureMixin:
         """
 
         explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
-        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 
         if explicit_num_channels:
             first_image = read_image(first_img_entry, preprocessing_parameters[NUM_CHANNELS])
