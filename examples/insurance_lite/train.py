@@ -20,7 +20,7 @@ dataset = insurance_lite.load()
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./config.yaml',
                     logging_level=logging.INFO,
-                    backend='ray')
+                    backend='local')
 
 
 # initiate model training
