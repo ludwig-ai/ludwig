@@ -5,6 +5,8 @@ import torch
 from torch import nn
 from torch.nn import Module, ModuleDict
 
+from typing import Optional
+
 
 def sequence_length_3D(sequence):
     used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
@@ -13,7 +15,9 @@ def sequence_length_3D(sequence):
     return length
 
 
-def sequence_mask(lengths, maxlen=None, dtype=torch.bool):
+def sequence_mask(
+        lengths: torch.Tensor,
+        maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
     if maxlen is None:
         maxlen = lengths.max()
     row_vector = torch.arange(0, maxlen, 1)
