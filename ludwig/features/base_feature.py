@@ -17,6 +17,11 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict
 
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pass
+import pandas as pd
 import torch
 
 from ludwig.constants import *
@@ -78,10 +83,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
-        return tf.keras.Input(shape=self.input_shape,
-                              dtype=self.get_input_dtype(),
-                              name=self.name + '_input')
-
+        return torch.rand(self.input_shape, dtype=self.input_dtype)
 
     @staticmethod
     @abstractmethod
@@ -174,9 +176,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 )
 
     def create_input(self):
-        return tf.keras.Input(shape=self.output_shape,
-                              dtype=self.get_output_dtype(),
-                              name=self.name + '_input')
+        return torch.rand(self.output_shape, dtype=self.get_output_dtype())
 
     @abstractmethod
     def get_prediction_set(self):
@@ -219,7 +219,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 metric_fn.update(predictions, targets)
             else:
                 #metric_fn.update_state(targets, predictions[PREDICTIONS])
-                metric_fn.update(predictions[PREDICTIONS], targets)
+                metric_fn.update(predictions, targets)
 
     def get_metrics(self):
         metric_vals = {}
@@ -411,7 +411,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                         dependencies_hidden.append(dependency_final_hidden)
 
             try:
-                hidden = tf.concat([hidden] + dependencies_hidden, -1)
+                hidden = torch.cat([hidden] + dependencies_hidden, dim=-1)
             except:
                 raise ValueError(
                     'Shape mismatch while concatenating dependent features of '
@@ -520,3 +520,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         )
 
         return feature_hidden
+
+    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Converts the output of batch_predict to a 1D array. """
+        return df
+
+    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+        """ Reshapes a flattened 1D array into its original shape. """
+        return df
+

@@ -119,7 +119,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
                inputs.dtype == torch.int32 or inputs.dtype == torch.int64
@@ -127,9 +127,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
             inputs = inputs.type(torch.IntTensor)
-        encoder_output = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        encoder_output = self.encoder_obj(inputs)
 
         return {'encoder_output': encoder_output}
 

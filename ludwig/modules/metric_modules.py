@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 from abc import abstractmethod
+from typing import Dict
 
 import numpy as np
 
@@ -26,15 +27,11 @@ from ludwig.modules.loss_modules import (
     #     SigmoidCrossEntropyLoss,
     #     SoftmaxCrossEntropyLoss,
     #     SampledSoftmaxCrossEntropyLoss,
-    rmspe_loss, SoftmaxCrossEntropyLoss,
+    rmspe_loss, SoftmaxCrossEntropyLoss, SigmoidCrossEntropyLoss
 )
 import torch
-from torchmetrics import (
-    MeanAbsoluteError,
-    MeanSquaredError,
-    Metric,
-    AUROC, Accuracy, AverageMeter,
-)
+from torchmetrics import Accuracy, AUROC, AverageMeter, IoU, MeanAbsoluteError,\
+    MeanSquaredError, Metric
 #from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {
@@ -166,7 +163,7 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
         self.add_state("sum_y_y_hat", default=torch.tensor(0, dtype=torch.float32))
         self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update(self, y_hat, y):
+    def update(self, y_hat: Dict[str, torch.Tensor], y: torch.Tensor):
         '''
         y = tf.cast(y, dtype=tf.float32)
         y_hat = tf.cast(y_hat, dtype=tf.float32)
@@ -177,6 +174,8 @@ class R2Score(Metric):#(tf.keras.metrics.Metric):
         self.sum_y_y_hat.assign_add(tf.reduce_sum(y * y_hat))
         self.N.assign_add(y.shape[0])
         '''
+        y_hat = y_hat[PREDICTIONS]
+
         y = y.type(torch.float32)
         y_hat = y_hat.type(torch.float32)
         self.sum_y += torch.sum(y)
@@ -298,16 +297,22 @@ class SoftmaxCrossEntropyMetric(MeanMetric):
 #         super().update_state(self.metric_function(y, y_hat))
 #
 #
-# class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
-#     def __init__(self, feature_loss=None, name="sigmoid_cross_entropy_metric"):
-#         super().__init__(name=name)
-#         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(
-#             feature_loss
-#         )
-#
-#     def update_state(self, y, y_hat):
-#         super().update_state(self.sigmoid_cross_entropy_function(y, y_hat))
-#
+class SigmoidCrossEntropyMetric(Metric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
+        self.add_state(
+            name='loss',
+            default=[],
+            dist_reduce_fx='mean'
+        )
+
+    def update(self, y: torch.Tensor, y_hat: torch.Tensor) -> None:
+        self.loss.append(self.sigmoid_cross_entropy_function(y, y_hat))
+
+    def compute(self) -> torch.Tensor:
+        return torch.mean(torch.stack(self.loss))
+
 #
 # class SequenceLossMetric(tf.keras.metrics.Mean):
 #     def __init__(self, from_logits=True, name=None):
@@ -520,50 +525,25 @@ class MSEMetric(MeanSquaredError):
     def __init__(self, name="MSE", **kwargs):
         super(MSEMetric, self).__init__(**kwargs)
 
-    def update(self, preds, target):
+    def update(self, preds: torch.Tensor, target):
         super().update(
             preds[PREDICTIONS].detach(), target
         )
 
 
-# class JaccardMetric(tf.keras.metrics.Metric):
-#     def __init__(self, name=None):
-#         super().__init__(name=name)
-#         self.jaccard_total = self.add_weight(
-#             "jaccard_numerator", initializer="zeros", dtype=tf.float32
-#         )
-#         self.N = self.add_weight(
-#             "jaccard_denomerator", initializer="zeros", dtype=tf.float32
-#         )
-#
-#     def update_state(self, y_true, y_pred):
-#         # notation: b is batch size and nc is number of unique elements
-#         #           in the set
-#         # y_true: shape [b, nc] bit-mapped set representation
-#         # y_pred: shape [b, nc] bit-mapped set representation
-#
-#         batch_size = tf.cast(tf.shape(y_true)[0], tf.float32)
-#
-#         y_true_bool = tf.cast(y_true, tf.bool)
-#         y_pred_bool = tf.cast(y_pred, tf.bool)
-#
-#         intersection = tf.reduce_sum(
-#             tf.cast(tf.logical_and(y_true_bool, y_pred_bool), tf.float32),
-#             axis=1,
-#         )
-#         union = tf.reduce_sum(
-#             tf.cast(tf.logical_or(y_true_bool, y_pred_bool), tf.float32),
-#             axis=1,
-#         )
-#
-#         jaccard_index = intersection / union  # shape [b]
-#
-#         # update metric state tensors
-#         self.jaccard_total.assign_add(tf.reduce_sum(jaccard_index))
-#         self.N.assign_add(batch_size)
-#
-#     def result(self):
-#         return self.jaccard_total / self.N
+class JaccardMetric(Metric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.jaccard_metric = IoU(num_classes=2, **kwargs)
+        self.add_state(name='loss', default=[], dist_reduce_fx='mean')
+
+    def update(self, y_true: torch.Tensor, y_pred: torch.Tensor) -> None:
+        self.loss.append(self.jaccard_metric(
+            y_pred.type(torch.bool), y_true[PREDICTIONS].type(torch.bool)
+        ))
+
+    def compute(self) -> torch.Tensor:
+        return torch.mean(torch.stack(self.loss))
 
 
 def get_improved_fun(metric):

@@ -1,12 +1,5 @@
-preprocessing:
-  image:
-    infer_image_dimensions: True
-
 combiner:
   type: concat
-  num_fc_layers: 3
-  fc_size: 128
-  dropout: 0.1
 
 training:
   batch_size: auto #256
@@ -23,7 +16,7 @@ hyperopt:
       upper: 8
     combiner.fc_size:
       space: choice
-      categories: [128, 256, 512, 1024]
+      categories: [128, 256]
     combiner.dropout:
       space: uniform
       type: float
@@ -33,10 +26,10 @@ hyperopt:
       space: loguniform
       type: float
       lower: 0.0001
-      upper: 0.01
+      upper: 0.003
     training.batch_size:
       space: choice
-      categories: [8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+      categories: [8, 16, 32, 64, 128, 256, 512, 1024]
 
   sampler:
     type: ray

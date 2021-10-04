@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from typing import Dict
+
 import torch
 from torch import nn
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
@@ -96,7 +98,7 @@ class BWCEWLoss:
         return train_mean_loss
 
 # TODO torch: test behavior parity with tf
-class SoftmaxCrossEntropyLoss(LogitsLoss):
+class SoftmaxCrossEntropyLoss(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss(**kwargs)
@@ -508,3 +510,24 @@ def rmspe_loss(targets, predictions):
         )
     )
     return loss
+
+
+class SigmoidCrossEntropyLoss(nn.Module):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
+
+    def forward(self, y: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
+        if y_pred.ndim != 2:
+            raise RuntimeError(
+                'SigmoidCrossEntropyLoss currently supported for 2D tensors.')
+
+        element_loss = self.loss_fn(
+            y_pred.type(torch.float32),
+            y[LOGITS].type(torch.float32)
+        )
+
+        # Reduce by sum along column dimension, mean along batch dimension.
+        loss = torch.sum(element_loss, dim=1)
+        loss = torch.mean(loss)
+        return loss

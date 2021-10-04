@@ -127,8 +127,7 @@ class ECD(LudwigModule):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
-            encoder_output = encoder(input_values, training=training,
-                                     mask=mask)
+            encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
 
         combiner_outputs = self.combiner(encoder_outputs)
@@ -204,7 +203,7 @@ class ECD(LudwigModule):
                    regularization_lambda=0.0):
         #with tf.GradientTape() as tape:
         optimizer.zero_grad()
-        model_outputs = self((inputs, targets), training=True)
+        model_outputs = self((inputs, targets))
         loss, all_losses = self.train_loss(
             targets, model_outputs, regularization_lambda
         )

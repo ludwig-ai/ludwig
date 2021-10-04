@@ -16,10 +16,13 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from typing import Any, Dict, List, Optional
+
+import torch
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register_default
-from ludwig.modules.embedding_modules import EmbedSparse
+from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
@@ -36,38 +39,36 @@ class SetEncoder(Encoder, ABC):
 
 @register_default(name='embed')
 class SetSparseEncoder(SetEncoder):
-
     def __init__(
             self,
-            vocab,
-            representation='dense',
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
+            vocab: List[str],
+            representation: str = 'dense',
+            embedding_size: int = 50,
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            embeddings_on_cpu: bool = False,
             fc_layers=None,
-            num_fc_layers=0,
-            fc_size=10,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0.0,
-            reduce_output='sum',
+            num_fc_layers: int = 0,
+            fc_size: int = 10,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict[str, Any]] = None,
+            activation: str = 'relu',
+            dropout: float=0.0,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        logger.debug('  EmbedSparse')
-        self.embed_sparse = EmbedSparse(
+        self.vocab_size = len(vocab)
+
+        logger.debug('  Embed')
+        self.embed = Embed(
             vocab,
             embedding_size,
             representation=representation,
@@ -77,11 +78,12 @@ class SetSparseEncoder(SetEncoder):
             dropout=dropout,
             embedding_initializer=weights_initializer,
             embedding_regularizer=weights_regularizer,
-            reduce_output=reduce_output,
         )
 
         logger.debug('  FCStack')
+        # TODO(shreya): Make sure this is updated when FCStack is updated
         self.fc_stack = FCStack(
+            first_layer_input_size=self.embed.output_shape[-1],
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -91,22 +93,30 @@ class SetSparseEncoder(SetEncoder):
             default_weights_regularizer=weights_regularizer,
             default_bias_regularizer=bias_regularizer,
             default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
             default_dropout=dropout,
         )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
+        Params:
+            inputs: The inputs fed into the encoder.
+                    Shape: [batch x vocab_size], type tf.int32.
 
-            :param return: embeddings of shape [batch x embed size], type tf.float32
+        Returns:
+            Embeddings of shape [batch x vocab_size x embed size], type float32.
         """
-        hidden = self.embed_sparse(inputs, training=training, mask=mask)
-        hidden = self.fc_stack(hidden, training=training, mask=mask)
+        hidden = self.embed(inputs)
+        hidden = self.fc_stack(hidden)
 
         return hidden
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape

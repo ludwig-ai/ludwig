@@ -24,6 +24,7 @@ import pickle
 import random
 import re
 from itertools import islice
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -376,21 +377,16 @@ def save_array(data_fp, array):
             output_file.write(str(x) + '\n')
 
 
-def load_pretrained_embeddings(embeddings_path, vocab):
-    embeddings = load_glove(embeddings_path)
-
-    # find out the size of the embeddings
-    embeddings_size = len(next(iter(embeddings.values())))
+# TODO(shreya): Confirm types of args
+def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]
+) -> np.ndarray:
+    """ Create an embedding matrix of all words in vocab. """
+    embeddings, embeddings_size = load_glove(
+        embeddings_path, return_embedding_size=True)
 
     # calculate an average embedding, to use for initializing missing words
-    avg_embedding = np.zeros(embeddings_size)
-    count = 0
-    for word in vocab:
-        if word in embeddings:
-            avg_embedding += embeddings[word]
-            count += 1
-    if count > 0:
-        avg_embedding /= count
+    avg_embedding = [embeddings[w] for w in vocab if w in embeddings]
+    avg_embedding = sum(avg_embedding) / len(avg_embedding)
 
     # create the embedding matrix
     embeddings_vectors = []
@@ -410,7 +406,16 @@ def load_pretrained_embeddings(embeddings_path, vocab):
 
 
 @functools.lru_cache(1)
-def load_glove(file_path):
+def load_glove(
+        file_path: str,
+        return_embedding_size: bool = False
+) -> Dict[str, np.ndarray]:
+    """Loads Glove embeddings for each word.
+
+    Returns:
+        Mapping between word and numpy array of size embedding_size as set by
+        first line of file.
+    """
     logger.info('  Loading Glove format file {}'.format(file_path))
     embeddings = {}
     embedding_size = 0
@@ -431,7 +436,10 @@ def load_glove(file_path):
                 try:
                     split = line.split()
                     if len(split) != embedding_size + 1:
-                        raise ValueError
+                        raise ValueError(
+                            f'Line {line_number} is of length {len(split)}, '
+                            f'while expected length is {embedding_size + 1}.'
+                        )
                     word = split[0]
                     embedding = np.array(
                         [float(val) for val in split[-embedding_size:]]
@@ -445,6 +453,9 @@ def load_glove(file_path):
                         )
                     )
     logger.info('  {0} embeddings loaded'.format(len(embeddings)))
+
+    if return_embedding_size:
+        return embeddings, embedding_size
     return embeddings
 
 

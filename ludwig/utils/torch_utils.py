@@ -38,6 +38,7 @@ initializer_registry = {
     "kaiming_normal": nn.init.kaiming_normal_,
     "orthogonal": nn.init.orthogonal_,
     "sparse": nn.init.sparse_,
+    'identity': nn.init.eye_,
     None: nn.init.xavier_uniform_,
 
 }
@@ -49,7 +50,8 @@ activations = {
     "relu": nn.ReLU,
     "sigmoid": nn.Sigmoid,
     "tanh": nn.Tanh,
-    "softmax": nn.Softmax
+    "softmax": nn.Softmax,
+    None: nn.Identity
 }
 
 
