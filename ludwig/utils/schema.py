@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 
 from jsonschema import validate
 
@@ -115,6 +116,7 @@ def get_output_decoder_conds():
         conds.append(decoder_cond)
     return conds
 
+
 def get_output_preproc_conds():
     conds = []
     for feature_type in OUTPUT_FEATURE_TYPES:
@@ -131,16 +133,19 @@ def get_output_preproc_conds():
         conds.append(preproc_cond)
     return conds
 
+
 def get_combiner_conds():
     conds = []
     for combiner_type in COMBINER_TYPES:
         combiner_cls = combiner_registry[combiner_type]
+        combiner_schema = json.loads(combiner_cls.get_params_cls().schema_json())
         combiner_cond = create_cond(
             {'type': combiner_type},
-            combiner_cls.validation_schema,
+            combiner_schema,
         )
         conds.append(combiner_cond)
     return conds
+
 
 def create_cond(if_pred, then_pred):
     return {

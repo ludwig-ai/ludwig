@@ -14,9 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 
 import pytest
 from jsonschema.exceptions import ValidationError
+
+from ludwig.combiners.combiners import ConcatCombinerParams
 from ludwig.utils.defaults import merge_with_defaults
 
 from ludwig.utils.schema import validate_config, OUTPUT_FEATURE_TYPES
