@@ -1079,7 +1079,7 @@ combiner_registry = {
     'sequence_concat': SequenceConcatCombiner,
     'sequence': SequenceCombiner,
     'tabnet': TabNetCombiner,
-    # 'comparator': ComparatorCombiner,
+    'comparator': ComparatorCombiner,
     "transformer": TransformerCombiner,
     "tabtransformer": TabTransformerCombiner,
 }

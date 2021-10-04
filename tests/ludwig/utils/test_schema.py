@@ -19,7 +19,7 @@ import pytest
 from jsonschema.exceptions import ValidationError
 from ludwig.utils.defaults import merge_with_defaults
 
-from ludwig.utils.schema import get_schema, validate_config, OUTPUT_FEATURE_TYPES
+from ludwig.utils.schema import validate_config, OUTPUT_FEATURE_TYPES
 
 from tests.integration_tests.utils import ENCODERS, numerical_feature, \
     binary_feature, audio_feature, bag_feature, date_feature, h3_feature, \
@@ -80,9 +80,6 @@ def test_config_features():
         dtype = input_feature['type']
         with pytest.raises(ValidationError, match=rf"^'{dtype}' is not one of .*"):
             validate_config(config)
-
-def test_schema_single():
-    print(get_schema())
 
 def test_config_encoders():
     for encoder in ENCODERS:
@@ -170,13 +167,11 @@ def test_config_bad_preprocessing_param():
                      'width': 12,
                      'num_channels': 3,
                      'tokenizer': 'space',
-                     'cat': 'test',
                 },
             ),
         ],
         'output_features': [category_feature(vocab_size=2, reduce_input='sum')],
         'combiner': {'type': 'concat', 'fc_size': 14},
-        'dog': 'test'
     }
 
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):

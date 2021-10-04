@@ -15,10 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import inspect
-
 from jsonschema import validate
-from jsonschema.validators import create
 
 from ludwig.combiners.combiners import combiner_registry
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -26,36 +23,6 @@ from ludwig.features.feature_registries import input_type_registry, output_type_
 INPUT_FEATURE_TYPES = sorted(list(input_type_registry.keys()))
 OUTPUT_FEATURE_TYPES = sorted(list(output_type_registry.keys()))
 COMBINER_TYPES = sorted(list(combiner_registry.keys()))
-
-# concatSchema = {
-#     'concat': {
-#         'type': 'object',
-#         'properties': {
-#             'type': {'type': 'string', 'enum': COMBINER_TYPES},
-#             'fc_size': {
-#                 'type': 'integer',
-#                 # TODO: correct range?
-#                 'minimum': 1,
-#                 'maximum': 256
-#             },
-#             'use_bias': { 'type': 'boolean' },
-#             'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
-#             'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-#             'activation': { 'type': 'string', 'enum': temp_activation_registry },
-#             'dropout': {
-#                 'type': 'number',
-#                 'minimum': 0,
-#                 'maximum': 1
-#             },
-#             'flatten_inputs': { 'type': 'boolean' },
-#             'residual': { 'type': 'boolean' }
-#         },
-#         # TODO: Force all properties to be set?:
-#         # "additionalProperties": False,
-#         # "minProperties": 9
-#         "required": ['type']
-#     },
-# }
 
 def get_schema():
     schema = {
@@ -96,7 +63,6 @@ def get_schema():
                 },
                 'allOf': get_combiner_conds(),
                 'required': ['type'],
-                # 'additionalProperties': False,
             },
             'training': {},
             'preprocessing': {},
