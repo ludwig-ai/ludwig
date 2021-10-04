@@ -54,6 +54,8 @@ class FCLayer(LudwigModule):
         super().__init__()
 
         self.layers = ModuleList()
+        self.input_size = input_size
+        self.output_size = output_size
 
         self.input_size = input_size
         self.output_size = output_size
