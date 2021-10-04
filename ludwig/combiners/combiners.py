@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from abc import abstractmethod
 import logging
-from typing import List
-import numpy as np
-from typing import Union
+from typing import Union, Optional, List, Dict
+from functools import lru_cache
 
 import torch
 from torch.nn import Module
@@ -41,23 +41,54 @@ from ludwig.utils.torch_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class ConcatCombiner(LudwigModule):
+# super class to house common properties
+class CombinerClass(LudwigModule):
+    @property
+    @abstractmethod
+    def concatenated_shape(self) -> torch.Size:
+        """ Returns the size of concatenated encoder output tensors. """
+        raise NotImplementedError('Abstract class.')
+
+    @property
+    def input_shape(self) -> dict:
+        # input to combiner is a dictionary of the input features encoder
+        # outputs, this property returns dictionary of output shapes for each
+        # input feature's encoder output shapes.
+        return {k: self.input_features[k].output_shape
+                for k in self.input_features}
+
+    @property
+    @lru_cache(maxsize=1)
+    def output_shape(self) -> torch.Size:
+        psuedo_input = {}
+        for k in self.input_features:
+            psuedo_input[k] = {
+                'encoder_output': torch.rand(
+                    2, *self.input_features[k].output_shape,
+                    dtype=self.input_dtype
+                )
+            }
+        output_tensor = self.forward(psuedo_input)
+        return output_tensor['combiner_output'].size()[1:]
+
+
+class ConcatCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: dict = None,
+            input_features: Dict = None,
             fc_layers: Union[list, None] = None,
-            num_fc_layers: Union[None, int] = None,
+            num_fc_layers: Optional[int] = None,
             fc_size: int = 256,
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Union[None, str] = None,
-            bias_regularizer: Union[None, str] = None,
-            activity_regularizer: Union[None, str] = None,
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm: Union[None, str] = None,
-            norm_params: Union[None, dict] = None,
+            norm: Optional[str] = None,
+            norm_params: Optional[dict] = None,
             activation: str = 'relu',
             dropout: float = 0,
             flatten_inputs: bool = False,
@@ -84,7 +115,7 @@ class ConcatCombiner(LudwigModule):
         if fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                first_layer_input_size=self.input_shape[-1],
+                first_layer_input_size=self.concatenated_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -106,11 +137,20 @@ class ConcatCombiner(LudwigModule):
         if input_features and len(input_features) == 1 and fc_layers is None:
             self.supports_masking = True
 
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
     def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
+            inputs: dict,  # encoder outputs
+            training: Optional[bool] = None,
+            mask: Optional[bool] = None,
             **kwargs
     ):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
@@ -145,30 +185,13 @@ class ConcatCombiner(LudwigModule):
 
         return return_data
 
-    @property
-    def input_shape(self) -> torch.Size:
-        if self.flatten_inputs:
-            shapes = [np.prod(self.input_features[k].output_shape) for k in
-                      self.input_features]
-        else:
-            shapes = [self.input_features[k].output_shape[-1] for k in
-                      self.input_features]  # output shape not input shape
-        return torch.Size([sum(shapes)])
 
-    @property
-    def output_shape(self) -> torch.Size:
-        if self.fc_layers is not None:
-            return torch.Size([self.fc_layers[-1]['fc_size']])
-        else:
-            return self.input_shape
-
-
-class SequenceConcatCombiner(LudwigModule):
+class SequenceConcatCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: dict,
-            reduce_output: Union[None, str] = None,
-            main_sequence_feature: Union[None, str] = None,
+            input_features: Dict,
+            reduce_output: Optional[str] = None,
+            main_sequence_feature: Optional[str] = None,
             **kwargs
     ):
         super().__init__()
@@ -182,11 +205,31 @@ class SequenceConcatCombiner(LudwigModule):
             self.supports_masking = True
         self.main_sequence_feature = main_sequence_feature
 
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # computes the effective shape of the input tensor after combining
+        # all the encoder outputs
+        # determine sequence size by finding the first sequence tensor
+        # assume all the sequences are of the same size, if not true
+        # this will be caught during processing
+        seq_size = None
+        for k in self.input_features:
+            # dim-2 output_shape implies a sequence [seq_size, hidden]
+            if len(self.input_features[k].output_shape) == 2:
+                seq_size = self.input_features[k].output_shape[0]
+                break
+
+        # collect the size of the last dimension for all input feature
+        # encoder outputs
+        shapes = [self.input_features[k].output_shape[-1] for k in
+                  self.input_features]  # output shape not input shape
+        return torch.Size([seq_size, sum(shapes)])
+
     def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
+            inputs: dict,  # encoder outputs
+            training: Optional[bool] = None,
+            mask: Optional[bool] = None,
             **kwargs
     ):
         if (self.main_sequence_feature is None or
@@ -305,13 +348,13 @@ class SequenceConcatCombiner(LudwigModule):
         return return_data
 
 
-class SequenceCombiner(LudwigModule):
+class SequenceCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: dict,
-            reduce_output: Union[None, str] = None,
-            main_sequence_feature: Union[None, str] = None,
-            encoder: Union[None, str] = None,
+            input_features: Dict,
+            reduce_output: Optional[str] = None,
+            main_sequence_feature: Optional[str] = None,
+            encoder: Optional[str] = None,
             **kwargs
     ):
         super().__init__()
@@ -326,10 +369,17 @@ class SequenceCombiner(LudwigModule):
             main_sequence_feature=main_sequence_feature
         )
 
+        logger.debug(
+            f'combiner input shape {self.combiner.concatenated_shape}, '
+            f'output shape {self.combiner.output_shape}'
+        )
+
         self.encoder_obj = get_from_registry(
             encoder, sequence_encoder_registry)(
             should_embed=False,
             reduce_output=reduce_output,
+            embedding_size=self.combiner.output_shape[1],
+            max_sequence_length=self.combiner.output_shape[0],
             **kwargs
         )
 
@@ -337,11 +387,31 @@ class SequenceCombiner(LudwigModule):
                 self.encoder_obj.supports_masking):
             self.supports_masking = True
 
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # computes the effective shape of the input tensor after combining
+        # all the encoder outputs
+        # determine sequence size by finding the first sequence tensor
+        # assume all the sequences are of the same size, if not true
+        # this will be caught during processing
+        seq_size = None
+        for k in self.input_features:
+            # dim-2 output_shape implies a sequence [seq_size, hidden]
+            if len(self.input_features[k].output_shape) == 2:
+                seq_size = self.input_features[k].output_shape[0]
+                break
+
+        # collect the size of the last dimension for all input feature
+        # encoder outputs
+        shapes = [self.input_features[k].output_shape[-1] for k in
+                  self.input_features]  # output shape not input shape
+        return torch.Size([seq_size, sum(shapes)])
+
     def forward(
             self,
             inputs,  # encoder outputs
-            training=None,
-            mask=None,
+            training: Optional[bool] = None,
+            mask: Optional[bool] = None,
             **kwargs
     ):
         # ================ Concat ================
@@ -455,29 +525,29 @@ class TabNetCombiner(Module):
 class TransformerCombiner(Module):
     def __init__(
             self,
-            input_features=None,
-            num_layers=1,
-            hidden_size=256,
-            num_heads=8,
-            transformer_fc_size=256,
-            dropout=0.1,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
+            input_features: Dict = None,
+            num_layers: int = 1,
+            hidden_size: int = 256,
+            num_heads: int = 8,
+            transformer_fc_size: int = 256,
+            dropout: float = 0.1,
+            fc_layers: Optional[list] = None,
+            num_fc_layers: int = 0,
+            fc_size: int = 256,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            fc_activation='relu',
-            fc_dropout=0,
-            fc_residual=False,
-            reduce_output='mean',
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict] = None,
+            fc_activation: str = 'relu',
+            fc_dropout: float = 0,
+            fc_residual: bool = False,
+            reduce_output: Optional[str] = 'mean',
             **kwargs
     ):
         super().__init__()

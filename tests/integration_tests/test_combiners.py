@@ -25,6 +25,7 @@ HIDDEN_SIZE = 24
 OTHER_HIDDEN_SIZE = 32
 FC_SIZE = 8
 BASE_FC_SIZE = 16
+NUM_FILTERS = 20
 
 
 # emulate Input Feature class.  Need to provide output_shape property to
@@ -159,7 +160,14 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
     combiner = ConcatCombiner(input_features_dict, fc_layers=fc_layer,
                               flatten_inputs=flatten_inputs)
 
-    # concatenate encoder outputs
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
+
+    # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
     # correct data structure
@@ -170,19 +178,8 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
     assert isinstance(combiner_output['combiner_output'], torch.Tensor)
 
     # confirm correct output shapes
-    if fc_layer:
-        assert combiner_output["combiner_output"].shape == (BATCH_SIZE, FC_SIZE)
-    else:
-        # calculate expected hidden size for concatenated tensors
-        hidden_size = 0
-        for k in encoder_outputs_dict:
-            hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[1] \
-                if not flatten_inputs else \
-                encoder_outputs_dict[k]["encoder_output"] \
-                    .reshape(BATCH_SIZE, -1).shape[1]
-
-        assert combiner_output["combiner_output"].shape == \
-               (BATCH_SIZE, hidden_size)
+    assert combiner_output["combiner_output"].shape == \
+           (BATCH_SIZE, *combiner.output_shape)
 
 
 # test for sequence concatenation combiner
@@ -201,12 +198,22 @@ def test_sequence_concat_combiner(
         reduce_output=reduce_output
     )
 
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
+
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs_dict:
         hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
-    # concatenate encoder outputs
+    # confirm correctness of concatenated_shape
+    assert combiner.concatenated_shape[-1] == hidden_size
+
+    # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
     # correct data structure
@@ -217,15 +224,8 @@ def test_sequence_concat_combiner(
     assert isinstance(combiner_output['combiner_output'], torch.Tensor)
 
     # confirm correct shape
-    if reduce_output is None:
-        assert combiner_output["combiner_output"].shape == (
-            BATCH_SIZE,
-            SEQ_SIZE,
-            hidden_size,
-        )
-    else:
-        assert combiner_output["combiner_output"].shape == (
-        BATCH_SIZE, hidden_size)
+    assert combiner_output['combiner_output'].shape == \
+           (BATCH_SIZE, *combiner.output_shape)
 
 
 # test for sequence combiner
@@ -242,37 +242,39 @@ def test_sequence_combiner(
         main_sequence_feature=main_sequence_feature,
         encoder=encoder,
         reduce_output=reduce_output,
+        # following emulates encoder parameters passed in from config file
+        fc_size=FC_SIZE,
+        num_fc_layers=3,
     )
+
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
-    for k in encoder_outputs:
-        hidden_size += encoder_outputs[k]["encoder_output"].shape[-1]
+    for k in encoder_outputs_dict:
+        hidden_size += encoder_outputs_dict[k]["encoder_output"].shape[-1]
 
-    # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    # confirm correctness of concatenated_shape
+    assert combiner.concatenated_shape[-1] == hidden_size
 
-    # required key present
-    assert "combiner_output" in results
+    # combine encoder outputs
+    combiner_output = combiner(encoder_outputs_dict)
 
-    combiner_shape = results["combiner_output"].shape
+    # correct data structure
+    assert isinstance(combiner_output, dict)
+
+    # required key present and correct data type
+    assert "combiner_output" in combiner_output
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+
     # test for correct dimension
-    if reduce_output:
-        assert len(combiner_shape) == 2
-    else:
-        assert len(combiner_shape) == 3
-
-    # Shape test assumes on Ludwig sequence encoder defaults
-    #   parallel encoders: # layers = 4, fc_size=256
-    #   non-parallel encoders: fc_size=256
-    # if defaults change, then this test has to be updated
-    default_layer = 4
-    default_fc_size = 256
-
-    if "parallel" in encoder:
-        combiner_shape[-1] == default_layer * default_fc_size
-    else:
-        combiner_shape[-1] == default_fc_size
+    assert combiner_output['combiner_output'].shape \
+           == (BATCH_SIZE, *combiner.output_shape)
 
 
 def tabnet_encoder_outputs():
