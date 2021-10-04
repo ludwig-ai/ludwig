@@ -46,8 +46,6 @@ class FCLayer(LudwigModule):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -55,7 +53,6 @@ class FCLayer(LudwigModule):
     ):
         super().__init__()
 
-        # self.layers = []
         self.layers = ModuleList()
 
         self.input_size = input_size
@@ -103,7 +100,6 @@ class FCLayer(LudwigModule):
         if norm and norm_params is None:
             norm_params = {}
         if norm == 'batch':
-            # self.layers.append(BatchNormalization(**norm_params))
             # might need if statement for 1d vs 2d? like images
             if input_rank == 2:
                 self.layers.append(BatchNorm1d(output_size, **norm_params))
@@ -118,17 +114,11 @@ class FCLayer(LudwigModule):
             self.layers.append(LayerNorm(output_size, **norm_params))
 
         # Dict for activation objects in pytorch?
-        # self.layers.append(Activations(activation))
         self.layers.append(activations[activation]())
         self.activation_index = len(self.layers) - 1
 
         if dropout > 0:
             self.layers.append(Dropout(dropout))
-
-        for layer in self.layers:
-            # REMOVE, just temporary
-            layer.name = "Placeholder"
-            logger.debug('   {}'.format(layer.name))
 
     def forward(self, inputs, training=None, mask=None):
         self.training = training
@@ -136,7 +126,6 @@ class FCLayer(LudwigModule):
         hidden = inputs
 
         for i, layer in enumerate(self.layers):
-            # hidden = layer(hidden, training=training)
             hidden = layer(hidden)
             if i == self.activation_index and self.activity_regularizer:
                 self.activation_loss = reg_loss(
@@ -160,8 +149,6 @@ class FCStack(LudwigModule):
             default_weights_regularizer=None,
             default_bias_regularizer=None,
             default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
@@ -200,10 +187,6 @@ class FCStack(LudwigModule):
                 layer['bias_regularizer'] = default_bias_regularizer
             if 'activity_regularizer' not in layer:
                 layer['activity_regularizer'] = default_activity_regularizer
-            # if 'weights_constraint' not in layer:
-            #     layer['weights_constraint'] = default_weights_constraint
-            # if 'bias_constraint' not in layer:
-            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
             if 'norm_params' not in layer:
@@ -227,8 +210,6 @@ class FCStack(LudwigModule):
                     weights_regularizer=layer['weights_regularizer'],
                     bias_regularizer=layer['bias_regularizer'],
                     activity_regularizer=layer['activity_regularizer'],
-                    # weights_constraint=layer['weights_constraint'],
-                    # bias_constraint=layer['bias_constraint'],
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
@@ -246,8 +227,6 @@ class FCStack(LudwigModule):
                 hidden = hidden + out
             else:
                 hidden = out
-            # layers[0] is the dense layer in a FC layer
-            # prev_fc_layer_size = layer.layers[0].units
             prev_fc_layer_size = layer.layers[0].out_features
         return hidden
 
@@ -257,4 +236,6 @@ class FCStack(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        return self.stack[-1].output_shape
+        if len(self.stack) > 0:
+            return self.stack[-1].output_shape
+        return torch.Size([self.input_size])

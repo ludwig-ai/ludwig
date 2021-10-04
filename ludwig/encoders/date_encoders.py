@@ -49,7 +49,7 @@ class DateEmbed(DateEncoder):
             embedding_size: int = 10,
             embeddings_on_cpu: bool = False,
             fc_layers: Optional[List[Dict]] = None,
-            num_fc_layers: int = 1,
+            num_fc_layers: int = 0,
             fc_size: int = 10,
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
@@ -224,15 +224,15 @@ class DateEmbed(DateEncoder):
 
         # Summed sizes of all of the embeddings.
         fc_layer_input_size = (
-                self.year_fc.output_shape[0] +
-                self.embed_month.output_shape[0] +
-                self.embed_day.output_shape[0] +
-                self.embed_weekday.output_shape[0] +
-                self.embed_yearday.output_shape[0] +
-                self.embed_hour.output_shape[0] +
-                self.embed_minute.output_shape[0] +
-                self.embed_second.output_shape[0]
-                + 1  # for periodic_second_of_day.
+            self.year_fc.output_shape[0] +
+            self.embed_month.output_shape[0] +
+            self.embed_day.output_shape[0] +
+            self.embed_weekday.output_shape[0] +
+            self.embed_yearday.output_shape[0] +
+            self.embed_hour.output_shape[0] +
+            self.embed_minute.output_shape[0] +
+            self.embed_second.output_shape[0]
+            + 1  # for periodic_second_of_day.
         )
 
         logger.debug('  FCStack')
@@ -262,7 +262,8 @@ class DateEmbed(DateEncoder):
         # ================ Embeddings ================
         input_vector = inputs.type(torch.IntTensor)
 
-        scaled_year = self.year_fc(input_vector[:, 0:1].type(torch.FloatTensor))
+        scaled_year = self.year_fc(
+            input_vector[:, 0:1].type(torch.FloatTensor))
         embedded_month = self.embed_month(input_vector[:, 1:2] - 1)
         embedded_day = self.embed_day(input_vector[:, 2:3] - 1)
         embedded_weekday = self.embed_weekday(input_vector[:, 3:4])
@@ -374,8 +375,8 @@ class DateWave(DateEncoder):
         # Summed sizes of all of the embeddings.
         # Additional 8 for periodic_[month, day, ..., second_of_day].
         fc_layer_input_size = (
-                self.year_fc.output_shape[0] +
-                8
+            self.year_fc.output_shape[0] +
+            8
         )
 
         logger.debug('  FCStack')
