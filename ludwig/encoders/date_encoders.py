@@ -272,7 +272,7 @@ class DateEmbed(DateEncoder):
         embedded_minute = self.embed_minute(input_vector[:, 6:7])
         embedded_second = self.embed_second(input_vector[:, 7:8])
         periodic_second_of_day = torch_utils.periodic(
-            input_vector[:, 8:9], 86400)
+            input_vector[:, 8:9].type(torch.FloatTensor), 86400)
 
         hidden = torch.cat(
             [scaled_year, embedded_month, embedded_day,
