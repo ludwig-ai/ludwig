@@ -1017,7 +1017,7 @@ class ComparatorCombiner(CombinerClass):
         )  # [bs, 1]
 
         logger.debug(
-            'preparing combiner output by concatenating: '
+            'preparing combiner output by concatenating these tensors: '
             f'dot_product: {dot_product.shape}, element_size_mul: {element_wise_mul.shape}'
             f', abs_diff: {abs_diff.shape}, bilinear_prod {bilinear_prod.shape}'
         )
