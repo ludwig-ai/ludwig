@@ -854,26 +854,26 @@ class ComparatorCombiner(CombinerClass):
             input_features: dict,
             entity_1: List[str],
             entity_2: List[str],
-            # fc_layers=None,
-            num_fc_layers=1,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer="xavier_uniform",
-            bias_initializer="zeros",
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
+            fc_layers: Optional[list] = None,
+            num_fc_layers: int = 1,
+            fc_size: int = 256,
+            use_bias: bool = True,
+            weights_initializer: str = "xavier_uniform",
+            bias_initializer: str = "zeros",
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation="relu",
-            dropout=0,
+            norm: Optional[str] = None,
+            norm_params: Optional[dict] = None,
+            activation: str = "relu",
+            dropout: float = 0,
             **kwargs,
     ):
         super().__init__()
         self.name = "ComparatorCombiner"
-        logger.debug(" {}".format(self.name))
+        logger.debug("Entering {}".format(self.name))
 
         self.input_features = input_features
         self.entity_1 = entity_1
@@ -884,13 +884,13 @@ class ComparatorCombiner(CombinerClass):
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        # if fc_layers is None and num_fc_layers is not None:
-        fc_layers = []
-        for i in range(num_fc_layers):
-            fc_layers.append({"fc_size": fc_size})
+        if fc_layers is None and num_fc_layers is not None:
+            fc_layers = []
+            for i in range(num_fc_layers):
+                fc_layers.append({"fc_size": fc_size})
 
         if fc_layers is not None:
-            logger.debug("  FCStack")
+            logger.debug("Setting up FCStack")
             self.e1_fc_stack = FCStack(
                 self.get_entity_shape(entity_1)[-1],
                 layers=fc_layers,
@@ -928,13 +928,15 @@ class ComparatorCombiner(CombinerClass):
                 default_dropout=dropout,
             )
 
-        # todo: this should actually be the size of the last fc layer,
-        #  not just fc_size
-        # todo: set initializer and regularization
-        self.bilinear_weights = torch.randn([fc_size, fc_size],
-                                            dtype=torch.float32)
+        self.last_fc_layer_fc_size = fc_layers[-1]['fc_size']
 
-    def get_entity_shape(self, entity: dict) -> torch.Size:
+        # todo: set initializer and regularization
+        self.bilinear_weights = torch.randn(
+            [self.last_fc_layer_fc_size, self.last_fc_layer_fc_size],
+            dtype=torch.float32
+        )
+
+    def get_entity_shape(self, entity: list) -> torch.Size:
         size = 0
         for k in entity:
             size += np.prod(self.input_features[k].output_shape)
@@ -942,17 +944,7 @@ class ComparatorCombiner(CombinerClass):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([2 * self.fc_size])
-        # todo: deterimine if we want to use this method
-        # psuedo_encoder_outputs = {}
-        # for f in self.entity_1 + self.entity_2:
-        #     psuedo_encoder_outputs[f] = {
-        #         'encoder_output':
-        #         torch.randn(2, *self.input_features[f].output_shape,
-        #                     dtype=self.input_dtype)
-        #     }
-        # combiner_output = self.forward(psuedo_encoder_outputs)
-        # return combiner_output['combiner_output'].size()[1:]
+        return torch.Size([2 * self.last_fc_layer_fc_size + 2])
 
     def forward(
             self,
@@ -1011,21 +1003,27 @@ class ComparatorCombiner(CombinerClass):
         if e1_hidden.shape != e2_hidden.shape:
             raise ValueError(
                 f"Mismatching shapes among dimensions! "
-                f"entity1 shape: {e1_hidden.shape.as_list()} "
-                f"entity2 shape: {e2_hidden.shape.as_list()}"
+                f"entity1 shape: {e1_hidden.shape} "
+                f"entity2 shape: {e2_hidden.shape}"
             )
 
-        dot_product = torch.matmul(e1_hidden, torch.transpose(e2_hidden, 0, 1))
-        element_wise_mul = e1_hidden * e2_hidden
-        abs_diff = torch.abs(e1_hidden - e2_hidden)
-        bilinear_prod = torch.matmul(
-            e1_hidden,
-            torch.matmul(self.bilinear_weights,
-                         torch.transpose(e2_hidden, 0, 1))
+        element_wise_mul = e1_hidden * e2_hidden  # [bs, fc_size]
+        dot_product = torch.sum(element_wise_mul, 1, keepdim=True)  # [bs, 1]
+        abs_diff = torch.abs(e1_hidden - e2_hidden)  # [bs, fc_size]
+        bilinear_prod = torch.sum(
+            torch.matmul(e1_hidden, self.bilinear_weights) * e2_hidden,
+            # [bs, fc_size]
+            1, keepdim=True
+        )  # [bs, 1]
+
+        logger.debug(
+            'preparing combiner output by concatenating: '
+            f'dot_product: {dot_product.shape}, element_size_mul: {element_wise_mul.shape}'
+            f', abs_diff: {abs_diff.shape}, bilinear_prod {bilinear_prod.shape}'
         )
         hidden = torch.cat(
             [dot_product, element_wise_mul, abs_diff, bilinear_prod], 1
-        )
+        )  # [bs, 2 * fc_size + 2]
 
         return {"combiner_output": hidden}
 

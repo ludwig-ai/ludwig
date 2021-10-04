@@ -346,7 +346,7 @@ def test_tabnet_combiner(encoder_outputs_key):
 
 
 @pytest.mark.parametrize("fc_layer",
-                         [None, [{"fc_size": 64}, {"fc_size": 64}]])
+                         [None, [{"fc_size": 64}, {"fc_size": 32}]])
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
@@ -375,18 +375,9 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     assert "combiner_output" in combiner_output
     assert isinstance(combiner_output['combiner_output'], torch.Tensor)
 
-    # todo: decide which approach for testing output shape
     # confirm correct shape
     assert combiner_output['combiner_output'].shape == \
-           (BATCH_SIZE, (2 * BATCH_SIZE) + combiner.output_shape[-1])
-
-    # confirm correct output shapes
-    # concat on axis=1
-    # because of dot products, 2 of the shapes added will be the fc_size
-    #   other 2 will be of shape BATCH_SIZE
-    # this assumes dimensionality = 2
-    size = BATCH_SIZE * 2 + fc_size * 2
-    assert combiner_output["combiner_output"].shape == (BATCH_SIZE, size)
+           (BATCH_SIZE, combiner.output_shape[-1])
 
 
 @pytest.mark.parametrize('fc_size', [8, 16])
