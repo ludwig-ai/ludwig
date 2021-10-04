@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from functools import lru_cache
 
+import math
 import torch
 from torch import nn
 from torch.nn import Module, ModuleDict
@@ -22,6 +23,11 @@ def sequence_mask(lengths, maxlen=None, dtype=torch.bool):
 
     mask.type(dtype)
     return mask
+
+
+def periodic(inputs: torch.Tensor, period: int) -> torch.Tensor:
+    """Returns periodic representation assuming 0 is start of period."""
+    return torch.cos(inputs * 2 * math.pi / period)
 
 
 initializer_registry = {

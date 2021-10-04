@@ -15,13 +15,13 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import math
 from abc import ABC
 from typing import Dict, List, Optional
 
 import torch
 
 from ludwig.encoders.base import Encoder
+from ludwig.utils import torch_utils
 from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
@@ -30,15 +30,9 @@ logger = logging.getLogger(__name__)
 
 ENCODER_REGISTRY = Registry()
 
-# YYYY (year)
-# MM (month)
-# DD (day)
-# W (weekday)
-# YDYD (yearday)
-# HH (hour)
-# MM (minutes)
-# SS (seconds)
-DATE_INPUT_SIZE = 19
+# Year, month, day, weekday, yearday, hour, minute, seconds, second_of_day.
+# TODO: Share this constant with date_feature.DATE_VECTOR_SIZE.
+DATE_INPUT_SIZE = 9
 
 
 class DateEncoder(Encoder, ABC):
@@ -266,9 +260,9 @@ class DateEmbed(DateEncoder):
             :type inputs: Tensor
          """
         # ================ Embeddings ================
-        input_vector = inputs.type(torch.int32)
+        input_vector = inputs.type(torch.IntTensor)
 
-        scaled_year = self.year_fc(input_vector[:, 0:1].type(torch.float32))
+        scaled_year = self.year_fc(input_vector[:, 0:1].type(torch.FloatTensor))
         embedded_month = self.embed_month(input_vector[:, 1].unsqueeze(1) - 1)
         embedded_day = self.embed_day(input_vector[:, 2].unsqueeze(1) - 1)
         embedded_weekday = self.embed_weekday(input_vector[:, 3].unsqueeze(1))
@@ -277,10 +271,8 @@ class DateEmbed(DateEncoder):
         embedded_hour = self.embed_hour(input_vector[:, 5].unsqueeze(1))
         embedded_minute = self.embed_minute(input_vector[:, 6].unsqueeze(1))
         embedded_second = self.embed_second(input_vector[:, 7].unsqueeze(1))
-        periodic_second_of_day = torch.sin(
-            input_vector[:, 8:9].type(torch.float32)
-            * (2 * math.pi / 86400)
-        )
+        periodic_second_of_day = torch_utils.periodic(
+            input_vector[:, 8:9], 86400)
 
         hidden = torch.cat(
             [scaled_year, embedded_month, embedded_day,
@@ -411,18 +403,17 @@ class DateWave(DateEncoder):
             :type inputs: Tensor
          """
         # ================ Embeddings ================
-        input_vector = inputs.type(torch.float32)
+        input_vector = inputs.type(torch.FloatTensor)
         scaled_year = self.year_fc(input_vector[:, 0:1])
-        periodic_month = torch.sin(input_vector[:, 1:2] * (2 * math.pi / 12))
-        periodic_day = torch.sin(input_vector[:, 2:3] * (2 * math.pi / 31))
-        periodic_weekday = torch.sin(input_vector[:, 3:4] * (2 * math.pi / 7))
-        periodic_yearday = torch.sin(input_vector[:, 4:5] * (2 * math.pi / 366))
-        periodic_hour = torch.sin(input_vector[:, 5:6] * (2 * math.pi / 24))
-        periodic_minute = torch.sin(input_vector[:, 6:7] * (2 * math.pi / 60))
-        periodic_second = torch.sin(input_vector[:, 7:8] * (2 * math.pi / 60))
-        periodic_second_of_day = torch.sin(
-            input_vector[:, 8:9] * (2 * math.pi / 86400)
-        )
+        periodic_month = torch_utils.periodic(input_vector[:, 1:2], 12)
+        periodic_day = torch_utils.periodic(input_vector[:, 2:3], 31)
+        periodic_weekday = torch_utils.periodic(input_vector[:, 3:4], 7)
+        periodic_yearday = torch_utils.periodic(input_vector[:, 4:5], 366)
+        periodic_hour = torch_utils.periodic(input_vector[:, 5:6], 24)
+        periodic_minute = torch_utils.periodic(input_vector[:, 6:7], 60)
+        periodic_second = torch_utils.periodic(input_vector[:, 7:8], 60)
+        periodic_second_of_day = torch_utils.periodic(
+            input_vector[:, 8:9], 86400)
 
         hidden = torch.cat(
             [scaled_year, periodic_month, periodic_day,
