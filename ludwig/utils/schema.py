@@ -15,7 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
+
 from jsonschema import validate
+from jsonschema.validators import create
 
 from ludwig.combiners.combiners import combiner_registry
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -24,10 +27,35 @@ INPUT_FEATURE_TYPES = sorted(list(input_type_registry.keys()))
 OUTPUT_FEATURE_TYPES = sorted(list(output_type_registry.keys()))
 COMBINER_TYPES = sorted(list(combiner_registry.keys()))
 
-# TODO: Where should these go? Are they complete?
-temp_weights_initializer_registry = ['glorot_uniform']
-temp_bias_initializer_registry = ['zeros']
-temp_activation_registry = ['relu']
+# concatSchema = {
+#     'concat': {
+#         'type': 'object',
+#         'properties': {
+#             'type': {'type': 'string', 'enum': COMBINER_TYPES},
+#             'fc_size': {
+#                 'type': 'integer',
+#                 # TODO: correct range?
+#                 'minimum': 1,
+#                 'maximum': 256
+#             },
+#             'use_bias': { 'type': 'boolean' },
+#             'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
+#             'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+#             'activation': { 'type': 'string', 'enum': temp_activation_registry },
+#             'dropout': {
+#                 'type': 'number',
+#                 'minimum': 0,
+#                 'maximum': 1
+#             },
+#             'flatten_inputs': { 'type': 'boolean' },
+#             'residual': { 'type': 'boolean' }
+#         },
+#         # TODO: Force all properties to be set?:
+#         # "additionalProperties": False,
+#         # "minProperties": 9
+#         "required": ['type']
+#     },
+# }
 
 def get_schema():
     schema = {
@@ -65,24 +93,10 @@ def get_schema():
                 'type': 'object',
                 'properties': {
                     'type': {'type': 'string', 'enum': COMBINER_TYPES},
-                    'fc_size': {
-                        'type': 'integer',
-                        # TODO: correct range?
-                        'minimum': 1,
-                        'maximum': 256
-                    },
-                    'use_bias': { 'type': 'boolean' },
-                    'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
-                    'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-                    'activation': { 'type': 'string', 'enum': temp_activation_registry },
-                    'dropout': {
-                        'type': 'number',
-                        'minimum': 0,
-                        'maximum': 1
-                    },
-                    'flatten_inputs': { 'type': 'boolean' },
-                    'residual': { 'type': 'boolean' }
                 },
+                'allOf': get_combiner_conds(),
+                'required': ['type'],
+                # 'additionalProperties': False,
             },
             'training': {},
             'preprocessing': {},
@@ -135,7 +149,6 @@ def get_output_decoder_conds():
         conds.append(decoder_cond)
     return conds
 
-
 def get_output_preproc_conds():
     conds = []
     for feature_type in OUTPUT_FEATURE_TYPES:
@@ -152,6 +165,21 @@ def get_output_preproc_conds():
         conds.append(preproc_cond)
     return conds
 
+def get_combiner_conds():
+    conds = []
+    for combiner_type in COMBINER_TYPES:
+        print(combiner_type)
+        combiner_cls = combiner_registry[combiner_type]
+        print(combiner_cls)
+        print(vars(combiner_cls))
+        print(combiner_cls.validation_schema)
+        combiner_cond = create_cond(
+            {'type': combiner_type},
+            combiner_cls.validation_schema,
+        )
+        print(combiner_cond)
+        conds.append(combiner_cond)
+    return conds
 
 def create_cond(if_pred, then_pred):
     return {

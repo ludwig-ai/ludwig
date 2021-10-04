@@ -39,6 +39,12 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
+# TODO: Where should these go? Are they complete?
+temp_weights_initializer_registry = ['glorot_uniform']
+temp_bias_initializer_registry = ['zeros']
+temp_activation_registry = ['relu']
+temp_reduce_output_registry = ['mean', 'concat']
+
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
@@ -137,6 +143,27 @@ class ConcatCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
+    
+    # TODO: correct ranges?
+    validation_schema = {
+        'fc_size': {
+            'type': 'integer',
+            # TODO: correct range?
+            'minimum': 1,
+            'maximum': 256
+        },
+        'use_bias': { 'type': 'boolean' },
+        'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
+        'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+        'activation': { 'type': 'string', 'enum': temp_activation_registry },
+        'dropout': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1
+        },
+        'flatten_inputs': { 'type': 'boolean' },
+        'residual': { 'type': 'boolean' }
+    }
 
 
 class SequenceConcatCombiner(tf.keras.Model):
@@ -277,6 +304,9 @@ class SequenceConcatCombiner(tf.keras.Model):
 
         return return_data
 
+    # TODO
+    validation_schema = {}
+
 
 class SequenceCombiner(tf.keras.Model):
     def __init__(
@@ -333,6 +363,8 @@ class SequenceCombiner(tf.keras.Model):
 
         return return_data
 
+    # TODO:
+    validation_schema = {}
 
 class TabNetCombiner(tf.keras.Model):
     def __init__(
@@ -419,6 +451,45 @@ class TabNetCombiner(tf.keras.Model):
 
         return return_data
 
+    # TODO: correct ranges?
+    validation_schema = {
+        'num_steps': {
+            'type': 'integer',
+            'minimum': 1,
+        },
+        'num_total_blocks': {
+            'type': 'integer',
+            'minimum': 1,
+        },
+        'num_shared_blocks': {
+            'type': 'integer',
+            'minimum': 1,
+        },
+        'relaxation_factor': {
+            'type': 'number',
+            'minimum': 1,
+        },
+        'bn_epsilon': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1,
+        },
+        'bn_momentum': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1,
+        },
+        'sparsity': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1,
+        },
+        'dropout': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1,
+        },
+    }
 
 class TransformerCombiner(tf.keras.Model):
     def __init__(
@@ -539,6 +610,55 @@ class TransformerCombiner(tf.keras.Model):
 
         return return_data
 
+    # TODO: correct ranges?
+    validation_schema = {
+        'num_layers': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'hidden_size': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'num_heads': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'transformer_fc_size': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'dropout': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1
+        },
+        'num_fc_layers': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'fc_size': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'use_bias': { 'type': 'boolean' },
+        'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
+        'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+        'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
+        'fc_dropout': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1
+        },
+        'fc_residual': { 'type': 'boolean' },
+        'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
+    }
 
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
@@ -723,8 +843,81 @@ class TabTransformerCombiner(tf.keras.Model):
 
         return return_data
 
+    # TODO: correct ranges?
+    validation_schema = {
+        'num_layers': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'hidden_size': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'num_heads': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'transformer_fc_size': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'dropout': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1
+        },
+        'num_fc_layers': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'fc_size': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'use_bias': { 'type': 'boolean' },
+        'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
+        'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+        'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
+        'fc_dropout': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1
+        },
+        'fc_residual': { 'type': 'boolean' },
+        # TODO: Does this need to be restricted to a particular enum?
+        'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
+    }
 
 class ComparatorCombiner(tf.keras.Model):
+    # TODO: correct ranges?
+    validation_schema = {
+        'num_fc_layers': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'fc_size': {
+            'type': 'integer',
+            'minimum': 1,
+            'maximum': 256
+        },
+        'use_bias': { 'type': 'boolean' },
+        'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
+        'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+        'activation': { 'type': 'string', 'enum': temp_activation_registry },
+        'dropout': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1
+        },
+    }
+
     def __init__(
             self,
             entity_1: List[str],
@@ -874,7 +1067,6 @@ class ComparatorCombiner(tf.keras.Model):
 
         return {"combiner_output": hidden}
 
-
 def get_combiner_class(combiner_type):
     return get_from_registry(
         combiner_type,
@@ -887,7 +1079,7 @@ combiner_registry = {
     'sequence_concat': SequenceConcatCombiner,
     'sequence': SequenceCombiner,
     'tabnet': TabNetCombiner,
-    'comparator': ComparatorCombiner,
+    # 'comparator': ComparatorCombiner,
     "transformer": TransformerCombiner,
     "tabtransformer": TabTransformerCombiner,
 }
