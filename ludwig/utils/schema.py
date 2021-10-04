@@ -134,16 +134,11 @@ def get_output_preproc_conds():
 def get_combiner_conds():
     conds = []
     for combiner_type in COMBINER_TYPES:
-        print(combiner_type)
         combiner_cls = combiner_registry[combiner_type]
-        print(combiner_cls)
-        print(vars(combiner_cls))
-        print(combiner_cls.validation_schema)
         combiner_cond = create_cond(
             {'type': combiner_type},
             combiner_cls.validation_schema,
         )
-        print(combiner_cond)
         conds.append(combiner_cond)
     return conds
 
