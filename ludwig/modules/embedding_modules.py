@@ -120,7 +120,12 @@ def embedding_matrix_on_device(
 
 
 class Embed(LudwigModule):
+<<<<<<< HEAD
     """ Module to embed Category, Date and H3 data types."""
+=======
+    """ Module to embed Category, Date and H3 data types. """
+
+>>>>>>> 582ac5e9 (Add input_shape and output_shape to EmbedSequence)
     def __init__(
             self,
             vocab: List[str],
@@ -160,7 +165,8 @@ class Embed(LudwigModule):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         if inputs.ndim != 2 or inputs.shape[1] != 1:
-            raise RuntimeError(f'Embed only takes inputs of shape [batch x 1].')
+            raise RuntimeError(
+                f'Embed only takes inputs of shape [batch x 1].')
         embedded = self.embeddings(inputs.long())
         embedded = torch.squeeze(embedded, dim=1)
         if self.dropout:
@@ -178,6 +184,7 @@ class Embed(LudwigModule):
 
 class EmbedSet(LudwigModule):
     """ Module to embed Set data types, works on multi-hot encoded input. """
+
     def __init__(
             self,
             vocab: List[str],
@@ -257,6 +264,7 @@ class EmbedSet(LudwigModule):
 
 class EmbedWeighted(LudwigModule):
     """ Module to embed Bag data type, works on input of token frequencies. """
+
     def __init__(
             self,
             vocab: List[str],
@@ -410,9 +418,8 @@ class EmbedSequence(LudwigModule):
         )
 
         if embedding_regularizer:
-            embedding_regularizer_obj = tf.keras.regularizers.get(
-                embedding_regularizer)
-            self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
+            self.add_loss(lambda: reg_loss(
+                self.embeddings, embedding_regularizer))
 
         if dropout > 0:
             self.dropout = nn.Dropout(dropout)
@@ -421,20 +428,17 @@ class EmbedSequence(LudwigModule):
 
     def forward(self, inputs, training=None, mask=None):
         embedded = self.embeddings(inputs)
-
-        # todo: convert to torch with mask support
-        # if mask is not None:
-        #     mask_matrix = tf.cast(
-        #         tf.expand_dims(mask, -1),
-        #         dtype=tf.float32
-        #     )
-        #     embedded = tf.multiply(embedded, mask_matrix)
-
         if self.dropout:
-            embedded = self.dropout(
-                embedded)  # todo: neeeded for torch? ...., training=training)
-
+            embedded = self.dropout(embedded)
         return embedded
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.vocab_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])
 
 
 class TokenAndPositionEmbedding(LudwigModule):
