@@ -67,9 +67,12 @@ class BWCEWLoss:
         self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
 
     def mean_confidence_penalty(self, probabilities, num_classes):
-        max_entropy = torch.IntTensor(np.log(num_classes), dtype=torch.int32)
+        max_entropy = torch.log(torch.tensor(num_classes))
         # clipping needed for avoiding log(0) = -inf
-        entropy_per_class = torch.maximum(-probabilities * torch.log(torch.clamp(probabilities, 1e-10, 1)), 0, )
+        entropy_per_class = torch.maximum(
+            -probabilities * torch.log(torch.clamp(probabilities, 1e-10, 1)),
+            0
+        )
         entropy = torch.sum(entropy_per_class, -1)
         penalty = (max_entropy - entropy) / max_entropy
         return torch.mean(penalty)
