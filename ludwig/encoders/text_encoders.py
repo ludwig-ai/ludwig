@@ -54,6 +54,7 @@ class BERTEncoder(TextEncoder):
             reduce_output='cls_pooled',
             trainable=True,
             num_tokens=None,
+            max_sequence_length=None,
             **kwargs
     ):
         super().__init__()
@@ -75,6 +76,7 @@ class BERTEncoder(TextEncoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
+        self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs, training=None, mask=None):
         if mask is not None:
@@ -91,6 +93,15 @@ class BERTEncoder(TextEncoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    # todo implement output_shape
+    # @property
+    # def output_shape(self) -> torch.Size:
+    #     pass
 
 
 # @register(name='gpt')
