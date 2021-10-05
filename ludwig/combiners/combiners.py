@@ -978,7 +978,8 @@ class ComparatorCombiner(CombinerClass):
             e1_hidden = list(e1_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e1_hidden = self.e1_fc_stack(e1_hidden, training=training, mask=mask)
+        e1_hidden = self.e1_fc_stack(e1_hidden, training=training,
+                                     mask=mask)  # [bs, fc_size]
 
         ############
         # Entity 2 #
@@ -998,7 +999,8 @@ class ComparatorCombiner(CombinerClass):
             e2_hidden = list(e2_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e2_hidden = self.e2_fc_stack(e2_hidden, training=training, mask=mask)
+        e2_hidden = self.e2_fc_stack(e2_hidden, training=training,
+                                     mask=mask)  # [bs, fc_size]
 
         ###########
         # Compare #
