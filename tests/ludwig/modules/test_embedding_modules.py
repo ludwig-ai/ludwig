@@ -60,4 +60,21 @@ def test_embed_weighted(
     assert outputs.shape[1:] == embed_weighted.output_shape
 
 
-# TODO: Test EmbedSequence and TokenAndPositionEmbedding
+@pytest.mark.parametrize('vocab', [['a', 'b', 'c']])
+@pytest.mark.parametrize('embedding_size', [2])
+@pytest.mark.parametrize('representation', ['dense', 'sparse'])
+def test_embed_sequence(
+        vocab: List[str],
+        embedding_size: int,
+        representation: str,
+):
+    embed = EmbedSequence(
+        vocab=vocab,
+        embedding_size=embedding_size,
+        representation=representation,
+    )
+    inputs = torch.randint(0, 2, size=(2, 10))
+    outputs = embed(inputs)
+    assert outputs.shape[2:] == embed.output_shape
+
+# TODO: Test TokenAndPositionEmbedding

@@ -79,9 +79,8 @@ def embedding_matrix(
 
     elif representation == 'sparse':
         embedding_size = vocab_size
-        embeddings = torch.tensor(
-            get_initializer('identity')([vocab_size, embedding_size]),
-            requires_grad=False)
+        embeddings = get_initializer('identity')(
+            [vocab_size, embedding_size]).clone().detach().requires_grad_(False)
     else:
         raise Exception(
             f'Embedding representation {representation} not supported.')
@@ -388,20 +387,21 @@ class EmbedWeighted(LudwigModule):
 class EmbedSequence(LudwigModule):
     def __init__(
             self,
-            vocab,
-            embedding_size,
-            representation='dense',
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            force_embedding_size=False,
-            embeddings_on_cpu=False,
-            dropout=0.0,
-            embedding_initializer=None,
-            embedding_regularizer=None
+            vocab: List[str],
+            embedding_size: int,
+            representation: str = 'dense',
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            force_embedding_size: bool = False,
+            embeddings_on_cpu: bool = False,
+            dropout: float = 0.0,
+            embedding_initializer: Optional[str] = None,
+            embedding_regularizer: Optional[str] = None
     ):
         super().__init__()
         self.supports_masking = True
 
+        self.vocab_size = len(vocab)
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
@@ -434,6 +434,7 @@ class EmbedSequence(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
+        # Excludes batch size and input size (dynamic).
         return torch.Size([self.embedding_size])
 
 

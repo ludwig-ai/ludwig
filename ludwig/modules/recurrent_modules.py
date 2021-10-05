@@ -16,11 +16,11 @@
 import inspect
 import logging
 import collections
+from typing import Optional
 
 import torch
 from torch.nn import RNN, GRU, LSTM
 from ludwig.utils.torch_utils import LudwigModule
-
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class RecurrentStack(LudwigModule):
             input_size: int = None,
             hidden_size: int = 256,
             cell_type: str = 'rnn',
-            sequence_size: int = None,
+            sequence_size: Optional[int] = None,
             num_layers: int = 1,
             bidirectional: bool = False,
             use_bias: bool = True,
@@ -69,13 +69,15 @@ class RecurrentStack(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        """ Returns the size of the input tensor without the batch dimension. """
-        return torch.Size([self.sequence_size, self.input_size])
+        if self.sequence_size:
+            return torch.Size([self.sequence_size, self.input_size])
+        return torch.Size([self.input_size])
 
     @property
     def output_shape(self) -> torch.Size:
-        """ Returns the size of the output tensor without the batch dimension."""
-        return torch.Size([self.sequence_size, self.hidden_size])
+        if self.sequence_size:
+            return torch.Size([self.sequence_size, self.hidden_size])
+        return torch.Size([self.hidden_size])
 
     def forward(self, inputs):
         hidden, final_state = self.layers(inputs)

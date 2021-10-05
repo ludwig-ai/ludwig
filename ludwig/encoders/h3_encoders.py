@@ -163,7 +163,6 @@ class H3Embed(H3Encoder):
         )
 
         logger.debug('  FCStack')
-        self.fc_size = fc_size
         self.fc_stack = FCStack(
             first_layer_input_size=embedding_size,
             layers=fc_layers,
@@ -297,7 +296,7 @@ class H3WeightedSum(H3Encoder):
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
-            first_layer_input_size=self.h3_embed.fc_size,
+            first_layer_input_size=self.h3_embed.output_shape[0],
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -355,8 +354,8 @@ class H3RNN(H3Encoder):
             embedding_size: int = 10,
             embeddings_on_cpu: bool = False,
             num_layers: int = 1,
-            state_size: int = 10,
-            cell_type: int = 'rnn',
+            hidden_size: int = 10,
+            cell_type: str = 'rnn',
             bidirectional: bool = False,
             activation: str = 'tanh',
             recurrent_activation: str = 'sigmoid',
@@ -399,8 +398,8 @@ class H3RNN(H3Encoder):
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
-            :param state_size: the size of the state of the rnn.
-            :type state_size: Integer
+            :param hidden_size: the size of the state of the rnn.
+            :type hidden_size: Integer
             :param bidirectional: if `True` two recurrent networks will perform
                    encoding in the forward and backward direction and
                    their outputs will be concatenated.
@@ -438,18 +437,6 @@ class H3RNN(H3Encoder):
             :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
             :type dropout: float
-            :param recurrent_dropout: Float between 0.0 and 1.0.  Fraction of
-                   the units to drop for the linear transformation of the
-                   recurrent state.
-            :type recurrent_dropout: float
-            :param reduce_output: defines how to reduce the output tensor of
-                   the convolutional layers along the `s` sequence length
-                   dimension if the rank of the tensor is greater than 2.
-                   Available values are: `sum`, `mean` or `avg`, `max`, `concat`
-                   (concatenates along the first dimension), `last` (returns
-                   the last vector of the first dimension) and `None` or `null`
-                   (which does not reduce and returns the full tensor).
-            :type reduce_output: str
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
@@ -472,24 +459,12 @@ class H3RNN(H3Encoder):
         self.recurrent_stack = RecurrentStack(
             input_size=self.h3_embed.output_shape[0],
             sequence_size=H3_INPUT_SIZE,
-            state_size=state_size,
+            hidden_size=hidden_size,
             cell_type=cell_type,
             num_layers=num_layers,
             bidirectional=bidirectional,
-            activation=activation,
-            recurrent_activation=recurrent_activation,
             use_bias=use_bias,
-            unit_forget_bias=unit_forget_bias,
-            weights_initializer=weights_initializer,
-            recurrent_initializer=recurrent_initializer,
-            bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            recurrent_regularizer=recurrent_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            dropout=dropout,
-            recurrent_dropout=recurrent_dropout,
-            reduce_output=reduce_output
+            dropout=dropout
         )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
