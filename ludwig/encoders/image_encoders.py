@@ -317,7 +317,8 @@ class ViTEncoder(ImageEncoder):
             layer_norm_eps: float = 1e-12,
             gradient_checkpointing: bool = False,
             patch_size: int = 16,
-            trainable: bool = True
+            trainable: bool = True,
+            **kwargs
     ):
         """ Creates a ViT encoder using transformers.ViTModel.
 
