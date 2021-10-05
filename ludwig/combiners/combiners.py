@@ -50,7 +50,7 @@ class CombinerClass(LudwigModule):
         raise NotImplementedError('Abstract class.')
 
     @property
-    def input_shape(self) -> dict:
+    def input_shape(self) -> Dict:
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
@@ -88,7 +88,7 @@ class ConcatCombiner(CombinerClass):
             # weights_constraint=None,
             # bias_constraint=None,
             norm: Optional[str] = None,
-            norm_params: Optional[dict] = None,
+            norm_params: Optional[Dict] = None,
             activation: str = 'relu',
             dropout: float = 0,
             flatten_inputs: bool = False,
@@ -148,7 +148,7 @@ class ConcatCombiner(CombinerClass):
 
     def forward(
             self,
-            inputs: dict,  # encoder outputs
+            inputs: Dict,  # encoder outputs
             training: Optional[bool] = None,
             mask: Optional[bool] = None,
             **kwargs
@@ -565,11 +565,13 @@ class TransformerCombiner(CombinerClass):
 
         logger.debug('  Projectors')
         self.projectors = ModuleList(
-            # regardless of rank-2 or rank-3 input, np.prod() calculates size
+            # regardless of rank-2 or rank-3 input, torch.prod() calculates size
             # after flattening the encoder output tensor
-            [Linear(np.int(np.prod(input_features[inp].output_shape)),
-                    hidden_size)
-             for inp in input_features]
+            [Linear(
+                torch.prod(
+                    torch.Tensor([*input_features[inp].output_shape])
+                ).type(torch.int32), hidden_size) for inp in input_features
+            ]
         )
 
         logger.debug('  TransformerStack')
@@ -609,9 +611,10 @@ class TransformerCombiner(CombinerClass):
     def concatenated_shape(self) -> torch.Size:
         # compute the size of the last dimension for the incoming encoder outputs
         # this is required to setup the fully connected layer
-        shapes = [np.prod(self.input_features[k].output_shape) for k in
-                  self.input_features]
-        return torch.Size([sum(shapes)])
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
             self,
@@ -851,7 +854,7 @@ class TabTransformerCombiner(Module):
 class ComparatorCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: dict,
+            input_features: Dict,
             entity_1: List[str],
             entity_2: List[str],
             fc_layers: Optional[list] = None,
@@ -866,7 +869,7 @@ class ComparatorCombiner(CombinerClass):
             # weights_constraint=None,
             # bias_constraint=None,
             norm: Optional[str] = None,
-            norm_params: Optional[dict] = None,
+            norm_params: Optional[Dict] = None,
             activation: str = "relu",
             dropout: float = 0,
             **kwargs,
@@ -937,10 +940,10 @@ class ComparatorCombiner(CombinerClass):
         )
 
     def get_entity_shape(self, entity: list) -> torch.Size:
-        size = 0
-        for k in entity:
-            size += np.prod(self.input_features[k].output_shape)
-        return torch.Size([size])
+        sizes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in entity]
+        return torch.Size([torch.sum(torch.Tensor(sizes)).type(torch.int32)])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -948,11 +951,11 @@ class ComparatorCombiner(CombinerClass):
 
     def forward(
             self,
-            inputs: typing.Dict,
+            inputs: Dict,
             training: Optional[bool] = None,
             mask: Optional[bool] = None,
             **kwargs
-    ) -> typing.Dict[str, torch.Tensor]:  # encoder outputs
+    ) -> Dict[str, torch.Tensor]:  # encoder outputs
         assert (
                 inputs.keys() == self.required_inputs
         ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
