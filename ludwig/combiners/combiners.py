@@ -20,7 +20,7 @@ from typing import Union, Optional, List, Dict
 from functools import lru_cache
 
 import torch
-from torch.nn import Module
+from torch.nn import Module, ModuleList, Linear
 from ludwig.utils.torch_utils import LudwigModule, \
     sequence_mask as torch_sequence_mask
 
@@ -50,7 +50,7 @@ class CombinerClass(LudwigModule):
         raise NotImplementedError('Abstract class.')
 
     @property
-    def input_shape(self) -> dict:
+    def input_shape(self) -> Dict:
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
         # input feature's encoder output shapes.
@@ -88,7 +88,7 @@ class ConcatCombiner(CombinerClass):
             # weights_constraint=None,
             # bias_constraint=None,
             norm: Optional[str] = None,
-            norm_params: Optional[dict] = None,
+            norm_params: Optional[Dict] = None,
             activation: str = 'relu',
             dropout: float = 0,
             flatten_inputs: bool = False,
@@ -148,7 +148,7 @@ class ConcatCombiner(CombinerClass):
 
     def forward(
             self,
-            inputs: dict,  # encoder outputs
+            inputs: Dict,  # encoder outputs
             training: Optional[bool] = None,
             mask: Optional[bool] = None,
             **kwargs
@@ -227,7 +227,7 @@ class SequenceConcatCombiner(CombinerClass):
 
     def forward(
             self,
-            inputs: dict,  # encoder outputs
+            inputs: Dict,  # encoder outputs
             training: Optional[bool] = None,
             mask: Optional[bool] = None,
             **kwargs
@@ -522,7 +522,7 @@ class TabNetCombiner(Module):
         return return_data
 
 
-class TransformerCombiner(Module):
+class TransformerCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict = None,
@@ -551,18 +551,33 @@ class TransformerCombiner(Module):
             **kwargs
     ):
         super().__init__()
+        self.name = 'TransformerCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
+        # sequence size for Transformer layer is number of input features
+        self.sequence_size = len(self.input_features)
+
         logger.debug('  Projectors')
-        self.projectors = [Dense(hidden_size) for _ in input_features]
+        self.projectors = ModuleList(
+            # regardless of rank-2 or rank-3 input, torch.prod() calculates size
+            # after flattening the encoder output tensor
+            [Linear(
+                torch.prod(
+                    torch.Tensor([*input_features[inp].output_shape])
+                ).type(torch.int32), hidden_size) for inp in input_features
+            ]
+        )
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
+            input_size=hidden_size,
+            sequence_size=self.sequence_size,
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,
@@ -573,6 +588,7 @@ class TransformerCombiner(Module):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.transformer_stack.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -591,7 +607,16 @@ class TransformerCombiner(Module):
                 fc_residual=fc_residual,
             )
 
-    def call(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
+    def forward(
             self,
             inputs,  # encoder outputs
             training=None,
@@ -601,9 +626,9 @@ class TransformerCombiner(Module):
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
         # ================ Flatten ================
-        batch_size = tf.shape(encoder_outputs[0])[0]
+        batch_size = encoder_outputs[0].shape[0]
         encoder_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
         ]
 
         # ================ Project & Concat ================
@@ -611,8 +636,8 @@ class TransformerCombiner(Module):
             self.projectors[i](eo)
             for i, eo in enumerate(encoder_outputs)
         ]
-        hidden = tf.stack(projected)  # num_eo, bs, h
-        hidden = tf.transpose(hidden, perm=[1, 0, 2])  # bs, num_eo, h
+        hidden = torch.stack(projected)  # shape [num_eo, bs, h]
+        hidden = torch.permute(hidden, (1, 0, 2))  # shape [bs, num_eo, h]
 
         # ================ Transformer Layers ================
         hidden = self.transformer_stack(
@@ -826,42 +851,51 @@ class TabTransformerCombiner(Module):
         return return_data
 
 
-class ComparatorCombiner(Module):
+class ComparatorCombiner(CombinerClass):
     def __init__(
             self,
+            input_features: Dict,
             entity_1: List[str],
             entity_2: List[str],
-            # fc_layers=None,
-            num_fc_layers=1,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer="glorot_uniform",
-            bias_initializer="zeros",
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
+            fc_layers: Optional[list] = None,
+            num_fc_layers: int = 1,
+            fc_size: int = 256,
+            use_bias: bool = True,
+            weights_initializer: str = "xavier_uniform",
+            bias_initializer: str = "zeros",
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
             # weights_constraint=None,
             # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation="relu",
-            dropout=0,
+            norm: Optional[str] = None,
+            norm_params: Optional[Dict] = None,
+            activation: str = "relu",
+            dropout: float = 0,
             **kwargs,
     ):
         super().__init__()
-        logger.debug(" {}".format(self.name))
+        self.name = "ComparatorCombiner"
+        logger.debug("Entering {}".format(self.name))
+
+        self.input_features = input_features
+        self.entity_1 = entity_1
+        self.entity_2 = entity_2
+        self.required_inputs = set(entity_1 + entity_2)
+        self.fc_size = fc_size
 
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        # if fc_layers is None and num_fc_layers is not None:
-        fc_layers = []
-        for i in range(num_fc_layers):
-            fc_layers.append({"fc_size": fc_size})
+        if fc_layers is None and num_fc_layers is not None:
+            fc_layers = []
+            for i in range(num_fc_layers):
+                fc_layers.append({"fc_size": fc_size})
 
         if fc_layers is not None:
-            logger.debug("  FCStack")
+            logger.debug("Setting up FCStack")
             self.e1_fc_stack = FCStack(
+                self.get_entity_shape(entity_1)[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -879,6 +913,7 @@ class ComparatorCombiner(Module):
                 default_dropout=dropout,
             )
             self.e2_fc_stack = FCStack(
+                self.get_entity_shape(entity_2)[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -896,19 +931,31 @@ class ComparatorCombiner(Module):
                 default_dropout=dropout,
             )
 
-        # todo: this should actually be the size of the last fc layer,
-        #  not just fc_size
+        self.last_fc_layer_fc_size = fc_layers[-1]['fc_size']
+
         # todo: set initializer and regularization
-        self.bilinear_weights = tf.random.normal([fc_size, fc_size],
-                                                 dtype=tf.float32)
+        self.bilinear_weights = torch.randn(
+            [self.last_fc_layer_fc_size, self.last_fc_layer_fc_size],
+            dtype=torch.float32
+        )
 
-        self.entity_1 = entity_1
-        self.entity_2 = entity_2
-        self.required_inputs = set(entity_1 + entity_2)
-        self.fc_size = fc_size
+    def get_entity_shape(self, entity: list) -> torch.Size:
+        sizes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in entity]
+        return torch.Size([torch.sum(torch.Tensor(sizes)).type(torch.int32)])
 
-    def call(self, inputs, training=None, mask=None,
-             **kwargs):  # encoder outputs
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([2 * self.last_fc_layer_fc_size + 2])
+
+    def forward(
+            self,
+            inputs: Dict,
+            training: Optional[bool] = None,
+            mask: Optional[bool] = None,
+            **kwargs
+    ) -> Dict[str, torch.Tensor]:  # encoder outputs
         assert (
                 inputs.keys() == self.required_inputs
         ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
@@ -919,19 +966,20 @@ class ComparatorCombiner(Module):
         e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
 
         # ================ Flatten ================
-        batch_size = tf.shape(e1_enc_outputs[0])[0]
+        batch_size = e1_enc_outputs[0].shape[0]
         e1_enc_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
         ]
 
         # ================ Concat ================
         if len(e1_enc_outputs) > 1:
-            e1_hidden = concatenate(e1_enc_outputs, 1)
+            e1_hidden = torch.cat(e1_enc_outputs, 1)
         else:
             e1_hidden = list(e1_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e1_hidden = self.e1_fc_stack(e1_hidden, training=training, mask=mask)
+        e1_hidden = self.e1_fc_stack(e1_hidden, training=training,
+                                     mask=mask)  # [bs, fc_size]
 
         ############
         # Entity 2 #
@@ -939,19 +987,20 @@ class ComparatorCombiner(Module):
         e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
 
         # ================ Flatten ================
-        batch_size = tf.shape(e2_enc_outputs[0])[0]
+        batch_size = e2_enc_outputs[0].shape[0]
         e2_enc_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
         ]
 
         # ================ Concat ================
         if len(e2_enc_outputs) > 1:
-            e2_hidden = concatenate(e2_enc_outputs, 1)
+            e2_hidden = torch.cat(e2_enc_outputs, 1)
         else:
             e2_hidden = list(e2_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e2_hidden = self.e2_fc_stack(e2_hidden, training=training, mask=mask)
+        e2_hidden = self.e2_fc_stack(e2_hidden, training=training,
+                                     mask=mask)  # [bs, fc_size]
 
         ###########
         # Compare #
@@ -959,20 +1008,26 @@ class ComparatorCombiner(Module):
         if e1_hidden.shape != e2_hidden.shape:
             raise ValueError(
                 f"Mismatching shapes among dimensions! "
-                f"entity1 shape: {e1_hidden.shape.as_list()} "
-                f"entity2 shape: {e2_hidden.shape.as_list()}"
+                f"entity1 shape: {e1_hidden.shape} "
+                f"entity2 shape: {e2_hidden.shape}"
             )
 
-        dot_product = tf.matmul(e1_hidden, tf.transpose(e2_hidden))
-        element_wise_mul = tf.math.multiply(e1_hidden, e2_hidden)
-        abs_diff = tf.abs(e1_hidden - e2_hidden)
-        bilinear_prod = tf.matmul(
-            e1_hidden,
-            tf.matmul(self.bilinear_weights, tf.transpose(e2_hidden))
+        element_wise_mul = e1_hidden * e2_hidden  # [bs, fc_size]
+        dot_product = torch.sum(element_wise_mul, 1, keepdim=True)  # [bs, 1]
+        abs_diff = torch.abs(e1_hidden - e2_hidden)  # [bs, fc_size]
+        bilinear_prod = torch.bmm(
+            torch.mm(e1_hidden, self.bilinear_weights).unsqueeze(1),
+            e2_hidden.unsqueeze(-1)
+        ).squeeze(-1)  # [bs, 1]
+
+        logger.debug(
+            'preparing combiner output by concatenating these tensors: '
+            f'dot_product: {dot_product.shape}, element_size_mul: {element_wise_mul.shape}'
+            f', abs_diff: {abs_diff.shape}, bilinear_prod {bilinear_prod.shape}'
         )
-        hidden = concatenate(
+        hidden = torch.cat(
             [dot_product, element_wise_mul, abs_diff, bilinear_prod], 1
-        )
+        )  # [bs, 2 * fc_size + 2]
 
         return {"combiner_output": hidden}
 

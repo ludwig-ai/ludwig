@@ -1,6 +1,6 @@
 import logging
 from collections import OrderedDict
-
+import numpy as np
 import pytest
 import torch
 
@@ -86,6 +86,7 @@ def encoder_comparator_outputs():
     #   feature_4: shape [b, sh, h2] tensor
 
     encoder_outputs = {}
+    input_features = {}
     shapes_list = [
         [BATCH_SIZE, HIDDEN_SIZE],
         [BATCH_SIZE, OTHER_HIDDEN_SIZE],
@@ -107,11 +108,15 @@ def encoder_comparator_outputs():
                 "encoder_output": torch.randn(dot_product_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              dot_product_shape)
         else:
             encoder_outputs[feature_name] = {
                 "encoder_output": torch.randn(batch_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              batch_shape)
 
     for i, (feature_name, batch_shape) in enumerate(
             zip(image_feature_names, shapes_list)
@@ -122,13 +127,17 @@ def encoder_comparator_outputs():
                 "encoder_output": torch.randn(dot_product_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              dot_product_shape)
         else:
             encoder_outputs[feature_name] = {
                 "encoder_output": torch.randn(batch_shape,
                                               dtype=torch.float32)
             }
+            input_features[feature_name] = PseudoInputFeature(feature_name,
+                                                              batch_shape)
 
-    return encoder_outputs
+    return encoder_outputs, input_features
 
 
 # test for simple concatenation combiner
@@ -337,69 +346,83 @@ def test_tabnet_combiner(encoder_outputs_key):
 
 
 @pytest.mark.parametrize("fc_layer",
-                         [None, [{"fc_size": 64}, {"fc_size": 64}]])
+                         [None, [{"fc_size": 64}, {"fc_size": 32}]])
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
                              entity_2):
+    encoder_comparator_outputs_dict, input_features_dict = encoder_comparator_outputs
     # clean out unneeded encoder outputs since we only have 2 layers
-    del encoder_comparator_outputs["text_feature_3"]
-    del encoder_comparator_outputs["image_feature_3"]
-    del encoder_comparator_outputs["text_feature_4"]
-    del encoder_comparator_outputs["image_feature_4"]
+    del encoder_comparator_outputs_dict["text_feature_3"]
+    del encoder_comparator_outputs_dict["image_feature_3"]
+    del encoder_comparator_outputs_dict["text_feature_4"]
+    del encoder_comparator_outputs_dict["image_feature_4"]
 
     # setup combiner to test set to 256 for case when none as it's the default size
     fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
     combiner = ComparatorCombiner(
-        entity_1, entity_2, fc_layers=fc_layer, fc_size=fc_size
+        input_features_dict, entity_1, entity_2,
+        fc_layers=fc_layer, fc_size=fc_size
     )
 
     # concatenate encoder outputs
-    results = combiner(encoder_comparator_outputs)
+    combiner_output = combiner(encoder_comparator_outputs_dict)
 
-    # required key present
-    assert "combiner_output" in results
+    # correct data structure
+    assert isinstance(combiner_output, dict)
 
-    # confirm correct output shapes
-    # concat on axis=1
-    # because of dot products, 2 of the shapes added will be the fc_size
-    #   other 2 will be of shape BATCH_SIZE
-    # this assumes dimensionality = 2
-    size = BATCH_SIZE * 2 + fc_size * 2
-    assert results["combiner_output"].shape.as_list() == [BATCH_SIZE, size]
+    # required key present and correct data type
+    assert "combiner_output" in combiner_output
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+
+    # confirm correct shape
+    assert combiner_output['combiner_output'].shape == \
+           (BATCH_SIZE, combiner.output_shape[-1])
 
 
-def test_transformer_combiner(encoder_outputs):
-    # clean out unneeded encoder outputs
-    encoder_outputs = {}
-    encoder_outputs['feature_1'] = {
-        'encoder_output': torch.randn(
-            [128, 1],
-            dtype=torch.float32
-        )
-    }
-    encoder_outputs['feature_2'] = {
-        'encoder_output': torch.randn(
-            [128, 1],
-            dtype=torch.float32
-        )
-    }
-
-    input_features_def = [
-        {'name': 'feature_1', 'type': 'numerical'},
-        {'name': 'feature_2', 'type': 'numerical'}
-    ]
+@pytest.mark.parametrize('fc_size', [8, 16])
+@pytest.mark.parametrize('transformer_fc_size', [4, 12])
+def test_transformer_combiner(
+        encoder_outputs: tuple,
+        transformer_fc_size: int,
+        fc_size: int
+) -> None:
+    encoder_outputs_dict, input_feature_dict = encoder_outputs
 
     # setup combiner to test
     combiner = TransformerCombiner(
-        input_features=input_features_def
+        input_features=input_feature_dict
     )
 
-    # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    # confirm correctness of input_shape property
+    assert isinstance(combiner.input_shape, dict)
+    for k in encoder_outputs_dict:
+        assert k in combiner.input_shape
+        assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
+               == combiner.input_shape[k]
 
-    # required key present
-    assert 'combiner_output' in results
+    # calculate expected hidden size for concatenated tensors
+    hidden_size = 0
+    for k in encoder_outputs_dict:
+        hidden_size += np.prod(
+            encoder_outputs_dict[k]["encoder_output"].shape[1:])
+
+    # confirm correctness of effective_input_shape
+    assert combiner.concatenated_shape[-1] == hidden_size
+
+    # concatenate encoder outputs
+    combiner_output = combiner(encoder_outputs_dict)
+
+    # correct data structure
+    assert isinstance(combiner_output, dict)
+
+    # required key present and correct data type
+    assert "combiner_output" in combiner_output
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+
+    # confirm correct shape
+    assert combiner_output['combiner_output'].shape == \
+           (BATCH_SIZE, *combiner.output_shape)
 
 
 def test_tabtransformer_combiner(encoder_outputs):
