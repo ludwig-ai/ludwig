@@ -47,8 +47,8 @@ def embedding_matrix(
             if embeddings_matrix.shape[-1] != embedding_size:
                 if not force_embedding_size:
                     embedding_size = embeddings_matrix.shape[-1]
-                    logger.info(f'Setting embedding size to be equal to ' +
-                                '{embeddings_matrix.shape[-1]}.')
+                    logger.info(
+                        f'Setting embedding size to be equal to {embeddings_matrix.shape[-1]}.')
                 else:
                     raise ValueError(
                         f'The size of the pretrained embeddings is '
@@ -162,7 +162,7 @@ class Embed(LudwigModule):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         if inputs.ndim != 2 or inputs.shape[1] != 1:
             raise RuntimeError(
-                f'Embed only takes inputs of shape [batch x 1].')
+                f'Embed only takes inputs of shape [batch x 1]. Received inputs with size: {inputs.size()}')
         embedded = self.embeddings(inputs.long())
         embedded = torch.squeeze(embedded, dim=1)
         if self.dropout:
