@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from functools import lru_cache
 
+import math
 import torch
 from torch import nn
 from torch.nn import Module, ModuleDict
@@ -22,6 +23,11 @@ def sequence_mask(lengths, maxlen=None, dtype=torch.bool):
 
     mask.type(dtype)
     return mask
+
+
+def periodic(inputs: torch.Tensor, period: int) -> torch.Tensor:
+    """Returns periodic representation assuming 0 is start of period."""
+    return torch.cos(inputs * 2 * math.pi / period)
 
 
 initializer_registry = {
@@ -106,12 +112,12 @@ class LudwigModule(Module):
     @property
     @abstractmethod
     def input_shape(self) -> torch.Size:
-        """ Returns the size of the input tensor without the batch dimension. """
+        """ Returns size of the input tensor without the batch dimension."""
         raise NotImplementedError('Abstract class.')
 
     @property
     def output_shape(self) -> torch.Size:
-        """ Returns the size of the output tensor without the batch dimension."""
+        """ Returns size of the output tensor without the batch dimension."""
         return self._compute_output_shape()
 
     @lru_cache(maxsize=1)
@@ -146,7 +152,8 @@ class Dense(LudwigModule):
         bias_initializer(self.dense.bias)
 
         if weights_regularizer:
-            self.add_loss(lambda: reg_loss(self.dense.weight, weights_regularizer))
+            self.add_loss(lambda: reg_loss(
+                self.dense.weight, weights_regularizer))
 
         if bias_regularizer:
             self.add_loss(lambda: reg_loss(self.dense.bias, bias_regularizer))
@@ -161,5 +168,6 @@ class Dense(LudwigModule):
         batch_size = input.shape[0]
         output = torch.squeeze(self.dense(input), dim=-1)
         if self.activity_regularizer:
-            self.activation_loss = reg_loss(output, self.activity_regularizer) / batch_size
+            self.activation_loss = reg_loss(
+                output, self.activity_regularizer) / batch_size
         return output
