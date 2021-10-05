@@ -76,6 +76,7 @@ class SequenceFeatureMixin:
         'padding': {'type': 'string', 'enum': ['right', 'left']},
         'tokenizer': {'type': 'string', 'enum': sorted(list(tokenizer_registry.keys()))},
         'lowercase': {'type': 'boolean'},
+        'vocab_file': {'type': ['string', 'null']},
         'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'string'},
         'computed_fill_value': {'type': 'string'},
