@@ -27,7 +27,6 @@ from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
-# from ludwig.modules.metric_modules import BWCEWLMetric, ROCAUCMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -132,15 +131,9 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
         assert len(inputs.shape) in [1, 2]
-
-        # inputs = tf.cast(inputs, dtype=torch.float32)
-        #inputs = tensor.type(tensor.float32)
-        # inputs_exp = inputs[:, tf.newaxis]
         inputs_exp = inputs[:, None]
         encoder_outputs = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
-
+            inputs_exp)
         return encoder_outputs
 
 
@@ -189,11 +182,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         probabilities = torch.sigmoid(
             logits, name="probabilities_{}".format(self.name)
         )
-        # predictions = tf.greater_equal(
-        #    probabilities,
-        #    self.threshold,
-        #    name="predictions_{}".format(self.name),
-        # )
 
         predictions = probabilities >= self.threshold
 
@@ -228,19 +216,16 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
 
-    # def update_metrics(self, targets, predictions):
-    #     for metric, metric_fn in self.metric_functions.items():
-    #         if metric == LOSS:
-    #             metric_fn.update_state(targets, predictions[LOGITS])
-    #         else:
-    #             metric_fn.update_state(targets, predictions[PREDICTIONS])
-
     @classmethod
     def get_output_dtype(cls):
         return torch.bool
 
     @property
     def output_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
     @staticmethod
