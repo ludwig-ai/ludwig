@@ -57,9 +57,6 @@ class FCLayer(LudwigModule):
         self.input_size = input_size
         self.output_size = output_size
 
-        self.input_size = input_size
-        self.output_size = output_size
-
         '''
         self.layers.append(Dense(
             units=fc_size,
