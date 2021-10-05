@@ -23,7 +23,6 @@ from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
 
-from kaggle.api.kaggle_api_extended import KaggleApi
 from tqdm import tqdm
 
 from ludwig.utils.fs_utils import get_fs_and_path, upload_output_directory
@@ -176,6 +175,9 @@ class KaggleDatasetDownloadMixin:
     raw_temp_path: str
 
     def download_raw_dataset(self):
+        # Import this here to avoid authenticating on module load
+        from kaggle.api.kaggle_api_extended import KaggleApi
+
         api = KaggleApi()
         api.authenticate()
 
