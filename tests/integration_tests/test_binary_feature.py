@@ -34,7 +34,7 @@ def test_binary_feature(enc_encoder):
     # pass synthetic binary tensor through the input feature
     encoder_output = binary_input_feature(binary_tensor)
 
-    # confirm correctness of the the audio encoder output
+    # confirm correctness of the the binary encoder output
     assert isinstance(encoder_output, dict)
     assert 'encoder_output' in encoder_output
     assert isinstance(encoder_output['encoder_output'], torch.Tensor)
