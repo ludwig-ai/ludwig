@@ -1,7 +1,6 @@
 import logging
 
 import pytest
-import tensorflow as tf
 
 from ludwig.features.numerical_feature import NumericalOutputFeature
 from tests.integration_tests.utils import numerical_feature

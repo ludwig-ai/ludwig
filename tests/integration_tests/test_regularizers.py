@@ -6,7 +6,6 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import pytest
-import tensorflow as tf
 
 from ludwig.constants import PROC_COLUMN, NAME
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset

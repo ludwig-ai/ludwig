@@ -17,7 +17,6 @@ import os
 import tempfile
 
 import pytest
-import tensorflow as tf
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.backend.dask import DaskBackend

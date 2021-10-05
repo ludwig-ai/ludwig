@@ -39,7 +39,6 @@ def init_tensorflow_cpu(request):
     and order of magnitude for small tests. Tests that execute in subprocesses, and tests
     in `test_graph_execution.py` still run in graph mode.
     """
-    # import tensorflow as tf
     # tf.config.experimental_run_functions_eagerly(True)
     # initialize_tensorflow(gpus=-1)
     pass

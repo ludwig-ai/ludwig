@@ -5,7 +5,6 @@ import math
 import os
 from distutils.version import LooseVersion
 
-import tensorflow as tf
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
@@ -16,10 +15,10 @@ from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 from ludwig.utils.data_utils import load_json
 
 
-if LooseVersion(tf.__version__) >= LooseVersion('2.4'):
-    AUTOTUNE = tf.data.AUTOTUNE
-else:
-    AUTOTUNE = tf.data.experimental.AUTOTUNE
+# if LooseVersion(tf.__version__) >= LooseVersion('2.4'):
+#     AUTOTUNE = tf.data.AUTOTUNE
+# else:
+#     AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
 class TFRecordDataset(Dataset):
