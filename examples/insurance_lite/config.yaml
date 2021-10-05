@@ -3,19 +3,18 @@ input_features:
     name: image_path
     type: image
     preprocessing:
-      height: 32
-      width: 32
+      height: 224
+      width: 224
       in_memory: true
       num_channels: 3
     encoder: vit
-    image_size: 32
-    patch_size: 4
-    num_layers: 4
-    d_model: 64
-    num_heads: 4
-    mlp_dim: 128
-    channels: 3
-    dropout: 0.1
+    img_height: 224
+    in_channels: 3
+    use_pretrained: true
+    hidden_size: 768
+    num_hidden_layers: 12
+    num_attention_heads: 12
+    intermediate_size: 3072
   -
     name: insurance_company
     type: category
@@ -64,8 +63,9 @@ output_features:
     preprocessing:
       normalization: zscore
 training:
-  epochs: 1000
+  epochs: 10
   early_stop: 0
+  batch_size: 8
 preprocessing:
   force_split: false
   split_probabilities: [0.7, 0.1, 0.2]

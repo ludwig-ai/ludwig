@@ -456,6 +456,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.num_channels, self.height, self.width])
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
+
     @staticmethod
     def update_config_with_metadata(
             input_feature,

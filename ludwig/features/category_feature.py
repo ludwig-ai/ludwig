@@ -105,6 +105,7 @@ class CategoryFeatureMixin:
             input_df[feature[COLUMN]].astype(str),
             metadata[feature[NAME]],
         )
+
         return proc_df
 
 
@@ -124,6 +125,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
                inputs.dtype == torch.int32 or inputs.dtype == torch.int64
         assert len(inputs.shape) == 1
+        inputs = inputs.unsqueeze(dim=1)
 
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
             inputs = inputs.type(torch.IntTensor)
