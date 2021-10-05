@@ -19,7 +19,7 @@ from typing import Dict
 import torch
 from torch import nn
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
-
+import numpy as np
 from ludwig.constants import LOGITS
 # from ludwig.utils.tf_utils import sequence_length_2D
 
@@ -61,42 +61,39 @@ class RMSPELoss(LogitsLoss):
         return loss
 
 
-# class BWCEWLoss(tf.keras.losses.Loss):
-#     def __init__(
-#         self, positive_class_weight=1, robust_lambda=0, confidence_penalty=0
-#     ):
-#         super().__init__()
-#
-#         self.positive_class_weight = positive_class_weight
-#         self.robust_lambda = robust_lambda
-#         self.confidence_penalty = confidence_penalty
-#
-#     def call(self, y_true, y_pred):
-#         logits = y_pred[LOGITS]
-#
-#         # weighted cross entropy
-#         train_loss = tf.nn.weighted_cross_entropy_with_logits(
-#             labels=tf.cast(y_true, tf.float32),
-#             logits=logits,
-#             pos_weight=self.positive_class_weight,
-#         )
-#
-#         # robust lambda
-#         if self.robust_lambda > 0:
-#             train_loss = (
-#                 1 - self.robust_lambda
-#             ) * train_loss + self.robust_lambda / 2
-#
-#         train_mean_loss = tf.reduce_mean(train_loss)
-#
-#         # confidence penalty
-#         if self.confidence_penalty > 0:
-#             probabilities = tf.nn.sigmoid(logits)
-#             mean_penalty = mean_confidence_penalty(probabilities, 2)
-#             train_mean_loss += self.confidence_penalty * mean_penalty
-#
-#         return train_mean_loss
+class BWCEWLoss:
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
 
+    def mean_confidence_penalty(self, probabilities, num_classes):
+        max_entropy = torch.IntTensor(np.log(num_classes), dtype=torch.int32)
+        # clipping needed for avoiding log(0) = -inf
+        entropy_per_class = torch.maximum(-probabilities * torch.log(torch.clamp(probabilities, 1e-10, 1)), 0, )
+        entropy = torch.sum(entropy_per_class, -1)
+        penalty = (max_entropy - entropy) / max_entropy
+        return torch.mean(penalty)
+
+    def forward(self, predictions: torch.Tensor, target: torch.Tensor):
+        logits = predictions[LOGITS]
+        target = target.long()
+        output = self.loss_fn(input, target)
+        # robust lambda
+        if self.robust_lambda > 0:
+            train_loss = (
+                                 1 - self.robust_lambda
+                         ) * output + self.robust_lambda / 2
+
+        train_mean_loss = torch.mean(train_loss)
+        #
+        # confidence penalty
+        if self.confidence_penalty > 0:
+            # need to define logits
+            probabilities = torch.sigmoid(logits)
+            mean_penalty = self.mean_confidence_penalty(probabilities, 2)
+            train_mean_loss += self.confidence_penalty * mean_penalty
+
+        return train_mean_loss
 
 # TODO torch: test behavior parity with tf
 class SoftmaxCrossEntropyLoss(nn.Module):
