@@ -266,6 +266,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             self.pad_idx = feature['pad_idx']
         else:
             self.pad_idx = None
+        self._input_shape = [feature['max_sequence_length']]
 
     def forward(self, inputs, training=None, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -332,6 +333,10 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
                 input_feature,
                 encoder_class.default_params
             )
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
 
     encoder_registry = ENCODER_REGISTRY
 
