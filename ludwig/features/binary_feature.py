@@ -128,13 +128,13 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.bool, torch.int64]
-        assert len(inputs.shape) == 1
+        assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
+        assert len(inputs.shape) in [1, 2]
 
         # inputs = tf.cast(inputs, dtype=torch.float32)
-        inputs = torch.tensor.type(torch.tensor.float32)
+        #inputs = tensor.type(tensor.float32)
         # inputs_exp = inputs[:, tf.newaxis]
         inputs_exp = inputs[:, None]
         encoder_outputs = self.encoder_obj(

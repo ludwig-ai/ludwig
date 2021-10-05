@@ -53,5 +53,5 @@ class BinaryPassthroughEncoder(BinaryEncoder):
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
         """
-        inputs = inputs.type(torch.float32)
+        #inputs = inputs.type(torch.float32)
         return {'encoder_output': inputs}
