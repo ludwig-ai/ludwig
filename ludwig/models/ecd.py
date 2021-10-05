@@ -395,6 +395,10 @@ def build_outputs(
         output_features_def)
     output_features = {}
 
+    print(f'\n\n\nLALALALALAL')
+    print(dir(combiner))
+    print(combiner.output_shape())
+
     for output_feature_def in output_features_def:
         output_feature_def["input_size"] = combiner.output_shape[-1]
         output_feature = build_single_output(
