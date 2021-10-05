@@ -2,8 +2,6 @@ import copy
 import logging
 from collections import OrderedDict
 
-#import tensorflow as tf
-
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import *
 from ludwig.features.feature_registries import input_type_registry, \

@@ -17,8 +17,6 @@
 import logging
 from abc import ABC
 
-# import tensorflow as tf
-
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed

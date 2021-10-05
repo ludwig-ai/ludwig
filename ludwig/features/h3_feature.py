@@ -18,7 +18,6 @@ import logging
 
 import numpy as np
 import torch
-# import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.h3_encoders import ENCODER_REGISTRY

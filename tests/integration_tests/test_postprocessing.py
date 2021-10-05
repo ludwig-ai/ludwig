@@ -20,7 +20,6 @@ import os
 import numpy as np
 import pandas as pd
 import pytest
-import tensorflow as tf
 from unittest import mock
 
 from ludwig.api import LudwigModel

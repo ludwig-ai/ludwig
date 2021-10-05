@@ -16,8 +16,6 @@
 import contextlib
 
 import pytest
-import tensorflow as tf
-import tensorflow_addons as tfa
 
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data

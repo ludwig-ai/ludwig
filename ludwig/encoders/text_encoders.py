@@ -18,8 +18,6 @@ import logging
 import sys
 from abc import ABC
 
-# import tensorflow as tf
-
 from ludwig.encoders import sequence_encoders
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register

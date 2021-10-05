@@ -17,7 +17,6 @@
 import contextlib
 import math
 
-import tensorflow as tf
 from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.partitioned import RayDataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP

@@ -19,7 +19,6 @@ import tempfile
 
 import pytest
 import ray
-import tensorflow as tf
 
 from ludwig.backend.ray import RayBackend, get_horovod_kwargs
 

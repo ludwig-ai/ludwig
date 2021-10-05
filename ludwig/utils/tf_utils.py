@@ -22,7 +22,6 @@ import multiprocessing
 import warnings
 import zipfile
 
-# import tensorflow as tf
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 
 _TF_INIT_PARAMS = None
