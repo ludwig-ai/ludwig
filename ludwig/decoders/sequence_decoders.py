@@ -16,8 +16,6 @@
 from abc import ABC
 import logging
 
-# import tensorflow as tf
-# import tensorflow_addons as tfa
 # from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
 #     StackedRNNCells
 # from tensorflow.keras.layers import Dense, Embedding

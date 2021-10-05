@@ -1,5 +1,4 @@
 import pytest
-import tensorflow as tf
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 

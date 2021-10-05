@@ -1,6 +1,5 @@
 from typing import List, Tuple
 
-# import tensorflow as tf
 import torch
 
 from ludwig.modules.activation_modules import glu

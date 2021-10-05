@@ -21,7 +21,7 @@ import subprocess
 import sys
 
 import pytest
-import tensorflow as tf
+import torch
 
 try:
     from horovod.common.util import nccl_built
@@ -93,7 +93,7 @@ def test_horovod_implicit(csv_filename):
                     reason="Horovod is not supported on Windows")
 @pytest.mark.skipif(not _nccl_available(),
                     reason="test requires Horovod with NCCL support")
-@pytest.mark.skipif(not tf.test.is_gpu_available(cuda_only=True),
+@pytest.mark.skipif(not torch.cuda.is_available(),
                     reason="test requires multi-GPU machine")
 @pytest.mark.distributed
 def test_horovod_gpu_memory_limit(csv_filename):

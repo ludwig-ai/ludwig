@@ -1,4 +1,3 @@
-# import tensorflow as tf
 from ludwig.utils.torch_utils import LudwigModule
 
 # from tensorflow.keras.layers import BatchNormalization

@@ -3,7 +3,6 @@ import tempfile
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from ludwig.api import LudwigModel
 from ludwig.constants import SPLIT

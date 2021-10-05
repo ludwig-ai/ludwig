@@ -29,7 +29,6 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
-#from ludwig.utils.tf_utils import sequence_length_3D
 from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigModule
 
 import numpy as np

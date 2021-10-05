@@ -18,7 +18,6 @@ import shutil
 import tempfile
 
 import numpy as np
-import tensorflow as tf
 
 from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights

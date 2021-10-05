@@ -20,7 +20,6 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
-import tensorflow as tf
 
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_prediction

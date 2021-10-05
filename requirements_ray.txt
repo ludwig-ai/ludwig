@@ -2,4 +2,4 @@ ray[default,tune]>=1.6.0
 pickle5
 tensorboardX<2.3
 GPUtil
-
+tblib
