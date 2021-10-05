@@ -120,12 +120,8 @@ def embedding_matrix_on_device(
 
 
 class Embed(LudwigModule):
-<<<<<<< HEAD
-    """ Module to embed Category, Date and H3 data types."""
-=======
-    """ Module to embed Category, Date and H3 data types. """
+    """Module to embed Category, Date, and H3 data types."""
 
->>>>>>> 582ac5e9 (Add input_shape and output_shape to EmbedSequence)
     def __init__(
             self,
             vocab: List[str],
