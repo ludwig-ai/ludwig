@@ -295,7 +295,7 @@ class EmbedWeighted(LudwigModule):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
         Params:
-            inputs: Tensor of frequences, where inputs[b, i] represents
+            inputs: Tensor of frequencies, where inputs[b, i] represents
                     frequency of token i in sample b of batch.
         """
         # Convert to multi-hot input
