@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 from abc import ABC
-from typing import Dict
+from typing import Dict, List, Optional
 
 import torch
 
@@ -48,22 +48,22 @@ class H3Embed(H3Encoder):
 
     def __init__(
             self,
-            embedding_size=10,
-            embeddings_on_cpu=False,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=10,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
-            reduce_output='sum',
+            embedding_size: int = 10,
+            embeddings_on_cpu: bool = False,
+            fc_layers: Optional[List] = None,
+            num_fc_layers: int = 0,
+            fc_size: int = 10,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
+            norm: str = None,
+            norm_params: Dict = None,
+            activation: str = 'relu',
+            dropout: float = 0,
+            reduce_output: str = 'sum',
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
@@ -199,6 +199,7 @@ class H3Embed(H3Encoder):
         embedded_cells = self.embed_cells(input_vector[:, 4:])
 
         # ================ Masking ================
+        # Mask out cells beyond the resolution of interest.
         resolution = input_vector[:, 2]
         mask = torch.unsqueeze(
             torch_utils.sequence_mask(resolution, 15), -1).type(
@@ -207,7 +208,7 @@ class H3Embed(H3Encoder):
         masked_embedded_cells = embedded_cells * mask
 
         # ================ Reduce ================
-        # Batch size X H3_INPUT_SIZE X Embedding size
+        # Batch size X H3_INPUT_SIZE X embedding size
         concatenated = torch.cat(
             [embedded_mode, embedded_edge, embedded_resolution,
              embedded_base_cell, masked_embedded_cells],
@@ -218,8 +219,6 @@ class H3Embed(H3Encoder):
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
         hidden = self.fc_stack(hidden)
-        logger.error(
-            f'hidden (after fc stack).size(): {hidden.size()}')
 
         return {'encoder_output': hidden}
 
@@ -237,22 +236,22 @@ class H3WeightedSum(H3Encoder):
 
     def __init__(
             self,
-            embedding_size=10,
-            embeddings_on_cpu=False,
-            should_softmax=False,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=10,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
+            embedding_size: int = 10,
+            embeddings_on_cpu: bool = False,
+            should_softmax: bool = False,
+            fc_layers: Optional[List] = None,
+            num_fc_layers: int = 0,
+            fc_size: int = 10,
+            use_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
+            norm: Optional[str] = None,
+            norm_params: Dict = None,
+            activation: str = 'relu',
+            dropout: float = 0,
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
@@ -353,26 +352,26 @@ class H3RNN(H3Encoder):
 
     def __init__(
             self,
-            embedding_size=10,
-            embeddings_on_cpu=False,
-            num_layers=1,
-            state_size=10,
-            cell_type='rnn',
-            bidirectional=False,
-            activation='tanh',
-            recurrent_activation='sigmoid',
-            use_bias=True,
-            unit_forget_bias=True,
-            weights_initializer='xavier_uniform',
-            recurrent_initializer='orthogonal',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            recurrent_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            dropout=0.0,
-            recurrent_dropout=0.0,
-            reduce_output='last'
+            embedding_size: int = 10,
+            embeddings_on_cpu: bool = False,
+            num_layers: int = 1,
+            state_size: int = 10,
+            cell_type: int = 'rnn',
+            bidirectional: bool = False,
+            activation: str = 'tanh',
+            recurrent_activation: str = 'sigmoid',
+            use_bias: bool = True,
+            unit_forget_bias: bool = True,
+            weights_initializer: str = 'xavier_uniform',
+            recurrent_initializer: str = 'orthogonal',
+            bias_initializer: str = 'zeros',
+            weights_regularizer: Optional[str] = None,
+            recurrent_regularizer: Optional[str] = None,
+            bias_regularizer: Optional[str] = None,
+            activity_regularizer: Optional[str] = None,
+            dropout: float = 0.0,
+            recurrent_dropout: float = 0.0,
+            reduce_output: str = 'last'
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
@@ -471,6 +470,8 @@ class H3RNN(H3Encoder):
 
         logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
+            input_size=self.h3_embed.output_shape[0],
+            sequence_size=H3_INPUT_SIZE,
             state_size=state_size,
             cell_type=cell_type,
             num_layers=num_layers,
@@ -517,4 +518,4 @@ class H3RNN(H3Encoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        return self.fc_stack.output_shape
+        return self.recurrent_stack.output_shape
