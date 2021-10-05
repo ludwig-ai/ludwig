@@ -1015,11 +1015,10 @@ class ComparatorCombiner(CombinerClass):
         element_wise_mul = e1_hidden * e2_hidden  # [bs, fc_size]
         dot_product = torch.sum(element_wise_mul, 1, keepdim=True)  # [bs, 1]
         abs_diff = torch.abs(e1_hidden - e2_hidden)  # [bs, fc_size]
-        bilinear_prod = torch.sum(
-            torch.mm(e1_hidden, self.bilinear_weights) * e2_hidden,
-            # [bs, fc_size]
-            1, keepdim=True
-        )  # [bs, 1]
+        bilinear_prod = torch.bmm(
+            torch.mm(e1_hidden, self.bilinear_weights).unsqueeze(1),
+            e2_hidden.unsqueeze(-1)
+        ).squeeze(-1)  # [bs, 1]
 
         logger.debug(
             'preparing combiner output by concatenating these tensors: '
