@@ -85,8 +85,6 @@ class ConcatCombiner(CombinerClass):
             weights_regularizer: Optional[str] = None,
             bias_regularizer: Optional[str] = None,
             activity_regularizer: Optional[str] = None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm: Optional[str] = None,
             norm_params: Optional[Dict] = None,
             activation: str = 'relu',
@@ -107,7 +105,7 @@ class ConcatCombiner(CombinerClass):
         if fc_layers is None and \
                 num_fc_layers is not None:
             fc_layers = []
-            for i in range(num_fc_layers):
+            for _ in range(num_fc_layers):
                 fc_layers.append({'fc_size': fc_size})
 
         self.fc_layers = fc_layers
@@ -184,6 +182,10 @@ class ConcatCombiner(CombinerClass):
                     return_data[key] = value
 
         return return_data
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return super().output_shape
 
 
 class SequenceConcatCombiner(CombinerClass):

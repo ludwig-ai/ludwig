@@ -266,25 +266,26 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             self.pad_idx = feature['pad_idx']
         else:
             self.pad_idx = None
+        self._input_shape = [feature['max_sequence_length']]
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
-               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+    def forward(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
+               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
         assert len(inputs.shape) == 2
 
-        inputs_exp = tf.cast(inputs, dtype=tf.int32)
-
         if self.pad_idx is not None:
-            inputs_mask = tf.not_equal(inputs, self.pad_idx)
+            inputs_mask = torch.not_equal(inputs, self.pad_idx)
         else:
-            inputs_mask = None
-        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
+            inputs_mask = torch.not_equal(inputs, 0)
+
+        inputs_exp = inputs.type(torch.int32)
+        lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
-
         encoder_output[LENGTHS] = lengths
+
         return encoder_output
 
     @property
@@ -328,13 +329,17 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         )
 
         if hasattr(encoder_class, 'default_params'):
-            set_default_values(
-                input_feature,
-                encoder_class.default_params
-            )
+            set_default_values(input_feature, encoder_class.default_params)
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     encoder_registry = ENCODER_REGISTRY
-
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
@@ -350,7 +355,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.int32
+        return torch.int32
 
     @property
     def output_shape(self) -> torch.Size:
