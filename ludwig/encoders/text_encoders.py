@@ -40,6 +40,15 @@ class TextEncoder(Encoder, ABC):
 
 @register(name='bert')
 class BERTEncoder(TextEncoder):
+    # TODO(justin): Use official class properties.
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'bert-base-uncased',
+    }
 
     def __init__(
             self,
@@ -153,6 +162,14 @@ class BERTEncoder(TextEncoder):
 
 @register(name='gpt')
 class GPTEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'openai-gpt',
+    }
 
     def __init__(
             self,
@@ -222,6 +239,7 @@ class GPTEncoder(TextEncoder):
             self.transformer = OpenAIGPTModel(config)
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
