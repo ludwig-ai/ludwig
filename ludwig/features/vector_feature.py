@@ -214,11 +214,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             self.train_loss_function = MAELoss()
             self.eval_loss_function = MAEMetric(name='eval_loss')
         elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
-            self.train_loss_function = SoftmaxCrossEntropyLoss(
-                num_classes=self.vector_size,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            self.train_loss_function = SoftmaxCrossEntropyLoss()
             self.eval_loss_function = SoftmaxCrossEntropyMetric(
                 num_classes=self.vector_size,
                 feature_loss=self.loss,

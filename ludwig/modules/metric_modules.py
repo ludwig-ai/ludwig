@@ -14,13 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 from abc import abstractmethod
-from typing import Dict
 
 import numpy as np
 from torch import Tensor
 
 from ludwig.constants import *
-from ludwig.constants import PREDICTIONS
+from ludwig.constants import PREDICTIONS, LOGITS
 from ludwig.modules.loss_modules import (
         BWCEWLoss,
     #     SequenceSoftmaxCrossEntropyLoss,
@@ -66,7 +65,22 @@ min_metrics = {
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
-
+metrics_inputs_registry = {
+    'RMSEMetric': PREDICTIONS,
+    'ROCAUCMetric': PREDICTIONS,
+    'RMSPEMetric': PREDICTIONS,
+    'R2ScoreMetric': PREDICTIONS,
+    'ErrorScore': PREDICTIONS, #double check
+    'BWCEWLMetric': LOGITS,
+    'SoftmaxCrossEntropyMetric': LOGITS, #double check
+    'SigmoidCrossEntropyMetric': LOGITS,
+    'TokenAccuracyMetric': PREDICTIONS, #double check
+    'CategoryAccuracy': PREDICTIONS, #double check
+    'HitsAtKMetric': LOGITS,
+    'MAEMetric': PREDICTIONS,
+    'MSEMetric': PREDICTIONS,
+    'JaccardMetric': PREDICTIONS,
+}
 
 # TODO(shreya): Remove the update function and make sure PREDICTIONS IS PASSED.
 class RMSEMetric(MeanSquaredError):
@@ -101,8 +115,6 @@ class MeanMetric(Metric):
 class RMSPEMetric(MeanMetric):
     """ Root mean squared percentage error metric. """
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
-        if isinstance(preds, dict) and PREDICTIONS in preds:
-            preds = preds[PREDICTIONS]
         return rmspe_loss(target, preds)
 
 
@@ -365,74 +377,23 @@ class HitsAtKMetric(Accuracy):
         super().__init__(top_k=top_k)
 
     def update(self, preds: torch.Tensor, target: torch.Tensor):
-        super().update(preds[LOGITS], target)
+        super().update(preds, target)
 
 
-'''
-class MAEMetric(MeanAbsoluteErrorMetric):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        super().update_state(
-            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
-        )
-class MAEMetric(LudwigMetric):
-    def __init__(self, name="MAE"):
-        super(MAEMetric, self).__init__(name=name)
-        self.absolute_error = self.add_tensor('absolute_error', dtype=torch.float32)
-        self.N = self.add_tensor('N', dtype=tf.float32)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        y_true = y_true.type(torch.float32)
-        y_hat = y_hat.type(torch.float32)
-        self.absolute_error += torch.abs(y_true - y_abs)
-        self.N += y_true.shape[0]
-
-    def result(self):
-        return self.absolute_error / self.N
-'''
 class MAEMetric(MeanAbsoluteError):
-    def __init__(self, name="MAE", **kwargs):
-        super().__init__(**kwargs)
-
-    def update(self, preds, target):
-        super().update(
-            preds[PREDICTIONS].detach(), target
-        )
-
-'''
-class MSEMetric(MeanSquaredErrorMetric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        super().update_state(
-            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
-        )
-class MSEMetric(LudwigMetric):
-    def __init__(self, name='MSE'):
-        super(MSEMetric, self).__init__(name=name)
-        self.square_error = self.add_tensor('square_error', dtype=torch.float32)
-        self.N = self.add_tensor('N', dtype=tf.float32)
+    def update(self, preds: Tensor, target: Tensor):
+        super().update(preds.detach(), target)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        y_true = y_true.type(torch.float32)
-        y_hat = y_hat.type(torch.float32)
-        self.square_error += (y_true - y_abs) ** 2
-        self.N += y_true.shape[0]
 
-    def result(self):
-        return self.square_error / self.N
-'''
 class MSEMetric(MeanSquaredError):
-    def __init__(self, name="MSE", **kwargs):
+    def __init__(self, **kwargs):
         super(MSEMetric, self).__init__(**kwargs)
 
     def update(self, preds: torch.Tensor, target):
-        super().update(
-            preds[PREDICTIONS].detach(), target
-        )
+        super().update(preds.detach(), target)
 
 
 class JaccardMetric(Metric):
@@ -443,7 +404,7 @@ class JaccardMetric(Metric):
 
     def update(self, y_true: torch.Tensor, y_pred: torch.Tensor) -> None:
         self.loss.append(self.jaccard_metric(
-            y_pred.type(torch.bool), y_true[PREDICTIONS].type(torch.bool)
+            y_pred.type(torch.bool), y_true.type(torch.bool)
         ))
 
     def compute(self) -> torch.Tensor:

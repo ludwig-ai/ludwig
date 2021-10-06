@@ -21,15 +21,23 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
+from ludwig.constants import LOGITS, PREDICTIONS
 import ludwig.utils.loss_utils as utils
-from ludwig.constants import LOGITS
-<<<<<<< HEAD
-=======
 from ludwig.utils.torch_utils import sequence_length_2D
->>>>>>> deabe548... [WIP] Porting loss and metric modules to torch
 
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
+
+
+loss_inputs_registry = {
+    'MSELoss': PREDICTIONS, #double check
+    'MAELoss': PREDICTIONS, #double check
+    'RMSELoss': PREDICTIONS, #double check
+    'RMSPELoss': PREDICTIONS, #double check
+    'BWCEWLoss': LOGITS,
+    'SoftmaxCrossEntropyLoss': LOGITS, #double check
+    'SigmoidCrossEntropyLoss': LOGITS,
+}
 
 
 class MSELoss(_MSELoss):

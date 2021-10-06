@@ -23,13 +23,17 @@ except ImportError:
     pass
 import pandas as pd
 import torch
+from torch import Tensor
 
 from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.loss_modules import loss_inputs_registry
+from ludwig.modules.metric_modules import metrics_inputs_registry
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
-from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigModule
+from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
+    sequence_mask
 
 import numpy as np
 
@@ -204,22 +208,23 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             **decoder_parameters
         )
 
-    def train_loss(self, targets, predictions):
-        #return self.train_loss_function(targets, predictions)
-        return self.train_loss_function(predictions, targets)
+    def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        loss_name = self.train_loss_function.__class__.__name__
+        prediction_key = loss_inputs_registry[loss_name]
+        return self.train_loss_function(predictions[prediction_key], targets)
 
-    def eval_loss(self, targets, predictions):
-        #return self.eval_loss_function(targets, predictions)
-        return self.eval_loss_function(predictions, targets)
+    def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        # TODO(shreya): Confirm that this works
+        loss_name = self.train_loss_function.__class__.__name__
+        prediction_key = loss_inputs_registry[loss_name]
+        return self.eval_loss_function(predictions[prediction_key], targets)
 
-    def update_metrics(self, targets, predictions):
-        for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS or metric == HITS_AT_K:
-                #metric_fn.update_state(targets, predictions)
-                metric_fn.update(predictions, targets)
-            else:
-                #metric_fn.update_state(targets, predictions[PREDICTIONS])
-                metric_fn.update(predictions, targets)
+    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        # TODO(shreya): Confirm this is ok.
+        for _, metric_fn in self.metric_functions.items():
+            metric_name = self.metric_fn.__class__.__name__
+            prediction_key = metrics_inputs_registry[metric_name]
+            metric_fn.update(predictions[prediction_key], targets)
 
     def get_metrics(self):
         metric_vals = {}
@@ -282,7 +287,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         #   with keys: logits, lengths, projection_input
         #
 
-        if isinstance(logits, torch.Tensor):
+        if isinstance(logits, Tensor):
             logits = {'logits': logits}
 
         return {
