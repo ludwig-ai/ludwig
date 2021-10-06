@@ -150,8 +150,9 @@ class BERTEncoder(TextEncoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
             return torch.Size([
-                self.max_sequence_length,
+                self.max_sequence_length - 2,
                 self.transformer.config.hidden_size
             ])
         return torch.Size([self.transformer.config.hidden_size])
