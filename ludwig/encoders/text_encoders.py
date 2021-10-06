@@ -98,6 +98,11 @@ class BERTEncoder(TextEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
+    # TODO(shreya): Confirm that this is it
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.transformer.config.hidden_size])
+
     # todo implement output_shape
     # @property
     # def output_shape(self) -> torch.Size:

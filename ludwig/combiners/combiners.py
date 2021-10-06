@@ -183,6 +183,10 @@ class ConcatCombiner(CombinerClass):
 
         return return_data
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return super().output_shape
+
 
 class SequenceConcatCombiner(CombinerClass):
     def __init__(

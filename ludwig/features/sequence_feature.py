@@ -194,6 +194,14 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return super().output_shape
+
     encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
 

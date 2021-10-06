@@ -329,14 +329,15 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         )
 
         if hasattr(encoder_class, 'default_params'):
-            set_default_values(
-                input_feature,
-                encoder_class.default_params
-            )
+            set_default_values(input_feature, encoder_class.default_params)
 
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     encoder_registry = ENCODER_REGISTRY
 
