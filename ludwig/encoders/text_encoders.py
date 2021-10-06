@@ -17,6 +17,7 @@
 import logging
 import sys
 from abc import ABC
+from typing import Callable, Dict, Optional, Union
 
 import torch
 
@@ -50,16 +51,34 @@ class BERTEncoder(TextEncoder):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='bert-base-uncased',
-            reduce_output='cls_pooled',
-            trainable=True,
-            num_tokens=None,
-            max_sequence_length=None,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'bert-base-uncased',
+            trainable: bool = True,
+            reduce_output: str ='cls_pooled',
+            num_tokens: Optional[int] = None,
+            max_sequence_length: Optional[int] = None,
+            vocab_size: Optional[int] = 30522,
+            hidden_size: Optional[int] = 768,
+            num_hidden_layers: Optional[int] = 12,
+            num_attention_heads: Optional[int] = 12,
+            intermediate_size: Optional[int] = 3072,
+            hidden_act: Optional[Union[str, Callable]] = "gelu",
+            hidden_dropout_prob: Optional[float] = 0.1,
+            attention_probs_dropout_prob: Optional[float] = 0.1,
+            max_position_embeddings: Optional[int] = 512,
+            type_vocab_size: Optional[int] = 2,
+            initializer_range: Optional[float] = 0.02,
+            layer_norm_eps: Optional[float] = 1e-12,
+            pad_token_id: Optional[int] = 0,
+            gradient_checkpointing: bool = False,
+            position_embedding_type: Optional[str] = "absolute",
+            use_cache: Optional[bool] = True,
+            classifier_dropout: Optional[float] = None,
             **kwargs
     ):
         super().__init__()
         try:
-            from transformers import BertModel
+            from transformers import BertModel, BertConfig
         except ModuleNotFoundError:
             logger.error(
                 ' transformers is not installed. '
@@ -68,9 +87,34 @@ class BERTEncoder(TextEncoder):
             )
             sys.exit(-1)
 
-        self.transformer = BertModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if use_pretrained:
+            self.transformer = BertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+            if trainable:
+                self.transformer.train()
+        else:
+            config = BertConfig(
+                vocab_size=vocab_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=num_hidden_layers,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                hidden_act=hidden_act,
+                hidden_dropout_prob=hidden_dropout_prob,
+                attention_probs_dropout_prob=attention_probs_dropout_prob,
+                max_position_embeddings=max_position_embeddings,
+                type_vocab_size=type_vocab_size,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                pad_token_id=pad_token_id,
+                gradient_checkpointing=gradient_checkpointing,
+                position_embedding_type=position_embedding_type,
+                use_cache=use_cache,
+                classifier_dropout=classifier_dropout
+            )
+            self.transformer = BertModel(config)
+
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -78,7 +122,12 @@ class BERTEncoder(TextEncoder):
         self.transformer.resize_token_embeddings(num_tokens)
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer(
@@ -103,11 +152,9 @@ class BERTEncoder(TextEncoder):
     def output_shape(self) -> torch.Size:
         return torch.Size([self.transformer.config.hidden_size])
 
-    # todo implement output_shape
-    # @property
-    # def output_shape(self) -> torch.Size:
-    #     pass
-
+    @property
+    def input_dtype(self):
+        return torch.int32
 
 # @register(name='gpt')
 # class GPTEncoder(TextEncoder):
