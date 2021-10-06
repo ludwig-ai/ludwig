@@ -17,11 +17,12 @@ from abc import abstractmethod
 from typing import Dict
 
 import numpy as np
+from torch import Tensor
 
 from ludwig.constants import *
 from ludwig.constants import PREDICTIONS
 from ludwig.modules.loss_modules import (
-    #     BWCEWLoss,
+        BWCEWLoss,
     #     SequenceSoftmaxCrossEntropyLoss,
     #     SequenceSampledSoftmaxCrossEntropyLoss,
     #     SigmoidCrossEntropyLoss,
@@ -31,7 +32,7 @@ from ludwig.modules.loss_modules import (
 )
 import torch
 from torchmetrics import Accuracy, AUROC, AverageMeter, IoU, MeanAbsoluteError,\
-    MeanSquaredError, Metric
+    MeanSquaredError, Metric, R2Score
 #from ludwig.utils.tf_utils import sequence_length_2D, to_sparse
 
 metrics = {
@@ -48,8 +49,13 @@ metrics = {
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
-
-max_metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
+max_metrics = {
+    ACCURACY,
+    TOKEN_ACCURACY,
+    HITS_AT_K,
+    R2,
+    JACCARD
+}
 min_metrics = {
     EDIT_DISTANCE,
     MEAN_SQUARED_ERROR,
@@ -62,210 +68,114 @@ min_metrics = {
 }
 
 
+# TODO(shreya): Remove the update function and make sure PREDICTIONS IS PASSED.
 class RMSEMetric(MeanSquaredError):
-    def __init__(self, name="MSE", **kwargs):
+    """ Root mean squared error metric. """
+    def __init__(self, **kwargs):
         super().__init__(squared=False, **kwargs)
 
-    def update(self, preds, target):
-        super().update(
-            preds[PREDICTIONS].detach(), target
-        )
 
-
+# TODO(shreya): Make sure preds[PREDICTIONS] is passed here
 class ROCAUCMetric(AUROC):
-    def __init__(self, curve="ROC", name="roc_auc"):
-        super().__init__()
-
-    def update(self, preds, target):
-        super().update(
-            preds[PREDICTIONS].detach(), target
-        )
+    """ Metric for area under ROC curve. """
+    pass
 
 
 class MeanMetric(Metric):
+    """ Abstract class for computing mean of metrics. """
     def __init__(self):
         super().__init__()
         self.avg = AverageMeter()
 
-    def update(self, preds, target):
+    def update(self, preds: Tensor, target: Tensor) -> None:
         self.avg.update(self.get_current_value(preds, target))
 
-    def compute(self):
+    def compute(self) -> Tensor:
         return self.avg.compute()
 
     @abstractmethod
-    def get_current_value(self, preds, target):
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         raise NotImplementedError()
 
 
 class RMSPEMetric(MeanMetric):
-    def get_current_value(self, preds, target):
+    """ Root mean squared percentage error metric. """
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         if isinstance(preds, dict) and PREDICTIONS in preds:
             preds = preds[PREDICTIONS]
         return rmspe_loss(target, preds)
 
 
-# class LudwigMetric:
-#     def __init__(self, name):
-#         self.variables = []
-#         self.name = name
-#
-#     def reset_states(self, *args, **kwargs):
-#         for var in variables:
-#             var = 0
-#
-#     def add_tensor(self, size=1, name=None, dtype=None):
-#         tensor = torch.zeros(size, dtype=dtype)
-#         self.variables.append(tensor)
-#         return tensor
-#
-#     @abstractmethod
-#     def update_state(self, *args, **kwargs):
-#         pass
-#
-#     @abstractmethod
-#     def result(self):
-#         pass
+# TODO(shreya): Make sure preds[PREDICTIONS] used here.
+# TODO(shreya): COnfirm that its ok to use torchmetrics R2score here.
+class R2ScoreMetric(R2Score):
+    """ R-squared metric. """
+    pass
+    # def __init__(self):
+    #     super().__init__()
+    #     self.add_state("sum_target", default=torch.tensor(0, dtype=torch.float32))
+    #     self.add_state("sum_target_squared", default=torch.tensor(0, dtype=torch.float32))
+    #     self.add_state("sum_preds", default=torch.tensor(0, dtype=torch.float32))
+    #     self.add_state("sum_preds_squared", default=torch.tensor(0, dtype=torch.float32))
+    #     self.add_state("sum_target_preds", default=torch.tensor(0, dtype=torch.float32))
+    #     self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
+
+    # def update(self, preds: Dict[str, torch.Tensor], target: torch.Tensor):
+    #     preds = preds[PREDICTIONS]
+
+    #     target = target.type(torch.float32)
+    #     preds = preds.type(torch.float32)
+    #     self.sum_target += torch.sum(target)
+    #     self.sum_target_squared += torch.sum(target ** 2)
+    #     self.sum_preds += torch.sum(preds)
+    #     self.sum_preds_squared += torch.sum(preds ** 2)
+    #     self.sum_target_preds += torch.sum(target * preds)
+    #     self.N += target.shape[0]
+
+    # def compute(self):
+    #     mean_target = self.sum_target / self.N
+    #     tot_ss = (
+    #         self.sum_target_squared
+    #         - 2.0 * mean_target * self.sum_target
+    #         + self.N * mean_target ** 2
+    #     )
+    #     res_ss = (
+    #         self.sum_target_squared
+    #         - 2.0 * self.sum_target_preds
+    #         + self.sum_preds_squared
+    #     )
+    #     return 1.0 - res_ss / tot_ss
 
 
-class R2Score(Metric):#(tf.keras.metrics.Metric):
-    def __init__(self, name='r2_score'):
-        #super().__init__(name=name)
+# TODO(shreya): What's the point of this error?
+class ErrorScore(MeanMetric):
+    def __init__(self):
         super().__init__()
-        '''
-        self.sum_y = self.add_weight(
-            "sum_y", initializer="zeros", dtype=tf.float32
-        )
-        self.sum_y_squared = self.add_weight(
-            "sum_y_squared", initializer="zeros", dtype=tf.float32
-        )
-        self.sum_y_hat = self.add_weight(
-            "sum_y_hat", initializer="zeros", dtype=tf.float32
-        )
-        self.sum_y_hat_squared = self.add_weight(
-            "sum_y_hat_squared", initializer="zeros", dtype=tf.float32
-        )
-        self.sum_y_hat = self.add_weight(
-            "sum_y_y_hat", initializer="zeros", dtype=tf.float32
-        )
-        self.sum_y_y_hat = self.add_weight(
-            "sum_y_y_hat", initializer="zeros", dtype=tf.float32
-        )
-        self.N = self.add_weight(
-            'N', initializer='zeros',
-            dtype=tf.float32
-        )
-        '''
-        self.add_state("sum_y", default=torch.tensor(0, dtype=torch.float32))
-        self.add_state("sum_y_squared", default=torch.tensor(0, dtype=torch.float32))
-        self.add_state("sum_y_hat", default=torch.tensor(0, dtype=torch.float32))
-        self.add_state("sum_y_hat_squared", default=torch.tensor(0, dtype=torch.float32))
-        self.add_state("sum_y_y_hat", default=torch.tensor(0, dtype=torch.float32))
-        self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update(self, y_hat: Dict[str, torch.Tensor], y: torch.Tensor):
-        '''
-        y = tf.cast(y, dtype=tf.float32)
-        y_hat = tf.cast(y_hat, dtype=tf.float32)
-        self.sum_y.assign_add(tf.reduce_sum(y))
-        self.sum_y_squared.assign_add(tf.reduce_sum(y ** 2))
-        self.sum_y_hat.assign_add(tf.reduce_sum(y_hat))
-        self.sum_y_hat_squared.assign_add(tf.reduce_sum(y_hat ** 2))
-        self.sum_y_y_hat.assign_add(tf.reduce_sum(y * y_hat))
-        self.N.assign_add(y.shape[0])
-        '''
-        y_hat = y_hat[PREDICTIONS]
-
-        y = y.type(torch.float32)
-        y_hat = y_hat.type(torch.float32)
-        self.sum_y += torch.sum(y)
-        self.sum_y_squared += torch.sum(y**2)
-        self.sum_y_hat += torch.sum(y_hat)
-        self.sum_y_hat_squared += torch.sum(y_hat ** 2)
-        self.sum_y_y_hat += torch.sum(y * y_hat)
-        self.N += y.shape[0]
-
-    def compute(self):
-        y_bar = self.sum_y / self.N
-        tot_ss = (
-            self.sum_y_squared
-            - 2.0 * y_bar * self.sum_y
-            + self.N * y_bar ** 2
-        )
-        res_ss = (
-            self.sum_y_squared
-            - 2.0 * self.sum_y_y_hat
-            + self.sum_y_hat_squared
-        )
-        return 1.0 - res_ss / tot_ss
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return (target.type(torch.float32) - preds.type(torch.float32))
 
 
-class ErrorScore(Metric):
-#(tf.keras.metrics.Metric)
-    def __init__(self, name='error_score'):
-        #super().__init__(name=name)
+# TODO(shreya): Confirm behavior parity.
+class BWCEWLMetric(MeanMetric):
+    """ Binary Weighted Cross Entropy Weighted Logits Score Metric. """
+
+    def __init__(
+            self,
+            positive_class_weight: int = 1,
+            robust_lambda: int = 0,
+            confidence_penalty: int = 0
+    ):
         super().__init__()
-        '''
-        self.sum_error = self.add_weight(
-            'sum_error', initializer='zeros',
-            dtype=tf.float32
+
+        self.loss_function = BWCEWLoss(
+            positive_class_weight=positive_class_weight,
+            robust_lambda=robust_lambda,
+            confidence_penalty=confidence_penalty,
         )
-        self.N = self.add_weight(
-            'N', initializer='zeros',
-            dtype=tf.float32
-        )
-        '''
-        self.add_state("sum_error", default=torch.tensor(0, dtype=torch.float32))
-        self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
 
-    def update(self, y_hat, y):
-        '''
-        y = tf.cast(y, tf.float32)
-        y_hat = tf.cast(y_hat, tf.float32)
-        self.sum_error.assign_add(tf.reduce_sum(y - y_hat))
-        self.N.assign_add(y.shape[0])
-        '''
-        y = y.type(torch.float32)
-        y_hat = y_hat.type(torch.float32)
-        self.sum_error += torch.sum(y - y_hat)
-        self.N += y.shape[0]
-
-    def compute(self):
-        return self.sum_error / self.N
-
-
-# class BWCEWLMetric(tf.keras.metrics.Metric):
-#     # Binary Weighted Cross Entropy Weighted Logits Score Metric
-#     # See for additional info:
-#     #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
-#
-#     def __init__(
-#             self,
-#             positive_class_weight=1,
-#             robust_lambda=0,
-#             confidence_penalty=0,
-#             name="binary_cross_entropy_weighted_loss_metric",
-#     ):
-#         super().__init__(name=name)
-#
-#         self.bwcew_loss_function = BWCEWLoss(
-#             positive_class_weight=positive_class_weight,
-#             robust_lambda=robust_lambda,
-#             confidence_penalty=confidence_penalty,
-#         )
-#
-#         self.sum_loss = self.add_weight(
-#             "sum_loss", initializer="zeros", dtype=tf.float32
-#         )
-#         self.N = self.add_weight("N", initializer="zeros", dtype=tf.float32)
-#
-#     def update_state(self, y, y_hat):
-#         loss = self.bwcew_loss_function(y, y_hat)
-#         self.sum_loss.assign_add(loss)
-#         self.N.assign_add(1)
-#
-#     def result(self):
-#         return self.sum_loss / self.N
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.loss_function(preds, target)
 
 
 class SoftmaxCrossEntropyMetric(MeanMetric):
@@ -273,7 +183,7 @@ class SoftmaxCrossEntropyMetric(MeanMetric):
         super().__init__()
         self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss()
 
-    def get_current_value(self, preds, target):
+    def get_current_value(self, preds: Tensor, target: Tensor):
         return self.softmax_cross_entropy_function(preds, target)
 
 
@@ -297,21 +207,13 @@ class SoftmaxCrossEntropyMetric(MeanMetric):
 #         super().update_state(self.metric_function(y, y_hat))
 #
 #
-class SigmoidCrossEntropyMetric(Metric):
+class SigmoidCrossEntropyMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
-        self.add_state(
-            name='loss',
-            default=[],
-            dist_reduce_fx='mean'
-        )
 
-    def update(self, y: torch.Tensor, y_hat: torch.Tensor) -> None:
-        self.loss.append(self.sigmoid_cross_entropy_function(y, y_hat))
-
-    def compute(self) -> torch.Tensor:
-        return torch.mean(torch.stack(self.loss))
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.sigmoid_cross_entropy_function(preds, target)
 
 #
 # class SequenceLossMetric(tf.keras.metrics.Mean):
@@ -374,28 +276,29 @@ class SigmoidCrossEntropyMetric(Metric):
 #         super().update_state(last_targets, y_pred, sample_weight=sample_weight)
 #
 #
+# TODO(shreya): After Sequence Losses
 # class PerplexityMetric(tf.keras.metrics.Mean):
 #     def __init__(self, name=None):
 #         super().__init__(name=name)
 #         self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
-#
+
 #     def update_state(self, y_true, y_pred, sample_weight=None):
 #         loss = self.loss_function(y_true, y_pred)
 #         super().update_state(loss)
-#
+
 #     def result(self):
 #         mean = super().result()
 #         return np.exp(mean)
-#
-#
+
+# TODO(shreya): No PyTorch CUDA implementation available
 # class EditDistanceMetric(tf.keras.metrics.Mean):
 #     def __init__(self, name=None):
 #         super().__init__(name=name)
-#
+
 #     def update_state(self, y_true, y_pred):
 #         # y_true: shape [batch_size, sequence_size]
 #         # y_pred: shape [batch_size, sequence_size]
-#
+
 #         prediction_dtype = y_pred.dtype
 #         prediction_sequence_length = sequence_length_2D(y_pred)
 #         y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
@@ -407,26 +310,27 @@ class SigmoidCrossEntropyMetric(Metric):
 #             prediction_sequence_length,
 #         )
 #         super().update_state(edit_distance_val)
+
+
+class TokenAccuracyMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super().__init__(name=name)
+
+    def update_state(self, y_true, y_pred):
+        # y_true: shape [batch_size, sequence_size]
+        # y_pred: shape [batch_size, sequence_size]
+
+        prediction_dtype = y_pred.dtype
+        y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
+        target_sequence_length = sequence_length_2D(y_true_tensor)
+        masked_corrected_preds = masked_corrected_predictions(
+            y_true_tensor, y_pred, target_sequence_length
+        )
+
+        super().update_state(masked_corrected_preds)
 #
 #
-# class TokenAccuracyMetric(tf.keras.metrics.Mean):
-#     def __init__(self, name=None):
-#         super().__init__(name=name)
-#
-#     def update_state(self, y_true, y_pred):
-#         # y_true: shape [batch_size, sequence_size]
-#         # y_pred: shape [batch_size, sequence_size]
-#
-#         prediction_dtype = y_pred.dtype
-#         y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
-#         target_sequence_length = sequence_length_2D(y_true_tensor)
-#         masked_corrected_preds = masked_corrected_predictions(
-#             y_true_tensor, y_pred, target_sequence_length
-#         )
-#
-#         super().update_state(masked_corrected_preds)
-#
-#
+# TODO(shreya): After Sequence Losses
 # class SequenceAccuracyMetric(tf.keras.metrics.Mean):
 #     def __init__(self, name=None):
 #         super().__init__(name=name)
@@ -580,25 +484,25 @@ def get_best_function(metric):
 #     return accuracy, correct_predictions
 #
 #
-# def masked_corrected_predictions(
-#         targets, predictions, targets_sequence_lengths
-# ):
-#     truncated_preds = predictions[:, : targets.shape[1]]
-#     paddings = tf.stack(
-#         [[0, 0], [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]]
-#     )
-#     padded_truncated_preds = tf.pad(truncated_preds, paddings, name="ptp")
-#
-#     correct_preds = tf.equal(padded_truncated_preds, targets)
-#
-#     mask = tf.sequence_mask(
-#         targets_sequence_lengths, maxlen=correct_preds.shape[1], dtype=tf.int32
-#     )
-#
-#     _, masked_correct_preds = tf.dynamic_partition(correct_preds, mask, 2)
-#     masked_correct_preds = tf.cast(masked_correct_preds, dtype=tf.float32)
-#
-#     return masked_correct_preds
+def masked_corrected_predictions(
+        targets, predictions, targets_sequence_lengths
+):
+    truncated_preds = predictions[:, : targets.shape[1]]
+    paddings = tf.stack(
+        [[0, 0], [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]]
+    )
+    padded_truncated_preds = tf.pad(truncated_preds, paddings, name="ptp")
+
+    correct_preds = tf.equal(padded_truncated_preds, targets)
+
+    mask = tf.sequence_mask(
+        targets_sequence_lengths, maxlen=correct_preds.shape[1], dtype=tf.int32
+    )
+
+    _, masked_correct_preds = tf.dynamic_partition(correct_preds, mask, 2)
+    masked_correct_preds = tf.cast(masked_correct_preds, dtype=tf.float32)
+
+    return masked_correct_preds
 #
 #
 # def masked_sequence_corrected_predictions(
@@ -643,6 +547,7 @@ def get_best_function(metric):
 #     return hits_at_k, mean_hits_at_k
 #
 #
+# TODO(shreya): No PyTorch CUDA implementation available
 # def edit_distance(
 #         targets, target_seq_length, predictions_sequence,
 #         predictions_seq_length
