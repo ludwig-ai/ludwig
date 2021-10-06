@@ -222,8 +222,6 @@ class GPTEncoder(TextEncoder):
             self.transformer = OpenAIGPTModel(config)
 
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
