@@ -138,10 +138,10 @@ def get_combiner_conds():
     conds = []
     for combiner_type in COMBINER_TYPES:
         combiner_cls = combiner_registry[combiner_type]
-        combiner_schema = json.loads(combiner_cls.get_params_cls().schema_json())
+        combiner_props = json.loads(combiner_cls.get_params_cls().schema_json())['properties']
         combiner_cond = create_cond(
             {'type': combiner_type},
-            combiner_schema,
+            combiner_props
         )
         print(combiner_cond)
         conds.append(combiner_cond)
