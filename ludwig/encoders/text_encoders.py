@@ -55,7 +55,6 @@ class BERTEncoder(TextEncoder):
             pretrained_model_name_or_path: str = 'bert-base-uncased',
             trainable: bool = True,
             reduce_output: str ='cls_pooled',
-            num_tokens: Optional[int] = None,
             max_sequence_length: Optional[int] = None,
             vocab_size: Optional[int] = 30522,
             hidden_size: Optional[int] = 768,
@@ -119,7 +118,7 @@ class BERTEncoder(TextEncoder):
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
-        self.transformer.resize_token_embeddings(num_tokens)
+        self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
     def forward(
@@ -150,6 +149,11 @@ class BERTEncoder(TextEncoder):
     # TODO(shreya): Confirm that this is it
     @property
     def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([
+                self.max_sequence_length,
+                self.transformer.config.hidden_size
+            ])
         return torch.Size([self.transformer.config.hidden_size])
 
     @property
