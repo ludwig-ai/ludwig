@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from enum import Enum
 from tokenize import Number
 from typing import List, Dict, Optional, Type, Union
 
@@ -52,22 +53,44 @@ bias_initializer_registry = list(initializers_registry.keys())
 temp_activation_registry = ['relu']
 temp_reduce_output_registry = ['mean', 'concat']
 
+# TODO: Should we restrict strings like this? 
+WeightInitializersEnum = \
+    Enum("WeightInitializersEnum", \
+        {k:k for k in weights_initializer_registry if k != None})
+
+# class ConcatCombinerParams(BaseModel):
+#     fc_layers: Optional[List[Dict]] = None
+#     num_fc_layers: Optional[NonNegativeInt] = None
+#     fc_size: PositiveInt = 256
+#     use_bias: bool = True
+#     weights_initializer: str = 'glorot_uniform'
+#     bias_initializer: str = 'zeros'
+#     weights_regularizer: Optional[str] = None
+#     bias_regularizer: Optional[str] = None
+#     activity_regularizer: Optional[str] = None
+#     norm: Optional[str] = None
+#     norm_params: Optional[str] = None
+#     activation: str = 'relu'
+#     dropout: confloat(ge=0.0, le=1.0) = 0.0
+#     flatten_inputs: bool = False
+#     residual: bool = False
+
 class ConcatCombinerParams(BaseModel):
     fc_layers: Optional[List[Dict]] = None
     num_fc_layers: Optional[NonNegativeInt] = None
-    fc_size: PositiveInt = 256
-    use_bias: bool = True
-    weights_initializer: str = 'glorot_uniform'
-    bias_initializer: str = 'zeros'
+    fc_size: Optional[PositiveInt] = 256
+    use_bias: Optional[bool] = True
+    weights_initializer: Optional[str] = 'glorot_uniform'
+    bias_initializer: Optional[str] = 'zeros'
     weights_regularizer: Optional[str] = None
     bias_regularizer: Optional[str] = None
     activity_regularizer: Optional[str] = None
     norm: Optional[str] = None
     norm_params: Optional[str] = None
-    activation: str = 'relu'
-    dropout: confloat(ge=0.0, le=1.0) = 0.0
-    flatten_inputs: bool = False
-    residual: bool = False
+    activation: Optional[str] = 'relu'
+    dropout: Optional[confloat(ge=0.0, le=1.0)] = 0.0
+    flatten_inputs: Optional[bool] = False
+    residual: Optional[bool] = False
 
 class ConcatCombiner(tf.keras.Model):
     def __init__(
@@ -317,8 +340,12 @@ class SequenceConcatCombiner(tf.keras.Model):
 
         return return_data
 
+    @staticmethod
+    def get_params_cls() -> Type[BaseModel]:
+        return SequenceConcatCombinerParams
+
     # TODO
-    validation_schema = {}
+    # validation_schema = {}
 
 class SequenceCombinerParams(BaseModel):
     reduce_output: Optional[str] = None
@@ -379,7 +406,12 @@ class SequenceCombiner(tf.keras.Model):
         return return_data
 
     # TODO:
-    validation_schema = {}
+    # validation_schema = {}
+
+    @staticmethod
+    def get_params_cls() -> Type[BaseModel]:
+        return SequenceCombinerParams
+
 
 class TabNetCombinerParams(BaseModel):
         size: PositiveInt  # N_a in the paper
@@ -468,46 +500,51 @@ class TabNetCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
+    
+    @staticmethod
+    def get_params_cls() -> Type[BaseModel]:
+        return TabNetCombinerParams
 
-    # TODO: correct ranges?
-    validation_schema = {
-        'num_steps': {
-            'type': 'integer',
-            'minimum': 1,
-        },
-        'num_total_blocks': {
-            'type': 'integer',
-            'minimum': 1,
-        },
-        'num_shared_blocks': {
-            'type': 'integer',
-            'minimum': 1,
-        },
-        'relaxation_factor': {
-            'type': 'number',
-            'minimum': 1,
-        },
-        'bn_epsilon': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1,
-        },
-        'bn_momentum': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1,
-        },
-        'sparsity': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1,
-        },
-        'dropout': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1,
-        },
-    }
+
+    # # TODO: correct ranges?
+    # validation_schema = {
+    #     'num_steps': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #     },
+    #     'num_total_blocks': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #     },
+    #     'num_shared_blocks': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #     },
+    #     'relaxation_factor': {
+    #         'type': 'number',
+    #         'minimum': 1,
+    #     },
+    #     'bn_epsilon': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1,
+    #     },
+    #     'bn_momentum': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1,
+    #     },
+    #     'sparsity': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1,
+    #     },
+    #     'dropout': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1,
+    #     },
+    # }
 
 class TransformerCombinerParams(BaseModel):
         num_layers: PositiveInt = 1
@@ -631,55 +668,59 @@ class TransformerCombiner(tf.keras.Model):
 
         return return_data
 
+    @staticmethod
+    def get_params_cls() -> Type[BaseModel]:
+        return TransformerCombinerParams
+
     # TODO: correct ranges?
-    validation_schema = {
-        'num_layers': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'hidden_size': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'num_heads': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'transformer_fc_size': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'dropout': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1
-        },
-        'num_fc_layers': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'fc_size': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'use_bias': { 'type': 'boolean' },
-        'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
-        'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-        'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
-        'fc_dropout': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1
-        },
-        'fc_residual': { 'type': 'boolean' },
-        'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
-    }
+    # validation_schema = {
+    #     'num_layers': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'hidden_size': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'num_heads': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'transformer_fc_size': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'dropout': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1
+    #     },
+    #     'num_fc_layers': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'fc_size': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'use_bias': { 'type': 'boolean' },
+    #     'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
+    #     'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+    #     'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
+    #     'fc_dropout': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1
+    #     },
+    #     'fc_residual': { 'type': 'boolean' },
+    #     'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
+    # }
 
 class TabTransformerCombinerParams(BaseModel):
         embed_input_feature_name: Optional[Union[int, str]] = None,  # None or embedding size or "add"
@@ -866,57 +907,61 @@ class TabTransformerCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
+    
+    @staticmethod
+    def get_params_cls() -> Type[BaseModel]:
+        return TabTransformerCombinerParams
 
-    # TODO: correct ranges?
-    validation_schema = {
-        'num_layers': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'hidden_size': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'num_heads': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'transformer_fc_size': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'dropout': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1
-        },
-        'num_fc_layers': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'fc_size': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'use_bias': { 'type': 'boolean' },
-        'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
-        'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-        'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
-        'fc_dropout': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1
-        },
-        'fc_residual': { 'type': 'boolean' },
-        # TODO: Does this need to be restricted to a particular enum?
-        'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
-    }
+    # # TODO: correct ranges?
+    # validation_schema = {
+    #     'num_layers': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'hidden_size': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'num_heads': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'transformer_fc_size': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'dropout': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1
+    #     },
+    #     'num_fc_layers': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'fc_size': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'use_bias': { 'type': 'boolean' },
+    #     'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
+    #     'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+    #     'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
+    #     'fc_dropout': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1
+    #     },
+    #     'fc_residual': { 'type': 'boolean' },
+    #     # TODO: Does this need to be restricted to a particular enum?
+    #     'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
+    # }
 
 class ComparatorCombinerParams(BaseModel):
         #fc_layers: Optional[List[Dict]] = None
@@ -1071,28 +1116,33 @@ class ComparatorCombiner(tf.keras.Model):
 
         return {"combiner_output": hidden}
     
+    @staticmethod
+    def get_params_cls() -> Type[BaseModel]:
+        return ComparatorCombinerParams
+
+    
     # TODO: correct ranges?
-    validation_schema = {
-        'num_fc_layers': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'fc_size': {
-            'type': 'integer',
-            'minimum': 1,
-            'maximum': 256
-        },
-        'use_bias': { 'type': 'boolean' },
-        'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
-        'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-        'activation': { 'type': 'string', 'enum': temp_activation_registry },
-        'dropout': {
-            'type': 'number',
-            'minimum': 0,
-            'maximum': 1
-        },
-    }
+    # validation_schema = {
+    #     'num_fc_layers': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'fc_size': {
+    #         'type': 'integer',
+    #         'minimum': 1,
+    #         'maximum': 256
+    #     },
+    #     'use_bias': { 'type': 'boolean' },
+    #     'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
+    #     'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
+    #     'activation': { 'type': 'string', 'enum': temp_activation_registry },
+    #     'dropout': {
+    #         'type': 'number',
+    #         'minimum': 0,
+    #         'maximum': 1
+    #     },
+    # }
 
 def get_combiner_class(combiner_type):
     return get_from_registry(

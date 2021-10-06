@@ -39,7 +39,6 @@ initializers_registry = {
     None: tf.initializers.glorot_uniform
 }
 
-
 def get_initializer(parameters):
     if parameters is None:
         return initializers_registry[parameters]()
@@ -60,3 +59,4 @@ def get_initializer(parameters):
             'Parameters values: {}'.format(
                 type(parameters), parameters
             ))
+
