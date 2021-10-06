@@ -79,8 +79,8 @@ def embedding_matrix(
 
     elif representation == 'sparse':
         embedding_size = vocab_size
-        embeddings = get_initializer('identity')(
-            [vocab_size, embedding_size]).clone().detach().requires_grad_(False)
+        embeddings = get_initializer('identity')([vocab_size, embedding_size])
+        embeddings.requires_grad = False
     else:
         raise Exception(
             f'Embedding representation {representation} not supported.')
