@@ -7,7 +7,13 @@ from torch import nn
 from torch.nn import Module, ModuleDict
 
 
-def sequence_length_3D(sequence):
+def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
+    used = (sequence != 0).type(torch.int32)
+    length = torch.sum(used, 1)
+    return length
+
+
+def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
     used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
     length = torch.sum(used, 1)
     length = length.int()

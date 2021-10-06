@@ -27,20 +27,6 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 _TF_INIT_PARAMS = None
 
 
-def sequence_length_3D(sequence):
-    used = tf.sign(tf.reduce_max(tf.abs(sequence), 2))
-    length = tf.reduce_sum(used, 1)
-    length = tf.cast(length, tf.int32)
-    return length
-
-
-def sequence_length_2D(sequence):
-    used = tf.sign(tf.abs(sequence))
-    length = tf.reduce_sum(used, 1)
-    length = tf.cast(length, tf.int32)
-    return length
-
-
 # Convert a dense matrix into a sparse matrix (for e.g. edit_distance)
 def to_sparse(tensor, lengths, max_length):
     mask = tf.sequence_mask(lengths, max_length)
