@@ -16,23 +16,18 @@
 # ==============================================================================
 import logging
 import numpy as np
-# from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 import torch
 
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
+from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
-from ludwig.utils.metrics_utils import ConfusionMatrix
-from ludwig.utils.metrics_utils import average_precision_score
-from ludwig.utils.metrics_utils import precision_recall_curve
-from ludwig.utils.metrics_utils import roc_auc_score
-from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.misc_utils import set_default_values
+from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric
+from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
+    precision_recall_curve, roc_auc_score, roc_curve
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
@@ -207,7 +202,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             confidence_penalty=self.loss["confidence_penalty"],
             name="eval_loss",
         )
-        self.metric_functions[ACCURACY] = BinaryAccuracy(
+        # TODO(shreya): Double check
+        self.metric_functions[ACCURACY] = Accuracy(
             name="metric_accuracy"
         )
         self.metric_functions[ROC_AUC] = ROCAUCMetric(name="metric_auc")

@@ -32,9 +32,9 @@ from ludwig.features.base_feature import OutputFeature
 #     SampledSoftmaxCrossEntropyMetric
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
+from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
