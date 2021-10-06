@@ -90,7 +90,7 @@ class H3Embed(H3Encoder):
 
         self.embedding_size = embedding_size
         self.reduce_output = reduce_output
-        self.sum_sequence_reducer = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
         logger.debug('  mode Embed')
         self.embed_mode = Embed(
@@ -213,7 +213,7 @@ class H3Embed(H3Encoder):
              embedded_base_cell, masked_embedded_cells],
             dim=1)
 
-        hidden = self.sum_sequence_reducer(concatenated)
+        hidden = self.reduce_sequence(concatenated)
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
