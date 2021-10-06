@@ -54,7 +54,7 @@ class BERTEncoder(TextEncoder):
             use_pretrained: bool = True,
             pretrained_model_name_or_path: str = 'bert-base-uncased',
             trainable: bool = True,
-            reduce_output: str ='cls_pooled',
+            reduce_output: str = 'cls_pooled',
             max_sequence_length: Optional[int] = None,
             vocab_size: Optional[int] = 30522,
             hidden_size: Optional[int] = 768,
@@ -161,55 +161,74 @@ class BERTEncoder(TextEncoder):
     def input_dtype(self):
         return torch.int32
 
-# @register(name='gpt')
-# class GPTEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'openai-gpt',
-#     }
-#
-#     def __init__(
-#             self,
-#             reduce_output='sum',
-#             pretrained_model_name_or_path='openai-gpt',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFOpenAIGPTModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFOpenAIGPTModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         hidden = transformer_outputs[0]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
+
+@register(name='gpt')
+class GPTEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'openai-gpt',
+    }
+
+    def __init__(
+            self,
+            reduce_output: str = 'sum',
+            pretrained_model_name_or_path: str = 'openai-gpt',
+            max_sequence_length: int = None,
+            trainable: bool = True,
+            vocab_size: Optional[int] = 30522,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import OpenAIGPTModel, OpenAIGPTConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        self.transformer = OpenAIGPTModel.from_pretrained(
+            pretrained_model_name_or_path
+        )
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(vocab_size)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.type(torch.IntTensor)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs))
+        hidden = transformer_outputs[0]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([
+                self.max_sequence_length,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 #
 #
 # @register(name='gpt2')
