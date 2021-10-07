@@ -41,7 +41,8 @@ class H3FeatureMixin:
     }
 
     preprocessing_schema = {
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'missing_value_strategy': {'type': 'string', 'enum':
+            MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'integer'},
         'computed_fill_value': {'type': 'integer'},
     }
@@ -103,8 +104,8 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.uint8, tf.int64]
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.uint8, torch.int64]
         assert len(inputs.shape) == 2
 
         inputs_encoded = self.encoder_obj(
