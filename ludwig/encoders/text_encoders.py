@@ -161,6 +161,158 @@ class BERTEncoder(TextEncoder):
     def input_dtype(self):
         return torch.int32
 
+
+@register(name='xlm')
+class XLMEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'xlm-mlm-en-2048',
+    }
+
+    def __init__(
+            self,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path='xlm-mlm-en-2048',
+            reduce_output: str = 'cls_pooled',
+            max_sequence_length: Optional[int] = None,
+            vocab_size=30145,
+            emb_dim=2048,
+            n_layers=12,
+            n_heads=16,
+            dropout=0.1,
+            attention_dropout=0.1,
+            gelu_activation=True,
+            sinusoidal_embeddings=False,
+            causal=False,
+            asm=False,
+            n_langs=1,
+            use_lang_emb=True,
+            max_position_embeddings=512,
+            embed_init_std=2048 ** -0.5,
+            layer_norm_eps=1e-12,
+            init_std=0.02,
+            bos_index=0,
+            eos_index=1,
+            pad_index=2,
+            unk_index=3,
+            mask_index=5,
+            is_encoder=True,
+            summary_type="first",
+            summary_use_proj=True,
+            summary_activation=None,
+            summary_proj_to_labels=True,
+            summary_first_dropout=0.1,
+            start_n_top=5,
+            end_n_top=5,
+            mask_token_id=0,
+            lang_id=0,
+            pad_token_id=2,
+            bos_token_id=0,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import XLMModel, XLMConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = XLMModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = XLMConfig(
+                vocab_size=vocab_size,
+                emb_dim=emb_dim,
+                n_layers=n_layers,
+                n_heads=n_heads,
+                dropout=dropout,
+                attention_dropout=attention_dropout,
+                gelu_activation=gelu_activation,
+                sinusoidal_embeddings=sinusoidal_embeddings,
+                causal=causal,
+                asm=asm,
+                n_langs=n_langs,
+                use_lang_emb=use_lang_emb,
+                max_position_embeddings=max_position_embeddings,
+                embed_init_std=embed_init_std,
+                layer_norm_eps=layer_norm_eps,
+                init_std=init_std,
+                bos_index=bos_index,
+                eos_index=eos_index,
+                pad_index=pad_index,
+                unk_index=unk_index,
+                mask_index=mask_index,
+                is_encoder=is_encoder,
+                summary_type=summary_type,
+                summary_use_proj=summary_use_proj,
+                summary_activation=summary_activation,
+                summary_proj_to_labels=summary_proj_to_labels,
+                summary_first_dropout=summary_first_dropout,
+                start_n_top=start_n_top,
+                end_n_top=end_n_top,
+                mask_token_id=mask_token_id,
+                lang_id=lang_id,
+                pad_token_id=pad_token_id,
+                bos_token_id=bos_token_id,
+            )
+            self.transformer = XLMModel(config)
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == 'cls_pooled':
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.resize_token_embeddings(vocab_size)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == 'cls_pooled':
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    # TODO(shreya): Confirm that this is it
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 2,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
 # @register(name='gpt')
 # class GPTEncoder(TextEncoder):
 #     fixed_preprocessing_parameters = {
