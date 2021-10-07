@@ -723,7 +723,7 @@ class TransformerCombiner(tf.keras.Model):
     # }
 
 class TabTransformerCombinerParams(BaseModel):
-        embed_input_feature_name: Optional[Union[int, str]] = None,  # None or embedding size or "add"
+        embed_input_feature_name: Optional[Union[int, str]] = None  # None or embedding size or "add"
         num_layers: PositiveInt = 1
         hidden_size: PositiveInt = 256
         num_heads: PositiveInt = 8
