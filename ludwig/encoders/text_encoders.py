@@ -256,11 +256,6 @@ class XLMEncoder(TextEncoder):
                 unk_index=unk_index,
                 mask_index=mask_index,
                 is_encoder=is_encoder,
-                summary_type=summary_type,
-                summary_use_proj=summary_use_proj,
-                summary_activation=summary_activation,
-                summary_proj_to_labels=summary_proj_to_labels,
-                summary_first_dropout=summary_first_dropout,
                 start_n_top=start_n_top,
                 end_n_top=end_n_top,
                 mask_token_id=mask_token_id,
@@ -512,57 +507,6 @@ class XLMEncoder(TextEncoder):
 #             "token_type_ids": tf.zeros_like(inputs),
 #         }, training=training)
 #         hidden = transformer_outputs[0]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
-#
-# @register(name='xlm')
-# class XLMEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'xlm-mlm-en-2048',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='xlm-mlm-en-2048',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFXLMModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFXLMModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
 #         hidden = self.reduce_sequence(hidden, self.reduce_output)
 #         return {'encoder_output': hidden}
 #
