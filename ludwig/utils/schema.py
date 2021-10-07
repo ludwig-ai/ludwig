@@ -144,7 +144,6 @@ def get_combiner_conds():
             {'type': combiner_type},
             combiner_props
         )
-        #print(combiner_cond)
         conds.append(combiner_cond)
     return conds
 
@@ -172,5 +171,4 @@ def create_cond(if_pred, then_pred):
 
 
 def validate_config(config):
-    # print(get_schema())
     validate(instance=config, schema=get_schema())
