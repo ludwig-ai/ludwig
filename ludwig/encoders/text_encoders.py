@@ -17,14 +17,14 @@
 import logging
 import sys
 from abc import ABC
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional, Union, List
 
 import torch
 
 from ludwig.encoders import sequence_encoders
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.utils.registry import Registry, register
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,6 @@ class BERTEncoder(TextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
-
 
 @register(name='xlm')
 class XLMEncoder(TextEncoder):
@@ -502,53 +501,128 @@ class GPT2Encoder(TextEncoder):
         return torch.int32
 
 
-# # @register(name='transformer_xl')
-# class TransformerXLEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'transfo-xl-wt103',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='transfo-xl-wt103',
-#             reduce_output='sum',
-#             trainable=True,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFTransfoXLModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFTransfoXLModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#
-#     def call(self, inputs, training=None, mask=None):
-#         transformer_outputs = self.transformer(
-#             inputs,
-#             training=training,
-#         )
-#         hidden = transformer_outputs[0]
-#
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
-#
+@register(name='transformer_xl')
+class TransformerXLEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'transfo-xl-wt103',
+    }
+
+    def __init__(
+            self,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path='transfo-xl-wt103',
+            reduce_output='sum',
+            trainable=True,
+            max_sequence_length: Optional[int] = None,
+            vocab_size: Optional[int] = 267735,
+            cutoffs: Optional[List[int]] = [20000, 40000, 200000],
+            d_model: Optional[int] = 1024,
+            d_embed: Optional[int] = 1024,
+            n_head: Optional[int] = 16,
+            d_head: Optional[int] = 64,
+            d_inner: Optional[int] = 4096,
+            div_val: Optional[int] = 4,
+            pre_lnorm: Optional[bool] = False,
+            n_layer: Optional[int] = 18,
+            mem_len: Optional[int] = 1600,
+            clamp_len: Optional[int] = 1000,
+            same_length: Optional[bool] = True,
+            proj_share_all_but_first: Optional[bool] = True,
+            attn_type: Optional[int] = 0,
+            sample_softmax: Optional[int] = -1,
+            adaptive: Optional[bool] = True,
+            dropout: Optional[float] = 0.1,
+            dropatt: Optional[float] = 0.0,
+            untie_r: Optional[bool] = True,
+            init: Optional[str] = "normal",
+            init_range: Optional[float] = 0.01,
+            proj_init_std: Optional[float] = 0.01,
+            init_std: Optional[float] = 0.02,
+            layer_norm_epsilon: Optional[float] = 1e-5,
+            eos_token_id: Optional[int] = 0,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import TransfoXLModel, TransfoXLConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = TransfoXLModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = TransfoXLConfig(
+                vocab_size=vocab_size,
+                cutoffs=cutoffs,
+                d_model=d_model,
+                d_embed=d_embed,
+                n_head=n_head,
+                d_head=d_head,
+                d_inner=d_inner,
+                div_val=div_val,
+                pre_lnorm=pre_lnorm,
+                n_layer=n_layer,
+                mem_len=mem_len,
+                clamp_len=clamp_len,
+                same_length=same_length,
+                proj_share_all_but_first=proj_share_all_but_first,
+                attn_type=attn_type,
+                sample_softmax=sample_softmax,
+                adaptive=adaptive,
+                dropout=dropout,
+                dropatt=dropatt,
+                untie_r=untie_r,
+                init=init,
+                init_range=init_range,
+                proj_init_std=proj_init_std,
+                init_std=init_std,
+                layer_norm_epsilon=layer_norm_epsilon,
+                eos_token_id=eos_token_id,
+            )
+            self.transformer = TransfoXLModel(config)
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.trainable = trainable
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+        transformer_outputs = self.transformer(inputs)
+        hidden = transformer_outputs[0]
+
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([
+                self.max_sequence_length,
+                self.transformer.config.d_model
+            ])
+        else:
+            return torch.Size([self.transformer.config.d_model])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
 # @register(name='xlnet')
 # class XLNetEncoder(TextEncoder):
 #     fixed_preprocessing_parameters = {
