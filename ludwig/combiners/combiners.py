@@ -649,7 +649,7 @@ class TabTransformerCombiner(CombinerClass):
             num_fc_layers=0,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -747,7 +747,7 @@ class TabTransformerCombiner(CombinerClass):
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
-            256,  # todo: need to generalize
+            hidden_size + concatenated_skip_encoders_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,

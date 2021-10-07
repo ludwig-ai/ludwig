@@ -427,8 +427,10 @@ def test_transformer_combiner(
            (BATCH_SIZE, *combiner.output_shape)
 
 
-@pytest.mark.parametrize('embed_input_feature_name', [56])  # None, 56, 'add'])
-def test_tabtransformer_combiner(encoder_outputs, embed_input_feature_name):
+@pytest.mark.parametrize('fc_layers', [None, [{'fc_size': 256}]])
+@pytest.mark.parametrize('embed_input_feature_name', [None, 64, 'add'])
+def test_tabtransformer_combiner(encoder_outputs, embed_input_feature_name,
+                                 fc_layers):
     # clean out unneeded encoder outputs
     # todo: combine creation of encoder_outputs and input_features into generic setp
     encoder_outputs = {}
@@ -454,7 +456,9 @@ def test_tabtransformer_combiner(encoder_outputs, embed_input_feature_name):
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features,
-        embed_input_feature_name=embed_input_feature_name
+        embed_input_feature_name=embed_input_feature_name,
+        ### emulates parameters passed from combiner def
+        fc_layers=fc_layers
     )
 
     # concatenate encoder outputs
