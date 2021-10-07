@@ -339,10 +339,6 @@ class SequenceConcatCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return SequenceConcatCombinerParams
-
-    # TODO
-    # validation_schema = {}
-
 class SequenceCombinerParams(BaseModel):
     reduce_output: Optional[ReduceOutputType] = None
     main_sequence_feature: Optional[str] = None
@@ -400,9 +396,6 @@ class SequenceCombiner(tf.keras.Model):
                 return_data[key] = value
 
         return return_data
-
-    # TODO:
-    # validation_schema = {}
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
@@ -500,47 +493,6 @@ class TabNetCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return TabNetCombinerParams
-
-
-    # # TODO: correct ranges?
-    # validation_schema = {
-    #     'num_steps': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #     },
-    #     'num_total_blocks': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #     },
-    #     'num_shared_blocks': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #     },
-    #     'relaxation_factor': {
-    #         'type': 'number',
-    #         'minimum': 1,
-    #     },
-    #     'bn_epsilon': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1,
-    #     },
-    #     'bn_momentum': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1,
-    #     },
-    #     'sparsity': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1,
-    #     },
-    #     'dropout': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1,
-    #     },
-    # }
 
 class TransformerCombinerParams(BaseModel):
         num_layers: PositiveInt = 1
@@ -667,56 +619,6 @@ class TransformerCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return TransformerCombinerParams
-
-    # TODO: correct ranges?
-    # validation_schema = {
-    #     'num_layers': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'hidden_size': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'num_heads': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'transformer_fc_size': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'dropout': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1
-    #     },
-    #     'num_fc_layers': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'fc_size': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'use_bias': { 'type': 'boolean' },
-    #     'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
-    #     'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-    #     'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
-    #     'fc_dropout': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1
-    #     },
-    #     'fc_residual': { 'type': 'boolean' },
-    #     'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
-    # }
 
 class TabTransformerCombinerParams(BaseModel):
         embed_input_feature_name: Optional[Union[int, str]] = None  # None or embedding size or "add"
@@ -908,57 +810,6 @@ class TabTransformerCombiner(tf.keras.Model):
     def get_params_cls() -> Type[BaseModel]:
         return TabTransformerCombinerParams
 
-    # # TODO: correct ranges?
-    # validation_schema = {
-    #     'num_layers': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'hidden_size': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'num_heads': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'transformer_fc_size': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'dropout': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1
-    #     },
-    #     'num_fc_layers': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'fc_size': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'use_bias': { 'type': 'boolean' },
-    #     'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
-    #     'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-    #     'fc_activation': { 'type': 'string', 'enum': temp_activation_registry },
-    #     'fc_dropout': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1
-    #     },
-    #     'fc_residual': { 'type': 'boolean' },
-    #     # TODO: Does this need to be restricted to a particular enum?
-    #     'reduce_output': { 'type': 'string', 'enum': temp_reduce_output_registry },
-    # }
-
 class ComparatorCombinerParams(BaseModel):
         #fc_layers: Optional[List[Dict]] = None
         num_fc_layers: NonNegativeInt = 0
@@ -1115,30 +966,6 @@ class ComparatorCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return ComparatorCombinerParams
-
-    
-    # TODO: correct ranges?
-    # validation_schema = {
-    #     'num_fc_layers': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'fc_size': {
-    #         'type': 'integer',
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'use_bias': { 'type': 'boolean' },
-    #     'weights_initializer': { 'type': 'string', 'enum': weights_initializer_registry },
-    #     'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-    #     'activation': { 'type': 'string', 'enum': temp_activation_registry },
-    #     'dropout': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1
-    #     },
-    # }
 
 def get_combiner_class(combiner_type):
     return get_from_registry(
