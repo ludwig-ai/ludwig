@@ -72,7 +72,6 @@ class BERTEncoder(TextEncoder):
             pad_token_id: int = 0,
             gradient_checkpointing: bool = False,
             position_embedding_type: str = 'absolute',
-            use_cache: bool = True,
             classifier_dropout: float = None,
             **kwargs
     ):
@@ -108,7 +107,6 @@ class BERTEncoder(TextEncoder):
                 pad_token_id=pad_token_id,
                 gradient_checkpointing=gradient_checkpointing,
                 position_embedding_type=position_embedding_type,
-                use_cache=use_cache,
                 classifier_dropout=classifier_dropout
             )
             self.transformer = BertModel(config)
@@ -116,7 +114,8 @@ class BERTEncoder(TextEncoder):
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer.trainable = trainable
+        if trainable:
+            self.transformer.train()
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -190,13 +189,6 @@ class GPTEncoder(TextEncoder):
             attn_pdrop: float = 0.1,
             layer_norm_epsilon: float = 1e-5,
             initializer_range: float = 0.02,
-            predict_special_tokens: bool = True,
-            summary_type: str = 'cls_index',
-            summary_use_proj: bool = True,
-            summary_activation: Optional[str] = None,
-            summary_proj_to_labels: bool = True,
-            summary_first_dropout: float = 0.1,
-            use_cache: bool = True,
             **kwargs
     ):
         super().__init__()
@@ -227,20 +219,14 @@ class GPTEncoder(TextEncoder):
                 embd_pdrop=embd_pdrop,
                 attn_pdrop=attn_pdrop,
                 layer_norm_epsilon=layer_norm_epsilon,
-                initializer_range=initializer_range,
-                predict_special_tokens=predict_special_tokens,
-                summary_type=summary_type,
-                summary_use_proj=summary_use_proj,
-                summary_activation=summary_activation,
-                summary_proj_to_labels=summary_proj_to_labels,
-                summary_first_dropout=summary_first_dropout,
-                use_cache=use_cache
+                initializer_range=initializer_range
             )
             self.transformer = OpenAIGPTModel(config)
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer.trainable = trainable
+        if trainable:
+            self.transformer.train()
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
