@@ -49,7 +49,7 @@ def test_gpt2_encoder(
         reduce_output: str,
         max_sequence_length: int
 ):
-    gpt_encoder = text_encoders.GPTEncoder(
+    gpt_encoder = text_encoders.GPT2Encoder(
         use_pretrained=use_pretrained,
         reduce_output=reduce_output,
         max_sequence_length=max_sequence_length

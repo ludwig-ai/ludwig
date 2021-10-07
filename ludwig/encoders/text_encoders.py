@@ -286,6 +286,7 @@ class GPT2Encoder(TextEncoder):
             self,
             use_pretrained: bool = True,
             pretrained_model_name_or_path: str = 'gpt2',
+            max_sequence_length: int = None,
             reduce_output: str = 'sum',
             trainable: bool = True,
             vocab_size: int = 50257,
@@ -306,7 +307,7 @@ class GPT2Encoder(TextEncoder):
     ):
         super().__init__()
         try:
-            from transformers import GPT2Model
+            from transformers import GPT2Model, GPT2Config
         except ModuleNotFoundError:
             logger.error(
                 ' transformers is not installed. '
@@ -320,7 +321,7 @@ class GPT2Encoder(TextEncoder):
                 pretrained_model_name_or_path
             )
         else:
-            config = GPT2ModelConfig(
+            config = GPT2Config(
                 vocab_size=vocab_size,
                 n_positions=n_positions,
                 n_ctx=n_ctx,
@@ -335,10 +336,11 @@ class GPT2Encoder(TextEncoder):
                 layer_norm_epsilon=layer_norm_epsilon,
                 initializer_range=initializer_range,
                 scale_attn_weights=scale_attn_weights)
-            self.transformer = OpenAIGPTModel(config)
+            self.transformer = GPT2Model(config)
 
         if trainable:
             self.transformer.train()
+        self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
