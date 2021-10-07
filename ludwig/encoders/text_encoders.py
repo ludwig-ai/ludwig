@@ -301,13 +301,7 @@ class GPT2Encoder(TextEncoder):
             attn_pdrop: float = 0.1,
             layer_norm_epsilon: float = 1e-5,
             initializer_range: float = 0.02,
-            summary_type: str = 'cls_index',
-            summary_use_proj: bool = True,
-            summary_activation: Optional[str] = None,
-            summary_proj_to_labels: bool = True,
-            summary_first_dropout: float = 0.1,
             scale_attn_weights: bool = True,
-            use_cache: bool = True,
             **kwargs
     ):
         super().__init__()
@@ -340,18 +334,13 @@ class GPT2Encoder(TextEncoder):
                 attn_pdrop=attn_pdrop,
                 layer_norm_epsilon=layer_norm_epsilon,
                 initializer_range=initializer_range,
-                summary_type=summary_type,
-                summary_use_proj=summary_use_proj,
-                summary_activation=summary_activation,
-                summary_proj_to_labels=summary_proj_to_labels,
-                summary_first_dropout=summary_first_dropout,
-                scale_attn_weights=scale_attn_weights,
-                use_cache=use_cache)
+                scale_attn_weights=scale_attn_weights)
             self.transformer = OpenAIGPTModel(config)
 
+        if trainable:
+            self.transformer.train()
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
