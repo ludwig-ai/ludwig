@@ -276,7 +276,6 @@ class XLMEncoder(TextEncoder):
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
-
     def forward(
             self,
             inputs: torch.Tensor,
