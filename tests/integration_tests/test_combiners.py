@@ -301,7 +301,11 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     del encoder_comparator_outputs["image_feature_4"]
 
     # setup combiner to test set to 256 for case when none as it's the default size
+    print(fc_layer)
+    print(entity_1)
+    print(entity_2)
     fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
+    print(fc_size)
     combiner = ComparatorCombiner(
         entity_1, 
         entity_2, 
