@@ -53,32 +53,36 @@ activation_registry = ['relu']
 reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat']
 
 # Initializers accept presets or customized dicts (not JSON-validated):
+# Note: instead of inheriting from Enum directly, define StringEnum so that
+# conversions to string work normally in rest of codebase:
+class StringEnum(str, Enum):
+    pass
 WeightsInitializerEnum = \
-    Enum("WeightsInitializerEnum", \
+    StringEnum("WeightsInitializerEnum", \
         {k:k for k in preset_weights_initializer_registry if k != None})
 WeightsInitializerType = Union[WeightsInitializerEnum, Dict]
 BiasInitializerEnum = \
-    Enum("BiasInitializerEnum", \
+    StringEnum("BiasInitializerEnum", \
         {k:k for k in preset_bias_initializer_registry if k != None})
 BiasInitializerType = Union[BiasInitializerEnum, Dict]
 
 WeightsRegularizerType = \
-    Enum("WeightsRegularizerEnum",
+    StringEnum("WeightsRegularizerEnum",
         {k:k for k in weights_regularizer_registry})
 BiasRegularizerType = \
-    Enum("BiasRegularizerEnum",
+    StringEnum("BiasRegularizerEnum",
         {k:k for k in bias_regularizer_registry})
 ActivityRegularizerType = \
-    Enum("ActivityRegularizerEnum",
+    StringEnum("ActivityRegularizerEnum",
         {k:k for k in activity_regularizer_registry})
 NormType = \
-    Enum("NormEnum",
+    StringEnum("NormEnum",
         {k:k for k in norm_registry})
 ActivationType = \
-    Enum("ActivationEnum",
+    StringEnum("ActivationEnum",
         {k:k for k in activation_registry})
 ReduceOutputType = \
-    Enum("ReduceOutputEnum",
+    StringEnum("ReduceOutputEnum",
         {k:k for k in reduce_output_registry})
 
 class ConcatCombinerParams(BaseModel):
@@ -101,8 +105,8 @@ class ConcatCombinerParams(BaseModel):
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: List,
-            config_params: ConcatCombinerParams,
+            input_features: Union[List, None] = None,
+            config_params: ConcatCombinerParams = ConcatCombinerParams(),
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
@@ -191,7 +195,7 @@ class SequenceConcatCombinerParams(BaseModel):
 class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_params: SequenceConcatCombinerParams,
+            config_params: SequenceConcatCombinerParams = SequenceConcatCombinerParams(),
             **kwargs
     ):
         super().__init__()
@@ -336,16 +340,16 @@ class SequenceCombinerParams(BaseModel):
 class SequenceCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_params: SequenceCombinerParams,
+            config_params: SequenceCombinerParams = SequenceCombinerParams(),
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        self.combiner = SequenceConcatCombiner(
+        self.combiner = SequenceConcatCombiner(SequenceConcatCombinerParams(
             reduce_output=None,
             main_sequence_feature=config_params.main_sequence_feature
-        )
+        ))
 
         self.encoder_obj = get_from_registry(
             config_params.encoder, sequence_encoder_registry)(
@@ -407,7 +411,7 @@ class TabNetCombinerParams(BaseModel):
 class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_params: TabNetCombinerParams,
+            config_params: TabNetCombinerParams = TabNetCombinerParams(),
             **kwargs
     ):
         super().__init__()
@@ -510,8 +514,8 @@ class TransformerCombinerParams(BaseModel):
 class TransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: List,
-            config_params: TransformerCombinerParams,
+            input_features: Union[List, None] = None,
+            config_params: TransformerCombinerParams = TransformerCombinerParams(),
             **kwargs
     ):
         super().__init__()
@@ -637,8 +641,8 @@ class TabTransformerCombinerParams(BaseModel):
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: List,
-            config_params: TabTransformerCombinerParams,
+            input_features: Union[List, None] = None,
+            config_params: TabTransformerCombinerParams = TabTransformerCombinerParams(),
             **kwargs
     ):
         super().__init__()
@@ -819,9 +823,9 @@ class ComparatorCombinerParams(BaseModel):
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
             self,
-            entity_1: List[str],
-            entity_2: List[str],
-            config_params: ComparatorCombinerParams,
+            entity_1: Union[List[str], None] = None,
+            entity_2: Union[List[str], None] = None, 
+            config_params: ComparatorCombinerParams = ComparatorCombinerParams(),
             **kwargs,
     ):
         super().__init__()
