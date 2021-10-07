@@ -176,42 +176,43 @@ class XLMEncoder(TextEncoder):
     def __init__(
             self,
             use_pretrained: bool = True,
-            pretrained_model_name_or_path='xlm-mlm-en-2048',
+            pretrained_model_name_or_path: str='xlm-mlm-en-2048',
+            trainable: bool = True,
             reduce_output: str = 'cls_pooled',
             max_sequence_length: Optional[int] = None,
-            vocab_size=30145,
-            emb_dim=2048,
-            n_layers=12,
-            n_heads=16,
-            dropout=0.1,
-            attention_dropout=0.1,
-            gelu_activation=True,
-            sinusoidal_embeddings=False,
-            causal=False,
-            asm=False,
-            n_langs=1,
-            use_lang_emb=True,
-            max_position_embeddings=512,
-            embed_init_std=2048 ** -0.5,
-            layer_norm_eps=1e-12,
-            init_std=0.02,
-            bos_index=0,
-            eos_index=1,
-            pad_index=2,
-            unk_index=3,
-            mask_index=5,
-            is_encoder=True,
-            summary_type="first",
-            summary_use_proj=True,
-            summary_activation=None,
-            summary_proj_to_labels=True,
-            summary_first_dropout=0.1,
-            start_n_top=5,
-            end_n_top=5,
-            mask_token_id=0,
-            lang_id=0,
-            pad_token_id=2,
-            bos_token_id=0,
+            vocab_size: int = 30145,
+            emb_dim: int = 2048,
+            n_layers: int = 12,
+            n_heads: int = 16,
+            dropout: float = 0.1,
+            attention_dropout: float = 0.1,
+            gelu_activation: bool = True,
+            sinusoidal_embeddings: bool = False,
+            causal: bool = False,
+            asm: bool = False,
+            n_langs : int = 1,
+            use_lang_emb: bool = True,
+            max_position_embeddings: int = 512,
+            embed_init_std: float = 2048 ** -0.5,
+            layer_norm_eps: float = 1e-12,
+            init_std: float = 0.02,
+            bos_index: int = 0,
+            eos_index: int = 1,
+            pad_index: int = 2,
+            unk_index: int = 3,
+            mask_index: int = 5,
+            is_encoder: bool = True,
+            summary_type: str = "first",
+            summary_use_proj: bool = True,
+            summary_activation: bool = None,
+            summary_proj_to_labels: bool = True,
+            summary_first_dropout: float = 0.1,
+            start_n_top: int = 5,
+            end_n_top: int = 5,
+            mask_token_id: int = 0,
+            lang_id: int = 0,
+            pad_token_id: int = 2,
+            bos_token_id: int = 0,
             **kwargs
     ):
         super().__init__()
@@ -229,6 +230,8 @@ class XLMEncoder(TextEncoder):
             self.transformer = XLMModel.from_pretrained(
                 pretrained_model_name_or_path
             )
+            if trainable:
+                self.transformer.train()
         else:
             config = XLMConfig(
                 vocab_size=vocab_size,
@@ -272,6 +275,7 @@ class XLMEncoder(TextEncoder):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
+
 
     def forward(
             self,

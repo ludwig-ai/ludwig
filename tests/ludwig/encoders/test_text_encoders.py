@@ -23,7 +23,7 @@ def test_bert_encoder(
     assert outputs['encoder_output'].shape[1:] == bert.output_shape
 
 
-@pytest.mark.parametrize('use_pretrained', [True])
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', [None])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_xlm_encoder(
