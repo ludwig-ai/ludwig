@@ -15,14 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from enum import Enum
-from tokenize import Number
-from typing import List, Dict, Optional, Type, Union
 
-from inspect import signature
-from pydantic import BaseModel, NonNegativeInt, PositiveInt, confloat
-from pydantic.networks import PostgresDsn
-from pydantic.types import NonNegativeFloat, PositiveFloat
+from enum import Enum
+from typing import List, Dict, Optional, Type, Union
+from pydantic import BaseModel, NonNegativeInt, PositiveInt, confloat, PositiveFloat
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
@@ -46,51 +42,59 @@ from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
+# Declare/shortcut to parameter registries: (TODO: Where should these go?)
+preset_weights_initializer_registry = list(initializers_registry.keys())
+preset_bias_initializer_registry = list(initializers_registry.keys())
 
-# TODO: Where should these go? Are they complete?
-weights_initializer_registry = list(initializers_registry.keys())
-bias_initializer_registry = list(initializers_registry.keys())
-temp_activation_registry = ['relu']
-temp_reduce_output_registry = ['mean', 'concat']
+# TODO: Could not find existing global vars for these ones elsewhere:
+# TODO: Should I include 'null'/'None' in these lists if they will be used elsewhere? --
+# (If so, easy to filter them out below in the Enum dict comprehension)
+weights_regularizer_registry = ['l1', 'l2', 'l1_l2']
+bias_regularizer_registry = ['l1', 'l2', 'l1_l2']
+activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
+norm_registry = ['batch', 'layer']
+# norm_params_registry = [] TODO: this param if not null is a dict right?
+activation_registry = ['relu']
+# TODO: fc_layers can technically be further validated with nested-types - future PR?
+reduce_output_registry = ['mean', 'concat']
 
-# TODO: Should we restrict strings like this? 
-WeightInitializersEnum = \
-    Enum("WeightInitializersEnum", \
-        {k:k for k in weights_initializer_registry if k != None})
+# TODO: Should we restrict strings like this?
+# Initializers accept presets or customized dicts (not JSON-validated):
 
-# class ConcatCombinerParams(BaseModel):
-#     fc_layers: Optional[List[Dict]] = None
-#     num_fc_layers: Optional[NonNegativeInt] = None
-#     fc_size: PositiveInt = 256
-#     use_bias: bool = True
-#     weights_initializer: str = 'glorot_uniform'
-#     bias_initializer: str = 'zeros'
-#     weights_regularizer: Optional[str] = None
-#     bias_regularizer: Optional[str] = None
-#     activity_regularizer: Optional[str] = None
-#     norm: Optional[str] = None
-#     norm_params: Optional[str] = None
-#     activation: str = 'relu'
-#     dropout: confloat(ge=0.0, le=1.0) = 0.0
-#     flatten_inputs: bool = False
-#     residual: bool = False
+class TempEnum(str, Enum):
+    pass
+
+WeightsInitializersEnum = \
+    TempEnum("WeightsInitializersEnum", \
+        {k:k for k in preset_weights_initializer_registry if k != None})
+# WeightsInitializersEnum = Enum(
+#     "WeightsInitializerEnum",
+#     {
+#         'test': 'test'
+#     }
+# )
+WeightsInitializersType = WeightsInitializersEnum
+BiasInitializersEnum = \
+    Enum("BiasInitializersEnum", \
+        {k:k for k in preset_bias_initializer_registry if k != None})
+BiasInitializersType = Union[BiasInitializersEnum, Dict]
 
 class ConcatCombinerParams(BaseModel):
     fc_layers: Optional[List[Dict]] = None
     num_fc_layers: Optional[NonNegativeInt] = None
-    fc_size: Optional[PositiveInt] = 256
-    use_bias: Optional[bool] = True
-    weights_initializer: Optional[str] = 'glorot_uniform'
-    bias_initializer: Optional[str] = 'zeros'
+    fc_size: PositiveInt = 256
+    use_bias: bool = True
+    weights_initializer: WeightsInitializersType = 'glorot_uniform'
+    bias_initializer: BiasInitializersType = 'zeros'
     weights_regularizer: Optional[str] = None
     bias_regularizer: Optional[str] = None
     activity_regularizer: Optional[str] = None
     norm: Optional[str] = None
-    norm_params: Optional[str] = None
-    activation: Optional[str] = 'relu'
-    dropout: Optional[confloat(ge=0.0, le=1.0)] = 0.0
-    flatten_inputs: Optional[bool] = False
-    residual: Optional[bool] = False
+    norm_params: Optional[Dict] = None
+    activation: str = 'relu'
+    dropout: confloat(ge=0.0, le=1.0) = 0.0
+    flatten_inputs: bool = False
+    residual: bool = False
 
 class ConcatCombiner(tf.keras.Model):
     def __init__(
@@ -177,27 +181,6 @@ class ConcatCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return ConcatCombinerParams
-
-    # # TODO: correct ranges?
-    # validation_schema = {
-    #     'fc_size': {
-    #         'type': 'integer',
-    #         # TODO: correct range?
-    #         'minimum': 1,
-    #         'maximum': 256
-    #     },
-    #     'use_bias': { 'type': 'boolean' },
-    #     'weights_initializer': { 'type': 'string', 'enum': temp_weights_initializer_registry },
-    #     'bias_initializer': { 'type': 'string', 'enum': temp_bias_initializer_registry },
-    #     'activation': { 'type': 'string', 'enum': temp_activation_registry },
-    #     'dropout': {
-    #         'type': 'number',
-    #         'minimum': 0,
-    #         'maximum': 1
-    #     },
-    #     'flatten_inputs': { 'type': 'boolean' },
-    #     'residual': { 'type': 'boolean' }
-    # }
 
 class SequenceConcatCombinerParams(BaseModel):
     reduce_output: Optional[str] = None
@@ -420,11 +403,11 @@ class TabNetCombinerParams(BaseModel):
         num_total_blocks: PositiveInt = 4
         num_shared_blocks: PositiveInt = 2
         relaxation_factor: PositiveFloat = 1.5  # gamma in the paper
-        bn_epsilon: PositiveFloat = 1e-3
-        bn_momentum: PositiveFloat = 0.7  # m_B in the paper
+        bn_epsilon: confloat(ge=0.0, le=1.0) = 1e-3
+        bn_momentum: confloat(ge=0.0, le=1.0) = 0.7  # m_B in the paper
         bn_virtual_bs: Optional[PositiveInt] = None  # B_v from the paper
-        sparsity: PositiveFloat = 1e-5  # lambda_sparse in the paper
-        dropout: NonNegativeFloat = 0
+        sparsity: confloat(ge=0.0, le=1.0) = 1e-5  # lambda_sparse in the paper
+        dropout: confloat(ge=0.0, le=1.0) = 0
 
 class TabNetCombiner(tf.keras.Model):
     def __init__(
@@ -551,7 +534,7 @@ class TransformerCombinerParams(BaseModel):
         hidden_size: PositiveInt = 256
         num_heads: PositiveInt = 8
         transformer_fc_size: PositiveInt = 256
-        dropout: NonNegativeFloat = 0.1
+        dropout: confloat(ge=0.0, le=1.0) = 0.1
         fc_layers: Optional[List[Dict]] = None
         num_fc_layers: NonNegativeInt = 0
         fc_size: PositiveInt = 256
@@ -566,7 +549,7 @@ class TransformerCombinerParams(BaseModel):
         norm: Optional[str] = None
         norm_params: Optional[str] = None
         fc_activation: str = 'relu'
-        fc_dropout: NonNegativeFloat = 0
+        fc_dropout: confloat(ge=0.0, le=1.0) = 0
         fc_residual: bool = False
         reduce_output: str = 'mean'
 
@@ -728,7 +711,7 @@ class TabTransformerCombinerParams(BaseModel):
         hidden_size: PositiveInt = 256
         num_heads: PositiveInt = 8
         transformer_fc_size: PositiveInt = 256
-        dropout: NonNegativeFloat = 0.1
+        dropout: confloat(ge=0.0, le=1.0) = 0.1
         fc_layers: Optional[List[Dict]] = None
         num_fc_layers: NonNegativeInt = 0
         fc_size: PositiveInt = 256
@@ -743,7 +726,7 @@ class TabTransformerCombinerParams(BaseModel):
         norm: Optional[str] = None
         norm_params: Optional[str] = None
         fc_activation: str = 'relu'
-        fc_dropout: NonNegativeFloat = 0
+        fc_dropout: confloat(ge=0.0, le=1.0) = 0
         fc_residual: bool = False
         reduce_output: str = 'concat'
 
@@ -978,7 +961,7 @@ class ComparatorCombinerParams(BaseModel):
         norm: Optional[str] = None
         norm_params: Optional[str] = None
         activation: str = 'relu'
-        dropout: NonNegativeFloat = 0
+        dropout: confloat(ge=0.0, le=1.0) = 0
 
 class ComparatorCombiner(tf.keras.Model):
     def __init__(

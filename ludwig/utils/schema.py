@@ -69,6 +69,7 @@ def get_schema():
             'preprocessing': {},
             'hyperopt': {},
         },
+        'definitions': get_custom_definitions(),
         'required': ['input_features', 'output_features']
     }
     return schema
@@ -143,10 +144,21 @@ def get_combiner_conds():
             {'type': combiner_type},
             combiner_props
         )
-        print(combiner_cond)
+        #print(combiner_cond)
         conds.append(combiner_cond)
     return conds
 
+def get_custom_definitions():
+    defs = {}
+    for combiner_type in COMBINER_TYPES:
+        combiner_cls = combiner_registry[combiner_type]
+        full_combiner_json = json.loads(combiner_cls.get_params_cls().schema_json())
+        if 'definitions' in full_combiner_json:
+            defs = {
+                **defs,
+                **full_combiner_json['definitions']
+            }
+    return defs
 
 def create_cond(if_pred, then_pred):
     return {

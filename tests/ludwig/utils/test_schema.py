@@ -19,9 +19,7 @@ import json
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.combiners.combiners import ConcatCombinerParams, TabNetCombinerParams
 from ludwig.utils.defaults import merge_with_defaults
-
 from ludwig.utils.schema import validate_config, OUTPUT_FEATURE_TYPES
 
 from tests.integration_tests.utils import ENCODERS, numerical_feature, \
@@ -180,10 +178,7 @@ def test_config_bad_preprocessing_param():
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
         validate_config(config)
 
-
 def test_config_bad_combiner():
-    tabnet_params: TabNetCombinerParams = {}
-    
     config = {
         'input_features': [
             category_feature(vocab_size=2, reduce_input='sum'),
@@ -204,7 +199,7 @@ def test_config_bad_combiner():
     with pytest.raises(ValidationError, match=r"^'type' is a required .*"):
         validate_config(config)
 
-    # bad combiner
+    # bad combiner type
     config['combiner']['type'] = 'fake'
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
         validate_config(config)
@@ -214,6 +209,7 @@ def test_config_bad_combiner():
     with pytest.raises(ValidationError, match=r"^\[\{'type': 'tabnet'\}\] is not of .*"):
         validate_config(config)
     
+    # bad combiner parameter types
     config['combiner'] = {
         'type': 'tabtransformer',
         'num_layers': 10,
@@ -221,6 +217,32 @@ def test_config_bad_combiner():
     }
     with pytest.raises(ValidationError, match=r"^False is not of type.*"):
         validate_config(config)
+
+    # bad combiner parameter range
+    config['combiner'] = {
+        'type': 'transformer',
+        'num_layers': -1,
+    }
+    with pytest.raises(ValidationError, match=r"less than or equal to.*"):
+        validate_config(config)
+
+def test_config_bad_combiner_types_enums():
+    config = {
+        'input_features': [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            numerical_feature(),
+        ],
+        'output_features': [binary_feature(weight_regularization=None)],
+        'combiner': {
+            'type': 'concat',
+            'weights_initializer': 'zeros'
+        },
+    }
+
+    # config is valid at this point
+    validate_config(config)
+
+    #config['combiner']['']
 
 
 def test_config_fill_values():
