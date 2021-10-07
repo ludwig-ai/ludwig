@@ -656,54 +656,111 @@ class GPT2Encoder(TextEncoder):
 #         return {'encoder_output': hidden}
 #
 #
-# @register(name='distilbert')
-# class DistilBERTEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'distilbert-base-uncased',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='distilbert-base-uncased',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFDistilBertModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFDistilBertModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask
-#         }, training=training)
-#         hidden = transformer_outputs[0][:, 1:-1, :]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
+@register(name='distilbert')
+class DistilBERTEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'distilbert-base-uncased',
+    }
+
+    def __init__(
+            self,
+            pretrained_model_name_or_path: str = 'distilbert-base-uncased',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            use_pretrained: bool = True,
+            max_sequence_length: int = None,
+            vocab_size: int = 30522,
+            max_position_embeddings: int = 512,
+            sinusoidal_pos_embds: bool = False,
+            n_layers: int = 6,
+            n_heads: int = 12,
+            dim: int = 768,
+            hidden_dim: int = 3072,
+            dropout: float = 0.1,
+            attention_dropout: float = 0.1,
+            activation: Union[str, Callable] = 'gelu',
+            initializer_range: float = 0.02,
+            qa_dropout: float = 0.1,
+            seq_classif_dropout: float = 0.2,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import DistilBertModel, DistilBertConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = DistilBertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = DistilBertConfig(
+                vocab_size=vocab_size,
+                max_position_embeddings=max_position_embeddings,
+                sinusoidal_pos_embds=sinusoidal_pos_embds,
+                n_layers=n_layers,
+                n_heads=n_heads,
+                dim=dim,
+                hidden_dim=hidden_dim,
+                dropout=dropout,
+                attention_dropout=attention_dropout,
+                activation=activation,
+                initializer_range=initializer_range,
+                qa_dropout=qa_dropout,
+                seq_classif_dropout=seq_classif_dropout
+            )
+            self.transformer = DistilBertModel(config)
+
+        if trainable:
+            self.transformer.train()
+        self.reduce_output = reduce_output
+        self.max_sequence_length = max_sequence_length
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.resize_token_embeddings(vocab_size)
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+        )
+        hidden = transformer_outputs[0][:, 1:-1, :]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 2,
+                self.transformer.config.dim
+            ])
+        return torch.Size([self.transformer.config.dim])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 #
 #
 # @register(name='ctrl')
