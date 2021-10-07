@@ -298,6 +298,7 @@ def test_config_bad_combiner_types_enums():
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
         validate_config(config)
     
+    # Test reduce_output:
     del config['combiner']['activation']
     config2 = {**config}
     config2['combiner']['type'] = 'tabtransformer'
@@ -306,8 +307,11 @@ def test_config_bad_combiner_types_enums():
     config2['combiner']['reduce_output'] = 'fail'
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
         validate_config(config2)
-
-
+    
+    # Test reduce_output = None:
+    config2['combiner']['reduce_output'] = None
+    with pytest.raises(ValidationError, match=r"None is not one of*"):
+        validate_config(config2)
 
 def test_config_fill_values():
     vector_fill_values = [
