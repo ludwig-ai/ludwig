@@ -42,27 +42,16 @@ from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
-# Declare/shortcut to parameter registries: (TODO: Where should these go?)
+# Declare/shortcut to parameter registries:
 preset_weights_initializer_registry = list(initializers_registry.keys())
 preset_bias_initializer_registry = list(initializers_registry.keys())
-
-# TODO: Could not find existing global vars for these ones elsewhere:
-# TODO: Should I include 'null'/'None' in these registries if they will be used elsewhere? --
-# (If so, easy to filter them out below in the Enum creation step)
-# TODO: More generally, do we want to enable 'None' handling, eg: https://stackoverflow.com/questions/63616798/pydantic-how-to-pass-the-default-value-to-a-variable-if-none-was-passed
 weights_regularizer_registry = ['l1', 'l2', 'l1_l2']
 bias_regularizer_registry = ['l1', 'l2', 'l1_l2']
 activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
 norm_registry = ['batch', 'layer']
-# norm_params_registry = [] TODO: this param if not null is a dict right?
-# TODO: do we want to do something like prevent norm_params from being set if norm is null?
 activation_registry = ['relu']
-# TODO: fc_layers can technically be further validated with nested-types - future PR?
-# TODO: Is 'concat' only a valid reduce_output for TabTransformer?
 reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat']
 
-# class TempEnum(str, Enum):
-#     pass
 # Initializers accept presets or customized dicts (not JSON-validated):
 WeightsInitializerEnum = \
     Enum("WeightsInitializerEnum", \
