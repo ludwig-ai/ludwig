@@ -19,7 +19,7 @@ import json
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.combiners.combiners import ConcatCombinerParams
+from ludwig.combiners.combiners import ConcatCombinerParams, TabNetCombinerParams
 from ludwig.utils.defaults import merge_with_defaults
 
 from ludwig.utils.schema import validate_config, OUTPUT_FEATURE_TYPES
@@ -182,6 +182,8 @@ def test_config_bad_preprocessing_param():
 
 
 def test_config_bad_combiner():
+    tabnet_params: TabNetCombinerParams = {}
+    
     config = {
         'input_features': [
             category_feature(vocab_size=2, reduce_input='sum'),
