@@ -221,9 +221,9 @@ def test_config_bad_combiner():
     # bad combiner parameter range
     config['combiner'] = {
         'type': 'transformer',
-        'num_layers': -1,
+        'dropout': -1,
     }
-    with pytest.raises(ValidationError, match=r"less than or equal to.*"):
+    with pytest.raises(ValidationError, match=r"less than the minimum.*"):
         validate_config(config)
 
 def test_config_bad_combiner_types_enums():
@@ -242,7 +242,71 @@ def test_config_bad_combiner_types_enums():
     # config is valid at this point
     validate_config(config)
 
-    #config['combiner']['']
+    # Test weights initializer:
+    # Custom dicts currently unchecked:
+    config['combiner']['weights_initializer'] = {'test': 'fail'}
+    validate_config(config)
+    config['combiner']['weights_initializer'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    # Test bias initializer:
+    del config['combiner']['weights_initializer']
+    config['combiner']['bias_initializer'] = 'variance_scaling'
+    validate_config(config)
+    config['combiner']['bias_initializer'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    # Test weights regularizer:
+    del config['combiner']['bias_initializer']
+    config['combiner']['weights_regularizer'] = 'l1'
+    validate_config(config)
+    config['combiner']['weights_regularizer'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    # Test bias regularizer:
+    del config['combiner']['weights_regularizer']
+    config['combiner']['bias_regularizer'] = 'l1_l2'
+    validate_config(config)
+    config['combiner']['bias_regularizer'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    # Test activity regularizer:
+    del config['combiner']['bias_regularizer']
+    config['combiner']['activity_regularizer'] = 'l1_l2'
+    validate_config(config)
+    config['combiner']['activity_regularizer'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    # Test norm:
+    del config['combiner']['activity_regularizer']
+    config['combiner']['norm'] = 'batch'
+    validate_config(config)
+    config['combiner']['norm'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    # Test activation:
+    del config['combiner']['norm']
+    config['combiner']['activation'] = 'relu'
+    validate_config(config)
+    config['combiner']['activation'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    del config['combiner']['activation']
+    config2 = {**config}
+    config2['combiner']['type'] = 'tabtransformer'
+    config2['combiner']['reduce_output'] = 'sum'
+    validate_config(config)
+    config2['combiner']['reduce_output'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config2)
+
 
 
 def test_config_fill_values():

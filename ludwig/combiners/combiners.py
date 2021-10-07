@@ -47,51 +47,64 @@ preset_weights_initializer_registry = list(initializers_registry.keys())
 preset_bias_initializer_registry = list(initializers_registry.keys())
 
 # TODO: Could not find existing global vars for these ones elsewhere:
-# TODO: Should I include 'null'/'None' in these lists if they will be used elsewhere? --
-# (If so, easy to filter them out below in the Enum dict comprehension)
+# TODO: Should I include 'null'/'None' in these registries if they will be used elsewhere? --
+# (If so, easy to filter them out below in the Enum creation step)
+# TODO: More generally, do we want to enable 'None' handling, eg: https://stackoverflow.com/questions/63616798/pydantic-how-to-pass-the-default-value-to-a-variable-if-none-was-passed
 weights_regularizer_registry = ['l1', 'l2', 'l1_l2']
 bias_regularizer_registry = ['l1', 'l2', 'l1_l2']
 activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
 norm_registry = ['batch', 'layer']
 # norm_params_registry = [] TODO: this param if not null is a dict right?
+# TODO: do we want to do something like prevent norm_params from being set if norm is null?
 activation_registry = ['relu']
 # TODO: fc_layers can technically be further validated with nested-types - future PR?
-reduce_output_registry = ['mean', 'concat']
+# TODO: Is 'concat' only a valid reduce_output for TabTransformer?
+reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat']
 
-# TODO: Should we restrict strings like this?
+# class TempEnum(str, Enum):
+#     pass
 # Initializers accept presets or customized dicts (not JSON-validated):
-
-class TempEnum(str, Enum):
-    pass
-
-WeightsInitializersEnum = \
-    TempEnum("WeightsInitializersEnum", \
+WeightsInitializerEnum = \
+    Enum("WeightsInitializerEnum", \
         {k:k for k in preset_weights_initializer_registry if k != None})
-# WeightsInitializersEnum = Enum(
-#     "WeightsInitializerEnum",
-#     {
-#         'test': 'test'
-#     }
-# )
-WeightsInitializersType = WeightsInitializersEnum
-BiasInitializersEnum = \
-    Enum("BiasInitializersEnum", \
+WeightsInitializerType = Union[WeightsInitializerEnum, Dict]
+BiasInitializerEnum = \
+    Enum("BiasInitializerEnum", \
         {k:k for k in preset_bias_initializer_registry if k != None})
-BiasInitializersType = Union[BiasInitializersEnum, Dict]
+BiasInitializerType = Union[BiasInitializerEnum, Dict]
+
+WeightsRegularizerType = \
+    Enum("WeightsRegularizerEnum",
+        {k:k for k in weights_regularizer_registry})
+BiasRegularizerType = \
+    Enum("BiasRegularizerEnum",
+        {k:k for k in bias_regularizer_registry})
+ActivityRegularizerType = \
+    Enum("ActivityRegularizerEnum",
+        {k:k for k in activity_regularizer_registry})
+NormType = \
+    Enum("NormEnum",
+        {k:k for k in norm_registry})
+ActivationType = \
+    Enum("ActivationEnum",
+        {k:k for k in activation_registry})
+ReduceOutputType = \
+    Enum("ReduceOutputEnum",
+        {k:k for k in reduce_output_registry})
 
 class ConcatCombinerParams(BaseModel):
     fc_layers: Optional[List[Dict]] = None
     num_fc_layers: Optional[NonNegativeInt] = None
     fc_size: PositiveInt = 256
     use_bias: bool = True
-    weights_initializer: WeightsInitializersType = 'glorot_uniform'
-    bias_initializer: BiasInitializersType = 'zeros'
-    weights_regularizer: Optional[str] = None
-    bias_regularizer: Optional[str] = None
-    activity_regularizer: Optional[str] = None
-    norm: Optional[str] = None
+    weights_initializer: WeightsInitializerType = 'glorot_uniform'
+    bias_initializer: BiasInitializerType = 'zeros'
+    weights_regularizer: Optional[WeightsRegularizerType] = None
+    bias_regularizer: Optional[BiasRegularizerType] = None
+    activity_regularizer: Optional[ActivityRegularizerType] = None
+    norm: Optional[NormType] = None
     norm_params: Optional[Dict] = None
-    activation: str = 'relu'
+    activation: ActivationType = 'relu'
     dropout: confloat(ge=0.0, le=1.0) = 0.0
     flatten_inputs: bool = False
     residual: bool = False
@@ -183,7 +196,7 @@ class ConcatCombiner(tf.keras.Model):
         return ConcatCombinerParams
 
 class SequenceConcatCombinerParams(BaseModel):
-    reduce_output: Optional[str] = None
+    reduce_output: Optional[ReduceOutputType] = None
     main_sequence_feature: Optional[str] = None
 
 class SequenceConcatCombiner(tf.keras.Model):
@@ -331,7 +344,7 @@ class SequenceConcatCombiner(tf.keras.Model):
     # validation_schema = {}
 
 class SequenceCombinerParams(BaseModel):
-    reduce_output: Optional[str] = None
+    reduce_output: Optional[ReduceOutputType] = None
     main_sequence_feature: Optional[str] = None
     encoder: Optional[str] = None
 
@@ -539,19 +552,19 @@ class TransformerCombinerParams(BaseModel):
         num_fc_layers: NonNegativeInt = 0
         fc_size: PositiveInt = 256
         use_bias: bool = True
-        weights_initializer: str = 'glorot_uniform'
-        bias_initializer: str ='zeros'
-        weights_regularizer: Optional[str] = None
-        bias_regularizer: Optional[str] = None
-        activity_regularizer: Optional[str] = None
+        weights_initializer: WeightsInitializerType = 'glorot_uniform'
+        bias_initializer: BiasInitializerType ='zeros'
+        weights_regularizer: Optional[WeightsRegularizerType] = None
+        bias_regularizer: Optional[BiasRegularizerType] = None
+        activity_regularizer: Optional[ActivityRegularizerType] = None
         # weights_constraint=None
         # bias_constraint=None
-        norm: Optional[str] = None
-        norm_params: Optional[str] = None
-        fc_activation: str = 'relu'
+        norm: Optional[NormType] = None
+        norm_params: Optional[Dict] = None
+        fc_activation: ActivationType = 'relu'
         fc_dropout: confloat(ge=0.0, le=1.0) = 0
         fc_residual: bool = False
-        reduce_output: str = 'mean'
+        reduce_output: ReduceOutputType = 'mean'
 
 class TransformerCombiner(tf.keras.Model):
     def __init__(
@@ -716,19 +729,19 @@ class TabTransformerCombinerParams(BaseModel):
         num_fc_layers: NonNegativeInt = 0
         fc_size: PositiveInt = 256
         use_bias: bool = True
-        weights_initializer: str = 'glorot_uniform'
-        bias_initializer: str ='zeros'
-        weights_regularizer: Optional[str] = None
-        bias_regularizer: Optional[str] = None
-        activity_regularizer: Optional[str] = None
+        weights_initializer: WeightsInitializerType = 'glorot_uniform'
+        bias_initializer: BiasInitializerType ='zeros'
+        weights_regularizer: Optional[WeightsRegularizerType] = None
+        bias_regularizer: Optional[BiasRegularizerType] = None
+        activity_regularizer: Optional[ActivityRegularizerType] = None
         # weights_constraint=None
         # bias_constraint=None
-        norm: Optional[str] = None
-        norm_params: Optional[str] = None
-        fc_activation: str = 'relu'
+        norm: Optional[NormType] = None
+        norm_params: Optional[Dict] = None
+        fc_activation: ActivationType = 'relu'
         fc_dropout: confloat(ge=0.0, le=1.0) = 0
         fc_residual: bool = False
-        reduce_output: str = 'concat'
+        reduce_output: ReduceOutputType = 'concat'
 
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
@@ -951,16 +964,16 @@ class ComparatorCombinerParams(BaseModel):
         num_fc_layers: NonNegativeInt = 0
         fc_size: PositiveInt = 256
         use_bias: bool = True
-        weights_initializer: str = 'glorot_uniform'
-        bias_initializer: str ='zeros'
-        weights_regularizer: Optional[str] = None
-        bias_regularizer: Optional[str] = None
-        activity_regularizer: Optional[str] = None
+        weights_initializer: WeightsInitializerType = 'glorot_uniform'
+        bias_initializer: BiasInitializerType ='zeros'
+        weights_regularizer: Optional[WeightsRegularizerType] = None
+        bias_regularizer: Optional[BiasRegularizerType] = None
+        activity_regularizer: Optional[ActivityRegularizerType] = None
         # weights_constraint=None
         # bias_constraint=None
-        norm: Optional[str] = None
-        norm_params: Optional[str] = None
-        activation: str = 'relu'
+        norm: Optional[NormType] = None
+        norm_params: Optional[Dict] = None
+        activation: ActivationType = 'relu'
         dropout: confloat(ge=0.0, le=1.0) = 0
 
 class ComparatorCombiner(tf.keras.Model):
