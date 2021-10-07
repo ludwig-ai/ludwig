@@ -31,9 +31,11 @@ NUM_FILTERS = 20
 # emulate Input Feature class.  Need to provide output_shape property to
 # mimic what happens during ECD.forward() processing.
 class PseudoInputFeature:
-    def __init__(self, feature_name, output_shape):
+    def __init__(self, feature_name, output_shape, type=None):
         self.name = feature_name
         self._output_shape = output_shape
+        if type is not None:
+            self.type = type
 
     @property
     def output_shape(self):
@@ -425,8 +427,10 @@ def test_transformer_combiner(
            (BATCH_SIZE, *combiner.output_shape)
 
 
-def test_tabtransformer_combiner(encoder_outputs):
+@pytest.mark.parametrize('embed_input_feature_name', [56])  # None, 56, 'add'])
+def test_tabtransformer_combiner(encoder_outputs, embed_input_feature_name):
     # clean out unneeded encoder outputs
+    # todo: combine creation of encoder_outputs and input_features into generic setp
     encoder_outputs = {}
     encoder_outputs['feature_1'] = {
         'encoder_output': torch.randn(
@@ -441,42 +445,20 @@ def test_tabtransformer_combiner(encoder_outputs):
         )
     }
 
-    input_features_def = [
-        {'name': 'feature_1', 'type': 'numerical'},
-        {'name': 'feature_2', 'type': 'category'}
-    ]
+    input_features = {
+        'feature_1': PseudoInputFeature('feature_1', [128, 1],
+                                        type='numerical'),
+        'feature_2': PseudoInputFeature('feature_2', [128, 16], type='category')
+    }
 
     # setup combiner to test
     combiner = TabTransformerCombiner(
-        input_features=input_features_def
+        input_features=input_features,
+        embed_input_feature_name=embed_input_feature_name
     )
 
     # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    combiner_output = combiner(encoder_outputs)
 
     # required key present
-    assert 'combiner_output' in results
-
-    # setup combiner to test
-    combiner = TabTransformerCombiner(
-        input_features=input_features_def,
-        embed_input_feature_name=56
-    )
-
-    # concatenate encoder outputs
-    results = combiner(encoder_outputs)
-
-    # required key present
-    assert 'combiner_output' in results
-
-    # setup combiner to test
-    combiner = TabTransformerCombiner(
-        input_features=input_features_def,
-        embed_input_feature_name='add'
-    )
-
-    # concatenate encoder outputs
-    results = combiner(encoder_outputs)
-
-    # required key present
-    assert 'combiner_output' in results
+    assert 'combiner_output' in combiner_output
