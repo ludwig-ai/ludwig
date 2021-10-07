@@ -392,8 +392,8 @@ class SequenceCombiner(tf.keras.Model):
 
 
 class TabNetCombinerParams(BaseModel):
-        size: PositiveInt  # N_a in the paper
-        output_size: PositiveInt  # N_d in the paper
+        size: PositiveInt = 32 # N_a in the paper
+        output_size: PositiveInt = 32  # N_d in the paper
         num_steps: PositiveInt = 1  # N_steps in the paper
         num_total_blocks: PositiveInt = 4
         num_shared_blocks: PositiveInt = 2
