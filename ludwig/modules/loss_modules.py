@@ -30,19 +30,18 @@ EPSILON = 1.0e-10
 
 
 loss_inputs_registry = {
-    'MSELoss': PREDICTIONS, #double check
-    'MAELoss': PREDICTIONS, #double check
-    'RMSELoss': PREDICTIONS, #double check
-    'RMSPELoss': PREDICTIONS, #double check
+    'MSELoss': LOGITS,
+    'MAELoss': LOGITS,
+    'RMSELoss': LOGITS,
+    'RMSPELoss': LOGITS,
     'BWCEWLoss': LOGITS,
-    'SoftmaxCrossEntropyLoss': LOGITS, #double check
+    'SoftmaxCrossEntropyLoss': LOGITS,
     'SigmoidCrossEntropyLoss': LOGITS,
 }
 
 
 class MSELoss(_MSELoss):
     """ Mean squared error. """
-    pass
 
 
 class MAELoss(L1Loss):
@@ -60,6 +59,7 @@ class RMSELoss(nn.Module):
         return torch.sqrt(self.mse(input, target))
 
 
+# TO TEST
 class RMSPELoss(nn.Module):
     """ Root mean square percentage error. """
     def __init__(self, **kwargs):
@@ -70,33 +70,30 @@ class RMSPELoss(nn.Module):
         return loss
 
 
-class BWCEWLoss:
+class BWCEWLoss(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
         self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
 
-    def forward(self, predictions: torch.Tensor, target: torch.Tensor):
-        logits = predictions[LOGITS]
+    def forward(self, input: torch.Tensor, target: torch.Tensor):
         target = target.long()
-        output = self.loss_fn(input, target)
+        train_loss = self.loss_fn(input, target)
         # robust lambda
         if self.robust_lambda > 0:
-            train_loss = (1 - self.robust_lambda) * output + \
+            train_loss = (1 - self.robust_lambda) * train_loss + \
                 self.robust_lambda / 2
 
         train_mean_loss = torch.mean(train_loss)
 
         # confidence penalty
         if self.confidence_penalty > 0:
-            # need to define logits
-            probabilities = torch.sigmoid(logits)
+            probabilities = torch.sigmoid(input)
             mean_penalty = utils.mean_confidence_penalty(probabilities, 2)
             train_mean_loss += self.confidence_penalty * mean_penalty
 
         return train_mean_loss
 
 
-# TODO torch: test behavior parity with tf
 class SoftmaxCrossEntropyLoss(nn.Module):
     def __init__(self, class_weights: Optional[Tensor]=None, **kwargs):
         """
@@ -108,8 +105,6 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
         target = target.long()
-        print(f'preds: {input.shape} {input.dtype} {input}')
-        print(f'target: {target.shape} {target.dtype} {target}')
         return self.loss_fn(input, target)
 
 
@@ -168,8 +163,8 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 #         )
 #
 #         return loss
-#
-#
+
+
 class SigmoidCrossEntropyLoss(nn.Module):
     def __init__(self, class_weights: Optional[Tensor] = None, **kwargs):
         """
@@ -184,7 +179,6 @@ class SigmoidCrossEntropyLoss(nn.Module):
         self.class_weights = class_weights
 
     def forward(self, input: Tensor, target: Tensor) -> Tensor:
-        # TODO(shreya): Make sure y[LOGITS] is passed here
         if input.ndim != 2:
             raise RuntimeError(
                 'SigmoidCrossEntropyLoss currently supported for 2D tensors.')

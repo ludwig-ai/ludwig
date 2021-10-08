@@ -1,4 +1,5 @@
 import torch
+import torchmetrics
 
 
 def rmspe_loss(targets: torch.Tensor, predictions: torch.Tensor) -> torch.Tensor:
@@ -6,11 +7,13 @@ def rmspe_loss(targets: torch.Tensor, predictions: torch.Tensor) -> torch.Tensor
     loss = torch.sqrt(torch.mean(
         ((targets - predictions).float() / targets) ** 2
     ))
-
     return loss
 
 
-def mean_confidence_penalty(probabilities, num_classes):
+def mean_confidence_penalty(
+        probabilities: torch.Tensor,
+        num_classes: int
+) -> torch.Tensor:
     max_entropy = torch.log(torch.tensor(num_classes))
     # clipping needed for avoiding log(0) = -inf
     entropy_per_class = torch.maximum(
