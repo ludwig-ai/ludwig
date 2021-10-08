@@ -215,13 +215,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
-        # TODO(shreya): Confirm that this works
         loss_name = self.train_loss_function.__class__.__name__
         prediction_key = loss_inputs_registry[loss_name]
         return self.eval_loss_function(predictions[prediction_key], targets)
 
     def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
-        # TODO(shreya): Confirm this is ok.
         for _, metric_fn in self.metric_functions.items():
             metric_name = metric_fn.__class__.__name__
             prediction_key = metrics_inputs_registry[metric_name]

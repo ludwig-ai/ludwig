@@ -33,6 +33,7 @@ from ludwig.utils.torch_utils import sequence_length_2D
     # edit_distance
 # from ludwig.utils.tf_utils import to_sparse
 
+# TODO(shreya): See if these can be made into class properties.
 metrics = {
     ACCURACY,
     TOKEN_ACCURACY,
@@ -73,7 +74,7 @@ metrics_inputs_registry = {
     'SoftmaxCrossEntropyMetric': LOGITS,
     'SigmoidCrossEntropyMetric': LOGITS,
     'TokenAccuracyMetric': PREDICTIONS, #double check
-    'CategoryAccuracy': PREDICTIONS, #double check
+    'CategoryAccuracy': PROBABILITIES, #double check
     'HitsAtKMetric': LOGITS,
     'MAEMetric': PREDICTIONS,
     'MSEMetric': PREDICTIONS,
