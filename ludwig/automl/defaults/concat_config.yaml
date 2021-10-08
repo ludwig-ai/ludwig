@@ -13,7 +13,7 @@ hyperopt:
       space: randint
       type: int
       lower: 1
-      upper: 8
+      upper: 4
     combiner.fc_size:
       space: choice
       categories: [128, 256]
@@ -25,11 +25,11 @@ hyperopt:
     training.learning_rate:
       space: loguniform
       type: float
-      lower: 0.0001
-      upper: 0.003
+      lower: 0.00002
+      upper: 0.001
     training.batch_size:
       space: choice
-      categories: [8, 16, 32, 64, 128, 256, 512, 1024]
+      categories: [64, 128, 256, 512, 1024]
 
   sampler:
     type: ray
