@@ -521,9 +521,9 @@ class RoBERTaEncoder(TextEncoder):
             reduce_output: str = 'cls_pooled',
             trainable: bool = True,
             num_tokens: int = None,
-            pad_token_id: int =1,
+            pad_token_id: int = 1,
             bos_token_id: int = 0,
-            eos_token_id: int =2,
+            eos_token_id: int = 2,
             **kwargs
     ):
         super().__init__()
@@ -547,10 +547,8 @@ class RoBERTaEncoder(TextEncoder):
                 bos_token_id=bos_token_id,
                 eos_token_id=eos_token_id)
             self.transformer = RobertaModel(config)
-
-        self.transformer = RobertaModel.from_pretrained(
-            pretrained_model_name_or_path
-        )
+        if trainable:
+            self.transformer.train()
         self.reduce_output = reduce_output
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
