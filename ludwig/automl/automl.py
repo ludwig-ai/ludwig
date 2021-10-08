@@ -80,7 +80,7 @@ def auto_train(
     All batch and learning rate tuning is done @ training time.
 
     # Inputs
-    :param dataset: (str) filepath to dataset.
+    :param dataset: (str, pd.DataFrame, dd.core.DataFrame) data source to train over.
     :param target: (str) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                         as the stopping parameter
@@ -110,7 +110,7 @@ def create_auto_config(
     limit.
 
     # Inputs
-    :param dataset: (str) filepath to dataset.
+    :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
     :param target: (str) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                                     as the stopping parameter
