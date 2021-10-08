@@ -18,7 +18,7 @@ import logging
 
 from enum import Enum
 from typing import List, Dict, Optional, Type, Union
-from pydantic import BaseModel, confloat, PositiveInt, NonNegativeInt, NonNegativeFloat
+from pydantic import BaseModel, confloat, PositiveInt, NonNegativeInt, NonNegativeFloat, create_model
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
@@ -85,6 +85,46 @@ ActivationType = \
 ReduceOutputType = \
     StringEnum("ReduceOutputEnum",
         {k:k for k in reduce_output_registry})
+
+# optional_fields = list()
+# if required:
+#   fields[col_name] = (data_type, ...)
+# else:
+#   fields[col_name] = (data_type, None)
+#   optional_fields.append(col_name)
+
+# model = pydantic.create_model(name, **fields)
+
+def insert_nonetype_on_optionals_schema_extra(params_cls):
+    # Find all optional (non-required) fields in class:
+    print('here')
+    optionalParams = []
+    print(params_cls.__fields__)
+    print(params_cls.__config__.fields)
+    for param_name, field in params_cls.__fields__.items():
+        if not field.required:
+            optionalParams.append((param_name, field))
+    print(optionalParams)
+    # Note: ONLY called after the json is generated:
+    def schema_extra(schema, model):
+        print('called')
+        print(schema)
+        for param, field in optionalParams:
+            print(param)
+            print(field)
+            if 'Enum' in field.type_.__name__:
+                path = field.type_.__name__
+                original_type = schema["definitions"][path]["type"]
+                schema["definitions"][path].update({"type": ["null", original_type]})
+            else:
+                original_type = schema["properties"][param]["type"]
+                schema["properties"][param].update({"type": ["null", original_type]})
+    params_cls.__config__.schema_extra = schema_extra
+    print(params_cls.__config__.fields)
+
+# model.__config__.schema_extra = schema_extra
+
+# schema_json = model.schema_json()
 
 class ConcatCombinerParams(BaseModel):
     fc_layers: Optional[List[Dict]] = None
@@ -187,6 +227,7 @@ class ConcatCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
+        insert_nonetype_on_optionals_schema_extra(ConcatCombinerParams)
         return ConcatCombinerParams
 
 
@@ -333,6 +374,7 @@ class SequenceConcatCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
+        insert_nonetype_on_optionals_schema_extra(SequenceConcatCombinerParams)
         return SequenceConcatCombinerParams
 
 
@@ -396,6 +438,7 @@ class SequenceCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
+        insert_nonetype_on_optionals_schema_extra(SequenceCombinerParams)
         return SequenceCombinerParams
 
 
@@ -489,6 +532,7 @@ class TabNetCombiner(tf.keras.Model):
     
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
+        insert_nonetype_on_optionals_schema_extra(TabNetCombinerParams)
         return TabNetCombinerParams
 
 
@@ -514,7 +558,8 @@ class TransformerCombinerParams(BaseModel):
         fc_activation: ActivationType = 'relu'
         fc_dropout: confloat(ge=0.0, le=1.0) = 0
         fc_residual: bool = False
-        reduce_output: ReduceOutputType = 'mean'
+        # TODO: Note
+        reduce_output: Optional[ReduceOutputType] = 'mean'
 
 class TransformerCombiner(tf.keras.Model):
     def __init__(
@@ -616,6 +661,7 @@ class TransformerCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
+        insert_nonetype_on_optionals_schema_extra(TransformerCombinerParams)
         return TransformerCombinerParams
 
 class TabTransformerCombinerParams(BaseModel):
@@ -641,7 +687,8 @@ class TabTransformerCombinerParams(BaseModel):
         fc_activation: ActivationType = 'relu'
         fc_dropout: confloat(ge=0.0, le=1.0) = 0
         fc_residual: bool = False
-        reduce_output: ReduceOutputType = 'concat'
+        # TODO: Note
+        reduce_output: Optional[ReduceOutputType] = 'concat'
 
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
@@ -806,6 +853,7 @@ class TabTransformerCombiner(tf.keras.Model):
     
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
+        insert_nonetype_on_optionals_schema_extra(TabTransformerCombinerParams)
         return TabTransformerCombinerParams
 
 
@@ -964,6 +1012,7 @@ class ComparatorCombiner(tf.keras.Model):
     
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
+        insert_nonetype_on_optionals_schema_extra(ComparatorCombinerParams)
         return ComparatorCombinerParams
 
 def get_combiner_class(combiner_type):
