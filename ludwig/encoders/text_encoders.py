@@ -52,11 +52,11 @@ class BERTEncoder(TextEncoder):
 
     def __init__(
             self,
+            max_sequence_length: int,
             use_pretrained: bool = True,
             pretrained_model_name_or_path: str = 'bert-base-uncased',
             trainable: bool = True,
             reduce_output: str = 'cls_pooled',
-            max_sequence_length: int = None,
             vocab_size: int = 30522,
             hidden_size: int = 768,
             num_hidden_layers: int = 12,
@@ -173,11 +173,11 @@ class XLMEncoder(TextEncoder):
 
     def __init__(
             self,
+            max_sequence_length: int,
             use_pretrained: bool = True,
-            pretrained_model_name_or_path: str='xlm-mlm-en-2048',
+            pretrained_model_name_or_path: str = 'xlm-mlm-en-2048',
             trainable: bool = True,
             reduce_output: str = 'cls_pooled',
-            max_sequence_length: int = None,
             vocab_size: int = 30145,
             emb_dim: int = 2048,
             n_layers: int = 12,
@@ -188,7 +188,7 @@ class XLMEncoder(TextEncoder):
             sinusoidal_embeddings: bool = False,
             causal: bool = False,
             asm: bool = False,
-            n_langs : int = 1,
+            n_langs: int = 1,
             use_lang_emb: bool = True,
             max_position_embeddings: int = 512,
             embed_init_std: float = 2048 ** -0.5,
@@ -313,10 +313,10 @@ class GPTEncoder(TextEncoder):
 
     def __init__(
             self,
+            max_sequence_length: int,
             reduce_output: str = 'sum',
             use_pretrained: bool = True,
             pretrained_model_name_or_path: str = 'openai-gpt',
-            max_sequence_length: int = None,
             trainable: bool = True,
             vocab_size: int = 30522,
             n_positions: int = 40478,
@@ -411,9 +411,9 @@ class GPT2Encoder(TextEncoder):
 
     def __init__(
             self,
+            max_sequence_length: int,
             use_pretrained: bool = True,
             pretrained_model_name_or_path: str = 'gpt2',
-            max_sequence_length: int = None,
             reduce_output: str = 'sum',
             trainable: bool = True,
             vocab_size: int = 50257,
@@ -669,11 +669,11 @@ class DistilBERTEncoder(TextEncoder):
 
     def __init__(
             self,
+            max_sequence_length: int,
             pretrained_model_name_or_path: str = 'distilbert-base-uncased',
             reduce_output: str = 'sum',
             trainable: bool = True,
             use_pretrained: bool = True,
-            max_sequence_length: int = None,
             vocab_size: int = 30522,
             max_position_embeddings: int = 512,
             sinusoidal_pos_embds: bool = False,
