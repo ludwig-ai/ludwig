@@ -27,6 +27,7 @@ from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.utils import _ray_init, get_model_name
 from ludwig.constants import COMBINER, NUMERICAL, TYPE
 from ludwig.hyperopt.run import hyperopt
+from ludwig.utils.misc_utils import merge_dict
 
 try:
     import dask.dataframe as dd
@@ -70,6 +71,7 @@ def auto_train(
     time_limit_s: Union[int, float],
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
+    user_specified_config: Dict = None,
     **kwargs,
 ) -> AutoTrainResults:
     """
@@ -91,7 +93,12 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, **kwargs
+        dataset,
+        target,
+        time_limit_s,
+        tune_for_memory,
+        user_specified_config,
+        **kwargs,
     )
     return train_with_config(
         dataset, config, output_directory=output_directory, **kwargs
@@ -103,6 +110,7 @@ def create_auto_config(
     target: str,
     time_limit_s: Union[int, float],
     tune_for_memory: bool,
+    user_specified_config: Dict = None,
 ) -> dict:
     """
     Returns an auto-generated Ludwig config with the intent of training
@@ -119,7 +127,9 @@ def create_auto_config(
     :return: (dict) selected model configuration
     """
     default_configs = _create_default_config(dataset, target, time_limit_s)
-    model_config = _model_select(dataset, default_configs)
+    model_config = _model_select(
+        dataset, default_configs, user_specified_config
+    )
     if tune_for_memory:
         if ray.is_initialized():
             model_config, _ = ray.get(
@@ -179,9 +189,10 @@ def train_with_config(
 def _model_select(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     default_configs,
+    user_specified_config,
 ):
     """
-    Performs model selection based on dataset.
+    Performs model selection based on dataset or user specified model.
     Note: Current implementation returns tabnet by default. If the
     percentage of numerical features is >90%, the concat model is used.
     """
@@ -203,10 +214,20 @@ def _model_select(
             total_numerical_feats += 1
 
     percent_numerical_feats = total_numerical_feats / len(fields)
+
     if percent_numerical_feats > 0.9:
-        return default_configs["concat"]
+        config = default_configs["concat"]
     else:
-        return default_configs["tabnet"]
+        config = default_configs["tabnet"]
+
+    # overwrite default params w/user specified params if they specify any
+    if user_specified_config is not None:
+        if "combiner" in user_specified_config.keys():
+            model_type = user_specified_config["combiner"]["type"]
+            config = default_configs[model_type]
+        config = merge_dict(config, user_specified_config)
+
+    return config
 
 
 def _train(
