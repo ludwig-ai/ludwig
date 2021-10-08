@@ -50,9 +50,10 @@ bias_regularizer_registry = ['l1', 'l2', 'l1_l2']
 activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
 norm_registry = ['batch', 'layer']
 activation_registry = ['relu']
-reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat']
+reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', 'null']
 
 # Initializers accept presets or customized dicts (not JSON-validated):
+#
 # Note: instead of inheriting from Enum directly, define StringEnum so that
 # conversions to string work normally in rest of codebase:
 class StringEnum(str, Enum):
@@ -105,7 +106,7 @@ class ConcatCombinerParams(BaseModel):
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: Union[List, None] = None,
+            input_features: Optional[List] = None,
             config_params: ConcatCombinerParams = ConcatCombinerParams(),
     ):
         super().__init__()
@@ -333,7 +334,7 @@ class SequenceConcatCombiner(tf.keras.Model):
     def get_params_cls() -> Type[BaseModel]:
         return SequenceConcatCombinerParams
 class SequenceCombinerParams(BaseModel):
-    reduce_output: Optional[ReduceOutputType] = None
+    reduce_output: Union[None, ReduceOutputType] = None
     main_sequence_feature: Optional[str] = None
     encoder: Optional[str] = None
 
@@ -514,7 +515,7 @@ class TransformerCombinerParams(BaseModel):
 class TransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: Union[List, None] = None,
+            input_features: Optional[List] = None,
             config_params: TransformerCombinerParams = TransformerCombinerParams(),
             **kwargs
     ):
@@ -641,7 +642,7 @@ class TabTransformerCombinerParams(BaseModel):
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features: Union[List, None] = None,
+            input_features: Optional[List] = None,
             config_params: TabTransformerCombinerParams = TabTransformerCombinerParams(),
             **kwargs
     ):
@@ -823,8 +824,8 @@ class ComparatorCombinerParams(BaseModel):
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
             self,
-            entity_1: Union[List[str], None] = None,
-            entity_2: Union[List[str], None] = None, 
+            entity_1: Optional[List[str]] = None,
+            entity_2: Optional[List[str]] = None, 
             config_params: ComparatorCombinerParams = ComparatorCombinerParams(),
             **kwargs,
     ):

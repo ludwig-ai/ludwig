@@ -202,7 +202,6 @@ def test_config_bad_combiner():
         'output_features': [binary_feature(weight_regularization=None)],
         'combiner': {
             'type': 'tabnet',
-            # 'dropout': False
         }
     }
 

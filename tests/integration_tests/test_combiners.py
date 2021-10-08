@@ -313,6 +313,7 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     )
 
     # concatenate encoder outputs
+    print(encoder_comparator_outputs)
     results = combiner(encoder_comparator_outputs)
 
     # required key present
