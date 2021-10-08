@@ -18,7 +18,7 @@ import logging
 
 from enum import Enum
 from typing import List, Dict, Optional, Type, Union
-from pydantic import BaseModel, NonNegativeInt, PositiveInt, confloat, PositiveFloat
+from pydantic import BaseModel, confloat, PositiveInt, NonNegativeInt, NonNegativeFloat
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
@@ -189,6 +189,7 @@ class ConcatCombiner(tf.keras.Model):
     def get_params_cls() -> Type[BaseModel]:
         return ConcatCombinerParams
 
+
 class SequenceConcatCombinerParams(BaseModel):
     reduce_output: Optional[ReduceOutputType] = None
     main_sequence_feature: Optional[str] = None
@@ -333,6 +334,8 @@ class SequenceConcatCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return SequenceConcatCombinerParams
+
+
 class SequenceCombinerParams(BaseModel):
     reduce_output: Union[None, ReduceOutputType] = None
     main_sequence_feature: Optional[str] = None
@@ -402,11 +405,11 @@ class TabNetCombinerParams(BaseModel):
         num_steps: PositiveInt = 1  # N_steps in the paper
         num_total_blocks: PositiveInt = 4
         num_shared_blocks: PositiveInt = 2
-        relaxation_factor: PositiveFloat = 1.5  # gamma in the paper
-        bn_epsilon: confloat(ge=0.0, le=1.0) = 1e-3
-        bn_momentum: confloat(ge=0.0, le=1.0) = 0.7  # m_B in the paper
+        relaxation_factor: NonNegativeFloat = 1.5  # gamma in the paper
+        bn_epsilon: float = 1e-3
+        bn_momentum: float = 0.7  # m_B in the paper
         bn_virtual_bs: Optional[PositiveInt] = None  # B_v from the paper
-        sparsity: confloat(ge=0.0, le=1.0) = 1e-5  # lambda_sparse in the paper
+        sparsity: float = 1e-5  # lambda_sparse in the paper
         dropout: confloat(ge=0.0, le=1.0) = 0
 
 class TabNetCombiner(tf.keras.Model):
@@ -487,6 +490,7 @@ class TabNetCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return TabNetCombinerParams
+
 
 class TransformerCombinerParams(BaseModel):
         num_layers: PositiveInt = 1
