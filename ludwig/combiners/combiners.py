@@ -804,22 +804,23 @@ class TabTransformerCombiner(tf.keras.Model):
     def get_params_cls() -> Type[BaseModel]:
         return TabTransformerCombinerParams
 
+
 class ComparatorCombinerParams(BaseModel):
-        #fc_layers: Optional[List[Dict]] = None
-        num_fc_layers: NonNegativeInt = 0
-        fc_size: PositiveInt = 256
-        use_bias: bool = True
-        weights_initializer: WeightsInitializerType = 'glorot_uniform'
-        bias_initializer: BiasInitializerType ='zeros'
-        weights_regularizer: Optional[WeightsRegularizerType] = None
-        bias_regularizer: Optional[BiasRegularizerType] = None
-        activity_regularizer: Optional[ActivityRegularizerType] = None
-        # weights_constraint=None
-        # bias_constraint=None
-        norm: Optional[NormType] = None
-        norm_params: Optional[Dict] = None
-        activation: ActivationType = 'relu'
-        dropout: confloat(ge=0.0, le=1.0) = 0
+    num_fc_layers: NonNegativeInt = 1
+    fc_size: PositiveInt = 256
+    use_bias: bool = True
+    weights_initializer: WeightsInitializerType = 'glorot_uniform'
+    bias_initializer: BiasInitializerType = 'zeros'
+    weights_regularizer: Optional[WeightsRegularizerType] = None
+    bias_regularizer: Optional[BiasRegularizerType] = None
+    activity_regularizer: Optional[ActivityRegularizerType] = None
+    # weights_constraint=None
+    # bias_constraint=None
+    norm: Optional[NormType] = None
+    norm_params: Optional[Dict] = None
+    activation: ActivationType = 'relu'
+    dropout: confloat(ge=0.0, le=1.0) = 0
+
 
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
