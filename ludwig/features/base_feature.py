@@ -209,6 +209,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         )
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        # TODO(shreya): Add exceptions here.
         loss_name = self.train_loss_function.__class__.__name__
         prediction_key = loss_inputs_registry[loss_name]
         return self.train_loss_function(predictions[prediction_key], targets)
@@ -222,7 +223,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
         # TODO(shreya): Confirm this is ok.
         for _, metric_fn in self.metric_functions.items():
-            metric_name = self.metric_fn.__class__.__name__
+            metric_name = metric_fn.__class__.__name__
             prediction_key = metrics_inputs_registry[metric_name]
             metric_fn.update(predictions[prediction_key], targets)
 

@@ -203,10 +203,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         }
 
     def _setup_loss(self):
-        self.train_loss_function = SigmoidCrossEntropyLoss(
-            feature_loss=self.loss,
-        )
-
+        self.train_loss_function = SigmoidCrossEntropyLoss(**self.loss)
         self.eval_loss_function = SigmoidCrossEntropyMetric(**self.loss)
 
     def _setup_metrics(self):
@@ -327,7 +324,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature, LOSS,
                           {TYPE: SIGMOID_CROSS_ENTROPY, 'weight': 1})
         set_default_value(output_feature[LOSS], 'weight', 1)
-        set_default_value(output_feature[LOSS], 'class_weights', 1)
+        set_default_value(output_feature[LOSS], 'class_weights', None)
 
         set_default_value(output_feature, 'threshold', 0.5)
         set_default_value(output_feature, 'dependencies', [])

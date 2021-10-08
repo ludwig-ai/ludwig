@@ -66,7 +66,7 @@ min_metrics = {
 }
 metrics_inputs_registry = {
     'RMSEMetric': PREDICTIONS,
-    'ROCAUCMetric': PREDICTIONS,
+    'ROCAUCMetric': PROBABILITIES,
     'RMSPEMetric': PREDICTIONS,
     'R2Score': PREDICTIONS,
     'BWCEWLMetric': LOGITS,
@@ -78,6 +78,7 @@ metrics_inputs_registry = {
     'MAEMetric': PREDICTIONS,
     'MSEMetric': PREDICTIONS,
     'JaccardMetric': PREDICTIONS,
+    'Accuracy': PREDICTIONS,
 }
 
 
@@ -89,7 +90,14 @@ class RMSEMetric(MeanSquaredError):
 
 class ROCAUCMetric(AUROC):
     """ Metric for area under ROC curve. """
-    pass
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        # Currently only supported for binary tasks.
+        if preds.ndim > 1 or target.ndim > 1:
+            raise RuntimeError(
+                f'Only binary tasks supported, but received input of '
+                f'{max(preds.ndim, target.ndim)} dimensions while expecting'
+                f'1-dimensional input.')
+        return super().update(preds, target)
 
 
 class MeanMetric(Metric):

@@ -83,7 +83,7 @@ class BWCEWLoss(nn.Module):
         self.confidence_penalty = confidence_penalty
 
     def forward(self, preds: torch.Tensor, target: torch.Tensor):
-        train_loss = self.loss_fn(preds, target)
+        train_loss = self.loss_fn(preds, target.float())
         # robust lambda
         if self.robust_lambda > 0:
             train_loss = (1 - self.robust_lambda) * train_loss + \

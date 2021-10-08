@@ -226,7 +226,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
         self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
-        self.metric_functions[R2] = R2Score()
+        self.metric_functions[R2] = R2Score(num_outputs=self.output_shape[0])
 
     def get_prediction_set(self):
         return {

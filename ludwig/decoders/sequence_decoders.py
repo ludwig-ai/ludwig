@@ -31,7 +31,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.recurrent_modules import BasicDecoder
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry, register
-from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
+from ludwig.utils.torch_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
 

@@ -172,14 +172,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def predictions(self, inputs, **kwargs):  # hidden
         logits = inputs[LOGITS]
-
-        probabilities = torch.sigmoid(
-            logits, name="probabilities_{}".format(self.name)
-        )
-
+        probabilities = torch.sigmoid(logits)
         predictions = probabilities >= self.threshold
-
-
         return {
             PROBABILITIES: probabilities,
             PREDICTIONS: predictions,
@@ -311,14 +305,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             {
                 "robust_lambda": 0,
                 "confidence_penalty": 0,
-                "positive_class_weight": 1,
+                "positive_class_weight": None,
                 "weight": 1,
             },
         )
 
         set_default_value(output_feature[LOSS], "robust_lambda", 0)
         set_default_value(output_feature[LOSS], "confidence_penalty", 0)
-        set_default_value(output_feature[LOSS], "positive_class_weight", 1)
+        set_default_value(output_feature[LOSS], "positive_class_weight", None)
         set_default_value(output_feature[LOSS], "weight", 1)
 
         set_default_values(

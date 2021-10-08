@@ -1,5 +1,4 @@
 import torch
-import torchmetrics
 
 
 def rmspe_loss(targets: torch.Tensor, predictions: torch.Tensor) -> torch.Tensor:
