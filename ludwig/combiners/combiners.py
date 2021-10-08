@@ -337,7 +337,7 @@ class SequenceConcatCombiner(tf.keras.Model):
 
 
 class SequenceCombinerParams(BaseModel):
-    reduce_output: Union[None, ReduceOutputType] = None
+    reduce_output: Optional[ReduceOutputType] = None
     main_sequence_feature: Optional[str] = None
     encoder: Optional[str] = None
 
