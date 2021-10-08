@@ -22,8 +22,22 @@ from typing import List, Union
 import pandas as pd
 
 from ludwig.automl.data_source import DataSource, DataframeSource
-from ludwig.automl.utils import (FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
-from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
+from ludwig.automl.utils import (
+    FieldInfo,
+    get_available_resources,
+    _ray_init,
+    FieldMetadata,
+    FieldConfig,
+)
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    CONFIG,
+    IMAGE,
+    NUMERICAL,
+    TEXT,
+    TYPE,
+)
 from ludwig.utils.data_utils import load_yaml, load_dataset
 
 try:
@@ -31,18 +45,18 @@ try:
     import ray
 except ImportError:
     raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
+        " ray is not installed. "
+        "In order to use auto_train please run "
+        "pip install ludwig[ray]"
     )
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
-CONFIG_DIR = os.path.join(PATH_HERE, 'defaults')
+CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
 
 model_defaults = {
-    'concat': os.path.join(CONFIG_DIR, 'concat_config.yaml'),
-    'tabnet': os.path.join(CONFIG_DIR, 'tabnet_config.yaml'),
-    'transformer': os.path.join(CONFIG_DIR, 'transformer_config.yaml')
+    "concat": os.path.join(CONFIG_DIR, "concat_config.yaml"),
+    "tabnet": os.path.join(CONFIG_DIR, "tabnet_config.yaml"),
+    "transformer": os.path.join(CONFIG_DIR, "transformer_config.yaml"),
 }
 
 
@@ -68,17 +82,13 @@ def allocate_experiment_resources(resources: dict) -> dict:
     # (1) expand logic to support multiple GPUs per trial (multi-gpu training)
     # (2) add support for kubernetes namespace (if applicable)
     # (3) add support for smarter allocation based on size of GPU memory
-    experiment_resources = {
-        'cpu_resources_per_trial': 1
-    }
-    gpu_count, cpu_count = resources['gpu'], resources['cpu']
+    experiment_resources = {"cpu_resources_per_trial": 1}
+    gpu_count, cpu_count = resources["gpu"], resources["cpu"]
     if gpu_count > 0:
-        experiment_resources.update({
-            'gpu_resources_per_trial': 1
-        })
+        experiment_resources.update({"gpu_resources_per_trial": 1})
         if cpu_count > 1:
             cpus_per_trial = max(int(cpu_count / gpu_count), 1)
-            experiment_resources['cpu_resources_per_trial'] = cpus_per_trial
+            experiment_resources["cpu_resources_per_trial"] = cpus_per_trial
 
     return experiment_resources
 
@@ -86,10 +96,10 @@ def allocate_experiment_resources(resources: dict) -> dict:
 def _create_default_config(
     dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
     target_name: str = None,
-    time_limit_s: Union[int, float] = None
+    time_limit_s: Union[int, float] = None,
 ) -> dict:
     """
-    Returns auto_train configs for three available combiner models. 
+    Returns auto_train configs for three available combiner models.
     Coordinates the following tasks:
 
     - extracts fields and generates list of FieldInfo objects
@@ -119,24 +129,26 @@ def _create_default_config(
         dataset_info = get_dataset_info(dataset)
 
     input_and_output_feature_config = get_features_config(
-        dataset_info.fields,
-        dataset_info.row_count,
-        resources,
-        target_name
+        dataset_info.fields, dataset_info.row_count, resources, target_name
     )
 
     model_configs = {}
     for model_name, path_to_defaults in model_defaults.items():
         default_model_config = load_yaml(path_to_defaults)
         default_model_config.update(input_and_output_feature_config)
-        default_model_config['hyperopt']['executor'].update(
-            experiment_resources)
-        default_model_config['hyperopt']['executor']['time_budget_s'] = time_limit_s
+        default_model_config["hyperopt"]["executor"].update(
+            experiment_resources
+        )
+        default_model_config["hyperopt"]["executor"][
+            "time_budget_s"
+        ] = time_limit_s
         model_configs[model_name] = default_model_config
     return model_configs
 
 
-def get_dataset_info(dataset: str) -> DatasetInfo:
+def get_dataset_info(
+    dataset: Union[str, pd.DataFrame, dd.core.DataFrame]
+) -> DatasetInfo:
     """
     Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
@@ -171,7 +183,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 distinct_values=distinct_values,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
-                avg_words=avg_words
+                avg_words=avg_words,
             )
         )
     return DatasetInfo(fields=fields, row_count=row_count)
@@ -193,13 +205,15 @@ def get_features_config(
     :param target_name (str) name of target feature
 
     # Return
-    :return: (dict) section of auto_train config for input_features and output_features 
+    :return: (dict) section of auto_train config for input_features and output_features
     """
     metadata = get_field_metadata(fields, row_count, resources, target_name)
     return get_config_from_metadata(metadata, target_name)
 
 
-def get_config_from_metadata(metadata: List[FieldMetadata], target_name: str = None) -> dict:
+def get_config_from_metadata(
+    metadata: List[FieldMetadata], target_name: str = None
+) -> dict:
     """
     Builds input/output feature sections of auto-train config using field
     metadata
@@ -226,7 +240,10 @@ def get_config_from_metadata(metadata: List[FieldMetadata], target_name: str = N
 
 
 def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, resources: dict, target_name: str = None
+    fields: List[FieldInfo],
+    row_count: int,
+    resources: dict,
+    target_name: str = None,
 ) -> List[FieldMetadata]:
     """
     Computes metadata for each field in dataset
@@ -252,7 +269,9 @@ def get_field_metadata(
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(idx, field, dtype, row_count, target_name),
+                excluded=should_exclude(
+                    idx, field, dtype, row_count, target_name
+                ),
                 mode=infer_mode(field, target_name),
                 missing_values=missing_value_percent,
             )
@@ -270,7 +289,7 @@ def get_field_metadata(
     )
 
     # Exclude text fields if no GPUs are available
-    if resources['gpu'] == 0:
+    if resources["gpu"] == 0:
         for meta in metadata:
             if input_count > 2 and meta.config.type == TEXT:
                 # By default, exclude text inputs when there are other candidate inputs
@@ -314,7 +333,9 @@ def infer_type(
     return NUMERICAL
 
 
-def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, target_name: str) -> bool:
+def should_exclude(
+    idx: int, field: FieldInfo, dtype: str, row_count: int, target_name: str
+) -> bool:
     if field.key == "PRI":
         return True
 
