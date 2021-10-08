@@ -257,57 +257,107 @@ class GPTEncoder(TextEncoder):
         return torch.int32
 
 
-# @register(name='gpt2')
-# class GPT2Encoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'gpt2',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='gpt2',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFGPT2Model
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFGPT2Model.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         hidden = transformer_outputs[0]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
-#
+@register(name='gpt2')
+class GPT2Encoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'gpt2',
+    }
+
+    def __init__(
+            self,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'gpt2',
+            max_sequence_length: int = None,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 50257,
+            n_positions: int = 1024,
+            n_ctx: int = 1024,
+            n_embd: int = 768,
+            n_layer: int = 12,
+            n_head: int = 12,
+            n_inner: Optional[int] = None,
+            activation_function: str = 'gelu',
+            resid_pdrop: float = 0.1,
+            embd_pdrop: float = 0.1,
+            attn_pdrop: float = 0.1,
+            layer_norm_epsilon: float = 1e-5,
+            initializer_range: float = 0.02,
+            scale_attn_weights: bool = True,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import GPT2Model, GPT2Config
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = GPT2Model.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = GPT2Config(
+                vocab_size=vocab_size,
+                n_positions=n_positions,
+                n_ctx=n_ctx,
+                n_embd=n_embd,
+                n_layer=n_layer,
+                n_head=n_head,
+                n_inner=n_inner,
+                activation_function=activation_function,
+                resid_pdrop=resid_pdrop,
+                embd_pdrop=embd_pdrop,
+                attn_pdrop=attn_pdrop,
+                layer_norm_epsilon=layer_norm_epsilon,
+                initializer_range=initializer_range,
+                scale_attn_weights=scale_attn_weights)
+            self.transformer = GPT2Model(config)
+
+        if trainable:
+            self.transformer.train()
+        self.max_sequence_length = max_sequence_length
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.resize_token_embeddings(vocab_size)
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        hidden = transformer_outputs[0]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
 # # @register(name='transformer_xl')
 # class TransformerXLEncoder(TextEncoder):
 #     fixed_preprocessing_parameters = {
