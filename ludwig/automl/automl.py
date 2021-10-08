@@ -17,10 +17,15 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.automl.base_config import _create_default_config, DatasetInfo
+from ludwig.automl.base_config import (
+    _create_default_config,
+    DatasetInfo,
+    get_dataset_info,
+    infer_type,
+)
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.utils import _ray_init, get_model_name
-from ludwig.constants import COMBINER, TYPE
+from ludwig.constants import COMBINER, NUMERICAL, TYPE
 from ludwig.hyperopt.run import hyperopt
 
 try:
@@ -29,9 +34,9 @@ try:
     from ray.tune import ExperimentAnalysis
 except ImportError:
     raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
+        " ray is not installed. "
+        "In order to use auto_train please run "
+        "pip install ludwig[ray]"
     )
 
 
@@ -56,7 +61,7 @@ class AutoTrainResults:
 
     @property
     def best_model(self) -> LudwigModel:
-        return LudwigModel.load(os.path.join(self.path_to_best_model, 'model'))
+        return LudwigModel.load(os.path.join(self.path_to_best_model, "model"))
 
 
 def auto_train(
@@ -65,7 +70,7 @@ def auto_train(
     time_limit_s: Union[int, float],
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
-    **kwargs
+    **kwargs,
 ) -> AutoTrainResults:
     """
     Main auto train API that first builds configs for each model type
@@ -86,12 +91,10 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, **kwargs)
+        dataset, target, time_limit_s, tune_for_memory, **kwargs
+    )
     return train_with_config(
-        dataset,
-        config,
-        output_directory=output_directory,
-        **kwargs
+        dataset, config, output_directory=output_directory, **kwargs
     )
 
 
@@ -116,12 +119,14 @@ def create_auto_config(
     :return: (dict) selected model configuration
     """
     default_configs = _create_default_config(dataset, target, time_limit_s)
-    model_config = _model_select(default_configs)
+    model_config = _model_select(dataset, default_configs)
     if tune_for_memory:
         if ray.is_initialized():
-            model_config, _ = ray.get(ray.remote(num_cpus=1)(
-                memory_tune_config
-            ).remote(model_config, dataset))
+            model_config, _ = ray.get(
+                ray.remote(num_cpus=1)(memory_tune_config).remote(
+                    model_config, dataset
+                )
+            )
         else:
             model_config, _ = memory_tune_config(model_config, dataset)
     return model_config
@@ -154,7 +159,7 @@ def train_with_config(
         dataset,
         output_directory=output_directory,
         model_name=model_name,
-        **kwargs
+        **kwargs,
     )
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
@@ -171,13 +176,37 @@ def train_with_config(
     return AutoTrainResults(experiment_analysis)
 
 
-def _model_select(default_configs):
+def _model_select(
+    dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
+    default_configs,
+):
     """
     Performs model selection based on dataset.
-    Note: Current implementation returns tabnet by default. This will be
-        improved in subsequent iterations
+    Note: Current implementation returns tabnet by default. If the
+    percentage of numerical features is >90%, the concat model is used.
     """
-    return default_configs['concat']
+
+    if isinstance(dataset, DatasetInfo):
+        fields = dataset.fields
+        row_count = dataset.row_count
+    else:
+        dataset_info = get_dataset_info(dataset)
+        fields = dataset_info.fields
+        row_count = dataset_info.row_count
+
+    total_numerical_feats = 0
+
+    for idx, field in enumerate(fields):
+        missing_value_percent = 1 - float(field.nonnull_values) / row_count
+        dtype = infer_type(field, missing_value_percent)
+        if dtype == NUMERICAL:
+            total_numerical_feats += 1
+
+    percent_numerical_feats = total_numerical_feats / len(fields)
+    if percent_numerical_feats > 0.9:
+        return default_configs["concat"]
+    else:
+        return default_configs["tabnet"]
 
 
 def _train(
@@ -185,14 +214,14 @@ def _train(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     output_directory: str,
     model_name: str,
-    **kwargs
+    **kwargs,
 ):
     hyperopt_results = hyperopt(
         config,
         dataset=dataset,
         output_directory=output_directory,
         model_name=model_name,
-        backend='local',
-        **kwargs
+        backend="local",
+        **kwargs,
     )
     return hyperopt_results
