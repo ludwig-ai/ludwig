@@ -429,7 +429,7 @@ def test_transformer_combiner(
 
 @pytest.mark.parametrize('fc_layers', [None, [{'fc_size': 256}]])
 @pytest.mark.parametrize('embed_input_feature_name', [None, 64, 'add'])
-def test_tabtransformer_combiner(encoder_outputs, embed_input_feature_name,
+def test_tabtransformer_combiner(embed_input_feature_name,
                                  fc_layers):
     # clean out unneeded encoder outputs
     # todo: combine creation of encoder_outputs and input_features into generic setp
@@ -446,11 +446,28 @@ def test_tabtransformer_combiner(encoder_outputs, embed_input_feature_name,
             dtype=torch.float32
         )
     }
+    encoder_outputs['feature_3'] = {
+        'encoder_output': torch.randn(
+            [128, 32],
+            dtype=torch.float32
+        )
+    }
+    encoder_outputs['feature_4'] = {
+        'encoder_output': torch.randn(
+            [128, 48],
+            dtype=torch.float32
+        )
+    }
 
     input_features = {
         'feature_1': PseudoInputFeature('feature_1', [128, 1],
+                                        type='binary'),
+        'feature_2': PseudoInputFeature('feature_2', [128, 16],
+                                        type='category'),
+        'feature_3': PseudoInputFeature('feature_3', [128, 32],
                                         type='numerical'),
-        'feature_2': PseudoInputFeature('feature_2', [128, 16], type='category')
+        'feature_4': PseudoInputFeature('feature_4', [128, 48],
+                                        type='category'),
     }
 
     # setup combiner to test
