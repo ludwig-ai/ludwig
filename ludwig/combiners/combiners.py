@@ -748,8 +748,19 @@ class TabTransformerCombiner(CombinerClass):
         )
 
         logger.debug('  FCStack')
+        # todo: confirm need for this size computation
+        # get hidden size from last transformer layer
+        transformer_hidden_size = \
+        self.transformer_stack.layers[-1].output_shape[-1]
+
+        # determine input size to fully connected layer based on reducer
+        if reduce_output == 'concat':
+            num_other_features = len(self.other_features)
+            fc_input_size = num_other_features * transformer_hidden_size
+        else:
+            fc_input_size = transformer_hidden_size
         self.fc_stack = FCStack(
-            hidden_size + concatenated_skip_encoders_size,
+            fc_input_size + concatenated_skip_encoders_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -772,6 +783,10 @@ class TabTransformerCombiner(CombinerClass):
     def get_flatten_size(output_shape: torch.Size) -> torch.Size:
         size = torch.prod(torch.Tensor([*output_shape]))
         return torch.Size([size.type(torch.int32)])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
 
     def forward(
             self,
