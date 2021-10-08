@@ -133,7 +133,6 @@ class BERTEncoder(TextEncoder):
         )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
-            print('transformer outputs:'+str(transformer_outputs))
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
