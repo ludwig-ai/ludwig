@@ -710,14 +710,16 @@ class TabTransformerCombiner(CombinerClass):
             projector_size = hidden_size
 
         logger.debug('  Projectors')
-        self.skip_features = [input_features[i_f].name for i_f in input_features
-                              if input_features[i_f].type == NUMERICAL
-                              or input_features[i_f].type == BINARY]
-        self.non_skip_features = list(set([input_features[i_f].name
-                                           for i_f in input_features])
-                                      - set(self.skip_features))
+        self.skip_features = []
+        self.other_features = []
+        for i_f in input_features:
+            if input_features[i_f].type in {NUMERICAL, BINARY}:
+                self.skip_features.append(input_features[i_f].name)
+            else:
+                self.other_features.append(input_features[i_f].name)
+
         self.projectors = ModuleList()
-        for i_f in self.non_skip_features:
+        for i_f in self.other_features:
             flatten_size = self.get_flatten_size(
                 input_features[i_f].output_shape
             )
@@ -736,7 +738,7 @@ class TabTransformerCombiner(CombinerClass):
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
             input_size=hidden_size,
-            sequence_size=len(self.non_skip_features),
+            sequence_size=len(self.other_features),
             hidden_size=hidden_size,
             # todo: can we just use projector_size? # hidden_size,
             num_heads=num_heads,
@@ -778,7 +780,7 @@ class TabTransformerCombiner(CombinerClass):
         skip_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
                                 if k in self.skip_features]
         other_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
-                                 if k in self.non_skip_features]
+                                 if k in self.other_features]
 
         # ================ Flatten ================
         batch_size = other_encoder_outputs[0].shape[0]
