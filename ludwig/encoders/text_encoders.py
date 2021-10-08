@@ -177,7 +177,7 @@ class XLMEncoder(TextEncoder):
             pretrained_model_name_or_path: str='xlm-mlm-en-2048',
             trainable: bool = True,
             reduce_output: str = 'cls_pooled',
-            max_sequence_length: Optional[int] = None,
+            max_sequence_length: int = None,
             vocab_size: int = 30145,
             emb_dim: int = 2048,
             n_layers: int = 12,
