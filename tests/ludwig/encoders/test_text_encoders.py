@@ -59,6 +59,24 @@ def test_gpt_encoder(
     assert outputs['encoder_output'].shape[1:] == gpt_encoder.output_shape
 
 
+@pytest.mark.parametrize('use_pretrained', [False])
+@pytest.mark.parametrize('reduce_output', ['cls_pooled', 'sum'])
+@pytest.mark.parametrize('max_sequence_length', [20])
+def test_roberta_encoder(
+        use_pretrained: bool,
+        reduce_output: str,
+        max_sequence_length: int
+):
+    roberta_encoder = text_encoders.RoBERTaEncoder(
+        use_pretrained=use_pretrained,
+        reduce_output=reduce_output,
+        max_sequence_length=max_sequence_length
+    )
+    inputs = torch.rand((2, max_sequence_length)).type(roberta_encoder.input_dtype)
+    outputs = roberta_encoder(inputs)
+    assert outputs['encoder_output'].shape[1:] == roberta_encoder.output_shape
+
+
 @pytest.mark.parametrize('use_pretrained', [True, False])
 @pytest.mark.parametrize('reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('max_sequence_length', [20])
