@@ -24,7 +24,7 @@ def test_bert_encoder(
 
 
 @pytest.mark.parametrize('use_pretrained', [False])
-@pytest.mark.parametrize('reduce_output', [None])
+@pytest.mark.parametrize('reduce_output', ['last','sum','mean'])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_xlm_encoder(
         use_pretrained: bool,

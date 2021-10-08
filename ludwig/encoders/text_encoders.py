@@ -136,6 +136,7 @@ class BERTEncoder(TextEncoder):
         )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
+            print('transformer outputs:'+str(transformer_outputs))
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
@@ -266,8 +267,7 @@ class XLMEncoder(TextEncoder):
             self.transformer = XLMModel(config)
 
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
@@ -284,11 +284,13 @@ class XLMEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == 'cls_pooled':
-            hidden = transformer_outputs[1]
-        else:
-            hidden = transformer_outputs[0][:, 1:-1, :]
-            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        hidden = transformer_outputs[0]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        #if self.reduce_output == 'cls_pooled':
+        #    hidden = transformer_outputs[1]
+        #else:
+        #    hidden = transformer_outputs[0][:, 1:-1, :]
+        #    hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {'encoder_output': hidden}
 
