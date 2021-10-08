@@ -1,6 +1,7 @@
 import logging
 from collections import OrderedDict
 import numpy as np
+from typing import Optional, Union, List, Tuple
 import pytest
 import torch
 
@@ -427,59 +428,77 @@ def test_transformer_combiner(
            (BATCH_SIZE, *combiner.output_shape)
 
 
+# generates encoder outputs and minimal input feature objects for testing
+@pytest.fixture
+def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
+    # feature_list: list of tuples that define the output_shape and type
+    #    of input features to generate.  tuple[0] is input feature type,
+    #    tuple[1] is input feature encoder output shape
+    encoder_outputs = {}
+    input_features = {}
+    for i in range(len(feature_list)):
+        feature_name = f'feature_{i:02d}'
+        encoder_outputs[feature_name] = {
+            'encoder_output': torch.randn(feature_list[i][1],
+                                          dtype=torch.float32)
+        }
+        input_features[feature_name] = PseudoInputFeature(
+            feature_name,
+            feature_list[i][1],
+            type=feature_list[i][0]
+        )
+
+    return encoder_outputs, input_features
+
+
+@pytest.mark.parametrize(
+    'feature_list',
+    [
+        [  # single numeric, single categorical
+            ('numerical', [BATCH_SIZE, 16]),
+            ('category', [BATCH_SIZE, 64])
+        ],
+        [  # multiple numeric, multiple categorical
+            ('binary', [BATCH_SIZE, 1]),
+            ('category', [BATCH_SIZE, 16]),
+            ('numerical', [BATCH_SIZE, 32]),
+            ('category', [BATCH_SIZE, 48])
+        ]
+    ]
+)
+@pytest.mark.parametrize('num_layers', [1, 2])
+@pytest.mark.parametrize('reduce_output', ['concat', 'sum'])
 @pytest.mark.parametrize('fc_layers', [None, [{'fc_size': 256}]])
 @pytest.mark.parametrize('embed_input_feature_name', [None, 64, 'add'])
-def test_tabtransformer_combiner(embed_input_feature_name,
-                                 fc_layers):
-    # clean out unneeded encoder outputs
-    # todo: combine creation of encoder_outputs and input_features into generic setp
-    encoder_outputs = {}
-    encoder_outputs['feature_1'] = {
-        'encoder_output': torch.randn(
-            [128, 1],
-            dtype=torch.float32
-        )
-    }
-    encoder_outputs['feature_2'] = {
-        'encoder_output': torch.randn(
-            [128, 16],
-            dtype=torch.float32
-        )
-    }
-    encoder_outputs['feature_3'] = {
-        'encoder_output': torch.randn(
-            [128, 32],
-            dtype=torch.float32
-        )
-    }
-    encoder_outputs['feature_4'] = {
-        'encoder_output': torch.randn(
-            [128, 48],
-            dtype=torch.float32
-        )
-    }
-
-    input_features = {
-        'feature_1': PseudoInputFeature('feature_1', [128, 1],
-                                        type='binary'),
-        'feature_2': PseudoInputFeature('feature_2', [128, 16],
-                                        type='category'),
-        'feature_3': PseudoInputFeature('feature_3', [128, 32],
-                                        type='numerical'),
-        'feature_4': PseudoInputFeature('feature_4', [128, 48],
-                                        type='category'),
-    }
+def test_tabtransformer_combiner(
+        features_to_test: tuple,
+        embed_input_feature_name: Optional[Union[int, str]],
+        fc_layers: Optional[list],
+        reduce_output: str,
+        num_layers: int
+) -> None:
+    # retrieve simulated encoder outputs and input features for the test
+    encoder_outputs, input_features = features_to_test
 
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features,
         embed_input_feature_name=embed_input_feature_name,
         ### emulates parameters passed from combiner def
-        fc_layers=fc_layers
+        num_layers=num_layers,  # number of transformer layers
+        fc_layers=fc_layers,  # fully_connected layer definition
+        reduce_output=reduce_output  # sequence reducer
     )
 
     # concatenate encoder outputs
     combiner_output = combiner(encoder_outputs)
 
+    # check for correct data type
+    assert isinstance(combiner_output, dict)
+
     # required key present
     assert 'combiner_output' in combiner_output
+
+    # check for correct output shape
+    assert combiner_output['combiner_output'].shape \
+           == (BATCH_SIZE, *combiner.output_shape)
