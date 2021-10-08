@@ -73,12 +73,12 @@ class RMSPELoss(nn.Module):
 class BWCEWLoss(nn.Module):
     def __init__(
             self,
-            pos_weight: Optional[Tensor] = None,
+            positive_class_weight: Optional[Tensor] = None,
             robust_lambda: int = 0,
             confidence_penalty: int = 0,
             **kwargs):
         super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight, **kwargs)
+        self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
         self.robust_lambda = robust_lambda
         self.confidence_penalty = confidence_penalty
 

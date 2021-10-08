@@ -200,13 +200,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             positive_class_weight=self.loss["positive_class_weight"],
             robust_lambda=self.loss["robust_lambda"],
             confidence_penalty=self.loss["confidence_penalty"],
-            name="eval_loss",
         )
-        # TODO(shreya): Double check
-        self.metric_functions[ACCURACY] = Accuracy(
-            name="metric_accuracy"
-        )
-        self.metric_functions[ROC_AUC] = ROCAUCMetric(name="metric_auc")
+        self.metric_functions[ACCURACY] = Accuracy()
+        self.metric_functions[ROC_AUC] = ROCAUCMetric()
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

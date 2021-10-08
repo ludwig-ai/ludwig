@@ -24,14 +24,10 @@ from ludwig.decoders.generic_decoders import Classifier
 from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-# from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-# from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
-# from ludwig.modules.metric_modules import CategoryAccuracy
-# from ludwig.modules.metric_modules import HitsAtKMetric
-# from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, \
-#     SampledSoftmaxCrossEntropyMetric
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+# from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
+# from ludwig.modules.metric_modules import SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax

@@ -68,7 +68,7 @@ metrics_inputs_registry = {
     'RMSEMetric': PREDICTIONS,
     'ROCAUCMetric': PREDICTIONS,
     'RMSPEMetric': PREDICTIONS,
-    'R2ScoreMetric': PREDICTIONS,
+    'R2Score': PREDICTIONS,
     'BWCEWLMetric': LOGITS,
     'SoftmaxCrossEntropyMetric': LOGITS,
     'SigmoidCrossEntropyMetric': LOGITS,
@@ -126,14 +126,14 @@ class BWCEWLMetric(MeanMetric):
 
     def __init__(
             self,
-            posweight: Optional[Tensor] = None,
+            positive_class_weight: Optional[Tensor] = None,
             robust_lambda: int = 0,
             confidence_penalty: int = 0
     ):
         super().__init__()
 
         self.loss_function = BWCEWLoss(
-            pos_weight=posweight,
+            positive_class_weight=positive_class_weight,
             robust_lambda=robust_lambda,
             confidence_penalty=confidence_penalty,
         )
@@ -143,9 +143,9 @@ class BWCEWLMetric(MeanMetric):
 
 
 class SoftmaxCrossEntropyMetric(MeanMetric):
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss()
+        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(**kwargs)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.softmax_cross_entropy_function(preds, target)

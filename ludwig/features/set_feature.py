@@ -207,9 +207,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             feature_loss=self.loss,
         )
 
-        self.eval_loss_function = SigmoidCrossEntropyMetric(
-            feature_loss=self.loss,
-        )
+        self.eval_loss_function = SigmoidCrossEntropyMetric(**self.loss)
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
