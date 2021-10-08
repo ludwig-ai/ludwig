@@ -14,20 +14,21 @@
 # limitations under the License.
 # ==============================================================================
 from abc import abstractmethod
-from typing import Callable
+from typing import Callable, Optional
 
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
 from torchmetrics import Accuracy, AUROC, AverageMeter, IoU, MeanAbsoluteError,\
-    MeanSquaredError, Metric, R2Score
+    MeanSquaredError, Metric, R2Score as _R2Score
 
 from ludwig.constants import *
 from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss,\
-    SoftmaxCrossEntropyLoss, rmspe_loss # SequenceSoftmaxCrossEntropyLoss,\
+    SoftmaxCrossEntropyLoss # SequenceSoftmaxCrossEntropyLoss,\
     # SequenceSampledSoftmaxCrossEntropyLoss, SampledSoftmaxCrossEntropyLoss
-from ludwig.utils.torch_utils import sequence_length_2D
+from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_corrected_predictions
+from ludwig.utils.torch_utils import sequence_length_2D
 # from ludwig.utils.metric_utils import masked_sequence_corrected_predictions,\
     # edit_distance
 # from ludwig.utils.tf_utils import to_sparse
@@ -68,9 +69,8 @@ metrics_inputs_registry = {
     'ROCAUCMetric': PREDICTIONS,
     'RMSPEMetric': PREDICTIONS,
     'R2ScoreMetric': PREDICTIONS,
-    'ErrorScore': PREDICTIONS, #double check
     'BWCEWLMetric': LOGITS,
-    'SoftmaxCrossEntropyMetric': LOGITS, #double check
+    'SoftmaxCrossEntropyMetric': LOGITS,
     'SigmoidCrossEntropyMetric': LOGITS,
     'TokenAccuracyMetric': PREDICTIONS, #double check
     'CategoryAccuracy': PREDICTIONS, #double check
@@ -80,14 +80,13 @@ metrics_inputs_registry = {
     'JaccardMetric': PREDICTIONS,
 }
 
-# TODO(shreya): Remove the update function and make sure PREDICTIONS IS PASSED.
+
 class RMSEMetric(MeanSquaredError):
     """ Root mean squared error metric. """
     def __init__(self, **kwargs):
         super().__init__(squared=False, **kwargs)
 
 
-# TODO(shreya): Make sure preds[PREDICTIONS] is passed here
 class ROCAUCMetric(AUROC):
     """ Metric for area under ROC curve. """
     pass
@@ -116,70 +115,25 @@ class RMSPEMetric(MeanMetric):
         return rmspe_loss(target, preds)
 
 
-# TODO(shreya): Make sure preds[PREDICTIONS] used here.
-# TODO(shreya): COnfirm that its ok to use torchmetrics R2score here.
-class R2ScoreMetric(R2Score):
+# TODO(shreya): Double check difference in computation.
+class R2Score(_R2Score):
     """ R-squared metric. """
     pass
-    # def __init__(self):
-    #     super().__init__()
-    #     self.add_state("sum_target", default=torch.tensor(0, dtype=torch.float32))
-    #     self.add_state("sum_target_squared", default=torch.tensor(0, dtype=torch.float32))
-    #     self.add_state("sum_preds", default=torch.tensor(0, dtype=torch.float32))
-    #     self.add_state("sum_preds_squared", default=torch.tensor(0, dtype=torch.float32))
-    #     self.add_state("sum_target_preds", default=torch.tensor(0, dtype=torch.float32))
-    #     self.add_state("N", default=torch.tensor(0, dtype=torch.float32))
-
-    # def update(self, preds: Dict[str, torch.Tensor], target: torch.Tensor):
-    #     preds = preds[PREDICTIONS]
-
-    #     target = target.type(torch.float32)
-    #     preds = preds.type(torch.float32)
-    #     self.sum_target += torch.sum(target)
-    #     self.sum_target_squared += torch.sum(target ** 2)
-    #     self.sum_preds += torch.sum(preds)
-    #     self.sum_preds_squared += torch.sum(preds ** 2)
-    #     self.sum_target_preds += torch.sum(target * preds)
-    #     self.N += target.shape[0]
-
-    # def compute(self):
-    #     mean_target = self.sum_target / self.N
-    #     tot_ss = (
-    #         self.sum_target_squared
-    #         - 2.0 * mean_target * self.sum_target
-    #         + self.N * mean_target ** 2
-    #     )
-    #     res_ss = (
-    #         self.sum_target_squared
-    #         - 2.0 * self.sum_target_preds
-    #         + self.sum_preds_squared
-    #     )
-    #     return 1.0 - res_ss / tot_ss
 
 
-# TODO(shreya): What's the point of this error?
-class ErrorScore(MeanMetric):
-    def __init__(self):
-        super().__init__()
-
-    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
-        return (target.type(torch.float32) - preds.type(torch.float32))
-
-
-# TODO(shreya): Confirm behavior parity.
 class BWCEWLMetric(MeanMetric):
     """ Binary Weighted Cross Entropy Weighted Logits Score Metric. """
 
     def __init__(
             self,
-            positive_class_weight: int = 1,
+            posweight: Optional[Tensor] = None,
             robust_lambda: int = 0,
             confidence_penalty: int = 0
     ):
         super().__init__()
 
         self.loss_function = BWCEWLoss(
-            positive_class_weight=positive_class_weight,
+            pos_weight=posweight,
             robust_lambda=robust_lambda,
             confidence_penalty=confidence_penalty,
         )
@@ -326,17 +280,16 @@ class SigmoidCrossEntropyMetric(MeanMetric):
 #         super().update_state(edit_distance_val)
 
 
-# TODO(shreya): Confirm if its ok to inherit from MeanMetric.
 class TokenAccuracyMetric(MeanMetric):
-    def __init__(self, name=None):
-        super().__init__(name=name)
+    def __init__(self):
+        super().__init__()
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
         target_sequence_length = sequence_length_2D(target)
         masked_corrected_preds = masked_corrected_predictions(
             target, preds, target_sequence_length)
-        return masked_corrected_preds
+        return torch.mean(masked_corrected_preds)
 
 
 # TODO(shreya): After Sequence Losses
@@ -364,7 +317,7 @@ class CategoryAccuracy(Accuracy):
     def __init__(self):
         super().__init__()
 
-    def update(self, preds: torch.Tensor, target: torch.Tensor):
+    def update(self, preds: Tensor, target: Tensor) -> None:
         # make sure y_true is tf.int64
         super().update(preds, target.type(torch.LongTensor))
 
@@ -373,7 +326,7 @@ class HitsAtKMetric(Accuracy):
     def __init__(self, top_k: int = 3):
         super().__init__(top_k=top_k)
 
-    def update(self, preds: torch.Tensor, target: torch.Tensor):
+    def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
 
 
@@ -381,7 +334,7 @@ class MAEMetric(MeanAbsoluteError):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def update(self, preds: Tensor, target: Tensor):
+    def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
 
 
@@ -389,23 +342,20 @@ class MSEMetric(MeanSquaredError):
     def __init__(self, **kwargs):
         super(MSEMetric, self).__init__(**kwargs)
 
-    def update(self, preds: Tensor, target: Tensor):
+    def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
 
 
-class JaccardMetric(Metric):
+class JaccardMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
-        self.jaccard_metric = IoU(num_classes=2, **kwargs)
+        self.jaccard_metric = IoU(num_classes=2, reduction='sum', **kwargs)
         self.add_state(name='loss', default=[], dist_reduce_fx='mean')
 
-    def update(self, y_true: torch.Tensor, y_pred: torch.Tensor) -> None:
-        self.loss.append(self.jaccard_metric(
-            y_pred.type(torch.bool), y_true.type(torch.bool)
-        ))
-
-    def compute(self) -> torch.Tensor:
-        return torch.mean(torch.stack(self.loss))
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.jaccard_metric(
+            preds.type(torch.bool), target.type(torch.bool)
+        )
 
 
 def get_improved_fun(metric: str) -> Callable:

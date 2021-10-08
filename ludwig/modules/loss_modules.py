@@ -15,7 +15,7 @@
 # ==============================================================================
 
 
-from typing import Optional
+from typing import Optional, Union
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -55,8 +55,8 @@ class RMSELoss(nn.Module):
         super().__init__()
         self.mse = nn.MSELoss(**kwargs)
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
-        return torch.sqrt(self.mse(input, target))
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        return torch.sqrt(self.mse(preds, target))
 
 
 # TO TEST
@@ -65,19 +65,25 @@ class RMSPELoss(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
-        loss = utils.rmspe_loss(target, input)
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        loss = utils.rmspe_loss(target, preds)
         return loss
 
 
 class BWCEWLoss(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(
+            self,
+            pos_weight: Optional[Tensor] = None,
+            robust_lambda: int = 0,
+            confidence_penalty: int = 0,
+            **kwargs):
         super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(**kwargs)
+        self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight, **kwargs)
+        self.robust_lambda = robust_lambda
+        self.confidence_penalty = confidence_penalty
 
-    def forward(self, input: torch.Tensor, target: torch.Tensor):
-        target = target.long()
-        train_loss = self.loss_fn(input, target)
+    def forward(self, preds: torch.Tensor, target: torch.Tensor):
+        train_loss = self.loss_fn(preds, target)
         # robust lambda
         if self.robust_lambda > 0:
             train_loss = (1 - self.robust_lambda) * train_loss + \
@@ -87,7 +93,7 @@ class BWCEWLoss(nn.Module):
 
         # confidence penalty
         if self.confidence_penalty > 0:
-            probabilities = torch.sigmoid(input)
+            probabilities = torch.sigmoid(preds)
             mean_penalty = utils.mean_confidence_penalty(probabilities, 2)
             train_mean_loss += self.confidence_penalty * mean_penalty
 
@@ -103,9 +109,9 @@ class SoftmaxCrossEntropyLoss(nn.Module):
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss(weight=class_weights)
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.long()
-        return self.loss_fn(input, target)
+        return self.loss_fn(preds, target)
 
 
 # # For Categorical Output Features
@@ -178,13 +184,13 @@ class SigmoidCrossEntropyLoss(nn.Module):
         )
         self.class_weights = class_weights
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
-        if input.ndim != 2:
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        if preds.ndim != 2:
             raise RuntimeError(
                 'SigmoidCrossEntropyLoss currently supported for 2D tensors.')
 
         element_loss = self.loss_fn(
-            input.type(torch.float32),
+            preds.type(torch.float32),
             target.type(torch.float32)
         )
 
