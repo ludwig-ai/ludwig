@@ -41,6 +41,13 @@ def is_http(urlpath):
     return protocol == "http" or protocol == "https"
 
 
+def upgrade_http(urlpath):
+    protocol, url = split_protocol(urlpath)
+    if protocol == "http":
+        return "https://" + url
+    return None
+
+
 def find_non_existing_dir_by_adding_suffix(directory_name):
     fs, _ = get_fs_and_path(directory_name)
     suffix = 0

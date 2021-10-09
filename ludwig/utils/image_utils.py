@@ -14,18 +14,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import functools
 import logging
 import os
 import sys
+from io import BytesIO
 from math import ceil, floor
+from urllib.error import HTTPError
 
 import numpy as np
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.fs_utils import open_file, is_http
+from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
 
 logger = logging.getLogger(__name__)
+
+
+def get_gray_default_image(height, width, num_channels):
+    return np.full((height, width, num_channels), 128, dtype=np.uint8)
+
+
+def get_average_image(image_lst):
+    return np.mean([x for x in image_lst if x is not None], axis=(0))
+
+
+@functools.lru_cache(maxsize=32)
+def get_image_from_http_bytes(img_entry):
+    import requests
+    data = requests.get(img_entry, stream=True)
+    if data.status_code == 404:
+        upgraded = upgrade_http(img_entry)
+        if upgraded:
+            logger.info(f'reading image url {img_entry} failed. upgrading to https and retrying')
+            return get_image_from_http_bytes(upgraded)
+        else:
+            raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed and cannot be upgraded to https')
+    return BytesIO(data.raw.read())
 
 
 def get_image_from_path(src_path, img_entry, ret_bytes=False):
@@ -37,8 +62,7 @@ def get_image_from_path(src_path, img_entry, ret_bytes=False):
         return img_entry
     if is_http(img_entry):
         if ret_bytes:
-            import requests
-            return requests.get(img_entry, stream=True).raw.read()
+            return get_image_from_http_bytes(img_entry)
         return img_entry
     if src_path or os.path.isabs(img_entry):
         return get_abs_path(src_path, img_entry)
@@ -62,7 +86,24 @@ def is_image(src_path, img_entry):
         return False
 
 
+# For image inference, want to bias towards both readable images, but also account for unreadable (i.e. expired) urls
+# with image extensions
+def is_image_score(src_path, img_entry):
+    if is_image(src_path, img_entry):
+        return 1
+    elif isinstance(img_entry, str) and img_entry.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+        return 0.5
+    return 0
+
+
 def read_image(img):
+    if isinstance(img, str):
+        return read_image_from_str(img)
+    return img
+
+
+@functools.lru_cache(maxsize=32)
+def read_image_from_str(img):
     try:
         from skimage.io import imread
     except ImportError:
@@ -72,9 +113,19 @@ def read_image(img):
             'pip install ludwig[image]'
         )
         sys.exit(-1)
-    if isinstance(img, str):
+
+    try:
         return imread(img)
-    return img
+    except HTTPError as e:
+        upgraded = upgrade_http(img)
+        if upgraded:
+            logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
+            return read_image(upgraded)
+        logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
+        return None
+    except Exception as e:
+        logger.info(f'reading image url {img} failed', e)
+        return None
 
 
 def pad(img, size, axis):

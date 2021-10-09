@@ -188,9 +188,29 @@ class AudioFeatureMixin:
             return merged_stats
 
         merged_stats = df_engine.reduce_objects(audio_stats, reduce)
-        merged_stats['mean'] = calculate_mean(merged_stats['sum'], merged_stats['count'])
-        merged_stats['var'] = calculate_var(merged_stats['sum'], merged_stats['sum2'], merged_stats['count'])
-        return processed_audio, merged_stats
+        merged_stats['mean'] = calculate_mean(merged_stats['sum'],
+                                              merged_stats['count'])
+        merged_stats['var'] = calculate_var(merged_stats['sum'],
+                                            merged_stats['sum2'],
+                                            merged_stats['count'])
+        merged_stats['std'] = np.sqrt(
+            merged_stats['var'] / float(merged_stats['count']))
+        print_statistics = (
+            "{} audio files loaded.\n"
+            "Statistics of audio file lengths:\n"
+            "- mean: {:.4f}\n"
+            "- std: {:.4f}\n"
+            "- max: {:.4f}\n"
+            "- min: {:.4f}\n"
+            "- cropped audio_files: {}\n"
+            "Max length was given as {}s"
+        ).format(
+            merged_stats['count'], merged_stats['mean'],
+            merged_stats['std'], merged_stats['max'],
+            merged_stats['min'], merged_stats['cropped'],
+            audio_file_length_limit_in_s)
+        logger.debug(print_statistics)
+        return processed_audio
 
     @staticmethod
     def _transform_to_feature(
@@ -349,7 +369,7 @@ class AudioFeatureMixin:
                 'There are no audio files in the dataset provided.')
 
         if feature[PREPROCESSING]['in_memory']:
-            audio_features, audio_stats = AudioFeatureMixin._process_in_memory(
+            audio_features = AudioFeatureMixin._process_in_memory(
                 input_df[feature[NAME]],
                 src_path,
                 audio_feature_dict,
@@ -361,24 +381,6 @@ class AudioFeatureMixin:
                 backend
             )
             proc_df[proc_column] = audio_features
-
-            audio_stats['std'] = np.sqrt(
-                audio_stats['var'] / float(audio_stats['count']))
-            print_statistics = (
-                "{} audio files loaded.\n"
-                "Statistics of audio file lengths:\n"
-                "- mean: {:.4f}\n"
-                "- std: {:.4f}\n"
-                "- max: {:.4f}\n"
-                "- min: {:.4f}\n"
-                "- cropped audio_files: {}\n"
-                "Max length was given as {}s"
-            ).format(
-                audio_stats['count'], audio_stats['mean'],
-                audio_stats['std'], audio_stats['max'],
-                audio_stats['min'], audio_stats['cropped'],
-                audio_file_length_limit_in_s)
-            logger.debug(print_statistics)
         else:
             backend.check_lazy_load_supported(feature)
 
