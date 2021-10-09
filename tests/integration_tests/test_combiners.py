@@ -43,6 +43,23 @@ class PseudoInputFeature:
         return torch.Size(self._output_shape[1:])
 
 
+# helper function to test correctness of combiner output
+def check_combiner_output(combiner, combiner_output, batch_size):
+    # check for required attributes
+    assert hasattr(combiner, 'input_dtype')
+    assert hasattr(combiner, 'output_shape')
+
+    # check for correct data type
+    assert isinstance(combiner_output, dict)
+
+    # required key present
+    assert 'combiner_output' in combiner_output
+
+    # check for correct output shape
+    assert combiner_output['combiner_output'].shape \
+           == (batch_size, *combiner.output_shape)
+
+
 # set up simulated encoder outputs
 @pytest.fixture
 def encoder_outputs():
@@ -182,16 +199,8 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
-    # correct data structure
-    assert isinstance(combiner_output, dict)
-
-    # required key present and correct data type
-    assert "combiner_output" in combiner_output
-    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
-
-    # confirm correct output shapes
-    assert combiner_output["combiner_output"].shape == \
-           (BATCH_SIZE, *combiner.output_shape)
+    # check for correctness of combiner output
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
 # test for sequence concatenation combiner
@@ -228,16 +237,8 @@ def test_sequence_concat_combiner(
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
-    # correct data structure
-    assert isinstance(combiner_output, dict)
-
-    # required key present and correct data type
-    assert "combiner_output" in combiner_output
-    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
-
-    # confirm correct shape
-    assert combiner_output['combiner_output'].shape == \
-           (BATCH_SIZE, *combiner.output_shape)
+    # check for correctness of combiner output
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
 # test for sequence combiner
@@ -277,16 +278,8 @@ def test_sequence_combiner(
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
-    # correct data structure
-    assert isinstance(combiner_output, dict)
-
-    # required key present and correct data type
-    assert "combiner_output" in combiner_output
-    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
-
-    # test for correct dimension
-    assert combiner_output['combiner_output'].shape \
-           == (BATCH_SIZE, *combiner.output_shape)
+    # check for correctness of combiner output
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
 def tabnet_encoder_outputs():
@@ -371,16 +364,8 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     # concatenate encoder outputs
     combiner_output = combiner(encoder_comparator_outputs_dict)
 
-    # correct data structure
-    assert isinstance(combiner_output, dict)
-
-    # required key present and correct data type
-    assert "combiner_output" in combiner_output
-    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
-
-    # confirm correct shape
-    assert combiner_output['combiner_output'].shape == \
-           (BATCH_SIZE, combiner.output_shape[-1])
+    # check for correctness of combiner output
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
 @pytest.mark.parametrize('fc_size', [8, 16])
@@ -416,16 +401,8 @@ def test_transformer_combiner(
     # concatenate encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
 
-    # correct data structure
-    assert isinstance(combiner_output, dict)
-
-    # required key present and correct data type
-    assert "combiner_output" in combiner_output
-    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
-
-    # confirm correct shape
-    assert combiner_output['combiner_output'].shape == \
-           (BATCH_SIZE, *combiner.output_shape)
+    # check for correctness of combiner output
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
 # generates encoder outputs and minimal input feature objects for testing
@@ -493,12 +470,4 @@ def test_tabtransformer_combiner(
     # concatenate encoder outputs
     combiner_output = combiner(encoder_outputs)
 
-    # check for correct data type
-    assert isinstance(combiner_output, dict)
-
-    # required key present
-    assert 'combiner_output' in combiner_output
-
-    # check for correct output shape
-    assert combiner_output['combiner_output'].shape \
-           == (BATCH_SIZE, *combiner.output_shape)
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
