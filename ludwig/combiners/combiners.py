@@ -710,35 +710,36 @@ class TabTransformerCombiner(CombinerClass):
             projector_size = hidden_size
 
         logger.debug('  Projectors')
-        self.skip_features = []
-        self.other_features = []
+        self.unembeddable_features = []
+        self.embeddable_features = []
         for i_f in input_features:
             if input_features[i_f].type in {NUMERICAL, BINARY}:
-                self.skip_features.append(input_features[i_f].name)
+                self.unembeddable_features.append(input_features[i_f].name)
             else:
-                self.other_features.append(input_features[i_f].name)
+                self.embeddable_features.append(input_features[i_f].name)
 
         self.projectors = ModuleList()
-        for i_f in self.other_features:
+        for i_f in self.embeddable_features:
             flatten_size = self.get_flatten_size(
                 input_features[i_f].output_shape
             )
             self.projectors.append(Linear(flatten_size[0], projector_size))
 
-        # input to layer_norm are the encoder outputs for skip features,
+        # input to layer_norm are the encoder outputs for unembeddable features,
         # which are numerical or binary features.  These should be 2-dim
-        # tensors.  Size should be concaenation of these tensors.
-        concatenated_skip_encoders_size = 0
-        for i_f in self.skip_features:
-            concatenated_skip_encoders_size += \
+        # tensors.  Size should be concatenation of these tensors.
+        concatenated_unembeddable_encoders_size = 0
+        for i_f in self.unembeddable_features:
+            concatenated_unembeddable_encoders_size += \
                 input_features[i_f].output_shape[0]
 
-        self.layer_norm = torch.nn.LayerNorm(concatenated_skip_encoders_size)
+        self.layer_norm = torch.nn.LayerNorm(
+            concatenated_unembeddable_encoders_size)
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
             input_size=hidden_size,
-            sequence_size=len(self.other_features),
+            sequence_size=len(self.embeddable_features),
             hidden_size=hidden_size,
             # todo: can we just use projector_size? # hidden_size,
             num_heads=num_heads,
@@ -751,16 +752,17 @@ class TabTransformerCombiner(CombinerClass):
         # todo: confirm need for this size computation
         # get hidden size from last transformer layer
         transformer_hidden_size = \
-        self.transformer_stack.layers[-1].output_shape[-1]
+            self.transformer_stack.layers[-1].output_shape[-1]
 
         # determine input size to fully connected layer based on reducer
         if reduce_output == 'concat':
-            num_other_features = len(self.other_features)
-            fc_input_size = num_other_features * transformer_hidden_size
+            num_embeddable_features = len(self.embeddable_features)
+            fc_input_size = num_embeddable_features * transformer_hidden_size
         else:
-            fc_input_size = transformer_hidden_size
+            fc_input_size = transformer_hidden_size if len(
+                self.embeddable_features) > 0 else 0
         self.fc_stack = FCStack(
-            fc_input_size + concatenated_skip_encoders_size,
+            fc_input_size + concatenated_unembeddable_encoders_size,
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
@@ -792,59 +794,77 @@ class TabTransformerCombiner(CombinerClass):
             self,
             inputs: Dict,  # encoder outputs
     ) -> Dict:
-        skip_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
-                                if k in self.skip_features]
-        other_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
-                                 if k in self.other_features]
+        unembeddable_encoder_outputs = [inputs[k]['encoder_output'] for k in
+                                        inputs
+                                        if k in self.unembeddable_features]
+        embeddable_encoder_outputs = [inputs[k]['encoder_output'] for k in
+                                      inputs
+                                      if k in self.embeddable_features]
 
-        # ================ Flatten ================
-        batch_size = other_encoder_outputs[0].shape[0]
-        other_encoder_outputs = [
-            torch.reshape(eo, [batch_size, -1]) for eo in other_encoder_outputs
-        ]
-        skip_encoder_outputs = [
-            torch.reshape(eo, [batch_size, -1]) for eo in skip_encoder_outputs
-        ]
+        batch_size = embeddable_encoder_outputs[0].shape[0] \
+            if len(embeddable_encoder_outputs) > 0 else \
+        unembeddable_encoder_outputs[0].shape[0]
 
-        # ================ Project & Concat others ================
-        projected = [
-            self.projectors[i](eo)
-            for i, eo in enumerate(other_encoder_outputs)
-        ]
-        hidden = torch.stack(projected)  # num_eo, bs, h
-        hidden = torch.permute(hidden, (1, 0, 2))  # bs, num_eo, h
+        # ================ Project & Concat embeddables ================
+        if len(embeddable_encoder_outputs) > 0:
 
-        if self.embed_input_feature_name:
-            i_f_names_idcs = torch.reshape(
-                # todo: confirm reshape is appropriate
-                torch.arange(0, len(other_encoder_outputs)),
-                [-1, 1]
-            )
-            embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
-            embedded_i_f_names = torch.unsqueeze(embedded_i_f_names, dim=0)
-            embedded_i_f_names = torch.tile(embedded_i_f_names,
-                                            [batch_size, 1, 1])
-            if self.embed_input_feature_name == 'add':
-                hidden = hidden + embedded_i_f_names
-            else:
-                hidden = torch.cat([hidden, embedded_i_f_names], -1)
+            # ============== Flatten =================
+            embeddable_encoder_outputs = [
+                torch.reshape(eo, [batch_size, -1]) for eo in
+                embeddable_encoder_outputs
+            ]
 
-        # ================ Transformer Layers ================
-        hidden = self.transformer_stack(hidden)
+            projected = [
+                self.projectors[i](eo)
+                for i, eo in enumerate(embeddable_encoder_outputs)
+            ]
+            hidden = torch.stack(projected)  # num_eo, bs, h
+            hidden = torch.permute(hidden, (1, 0, 2))  # bs, num_eo, h
 
-        # ================ Sequence Reduction ================
-        hidden = self.reduce_sequence(hidden)
+            if self.embed_input_feature_name:
+                i_f_names_idcs = torch.reshape(
+                    # todo: confirm reshape is appropriate
+                    torch.arange(0, len(embeddable_encoder_outputs)),
+                    [-1, 1]
+                )
+                embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
+                embedded_i_f_names = torch.unsqueeze(embedded_i_f_names, dim=0)
+                embedded_i_f_names = torch.tile(embedded_i_f_names,
+                                                [batch_size, 1, 1])
+                if self.embed_input_feature_name == 'add':
+                    hidden = hidden + embedded_i_f_names
+                else:
+                    hidden = torch.cat([hidden, embedded_i_f_names], -1)
+
+            # ================ Transformer Layers ================
+            hidden = self.transformer_stack(hidden)
+
+            # ================ Sequence Reduction ================
+            hidden = self.reduce_sequence(hidden)
+        else:
+            # create emtpy tensor because there are no cateagory features
+            hidden = torch.empty([batch_size, 0])
 
         # ================ Concat Skipped ================
-        if len(skip_encoder_outputs) > 1:
-            skip_hidden = torch.cat(skip_encoder_outputs,
-                                    -1)  # tf.keras.layers.concatenate
+        if len(unembeddable_encoder_outputs) > 0:
+            unembeddable_encoder_outputs = [
+                torch.reshape(eo, [batch_size, -1]) for eo in
+                unembeddable_encoder_outputs
+            ]
+            # ================ Flatten ================
+            if len(unembeddable_encoder_outputs) > 1:
+                unembeddable_hidden = torch.cat(unembeddable_encoder_outputs,
+                                                -1)  # tf.keras.layers.concatenate
+            else:
+                unembeddable_hidden = list(unembeddable_encoder_outputs)[0]
+            unembeddable_hidden = self.layer_norm(unembeddable_hidden)
+
         else:
-            skip_hidden = list(skip_encoder_outputs)[0]
-        skip_hidden = self.layer_norm(skip_hidden)
+            # create empty tensor because there are not numeric/binary features
+            unembeddable_hidden = torch.empty([batch_size, 0])
 
         # ================ Concat Skipped and Others ================
-        hidden = torch.cat([hidden, skip_hidden], -1)
+        hidden = torch.cat([hidden, unembeddable_hidden], -1)
 
         # ================ FC Layers ================
         hidden = self.fc_stack(hidden)

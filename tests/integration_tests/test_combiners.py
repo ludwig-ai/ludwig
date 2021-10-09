@@ -410,7 +410,7 @@ def test_transformer_combiner(
 def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
     # feature_list: list of tuples that define the output_shape and type
     #    of input features to generate.  tuple[0] is input feature type,
-    #    tuple[1] is input feature encoder output shape
+    #    tuple[1] is expected encoder output shape for the input feature
     encoder_outputs = {}
     input_features = {}
     for i in range(len(feature_list)):
@@ -429,17 +429,31 @@ def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
 
 
 @pytest.mark.parametrize(
-    'feature_list',
+    'feature_list',  # defines parameter for fixture features_to_test()
     [
         [  # single numeric, single categorical
-            ('numerical', [BATCH_SIZE, 16]),
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
             ('category', [BATCH_SIZE, 64])
         ],
         [  # multiple numeric, multiple categorical
-            ('binary', [BATCH_SIZE, 1]),
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
             ('category', [BATCH_SIZE, 16]),
-            ('numerical', [BATCH_SIZE, 32]),
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
             ('category', [BATCH_SIZE, 48])
+        ],
+        [  # only numeric features
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 1])  # passthrough encoder
+        ],
+        [  # only category features
+            ('category', [BATCH_SIZE, 16]),
+            ('category', [BATCH_SIZE, 8])
+        ],
+        [  # only single numeric feature
+            ('numerical', [BATCH_SIZE, 1])  # passthrough encoder
+        ],
+        [  # only single category feature
+            ('category', [BATCH_SIZE, 8])
         ]
     ]
 )
