@@ -50,32 +50,18 @@ def get_dask_kwargs():
 
 
 def get_horovod_kwargs(use_gpu=None):
-    # TODO ray: https://github.com/horovod/horovod/issues/2702
-    resources = [node['Resources'] for node in ray.state.nodes()]
+    # Our goal is to have a worker per resource used for training.
+    # The priority is GPUs, but can fall back to CPUs if there are no
+    # GPUs available.
     if use_gpu is None:
         use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
 
-    # Our goal is to maximize the number of training resources we can
-    # form into a homogenous configuration. The priority is GPUs, but
-    # can fall back to CPUs if there are no GPUs available.
-    key = 'GPU' if use_gpu else 'CPU'
+    resource = 'GPU' if use_gpu else 'CPU'
+    num_workers = int(ray.cluster_resources().get(resource, 0))
 
-    # Bucket the per node resources by the number of the target resource
-    # available on that host (equivalent to number of slots).
-    buckets = defaultdict(list)
-    for node_resources in resources:
-        buckets[int(node_resources.get(key, 0))].append(node_resources)
-
-    # Maximize for the total number of the target resource = num_slots * num_workers
-    def get_total_resources(bucket):
-        slots, resources = bucket
-        return slots * len(resources)
-
-    best_slots, best_resources = max(buckets.items(), key=get_total_resources)
     return dict(
-        num_slots=best_slots,
-        num_hosts=len(best_resources),
-        use_gpu=use_gpu
+        num_workers=num_workers,
+        use_gpu=use_gpu,
     )
 
 
@@ -287,6 +273,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_predictor(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
         return RayPredictor(self._horovod_kwargs, executable_kwargs)
+
+    def set_distributed_kwargs(self, **kwargs):
+        self._horovod_kwargs = kwargs
 
     @property
     def df_engine(self):

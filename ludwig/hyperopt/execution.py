@@ -906,14 +906,14 @@ class RayTuneExecutor(HyperoptExecutor):
             # get the resources assigned to the current trial
             current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
 
-            hyperopt_dict['backend']._horovod_kwargs['num_slots'] = None
-            hyperopt_dict['backend']._horovod_kwargs['num_hosts'] = None
-            hyperopt_dict['backend']._horovod_kwargs['num_workers'] = int(
-                current_resources)
-            hyperopt_dict['backend']._horovod_kwargs['use_gpu'] = use_gpu
+            hvd_kwargs = {
+                'num_workers': int(current_resources),
+                'use_gpu': use_gpu,
+            }
+            hyperopt_dict['backend'].set_distributed_kwargs(**hvd_kwargs)
 
             logger.debug(
-                f"Trial horovod kwargs: {hyperopt_dict['backend']._horovod_kwargs}")
+                f"Trial horovod kwargs: {hvd_kwargs}")
 
         stats = []
 

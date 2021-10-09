@@ -123,7 +123,7 @@ def _get_config(sampler, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 4, "learning_rate": 0.001},
+        "training": {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -143,8 +143,8 @@ class MockRayTuneExecutor(RayTuneExecutor):
 
 
 @pytest.fixture
-def ray_start_8_cpus():
-    address_info = ray.init(num_cpus=8)
+def ray_start_4_cpus():
+    address_info = ray.init(num_cpus=4)
     try:
         yield address_info
     finally:
@@ -214,12 +214,12 @@ def run_hyperopt_executor(
 @pytest.mark.distributed
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename, ray_start_8_cpus, ray_mock_dir):
+def test_hyperopt_executor(sampler, executor, csv_filename, ray_start_4_cpus, ray_mock_dir):
     run_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir)
 
 
 @pytest.mark.distributed
-def test_hyperopt_executor_with_metric(csv_filename, ray_start_8_cpus, ray_mock_dir):
+def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus, ray_mock_dir):
     run_hyperopt_executor({"type": "ray", "num_samples": 2},
                           {"type": "ray"},
                           csv_filename,
@@ -230,7 +230,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_start_8_cpus, ray_mock_
 
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
-def test_hyperopt_run_hyperopt(csv_filename, ray_start_8_cpus, ray_mock_dir):
+def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus, ray_mock_dir):
     input_features = [
         numerical_feature(), numerical_feature()
     ]
