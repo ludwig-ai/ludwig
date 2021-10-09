@@ -796,13 +796,6 @@ class RayTuneExecutor(HyperoptExecutor):
             self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir))
         return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
 
-    def _validate_remote_fs_for_ray_backend(self, backend, dataset, output_directory):
-        """Raise a warning if backend is Ray and dataset or output_directory aren't remote."""
-        if _is_ray_backend(backend) and not (has_remote_protocol(dataset) and has_remote_protocol(output_directory)):
-            warnings.warn("Ray backend with Ray Tune is designed to be used with "
-                          "both the `dataset` and `output_directory` are remote "
-                          "(s3://, gs://, hdfs://).")
-
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
@@ -1009,9 +1002,6 @@ class RayTuneExecutor(HyperoptExecutor):
 
         if isinstance(backend, str):
             backend = initialize_backend(backend)
-
-        self._validate_remote_fs_for_ray_backend(
-            backend, dataset, output_directory)
 
         if gpus is not None:
             raise ValueError("Parameter `gpus` is not supported when using Ray Tune. "

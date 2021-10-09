@@ -138,9 +138,6 @@ class MockRayTuneExecutor(RayTuneExecutor):
             self.mock_path, *_get_relative_checkpoints_dir_parts(trial_dir))
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
-    def _validate_remote_fs_for_ray_backend(self, backend, dataset, output_directory):
-        return
-
 
 @pytest.fixture
 def ray_start_4_cpus():
