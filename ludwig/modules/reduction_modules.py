@@ -135,6 +135,7 @@ reduce_mode_registry = {
     'max': ReduceMax,
     'concat': ReduceConcat,
     'attention': FeedForwardAttentionReducer,
+    # TODO: Simplify this.
     'none': ReduceNone,
     'None': ReduceNone,
     None: ReduceNone
