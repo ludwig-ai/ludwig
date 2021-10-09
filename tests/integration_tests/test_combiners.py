@@ -439,7 +439,8 @@ def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
             ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
             ('category', [BATCH_SIZE, 16]),
             ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
-            ('category', [BATCH_SIZE, 48])
+            ('category', [BATCH_SIZE, 48]),
+            ('numerical', [BATCH_SIZE, 32])  # dense encoder
         ],
         [  # only numeric features
             ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
