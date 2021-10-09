@@ -749,8 +749,6 @@ class TabTransformerCombiner(CombinerClass):
         )
 
         logger.debug('  FCStack')
-        # todo: confirm need for this size computation
-        # get hidden size from last transformer layer
         transformer_hidden_size = \
             self.transformer_stack.layers[-1].output_shape[-1]
 
@@ -759,8 +757,8 @@ class TabTransformerCombiner(CombinerClass):
             num_embeddable_features = len(self.embeddable_features)
             fc_input_size = num_embeddable_features * transformer_hidden_size
         else:
-            fc_input_size = transformer_hidden_size if len(
-                self.embeddable_features) > 0 else 0
+            fc_input_size = transformer_hidden_size \
+                if len(self.embeddable_features) > 0 else 0
         self.fc_stack = FCStack(
             fc_input_size + concatenated_unembeddable_encoders_size,
             layers=fc_layers,
@@ -823,7 +821,6 @@ class TabTransformerCombiner(CombinerClass):
 
             if self.embed_input_feature_name:
                 i_f_names_idcs = torch.reshape(
-                    # todo: confirm reshape is appropriate
                     torch.arange(0, len(embeddable_encoder_outputs)),
                     [-1, 1]
                 )
