@@ -1,20 +1,13 @@
-import contextlib
 import os
-import time
-import shutil
-
-from contextlib import AbstractContextManager
-from pathlib import Path
 
 from dask.base import tokenize
 from dask.highlevelgraph import HighLevelGraph
 from dask.delayed import Delayed
 from dask.utils import apply
-from filelock import FileLock
 
 from ludwig.data.dataframe.pandas import pandas_df_to_tfrecords, write_meta
 from ludwig.data.dataset.tfrecord import get_part_filename, get_compression_ext
-from ludwig.utils.fs_utils import makedirs, has_remote_protocol
+from ludwig.utils.fs_utils import makedirs
 
 
 def dask_to_tfrecords(
@@ -56,13 +49,3 @@ def dask_to_tfrecords(
     out = Delayed(name, graph)
     out = out.compute()
     return out
-
-
-@contextlib.contextmanager
-def file_lock(path: str):
-    """Simple file lock based on creating and removing a lock file."""
-    if not has_remote_protocol(path):
-        with FileLock(f'{path}.lock'):
-            yield
-    else:
-        yield

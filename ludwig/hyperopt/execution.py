@@ -27,7 +27,7 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import (get_available_gpu_memory,
                                      get_from_registry,
                                      hash_dict)
-from ludwig.utils.fs_utils import has_remote_protocol
+from ludwig.utils.fs_utils import has_remote_protocol, file_lock
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 try:
@@ -863,16 +863,17 @@ class RayTuneExecutor(HyperoptExecutor):
 
             def on_trainer_train_setup(self, trainer, save_path):
                 if is_using_ray_backend and checkpoint_dir:
-                    save_path = Path(save_path)
+                    with file_lock(str(trial_dir.absolute()), False):
+                        save_path = Path(save_path)
 
-                    for path in trial_dir.glob("checkpoint*"):
-                        if path != save_path.parent:
-                            shutil.rmtree(path, ignore_errors=True)
+                        for path in trial_dir.glob("checkpoint*"):
+                            if path != save_path.parent:
+                                shutil.rmtree(path, ignore_errors=True)
 
-                    sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
-                    sync_client.sync_down(
-                        remote_checkpoint_dir, str(trial_dir.absolute()))
-                    sync_client.wait()
+                        sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
+                        sync_client.sync_down(
+                            remote_checkpoint_dir, str(trial_dir.absolute()))
+                        sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
                 if is_using_ray_backend:

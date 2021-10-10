@@ -24,6 +24,7 @@ import fsspec
 import h5py
 from fsspec.core import split_protocol
 
+from filelock import FileLock
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
@@ -163,3 +164,13 @@ def upload_output_file(url):
             fs.put(local_fname, url, recursive=True)
     else:
         yield url
+
+
+@contextlib.contextmanager
+def file_lock(path: str, check_remote_protocol: bool = True):
+    """Simple file lock based on creating and removing a lock file."""
+    if not (check_remote_protocol and has_remote_protocol(path)):
+        with FileLock(f'{path}.lock'):
+            yield
+    else:
+        yield

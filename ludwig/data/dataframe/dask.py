@@ -24,7 +24,8 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords, file_lock
+from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords
+from ludwig.utils.fs_utils import file_lock
 
 
 TMP_COLUMN = '__TMP_COLUMN__'
