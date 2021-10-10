@@ -169,8 +169,9 @@ def upload_output_file(url):
 @contextlib.contextmanager
 def file_lock(path: str, check_remote_protocol: bool = True):
     """Simple file lock based on creating and removing a lock file."""
+    path = os.path.join(path, ".lock") if os.path.isdir(path) else f'{path}.lock'
     if not (check_remote_protocol and has_remote_protocol(path)):
-        with FileLock(f'{path}.lock'):
+        with FileLock(path):
             yield
     else:
         yield
