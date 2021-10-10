@@ -297,5 +297,5 @@ def run_hyperopt(
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(
-        os.path.join('results_hyperopt', 'hyperopt_statistics.json')
+        os.path.join(out_dir, 'hyperopt_statistics.json')
     )
