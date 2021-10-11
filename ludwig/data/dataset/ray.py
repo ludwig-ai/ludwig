@@ -16,17 +16,14 @@
 # ==============================================================================
 from typing import Dict, List
 
-try:
-    from dask.dataframe import DataFrame
-    from ray.data import from_dask
-except ImportError:
-    pass
+from ludwig.utils.types import DataFrame
 
 
 class RayDataset(object):
     """ Wrapper around ray.data.Dataset. """
 
     def __init__(self, df: DataFrame, features: List[Dict], data_hdf5_fp: str):
+        from ray.data import from_dask
         self.ds = from_dask(df)
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
