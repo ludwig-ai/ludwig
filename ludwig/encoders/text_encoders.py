@@ -516,9 +516,9 @@ class TransformerXLEncoder(TextEncoder):
             self,
             max_sequence_length: int,
             use_pretrained: bool = True,
-            pretrained_model_name_or_path='transfo-xl-wt103',
-            reduce_output='sum',
-            trainable=True,
+            pretrained_model_name_or_path: str = 'transfo-xl-wt103',
+            reduce_output: str ='sum',
+            trainable: bool = True,
             vocab_size: int = 267735,
             cutoffs: List[int] = [20000, 40000, 200000],
             d_model: int = 1024,
@@ -624,55 +624,135 @@ class TransformerXLEncoder(TextEncoder):
         return torch.int32
 
 
-# @register(name='xlnet')
-# class XLNetEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'xlnet-base-cased',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='xlnet-base-cased',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFXLNetModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFXLNetModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         hidden = transformer_outputs[0]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
+@register(name='xlnet')
+class XLNetEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'xlnet-base-cased',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'xlnet-base-cased',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 32000,
+            d_model: int = 1024,
+            n_layer: int = 24,
+            n_head: int = 16,
+            d_inner: int = 4096,
+            ff_activation: str = "gelu",
+            untie_r: bool = True,
+            attn_type: str = "bi",
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            dropout: float = 0.1,
+            mem_len: Optional[int] = 512,
+            reuse_len: Optional[int] = None,
+            use_mems_eval: bool = True,
+            use_mems_train: bool = False,
+            bi_data: bool = False,
+            clamp_len: int = -1,
+            same_length: bool = False,
+            summary_type: str = "last",
+            summary_use_proj: bool = True,
+            summary_activation: str = "tanh",
+            summary_last_dropout: float = 0.1,
+            start_n_top: int = 5,
+            end_n_top: int = 5,
+            pad_token_id: int = 5,
+            bos_token_id: int = 1,
+            eos_token_id: int = 2,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import XLNetModel, XLNetConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = XLNetModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = XLNetConfig(
+                vocab_size=vocab_size,
+                d_model=d_model,
+                n_layer=n_layer,
+                n_head=n_head,
+                d_inner=d_inner,
+                ff_activation=ff_activation,
+                untie_r=untie_r,
+                attn_type=attn_type,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                dropout=dropout,
+                mem_len=mem_len,
+                reuse_len=reuse_len,
+                use_mems_eval=use_mems_eval,
+                use_mems_train=use_mems_train,
+                bi_data=bi_data,
+                clamp_len=clamp_len,
+                same_length=same_length,
+                summary_type=summary_type,
+                summary_use_proj=summary_use_proj,
+                summary_activation=summary_activation,
+                summary_last_dropout=summary_last_dropout,
+                start_n_top=start_n_top,
+                end_n_top=end_n_top,
+                pad_token_id=pad_token_id,
+                bos_token_id=bos_token_id,
+                eos_token_id=eos_token_id,
+            )
+            self.transformer = XLNetModel(config)
+        self.max_sequence_length = max_sequence_length
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+
+    def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        hidden = transformer_outputs[0]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([
+                self.max_sequence_length,
+                self.transformer.config.d_model
+            ])
+        else:
+            return torch.Size([self.transformer.config.d_model])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 #
 #
 # @register(name='roberta')

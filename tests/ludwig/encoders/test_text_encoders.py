@@ -109,3 +109,20 @@ def test_transfoxl_encoder(
     inputs = torch.randint(10, (2, max_sequence_length)).type(transfo.input_dtype)
     outputs = transfo(inputs)
     assert outputs['encoder_output'].shape[1:] == transfo.output_shape
+
+
+@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('reduce_output', [None, 'sum'])
+@pytest.mark.parametrize('max_sequence_length', [20])
+def test_xlnet_encoder(
+        use_pretrained: bool,
+        reduce_output: str,
+        max_sequence_length: int
+):
+    xlnet = text_encoders.XLNetEncoder(
+        use_pretrained=use_pretrained,
+        reduce_output=reduce_output,
+        max_sequence_length=max_sequence_length)
+    inputs = torch.randint(10, (2, max_sequence_length)).type(xlnet.input_dtype)
+    outputs = xlnet(inputs)
+    assert outputs['encoder_output'].shape[1:] == xlnet.output_shape
