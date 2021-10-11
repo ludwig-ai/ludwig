@@ -514,37 +514,37 @@ class TransformerXLEncoder(TextEncoder):
 
     def __init__(
             self,
+            max_sequence_length: int,
             use_pretrained: bool = True,
             pretrained_model_name_or_path='transfo-xl-wt103',
             reduce_output='sum',
             trainable=True,
-            max_sequence_length: Optional[int] = None,
-            vocab_size: Optional[int] = 267735,
-            cutoffs: Optional[List[int]] = [20000, 40000, 200000],
-            d_model: Optional[int] = 1024,
-            d_embed: Optional[int] = 1024,
-            n_head: Optional[int] = 16,
-            d_head: Optional[int] = 64,
-            d_inner: Optional[int] = 4096,
-            div_val: Optional[int] = 4,
-            pre_lnorm: Optional[bool] = False,
-            n_layer: Optional[int] = 18,
-            mem_len: Optional[int] = 1600,
-            clamp_len: Optional[int] = 1000,
-            same_length: Optional[bool] = True,
-            proj_share_all_but_first: Optional[bool] = True,
-            attn_type: Optional[int] = 0,
-            sample_softmax: Optional[int] = -1,
-            adaptive: Optional[bool] = True,
-            dropout: Optional[float] = 0.1,
-            dropatt: Optional[float] = 0.0,
-            untie_r: Optional[bool] = True,
-            init: Optional[str] = "normal",
-            init_range: Optional[float] = 0.01,
-            proj_init_std: Optional[float] = 0.01,
-            init_std: Optional[float] = 0.02,
-            layer_norm_epsilon: Optional[float] = 1e-5,
-            eos_token_id: Optional[int] = 0,
+            vocab_size: int = 267735,
+            cutoffs: List[int] = [20000, 40000, 200000],
+            d_model: int = 1024,
+            d_embed: int = 1024,
+            n_head: int = 16,
+            d_head: int = 64,
+            d_inner: int = 4096,
+            div_val: int = 4,
+            pre_lnorm: bool = False,
+            n_layer: int = 18,
+            mem_len: int = 1600,
+            clamp_len: int = 1000,
+            same_length: bool = True,
+            proj_share_all_but_first: bool = True,
+            attn_type: int = 0,
+            sample_softmax: int = -1,
+            adaptive: bool = True,
+            dropout: float = 0.1,
+            dropatt: float = 0.0,
+            untie_r: bool = True,
+            init: str = "normal",
+            init_range: float = 0.01,
+            proj_init_std: float = 0.01,
+            init_std: float = 0.02,
+            layer_norm_epsilon: float = 1e-5,
+            eos_token_id: int = 0,
             **kwargs
     ):
         super().__init__()
@@ -594,7 +594,8 @@ class TransformerXLEncoder(TextEncoder):
             self.transformer = TransfoXLModel(config)
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer.trainable = trainable
+        if trainable:
+            self.transformer.train()
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
