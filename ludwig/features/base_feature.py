@@ -19,11 +19,6 @@ from typing import Dict
 
 from ludwig.utils.types import DataFrame
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    pass
-import pandas as pd
 import tensorflow as tf
 
 from ludwig.constants import *
