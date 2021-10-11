@@ -27,15 +27,23 @@ class GhostBatchNormalization(LudwigModule):
                 num_or_size_splits = [self.virtual_batch_size] * q + [r]
 
             splits = torch.split(inputs, num_or_size_splits)
-            x = [self.bn(inputs) for x in splits]
+            x = [self.bn(x) for x in splits]
             return torch.cat(x, 0)
 
         return self.bn(inputs)
 
     @property
-    def moving_mean(self):
+    def moving_mean(self) -> torch.Tensor:
         return self.bn.running_mean
 
     @property
-    def moving_variance(self):
+    def moving_variance(self) -> torch.Tensor:
         return self.bn.running_var
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.num_features])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.num_features])
