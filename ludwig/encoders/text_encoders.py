@@ -38,6 +38,136 @@ class TextEncoder(Encoder, ABC):
         ENCODER_REGISTRY[name] = cls
 
 
+@register(name='albert')
+class ALBERTEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'albert-base-v2',
+    }
+
+    def __init__(
+            self,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'albert-base-v2',
+            trainable: bool = True,
+            reduce_output: str = 'cls_pooled',
+            max_sequence_length: int = None,
+            vocab_size: int = 30000,
+            embedding_size: int = 128,
+            hidden_size: int = 4096,
+            num_hidden_layers: int = 12,
+            num_hidden_groups: int = 1,
+            num_attention_heads: int = 64,
+            intermediate_size:int = 16384,
+            inner_group_num: int = 1,
+            hidden_act: str = "gelu_new",
+            hidden_dropout_prob: float = 0,
+            attention_probs_dropout_prob: float = 0,
+            max_position_embeddings: int = 512,
+            type_vocab_size: int = 2,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            classifier_dropout_prob: float = 0.1,
+            position_embedding_type: str = "absolute",
+            pad_token_id: int = 0,
+            bos_token_id: int = 2,
+            eos_token_id: int = 3,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import AlbertModel, AlbertConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = AlbertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = AlbertConfig(
+                vocab_size=vocab_size,
+                embedding_size=embedding_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=num_hidden_layers,
+                num_hidden_groups=num_hidden_groups,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                inner_group_num=inner_group_num,
+                hidden_act=hidden_act,
+                hidden_dropout_prob=hidden_dropout_prob,
+                attention_probs_dropout_prob=attention_probs_dropout_prob,
+                max_position_embeddings=max_position_embeddings,
+                type_vocab_size=type_vocab_size,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                classifier_dropout_prob=classifier_dropout_prob,
+                position_embedding_type=position_embedding_type,
+                pad_token_id=pad_token_id,
+                bos_token_id=bos_token_id,
+                eos_token_id=eos_token_id
+            )
+            self.transformer = AlbertModel(config)
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == 'cls_pooled':
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+        self.max_sequence_length = max_sequence_length
+
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == 'cls_pooled':
+            hidden = transformer_outputs[1]
+            print('transformer outputs:'+str(transformer_outputs))
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    # TODO(shreya): Confirm that this is it
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 2,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
 @register(name='bert')
 class BERTEncoder(TextEncoder):
     # TODO(justin): Use official class properties.
@@ -811,60 +941,6 @@ class GPT2Encoder(TextEncoder):
 #             hidden = self.reduce_sequence(hidden, self.reduce_output)
 #         return {'encoder_output': hidden}
 #
-#
-# @register(name='albert')
-# class ALBERTEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'albert-base-v2',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='albert-base-v2',
-#             reduce_output='cls_pooled',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFAlbertModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFAlbertModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         if not self.reduce_output == 'cls_pooled':
-#             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         if self.reduce_output == 'cls_pooled':
-#             hidden = transformer_outputs[1]
-#         else:
-#             hidden = transformer_outputs[0][:, 1:-1, :]
-#             hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
 #
 #
 # @register(name='t5')
