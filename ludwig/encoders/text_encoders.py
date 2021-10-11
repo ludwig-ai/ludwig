@@ -682,63 +682,6 @@ class RoBERTaEncoder(TextEncoder):
 #         hidden = transformer_outputs[0]
 #         hidden = self.reduce_sequence(hidden, self.reduce_output)
 #         return {'encoder_output': hidden}
-#
-#
-# @register(name='roberta')
-# class RoBERTaEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'roberta-base',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='roberta-base',
-#             reduce_output='cls_pooled',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFRobertaModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFRobertaModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         if not self.reduce_output == 'cls_pooled':
-#             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         if self.reduce_output == 'cls_pooled':
-#             hidden = transformer_outputs[1]
-#         else:
-#             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
-#             hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
-#
 # @register(name='distilbert')
 # class DistilBERTEncoder(TextEncoder):
 #     fixed_preprocessing_parameters = {
