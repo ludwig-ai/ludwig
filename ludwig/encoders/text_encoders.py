@@ -51,11 +51,11 @@ class ALBERTEncoder(TextEncoder):
 
     def __init__(
             self,
+            max_sequence_length,
             use_pretrained: bool = True,
             pretrained_model_name_or_path: str = 'albert-base-v2',
             trainable: bool = True,
             reduce_output: str = 'cls_pooled',
-            max_sequence_length: int = None,
             vocab_size: int = 30000,
             embedding_size: int = 128,
             hidden_size: int = 4096,
@@ -126,7 +126,6 @@ class ALBERTEncoder(TextEncoder):
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
-
     def forward(
             self,
             inputs: torch.Tensor,
@@ -141,7 +140,6 @@ class ALBERTEncoder(TextEncoder):
         )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
-            print('transformer outputs:'+str(transformer_outputs))
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
@@ -152,7 +150,6 @@ class ALBERTEncoder(TextEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    # TODO(shreya): Confirm that this is it
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
