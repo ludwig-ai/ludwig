@@ -441,8 +441,8 @@ class SequenceCombiner(CombinerClass):
 class TabNetCombiner(Module):
     def __init__(
             self,
-            size: int,  # N_a in the paper
-            output_size: int,  # N_d in the paper
+            size: int = 32,  # N_a in the paper
+            output_size: int = 32,  # N_d in the paper
             num_steps: int = 1,  # N_steps in the paper
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
