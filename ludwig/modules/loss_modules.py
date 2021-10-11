@@ -29,7 +29,8 @@ from ludwig.utils.torch_utils import sequence_length_2D
 EPSILON = 1.0e-10
 
 
-loss_inputs_registry = {
+# Registry to map loss name to the desired predicted input type.
+LOSS_INPUTS_REGISTRY = {
     'MSELoss': LOGITS,
     'MAELoss': LOGITS,
     'RMSELoss': LOGITS,
@@ -190,7 +191,6 @@ class SigmoidCrossEntropyLoss(nn.Module):
             reduction='none',
             pos_weight=class_weights
         )
-        self.class_weights = class_weights
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         if preds.ndim != 2:

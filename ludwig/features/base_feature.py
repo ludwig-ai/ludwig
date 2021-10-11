@@ -29,8 +29,8 @@ from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.modules.loss_modules import loss_inputs_registry
-from ludwig.modules.metric_modules import metrics_inputs_registry
+from ludwig.modules.loss_modules import LOSS_INPUTS_REGISTRY
+from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
     sequence_mask
@@ -211,18 +211,18 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         # TODO(shreya): Add exceptions here.
         loss_name = self.train_loss_function.__class__.__name__
-        prediction_key = loss_inputs_registry[loss_name]
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_name]
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_name = self.train_loss_function.__class__.__name__
-        prediction_key = loss_inputs_registry[loss_name]
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_name]
         return self.eval_loss_function(predictions[prediction_key], targets)
 
     def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
         for _, metric_fn in self.metric_functions.items():
             metric_name = metric_fn.__class__.__name__
-            prediction_key = metrics_inputs_registry[metric_name]
+            prediction_key = METRICS_INPUTS_REGISTRY[metric_name]
             metric_fn.update(predictions[prediction_key], targets)
 
     def get_metrics(self):

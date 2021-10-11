@@ -8,6 +8,7 @@ from torch.nn import Module, ModuleDict
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
+    """ Returns the number of non-zero elements per sequence. """
     used = (sequence != 0).type(torch.int32)
     length = torch.sum(used, 1)
     return length
