@@ -1,15 +1,18 @@
+from typing import Optional
+import numpy as np
 import torch
 
 from ludwig.utils.torch_utils import LudwigModule
 
 
+# implementation adapted from https://github.com/dreamquark-ai/tabnet
 class GhostBatchNormalization(LudwigModule):
     def __init__(
             self,
             num_features: int,
             momentum: float = 0.9,
             epsilon: float = 1e-3,
-            virtual_batch_size: int = None
+            virtual_batch_size: Optional[int] = None
     ):
         super().__init__()
         self.num_features = num_features
@@ -21,12 +24,10 @@ class GhostBatchNormalization(LudwigModule):
         if self.training and self.virtual_batch_size:
             batch_size = inputs.shape[0]
 
-            q, r = divmod(batch_size, self.virtual_batch_size)
-            num_or_size_splits = q
-            if r != 0:
-                num_or_size_splits = [self.virtual_batch_size] * q + [r]
-
-            splits = torch.split(inputs, num_or_size_splits)
+            splits = inputs.chunk(
+                int(np.ceil(batch_size / self.virtual_batch_size)),
+                0
+            )
             x = [self.bn(x) for x in splits]
             return torch.cat(x, 0)
 
