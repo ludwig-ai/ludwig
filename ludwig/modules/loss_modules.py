@@ -71,6 +71,8 @@ class RMSPELoss(nn.Module):
 
 
 class BWCEWLoss(nn.Module):
+    """ Binary weighted cross entropy loss. """
+
     def __init__(
             self,
             positive_class_weight: Optional[Tensor] = None,
@@ -110,6 +112,12 @@ class SoftmaxCrossEntropyLoss(nn.Module):
         self.loss_fn = nn.CrossEntropyLoss(weight=class_weights)
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        """
+        Params:
+            preds: Tensor of shape [batch x num_classes]
+            target: Tensor of shape [batch], where each element is integral
+                between 0 and num_classes.
+        """
         target = target.long()
         return self.loss_fn(preds, target)
 
