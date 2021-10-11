@@ -14,7 +14,8 @@ FC_SIZE = 8
     [
         None,
         BATCH_SIZE // 2,
-        BATCH_SIZE - 2
+        BATCH_SIZE - 14,
+        BATCH_SIZE - 10
     ]
 )
 @pytest.mark.parametrize('mode',
