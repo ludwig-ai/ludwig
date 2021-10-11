@@ -16,6 +16,8 @@
 # ==============================================================================
 import os
 
+from ludwig.utils.types import DataFrame
+
 try:
     import dask.dataframe as dd
 except ImportError:
@@ -556,12 +558,12 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+    def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
         return df
 
-    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+    def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         df[probs_col] = df[probs_col].apply(
             lambda x: x.reshape(-1, self.num_classes),
