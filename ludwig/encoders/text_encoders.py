@@ -520,8 +520,9 @@ class RoBERTaEncoder(TextEncoder):
             pretrained_model_name_or_path: str = 'roberta-base',
             reduce_output: str = 'cls_pooled',
             trainable: bool = True,
-            num_tokens: int = None,
+            vocab_size: int = None,
             pad_token_id: int = 1,
+            max_sequence_length: int = 20,
             bos_token_id: int = 0,
             eos_token_id: int = 2,
             **kwargs
@@ -553,7 +554,7 @@ class RoBERTaEncoder(TextEncoder):
         if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
-        self.transformer.resize_token_embeddings(num_tokens)
+        self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
          if mask is not None:
@@ -584,9 +585,6 @@ class RoBERTaEncoder(TextEncoder):
     def input_dtype(self):
          return torch.int32
 
-    @property
-    def input_dtype(self):
-         return torch.int32
 
 # # @register(name='transformer_xl')
 # class TransformerXLEncoder(TextEncoder):
