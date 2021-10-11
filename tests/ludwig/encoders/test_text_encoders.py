@@ -75,3 +75,22 @@ def test_gpt2_encoder(
     inputs = torch.rand((2, max_sequence_length)).type(gpt_encoder.input_dtype)
     outputs = gpt_encoder(inputs)
     assert outputs['encoder_output'].shape[1:] == gpt_encoder.output_shape
+
+
+@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('reduce_output', [None, 'sum'])
+@pytest.mark.parametrize('max_sequence_length', [20])
+def test_distil_bert(
+        use_pretrained: bool,
+        reduce_output: str,
+        max_sequence_length: int
+):
+    distil_bert_encoder = text_encoders.DistilBERTEncoder(
+        use_pretrained=use_pretrained,
+        reduce_output=reduce_output,
+        max_sequence_length=max_sequence_length
+    )
+    inputs = torch.rand((2, max_sequence_length)).type(
+        distil_bert_encoder.input_dtype)
+    outputs = distil_bert_encoder(inputs)
+    assert outputs['encoder_output'].shape[1:] == distil_bert_encoder.output_shape
