@@ -211,8 +211,8 @@ class AttentiveTransformer(LudwigModule):
             bn_virtual_bs=bn_virtual_bs,
             apply_glu=False,
         )
-        # self.sparsemax = Sparsemax()
-        self.sparsemax = CustomSparsemax()
+        self.sparsemax = Sparsemax()
+        # self.sparsemax = CustomSparsemax()  # todo: tf implementation
 
     def call(self, inputs, prior_scales, training=None, **kwargs):
         hidden = self.feature_block(inputs, training=training)
