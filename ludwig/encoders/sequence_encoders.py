@@ -1573,11 +1573,8 @@ class StackedRNN(SequenceEncoder):
         hidden = embedded_sequence
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        # todo: reintroduce mask parameter
+        hidden, final_state = self.recurrent_stack(hidden)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1900,10 +1897,8 @@ class StackedCNNRNN(SequenceEncoder):
         )
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training
-        )
+        # todo: reintroduce mask parameter
+        hidden, final_state = self.recurrent_stack(hidden)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
