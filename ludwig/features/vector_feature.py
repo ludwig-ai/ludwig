@@ -209,21 +209,13 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def _setup_loss(self):
         if self.loss[TYPE] == 'mean_squared_error':
             self.train_loss_function = MSELoss()
-            self.eval_loss_function = MSEMetric(name='eval_loss')
+            self.eval_loss_function = MSEMetric()
         elif self.loss[TYPE] == 'mean_absolute_error':
             self.train_loss_function = MAELoss()
-            self.eval_loss_function = MAEMetric(name='eval_loss')
+            self.eval_loss_function = MAEMetric()
         elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
-            self.train_loss_function = SoftmaxCrossEntropyLoss(
-                num_classes=self.vector_size,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
-            self.eval_loss_function = SoftmaxCrossEntropyMetric(
-                num_classes=self.vector_size,
-                feature_loss=self.loss,
-                name='eval_loss'
-            )
+            self.train_loss_function = SoftmaxCrossEntropyLoss()
+            self.eval_loss_function = SoftmaxCrossEntropyMetric(**self.loss)
         else:
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss[TYPE])
@@ -232,9 +224,9 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric(name='metric_mse')
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric(name='metric_mae')
-        self.metric_functions[R2] = R2Score(name='metric_r2')
+        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
+        self.metric_functions[R2] = R2Score(num_outputs=self.output_shape[0])
 
     def get_prediction_set(self):
         return {

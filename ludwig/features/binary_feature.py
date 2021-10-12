@@ -16,23 +16,18 @@
 # ==============================================================================
 import logging
 import numpy as np
-# from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 import torch
 
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
+from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
-from ludwig.utils.metrics_utils import ConfusionMatrix
-from ludwig.utils.metrics_utils import average_precision_score
-from ludwig.utils.metrics_utils import precision_recall_curve
-from ludwig.utils.metrics_utils import roc_auc_score
-from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.misc_utils import set_default_values
+from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric
+from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
+    precision_recall_curve, roc_auc_score, roc_curve
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
@@ -177,14 +172,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def predictions(self, inputs, **kwargs):  # hidden
         logits = inputs[LOGITS]
-
-        probabilities = torch.sigmoid(
-            logits, name="probabilities_{}".format(self.name)
-        )
-
+        probabilities = torch.sigmoid(logits)
         predictions = probabilities >= self.threshold
-
-
         return {
             PROBABILITIES: probabilities,
             PREDICTIONS: predictions,
@@ -205,12 +194,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             positive_class_weight=self.loss["positive_class_weight"],
             robust_lambda=self.loss["robust_lambda"],
             confidence_penalty=self.loss["confidence_penalty"],
-            name="eval_loss",
         )
-        self.metric_functions[ACCURACY] = BinaryAccuracy(
-            name="metric_accuracy"
-        )
-        self.metric_functions[ROC_AUC] = ROCAUCMetric(name="metric_auc")
+        self.metric_functions[ACCURACY] = Accuracy()
+        self.metric_functions[ROC_AUC] = ROCAUCMetric()
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -319,14 +305,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             {
                 "robust_lambda": 0,
                 "confidence_penalty": 0,
-                "positive_class_weight": 1,
+                "positive_class_weight": None,
                 "weight": 1,
             },
         )
 
         set_default_value(output_feature[LOSS], "robust_lambda", 0)
         set_default_value(output_feature[LOSS], "confidence_penalty", 0)
-        set_default_value(output_feature[LOSS], "positive_class_weight", 1)
+        set_default_value(output_feature[LOSS], "positive_class_weight", None)
         set_default_value(output_feature[LOSS], "weight", 1)
 
         set_default_values(

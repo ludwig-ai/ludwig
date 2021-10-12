@@ -18,7 +18,6 @@ import logging
 
 import numpy as np
 import torch
-from torchmetrics import MeanAbsoluteError, MeanSquaredError
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
@@ -320,22 +319,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        if self.loss[TYPE] == "mean_squared_error":
-            self.metric_functions[LOSS] = MSEMetric(name="eval_loss")
-        elif self.loss[TYPE] == "mean_absolute_error":
-            self.metric_functions[LOSS] = MAEMetric(name="eval_loss")
-        elif self.loss[TYPE] == "root_mean_squared_error":
-            self.metric_functions[LOSS] = RMSEMetric(name="eval_loss")
-        elif self.loss[TYPE] == "root_mean_squared_percentage_error":
-            self.metric_functions[LOSS] = RMSPEMetric(name="eval_loss")
-
-        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredError()
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteError()
-        # self.metric_functions[
-        #     ROOT_MEAN_SQUARED_ERROR
-        # ] = RootMeanSquaredErrorMetric(name="metric_rmse")
+        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
+        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RMSEMetric()
         self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric()
-        self.metric_functions[R2] = R2Score(name="metric_r2")
+        self.metric_functions[R2] = R2Score()
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
