@@ -65,23 +65,6 @@ min_metrics = {
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
 }
-# Registry to map loss name to the desired predicted input type.
-METRICS_INPUTS_REGISTRY = {
-    'RMSEMetric': PREDICTIONS,
-    'ROCAUCMetric': PROBABILITIES,
-    'RMSPEMetric': PREDICTIONS,
-    'R2Score': PREDICTIONS,
-    'BWCEWLMetric': LOGITS,
-    'SoftmaxCrossEntropyMetric': LOGITS,
-    'SigmoidCrossEntropyMetric': LOGITS,
-    'TokenAccuracyMetric': PREDICTIONS, #double check
-    'CategoryAccuracy': PROBABILITIES, #double check
-    'HitsAtKMetric': LOGITS,
-    'MAEMetric': PREDICTIONS,
-    'MSEMetric': PREDICTIONS,
-    'JaccardMetric': PREDICTIONS,
-    'Accuracy': PREDICTIONS,
-}
 
 
 class RMSEMetric(MeanSquaredError):
@@ -427,3 +410,22 @@ def squared_error(preds: Tensor, target: Tensor) -> Tensor:
 
 def r2(preds: Tensor, target: Tensor) -> Tensor:
     return metrics_F.r2_score(preds, target)
+
+
+# Registry to map loss name to the desired predicted input type.
+METRICS_INPUTS_REGISTRY = {
+    RMSEMetric: PREDICTIONS,
+    ROCAUCMetric: PROBABILITIES,
+    RMSPEMetric: PREDICTIONS,
+    R2Score: PREDICTIONS,
+    BWCEWLMetric: LOGITS,
+    SoftmaxCrossEntropyMetric: LOGITS,
+    SigmoidCrossEntropyMetric: LOGITS,
+    TokenAccuracyMetric: PREDICTIONS, #double check
+    CategoryAccuracy: PROBABILITIES, #double check
+    HitsAtKMetric: LOGITS,
+    MAEMetric: PREDICTIONS,
+    MSEMetric: PREDICTIONS,
+    JaccardMetric: PREDICTIONS,
+    Accuracy: PREDICTIONS,
+}

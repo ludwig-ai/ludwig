@@ -29,18 +29,6 @@ from ludwig.utils.torch_utils import sequence_length_2D
 EPSILON = 1.0e-10
 
 
-# Registry to map loss name to the desired predicted input type.
-LOSS_INPUTS_REGISTRY = {
-    'MSELoss': LOGITS,
-    'MAELoss': LOGITS,
-    'RMSELoss': LOGITS,
-    'RMSPELoss': LOGITS,
-    'BWCEWLoss': LOGITS,
-    'SoftmaxCrossEntropyLoss': LOGITS,
-    'SigmoidCrossEntropyLoss': LOGITS,
-}
-
-
 class MSELoss(_MSELoss):
     """ Mean squared error. """
 
@@ -60,7 +48,6 @@ class RMSELoss(nn.Module):
         return torch.sqrt(self.mse(preds, target))
 
 
-# TO TEST
 class RMSPELoss(nn.Module):
     """ Root mean square percentage error. """
     def __init__(self, **kwargs):
@@ -258,3 +245,15 @@ class SigmoidCrossEntropyLoss(nn.Module):
 #         loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
 #         return loss
 #
+
+
+# Registry to map loss name to the desired predicted input type.
+LOSS_INPUTS_REGISTRY = {
+    MSELoss: LOGITS,
+    MAELoss: LOGITS,
+    RMSELoss: LOGITS,
+    RMSPELoss: LOGITS,
+    BWCEWLoss: LOGITS,
+    SoftmaxCrossEntropyLoss: LOGITS,
+    SigmoidCrossEntropyLoss: LOGITS,
+}

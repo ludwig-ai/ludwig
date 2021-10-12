@@ -210,19 +210,19 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         # TODO(shreya): Add exceptions here.
-        loss_name = self.train_loss_function.__class__.__name__
-        prediction_key = LOSS_INPUTS_REGISTRY[loss_name]
+        loss_class = type(self.train_loss_function)
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
-        loss_name = self.train_loss_function.__class__.__name__
-        prediction_key = LOSS_INPUTS_REGISTRY[loss_name]
+        loss_class = type(self.train_loss_function)
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
         return self.eval_loss_function(predictions[prediction_key], targets)
 
     def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
         for _, metric_fn in self.metric_functions.items():
-            metric_name = metric_fn.__class__.__name__
-            prediction_key = METRICS_INPUTS_REGISTRY[metric_name]
+            metric_class = type(metric_fn)
+            prediction_key = METRICS_INPUTS_REGISTRY[metric_class]
             metric_fn.update(predictions[prediction_key], targets)
 
     def get_metrics(self):
