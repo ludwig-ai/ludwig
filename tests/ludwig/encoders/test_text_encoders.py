@@ -5,6 +5,24 @@ from ludwig.encoders import text_encoders
 
 
 @pytest.mark.parametrize('use_pretrained', [False])
+@pytest.mark.parametrize('reduce_output', [None, 'sum'])
+@pytest.mark.parametrize('max_sequence_length', [20])
+def test_albert_encoder(
+        use_pretrained: bool,
+        reduce_output: str,
+        max_sequence_length: int
+):
+    albert_encoder = text_encoders.ALBERTEncoder(
+        use_pretrained=use_pretrained,
+        reduce_output=reduce_output,
+        max_sequence_length=max_sequence_length
+    )
+    inputs = torch.rand((2, max_sequence_length)).type(albert_encoder.input_dtype)
+    outputs = albert_encoder(inputs)
+    assert outputs['encoder_output'].shape[1:] == albert_encoder.output_shape
+
+
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', [None, 'cls_pooled', 'sum'])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_bert_encoder(
