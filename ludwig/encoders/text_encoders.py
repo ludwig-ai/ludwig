@@ -501,6 +501,89 @@ class GPT2Encoder(TextEncoder):
         return torch.int32
 
 
+@register(name='roberta')
+class RoBERTaEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'roberta-base',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'roberta-base',
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            vocab_size: int = None,
+            pad_token_id: int = 1,
+            bos_token_id: int = 0,
+            eos_token_id: int = 2,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import RobertaModel, RobertaConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = RobertaModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = RobertaConfig(
+                pad_token_id=pad_token_id,
+                bos_token_id=bos_token_id,
+                eos_token_id=eos_token_id)
+            self.transformer = RobertaModel(config)
+        if trainable:
+            self.transformer.train()
+        self.reduce_output = reduce_output
+        if not self.reduce_output == 'cls_pooled':
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(vocab_size)
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+         if mask is not None:
+             mask = mask.to(torch.int32)
+         transformer_outputs = self.transformer(
+             input_ids=inputs,
+             attention_mask=mask,
+             token_type_ids=torch.zeros_like(inputs),
+         )
+         if self.reduce_output == 'cls_pooled':
+             hidden = transformer_outputs[1]
+         else:
+             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
+             hidden = self.reduce_sequence(hidden, self.reduce_output)
+         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+         return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+         if self.reduce_output is None:
+             return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
+         return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+         return torch.int32
+
+
 @register(name='transformer_xl')
 class TransformerXLEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
@@ -753,63 +836,8 @@ class XLNetEncoder(TextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
-#
-#
-# @register(name='roberta')
-# class RoBERTaEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'roberta-base',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='roberta-base',
-#             reduce_output='cls_pooled',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFRobertaModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFRobertaModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         if not self.reduce_output == 'cls_pooled':
-#             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         if self.reduce_output == 'cls_pooled':
-#             hidden = transformer_outputs[1]
-#         else:
-#             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
-#             hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
-#
+
+
 @register(name='distilbert')
 class DistilBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
