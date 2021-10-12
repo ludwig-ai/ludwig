@@ -67,9 +67,10 @@ class TabNet(LudwigModule):
 
         # first feature transformer block is built first
         # to get the shared blocks
-        self.feature_transforms: List[FeatureTransformer] = [
+        self.feature_transforms = torch.nn.ModuleList([
             FeatureTransformer(tab_features_size, **kargs)
-        ]
+        ])
+        # todo: should this be nn.ModuleList()?
         self.attentive_transforms: List[AttentiveTransformer] = [None]
         for i in range(num_steps):
             self.feature_transforms.append(
@@ -89,15 +90,16 @@ class TabNet(LudwigModule):
             # )
         self.final_projection = tf.keras.layers.Dense(self.output_size)
 
-    def build(self, input_shape):
-        num_features = input_shape[-1]
-        for i in range(self.num_steps):
-            self.attentive_transforms.append(
-                AttentiveTransformer(num_features, self.bn_momentum,
-                                     self.bn_epsilon, self.bn_virtual_bs)
-            )
+    # todo: remove tf code when done
+    # def build(self, input_shape):
+    #     num_features = input_shape[-1]
+    #     for i in range(self.num_steps):
+    #         self.attentive_transforms.append(
+    #             AttentiveTransformer(num_features, self.bn_momentum,
+    #                                  self.bn_epsilon, self.bn_virtual_bs)
+    #         )
 
-    def call(
+    def forward(
             self,
             features: torch.Tensor,
             training: bool = None,
@@ -188,6 +190,7 @@ class FeatureBlock(LudwigModule):
                                             bias=False)  # todo: figure out in_features
 
         self.batch_norm = GhostBatchNormalization(
+            units,
             virtual_batch_size=bn_virtual_bs,
             momentum=bn_momentum,
             epsilon=bn_epsilon
@@ -220,8 +223,8 @@ class AttentiveTransformer(LudwigModule):
         self.sparsemax = Sparsemax()
         # self.sparsemax = CustomSparsemax()  # todo: tf implementation
 
-    def forward(self, inputs, prior_scales, training=None, **kwargs):
-        hidden = self.feature_block(inputs, training=training)
+    def forward(self, inputs, prior_scales):
+        hidden = self.feature_block(inputs)
         hidden = hidden * prior_scales
 
         # removing the mean to try to avoid numerical instability
