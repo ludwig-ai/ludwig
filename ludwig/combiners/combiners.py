@@ -418,6 +418,7 @@ class SequenceCombiner(CombinerClass):
 class TabNetCombiner(Module):
     def __init__(
             self,
+            input_features: Dict,
             size: int,  # N_a in the paper
             output_size: int,  # N_d in the paper
             num_steps: int = 1,  # N_steps in the paper
@@ -430,11 +431,15 @@ class TabNetCombiner(Module):
             sparsity: float = 1e-5,  # lambda_sparse in the paper
             dropout=0,
             **kwargs
-    ):
+    ) -> None:
         super().__init__()
+        self.name = 'TabNetCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
+
         self.tabnet = TabNet(
+            self.concatenated_shape[-1],
             size=size,
             output_size=output_size,
             num_steps=num_steps,
@@ -452,19 +457,26 @@ class TabNetCombiner(Module):
         else:
             self.dropout = None
 
-    def build(self, input_shape):
-        self.flatten_layers = {
-            k: tf.keras.layers.Flatten()
-            for k in input_shape.keys()
-        }
+    # todo: tf specific remove
+    # def build(self, input_shape):
+    #     self.flatten_layers = {
+    #         k: tf.keras.layers.Flatten()
+    #         for k in input_shape.keys()
+    #     }
 
-    def call(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
+    def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
+            inputs: torch.Tensor,  # encoder outputs
+    ) -> Dict:
         encoder_output_map = {
             k: inputs[k]['encoder_output'] for k in inputs
         }

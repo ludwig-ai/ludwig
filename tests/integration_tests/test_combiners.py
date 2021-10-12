@@ -282,49 +282,21 @@ def test_sequence_combiner(
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
-def tabnet_encoder_outputs():
-    # Need to do this in a function, otherwise TF will try to initialize
-    # too early
-    return {
-        'batch_128': {
-            'feature_1': {
-                'encoder_output': torch.randn(
-                    [128, 1],
-                    dtype=torch.float32
-                )
-            },
-            'feature_2': {
-                'encoder_output': torch.randn(
-                    [128, 1],
-                    dtype=torch.float32
-                )
-            },
-        },
-        'inputs': {
-            'feature_1': {
-                'encoder_output': tf.keras.Input(
-                    (),
-                    dtype=torch.float32,
-                    name='feature_1',
-                )
-            },
-            'feature_2': {
-                'encoder_output': tf.keras.Input(
-                    (),
-                    dtype=torch.float32,
-                    name='feature_2',
-                )
-            },
-        }
-    }
-
-
-@pytest.mark.parametrize("encoder_outputs_key", ['batch_128', 'inputs'])
-def test_tabnet_combiner(encoder_outputs_key):
-    encoder_outputs = tabnet_encoder_outputs()[encoder_outputs_key]
+@pytest.mark.parametrize(
+    'feature_list',  # defines parameter for fixture features_to_test()
+    [
+        [  # only numeric features
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 1])  # passthrough encoder
+        ]
+    ]
+)
+def test_tabnet_combiner(features_to_test):
+    encoder_outputs, input_features = features_to_test
 
     # setup combiner to test
     combiner = TabNetCombiner(
+        input_features,
         size=2,
         output_size=2,
         num_steps=3,

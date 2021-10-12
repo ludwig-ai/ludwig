@@ -11,6 +11,7 @@ from ludwig.utils.torch_utils import LudwigModule
 class TabNet(LudwigModule):
     def __init__(
             self,
+            tab_features_size: int,
             size: int,
             output_size: int,
             num_steps: int = 1,
@@ -25,6 +26,7 @@ class TabNet(LudwigModule):
         """TabNet
         Will output a vector of size output_dim.
         Args:
+            tab_feature_size (int): concatenated size of input tabular features
             size (int): Embedding feature dimension to use.
             output_size (int): Output dimension.
             num_steps (int, optional): Total number of steps. Defaults to 1.
@@ -36,6 +38,7 @@ class TabNet(LudwigModule):
             bn_virtual_bs (int, optional): Virtual batch ize for ghost batch norm..
         """
         super().__init__()
+        self.tab_feature_size = tab_features_size
         self.size = size
         self.output_size = output_size
         self.num_steps = num_steps
@@ -48,9 +51,10 @@ class TabNet(LudwigModule):
         self.bn_epsilon = bn_epsilon
         self.bn_virtual_bs = bn_virtual_bs
 
-        self.batch_norm = tf.keras.layers.BatchNormalization(
-            momentum=bn_momentum, epsilon=bn_epsilon
-        )
+        self.batch_norm = torch.nn.BatchNorm1d(tab_features_size,
+                                               momentum=bn_momentum,
+                                               eps=bn_epsilon
+                                               )
 
         kargs = {
             "size": size + output_size,
@@ -64,7 +68,7 @@ class TabNet(LudwigModule):
         # first feature transformer block is built first
         # to get the shared blocks
         self.feature_transforms: List[FeatureTransformer] = [
-            FeatureTransformer(**kargs)
+            FeatureTransformer(tab_features_size, **kargs)
         ]
         self.attentive_transforms: List[AttentiveTransformer] = [None]
         for i in range(num_steps):
@@ -164,6 +168,7 @@ class TabNet(LudwigModule):
 class FeatureBlock(LudwigModule):
     def __init__(
             self,
+            tab_feature_size: int,
             size: int,
             apply_glu: bool = True,
             bn_momentum: float = 0.9,
@@ -179,7 +184,8 @@ class FeatureBlock(LudwigModule):
         if shared_fc_layer:
             self.fc_layer = shared_fc_layer
         else:
-            self.fc_layer = tf.keras.layers.Dense(units, use_bias=False)
+            self.fc_layer = torch.nn.Linear(tab_feature_size, units,
+                                            bias=False)  # todo: figure out in_features
 
         self.batch_norm = GhostBatchNormalization(
             virtual_batch_size=bn_virtual_bs,
@@ -187,9 +193,9 @@ class FeatureBlock(LudwigModule):
             epsilon=bn_epsilon
         )
 
-    def call(self, inputs, training: bool = None, **kwargs):
+    def forward(self, inputs, training: bool = None, **kwargs):
         hidden = self.fc_layer(inputs)
-        hidden = self.batch_norm(hidden, training=training)
+        hidden = self.batch_norm(hidden)
         if self.apply_glu:
             hidden = glu(hidden)
         return hidden
@@ -214,7 +220,7 @@ class AttentiveTransformer(LudwigModule):
         self.sparsemax = Sparsemax()
         # self.sparsemax = CustomSparsemax()  # todo: tf implementation
 
-    def call(self, inputs, prior_scales, training=None, **kwargs):
+    def forward(self, inputs, prior_scales, training=None, **kwargs):
         hidden = self.feature_block(inputs, training=training)
         hidden = hidden * prior_scales
 
@@ -239,6 +245,7 @@ class AttentiveTransformer(LudwigModule):
 class FeatureTransformer(LudwigModule):
     def __init__(
             self,
+            tab_feature_size: int,
             size: int,
             shared_fc_layers: List[LudwigModule] = [],
             num_total_blocks: int = 4,
@@ -267,9 +274,9 @@ class FeatureTransformer(LudwigModule):
                     FeatureBlock(**kargs, shared_fc_layer=shared_fc_layers[n]))
             else:
                 # build new blocks
-                self.blocks.append(FeatureBlock(**kargs))
+                self.blocks.append(FeatureBlock(tab_feature_size, **kargs))
 
-    def call(
+    def forward(
             self,
             inputs: torch.Tensor,
             training: bool = None,
