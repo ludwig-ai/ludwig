@@ -1556,59 +1556,88 @@ class CamemBERTEncoder(TextEncoder):
 #         return {'encoder_output': hidden}
 #
 #
-# @register(name='longformer')
-# class LongformerEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'allenai/longformer-base-4096',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='allenai/longformer-base-4096',
-#             reduce_output='cls_pooled',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFLongformerModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFLongformerModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         if not self.reduce_output == 'cls_pooled':
-#             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         if self.reduce_output == 'cls_pooled':
-#             hidden = transformer_outputs[1]
-#         else:
-#             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
-#             hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
+@register(name='longformer')
+class LongformerEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'allenai/longformer-base-4096',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            attention_window: Union[List[int], int] = 512,
+            sep_token_id: int = 2,
+            pretrained_model_name_or_path: str ='allenai/longformer-base-4096',
+            reduce_output: Optional[str] = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import LongformerModel, LongformerConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = LongformerModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = LongformerConfig(attention_window, sep_token_id, **kwargs)
+            self.transformer = LongformerModel(config)
+        self.reduce_output = reduce_output
+        if not self.reduce_output == 'cls_pooled':
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(num_tokens)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == 'cls_pooled':
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by Longformer (== Roberta) tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 2,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
 #
 #
 # @register(name='auto_transformer')
