@@ -30,7 +30,7 @@ jobs:
           - python-version: 3.7
             tensorflow-version: 2.5.0
           - python-version: 3.8
-            tensorflow-version: nightly
+            tensorflow-version: 2.5.0
     env:
       TENSORFLOW: ${{ matrix.tensorflow-version }}
       MARKERS: ${{ matrix.test-markers }}
