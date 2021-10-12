@@ -556,33 +556,33 @@ class RoBERTaEncoder(TextEncoder):
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
-         if mask is not None:
-             mask = mask.to(torch.int32)
-         transformer_outputs = self.transformer(
-             input_ids=inputs,
-             attention_mask=mask,
-             token_type_ids=torch.zeros_like(inputs),
-         )
-         if self.reduce_output == 'cls_pooled':
-             hidden = transformer_outputs[1]
-         else:
-             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
-             hidden = self.reduce_sequence(hidden, self.reduce_output)
-         return {'encoder_output': hidden}
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == 'cls_pooled':
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
-         return torch.Size([self.max_sequence_length])
+        return torch.Size([self.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
-         if self.reduce_output is None:
-             return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
-         return torch.Size([self.transformer.config.hidden_size])
+        if self.reduce_output is None:
+            return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
+        return torch.Size([self.transformer.config.hidden_size])
 
     @property
     def input_dtype(self):
-         return torch.int32
+        return torch.int32
 
 
 @register(name='transformer_xl')
@@ -600,9 +600,9 @@ class TransformerXLEncoder(TextEncoder):
             self,
             max_sequence_length: int,
             use_pretrained: bool = True,
-            pretrained_model_name_or_path='transfo-xl-wt103',
-            reduce_output='sum',
-            trainable=True,
+            pretrained_model_name_or_path: str = 'transfo-xl-wt103',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
             vocab_size: int = 267735,
             cutoffs: List[int] = [20000, 40000, 200000],
             d_model: int = 1024,
