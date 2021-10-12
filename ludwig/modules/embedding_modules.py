@@ -422,7 +422,8 @@ class EmbedSequence(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor):
+        inputs = inputs.int()
         embedded = self.embeddings(inputs)
         if self.dropout:
             embedded = self.dropout(embedded)
