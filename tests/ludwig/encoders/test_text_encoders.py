@@ -4,7 +4,7 @@ import torch
 from ludwig.encoders import text_encoders
 
 
-@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', [None, 'cls_pooled', 'sum'])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_bert_encoder(
@@ -22,7 +22,7 @@ def test_bert_encoder(
     assert outputs['encoder_output'].shape[1:] == bert.output_shape
 
 
-@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', ['last', 'sum', 'mean'])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_xlm_encoder(
@@ -40,7 +40,7 @@ def test_xlm_encoder(
     assert outputs['encoder_output'].shape[1:] == xlm_encoder.output_shape
 
 
-@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_gpt_encoder(
@@ -71,7 +71,8 @@ def test_roberta_encoder(
         reduce_output=reduce_output,
         max_sequence_length=max_sequence_length
     )
-    inputs = torch.rand((2, max_sequence_length)).type(roberta_encoder.input_dtype)
+    inputs = torch.rand((2, max_sequence_length)).type(
+        roberta_encoder.input_dtype)
     outputs = roberta_encoder(inputs)
     assert outputs['encoder_output'].shape[1:] == roberta_encoder.output_shape
 
@@ -93,7 +94,7 @@ def test_gpt2_encoder(
     assert outputs['encoder_output'].shape[1:] == gpt_encoder.output_shape
 
 
-@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_distil_bert(
@@ -112,7 +113,7 @@ def test_distil_bert(
     assert outputs['encoder_output'].shape[1:] == distil_bert_encoder.output_shape
 
 
-@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('max_sequence_length', [20])
 def test_transfoxl_encoder(
@@ -124,24 +125,43 @@ def test_transfoxl_encoder(
         use_pretrained=use_pretrained,
         reduce_output=reduce_output,
         max_sequence_length=max_sequence_length)
-    inputs = torch.randint(10, (2, max_sequence_length)).type(transfo.input_dtype)
+    inputs = torch.randint(10, (2, max_sequence_length)
+                           ).type(transfo.input_dtype)
     outputs = transfo(inputs)
     assert outputs['encoder_output'].shape[1:] == transfo.output_shape
 
 
-@pytest.mark.parametrize('use_pretrained', [True, False])
+@pytest.mark.parametrize('use_pretrained', [False])
 @pytest.mark.parametrize('reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('max_sequence_length', [20])
-def test_xlnet_encoder(
+def test_ctrl_encoder(
         use_pretrained: bool,
         reduce_output: str,
         max_sequence_length: int
 ):
-    xlnet = text_encoders.XLNetEncoder(
+    encoder = text_encoders.CTRLEncoder(
+        max_sequence_length,
+        use_pretrained=use_pretrained,
+        reduce_output=reduce_output)
+    inputs = torch.rand((2, max_sequence_length)).type(
+        encoder.input_dtype)
+    outputs = encoder(inputs)
+    assert outputs['encoder_output'].shape[1:] == encoder.output_shape
+
+
+@pytest.mark.parametrize('use_pretrained', [False])
+@pytest.mark.parametrize('reduce_output', [None, 'cls_pooled'])
+@pytest.mark.parametrize('max_sequence_length', [20])
+def test_camembert_encoder(
+        use_pretrained: bool,
+        reduce_output: str,
+        max_sequence_length: int
+):
+    encoder = text_encoders.CamemBERTEncoder(
         use_pretrained=use_pretrained,
         reduce_output=reduce_output,
         max_sequence_length=max_sequence_length)
-    inputs = torch.randint(10, (2, max_sequence_length)).type(xlnet.input_dtype)
-    outputs = xlnet(inputs)
-    assert outputs['encoder_output'].shape[1:] == xlnet.output_shape
-
+    inputs = torch.rand((2, max_sequence_length)).type(
+        encoder.input_dtype)
+    outputs = encoder(inputs)
+    assert outputs['encoder_output'].shape[1:] == encoder.output_shape

@@ -158,6 +158,7 @@ class BERTEncoder(TextEncoder):
     def input_dtype(self):
         return torch.int32
 
+
 @register(name='xlm')
 class XLMEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
@@ -599,9 +600,9 @@ class TransformerXLEncoder(TextEncoder):
             self,
             max_sequence_length: int,
             use_pretrained: bool = True,
-            pretrained_model_name_or_path: str = 'transfo-xl-wt103',
-            reduce_output: str ='sum',
-            trainable: bool = True,
+            pretrained_model_name_or_path='transfo-xl-wt103',
+            reduce_output='sum',
+            trainable=True,
             vocab_size: int = 267735,
             cutoffs: List[int] = [20000, 40000, 200000],
             d_model: int = 1024,
@@ -943,112 +944,228 @@ class DistilBERTEncoder(TextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
-#
-#
-# @register(name='ctrl')
-# class CTRLEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'ctrl',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='ctrl',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFCTRLModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFCTRLModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         hidden = transformer_outputs[0]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
-#
-# @register(name='camembert')
-# class CamemBERTEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'jplu/tf-camembert-base',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='jplu/tf-camembert-base',
-#             reduce_output='cls_pooled',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFCamembertModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFCamembertModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         if not self.reduce_output == 'cls_pooled':
-#             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         if self.reduce_output == 'cls_pooled':
-#             hidden = transformer_outputs[1]
-#         else:
-#             hidden = transformer_outputs[0][:, 1:-1, :]
-#             hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
+
+
+@register(name='ctrl')
+class CTRLEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'ctrl',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'ctrl',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 246534,
+            n_positions: int = 256,
+            n_ctx: int = 256,
+            n_embd: int = 1280,
+            dff: int = 8192,
+            n_layer: int = 48,
+            n_head: int = 16,
+            resid_pdrop: float = 0.1,
+            embd_pdrop: float = 0.1,
+            attn_pdrop: float = 0.1,
+            layer_norm_epsilon: float = 1e-6,
+            initializer_range: float = 0.02,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import CTRLModel, CTRLConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = CTRLModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = CTRLConfig(
+                vocab_size=vocab_size,
+                n_positions=n_positions,
+                n_ctx=n_ctx,
+                n_embd=n_embd,
+                dff=dff,
+                n_layer=n_layer,
+                n_head=n_head,
+                resid_pdrop=resid_pdrop,
+                embd_pdrop=embd_pdrop,
+                attn_pdrop=attn_pdrop,
+                layer_norm_epsilon=layer_norm_epsilon,
+                initializer_range=initializer_range)
+            self.transformer = CTRLModel(config)
+
+        self.vocab_size = vocab_size
+        self.max_sequence_length = max_sequence_length
+        if trainable:
+            self.transformer.train()
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.resize_token_embeddings(self.vocab_size)
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs)
+        )
+        hidden = transformer_outputs[0]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return torch.Size([
+                self.max_sequence_length,
+                self.transformer.config.n_embd])
+        return torch.Size([self.transformer.config.n_embd])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
+@register(name='camembert')
+class CamemBERTEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'jplu/camembert-base',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'ctrl',
+            reduce_output: str = 'cls-pooled',
+            trainable: bool = True,
+            vocab_size: int = 30522,
+            hidden_size: int = 768,
+            num_hidden_layers: int = 12,
+            num_attention_heads: int = 12,
+            intermediate_size: int = 3072,
+            hidden_act: Union[str, Callable] = 'gelu',
+            hidden_dropout_prob: float = 0.1,
+            attention_probs_dropout_prob: float = 0.1,
+            max_position_embeddings: int = 512,
+            type_vocab_size: int = 2,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            pad_token_id: int = 0,
+            gradient_checkpointing: bool = False,
+            position_embedding_type: str = 'absolute',
+            classifier_dropout: float = None,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import CamembertModel, CamembertConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = CamembertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = CamembertConfig(
+                vocab_size=vocab_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=num_hidden_layers,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                hidden_act=hidden_act,
+                hidden_dropout_prob=hidden_dropout_prob,
+                attention_probs_dropout_prob=attention_probs_dropout_prob,
+                max_position_embeddings=max_position_embeddings,
+                type_vocab_size=type_vocab_size,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                pad_token_id=pad_token_id,
+                gradient_checkpointing=gradient_checkpointing,
+                position_embedding_type=position_embedding_type,
+                classifier_dropout=classifier_dropout)
+            self.transformer = CamembertModel(config)
+
+        if trainable:
+            self.transformer.train()
+        self.reduce_output = reduce_output
+        if not self.reduce_output == 'cls_pooled':
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.transformer.resize_token_embeddings(vocab_size)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == 'cls_pooled':
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 2,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 #
 #
 # @register(name='albert')
