@@ -281,9 +281,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         inputs_exp = inputs.type(torch.int32)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
-        encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=inputs_mask
-        )
+        encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
         encoder_output[LENGTHS] = lengths
 
         return encoder_output
