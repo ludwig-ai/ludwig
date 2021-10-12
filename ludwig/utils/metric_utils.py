@@ -33,7 +33,7 @@ def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int):
     return res
 
 
-def masked_corrected_predictions(
+def masked_correct_predictions(
         targets: Tensor,
         preds: Tensor,
         targets_sequence_lengths: Tensor

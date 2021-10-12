@@ -27,7 +27,7 @@ from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss,\
     SoftmaxCrossEntropyLoss # SequenceSoftmaxCrossEntropyLoss,\
     # SequenceSampledSoftmaxCrossEntropyLoss, SampledSoftmaxCrossEntropyLoss
 from ludwig.utils.loss_utils import rmspe_loss
-from ludwig.utils.metric_utils import masked_corrected_predictions
+from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
 # from ludwig.utils.metric_utils import masked_sequence_corrected_predictions,\
     # edit_distance
@@ -280,9 +280,9 @@ class TokenAccuracyMetric(MeanMetric):
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
         target_sequence_length = sequence_length_2D(target)
-        masked_corrected_preds = masked_corrected_predictions(
+        masked_correct_preds = masked_correct_predictions(
             target, preds, target_sequence_length)
-        return torch.mean(masked_corrected_preds)
+        return torch.mean(masked_correct_preds)
 
 
 # TODO(shreya): After Sequence Losses
