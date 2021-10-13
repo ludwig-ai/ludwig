@@ -167,7 +167,7 @@ def run_hyperopt_executor(
 
     csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
     dataset_csv = generate_data(
-        config['input_features'], config['output_features'], csv_filename)
+        config['input_features'], config['output_features'], csv_filename, num_examples=100)
     dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
 
     config = merge_with_defaults(config)
@@ -237,7 +237,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus, ray_mock_dir):
 
     csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
     dataset_csv = generate_data(
-        input_features, output_features, csv_filename)
+        input_features, output_features, csv_filename, num_examples=100)
     dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
 
     config = {
