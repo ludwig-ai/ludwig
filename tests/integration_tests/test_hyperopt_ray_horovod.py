@@ -16,7 +16,6 @@
 import logging
 import os.path
 import uuid
-import tempfile
 import shutil
 from unittest.mock import patch
 
@@ -25,8 +24,10 @@ import pytest
 import ray
 from ray.tune.sync_client import get_sync_client
 
+from ludwig.backend.ray import RayBackend
+
 from ludwig.hyperopt.execution import (
-    RayTuneExecutor, _get_relative_checkpoints_dir_parts, get_build_hyperopt_executor)
+    RayTuneExecutor, _get_relative_checkpoints_dir_parts)
 from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
@@ -167,7 +168,7 @@ def run_hyperopt_executor(
 
     csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
     dataset_csv = generate_data(
-        config['input_features'], config['output_features'], csv_filename, num_examples=100)
+        config['input_features'], config['output_features'], csv_filename)
     dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
 
     config = merge_with_defaults(config)
@@ -201,7 +202,7 @@ def run_hyperopt_executor(
     hyperopt_executor.execute(
         config,
         dataset=dataset_parquet,
-        backend='ray',
+        backend=RayBackend(processor={'parallelism': 4,}),
         output_directory=ray_mock_dir,
         skip_save_processed_input=True,
         skip_save_unprocessed_output=True
@@ -237,7 +238,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus, ray_mock_dir):
 
     csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
     dataset_csv = generate_data(
-        input_features, output_features, csv_filename, num_examples=100)
+        input_features, output_features, csv_filename)
     dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
 
     config = {
@@ -271,7 +272,8 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus, ray_mock_dir):
         'output_feature': output_feature_name,
         'validation_metrics': 'loss',
         'executor': {'type': 'ray'},
-        'sampler': {'type': 'ray', 'num_samples': 2}
+        'sampler': {'type': 'ray', 'num_samples': 2},
+        'backend': {'type': 'ray', 'processor': {'parallelism': 4}}
     }
 
     # add hyperopt parameter space to the config
