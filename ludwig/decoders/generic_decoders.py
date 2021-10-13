@@ -30,17 +30,6 @@ from ludwig.constants import LOSS, TYPE
 logger = logging.getLogger(__name__)
 
 
-def get_input_size(input_size, fc_layers):
-    """Returns the input size to the final output."""
-    if not fc_layers:
-        # No fc_layers. Use input size.
-        return input_size
-    if fc_layers[-1]['fc_size']:
-        return fc_layers[-1]['fc_size']
-    raise ValueError(
-        f'The fc_size of the last decoder FC layer is unspecified: {fc_layers[-1]}')
-
-
 class Regressor(Decoder):
 
     def __init__(
@@ -53,7 +42,6 @@ class Regressor(Decoder):
             bias_regularizer=None,
             activity_regularizer=None,
             activation=None,
-            fc_layers: Optional[List[Dict]] = None,
             **kwargs
     ):
         super().__init__()
@@ -62,7 +50,7 @@ class Regressor(Decoder):
         logger.debug('  Dense')
 
         self.dense = Dense(
-            input_size=get_input_size(input_size, fc_layers),
+            input_size=input_size,
             output_size=1,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
@@ -94,7 +82,6 @@ class Projector(Decoder):
             activity_regularizer=None,
             activation=None,
             clip=None,
-            fc_layers: Optional[List[Dict]] = None,
             **kwargs
     ):
         super().__init__()
@@ -102,7 +89,7 @@ class Projector(Decoder):
 
         logger.debug('  Dense')
         self.dense = Dense(
-            input_size=get_input_size(input_size, fc_layers),
+            input_size=input_size,
             output_size=output_size,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
@@ -177,7 +164,7 @@ class Classifier(Decoder):
         if LOSS in kwargs and TYPE in kwargs[LOSS] and kwargs[LOSS][TYPE] is not None:
             self.sampled_loss = kwargs[LOSS][TYPE].startswith('sampled')
 
-        # this is needed because TF2 initialzies the weights at the first call
+        # this is needed because TF2 initializes the weights at the first call
         # so the first time we need to compute the full dense,
         # otherwise the weights of the Dense layer would not be initialized
         self.first_call = True
