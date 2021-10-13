@@ -6,7 +6,7 @@ import pytest
 
 from ludwig.constants import META, TRAINING, VALIDATION, TEST, CHECKSUM
 from ludwig.data.cache.manager import CacheManager, alphanum
-from ludwig.data.dataset import pandas_manager
+from ludwig.data.dataset.pandas import PandasDatasetManager
 
 from tests.integration_tests.utils import sequence_feature, category_feature, LocalTestBackend
 
@@ -14,7 +14,7 @@ from tests.integration_tests.utils import sequence_feature, category_feature, Lo
 @pytest.mark.parametrize('use_split', [True, False], ids=['split', 'no_split'])
 @pytest.mark.parametrize('use_cache_dir', [True, False], ids=['cache_dir', 'no_cache_dir'])
 def test_cache_dataset(use_cache_dir, use_split, tmpdir):
-    dataset_manager = pandas_manager()(backend=LocalTestBackend())
+    dataset_manager = PandasDatasetManager(backend=LocalTestBackend())
     cache_dir = os.path.join(tmpdir, 'cache') if use_cache_dir else None
     manager = CacheManager(dataset_manager, cache_dir=cache_dir)
 

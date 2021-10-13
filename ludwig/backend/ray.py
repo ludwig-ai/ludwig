@@ -31,7 +31,7 @@ from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.partitioned import RayDataset
+from ludwig.data.dataset.ray import RayDataset
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
@@ -39,14 +39,6 @@ from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer,
 
 
 logger = logging.getLogger(__name__)
-
-
-def get_dask_kwargs():
-    # TODO ray: select this more intelligently,
-    #  must be greather than or equal to number of Horovod workers
-    return dict(
-        parallelism=int(ray.cluster_resources()['CPU'])
-    )
 
 
 def get_horovod_kwargs():
@@ -84,15 +76,19 @@ _engine_registry = {
 }
 
 
-def _get_df_engine(engine_config):
-    if engine_config is None:
+def _get_df_engine(processor):
+    logger.info(f"Ray processor params: {processor}")
+    if processor is None:
+        # TODO ray: find an informed way to set the parallelism, in practice
+        #  it looks like Dask handles this well on its own most of the time
         return DaskEngine()
 
-    engine_config = engine_config.copy()
+    processor_kwargs = processor.copy()
 
-    dtype = engine_config.pop('type', 'dask')
+    dtype = processor_kwargs.pop('type', 'dask')
     engine_cls = _engine_registry.get(dtype)
-    return engine_cls(**engine_config)
+
+    return engine_cls(**processor_kwargs)
 
 
 class RayRemoteModel:
@@ -249,10 +245,10 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, horovod_kwargs=None, cache_format=PARQUET, engine=None, **kwargs):
+    def __init__(self, processor=None, trainer=None, cache_format=PARQUET, **kwargs):
         super().__init__(cache_format=cache_format, **kwargs)
-        self._df_engine = _get_df_engine(engine)
-        self._horovod_kwargs = horovod_kwargs or {}
+        self._df_engine = _get_df_engine(processor)
+        self._horovod_kwargs = trainer or {}
         self._tensorflow_kwargs = {}
         if cache_format not in [PARQUET, TFRECORD]:
             raise ValueError(
@@ -269,7 +265,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
-        self._df_engine.set_parallelism(**get_dask_kwargs())
 
     def initialize_tensorflow(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node

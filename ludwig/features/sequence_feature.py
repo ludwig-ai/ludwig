@@ -14,15 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    pass
 import numpy as np
 import torch
-import pandas as pd
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
@@ -48,6 +42,7 @@ from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 from ludwig.utils.strings_utils import tokenizer_registry
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -570,12 +565,12 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+    def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
         return df
 
-    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+    def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         df[probs_col] = df[probs_col].apply(
             lambda x: x.reshape(-1, self.num_classes),
