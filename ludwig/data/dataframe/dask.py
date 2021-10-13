@@ -15,9 +15,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import multiprocessing
-import os
-
 import dask
 import dask.array as da
 import dask.dataframe as dd
@@ -36,7 +33,7 @@ def set_scheduler(scheduler):
 
 class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=False, **kwargs):
-        self._parallelism = parallelism or multiprocessing.cpu_count()
+        self._parallelism = parallelism
         self._persist = persist
 
     def set_parallelism(self, parallelism):
@@ -53,7 +50,9 @@ class DaskEngine(DataFrameEngine):
         return dataset
 
     def parallelize(self, data):
-        return data.repartition(self.parallelism)
+        if self.parallelism:
+            return data.repartition(self.parallelism)
+        return data
 
     def persist(self, data):
         return data.persist() if self._persist else data
