@@ -441,6 +441,10 @@ class SequenceCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return SequenceCombinerParams
+    
+    @staticmethod
+    def get_nullable_params() -> List[str]:
+        return ['reduce_output']
 
 
 class TabNetCombinerParams(BaseModel):
