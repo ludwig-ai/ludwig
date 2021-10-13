@@ -877,12 +877,13 @@ class RayTuneExecutor(HyperoptExecutor):
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
                 if is_using_ray_backend:
-                    save_path = Path(save_path)
-                    sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
-                    sync_client.sync_up(
-                        str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                    sync_client.wait()
-                    ray_queue.put((progress_tracker, str(save_path)))
+                    with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
+                        save_path = Path(save_path)
+                        sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
+                        sync_client.sync_up(
+                            str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                        sync_client.wait()
+                        ray_queue.put((progress_tracker, str(save_path)))
                     return
 
                 checkpoint(progress_tracker, save_path)
