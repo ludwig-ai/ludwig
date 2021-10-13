@@ -75,7 +75,6 @@ class Conv1DLayer(LudwigModule):
         else:
             self.pool_padding = 0
 
-
         self.layers = nn.ModuleList()
 
         self.layers.append(nn.Conv1d(
@@ -482,7 +481,8 @@ class ParallelConv1D(LudwigModule):
                 'and pool.'
             )
 
-        return hidden  # (batch_size, seq_size, len(parallel_layers) * out_channels)
+        # (batch_size, seq_size, len(parallel_layers) * out_channels)
+        return hidden
 
 
 class ParallelConv1DStack(LudwigModule):
@@ -498,7 +498,7 @@ class ParallelConv1DStack(LudwigModule):
             default_padding='same',
             default_dilation_rate=1,
             default_use_bias=True,
-            default_weights_initializer='glorot_uniform',
+            default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
@@ -629,7 +629,7 @@ class ParallelConv1DStack(LudwigModule):
             raise ValueError(
                 'The output of the conv stack has the second dimension '
                 '(length of the sequence) equal to 0. '
-                'This means that the compination of filter_size, padding, '
+                'This means that the combination of filter_size, padding, '
                 'stride, pool_size, pool_padding and pool_stride is reduces '
                 'the sequence length more than is possible. '
                 'Try using "same" padding and reducing or eliminating stride '
@@ -1141,7 +1141,6 @@ class ResNetBottleneckBlock(LudwigModule):
                       self.conv2, self.norm2, self.relu2,
                       self.conv3, self.norm3, self.relu3]:
             logger.debug('   {}'.format(layer._get_name()))
-        
 
         self._output_shape = self.conv3.output_shape
 

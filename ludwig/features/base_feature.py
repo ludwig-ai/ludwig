@@ -132,7 +132,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.num_fc_layers = 0
         self.fc_size = 256
         self.use_bias = True
-        self.weights_initializer = 'glorot_uniform'
+        self.weights_initializer = 'xavier_uniform'
         self.bias_initializer = 'zeros'
         self.weights_regularizer = None
         self.bias_regularizer = None
@@ -229,13 +229,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
             #metric_vals[metric_name] = metric_onj.result().numpy()
-            metric_vals[metric_name] = metric_onj.compute().detach().numpy().item()
+            metric_vals[metric_name] = metric_onj.compute(
+            ).detach().numpy().item()
         return metric_vals
 
     def reset_metrics(self):
         for of_name, metric_fn in self.metric_functions.items():
             if metric_fn is not None:
-                #metric_fn.reset_states()
+                # metric_fn.reset_states()
                 metric_fn.reset()
 
     def forward(
@@ -353,7 +354,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     if len(dependency_final_hidden.shape) > 2:
                         # matrix matrix -> concat
                         assert hidden.shape[1] == \
-                               dependency_final_hidden.shape[1]
+                            dependency_final_hidden.shape[1]
                         dependencies_hidden.append(dependency_final_hidden)
                     else:
                         # matrix vector -> tile concat
@@ -532,4 +533,3 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
         """ Reshapes a flattened 1D array into its original shape. """
         return df
-

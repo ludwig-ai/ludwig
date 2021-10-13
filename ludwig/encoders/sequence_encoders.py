@@ -54,7 +54,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
     ):
         """
             :param reduce_output: defines how to reduce the output tensor along
-                   the `s` sequence length dimention if the rank of the tensor
+                   the `s` sequence length dimension if the rank of the tensor
                    is greater than 2. Available values are: `sum`,
                    `mean` or `avg`, `max`, `concat` (concatenates along
                    the first dimension), `last` (returns the last vector of the
@@ -80,7 +80,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
             :type input_sequence: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -118,12 +118,12 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -146,7 +146,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -157,26 +157,26 @@ class SequenceEmbedEncoder(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param weights_initializer: the initializer to use. If `None`, the default
-                   initialized of each variable is used (`glorot_uniform`
+                   initialized of each variable is used (`xavier_uniform`
                    in most cases). Options are: `constant`, `identity`, `zeros`,
                     `ones`, `orthogonal`, `normal`, `uniform`,
-                    `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                    `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                    `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                    `xavier_uniform`, `xavier_normal`,
                     `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                     Alternatively it is possible to specify a dictionary with
-                    a key `type` that identifies the type of initialzier and
+                    a key `type` that identifies the type of initializer and
                     other keys for its parameters, e.g.
                     `{type: normal, mean: 0, stddev: 0}`.
                     To know the parameters of each initializer, please refer to
                     TensorFlow's documentation.
             :type weights_initializer: str
-            :param regularize: if `True` the embedding wieghts are added to
-                   the set of weights that get reularized by a regularization
+            :param regularize: if `True` the embedding weights are added to
+                   the set of weights that get regularized by a regularization
                    loss (if the `regularization_lambda` in `training`
                    is greater than 0).
             :type regularize: Boolean
             :param reduce_output: defines how to reduce the output tensor along
-                   the `s` sequence length dimention if the rank of the tensor
+                   the `s` sequence length dimension if the rank of the tensor
                    is greater than 2. Available values are: `sum`,
                    `mean` or `avg`, `max`, `concat` (concatenates along
                    the first dimension), `last` (returns the last vector of the
@@ -282,12 +282,12 @@ class ParallelCNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -310,7 +310,7 @@ class ParallelCNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -384,13 +384,13 @@ class ParallelCNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
@@ -404,7 +404,7 @@ class ParallelCNN(SequenceEncoder):
             :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -618,12 +618,12 @@ class StackedCNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -646,7 +646,7 @@ class StackedCNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -720,13 +720,13 @@ class StackedCNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
@@ -740,7 +740,7 @@ class StackedCNN(SequenceEncoder):
             :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -899,7 +899,7 @@ class StackedCNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (tf.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -984,12 +984,12 @@ class StackedParallelCNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1012,7 +1012,7 @@ class StackedParallelCNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -1093,13 +1093,13 @@ class StackedParallelCNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
@@ -1113,7 +1113,7 @@ class StackedParallelCNN(SequenceEncoder):
             :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -1257,7 +1257,7 @@ class StackedParallelCNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (tf.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -1348,12 +1348,12 @@ class StackedRNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1376,7 +1376,7 @@ class StackedRNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -1420,10 +1420,10 @@ class StackedRNN(SequenceEncoder):
             :param num_rec_layers: the number of stacked recurrent layers.
             :type num_rec_layers: Integer
             :param cell_type: the type of recurrent cell to use.
-                   Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
+                   Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                    `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                    For reference about the differences between the cells please
-                   refer to TensorFlow's documentstion. We suggest to use the
+                   refer to TensorFlow's documentation. We suggest to use the
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
@@ -1437,13 +1437,13 @@ class StackedRNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
@@ -1457,7 +1457,7 @@ class StackedRNN(SequenceEncoder):
             :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -1492,7 +1492,6 @@ class StackedRNN(SequenceEncoder):
                 embedding_initializer=weights_initializer,
                 embedding_regularizer=weights_regularizer
             )
-
 
         logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
@@ -1555,7 +1554,7 @@ class StackedRNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (tf.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -1660,12 +1659,12 @@ class StackedCNNRNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1688,7 +1687,7 @@ class StackedCNNRNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -1698,10 +1697,10 @@ class StackedCNNRNN(SequenceEncoder):
             :param num_layers: the number of stacked recurrent layers.
             :type num_layers: Integer
             :param cell_type: the type of recurrent cell to use.
-                   Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
+                   Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                    `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                    For reference about the differences between the cells please
-                   refer to TensorFlow's documentstion. We suggest to use the
+                   refer to TensorFlow's documentation. We suggest to use the
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
@@ -1715,13 +1714,13 @@ class StackedCNNRNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
@@ -1735,7 +1734,7 @@ class StackedCNNRNN(SequenceEncoder):
             :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -1875,7 +1874,7 @@ class StackedCNNRNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (tf.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -1970,12 +1969,12 @@ class StackedTransformer(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1998,7 +1997,7 @@ class StackedTransformer(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -2042,10 +2041,10 @@ class StackedTransformer(SequenceEncoder):
             :param num_rec_layers: the number of stacked recurrent layers.
             :type num_rec_layers: Integer
             :param cell_type: the type of recurrent cell to use.
-                   Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
+                   Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                    `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                    For reference about the differences between the cells please
-                   refer to TensorFlow's documentstion. We suggest to use the
+                   refer to TensorFlow's documentation. We suggest to use the
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
@@ -2059,13 +2058,13 @@ class StackedTransformer(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
@@ -2079,7 +2078,7 @@ class StackedTransformer(SequenceEncoder):
             :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -2172,7 +2171,7 @@ class StackedTransformer(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (tf.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
         """
