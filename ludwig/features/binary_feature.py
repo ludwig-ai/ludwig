@@ -160,6 +160,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def __init__(self, feature):
         super().__init__(feature)
+        self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
