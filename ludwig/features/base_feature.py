@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+import copy
 from typing import Dict
 
 from ludwig.utils.types import DataFrame
@@ -115,9 +116,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
-    #train_loss_function = None
-    #eval_loss_function = None
-
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
 
@@ -134,8 +132,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.weights_regularizer = None
         self.bias_regularizer = None
         self.activity_regularizer = None
-        # self.weights_constraint=None
-        # self.bias_constraint=None
         self.norm = None
         self.norm_params = None
         self.activation = 'relu'
@@ -157,8 +153,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_weights_regularizer=self.weights_regularizer,
             default_bias_regularizer=self.bias_regularizer,
             default_activity_regularizer=self.activity_regularizer,
-            # default_weights_constraint=self.weights_constraint,
-            # default_bias_constraint=self.bias_constraint,
             default_norm=self.norm,
             default_norm_params=self.norm_params,
             default_activation=self.activation,
@@ -201,8 +195,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_decoder(self, decoder_parameters):
+        # Override input_size. Features input_size may be different if the
+        # output feature has a custom FC.
+        decoder_parameters_copy = copy.copy(
+            decoder_parameters)
+        decoder_parameters_copy['input_size'] = self.fc_stack.output_shape[-1]
         return get_from_registry(self.decoder, self.decoder_registry)(
-            **decoder_parameters
+            **decoder_parameters_copy
         )
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
@@ -225,7 +224,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
-            #metric_vals[metric_name] = metric_onj.result().numpy()
             metric_vals[metric_name] = metric_onj.compute(
             ).detach().numpy().item()
         return metric_vals
@@ -233,7 +231,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def reset_metrics(self):
         for of_name, metric_fn in self.metric_functions.items():
             if metric_fn is not None:
-                # metric_fn.reset_states()
                 metric_fn.reset()
 
     def forward(

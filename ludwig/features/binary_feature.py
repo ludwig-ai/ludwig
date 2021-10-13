@@ -130,7 +130,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
             inputs_exp)
         return encoder_outputs
 
-
     @property
     def input_dtype(self):
         return torch.bool
