@@ -945,10 +945,10 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_client.wait()
                     except tune.TuneError:
                         pass
-                for progress_tracker, save_path in results:
-                    checkpoint(progress_tracker, str(
-                        trial_dir.joinpath(Path(save_path))))
-                    report(progress_tracker)
+                    for progress_tracker, save_path in results:
+                        checkpoint(progress_tracker, str(
+                            trial_dir.joinpath(Path(save_path))))
+                        report(progress_tracker)
 
             while thread.is_alive():
                 thread.join(timeout=0)
