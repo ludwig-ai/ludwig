@@ -75,6 +75,7 @@ class TabNet(LudwigModule):
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
+                    tab_features_size,
                     **kargs,
                     shared_fc_layers=self.feature_transforms[
                         0].shared_fc_layers
@@ -84,11 +85,12 @@ class TabNet(LudwigModule):
             # because their outputs size depends on the number
             # of features that we determine by looking at the
             # last dimension of the input tensor
-            # self.attentive_transforms.append(
-            #     AttentiveTransformer(num_features, bn_momentum, bn_epsilon,
-            #                          bn_virtual_bs)
-            # )
-        self.final_projection = tf.keras.layers.Dense(self.output_size)
+            self.attentive_transforms.append(
+                AttentiveTransformer(tab_features_size, size, bn_momentum,
+                                     bn_epsilon, bn_virtual_bs)
+            )
+        self.final_projection = torch.nn.Linear(5,
+                                                self.output_size)  # todo: generalize
 
     # todo: remove tf code when done
     # def build(self, input_shape):
@@ -105,17 +107,21 @@ class TabNet(LudwigModule):
             training: bool = None,
             **kwargs
     ) -> Tuple[torch.Tensor, torch.Tensor, List[torch.Tensor]]:
-        tf.assert_rank(features, 2)
+        if features.dim() != 2:
+            raise ValueError(
+                f'Expecting incoming tensor to be dim 2, '
+                f'instead dim={features.dim()}'
+            )
 
-        batch_size = tf.shape(features)[0]
-        num_features = tf.shape(features)[-1]
-        out_accumulator = tf.zeros((batch_size, self.output_size))
-        aggregated_mask = tf.zeros([batch_size, num_features])
-        prior_scales = tf.ones((batch_size, num_features))
+        batch_size = features.shape[0]
+        num_features = features.shape[-1]
+        out_accumulator = torch.zeros((batch_size, self.output_size))
+        aggregated_mask = torch.zeros([batch_size, num_features])
+        prior_scales = torch.ones((batch_size, num_features))
         masks = []
         total_entropy = 0.0
 
-        features = self.batch_norm(features, training=training)
+        features = self.batch_norm(features)
         masked_features = features
 
         x = self.feature_transforms[0](masked_features, training=training)
@@ -133,34 +139,34 @@ class TabNet(LudwigModule):
 
             # entropy is used to penalize the amount of sparsity
             # in feature selection
-            total_entropy += tf.reduce_mean(
-                tf.reduce_sum(
-                    -mask_values * tf.math.log(mask_values + 0.00001),
-                    axis=1)
+            total_entropy += torch.mean(
+                torch.sum(
+                    -mask_values * torch.log(mask_values + 0.00001),
+                    dim=1)
             ) / self.num_steps
 
-            masks.append(tf.expand_dims(tf.expand_dims(mask_values, 0), 3))
+            masks.append(torch.unsqueeze(torch.unsqueeze(mask_values, 0), 3))
 
             #######################
             # Feature Transformer #
             #######################
-            masked_features = tf.multiply(mask_values, features)
+            masked_features = torch.multiply(mask_values, features)
 
             x = self.feature_transforms[step_i](
-                masked_features, training=training
+                masked_features
             )
 
-            out = tf.keras.activations.relu(x[:, :self.output_size])
+            out = torch.nn.functional.relu(x[:, :self.output_size])
             out_accumulator += out
 
             # Aggregated masks are used for visualization of the
             # feature importance attributes.
-            scale = tf.reduce_sum(out, axis=1, keepdims=True) / self.num_steps
+            scale = torch.sum(out, dim=1, keepdim=True) / self.num_steps
             aggregated_mask += mask_values * scale
 
         final_output = self.final_projection(out_accumulator)
 
-        sparsity_loss = tf.multiply(self.sparsity, total_entropy)
+        sparsity_loss = torch.multiply(self.sparsity, total_entropy)
         setattr(sparsity_loss, "loss_name", "sparsity_loss")
         self.add_loss(sparsity_loss)
 
@@ -207,6 +213,7 @@ class FeatureBlock(LudwigModule):
 class AttentiveTransformer(LudwigModule):
     def __init__(
             self,
+            tab_feature_size: int,
             size: int,
             bn_momentum: float = 0.9,
             bn_epsilon: float = 1e-3,
@@ -214,6 +221,7 @@ class AttentiveTransformer(LudwigModule):
     ):
         super().__init__()
         self.feature_block = FeatureBlock(
+            tab_feature_size,
             size,
             bn_momentum=bn_momentum,
             bn_epsilon=bn_epsilon,
@@ -269,26 +277,29 @@ class FeatureTransformer(LudwigModule):
         }
 
         # build blocks
-        self.blocks: List[FeatureBlock] = []
+        self.blocks = torch.nn.ModuleList()
         for n in range(num_total_blocks):
             if shared_fc_layers and n < len(shared_fc_layers):
                 # add shared blocks
                 self.blocks.append(
-                    FeatureBlock(**kargs, shared_fc_layer=shared_fc_layers[n]))
+                    FeatureBlock(
+                        tab_feature_size,
+                        **kargs,
+                        shared_fc_layer=shared_fc_layers[n]
+                    )
+                )
             else:
                 # build new blocks
                 self.blocks.append(FeatureBlock(tab_feature_size, **kargs))
 
     def forward(
             self,
-            inputs: torch.Tensor,
-            training: bool = None,
-            **kwargs
+            inputs: torch.Tensor
     ) -> torch.Tensor:
-        hidden = self.blocks[0](inputs, training=training)
+        hidden = self.blocks[0](inputs)
         for n in range(1, self.num_total_blocks):
-            hidden = (self.blocks[n](hidden, training=training) +
-                      hidden) * tf.sqrt(0.5)
+            hidden = (self.blocks[n](hidden) +
+                      hidden) * torch.sqrt(torch.tensor(0.5))
         return hidden
 
     @property

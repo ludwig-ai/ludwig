@@ -453,7 +453,7 @@ class TabNetCombiner(Module):
         )
 
         if dropout > 0:
-            self.dropout = tf.keras.layers.Dropout(dropout)
+            self.dropout = torch.nn.Dropout(dropout)
         else:
             self.dropout = None
 
@@ -477,26 +477,23 @@ class TabNetCombiner(Module):
             self,
             inputs: torch.Tensor,  # encoder outputs
     ) -> Dict:
-        encoder_output_map = {
-            k: inputs[k]['encoder_output'] for k in inputs
-        }
+        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
         # ================ Flatten ================
+        batch_size = encoder_outputs[0].shape[0]
         encoder_outputs = [
-            self.flatten_layers[k](eo)
-            for k, eo in encoder_output_map.items()
+            torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
         ]
 
         # ================ Concat ================
         if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, 1)
+            hidden = torch.cat(encoder_outputs, 1)
         else:
             hidden = list(encoder_outputs)[0]
 
         # ================ TabNet ================
         hidden, aggregated_mask, masks = self.tabnet(
-            hidden,
-            training=training,
+            hidden
         )
         if self.dropout:
             hidden = self.dropout(hidden, training=training)
