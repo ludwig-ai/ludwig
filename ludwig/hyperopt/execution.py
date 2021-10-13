@@ -809,6 +809,7 @@ class RayTuneExecutor(HyperoptExecutor):
         )
 
         trial_dir = Path(tune.get_trial_dir())
+        trial_location = ray.util.get_node_ip_address()
 
         hyperopt_dict['config'] = modified_config
         hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -821,20 +822,21 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = None
 
         def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
-                checkpoint_model = os.path.join(checkpoint_dir, 'model')
-                # shutil.copytree(save_path, checkpoint_model)
-                # Note: A previous implementation used shutil.copytree()
-                # however, this copying method is non atomic
-                if not os.path.isdir(checkpoint_model):
-                    copy_id = uuid.uuid4()
-                    tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
-                    assert os.path.exists(save_path)
-                    shutil.copytree(save_path, tmp_dst)
-                    try:
-                        os.rename(tmp_dst, checkpoint_model)
-                    except Exception:
-                        shutil.rmtree(tmp_dst)
+            with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
+                with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+                    checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                    # shutil.copytree(save_path, checkpoint_model)
+                    # Note: A previous implementation used shutil.copytree()
+                    # however, this copying method is non atomic
+                    if not os.path.isdir(checkpoint_model):
+                        copy_id = uuid.uuid4()
+                        tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                        assert os.path.exists(save_path)
+                        shutil.copytree(save_path, tmp_dst)
+                        try:
+                            os.rename(tmp_dst, checkpoint_model)
+                        except Exception:
+                            shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
             train_stats = {
@@ -862,31 +864,28 @@ class RayTuneExecutor(HyperoptExecutor):
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
 
             def on_trainer_train_setup(self, trainer, save_path):
-                if is_using_ray_backend and checkpoint_dir:
-                    save_path = Path(save_path)
+                if is_using_ray_backend and checkpoint_dir and trial_location != ray.util.get_node_ip_address():
+                    with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
+                        save_path = Path(save_path)
 
-                    for path in trial_dir.glob("checkpoint*"):
-                        if path not in (save_path.parent, checkpoint_dir):
-                            shutil.rmtree(path, ignore_errors=True)
+                        for path in trial_dir.glob("checkpoint*"):
+                            if path not in (save_path.parent, checkpoint_dir):
+                                shutil.rmtree(path, ignore_errors=True)
 
-                sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
-                sync_client.sync_down(
-                    remote_checkpoint_dir, str(trial_dir.absolute()))
-                try:
-                    sync_client.wait()
-                except tune.TuneError:
-                    pass
+                        sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
+                        sync_client.sync_down(
+                            remote_checkpoint_dir, str(trial_dir.absolute()))
+                        sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
                 if is_using_ray_backend:
                     save_path = Path(save_path)
-                    sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
-                    sync_client.sync_up(
-                        str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                    try:
-                        sync_client.wait()
-                    except tune.TuneError:
-                        pass
+                    if trial_location != ray.util.get_node_ip_address():
+                        with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
+                            sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
+                            sync_client.sync_up(
+                                str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                            sync_client.wait()
                     ray_queue.put((progress_tracker, str(save_path)))
                     return
 
@@ -939,12 +938,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    sync_client.sync_down(
-                        remote_checkpoint_dir, str(trial_dir.absolute()))
-                    try:
+                    with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
+                        sync_client.sync_down(
+                            remote_checkpoint_dir, str(trial_dir.absolute()))
                         sync_client.wait()
-                    except tune.TuneError:
-                        pass
                     for progress_tracker, save_path in results:
                         checkpoint(progress_tracker, str(
                             trial_dir.joinpath(Path(save_path))))
