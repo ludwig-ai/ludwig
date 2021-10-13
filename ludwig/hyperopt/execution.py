@@ -821,20 +821,21 @@ class RayTuneExecutor(HyperoptExecutor):
             ray_queue = None
 
         def checkpoint(progress_tracker, save_path):
-            with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
-                checkpoint_model = os.path.join(checkpoint_dir, 'model')
-                # shutil.copytree(save_path, checkpoint_model)
-                # Note: A previous implementation used shutil.copytree()
-                # however, this copying method is non atomic
-                if not os.path.isdir(checkpoint_model):
-                    copy_id = uuid.uuid4()
-                    tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
-                    assert os.path.exists(save_path)
-                    shutil.copytree(save_path, tmp_dst)
-                    try:
-                        os.rename(tmp_dst, checkpoint_model)
-                    except Exception:
-                        shutil.rmtree(tmp_dst)
+            with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
+                with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+                    checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                    # shutil.copytree(save_path, checkpoint_model)
+                    # Note: A previous implementation used shutil.copytree()
+                    # however, this copying method is non atomic
+                    if not os.path.isdir(checkpoint_model):
+                        copy_id = uuid.uuid4()
+                        tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                        assert os.path.exists(save_path)
+                        shutil.copytree(save_path, tmp_dst)
+                        try:
+                            os.rename(tmp_dst, checkpoint_model)
+                        except Exception:
+                            shutil.rmtree(tmp_dst)
 
         def report(progress_tracker):
             train_stats = {
