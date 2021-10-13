@@ -863,7 +863,7 @@ class RayTuneExecutor(HyperoptExecutor):
 
             def on_trainer_train_setup(self, trainer, save_path):
                 if is_using_ray_backend and checkpoint_dir:
-                    with file_lock(trial_dir.absolute()):
+                    with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
                         save_path = Path(save_path)
 
                         for path in trial_dir.glob("checkpoint*"):

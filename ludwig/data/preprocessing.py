@@ -1422,7 +1422,7 @@ def preprocess_for_training(
             dataset, training_set, validation_set, test_set
         )
 
-    with file_lock(backend.cache.get_cache_directory(dataset)):
+    with file_lock(backend.cache.get_cache_directory(dataset), lock_file='.lock_preprocessing'):
         # if training_set_metadata is a string, assume it's a path to load the json
         training_set_metadata = training_set_metadata or {}
         if training_set_metadata and isinstance(training_set_metadata, str):
