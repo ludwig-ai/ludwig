@@ -165,6 +165,133 @@ class ALBERTEncoder(TextEncoder):
         return torch.int32
 
 
+@register(name="mt5")
+class BERTEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+    }
+
+    default_params = {
+        "pretrained_model_name_or_path": "google/mt5-base",
+    }   
+
+    def __init__(
+        self,
+        max_sequence_length: int,
+        use_pretrained: bool = True,
+        pretrained_model_name_or_path: str = "google/mt5-base",
+        trainable: bool = True,
+        reduce_output: str = "cls_pooled",
+        vocab_size=250112,
+        d_model=512,
+        d_kv=64,
+        d_ff=1024,
+        num_layers=8,
+        num_decoder_layers=None,
+        num_heads=6,
+        relative_attention_num_buckets=32,
+        dropout_rate=0.1,
+        layer_norm_epsilon=1e-06,
+        initializer_factor=1.0,
+        feed_forward_proj="gated-gelu",
+        is_encoder_decoder=True,
+        use_cache=True,
+        tokenizer_class="T5Tokenizer",
+        tie_word_embeddings=False,
+        pad_token_id=0,
+        eos_token_id=1,
+        decoder_start_token_id=0,
+        **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import MT5Model, MT5Config
+        except ModuleNotFoundError:
+            logger.error(
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = MT5Model.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = MT5Config(
+                vocab_size=vocab_size,
+                d_model=d_model,
+                d_kv=d_kv,
+                d_ff=d_ff,
+                num_layers=num_layers,
+                num_decoder_layers=num_decoder_layers,
+                num_heads=num_heads,
+                relative_attention_num_buckets=relative_attention_num_buckets,
+                dropout_rate=dropout_rate,
+                layer_norm_epsilon=layer_norm_epsilon,
+                initializer_factor=initializer_factor,
+                feed_forward_proj=feed_forward_proj,
+                is_encoder_decoder=is_encoder_decoder,
+                use_cache=use_cache,
+                tokenizer_class=tokenizer_class,
+                tie_word_embeddings=tie_word_embeddings,
+                pad_token_id=pad_token_id,
+                eos_token_id=eos_token_id,
+                decoder_start_token_id=decoder_start_token_id,
+                **kwargs
+            )
+            self.transformer = MT5Model(config)
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(
+        self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == "cls_pooled":
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+
+        return {"encoder_output": hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
+            return torch.Size(
+                [
+                    self.max_sequence_length - 2,
+                    self.transformer.config.hidden_size,
+                ]
+            )
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
+
 @register(name='bert')
 class BERTEncoder(TextEncoder):
     # TODO(justin): Use official class properties.
