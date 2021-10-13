@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import torch
 from torch.autograd import Function
@@ -70,12 +70,11 @@ class TabNet(LudwigModule):
         self.feature_transforms = torch.nn.ModuleList([
             FeatureTransformer(tab_features_size, **kargs)
         ])
-        # todo: should this be nn.ModuleList()?
-        self.attentive_transforms: List[AttentiveTransformer] = [None]
+        self.attentive_transforms = torch.nn.ModuleList()
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
-                    tab_features_size,
+                    tab_features_size,  # todo:  need to generalize
                     **kargs,
                     shared_fc_layers=self.feature_transforms[
                         0].shared_fc_layers
@@ -89,8 +88,9 @@ class TabNet(LudwigModule):
                 AttentiveTransformer(tab_features_size, size, bn_momentum,
                                      bn_epsilon, bn_virtual_bs)
             )
-        self.final_projection = torch.nn.Linear(5,
-                                                self.output_size)  # todo: generalize
+        self.final_projection = torch.nn.Linear(
+            self.feature_transforms[-1].output_shape[-1],
+            self.output_size)  # todo: generalize
 
     # todo: remove tf code when done
     # def build(self, input_shape):
@@ -103,9 +103,7 @@ class TabNet(LudwigModule):
 
     def forward(
             self,
-            features: torch.Tensor,
-            training: bool = None,
-            **kwargs
+            features: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, List[torch.Tensor]]:
         if features.dim() != 2:
             raise ValueError(
@@ -124,15 +122,14 @@ class TabNet(LudwigModule):
         features = self.batch_norm(features)
         masked_features = features
 
-        x = self.feature_transforms[0](masked_features, training=training)
+        x = self.feature_transforms[0](masked_features)
 
         for step_i in range(1, self.num_steps + 1):
             #########################
             # Attentive Transformer #
             #########################
             mask_values = self.attentive_transforms[step_i](
-                x[:, self.output_size:], prior_scales, training=training
-            )
+                x[:, self.output_size:], prior_scales)
 
             # relaxation factor 1 forces the feature to be only used once
             prior_scales *= self.relaxation_factor - mask_values
@@ -176,7 +173,7 @@ class TabNet(LudwigModule):
 class FeatureBlock(LudwigModule):
     def __init__(
             self,
-            tab_feature_size: int,
+            input_size: int,
             size: int,
             apply_glu: bool = True,
             bn_momentum: float = 0.9,
@@ -185,6 +182,7 @@ class FeatureBlock(LudwigModule):
             shared_fc_layer: LudwigModule = None,
     ):
         super().__init__()
+        self.input_size = input_size
         self.apply_glu = apply_glu
         self.size = size
         units = size * 2 if apply_glu else size
@@ -192,8 +190,7 @@ class FeatureBlock(LudwigModule):
         if shared_fc_layer:
             self.fc_layer = shared_fc_layer
         else:
-            self.fc_layer = torch.nn.Linear(tab_feature_size, units,
-                                            bias=False)  # todo: figure out in_features
+            self.fc_layer = torch.nn.Linear(input_size, units, bias=False)
 
         self.batch_norm = GhostBatchNormalization(
             units,
@@ -209,6 +206,10 @@ class FeatureBlock(LudwigModule):
             hidden = glu(hidden)
         return hidden
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
 
 class AttentiveTransformer(LudwigModule):
     def __init__(
@@ -220,6 +221,8 @@ class AttentiveTransformer(LudwigModule):
             bn_virtual_bs: int = None,
     ):
         super().__init__()
+        self.tab_feature_size = tab_feature_size
+
         self.feature_block = FeatureBlock(
             tab_feature_size,
             size,
@@ -246,11 +249,19 @@ class AttentiveTransformer(LudwigModule):
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
 
         # added to avoid NaNs in the sparsemax
-        hidden = tf.clip_by_value(hidden,
-                                  clip_value_min=-1.0e+6,
-                                  clip_value_max=1.0e+6)
+        hidden = torch.clamp(hidden, min=-1.0e+6, max=1.0e+6)
         return self.sparsemax(hidden)
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.tab_feature_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        tensor = torch.rand([2, *self.input_shape], dtype=torch.float32)
+        prior_scales = torch.ones(2, self.input_shape[-1])
+        output = self.forward(tensor, prior_scales)
+        return output.size()[1:]
 
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class FeatureTransformer(LudwigModule):
@@ -258,7 +269,7 @@ class FeatureTransformer(LudwigModule):
             self,
             tab_feature_size: int,
             size: int,
-            shared_fc_layers: List[LudwigModule] = [],
+            shared_fc_layers: torch.nn.ModuleList = torch.nn.ModuleList(),
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             bn_momentum: float = 0.9,
@@ -266,8 +277,10 @@ class FeatureTransformer(LudwigModule):
             bn_virtual_bs: int = None,
     ):
         super().__init__()
+        self.tab_feature_size = tab_feature_size
         self.num_total_blocks = num_total_blocks
         self.num_shared_blocks = num_shared_blocks
+        self.size = size
 
         kargs = {
             "size": size,
@@ -278,6 +291,7 @@ class FeatureTransformer(LudwigModule):
 
         # build blocks
         self.blocks = torch.nn.ModuleList()
+        # todo: figure out how to generalize specificaiton of input size for FeatureBlock
         for n in range(num_total_blocks):
             if shared_fc_layers and n < len(shared_fc_layers):
                 # add shared blocks
@@ -290,7 +304,7 @@ class FeatureTransformer(LudwigModule):
                 )
             else:
                 # build new blocks
-                self.blocks.append(FeatureBlock(tab_feature_size, **kargs))
+                self.blocks.append(FeatureBlock(self.size, **kargs))
 
     def forward(
             self,
@@ -305,6 +319,14 @@ class FeatureTransformer(LudwigModule):
     @property
     def shared_fc_layers(self):
         return [self.blocks[i].fc_layer for i in range(self.num_shared_blocks)]
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.tab_feature_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.size])
 
 
 # sparsemax implementation: https://github.com/dreamquark-ai/tabnet/blob/develop/pytorch_tabnet/sparsemax.py
