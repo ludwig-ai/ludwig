@@ -24,7 +24,7 @@ import fsspec
 import h5py
 from fsspec.core import split_protocol
 
-from filelock import FileLock
+from filelock import SoftFileLock
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
@@ -181,7 +181,9 @@ class file_lock(contextlib.AbstractContextManager):
             if ignore_remote_protocol and has_remote_protocol(path):
                 self.lock = None
             else:
-                self.lock = FileLock(path, timeout=-1)
+                # unix file lock cannot be used, see
+                # https://stackoverflow.com/questions/28470246/python-lockf-and-flock-behaviour
+                self.lock = SoftFileLock(path, timeout=-1)
 
     def __enter__(self, *args, **kwargs):
         if self.lock:

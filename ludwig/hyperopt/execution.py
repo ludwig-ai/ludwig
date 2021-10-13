@@ -936,9 +936,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    sync_client.sync_down(
-                        remote_checkpoint_dir, str(trial_dir.absolute()))
-                    sync_client.wait()
+                    with file_lock(trial_dir.absolute(), lock_file=".lock_checkpoint"):
+                        sync_client.sync_down(
+                            remote_checkpoint_dir, str(trial_dir.absolute()))
+                        sync_client.wait()
                     for progress_tracker, save_path in results:
                         checkpoint(progress_tracker, str(
                             trial_dir.joinpath(Path(save_path))))
