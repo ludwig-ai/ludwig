@@ -276,7 +276,103 @@ class MT5Encoder(TextEncoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
-            # Subtract 2 to remove CLS and PAD tokens added by BERT tokenizer.
+            # Subtract 2 to remove CLS and PAD tokens added by MT5 tokenizer.
+            return torch.Size(
+                [
+                    self.max_sequence_length - 2,
+                    self.transformer.config.hidden_size,
+                ]
+            )
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
+@register(name="xlmroberta")
+class XLMRoBERTaEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        "word_tokenizer": "hf_tokenizer",
+        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+    }
+
+    default_params = {
+        "pretrained_model_name_or_path": "xlm-roberta-base",
+    }
+
+    def __init__(
+        self,
+        max_sequence_length,
+        use_pretrained: bool = True,
+        pretrained_model_name_or_path: str = "xlm-roberta-base",
+        reduce_output: str = "cls_pooled",
+        trainable: bool = True,
+        vocab_size: int = None,
+        pad_token_id: int = 1,
+        bos_token_id: int = 0,
+        eos_token_id: int = 2,
+        add_pooling_layer: bool = True,
+        **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import XLMRobertaModel, XLMRobertaConfig
+        except ModuleNotFoundError:
+            logger.error(
+                " transformers is not installed. "
+                "In order to install all text feature dependencies run "
+                "pip install ludwig[text]"
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = XLMRobertaModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = XLMRobertaConfig(
+                pad_token_id=pad_token_id,
+                bos_token_id=bos_token_id,
+                eos_token_id=eos_token_id,
+            )
+
+            self.transformer = XLMRobertaModel(config, add_pooling_layer)
+
+        self.reduce_output = reduce_output
+        if not self.reduce_output == "cls_pooled":
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+        self.max_sequence_length = max_sequence_length
+
+    def forward(
+        self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs),
+        )
+        if self.reduce_output == "cls_pooled":
+            hidden = transformer_outputs[1]
+        else:
+            hidden = transformer_outputs[0][:, 1:-1, :]
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+
+        return {"encoder_output": hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by XLMRoberta tokenizer.
             return torch.Size(
                 [
                     self.max_sequence_length - 2,
