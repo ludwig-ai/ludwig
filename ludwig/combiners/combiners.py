@@ -50,7 +50,9 @@ bias_regularizer_registry = ['l1', 'l2', 'l1_l2']
 activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
 norm_registry = ['batch', 'layer']
 activation_registry = ['relu']
-reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', 'null']
+reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat']
+# reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', 'null']
+
 
 # Initializers accept presets or customized dicts (not JSON-validated):
 #
@@ -62,10 +64,12 @@ WeightsInitializerEnum = \
     StringEnum("WeightsInitializerEnum", \
         {k:k for k in preset_weights_initializer_registry if k != None})
 WeightsInitializerType = Union[WeightsInitializerEnum, Dict]
+# WeightsInitializerType = WeightsInitializerEnum
 BiasInitializerEnum = \
     StringEnum("BiasInitializerEnum", \
         {k:k for k in preset_bias_initializer_registry if k != None})
 BiasInitializerType = Union[BiasInitializerEnum, Dict]
+# BiasInitializerType = BiasInitializerEnum
 
 WeightsRegularizerType = \
     StringEnum("WeightsRegularizerEnum",
@@ -227,7 +231,6 @@ class ConcatCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
-        insert_nonetype_on_optionals_schema_extra(ConcatCombinerParams)
         return ConcatCombinerParams
 
 
@@ -374,7 +377,6 @@ class SequenceConcatCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
-        insert_nonetype_on_optionals_schema_extra(SequenceConcatCombinerParams)
         return SequenceConcatCombinerParams
 
 
@@ -438,7 +440,6 @@ class SequenceCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
-        insert_nonetype_on_optionals_schema_extra(SequenceCombinerParams)
         return SequenceCombinerParams
 
 
@@ -532,7 +533,6 @@ class TabNetCombiner(tf.keras.Model):
     
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
-        insert_nonetype_on_optionals_schema_extra(TabNetCombinerParams)
         return TabNetCombinerParams
 
 
@@ -661,7 +661,6 @@ class TransformerCombiner(tf.keras.Model):
 
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
-        insert_nonetype_on_optionals_schema_extra(TransformerCombinerParams)
         return TransformerCombinerParams
 
 class TabTransformerCombinerParams(BaseModel):
@@ -853,7 +852,6 @@ class TabTransformerCombiner(tf.keras.Model):
     
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
-        insert_nonetype_on_optionals_schema_extra(TabTransformerCombinerParams)
         return TabTransformerCombinerParams
 
 
@@ -1012,7 +1010,6 @@ class ComparatorCombiner(tf.keras.Model):
     
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
-        insert_nonetype_on_optionals_schema_extra(ComparatorCombinerParams)
         return ComparatorCombinerParams
 
 def get_combiner_class(combiner_type):

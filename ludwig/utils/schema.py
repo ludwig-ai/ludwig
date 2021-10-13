@@ -157,6 +157,27 @@ def get_custom_definitions():
                 **defs,
                 **full_combiner_json['definitions']
             }
+
+            params_cls = combiner_cls.get_params_cls()
+            optionalParams = []
+            for param_name, field in params_cls.__fields__.items():
+                if not field.required:
+                    optionalParams.append((param_name, field))
+            for param, field in optionalParams:
+                print(param)
+                print(field)
+                print(field.name)
+                print(field.type_)
+                # if 'Enum' in field.type_.__name__:
+                print(defs.keys())
+                if 'Enum' in field.type_ and field.type_.__name__ in defs.keys():
+                    path = field.type_.__name__
+                    original_type = defs[path]["type"]
+                    defs[path].update({"type": ["null", original_type]})
+                    print(defs[path])
+                # else:
+                #     original_type = defs["properties"][param]["type"]
+                #     schema["properties"][param].update({"type": ["null", original_type]})
     return defs
 
 def create_cond(if_pred, then_pred):
