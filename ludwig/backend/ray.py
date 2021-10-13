@@ -249,9 +249,10 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, horovod_kwargs=None, cache_format=PARQUET, engine=None, **kwargs):
+    def __init__(self, dask_kwargs=None, horovod_kwargs=None, cache_format=PARQUET, engine=None, **kwargs):
         super().__init__(cache_format=cache_format, **kwargs)
         self._df_engine = _get_df_engine(engine)
+        self._dask_kwargs = dask_kwargs or {}
         self._horovod_kwargs = horovod_kwargs or {}
         self._tensorflow_kwargs = {}
         if cache_format not in [PARQUET, TFRECORD]:
@@ -268,8 +269,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 logger.info('Initializing new Ray cluster...')
                 ray.init(ignore_reinit_error=True)
 
+        dask_kwargs = {**get_dask_kwargs(), **self._dask_kwargs}
+        logger.info(f"Dask params: {dask_kwargs}")
         dask.config.set(scheduler=ray_dask_get)
-        self._df_engine.set_parallelism(**get_dask_kwargs())
+        self._df_engine.set_parallelism(**dask_kwargs)
 
     def initialize_tensorflow(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
