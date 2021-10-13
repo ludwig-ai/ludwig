@@ -166,12 +166,24 @@ def upload_output_file(url):
         yield url
 
 
-@contextlib.contextmanager
-def file_lock(path: str, check_remote_protocol: bool = True):
-    """Simple file lock based on creating and removing a lock file."""
-    path = os.path.join(path, ".lock") if os.path.isdir(path) else f'{path}.lock'
-    if not (check_remote_protocol and has_remote_protocol(path)):
-        with FileLock(path):
-            yield
-    else:
-        yield
+class file_lock(contextlib.AbstractContextManager):
+    """File lock based on filelock package."""
+    def __init__(
+        self,
+        path: str,
+        ignore_remote_protocol: bool = True,
+        lock_file: str = '.lock'
+    ) -> None:
+        path = os.path.join(path, lock_file) if os.path.isdir(path) else f'{path}./{lock_file}'
+        if ignore_remote_protocol and has_remote_protocol(path):
+            self.lock = None
+        else:
+            self.lock = FileLock(path, timeout=-1)
+
+    def __enter__(self, *args, **kwargs):
+        if self.lock:
+            return self.lock.__enter__(*args, **kwargs)
+
+    def __exit__(self, *args, **kwargs):
+        if self.lock:
+            return self.lock.__exit__(*args, **kwargs)

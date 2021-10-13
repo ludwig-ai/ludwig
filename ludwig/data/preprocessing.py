@@ -48,7 +48,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
 from ludwig.utils.data_utils import save_array, get_split_path
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
-from ludwig.utils.fs_utils import path_exists
+from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      get_proc_features_from_lists)
@@ -1422,120 +1422,120 @@ def preprocess_for_training(
             dataset, training_set, validation_set, test_set
         )
 
-    # if training_set_metadata is a string, assume it's a path to load the json
-    training_set_metadata = training_set_metadata or {}
-    if training_set_metadata and isinstance(training_set_metadata, str):
-        training_set_metadata = load_metadata(training_set_metadata)
+    with file_lock(backend.cache.get_cache_directory(dataset)):
+        # if training_set_metadata is a string, assume it's a path to load the json
+        training_set_metadata = training_set_metadata or {}
+        if training_set_metadata and isinstance(training_set_metadata, str):
+            training_set_metadata = load_metadata(training_set_metadata)
 
-    # setup
-    features = (config['input_features'] +
-                config['output_features'])
+        # setup
+        features = (config['input_features'] +
+                    config['output_features'])
 
-    # in case data_format is one of the cacheable formats,
-    # check if there's a cached hdf5 file with the same name,
-    # and in case move on with the hdf5 branch.
-    cached = False
-    cache = backend.cache.get_dataset_cache(
-        config, dataset, training_set, test_set, validation_set
-    )
-    if data_format in CACHEABLE_FORMATS:
-        cache_results = cache.get()
-        if cache_results is not None:
-            valid, *cache_values = cache_results
-            if valid:
-                logger.info(
-                    'Found cached dataset and meta.json with the same filename '
-                    'of the dataset, using them instead'
-                )
-                training_set_metadata, training_set, test_set, validation_set = cache_values
-                config['data_hdf5_fp'] = training_set
-                data_format = backend.cache.data_format
-                cached = True
-                dataset = None
-            else:
-                logger.info(
-                    "Found cached dataset and meta.json with the same filename "
-                    "of the dataset, but checksum don't match, "
-                    "if saving of processed input is not skipped "
-                    "they will be overridden"
-                )
-                cache.delete()
-
-    training_set_metadata[CHECKSUM] = cache.checksum
-    data_format_processor = get_from_registry(
-        data_format,
-        data_format_preprocessor_registry
-    )
-
-    if cached or data_format == 'hdf5':
-        # Always interpret hdf5 files as preprocessed, even if missing from the cache
-        processed = data_format_processor.prepare_processed_data(
-            features,
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed
+        # in case data_format is one of the cacheable formats,
+        # check if there's a cached hdf5 file with the same name,
+        # and in case move on with the hdf5 branch.
+        cached = False
+        cache = backend.cache.get_dataset_cache(
+            config, dataset, training_set, test_set, validation_set
         )
-        training_set, test_set, validation_set, training_set_metadata = processed
-    else:
-        processed = data_format_processor.preprocess_for_training(
-            features,
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed
+        if data_format in CACHEABLE_FORMATS:
+            cache_results = cache.get()
+            if cache_results is not None:
+                valid, *cache_values = cache_results
+                if valid:
+                    logger.info(
+                        'Found cached dataset and meta.json with the same filename '
+                        'of the dataset, using them instead'
+                    )
+                    training_set_metadata, training_set, test_set, validation_set = cache_values
+                    config['data_hdf5_fp'] = training_set
+                    data_format = backend.cache.data_format
+                    cached = True
+                    dataset = None
+                else:
+                    logger.info(
+                        "Found cached dataset and meta.json with the same filename "
+                        "of the dataset, but checksum don't match, "
+                        "if saving of processed input is not skipped "
+                        "they will be overridden"
+                    )
+                    cache.delete()
+
+        training_set_metadata[CHECKSUM] = cache.checksum
+        data_format_processor = get_from_registry(
+            data_format,
+            data_format_preprocessor_registry
         )
-        training_set, test_set, validation_set, training_set_metadata = processed
 
-        replace_text_feature_level(
-            features,
-            [training_set, validation_set, test_set]
-        )
-        processed = (training_set, test_set, validation_set, training_set_metadata)
+        if cached or data_format == 'hdf5':
+            # Always interpret hdf5 files as preprocessed, even if missing from the cache
+            processed = data_format_processor.prepare_processed_data(
+                features,
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                skip_save_processed_input=skip_save_processed_input,
+                preprocessing_params=preprocessing_params,
+                backend=backend,
+                random_seed=random_seed
+            )
+            training_set, test_set, validation_set, training_set_metadata = processed
+        else:
+            processed = data_format_processor.preprocess_for_training(
+                features,
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                skip_save_processed_input=skip_save_processed_input,
+                preprocessing_params=preprocessing_params,
+                backend=backend,
+                random_seed=random_seed
+            )
+            training_set, test_set, validation_set, training_set_metadata = processed
+            replace_text_feature_level(
+                features,
+                [training_set, validation_set, test_set]
+            )
+            processed = (training_set, test_set, validation_set, training_set_metadata)
 
-        # cache the dataset
-        if backend.cache.can_cache(skip_save_processed_input):
-            processed = cache.put(*processed)
-        training_set, test_set, validation_set, training_set_metadata = processed
+            # cache the dataset
+            if backend.cache.can_cache(skip_save_processed_input):
+                processed = cache.put(*processed)
+            training_set, test_set, validation_set, training_set_metadata = processed
 
-    training_dataset = backend.dataset_manager.create(
-        training_set,
-        config,
-        training_set_metadata
-    )
-
-    validation_dataset = None
-    if validation_set is not None:
-        validation_dataset = backend.dataset_manager.create(
-            validation_set,
+        training_dataset = backend.dataset_manager.create(
+            training_set,
             config,
             training_set_metadata
         )
 
-    test_dataset = None
-    if test_set is not None:
-        test_dataset = backend.dataset_manager.create(
-            test_set,
-            config,
+        validation_dataset = None
+        if validation_set is not None:
+            validation_dataset = backend.dataset_manager.create(
+                validation_set,
+                config,
+                training_set_metadata
+            )
+
+        test_dataset = None
+        if test_set is not None:
+            test_dataset = backend.dataset_manager.create(
+                test_set,
+                config,
+                training_set_metadata
+            )
+
+        return (
+            training_dataset,
+            validation_dataset,
+            test_dataset,
             training_set_metadata
         )
-
-    return (
-        training_dataset,
-        validation_dataset,
-        test_dataset,
-        training_set_metadata
-    )
 
 
 def _preprocess_file_for_training(

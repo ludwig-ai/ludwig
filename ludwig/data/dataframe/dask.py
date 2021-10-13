@@ -25,7 +25,6 @@ from dask.diagnostics import ProgressBar
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords
-from ludwig.utils.fs_utils import file_lock
 
 
 TMP_COLUMN = '__TMP_COLUMN__'
@@ -77,24 +76,22 @@ class DaskEngine(DataFrameEngine):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
     def to_parquet(self, df, path):
-        with file_lock(path):
-            with ProgressBar():
-                df.to_parquet(
-                    path,
-                    engine='pyarrow',
-                    write_index=False,
-                    schema='infer',
-                )
+        with ProgressBar():
+            df.to_parquet(
+                path,
+                engine='pyarrow',
+                write_index=False,
+                schema='infer',
+            )
 
     def to_tfrecord(self, df, path):
         """Implementations of data frame to tfrecords."""
-        with file_lock(path):
-            with ProgressBar():
-                dask_to_tfrecords(
-                    df,
-                    path,
-                    compression_type="GZIP",
-                    compression_level=9)
+        with ProgressBar():
+            dask_to_tfrecords(
+                df,
+                path,
+                compression_type="GZIP",
+                compression_level=9)
 
     @property
     def array_lib(self):
