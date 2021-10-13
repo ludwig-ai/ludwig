@@ -51,6 +51,8 @@ initializer_registry = {
     "dirac": nn.init.dirac_,
     "xavier_uniform": nn.init.xavier_uniform_,
     "xavier_normal": nn.init.xavier_normal_,
+    "glorot_uniform": nn.init.xavier_uniform_,
+    "glorot_normal": nn.init.xavier_normal_,
     "kaiming_uniform": nn.init.kaiming_uniform_,
     "kaiming_normal": nn.init.kaiming_normal_,
     "orthogonal": nn.init.orthogonal_,

@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 from functools import partial
+from typing import Optional, Dict, List
 
 import torch
 
@@ -27,6 +28,17 @@ from ludwig.constants import LOSS, TYPE
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_input_size(input_size, fc_layers):
+    """Returns the input size to the final output."""
+    if not fc_layers:
+        # No fc_layers. Use input size.
+        return input_size
+    if fc_layers[-1]['fc_size']:
+        return fc_layers[-1]['fc_size']
+    raise ValueError(
+        f'The fc_size of the last decoder FC layer is unspecified: {fc_layers[-1]}')
 
 
 class Regressor(Decoder):
@@ -41,6 +53,7 @@ class Regressor(Decoder):
             bias_regularizer=None,
             activity_regularizer=None,
             activation=None,
+            fc_layers: Optional[List[Dict]] = None,
             **kwargs
     ):
         super().__init__()
@@ -49,7 +62,7 @@ class Regressor(Decoder):
         logger.debug('  Dense')
 
         self.dense = Dense(
-            input_size=input_size,
+            input_size=get_input_size(input_size, fc_layers),
             output_size=1,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
@@ -81,6 +94,7 @@ class Projector(Decoder):
             activity_regularizer=None,
             activation=None,
             clip=None,
+            fc_layers: Optional[List[Dict]] = None,
             **kwargs
     ):
         super().__init__()
@@ -88,7 +102,7 @@ class Projector(Decoder):
 
         logger.debug('  Dense')
         self.dense = Dense(
-            input_size=input_size,
+            input_size=get_input_size(input_size, fc_layers),
             output_size=output_size,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
@@ -141,6 +155,7 @@ class Classifier(Decoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
+            fc_layers: Optional[List[Dict]] = None,
             **kwargs
     ):
         super().__init__()
@@ -148,7 +163,7 @@ class Classifier(Decoder):
 
         logger.debug('  Dense')
         self.dense = Dense(
-            input_size=input_size,
+            input_size=get_input_size(input_size, fc_layers),
             output_size=num_classes,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
