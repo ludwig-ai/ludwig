@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+import copy
 from typing import Dict
 
 from ludwig.utils.types import DataFrame
@@ -196,9 +197,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_decoder(self, decoder_parameters):
         # Override input_size. Features input_size may be different if the
         # output feature has a custom FC.
-        decoder_parameters['input_size'] = self.fc_stack.output_shape[-1]
+        decoder_parameters_copy = copy.copy(
+            decoder_parameters)
+        decoder_parameters_copy['input_size'] = self.fc_stack.output_shape[-1]
         return get_from_registry(self.decoder, self.decoder_registry)(
-            **decoder_parameters
+            **decoder_parameters_copy
         )
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):

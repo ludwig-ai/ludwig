@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Optional, Dict, List
 
 import torch
 
@@ -142,7 +141,6 @@ class Classifier(Decoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            fc_layers: Optional[List[Dict]] = None,
             **kwargs
     ):
         super().__init__()
