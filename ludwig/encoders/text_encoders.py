@@ -17,6 +17,7 @@
 import logging
 import sys
 from abc import ABC
+import math
 from typing import Callable, Dict, Optional, Union, List
 
 import torch
@@ -62,7 +63,7 @@ class ALBERTEncoder(TextEncoder):
             num_hidden_layers: int = 12,
             num_hidden_groups: int = 1,
             num_attention_heads: int = 64,
-            intermediate_size:int = 16384,
+            intermediate_size: int = 16384,
             inner_group_num: int = 1,
             hidden_act: str = "gelu_new",
             hidden_dropout_prob: float = 0,
@@ -1293,60 +1294,112 @@ class CamemBERTEncoder(TextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
-#
-#
-#
-# @register(name='t5')
-# class T5Encoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 't5-small',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='t5-small',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFT5Model
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFT5Model.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer(
-#             inputs,
-#             decoder_input_ids=inputs,
-#             training=training,
-#             attention_mask=mask,
-#         )
-#         hidden = transformer_outputs[0][:, 0:-1, :]  # [sent] + [eos token]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
+
+
+@register(name='t5')
+class T5Encoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 't5-small',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 't5-small',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 32128,
+            d_model: int = 512,
+            d_kv: int = 64,
+            d_ff: int = 2048,
+            num_layers: int = 6,
+            num_decoder_layers: Optional[int] = None,
+            num_heads: int = 8,
+            relative_attention_num_buckets: int = 32,
+            dropout_rate: float = 0.1,
+            layer_norm_eps: float = 1e-6,
+            initializer_factor: float = 1,
+            feed_forward_proj: str = 'relu',
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import T5Model, T5Config
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = T5Model.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = T5Config(
+                vocab_size=vocab_size,
+                d_model=d_model,
+                d_kv=d_kv,
+                d_ff=d_ff,
+                num_layers=num_layers,
+                num_decoder_layers=num_decoder_layers,
+                num_heads=num_heads,
+                relative_attention_num_buckets=relative_attention_num_buckets,
+                dropout_rate=dropout_rate,
+                layer_norm_eps=layer_norm_eps,
+                initializer_factor=initializer_factor)
+            self.transformer = T5Model(config)
+
+        self.max_sequence_length = max_sequence_length
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            inputs,
+            decoder_input_ids=inputs,
+            attention_mask=mask,
+        )
+        hidden = transformer_outputs[0][:, 0:-1, :]  # [eos token]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 1 to remove EOS token added by T5 tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 1,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.d_model])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
+
+
 # @register(name='mt5')
 # class MT5Encoder(TextEncoder):
 #     fixed_preprocessing_parameters = {
@@ -1454,55 +1507,136 @@ class CamemBERTEncoder(TextEncoder):
 #         return {'encoder_output': hidden}
 #
 #
-# @register(name='flaubert')
-# class FlauBERTEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'jplu/tf-flaubert-small-cased',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='jplu/tf-flaubert-small-cased',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFFlaubertModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFFlaubertModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             'input_ids': inputs,
-#             'attention_mask': mask,
-#             'token_type_ids': tf.zeros_like(inputs),
-#         }, training=training)
-#         hidden = transformer_outputs[0][:, 1:-1, :]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
+@register(name='flaubert')
+class FlauBERTEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'jplu/tf-flaubert-small-cased',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool,
+            pretrained_model_name_or_path: str = 'jplu/tf-flaubert-small-cased',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 30145,
+            pre_norm: bool = False,
+            layerdrop: float = 0,
+            emb_dim: int = 2048,
+            n_layer: int = 12,
+            n_head: int = 16,
+            dropout: float = 0.1,
+            attention_dropout: float = 0.1,
+            gelu_activation: bool = True,
+            sinusoidal_embeddings: bool = False,
+            causal: bool = False,
+            asm: bool = False,
+            n_langs: int = 1,
+            use_lang_emb: bool = True,
+            max_position_embeddings: int = 512,
+            embed_init_std: float = math.pow(2048, -0.5),
+            init_std: int = 50257,
+            layer_norm_eps: float = 1e-12,
+            bos_index: int = 0,
+            eos_index: int = 1,
+            pad_index: int = 2,
+            unk_index: int = 3,
+            mask_index: int = 5,
+            is_encoder: bool = True,
+            mask_token_id: int = 0,
+            lang_id: int = 1,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import FlaubertModel, FlaubertConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = FlaubertModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = FlaubertConfig(
+                vocab_size=vocab_size,
+                pre_norm=pre_norm,
+                layerdrop=layerdrop,
+                emb_dim=emb_dim,
+                n_layer=n_layer,
+                n_head=n_head,
+                dropout=dropout,
+                attention_dropout=dropout,
+                gelu_activation=gelu_activation,
+                sinusoidal_embeddings=sinusoidal_embeddings,
+                causal=causal,
+                asm=asm,
+                n_langs=n_langs,
+                use_lang_emb=use_lang_emb,
+                max_position_embeddings=max_position_embeddings,
+                embed_init_std=embed_init_std,
+                init_std=init_std,
+                layer_norm_eps=layer_norm_eps,
+                bos_index=bos_index,
+                eos_index=eos_index,
+                pad_index=pad_index,
+                unk_index=unk_index,
+                mask_index=mask_index,
+                is_encoder=is_encoder,
+                mask_token_id=mask_token_id,
+                lang_id=lang_id)
+            self.transformer = FlaubertModel(config)
+
+        self.max_sequence_length = max_sequence_length
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs))
+        hidden = transformer_outputs[0][:, 1:-1, :]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 2,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.emb_dim])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 #
 #
 # @register(name='electra')
@@ -1556,6 +1690,8 @@ class CamemBERTEncoder(TextEncoder):
 #         return {'encoder_output': hidden}
 #
 #
+
+
 @register(name='longformer')
 class LongformerEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
@@ -1573,7 +1709,7 @@ class LongformerEncoder(TextEncoder):
             use_pretrained: bool = True,
             attention_window: Union[List[int], int] = 512,
             sep_token_id: int = 2,
-            pretrained_model_name_or_path: str ='allenai/longformer-base-4096',
+            pretrained_model_name_or_path: str = 'allenai/longformer-base-4096',
             reduce_output: Optional[str] = 'cls_pooled',
             trainable: bool = True,
             num_tokens: Optional[int] = None,
@@ -1638,58 +1774,77 @@ class LongformerEncoder(TextEncoder):
     def input_dtype(self):
         return torch.int32
 
-#
-#
-# @register(name='auto_transformer')
-# class AutoTransformerEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path,
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFAutoModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFAutoModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         if not self.reduce_output == 'cls_pooled':
-#             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "training": training,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs)
-#         }, return_dict=True)
-#         if self.reduce_output == 'cls_pooled':
-#             # this works only if the user know that the specific model
-#             # they want to use has the same outputs of
-#             # the BERT base class call() function
-#             hidden = transformer_outputs['cls_pooled']
-#         else:
-#             hidden = transformer_outputs['last_hidden_state']
-#             hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
+
+@register(name='auto_transformer')
+class AutoTransformerEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    def __init__(
+            self,
+            pretrained_model_name_or_path: str,
+            max_sequence_length: int,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = None,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import AutoModel
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        self.transformer = AutoModel.from_pretrained(
+            pretrained_model_name_or_path
+        )
+        self.reduce_output = reduce_output
+        if not self.reduce_output == 'cls_pooled':
+            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+        self.vocab_size = vocab_size
+        self.max_sequence_length = max_sequence_length
+
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs))
+        if self.reduce_output == 'cls_pooled':
+            # this works only if the user know that the specific model
+            # they want to use has the same outputs of
+            # the BERT base class call() function
+            hidden = transformer_outputs['cls_pooled']
+        else:
+            hidden = transformer_outputs['last_hidden_state']
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # This may need to be conditioned on which AutoModel gets chosen.
+            return torch.Size([
+                self.max_sequence_length,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
