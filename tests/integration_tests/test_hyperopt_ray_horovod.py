@@ -45,9 +45,9 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 # Ray mocks
 
-# Sync and delete templates that operate on local directories.
-LOCAL_SYNC_TEMPLATE = "mkdir -p {target} && rsync -avz {source}/ {target}/"
-LOCAL_DELETE_TEMPLATE = "rm -rf {target}"
+# Dummy sync templates
+LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
+LOCAL_DELETE_TEMPLATE = "echo {target}"
 
 logger = logging.getLogger(__name__)
 
