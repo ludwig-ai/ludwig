@@ -53,7 +53,9 @@ class DaskEngine(DataFrameEngine):
         return dataset
 
     def parallelize(self, data):
-        return data.repartition(self.parallelism)
+        if self.parallelism:
+            return data.repartition(self.parallelism)
+        return data
 
     def persist(self, data):
         return data.persist() if self._persist else data
