@@ -42,11 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_dask_kwargs():
-    # TODO ray: select this more intelligently,
-    #  must be greather than or equal to number of Horovod workers
-    return dict(
-        parallelism=int(ray.cluster_resources()['CPU'])
-    )
+    # TODO ray: find an informed way to set the parallelism, in practice
+    #  it looks like Dask handles this well on its own most of the time
+    return {}
 
 
 def get_horovod_kwargs():
