@@ -1637,59 +1637,116 @@ class FlauBERTEncoder(TextEncoder):
     @property
     def input_dtype(self):
         return torch.int32
-#
-#
-# @register(name='electra')
-# class ELECTRAEncoder(TextEncoder):
-#     fixed_preprocessing_parameters = {
-#         'word_tokenizer': 'hf_tokenizer',
-#         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
-#     }
-#
-#     default_params = {
-#         'pretrained_model_name_or_path': 'google/electra-small-discriminator',
-#     }
-#
-#     def __init__(
-#             self,
-#             pretrained_model_name_or_path='google/electra-small-discriminator',
-#             reduce_output='sum',
-#             trainable=True,
-#             num_tokens=None,
-#             **kwargs
-#     ):
-#         super().__init__()
-#         try:
-#             from transformers import TFElectraModel
-#         except ModuleNotFoundError:
-#             logger.error(
-#                 ' transformers is not installed. '
-#                 'In order to install all text feature dependencies run '
-#                 'pip install ludwig[text]'
-#             )
-#             sys.exit(-1)
-#
-#         self.transformer = TFElectraModel.from_pretrained(
-#             pretrained_model_name_or_path
-#         )
-#         self.reduce_output = reduce_output
-#         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-#         self.transformer.trainable = trainable
-#         self.transformer.resize_token_embeddings(num_tokens)
-#
-#     def call(self, inputs, training=None, mask=None):
-#         if mask is not None:
-#             mask = tf.cast(mask, dtype=tf.int32)
-#         transformer_outputs = self.transformer({
-#             "input_ids": inputs,
-#             "attention_mask": mask,
-#             "token_type_ids": tf.zeros_like(inputs),
-#         }, training=training)
-#         hidden = transformer_outputs[0][:, 1:-1, :]
-#         hidden = self.reduce_sequence(hidden, self.reduce_output)
-#         return {'encoder_output': hidden}
-#
-#
+
+
+@register(name='electra')
+class ELECTRAEncoder(TextEncoder):
+    fixed_preprocessing_parameters = {
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'google/electra-small-discriminator',
+    }
+
+    def __init__(
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'google/electra-small-discriminator',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 30522,
+            embedding_size: int = 128,
+            hidden_size: int = 256,
+            num_hidden_layers: int = 12,
+            num_attention_heads: int = 4,
+            intermediate_size: int = 1024,
+            hidden_act: Union[str, Callable] = 'gelu',
+            hidden_dropout_prob: float = 0.1,
+            attention_probs_dropout_prob: float = 0.1,
+            max_position_embeddings: int = 512,
+            type_vocab_size: int = 2,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            position_embedding_type: str = 'absolute',
+            classifier_dropout: Optional[float] = None,
+            **kwargs
+    ):
+        super().__init__()
+        try:
+            from transformers import ElectraModel, ElectraConfig
+        except ModuleNotFoundError:
+            logger.error(
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
+        if use_pretrained:
+            self.transformer = ElectraModel.from_pretrained(
+                pretrained_model_name_or_path
+            )
+        else:
+            config = ElectraConfig(
+                vocab_size=vocab_size,
+                embedding_size=embedding_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=num_hidden_layers,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                hidden_act=hidden_act,
+                hidden_dropout_prob=hidden_dropout_prob,
+                attention_probs_dropout_prob=attention_probs_dropout_prob,
+                max_position_embeddings=max_position_embeddings,
+                type_vocab_size=type_vocab_size,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                position_embedding_type=position_embedding_type,
+                classifier_dropout=classifier_dropout)
+            self.transformer = ElectraModel(config)
+
+        self.max_sequence_length = max_sequence_length
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if trainable:
+            self.transformer.train()
+        self.transformer.resize_token_embeddings(vocab_size)
+
+    def forward(
+            self,
+            inputs: torch.Tensor,
+            mask: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        if mask is not None:
+            mask = mask.to(torch.int32)
+        transformer_outputs = self.transformer(
+            input_ids=inputs,
+            attention_mask=mask,
+            token_type_ids=torch.zeros_like(inputs))
+        hidden = transformer_outputs[0][:, 1:-1, :]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            # Subtract 2 to remove CLS and PAD tokens added by tokenizer.
+            return torch.Size([
+                self.max_sequence_length - 2,
+                self.transformer.config.hidden_size
+            ])
+        return torch.Size([self.transformer.config.hidden_size])
+
+    @property
+    def input_dtype(self):
+        return torch.int32
 
 
 @register(name='longformer')
@@ -1806,7 +1863,7 @@ class AutoTransformerEncoder(TextEncoder):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
+        if self.reduce_output != 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -1825,7 +1882,7 @@ class AutoTransformerEncoder(TextEncoder):
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
             # the BERT base class call() function
-            hidden = transformer_outputs['cls_pooled']
+            hidden = transformer_outputs['pooler_output']
         else:
             hidden = transformer_outputs['last_hidden_state']
             hidden = self.reduce_sequence(hidden, self.reduce_output)
