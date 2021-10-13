@@ -17,7 +17,6 @@
 import logging
 import sys
 from abc import ABC
-import math
 from typing import Callable, Dict, Optional, Union, List
 
 import torch
@@ -1355,7 +1354,8 @@ class T5Encoder(TextEncoder):
                 relative_attention_num_buckets=relative_attention_num_buckets,
                 dropout_rate=dropout_rate,
                 layer_norm_eps=layer_norm_eps,
-                initializer_factor=initializer_factor)
+                initializer_factor=initializer_factor,
+                feed_forward_proj=feed_forward_proj)
             self.transformer = T5Model(config)
 
         self.max_sequence_length = max_sequence_length
@@ -1527,7 +1527,7 @@ class FlauBERTEncoder(TextEncoder):
             trainable: bool = True,
             vocab_size: int = 30145,
             pre_norm: bool = False,
-            layerdrop: float = 0,
+            layerdrop: float = 0.0,
             emb_dim: int = 2048,
             n_layer: int = 12,
             n_head: int = 16,
@@ -1540,7 +1540,7 @@ class FlauBERTEncoder(TextEncoder):
             n_langs: int = 1,
             use_lang_emb: bool = True,
             max_position_embeddings: int = 512,
-            embed_init_std: float = math.pow(2048, -0.5),
+            embed_init_std: float = 2048**-0.5,
             init_std: int = 50257,
             layer_norm_eps: float = 1e-12,
             bos_index: int = 0,
@@ -1895,7 +1895,7 @@ class AutoTransformerEncoder(TextEncoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
-            # This may need to be conditioned on which AutoModel gets chosen.
+            # TODO(justin): This may need to be conditioned on which AutoModel gets chosen.
             return torch.Size([
                 self.max_sequence_length,
                 self.transformer.config.hidden_size
