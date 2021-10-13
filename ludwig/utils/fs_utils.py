@@ -174,11 +174,14 @@ class file_lock(contextlib.AbstractContextManager):
         ignore_remote_protocol: bool = True,
         lock_file: str = '.lock'
     ) -> None:
-        path = os.path.join(path, lock_file) if os.path.isdir(path) else f'{path}./{lock_file}'
-        if ignore_remote_protocol and has_remote_protocol(path):
+        if not isinstance(path, (str, os.PathLike, pathlib.Path)):
             self.lock = None
         else:
-            self.lock = FileLock(path, timeout=-1)
+            path = os.path.join(path, lock_file) if os.path.isdir(path) else f'{path}./{lock_file}'
+            if ignore_remote_protocol and has_remote_protocol(path):
+                self.lock = None
+            else:
+                self.lock = FileLock(path, timeout=-1)
 
     def __enter__(self, *args, **kwargs):
         if self.lock:
