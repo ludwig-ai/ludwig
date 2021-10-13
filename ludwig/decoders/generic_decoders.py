@@ -150,7 +150,7 @@ class Classifier(Decoder):
 
         logger.debug('  Dense')
         self.dense = Dense(
-            input_size=get_input_size(input_size, fc_layers),
+            input_size=input_size,
             output_size=num_classes,
             use_bias=use_bias,
             weights_initializer=weights_initializer,
