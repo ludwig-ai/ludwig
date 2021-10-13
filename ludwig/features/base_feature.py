@@ -17,11 +17,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    pass
-import pandas as pd
+from ludwig.utils.types import DataFrame
+
 import tensorflow as tf
 
 from ludwig.constants import *
@@ -496,11 +493,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
         return feature_hidden
 
-    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+    def flatten(self, df: DataFrame) -> DataFrame:
         """ Converts the output of batch_predict to a 1D array. """
         return df
 
-    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+    def unflatten(self, df: DataFrame) -> DataFrame:
         """ Reshapes a flattened 1D array into its original shape. """
         return df
 
