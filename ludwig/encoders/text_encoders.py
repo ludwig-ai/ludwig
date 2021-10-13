@@ -206,7 +206,7 @@ class MT5Encoder(TextEncoder):
     ):
         super().__init__()
         try:
-            from transformers import MT5Model, MT5Config
+            from transformers import MT5EncoderModel, MT5Config
         except ModuleNotFoundError:
             logger.error(
                 " transformers is not installed. "
@@ -216,7 +216,7 @@ class MT5Encoder(TextEncoder):
             sys.exit(-1)
 
         if use_pretrained:
-            self.transformer = MT5Model.from_pretrained(
+            self.transformer = MT5EncoderModel.from_pretrained(
                 pretrained_model_name_or_path
             )
         else:
@@ -241,7 +241,7 @@ class MT5Encoder(TextEncoder):
                 eos_token_id=eos_token_id,
                 decoder_start_token_id=decoder_start_token_id,
             )
-            self.transformer = MT5Model(config)
+            self.transformer = MT5EncoderModel(config)
 
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
@@ -259,7 +259,6 @@ class MT5Encoder(TextEncoder):
         transformer_outputs = self.transformer(
             input_ids=inputs,
             attention_mask=mask,
-            token_type_ids=torch.zeros_like(inputs),
         )
         if self.reduce_output == "cls_pooled":
             hidden = transformer_outputs[1]
