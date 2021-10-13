@@ -240,7 +240,6 @@ class MT5Encoder(TextEncoder):
                 pad_token_id=pad_token_id,
                 eos_token_id=eos_token_id,
                 decoder_start_token_id=decoder_start_token_id,
-                **kwargs
             )
             self.transformer = MT5Model(config)
 
