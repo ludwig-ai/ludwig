@@ -1,0 +1,6 @@
+version: 1.0
+kaggle_dataset_name: ATIS
+kaggle_dataset_id: hassanamin/atis-airlinetravelinformationsystem
+kaggle_dataset_files:
+  - atis_intents.csv
+csv_filename: atis_intents.csv

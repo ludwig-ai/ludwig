@@ -16,9 +16,6 @@
 # ==============================================================================
 import os
 import pandas as pd
-from tqdm import tqdm
-from typing import List
-from urllib.request import urlretrieve
 
 from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.download import KaggleDatasetDownloadMixin
