@@ -2,14 +2,14 @@
 # coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -38,54 +38,54 @@ class TextEncoder(Encoder, ABC):
         ENCODER_REGISTRY[name] = cls
 
 
-@register(name="albert")
+@register(name='albert')
 class ALBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "albert-base-v2",
+        'pretrained_model_name_or_path': 'albert-base-v2',
     }
 
     def __init__(
-        self,
-        max_sequence_length,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "albert-base-v2",
-        trainable: bool = True,
-        reduce_output: str = "cls_pooled",
-        vocab_size: int = 30000,
-        embedding_size: int = 128,
-        hidden_size: int = 4096,
-        num_hidden_layers: int = 12,
-        num_hidden_groups: int = 1,
-        num_attention_heads: int = 64,
-        intermediate_size: int = 16384,
-        inner_group_num: int = 1,
-        hidden_act: str = "gelu_new",
-        hidden_dropout_prob: float = 0,
-        attention_probs_dropout_prob: float = 0,
-        max_position_embeddings: int = 512,
-        type_vocab_size: int = 2,
-        initializer_range: float = 0.02,
-        layer_norm_eps: float = 1e-12,
-        classifier_dropout_prob: float = 0.1,
-        position_embedding_type: str = "absolute",
-        pad_token_id: int = 0,
-        bos_token_id: int = 2,
-        eos_token_id: int = 3,
-        **kwargs
+            self,
+            max_sequence_length,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'albert-base-v2',
+            trainable: bool = True,
+            reduce_output: str = 'cls_pooled',
+            vocab_size: int = 30000,
+            embedding_size: int = 128,
+            hidden_size: int = 4096,
+            num_hidden_layers: int = 12,
+            num_hidden_groups: int = 1,
+            num_attention_heads: int = 64,
+            intermediate_size: int = 16384,
+            inner_group_num: int = 1,
+            hidden_act: str = 'gelu_new',
+            hidden_dropout_prob: float = 0,
+            attention_probs_dropout_prob: float = 0,
+            max_position_embeddings: int = 512,
+            type_vocab_size: int = 2,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            classifier_dropout_prob: float = 0.1,
+            position_embedding_type: str = 'absolute',
+            pad_token_id: int = 0,
+            bos_token_id: int = 2,
+            eos_token_id: int = 3,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import AlbertModel, AlbertConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -119,7 +119,7 @@ class ALBERTEncoder(TextEncoder):
             self.transformer = AlbertModel(config)
 
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
+        if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -136,13 +136,13 @@ class ALBERTEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -165,53 +165,53 @@ class ALBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="mt5")
+@register(name='mt5')
 class MT5Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "google/mt5-base",
+        'pretrained_model_name_or_path': 'google/mt5-base',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "google/mt5-base",
-        trainable: bool = True,
-        reduce_output: str = "cls_pooled",
-        vocab_size: int = 250112,
-        d_model: int = 512,
-        d_kv: int = 64,
-        d_ff: int = 1024,
-        num_layers: int = 8,
-        num_decoder_layers: int = None,
-        num_heads: int = 6,
-        relative_attention_num_buckets: int = 32,
-        dropout_rate: float = 0.1,
-        layer_norm_epsilon: float = 1e-06,
-        initializer_factor: float = 1.0,
-        feed_forward_proj: str = "gated-gelu",
-        is_encoder_decoder: bool = True,
-        use_cache: bool = True,
-        tokenizer_class: str = "T5Tokenizer",
-        tie_word_embeddings: bool = False,
-        pad_token_id: int = 0,
-        eos_token_id: int = 1,
-        decoder_start_token_id: int = 0,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'google/mt5-base',
+            trainable: bool = True,
+            reduce_output: str = 'cls_pooled',
+            vocab_size: int = 250112,
+            d_model: int = 512,
+            d_kv: int = 64,
+            d_ff: int = 1024,
+            num_layers: int = 8,
+            num_decoder_layers: int = None,
+            num_heads: int = 6,
+            relative_attention_num_buckets: int = 32,
+            dropout_rate: float = 0.1,
+            layer_norm_epsilon: float = 1e-06,
+            initializer_factor: float = 1.0,
+            feed_forward_proj: str = 'gated-gelu',
+            is_encoder_decoder: bool = True,
+            use_cache: bool = True,
+            tokenizer_class: str = 'T5Tokenizer',
+            tie_word_embeddings: bool = False,
+            pad_token_id: int = 0,
+            eos_token_id: int = 1,
+            decoder_start_token_id: int = 0,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import MT5EncoderModel, MT5Config
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -244,7 +244,7 @@ class MT5Encoder(TextEncoder):
             self.transformer = MT5EncoderModel(config)
 
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
+        if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -260,13 +260,13 @@ class MT5Encoder(TextEncoder):
             input_ids=inputs,
             attention_mask=mask,
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -289,39 +289,39 @@ class MT5Encoder(TextEncoder):
         return torch.int32
 
 
-@register(name="xlmroberta")
+@register(name='xlmroberta')
 class XLMRoBERTaEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "xlm-roberta-base",
+        'pretrained_model_name_or_path': 'xlm-roberta-base',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlm-roberta-base",
-        reduce_output: str = "cls_pooled",
-        trainable: bool = True,
-        vocab_size: int = None,
-        pad_token_id: int = 1,
-        bos_token_id: int = 0,
-        eos_token_id: int = 2,
-        add_pooling_layer: bool = True,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'xlm-roberta-base',
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            vocab_size: int = None,
+            pad_token_id: int = 1,
+            bos_token_id: int = 0,
+            eos_token_id: int = 2,
+            add_pooling_layer: bool = True,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import XLMRobertaModel, XLMRobertaConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -339,7 +339,7 @@ class XLMRoBERTaEncoder(TextEncoder):
             self.transformer = XLMRobertaModel(config, add_pooling_layer)
 
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
+        if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -356,13 +356,13 @@ class XLMRoBERTaEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -385,51 +385,51 @@ class XLMRoBERTaEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="bert")
+@register(name='bert')
 class BERTEncoder(TextEncoder):
     # TODO(justin): Use official class properties.
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "bert-base-uncased",
+        'pretrained_model_name_or_path': 'bert-base-uncased',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "bert-base-uncased",
-        trainable: bool = True,
-        reduce_output: str = "cls_pooled",
-        vocab_size: int = 30522,
-        hidden_size: int = 768,
-        num_hidden_layers: int = 12,
-        num_attention_heads: int = 12,
-        intermediate_size: int = 3072,
-        hidden_act: Union[str, Callable] = "gelu",
-        hidden_dropout_prob: float = 0.1,
-        attention_probs_dropout_prob: float = 0.1,
-        max_position_embeddings: int = 512,
-        type_vocab_size: int = 2,
-        initializer_range: float = 0.02,
-        layer_norm_eps: float = 1e-12,
-        pad_token_id: int = 0,
-        gradient_checkpointing: bool = False,
-        position_embedding_type: str = "absolute",
-        classifier_dropout: float = None,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'bert-base-uncased',
+            trainable: bool = True,
+            reduce_output: str = 'cls_pooled',
+            vocab_size: int = 30522,
+            hidden_size: int = 768,
+            num_hidden_layers: int = 12,
+            num_attention_heads: int = 12,
+            intermediate_size: int = 3072,
+            hidden_act: Union[str, Callable] = 'gelu',
+            hidden_dropout_prob: float = 0.1,
+            attention_probs_dropout_prob: float = 0.1,
+            max_position_embeddings: int = 512,
+            type_vocab_size: int = 2,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            pad_token_id: int = 0,
+            gradient_checkpointing: bool = False,
+            position_embedding_type: str = 'absolute',
+            classifier_dropout: float = None,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import BertModel, BertConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -459,7 +459,7 @@ class BERTEncoder(TextEncoder):
             self.transformer = BertModel(config)
 
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
+        if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -476,13 +476,13 @@ class BERTEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -506,62 +506,62 @@ class BERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="xlm")
+@register(name='xlm')
 class XLMEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "xlm-mlm-en-2048",
+        'pretrained_model_name_or_path': 'xlm-mlm-en-2048',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlm-mlm-en-2048",
-        trainable: bool = True,
-        reduce_output: str = "cls_pooled",
-        vocab_size: int = 30145,
-        emb_dim: int = 2048,
-        n_layers: int = 12,
-        n_heads: int = 16,
-        dropout: float = 0.1,
-        attention_dropout: float = 0.1,
-        gelu_activation: bool = True,
-        sinusoidal_embeddings: bool = False,
-        causal: bool = False,
-        asm: bool = False,
-        n_langs: int = 1,
-        use_lang_emb: bool = True,
-        max_position_embeddings: int = 512,
-        embed_init_std: float = 2048 ** -0.5,
-        layer_norm_eps: float = 1e-12,
-        init_std: float = 0.02,
-        bos_index: int = 0,
-        eos_index: int = 1,
-        pad_index: int = 2,
-        unk_index: int = 3,
-        mask_index: int = 5,
-        is_encoder: bool = True,
-        start_n_top: int = 5,
-        end_n_top: int = 5,
-        mask_token_id: int = 0,
-        lang_id: int = 0,
-        pad_token_id: int = 2,
-        bos_token_id: int = 0,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'xlm-mlm-en-2048',
+            trainable: bool = True,
+            reduce_output: str = 'cls_pooled',
+            vocab_size: int = 30145,
+            emb_dim: int = 2048,
+            n_layers: int = 12,
+            n_heads: int = 16,
+            dropout: float = 0.1,
+            attention_dropout: float = 0.1,
+            gelu_activation: bool = True,
+            sinusoidal_embeddings: bool = False,
+            causal: bool = False,
+            asm: bool = False,
+            n_langs: int = 1,
+            use_lang_emb: bool = True,
+            max_position_embeddings: int = 512,
+            embed_init_std: float = 2048 ** -0.5,
+            layer_norm_eps: float = 1e-12,
+            init_std: float = 0.02,
+            bos_index: int = 0,
+            eos_index: int = 1,
+            pad_index: int = 2,
+            unk_index: int = 3,
+            mask_index: int = 5,
+            is_encoder: bool = True,
+            start_n_top: int = 5,
+            end_n_top: int = 5,
+            mask_token_id: int = 0,
+            lang_id: int = 0,
+            pad_token_id: int = 2,
+            bos_token_id: int = 0,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import XLMModel, XLMConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -622,7 +622,7 @@ class XLMEncoder(TextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -646,46 +646,46 @@ class XLMEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="gpt")
+@register(name='gpt')
 class GPTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "openai-gpt",
+        'pretrained_model_name_or_path': 'openai-gpt',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        reduce_output: str = "sum",
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "openai-gpt",
-        trainable: bool = True,
-        vocab_size: int = 30522,
-        n_positions: int = 40478,
-        n_ctx: int = 512,
-        n_embd: int = 768,
-        n_layer: int = 12,
-        n_head: int = 12,
-        afn: str = "gelu",
-        resid_pdrop: float = 0.1,
-        embd_pdrop: float = 0.1,
-        attn_pdrop: float = 0.1,
-        layer_norm_epsilon: float = 1e-5,
-        initializer_range: float = 0.02,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            reduce_output: str = 'sum',
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'openai-gpt',
+            trainable: bool = True,
+            vocab_size: int = 30522,
+            n_positions: int = 40478,
+            n_ctx: int = 512,
+            n_embd: int = 768,
+            n_layer: int = 12,
+            n_head: int = 12,
+            afn: str = 'gelu',
+            resid_pdrop: float = 0.1,
+            embd_pdrop: float = 0.1,
+            attn_pdrop: float = 0.1,
+            layer_norm_epsilon: float = 1e-5,
+            initializer_range: float = 0.02,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import OpenAIGPTModel, OpenAIGPTConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -729,7 +729,7 @@ class GPTEncoder(TextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -748,48 +748,48 @@ class GPTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="gpt2")
+@register(name='gpt2')
 class GPT2Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "gpt2",
+        'pretrained_model_name_or_path': 'gpt2',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "gpt2",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = 50257,
-        n_positions: int = 1024,
-        n_ctx: int = 1024,
-        n_embd: int = 768,
-        n_layer: int = 12,
-        n_head: int = 12,
-        n_inner: Optional[int] = None,
-        activation_function: str = "gelu",
-        resid_pdrop: float = 0.1,
-        embd_pdrop: float = 0.1,
-        attn_pdrop: float = 0.1,
-        layer_norm_epsilon: float = 1e-5,
-        initializer_range: float = 0.02,
-        scale_attn_weights: bool = True,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'gpt2',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 50257,
+            n_positions: int = 1024,
+            n_ctx: int = 1024,
+            n_embd: int = 768,
+            n_layer: int = 12,
+            n_head: int = 12,
+            n_inner: Optional[int] = None,
+            activation_function: str = 'gelu',
+            resid_pdrop: float = 0.1,
+            embd_pdrop: float = 0.1,
+            attn_pdrop: float = 0.1,
+            layer_norm_epsilon: float = 1e-5,
+            initializer_range: float = 0.02,
+            scale_attn_weights: bool = True,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import GPT2Model, GPT2Config
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -835,7 +835,7 @@ class GPT2Encoder(TextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -858,38 +858,38 @@ class GPT2Encoder(TextEncoder):
         return torch.int32
 
 
-@register(name="roberta")
+@register(name='roberta')
 class RoBERTaEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "roberta-base",
+        'pretrained_model_name_or_path': 'roberta-base',
     }
 
     def __init__(
-        self,
-        max_sequence_length,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "roberta-base",
-        reduce_output: str = "cls_pooled",
-        trainable: bool = True,
-        vocab_size: int = None,
-        pad_token_id: int = 1,
-        bos_token_id: int = 0,
-        eos_token_id: int = 2,
-        **kwargs
+            self,
+            max_sequence_length,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'roberta-base',
+            reduce_output: str = 'cls_pooled',
+            trainable: bool = True,
+            vocab_size: int = None,
+            pad_token_id: int = 1,
+            bos_token_id: int = 0,
+            eos_token_id: int = 2,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import RobertaModel, RobertaConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -907,7 +907,7 @@ class RoBERTaEncoder(TextEncoder):
         if trainable:
             self.transformer.train()
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
+        if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(vocab_size)
@@ -922,12 +922,12 @@ class RoBERTaEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -946,60 +946,60 @@ class RoBERTaEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="transformer_xl")
+@register(name='transformer_xl')
 class TransformerXLEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "transfo-xl-wt103",
+        'pretrained_model_name_or_path': 'transfo-xl-wt103',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "transfo-xl-wt103",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = 267735,
-        cutoffs: List[int] = [20000, 40000, 200000],
-        d_model: int = 1024,
-        d_embed: int = 1024,
-        n_head: int = 16,
-        d_head: int = 64,
-        d_inner: int = 4096,
-        div_val: int = 4,
-        pre_lnorm: bool = False,
-        n_layer: int = 18,
-        mem_len: int = 1600,
-        clamp_len: int = 1000,
-        same_length: bool = True,
-        proj_share_all_but_first: bool = True,
-        attn_type: int = 0,
-        sample_softmax: int = -1,
-        adaptive: bool = True,
-        dropout: float = 0.1,
-        dropatt: float = 0.0,
-        untie_r: bool = True,
-        init: str = "normal",
-        init_range: float = 0.01,
-        proj_init_std: float = 0.01,
-        init_std: float = 0.02,
-        layer_norm_epsilon: float = 1e-5,
-        eos_token_id: int = 0,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'transfo-xl-wt103',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 267735,
+            cutoffs: List[int] = [20000, 40000, 200000],
+            d_model: int = 1024,
+            d_embed: int = 1024,
+            n_head: int = 16,
+            d_head: int = 64,
+            d_inner: int = 4096,
+            div_val: int = 4,
+            pre_lnorm: bool = False,
+            n_layer: int = 18,
+            mem_len: int = 1600,
+            clamp_len: int = 1000,
+            same_length: bool = True,
+            proj_share_all_but_first: bool = True,
+            attn_type: int = 0,
+            sample_softmax: int = -1,
+            adaptive: bool = True,
+            dropout: float = 0.1,
+            dropatt: float = 0.0,
+            untie_r: bool = True,
+            init: str = 'normal',
+            init_range: float = 0.01,
+            proj_init_std: float = 0.01,
+            init_std: float = 0.02,
+            layer_norm_epsilon: float = 1e-5,
+            eos_token_id: int = 0,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import TransfoXLModel, TransfoXLConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1048,7 +1048,7 @@ class TransformerXLEncoder(TextEncoder):
         hidden = transformer_outputs[0]
 
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1068,61 +1068,61 @@ class TransformerXLEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="xlnet")
+@register(name='xlnet')
 class XLNetEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "xlnet-base-cased",
+        'pretrained_model_name_or_path': 'xlnet-base-cased',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlnet-base-cased",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = 32000,
-        d_model: int = 1024,
-        n_layer: int = 24,
-        n_head: int = 16,
-        d_inner: int = 4096,
-        ff_activation: str = "gelu",
-        untie_r: bool = True,
-        attn_type: str = "bi",
-        initializer_range: float = 0.02,
-        layer_norm_eps: float = 1e-12,
-        dropout: float = 0.1,
-        mem_len: Optional[int] = 512,
-        reuse_len: Optional[int] = None,
-        use_mems_eval: bool = True,
-        use_mems_train: bool = False,
-        bi_data: bool = False,
-        clamp_len: int = -1,
-        same_length: bool = False,
-        summary_type: str = "last",
-        summary_use_proj: bool = True,
-        summary_activation: str = "tanh",
-        summary_last_dropout: float = 0.1,
-        start_n_top: int = 5,
-        end_n_top: int = 5,
-        pad_token_id: int = 5,
-        bos_token_id: int = 1,
-        eos_token_id: int = 2,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'xlnet-base-cased',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 32000,
+            d_model: int = 1024,
+            n_layer: int = 24,
+            n_head: int = 16,
+            d_inner: int = 4096,
+            ff_activation: str = 'gelu',
+            untie_r: bool = True,
+            attn_type: str = 'bi',
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            dropout: float = 0.1,
+            mem_len: Optional[int] = 512,
+            reuse_len: Optional[int] = None,
+            use_mems_eval: bool = True,
+            use_mems_train: bool = False,
+            bi_data: bool = False,
+            clamp_len: int = -1,
+            same_length: bool = False,
+            summary_type: str = 'last',
+            summary_use_proj: bool = True,
+            summary_activation: str = 'tanh',
+            summary_last_dropout: float = 0.1,
+            start_n_top: int = 5,
+            end_n_top: int = 5,
+            pad_token_id: int = 5,
+            bos_token_id: int = 1,
+            eos_token_id: int = 2,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import XLNetModel, XLNetConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1180,7 +1180,7 @@ class XLNetEncoder(TextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1200,47 +1200,47 @@ class XLNetEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="distilbert")
+@register(name='distilbert')
 class DistilBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "distilbert-base-uncased",
+        'pretrained_model_name_or_path': 'distilbert-base-uncased',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        pretrained_model_name_or_path: str = "distilbert-base-uncased",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        use_pretrained: bool = True,
-        vocab_size: int = 30522,
-        max_position_embeddings: int = 512,
-        sinusoidal_pos_embds: bool = False,
-        n_layers: int = 6,
-        n_heads: int = 12,
-        dim: int = 768,
-        hidden_dim: int = 3072,
-        dropout: float = 0.1,
-        attention_dropout: float = 0.1,
-        activation: Union[str, Callable] = "gelu",
-        initializer_range: float = 0.02,
-        qa_dropout: float = 0.1,
-        seq_classif_dropout: float = 0.2,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            pretrained_model_name_or_path: str = 'distilbert-base-uncased',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            use_pretrained: bool = True,
+            vocab_size: int = 30522,
+            max_position_embeddings: int = 512,
+            sinusoidal_pos_embds: bool = False,
+            n_layers: int = 6,
+            n_heads: int = 12,
+            dim: int = 768,
+            hidden_dim: int = 3072,
+            dropout: float = 0.1,
+            attention_dropout: float = 0.1,
+            activation: Union[str, Callable] = 'gelu',
+            initializer_range: float = 0.02,
+            qa_dropout: float = 0.1,
+            seq_classif_dropout: float = 0.2,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import DistilBertModel, DistilBertConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1284,7 +1284,7 @@ class DistilBERTEncoder(TextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1304,46 +1304,46 @@ class DistilBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="ctrl")
+@register(name='ctrl')
 class CTRLEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "ctrl",
+        'pretrained_model_name_or_path': 'ctrl',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "ctrl",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = 246534,
-        n_positions: int = 256,
-        n_ctx: int = 256,
-        n_embd: int = 1280,
-        dff: int = 8192,
-        n_layer: int = 48,
-        n_head: int = 16,
-        resid_pdrop: float = 0.1,
-        embd_pdrop: float = 0.1,
-        attn_pdrop: float = 0.1,
-        layer_norm_epsilon: float = 1e-6,
-        initializer_range: float = 0.02,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'ctrl',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 246534,
+            n_positions: int = 256,
+            n_ctx: int = 256,
+            n_embd: int = 1280,
+            dff: int = 8192,
+            n_layer: int = 48,
+            n_head: int = 16,
+            resid_pdrop: float = 0.1,
+            embd_pdrop: float = 0.1,
+            attn_pdrop: float = 0.1,
+            layer_norm_epsilon: float = 1e-6,
+            initializer_range: float = 0.02,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import CTRLModel, CTRLConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1388,7 +1388,7 @@ class CTRLEncoder(TextEncoder):
         )
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1407,50 +1407,50 @@ class CTRLEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="camembert")
+@register(name='camembert')
 class CamemBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "jplu/camembert-base",
+        'pretrained_model_name_or_path': 'jplu/camembert-base',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "ctrl",
-        reduce_output: str = "cls-pooled",
-        trainable: bool = True,
-        vocab_size: int = 30522,
-        hidden_size: int = 768,
-        num_hidden_layers: int = 12,
-        num_attention_heads: int = 12,
-        intermediate_size: int = 3072,
-        hidden_act: Union[str, Callable] = "gelu",
-        hidden_dropout_prob: float = 0.1,
-        attention_probs_dropout_prob: float = 0.1,
-        max_position_embeddings: int = 512,
-        type_vocab_size: int = 2,
-        initializer_range: float = 0.02,
-        layer_norm_eps: float = 1e-12,
-        pad_token_id: int = 0,
-        gradient_checkpointing: bool = False,
-        position_embedding_type: str = "absolute",
-        classifier_dropout: float = None,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'ctrl',
+            reduce_output: str = 'cls-pooled',
+            trainable: bool = True,
+            vocab_size: int = 30522,
+            hidden_size: int = 768,
+            num_hidden_layers: int = 12,
+            num_attention_heads: int = 12,
+            intermediate_size: int = 3072,
+            hidden_act: Union[str, Callable] = 'gelu',
+            hidden_dropout_prob: float = 0.1,
+            attention_probs_dropout_prob: float = 0.1,
+            max_position_embeddings: int = 512,
+            type_vocab_size: int = 2,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            pad_token_id: int = 0,
+            gradient_checkpointing: bool = False,
+            position_embedding_type: str = 'absolute',
+            classifier_dropout: float = None,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import CamembertModel, CamembertConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1482,7 +1482,7 @@ class CamemBERTEncoder(TextEncoder):
         if trainable:
             self.transformer.train()
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
+        if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
@@ -1497,13 +1497,13 @@ class CamemBERTEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1526,46 +1526,46 @@ class CamemBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="t5")
+@register(name='t5')
 class T5Encoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "t5-small",
+        'pretrained_model_name_or_path': 't5-small',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "t5-small",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = 32128,
-        d_model: int = 512,
-        d_kv: int = 64,
-        d_ff: int = 2048,
-        num_layers: int = 6,
-        num_decoder_layers: Optional[int] = None,
-        num_heads: int = 8,
-        relative_attention_num_buckets: int = 32,
-        dropout_rate: float = 0.1,
-        layer_norm_eps: float = 1e-6,
-        initializer_factor: float = 1,
-        feed_forward_proj: str = "relu",
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 't5-small',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 32128,
+            d_model: int = 512,
+            d_kv: int = 64,
+            d_ff: int = 2048,
+            num_layers: int = 6,
+            num_decoder_layers: Optional[int] = None,
+            num_heads: int = 8,
+            relative_attention_num_buckets: int = 32,
+            dropout_rate: float = 0.1,
+            layer_norm_eps: float = 1e-6,
+            initializer_factor: float = 1,
+            feed_forward_proj: str = 'relu',
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import T5Model, T5Config
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1609,7 +1609,7 @@ class T5Encoder(TextEncoder):
         )
         hidden = transformer_outputs[0][:, 0:-1, :]  # [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1632,60 +1632,60 @@ class T5Encoder(TextEncoder):
         return torch.int32
 
 
-@register(name="flaubert")
+@register(name='flaubert')
 class FlauBERTEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "jplu/tf-flaubert-small-cased",
+        'pretrained_model_name_or_path': 'jplu/tf-flaubert-small-cased',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool,
-        pretrained_model_name_or_path: str = "jplu/tf-flaubert-small-cased",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = 30145,
-        pre_norm: bool = False,
-        layerdrop: float = 0.0,
-        emb_dim: int = 2048,
-        n_layer: int = 12,
-        n_head: int = 16,
-        dropout: float = 0.1,
-        attention_dropout: float = 0.1,
-        gelu_activation: bool = True,
-        sinusoidal_embeddings: bool = False,
-        causal: bool = False,
-        asm: bool = False,
-        n_langs: int = 1,
-        use_lang_emb: bool = True,
-        max_position_embeddings: int = 512,
-        embed_init_std: float = 2048 ** -0.5,
-        init_std: int = 50257,
-        layer_norm_eps: float = 1e-12,
-        bos_index: int = 0,
-        eos_index: int = 1,
-        pad_index: int = 2,
-        unk_index: int = 3,
-        mask_index: int = 5,
-        is_encoder: bool = True,
-        mask_token_id: int = 0,
-        lang_id: int = 1,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool,
+            pretrained_model_name_or_path: str = 'jplu/tf-flaubert-small-cased',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 30145,
+            pre_norm: bool = False,
+            layerdrop: float = 0.0,
+            emb_dim: int = 2048,
+            n_layer: int = 12,
+            n_head: int = 16,
+            dropout: float = 0.1,
+            attention_dropout: float = 0.1,
+            gelu_activation: bool = True,
+            sinusoidal_embeddings: bool = False,
+            causal: bool = False,
+            asm: bool = False,
+            n_langs: int = 1,
+            use_lang_emb: bool = True,
+            max_position_embeddings: int = 512,
+            embed_init_std: float = 2048 ** -0.5,
+            init_std: int = 50257,
+            layer_norm_eps: float = 1e-12,
+            bos_index: int = 0,
+            eos_index: int = 1,
+            pad_index: int = 2,
+            unk_index: int = 3,
+            mask_index: int = 5,
+            is_encoder: bool = True,
+            mask_token_id: int = 0,
+            lang_id: int = 1,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import FlaubertModel, FlaubertConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1743,7 +1743,7 @@ class FlauBERTEncoder(TextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1766,49 +1766,49 @@ class FlauBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="electra")
+@register(name='electra')
 class ELECTRAEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "google/electra-small-discriminator",
+        'pretrained_model_name_or_path': 'google/electra-small-discriminator',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "google/electra-small-discriminator",
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = 30522,
-        embedding_size: int = 128,
-        hidden_size: int = 256,
-        num_hidden_layers: int = 12,
-        num_attention_heads: int = 4,
-        intermediate_size: int = 1024,
-        hidden_act: Union[str, Callable] = "gelu",
-        hidden_dropout_prob: float = 0.1,
-        attention_probs_dropout_prob: float = 0.1,
-        max_position_embeddings: int = 512,
-        type_vocab_size: int = 2,
-        initializer_range: float = 0.02,
-        layer_norm_eps: float = 1e-12,
-        position_embedding_type: str = "absolute",
-        classifier_dropout: Optional[float] = None,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            pretrained_model_name_or_path: str = 'google/electra-small-discriminator',
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = 30522,
+            embedding_size: int = 128,
+            hidden_size: int = 256,
+            num_hidden_layers: int = 12,
+            num_attention_heads: int = 4,
+            intermediate_size: int = 1024,
+            hidden_act: Union[str, Callable] = 'gelu',
+            hidden_dropout_prob: float = 0.1,
+            attention_probs_dropout_prob: float = 0.1,
+            max_position_embeddings: int = 512,
+            type_vocab_size: int = 2,
+            initializer_range: float = 0.02,
+            layer_norm_eps: float = 1e-12,
+            position_embedding_type: str = 'absolute',
+            classifier_dropout: Optional[float] = None,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import ElectraModel, ElectraConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1855,7 +1855,7 @@ class ELECTRAEncoder(TextEncoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1878,37 +1878,37 @@ class ELECTRAEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="longformer")
+@register(name='longformer')
 class LongformerEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "allenai/longformer-base-4096",
+        'pretrained_model_name_or_path': 'allenai/longformer-base-4096',
     }
 
     def __init__(
-        self,
-        max_sequence_length: int,
-        use_pretrained: bool = True,
-        attention_window: Union[List[int], int] = 512,
-        sep_token_id: int = 2,
-        pretrained_model_name_or_path: str = "allenai/longformer-base-4096",
-        reduce_output: Optional[str] = "cls_pooled",
-        trainable: bool = True,
-        num_tokens: Optional[int] = None,
-        **kwargs
+            self,
+            max_sequence_length: int,
+            use_pretrained: bool = True,
+            attention_window: Union[List[int], int] = 512,
+            sep_token_id: int = 2,
+            pretrained_model_name_or_path: str = 'allenai/longformer-base-4096',
+            reduce_output: Optional[str] = 'cls_pooled',
+            trainable: bool = True,
+            num_tokens: Optional[int] = None,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import LongformerModel, LongformerConfig
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1920,7 +1920,7 @@ class LongformerEncoder(TextEncoder):
             config = LongformerConfig(attention_window, sep_token_id, **kwargs)
             self.transformer = LongformerModel(config)
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
+        if not self.reduce_output == 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -1937,12 +1937,12 @@ class LongformerEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1965,30 +1965,30 @@ class LongformerEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name="auto_transformer")
+@register(name='auto_transformer')
 class AutoTransformerEncoder(TextEncoder):
     fixed_preprocessing_parameters = {
-        "word_tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
+        'word_tokenizer': 'hf_tokenizer',
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
     def __init__(
-        self,
-        pretrained_model_name_or_path: str,
-        max_sequence_length: int,
-        reduce_output: str = "sum",
-        trainable: bool = True,
-        vocab_size: int = None,
-        **kwargs
+            self,
+            pretrained_model_name_or_path: str,
+            max_sequence_length: int,
+            reduce_output: str = 'sum',
+            trainable: bool = True,
+            vocab_size: int = None,
+            **kwargs
     ):
         super().__init__()
         try:
             from transformers import AutoModel
         except ModuleNotFoundError:
             logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
+                ' transformers is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
             )
             sys.exit(-1)
 
@@ -1996,7 +1996,7 @@ class AutoTransformerEncoder(TextEncoder):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
-        if self.reduce_output != "cls_pooled":
+        if self.reduce_output != 'cls_pooled':
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -2014,15 +2014,15 @@ class AutoTransformerEncoder(TextEncoder):
             attention_mask=mask,
             token_type_ids=torch.zeros_like(inputs),
         )
-        if self.reduce_output == "cls_pooled":
+        if self.reduce_output == 'cls_pooled':
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
             # the BERT base class call() function
-            hidden = transformer_outputs["pooler_output"]
+            hidden = transformer_outputs['pooler_output']
         else:
-            hidden = transformer_outputs["last_hidden_state"]
+            hidden = transformer_outputs['last_hidden_state']
             hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {"encoder_output": hidden}
+        return {'encoder_output': hidden}
 
     @property
     def input_shape(self) -> torch.Size:
