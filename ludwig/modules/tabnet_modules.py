@@ -43,7 +43,7 @@ class TabNet(LudwigModule):
         self.output_size = output_size
         self.num_steps = num_steps
         self.relaxation_factor = relaxation_factor
-        self.sparsity = sparsity
+        self.sparsity = torch.tensor(sparsity)
 
         # needed by the attentive transformer in build()
         self.num_steps = num_steps
@@ -89,7 +89,7 @@ class TabNet(LudwigModule):
                                      bn_epsilon, bn_virtual_bs)
             )
         self.final_projection = torch.nn.Linear(
-            self.feature_transforms[-1].output_shape[-1],
+            self.tab_feature_size,
             self.output_size)  # todo: generalize
 
     # todo: remove tf code when done
@@ -124,7 +124,7 @@ class TabNet(LudwigModule):
 
         x = self.feature_transforms[0](masked_features)
 
-        for step_i in range(1, self.num_steps + 1):
+        for step_i in range(1, self.num_steps):  # todo: old value num_steps + 1
             #########################
             # Attentive Transformer #
             #########################
@@ -282,7 +282,7 @@ class FeatureTransformer(LudwigModule):
         self.num_shared_blocks = num_shared_blocks
         self.size = size
 
-        kargs = {
+        kwargs = {
             "size": size,
             "bn_momentum": bn_momentum,
             "bn_epsilon": bn_epsilon,
@@ -298,13 +298,16 @@ class FeatureTransformer(LudwigModule):
                 self.blocks.append(
                     FeatureBlock(
                         tab_feature_size,
-                        **kargs,
+                        **kwargs,
                         shared_fc_layer=shared_fc_layers[n]
                     )
                 )
             else:
                 # build new blocks
-                self.blocks.append(FeatureBlock(self.size, **kargs))
+                if n == 0:
+                    self.blocks.append(FeatureBlock(tab_feature_size, **kwargs))
+                else:
+                    self.blocks.append(FeatureBlock(self.size, **kwargs))
 
     def forward(
             self,

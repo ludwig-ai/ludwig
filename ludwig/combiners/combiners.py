@@ -496,7 +496,7 @@ class TabNetCombiner(Module):
             hidden
         )
         if self.dropout:
-            hidden = self.dropout(hidden, training=training)
+            hidden = self.dropout(hidden)
 
         return_data = {'combiner_output': hidden,
                        'aggregated_attention_masks': aggregated_mask,
