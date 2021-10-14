@@ -28,6 +28,9 @@ class Callback(ABC):
     def on_hyperopt_trial_start(self, parameters):
         pass
 
+    def on_hyperopt_trial_end(self, parameters):
+        pass
+
     def on_train_init(
         self,
         base_config,
