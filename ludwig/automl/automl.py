@@ -215,7 +215,7 @@ def _model_select(
 
     base_config = default_configs["base_config"]
 
-    # tabular datset
+    # tabular dataset heuristics
     if len(fields) > 3:
         if percent_numerical_feats > 0.9:
             base_config = (
@@ -224,7 +224,7 @@ def _model_select(
             base_config = merge_dict(
                 base_config, default_configs["combiner"]["tabnet"])
 
-        # overwrite default params w/user specified params if they specify any
+        # override combiner heuristic if explicitly provided by user
         if user_specified_config is not None:
             if "combiner" in user_specified_config.keys():
                 model_type = user_specified_config["combiner"]["type"]
@@ -233,6 +233,8 @@ def _model_select(
     else:
         # text heuristics
         for input_feature in base_config["input_features"]:
+            # default text encoder is bert
+            # TODO (ASN): add more robust heuristics
             if input_feature["type"] == "text":
                 input_feature["encoder"] = "bert"
                 base_config = merge_dict(
@@ -253,8 +255,6 @@ def _model_select(
             if config_section in user_specified_config.keys():
                 if param in user_specified_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
-
-    print(base_config)
 
     return base_config
 
