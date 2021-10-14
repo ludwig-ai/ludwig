@@ -11,9 +11,9 @@ from ludwig.utils.torch_utils import LudwigModule
 class TabNet(LudwigModule):
     def __init__(
             self,
-            tab_features_size: int,
+            input_dim: int,
             size: int,
-            output_size: int,
+            output_dim: int,
             num_steps: int = 1,
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
@@ -26,9 +26,9 @@ class TabNet(LudwigModule):
         """TabNet
         Will output a vector of size output_dim.
         Args:
-            tab_feature_size (int): concatenated size of input tabular features
-            size (int): Embedding feature dimension to use.
-            output_size (int): Output dimension.
+            input_dim (int): concatenated size of input feature encoder outputs
+            size (int): Embedding feature dimension
+            output_dim (int): Output dimension for TabNet
             num_steps (int, optional): Total number of steps. Defaults to 1.
             num_total_blocks (int, optional): Total number of feature transformer blocks. Defaults to 4.
             num_shared_blocks (int, optional): Number of shared feature transformer blocks. Defaults to 2.
@@ -38,9 +38,9 @@ class TabNet(LudwigModule):
             bn_virtual_bs (int, optional): Virtual batch ize for ghost batch norm..
         """
         super().__init__()
-        self.tab_feature_size = tab_features_size
+        self.input_dim = input_dim
         self.size = size
-        self.output_size = output_size
+        self.output_dim = output_dim
         self.num_steps = num_steps
         self.relaxation_factor = relaxation_factor
         self.sparsity = torch.tensor(sparsity)
@@ -51,13 +51,13 @@ class TabNet(LudwigModule):
         self.bn_epsilon = bn_epsilon
         self.bn_virtual_bs = bn_virtual_bs
 
-        self.batch_norm = torch.nn.BatchNorm1d(tab_features_size,
+        self.batch_norm = torch.nn.BatchNorm1d(input_dim,
                                                momentum=bn_momentum,
                                                eps=bn_epsilon
                                                )
 
         kargs = {
-            "size": size + output_size,
+            "size": size + output_dim,
             "num_total_blocks": num_total_blocks,
             "num_shared_blocks": num_shared_blocks,
             "bn_momentum": bn_momentum,
@@ -68,13 +68,13 @@ class TabNet(LudwigModule):
         # first feature transformer block is built first
         # to get the shared blocks
         self.feature_transforms = torch.nn.ModuleList([
-            FeatureTransformer(tab_features_size, **kargs)
+            FeatureTransformer(input_dim, **kargs)
         ])
         self.attentive_transforms = torch.nn.ModuleList()
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
-                    tab_features_size,  # todo:  need to generalize
+                    input_dim,  # todo:  need to generalize
                     **kargs,
                     shared_fc_layers=self.feature_transforms[
                         0].shared_fc_layers
@@ -85,12 +85,12 @@ class TabNet(LudwigModule):
             # of features that we determine by looking at the
             # last dimension of the input tensor
             self.attentive_transforms.append(
-                AttentiveTransformer(tab_features_size, size, bn_momentum,
+                AttentiveTransformer(input_dim, size, bn_momentum,
                                      bn_epsilon, bn_virtual_bs)
             )
         self.final_projection = torch.nn.Linear(
-            self.tab_feature_size,
-            self.output_size)  # todo: generalize
+            self.input_dim,
+            self.output_dim)  # todo: generalize
 
     # todo: remove tf code when done
     # def build(self, input_shape):
@@ -269,7 +269,7 @@ class FeatureTransformer(LudwigModule):
             self,
             tab_feature_size: int,
             size: int,
-            shared_fc_layers: torch.nn.ModuleList = torch.nn.ModuleList(),
+            shared_fc_layers: List = [],
             num_total_blocks: int = 4,
             num_shared_blocks: int = 2,
             bn_momentum: float = 0.9,
@@ -291,7 +291,6 @@ class FeatureTransformer(LudwigModule):
 
         # build blocks
         self.blocks = torch.nn.ModuleList()
-        # todo: figure out how to generalize specificaiton of input size for FeatureBlock
         for n in range(num_total_blocks):
             if shared_fc_layers and n < len(shared_fc_layers):
                 # add shared blocks
@@ -305,8 +304,10 @@ class FeatureTransformer(LudwigModule):
             else:
                 # build new blocks
                 if n == 0:
+                    # first block
                     self.blocks.append(FeatureBlock(tab_feature_size, **kwargs))
                 else:
+                    # subsequent blocks
                     self.blocks.append(FeatureBlock(self.size, **kwargs))
 
     def forward(
