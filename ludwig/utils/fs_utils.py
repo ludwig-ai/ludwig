@@ -24,11 +24,17 @@ import fsspec
 import h5py
 from fsspec.core import split_protocol
 
+from filelock import FileLock
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
     fs = fsspec.filesystem(protocol)
     return fs, path
+
+
+def has_remote_protocol(url):
+    protocol, _ = split_protocol(url)
+    return protocol and protocol != "file"
 
 
 def is_http(urlpath):
@@ -158,3 +164,29 @@ def upload_output_file(url):
             fs.put(local_fname, url, recursive=True)
     else:
         yield url
+
+
+class file_lock(contextlib.AbstractContextManager):
+    """File lock based on filelock package."""
+    def __init__(
+        self,
+        path: str,
+        ignore_remote_protocol: bool = True,
+        lock_file: str = '.lock'
+    ) -> None:
+        if not isinstance(path, (str, os.PathLike, pathlib.Path)):
+            self.lock = None
+        else:
+            path = os.path.join(path, lock_file) if os.path.isdir(path) else f'{path}./{lock_file}'
+            if ignore_remote_protocol and has_remote_protocol(path):
+                self.lock = None
+            else:
+                self.lock = FileLock(path, timeout=-1)
+
+    def __enter__(self, *args, **kwargs):
+        if self.lock:
+            return self.lock.__enter__(*args, **kwargs)
+
+    def __exit__(self, *args, **kwargs):
+        if self.lock:
+            return self.lock.__exit__(*args, **kwargs)
