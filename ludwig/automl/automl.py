@@ -15,7 +15,7 @@ from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
-import pdb
+import copy
 
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import (
@@ -198,13 +198,10 @@ def _model_select(
     percentage of numerical features is >90%, the concat model is used.
     """
 
-    if isinstance(dataset, DatasetInfo):
-        fields = dataset.fields
-        row_count = dataset.row_count
-    else:
-        dataset_info = get_dataset_info(dataset)
-        fields = dataset_info.fields
-        row_count = dataset_info.row_count
+    dataset_info = get_dataset_info(dataset) if not isinstance(
+        dataset, DatasetInfo) else dataset
+    fields = dataset_info.fields
+    row_count = dataset_info.row_count
 
     total_numerical_feats = 0
 
@@ -243,8 +240,19 @@ def _model_select(
 
             # TODO (ASN): add image heuristics
 
+    # override and constrain automl config based on user specified values
     if user_specified_config is not None:
         base_config = merge_dict(base_config, user_specified_config)
+
+        # remove all parameters from hyperparameter search that user has
+        # provided explicit values for
+        hyperopt_params = copy.deepcopy(base_config["hyperopt"]["parameters"])
+        for hyperopt_params in hyperopt_params.keys():
+            config_section, param = hyperopt_params.split(
+                ".")[0], hyperopt_params.split(".")[1]
+            if config_section in user_specified_config.keys():
+                if param in user_specified_config[config_section]:
+                    del base_config["hyperopt"]["parameters"][hyperopt_params]
 
     print(base_config)
 
