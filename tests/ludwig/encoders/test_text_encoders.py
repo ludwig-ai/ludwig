@@ -18,6 +18,9 @@ def test_albert_encoder(
     inputs = torch.rand((2, max_sequence_length)).type(
         albert_encoder.input_dtype
     )
+    inputs = torch.rand((2, max_sequence_length)).type(
+        albert_encoder.input_dtype
+    )
     outputs = albert_encoder(inputs)
     assert outputs["encoder_output"].shape[1:] == albert_encoder.output_shape
 

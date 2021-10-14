@@ -520,10 +520,6 @@ class ParallelCNN(SequenceEncoder):
                 default_dropout=dropout,
             )
 
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
-
     def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
@@ -534,9 +530,7 @@ class ParallelCNN(SequenceEncoder):
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -565,6 +559,16 @@ class ParallelCNN(SequenceEncoder):
 
         return {'encoder_output': hidden}
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        else:
+            return self.parallel_conv1d.output_shape
 
 @register(name='stacked_cnn')
 class StackedCNN(SequenceEncoder):
