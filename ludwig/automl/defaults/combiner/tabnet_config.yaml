@@ -53,14 +53,3 @@ hyperopt:
     combiner.bn_momentum:
       space: choice
       categories: [0.6, 0.7, 0.8, 0.9, 0.95, 0.98]
-
-  sampler:
-    type: ray
-    scheduler:
-      type: async_hyperband
-      time_attr: time_total_s
-    num_samples: 20
-
-  executor:
-    type: ray
-    time_budget_s: 6000

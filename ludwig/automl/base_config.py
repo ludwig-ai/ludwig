@@ -53,10 +53,18 @@ except ImportError:
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
 
-model_defaults = {
-    "concat": os.path.join(CONFIG_DIR, "concat_config.yaml"),
-    "tabnet": os.path.join(CONFIG_DIR, "tabnet_config.yaml"),
-    "transformer": os.path.join(CONFIG_DIR, "transformer_config.yaml"),
+BASE_AUTOML_CONFIG = os.path.join(CONFIG_DIR, "base_automl_config.yaml")
+
+combiner_defaults = {
+    "concat": os.path.join(CONFIG_DIR, "combiner/concat_config.yaml"),
+    "tabnet": os.path.join(CONFIG_DIR, "combiner/tabnet_config.yaml"),
+    "transformer": os.path.join(CONFIG_DIR, "combiner/transformer_config.yaml"),
+}
+
+encoder_defaults = {
+    "text": {
+        "bert": os.path.join(CONFIG_DIR, "text/bert_config.yaml"),
+    }
 }
 
 
@@ -133,16 +141,35 @@ def _create_default_config(
     )
 
     model_configs = {}
-    for model_name, path_to_defaults in model_defaults.items():
-        default_model_config = load_yaml(path_to_defaults)
-        default_model_config.update(input_and_output_feature_config)
-        default_model_config["hyperopt"]["executor"].update(
-            experiment_resources
-        )
-        default_model_config["hyperopt"]["executor"][
-            "time_budget_s"
-        ] = time_limit_s
-        model_configs[model_name] = default_model_config
+
+    # read in base config and update with experiment resources
+    base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
+    base_automl_config["hyperopt"]["executor"].update(
+        experiment_resources
+    )
+    base_automl_config["hyperopt"]["executor"][
+        "time_budget_s"
+    ] = time_limit_s
+    base_automl_config.update(input_and_output_feature_config)
+
+    model_configs["base_config"] = base_automl_config
+
+    # read in all encoder configs
+    for feat_type, default_configs in encoder_defaults.items():
+        if feat_type not in model_configs.keys():
+            model_configs[feat_type] = {}
+        else:
+            for encoder_name, encoder_config_path in default_configs.items():
+                model_configs[feat_type][encoder_name] = load_yaml(
+                    encoder_config_path)
+
+    # read in all combiner configs
+    model_configs["combiner"] = {}
+    for combiner_type, default_config in combiner_defaults.items():
+        combiner_config = load_yaml(default_config)
+        model_configs["combiner"][combiner_type] = combiner_config
+
+    print(model_configs)
     return model_configs
 
 

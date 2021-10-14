@@ -15,6 +15,7 @@ from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
+import pdb
 
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import (
@@ -215,19 +216,39 @@ def _model_select(
 
     percent_numerical_feats = total_numerical_feats / len(fields)
 
-    if percent_numerical_feats > 0.9:
-        config = default_configs["concat"]
+    base_config = default_configs["base_config"]
+
+    # tabular datset
+    if len(fields) > 3:
+        if percent_numerical_feats > 0.9:
+            base_config = (
+                base_config, default_configs["combiner"]["concat"])
+        else:
+            base_config = merge_dict(
+                base_config, default_configs["combiner"]["tabnet"])
+
+        # overwrite default params w/user specified params if they specify any
+        if user_specified_config is not None:
+            if "combiner" in user_specified_config.keys():
+                model_type = user_specified_config["combiner"]["type"]
+                base_config = merge_dict(
+                    base_config, default_configs["combiner"][model_type])
     else:
-        config = default_configs["tabnet"]
+        # text heuristics
+        for input_feature in base_config["input_features"]:
+            if input_feature["type"] == "text":
+                input_feature["encoder"] = "bert"
+                base_config = merge_dict(
+                    base_config, default_configs["text"]["bert"])
 
-    # overwrite default params w/user specified params if they specify any
+            # TODO (ASN): add image heuristics
+
     if user_specified_config is not None:
-        if "combiner" in user_specified_config.keys():
-            model_type = user_specified_config["combiner"]["type"]
-            config = default_configs[model_type]
-        config = merge_dict(config, user_specified_config)
+        base_config = merge_dict(base_config, user_specified_config)
 
-    return config
+    print(base_config)
+
+    return base_config
 
 
 def _train(

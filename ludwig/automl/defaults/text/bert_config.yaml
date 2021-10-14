@@ -1,0 +1,8 @@
+hyperopt:
+  # goal: maximize
+  parameters:
+    training.learning_rate:
+      type: float
+      lower: 0.00002
+      upper: 0.00005
+      space: loguniform
