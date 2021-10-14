@@ -199,7 +199,7 @@ class FeatureBlock(LudwigModule):
             epsilon=bn_epsilon
         )
 
-    def forward(self, inputs, training: bool = None, **kwargs):
+    def forward(self, inputs):
         hidden = self.fc_layer(inputs)
         hidden = self.batch_norm(hidden)
         if self.apply_glu:
