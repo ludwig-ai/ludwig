@@ -29,18 +29,27 @@ def test_sparsemax():
 
 
 @pytest.mark.parametrize(
-    'shared_fc_layer', [None]
+    'external_shared_fc_layer', [True, False]
 )
 @pytest.mark.parametrize('apply_glu', [True, False])
 @pytest.mark.parametrize('output_size', [4, 12])
 def test_feature_block(
         output_size: int,
         apply_glu: bool,
-        shared_fc_layer: Optional[List]
+        external_shared_fc_layer: bool
 ) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
     input_tensor = torch.randn([BATCH_SIZE, HIDDEN_SIZE], dtype=torch.float32)
+
+    if external_shared_fc_layer:
+        shared_fc_layer = torch.nn.Linear(
+            HIDDEN_SIZE,
+            output_size * 2 if apply_glu else output_size,
+            bias=False
+        )
+    else:
+        shared_fc_layer = None
 
     feature_block = FeatureBlock(
         HIDDEN_SIZE,
