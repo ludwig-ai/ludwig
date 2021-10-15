@@ -181,8 +181,8 @@ class RaySgdTrainer(BaseTrainer):
         wg = SGDWorkerGroup(self.trainer._executor.worker_group)
         workers = [w for w in wg]
         train_shards = training_set.pipeline().split(n=len(workers), locality_hints=workers)
-        val_shards = validation_set.pipeline().split(n=len(workers), locality_hints=workers) if validation_set else None
-        test_shards = test_set.pipeline().split(n=len(workers), locality_hints=workers) if test_set else None
+        val_shards = validation_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers) if validation_set else None
+        test_shards = test_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers) if test_set else None
         kwargs = {
             'train_shards': train_shards,
             'val_shards': val_shards,

@@ -40,8 +40,11 @@ class RayDataset(object):
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
 
-    def pipeline(self) -> DatasetPipeline:
-        return self.ds.repeat().random_shuffle()
+    def pipeline(self, shuffle=True) -> DatasetPipeline:
+        pipe = self.ds.repeat()
+        if shuffle:
+            pipe = pipe.random_shuffle()
+        return pipe
 
     def __len__(self):
         return self.ds.count()
@@ -200,14 +203,17 @@ class RayDatasetBatcher(Batcher):
         if self.last_batch():
             raise StopIteration()
 
+        print(f"!!! NEXT BATCH")
         batch = self._next_batch
         self._fetch_next_batch()
         return batch
 
     def last_batch(self):
+        print(f"!!! LAST BATCH")
         return self._last_batch
 
     def set_epoch(self, epoch):
+        print(f"!!! SET EPOCH: {epoch}")
         dataset = next(self.dataset_epoch_iterator)
         self.dataset_batch_iter = iter(prepare_dataset_shard(
             to_tf(
