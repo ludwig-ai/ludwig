@@ -19,9 +19,9 @@ RUN apt-get -y update && apt-get -y install \
 WORKDIR /ludwig
 
 COPY . .
-RUN HOROVOD_WITH_TENSORFLOW=1 \
+RUN HOROVOD_WITH_PYTORCH=1 \
     HOROVOD_WITHOUT_MPI=1 \
-    HOROVOD_WITHOUT_PYTORCH=1 \
+    HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
     pip install --no-cache-dir '.[full]'
 
