@@ -162,7 +162,7 @@ class RayDatasetBatcher(Batcher):
             output_features: Dict[str, OutputFeature],
             batch_size: int,
     ):
-        self.dataset_iterator = dataset_pipeline.iter_datasets()
+        self.dataset_epoch_iterator = dataset_pipeline.iter_datasets()
         self.batch_size = batch_size
 
         input_features_signature = {
@@ -185,7 +185,7 @@ class RayDatasetBatcher(Batcher):
             **input_features_signature,
             **output_features_signature,
         }
-        self.dataset_iter = None
+        self.dataset_batch_iter = None
         self._next_batch = None
         self._last_batch = False
 
@@ -201,8 +201,8 @@ class RayDatasetBatcher(Batcher):
         return self._last_batch
 
     def set_epoch(self, epoch):
-        dataset = next(self.dataset_iterator)
-        self.dataset_iter = iter(prepare_dataset_shard(
+        dataset = next(self.dataset_epoch_iterator)
+        self.dataset_batch_iter = iter(prepare_dataset_shard(
             to_tf(
                 dataset,
                 output_signature=self.output_signature,
@@ -214,6 +214,6 @@ class RayDatasetBatcher(Batcher):
     def _fetch_next_batch(self):
         self._last_batch = False
         try:
-            self._next_batch = next(self.dataset_iterator)
+            self._next_batch = next(self.dataset_batch_iter)
         except StopIteration:
             self._last_batch = True
