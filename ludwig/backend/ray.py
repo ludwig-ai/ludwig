@@ -194,7 +194,7 @@ class RaySgdTrainer(BaseTrainer):
             lambda config: train_fn(**config),
             config={
                 'executable_kwargs': executable_kwargs,
-                'model': remote_model,
+                'remote_model': remote_model,
                 **kwargs
             },
             # dataset={
