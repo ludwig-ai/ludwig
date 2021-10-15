@@ -45,7 +45,7 @@ def ray_start_2_cpus():
             num_cpus=2,
             include_dashboard=False,
             object_store_memory=150 * 1024 * 1024,
-            _temp_dir=tmpdir,
+            # _temp_dir=tmpdir,
         )
         try:
             yield res
