@@ -121,6 +121,10 @@ class RayDatasetShard(Dataset):
         # TODO(travis): find way to avoid calling this, as it's expensive
         return self.dataset_shard.count()
 
+    @property
+    def size(self):
+        return len(self)
+
 
 def prepare_dataset_shard(dataset_shard: tf.data.Dataset):
     # Disable Tensorflow autosharding since the dataset has already been

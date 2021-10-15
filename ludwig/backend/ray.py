@@ -180,9 +180,9 @@ class RaySgdTrainer(BaseTrainer):
         # TODO(travis) remove this once `dataset` keyword is supported:
         wg = SGDWorkerGroup(self.trainer._executor.worker_group)
         workers = [w for w in wg]
-        train_shards = training_set.pipeline().split(n=len(workers), locality_hints=wg)
-        val_shards = validation_set.pipeline().split(n=len(workers), locality_hints=wg) if validation_set else None
-        test_shards = test_set.pipeline().split(n=len(workers), locality_hints=wg) if test_set else None
+        train_shards = training_set.pipeline().split(n=len(workers), locality_hints=workers)
+        val_shards = validation_set.pipeline().split(n=len(workers), locality_hints=workers) if validation_set else None
+        test_shards = test_set.pipeline().split(n=len(workers), locality_hints=workers) if test_set else None
         kwargs = {
             'train_shards': train_shards,
             'val_shards': val_shards,

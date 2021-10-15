@@ -59,9 +59,17 @@ def run_api_experiment(config, data_parquet):
     assert kwargs.get('num_workers') == 2
 
     # Train on Parquet
-    dask_backend = RayBackend(processor={
-        'parallelism': 2,
-    })
+    dask_backend = RayBackend(
+        processor={
+            'parallelism': 2,
+        },
+        trainer={
+            'num_workers': 2,
+            'resources_per_worker': {
+                'CPU': 0,
+            }
+        }
+    )
     train_with_backend(dask_backend, config, dataset=data_parquet, evaluate=False)
 
 
