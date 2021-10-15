@@ -26,7 +26,7 @@ from horovod.ray import RayExecutor
 from ray.util.dask import ray_dask_get
 
 import ray.util.sgd.v2 as raysgd
-from ray.util.sgd.v2.trainer import Trainer
+from ray.util.sgd.v2.trainer import Trainer, SGDWorkerGroup
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY
@@ -129,16 +129,16 @@ class RayRemoteTrainer(RemoteTrainer):
         return results
 
 
-def train_fn(executable_kwargs=None, remote_model=None, **kwargs):
+def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_shards=None, test_shards=None, **kwargs):
     model = remote_model.load()
 
     train_shard = RayDatasetShard(
-        raysgd.get_dataset_shard("train"),
+        train_shards[raysgd.world_rank()], #raysgd.get_dataset_shard("train"),
         model.input_features,
         model.output_features,
     )
 
-    val_shard = raysgd.get_dataset_shard("val")
+    val_shard = val_shards[raysgd.world_rank()] if val_shards else None #raysgd.get_dataset_shard("val")
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
@@ -146,7 +146,7 @@ def train_fn(executable_kwargs=None, remote_model=None, **kwargs):
             model.output_features,
         )
 
-    test_shard = raysgd.get_dataset_shard("test")
+    test_shard = test_shards[raysgd.world_rank()] if test_shards else None #raysgd.get_dataset_shard("test")
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
@@ -177,6 +177,19 @@ class RaySgdTrainer(BaseTrainer):
         executable_kwargs = self.executable_kwargs
         remote_model = RayRemoteModel(model)
 
+        # TODO(travis) remove this once `dataset` keyword is supported:
+        wg = SGDWorkerGroup(self.trainer._executor.worker_group)
+        workers = [w for w in wg]
+        train_shards = training_set.pipeline().split(n=len(workers), locality_hints=wg)
+        val_shards = validation_set.pipeline().split(n=len(workers), locality_hints=wg) if validation_set else None
+        test_shards = test_set.pipeline().split(n=len(workers), locality_hints=wg) if test_set else None
+        kwargs = {
+            'train_shards': train_shards,
+            'val_shards': val_shards,
+            'test_shards': test_shards,
+            **kwargs
+        }
+
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),
             config={
@@ -184,11 +197,11 @@ class RaySgdTrainer(BaseTrainer):
                 'model': remote_model,
                 **kwargs
             },
-            dataset={
-                'train': training_set.pipeline(),
-                'val': validation_set.pipeline() if validation_set else None,
-                'test': test_set.pipeline() if test_set else None,
-            },
+            # dataset={
+            #     'train': training_set.pipeline(),
+            #     'val': validation_set.pipeline() if validation_set else None,
+            #     'test': test_set.pipeline() if test_set else None,
+            # },
         )
 
         weights, *stats = results[0]
