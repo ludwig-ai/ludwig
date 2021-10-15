@@ -337,6 +337,10 @@ def hyperopt(
             save_hyperopt_stats(hyperopt_stats, output_directory)
             logger.info('Hyperopt stats saved to: {}'.format(output_directory))
 
+    if callbacks:
+        for callback in callbacks:
+            callback.on_hyperopt_finish(experiment_name)
+
     logger.info('Finished hyperopt')
 
     return hyperopt_results
