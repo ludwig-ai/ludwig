@@ -87,8 +87,8 @@ def test_feature_transfomer(
 
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
-@pytest.mark.parametrize('size', [4, 8])
-@pytest.mark.parametrize('output_dim', [4, 12])
+@pytest.mark.parametrize('size', [2, 4, 8])
+@pytest.mark.parametrize('output_dim', [2, 4, 12])
 def test_tabnet(
         output_dim: int,
         size: int,
@@ -96,16 +96,18 @@ def test_tabnet(
 ) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
-    input_tensor = torch.randn([BATCH_SIZE, HIDDEN_SIZE], dtype=torch.float32)
+    input_tensor = torch.randn([BATCH_SIZE, 2], dtype=torch.float32)
 
     feature_transformer = TabNet(
-        HIDDEN_SIZE,
+        2,
         size,
         output_dim,
-        bn_virtual_bs=virtual_batch_size
+        num_steps=3,
+        num_total_blocks=4,
+        num_shared_blocks=2
     )
 
-    output_tensor = feature_transformer(input_tensor)
+    output = feature_transformer(input_tensor)
 
-    assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, output_dim)
+    assert isinstance(output, tuple)
+    assert output[0].shape == (BATCH_SIZE, 2)

@@ -113,7 +113,7 @@ class TabNet(LudwigModule):
 
         batch_size = features.shape[0]
         num_features = features.shape[-1]
-        out_accumulator = torch.zeros((batch_size, self.output_size))
+        out_accumulator = torch.zeros((batch_size, self.output_dim))
         aggregated_mask = torch.zeros([batch_size, num_features])
         prior_scales = torch.ones((batch_size, num_features))
         masks = []
@@ -129,7 +129,7 @@ class TabNet(LudwigModule):
             # Attentive Transformer #
             #########################
             mask_values = self.attentive_transforms[step_i](
-                x[:, self.output_size:], prior_scales)
+                x[:, self.output_dim:], prior_scales)
 
             # relaxation factor 1 forces the feature to be only used once
             prior_scales *= self.relaxation_factor - mask_values
@@ -153,7 +153,7 @@ class TabNet(LudwigModule):
                 masked_features
             )
 
-            out = torch.nn.functional.relu(x[:, :self.output_size])
+            out = torch.nn.functional.relu(x[:, :self.output_dim])
             out_accumulator += out
 
             # Aggregated masks are used for visualization of the
