@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+from functools import lru_cache
 from typing import Dict, List, Optional, Any
 
 # TODO(travis): remove import of this from top-level api due to optional deps
@@ -27,7 +28,7 @@ import tensorflow as tf
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, to_numpy_dataset
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 from ludwig.utils.types import DataFrame
 
@@ -113,16 +114,17 @@ class RayDatasetShard(Dataset):
                            seed=0,
                            ignore_last=False,
                            horovod=None):
-        return RayDatasetBatcher(
+        yield RayDatasetBatcher(
             self.dataset_shard,
             self.input_features,
             self.output_features,
             batch_size
         )
 
+    @lru_cache(1)
     def __len__(self):
         # TODO(travis): find way to avoid calling this, as it's expensive
-        return self.dataset_shard.count()
+        return next(self.dataset_shard.iter_datasets()).count()
 
     @property
     def size(self):
@@ -141,6 +143,7 @@ def prepare_dataset_shard(dataset_shard: tf.data.Dataset):
 
 def to_tf(
         dataset: ray.data.Dataset,
+        columns: List[str],
         output_signature: Dict[str, "tf.TypeSpec"],
         prefetch_blocks: int = 0,
         batch_size: int = 1
@@ -150,18 +153,19 @@ def to_tf(
         for batch in dataset.iter_batches(
                 prefetch_blocks=prefetch_blocks,
                 batch_size=batch_size,
-                batch_format="pandas"):
+                batch_format="pandas"
+        ):
+            arrays = to_numpy_dataset(batch)
             yield {
-                c: batch[c]
-                for c in batch.columns
+                c: arrays[c] for c in columns
             }
 
-    dataset = tf.data.Dataset.from_generator(
+    tf_dataset = tf.data.Dataset.from_generator(
         make_generator,
         output_signature=output_signature
     )
 
-    return dataset
+    return tf_dataset
 
 
 class RayDatasetBatcher(Batcher):
@@ -176,28 +180,36 @@ class RayDatasetBatcher(Batcher):
         self.batch_size = batch_size
 
         input_features_signature = {
-            name: tf.TensorSpec(
+            feature.proc_column: tf.TensorSpec(
                 shape=(None, *feature.get_input_shape()),
                 dtype=feature.get_input_dtype(),
             )
-            for name, feature in input_features
+            for feature in input_features.values()
         }
 
         output_features_signature = {
-            name: tf.TensorSpec(
+            feature.proc_column: tf.TensorSpec(
                 shape=(None, *feature.get_output_shape()),
                 dtype=feature.get_output_dtype(),
             )
-            for name, feature in output_features
+            for feature in output_features.values()
         }
 
         self.output_signature = {
             **input_features_signature,
             **output_features_signature,
         }
+
+        self.columns = [
+            f.proc_column for f in input_features.values()
+        ] + [
+            f.proc_column for f in output_features.values()
+        ]
+
         self.dataset_batch_iter = None
         self._next_batch = None
         self._last_batch = False
+        self._step = 0
 
     def next_batch(self):
         if self.last_batch():
@@ -206,6 +218,7 @@ class RayDatasetBatcher(Batcher):
         print(f"!!! NEXT BATCH")
         batch = self._next_batch
         self._fetch_next_batch()
+        self._step += 1
         return batch
 
     def last_batch(self):
@@ -218,11 +231,17 @@ class RayDatasetBatcher(Batcher):
         self.dataset_batch_iter = iter(prepare_dataset_shard(
             to_tf(
                 dataset,
+                columns=self.columns,
                 output_signature=self.output_signature,
                 batch_size=self.batch_size,
             )
         ))
+        self._step = 0
         self._fetch_next_batch()
+
+    @property
+    def step(self):
+        return self._step
 
     def _fetch_next_batch(self):
         self._last_batch = False
