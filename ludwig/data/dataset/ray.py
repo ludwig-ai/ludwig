@@ -17,7 +17,7 @@
 import contextlib
 from typing import Dict, List, Optional, Any
 
-# TODO(travis): remove import of this from api due ot ray deps
+# TODO(travis): remove import of this from top-level api due to optional deps
 import ray
 from ray.data import from_dask
 from ray.data.dataset_pipeline import DatasetPipeline
