@@ -173,7 +173,7 @@ class RaySgdTrainer(BaseTrainer):
         self._validation_field = None
         self._validation_metric = None
 
-    def train_fn(self, model, training_set, validation_set=None, test_set=None, **kwargs):
+    def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         executable_kwargs = self.executable_kwargs
         remote_model = RayRemoteModel(model)
 

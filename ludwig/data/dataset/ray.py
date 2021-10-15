@@ -41,7 +41,10 @@ class RayDataset(object):
         self.data_hdf5_fp = data_hdf5_fp
 
     def pipeline(self) -> DatasetPipeline:
-        return self.ds.repeat().random_shuffle_each_window()
+        return self.ds.repeat().random_shuffle()
+
+    def __len__(self):
+        return self.ds.count()
 
 
 class RayDatasetManager(object):
