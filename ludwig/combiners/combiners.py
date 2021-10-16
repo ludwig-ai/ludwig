@@ -440,8 +440,8 @@ class TabNetCombiner(Module):
 
         self.tabnet = TabNet(
             self.concatenated_shape[-1],
-            size=size,
-            output_dim=output_size,
+            size,
+            output_size,
             num_steps=num_steps,
             num_total_blocks=num_total_blocks,
             num_shared_blocks=num_shared_blocks,

@@ -1,7 +1,7 @@
 import logging
 from collections import OrderedDict
 import numpy as np
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List, Tuple, Dict
 import pytest
 import torch
 
@@ -287,18 +287,29 @@ def test_sequence_combiner(
     [
         [  # only numeric features
             ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
-            ('numerical', [BATCH_SIZE, 1])  # passthrough encoder
-        ]
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
+        ],
+        [  # only numeric features
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
+        ],
     ]
 )
-def test_tabnet_combiner(features_to_test):
+@pytest.mark.parametrize('size', [4, 8])
+@pytest.mark.parametrize('output_size', [6, 10])
+def test_tabnet_combiner(
+        features_to_test: Dict,
+        size: int,
+        output_size: int
+) -> None:
     encoder_outputs, input_features = features_to_test
 
     # setup combiner to test
     combiner = TabNetCombiner(
         input_features,
-        size=2,
-        output_size=2,
+        size=size,
+        output_size=output_size,
         num_steps=3,
         num_total_blocks=4,
         num_shared_blocks=2,
@@ -306,11 +317,15 @@ def test_tabnet_combiner(features_to_test):
     )
 
     # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    combiner_output = combiner(encoder_outputs)
 
     # required key present
-    assert 'combiner_output' in results
-    assert 'attention_masks' in results
+    assert 'combiner_output' in combiner_output
+    assert 'attention_masks' in combiner_output
+    assert 'aggregated_attention_masks' in combiner_output
+
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+    assert combiner_output['combiner_output'].shape == (BATCH_SIZE, output_size)
 
 
 @pytest.mark.parametrize("fc_layer",
