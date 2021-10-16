@@ -69,26 +69,72 @@ def test_feature_block(
     assert output_tensor.shape == (BATCH_SIZE, size)
 
 
+@pytest.mark.parametrize(
+    'num_total_blocks, num_shared_blocks',
+    [(4, 2), (6, 4), (3, 1)]
+)
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
-@pytest.mark.parametrize('output_size', [4, 12])
-def test_feature_transfomer(
-        output_size: int,
-        virtual_batch_size: Optional[int]
+@pytest.mark.parametrize('size', [4, 12])
+@pytest.mark.parametrize('input_size', [2, 6])
+def test_feature_transformer(
+        input_size: int,
+        size: int,
+        virtual_batch_size: Optional[int],
+        num_total_blocks: int,
+        num_shared_blocks: int
 ) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
-    input_tensor = torch.randn([BATCH_SIZE, HIDDEN_SIZE], dtype=torch.float32)
+    input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
 
     feature_transformer = FeatureTransformer(
-        HIDDEN_SIZE,
-        size=output_size,
-        bn_virtual_bs=virtual_batch_size
+        input_size,
+        size,
+        bn_virtual_bs=virtual_batch_size,
+        num_total_blocks=num_total_blocks,
+        num_shared_blocks=num_shared_blocks
     )
 
     output_tensor = feature_transformer(input_tensor)
 
     assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, output_size)
+    assert output_tensor.shape == (BATCH_SIZE, size)
+
+
+@pytest.mark.parametrize('virtual_batch_size', [None, 7])
+@pytest.mark.parametrize('output_size', [10, 12])
+@pytest.mark.parametrize('size', [4, 8])
+@pytest.mark.parametrize('input_size', [2, 6])
+def test_attentive_transformer(
+        input_size: int,
+        size: int,
+        output_size: int,
+        virtual_batch_size: Optional[int]
+) -> None:
+    # setup synthetic tensors
+    torch.manual_seed(RANDOM_SEED)
+    input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
+    prior_scales = torch.ones([BATCH_SIZE, input_size])
+
+    # setup required trasnformers for test
+    feature_transformer = FeatureTransformer(
+        input_size,
+        size + output_size,
+        bn_virtual_bs=virtual_batch_size
+    )
+    attentive_transformer = AttentiveTransformer(
+        size,
+        input_size,
+        bn_virtual_bs=virtual_batch_size
+    )
+
+    # process synthetic tensor through transformers
+    x = feature_transformer(input_tensor)
+    output_tensor = attentive_transformer(x[:, output_size:], prior_scales)
+
+    # check for correctness
+    assert isinstance(output_tensor, torch.Tensor)
+    assert output_tensor.shape == (BATCH_SIZE, input_size)
 
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
