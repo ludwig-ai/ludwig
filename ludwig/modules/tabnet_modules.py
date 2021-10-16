@@ -102,28 +102,35 @@ class TabNet(LudwigModule):
                 f'instead dim={features.dim()}'
             )
 
-        batch_size = features.shape[0]
-        num_features = features.shape[-1]
-        out_accumulator = torch.zeros((batch_size, self.output_size))
-        aggregated_mask = torch.zeros([batch_size, num_features])
-        prior_scales = torch.ones((batch_size, num_features))
+        # shape notation
+        # i_s: input_size
+        # s: size
+        # o_s: output_size
+        # b_s: batch_size
+        batch_size = features.shape[0]  # b_s
+        num_features = features.shape[-1]  # i_s
+        out_accumulator = torch.zeros(
+            (batch_size, self.output_size))  # [b_s, o_s]
+        aggregated_mask = torch.zeros([batch_size, num_features])  # [b_s, i_s]
+        prior_scales = torch.ones((batch_size, num_features))  # [b_s, i_s]
         masks = []
         total_entropy = 0.0
 
-        features = self.batch_norm(features)
+        features = self.batch_norm(features)  # [b_s, i_s]
         masked_features = features
 
-        x = self.feature_transforms[0](masked_features)
+        x = self.feature_transforms[0](masked_features)  # [b_s, s + o_s]
 
         for step_i in range(1, self.num_steps):  # todo: old value num_steps + 1
             #########################
             # Attentive Transformer #
             #########################
+            # x in following is shape [b_s, s]
             mask_values = self.attentive_transforms[step_i](
-                x[:, self.output_size:], prior_scales)
+                x[:, self.output_size:], prior_scales)  # [b_s, i_s]
 
             # relaxation factor 1 forces the feature to be only used once
-            prior_scales *= self.relaxation_factor - mask_values
+            prior_scales *= self.relaxation_factor - mask_values  # [b_s, i_s]
 
             # entropy is used to penalize the amount of sparsity
             # in feature selection
@@ -133,7 +140,8 @@ class TabNet(LudwigModule):
                     dim=1)
             ) / self.num_steps
 
-            masks.append(torch.unsqueeze(torch.unsqueeze(mask_values, 0), 3))
+            masks.append(torch.unsqueeze(torch.unsqueeze(mask_values, 0),
+                                         3))  # [1, b_s, i_s, 1]
 
             #######################
             # Feature Transformer #
@@ -142,17 +150,19 @@ class TabNet(LudwigModule):
 
             x = self.feature_transforms[step_i](
                 masked_features
-            )
+            )  # [b_s, s + o_s]
 
-            out = torch.nn.functional.relu(x[:, :self.output_size])
+            # x in following is shape [b_s, o_s]
+            out = torch.nn.functional.relu(
+                x[:, :self.output_size])  # [b_s, o_s]
             out_accumulator += out
 
             # Aggregated masks are used for visualization of the
             # feature importance attributes.
             scale = torch.sum(out, dim=1, keepdim=True) / self.num_steps
-            aggregated_mask += mask_values * scale
+            aggregated_mask += mask_values * scale  # [b_s, i_s]
 
-        final_output = self.final_projection(out_accumulator)
+        final_output = self.final_projection(out_accumulator)  # [b_s, o_s]
 
         sparsity_loss = torch.multiply(self.sparsity, total_entropy)
         setattr(sparsity_loss, "loss_name", "sparsity_loss")
@@ -199,11 +209,18 @@ class FeatureBlock(LudwigModule):
         )
 
     def forward(self, inputs):
-        hidden = self.fc_layer(inputs)
-        hidden = self.batch_norm(hidden)
+        # shape notation
+        # i_s: input_size
+        # s: size
+        # u: units
+        # b_s: batch_size
+
+        # inputs shape [b_s, i_s]
+        hidden = self.fc_layer(inputs)  # [b_s, u]
+        hidden = self.batch_norm(hidden)  # [b_s, u]
         if self.apply_glu:
-            hidden = glu(hidden)
-        return hidden
+            hidden = glu(hidden)  # [bs, s]
+        return hidden  # [b_s, 2*s] if apply_glu else [b_s, s]
 
     @property
     def input_shape(self) -> torch.Size:
@@ -235,8 +252,14 @@ class AttentiveTransformer(LudwigModule):
         # self.sparsemax = CustomSparsemax()  # todo: tf implementation
 
     def forward(self, inputs, prior_scales):
-        hidden = self.feature_block(inputs)
-        hidden = hidden * prior_scales
+        # shape notation
+        # i_s: input_size
+        # s: size
+        # b_s: batch_size
+
+        # inputs shape [b_s, i_s], prior_scales shape [b_s, s]
+        hidden = self.feature_block(inputs)  # [b_s, s]
+        hidden = hidden * prior_scales  # [b_s, s]
 
         # removing the mean to try to avoid numerical instability
         # https://github.com/tensorflow/addons/issues/2314
@@ -249,8 +272,8 @@ class AttentiveTransformer(LudwigModule):
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
 
         # added to avoid NaNs in the sparsemax
-        hidden = torch.clamp(hidden, min=-1.0e+6, max=1.0e+6)
-        return self.sparsemax(hidden)
+        hidden = torch.clamp(hidden, min=-1.0e+6, max=1.0e+6)  # [b_s, s]
+        return self.sparsemax(hidden)  # [b_s, s]
 
     @property
     def input_shape(self) -> torch.Size:
@@ -311,11 +334,17 @@ class FeatureTransformer(LudwigModule):
             self,
             inputs: torch.Tensor
     ) -> torch.Tensor:
-        hidden = self.blocks[0](inputs)
+        # shape notation
+        # i_s: input_size
+        # s: size
+        # b_s: batch_size
+
+        # inputs shape [b_s, i_s]
+        hidden = self.blocks[0](inputs)  # [b_s, s]
         for n in range(1, self.num_total_blocks):
             hidden = (self.blocks[n](hidden) +
-                      hidden) * torch.sqrt(torch.tensor(0.5))
-        return hidden
+                      hidden) * torch.sqrt(torch.tensor(0.5))  # [b_s, s]
+        return hidden  # [b_s, s]
 
     @property
     def shared_fc_layers(self):
