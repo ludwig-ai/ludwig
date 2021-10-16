@@ -647,7 +647,8 @@ def train_with_backend(
             test_set=test_set,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
+            skip_save_log=True,
         )
 
         if dataset is None:

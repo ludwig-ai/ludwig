@@ -132,6 +132,8 @@ class RayRemoteTrainer(RemoteTrainer):
 def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_shards=None, test_shards=None, **kwargs):
     model = remote_model.load()
 
+    print(f"!!! SHARDS: {len(train_shards)} RANK: {raysgd.world_rank()}")
+
     train_shard = RayDatasetShard(
         train_shards[raysgd.world_rank()], #raysgd.get_dataset_shard("train"),
         model.input_features,
@@ -202,9 +204,9 @@ class RaySgdTrainer(BaseTrainer):
             #     'val': validation_set.pipeline() if validation_set else None,
             #     'test': test_set.pipeline() if test_set else None,
             # },
-        )
+        )[0]
 
-        weights, *stats = results[0]
+        weights, *stats = results
         load_weights_from_buffer(model, weights)
         return (model, *stats)
 

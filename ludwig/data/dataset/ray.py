@@ -15,8 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import math
 from functools import lru_cache
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Iterator
 
 # TODO(travis): remove import of this from top-level api due to optional deps
 import ray
@@ -106,6 +107,7 @@ class RayDatasetShard(Dataset):
         self.dataset_shard = dataset_shard
         self.input_features = input_features
         self.output_features = output_features
+        self.dataset_iter = dataset_shard.iter_datasets()
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
@@ -115,16 +117,17 @@ class RayDatasetShard(Dataset):
                            ignore_last=False,
                            horovod=None):
         yield RayDatasetBatcher(
-            self.dataset_shard,
+            self.dataset_iter,
             self.input_features,
             self.output_features,
-            batch_size
+            batch_size,
+            self.size,
         )
 
     @lru_cache(1)
     def __len__(self):
         # TODO(travis): find way to avoid calling this, as it's expensive
-        return next(self.dataset_shard.iter_datasets()).count()
+        return next(self.dataset_iter).count()
 
     @property
     def size(self):
@@ -171,13 +174,15 @@ def to_tf(
 class RayDatasetBatcher(Batcher):
     def __init__(
             self,
-            dataset_pipeline: DatasetPipeline,
+            dataset_epoch_iterator: Iterator[ray.data.Dataset],
             input_features: Dict[str, InputFeature],
             output_features: Dict[str, OutputFeature],
             batch_size: int,
+            samples_per_epoch: int,
     ):
-        self.dataset_epoch_iterator = dataset_pipeline.iter_datasets()
+        self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
+        self.samples_per_epoch = samples_per_epoch
 
         input_features_signature = {
             feature.proc_column: tf.TensorSpec(
@@ -207,26 +212,38 @@ class RayDatasetBatcher(Batcher):
         ]
 
         self.dataset_batch_iter = None
+        self._epoch = 0
         self._next_batch = None
         self._last_batch = False
         self._step = 0
+        self._fetch_next_epoch()
 
     def next_batch(self):
         if self.last_batch():
             raise StopIteration()
 
-        print(f"!!! NEXT BATCH")
         batch = self._next_batch
         self._fetch_next_batch()
         self._step += 1
         return batch
 
     def last_batch(self):
-        print(f"!!! LAST BATCH")
         return self._last_batch
 
     def set_epoch(self, epoch):
-        print(f"!!! SET EPOCH: {epoch}")
+        if epoch != self._epoch:
+            self._fetch_next_epoch()
+            self._epoch = epoch
+
+    @property
+    def step(self):
+        return self._step
+
+    @property
+    def steps_per_epoch(self):
+        return math.ceil(self.samples_per_epoch / self.batch_size)
+
+    def _fetch_next_epoch(self):
         dataset = next(self.dataset_epoch_iterator)
         self.dataset_batch_iter = iter(prepare_dataset_shard(
             to_tf(
@@ -239,11 +256,11 @@ class RayDatasetBatcher(Batcher):
         self._step = 0
         self._fetch_next_batch()
 
-    @property
-    def step(self):
-        return self._step
-
     def _fetch_next_batch(self):
+        if self.dataset_batch_iter is None:
+            self._last_batch = True
+            return
+
         self._last_batch = False
         try:
             self._next_batch = next(self.dataset_batch_iter)
