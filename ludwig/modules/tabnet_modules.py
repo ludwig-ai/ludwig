@@ -74,7 +74,7 @@ class TabNet(LudwigModule):
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
-                    input_dim,  # todo:  need to generalize
+                    input_dim,
                     **kargs,
                     shared_fc_layers=self.feature_transforms[
                         0].shared_fc_layers
@@ -85,21 +85,12 @@ class TabNet(LudwigModule):
             # of features that we determine by looking at the
             # last dimension of the input tensor
             self.attentive_transforms.append(
-                AttentiveTransformer(input_dim, size, bn_momentum,
+                AttentiveTransformer(size, input_dim, bn_momentum,
                                      bn_epsilon, bn_virtual_bs)
             )
         self.final_projection = torch.nn.Linear(
-            self.input_dim,
-            self.output_dim)  # todo: generalize
-
-    # todo: remove tf code when done
-    # def build(self, input_shape):
-    #     num_features = input_shape[-1]
-    #     for i in range(self.num_steps):
-    #         self.attentive_transforms.append(
-    #             AttentiveTransformer(num_features, self.bn_momentum,
-    #                                  self.bn_epsilon, self.bn_virtual_bs)
-    #         )
+            self.output_dim,
+            self.output_dim)
 
     def forward(
             self,
