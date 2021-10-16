@@ -60,6 +60,29 @@ def check_combiner_output(combiner, combiner_output, batch_size):
            == (batch_size, *combiner.output_shape)
 
 
+# generates encoder outputs and minimal input feature objects for testing
+@pytest.fixture
+def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
+    # feature_list: list of tuples that define the output_shape and type
+    #    of input features to generate.  tuple[0] is input feature type,
+    #    tuple[1] is expected encoder output shape for the input feature
+    encoder_outputs = {}
+    input_features = {}
+    for i in range(len(feature_list)):
+        feature_name = f'feature_{i:02d}'
+        encoder_outputs[feature_name] = {
+            'encoder_output': torch.randn(feature_list[i][1],
+                                          dtype=torch.float32)
+        }
+        input_features[feature_name] = PseudoInputFeature(
+            feature_name,
+            feature_list[i][1],
+            type=feature_list[i][0]
+        )
+
+    return encoder_outputs, input_features
+
+
 # set up simulated encoder outputs
 @pytest.fixture
 def encoder_outputs():
@@ -165,8 +188,12 @@ def encoder_comparator_outputs():
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer",
                          [None, [{"fc_size": FC_SIZE}, {"fc_size": FC_SIZE}]])
-def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
-                         number_inputs):
+def test_concat_combiner(
+        encoder_outputs: Tuple,
+        fc_layer: Optional[List[Dict]],
+        flatten_inputs: bool,
+        number_inputs: Optional[int]
+) -> None:
     encoder_outputs_dict, input_features_dict = encoder_outputs
 
     # setup encoder inputs to combiner based on test case
@@ -207,8 +234,10 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_concat_combiner(
-        encoder_outputs, main_sequence_feature, reduce_output
-):
+        encoder_outputs: Tuple,
+        main_sequence_feature: Optional[str],
+        reduce_output: Optional[str]
+) -> None:
     # extract encoder outputs and input feature dictionaries
     encoder_outputs_dict, input_feature_dict = encoder_outputs
 
@@ -246,8 +275,11 @@ def test_sequence_concat_combiner(
 @pytest.mark.parametrize("encoder", sequence_encoder_registry)
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
-        encoder_outputs, main_sequence_feature, encoder, reduce_output
-):
+        encoder_outputs: Tuple,
+        main_sequence_feature: Optional[str],
+        encoder: str,
+        reduce_output: Optional[str]
+) -> None:
     encoder_outputs_dict, input_features_dict = encoder_outputs
 
     combiner = SequenceCombiner(
@@ -332,8 +364,12 @@ def test_tabnet_combiner(
                          [None, [{"fc_size": 64}, {"fc_size": 32}]])
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
-def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
-                             entity_2):
+def test_comparator_combiner(
+        encoder_comparator_outputs: Tuple,
+        fc_layer: Optional[List[Dict]],
+        entity_1: str,
+        entity_2: str
+) -> None:
     encoder_comparator_outputs_dict, input_features_dict = encoder_comparator_outputs
     # clean out unneeded encoder outputs since we only have 2 layers
     del encoder_comparator_outputs_dict["text_feature_3"]
@@ -390,29 +426,6 @@ def test_transformer_combiner(
 
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
-
-
-# generates encoder outputs and minimal input feature objects for testing
-@pytest.fixture
-def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
-    # feature_list: list of tuples that define the output_shape and type
-    #    of input features to generate.  tuple[0] is input feature type,
-    #    tuple[1] is expected encoder output shape for the input feature
-    encoder_outputs = {}
-    input_features = {}
-    for i in range(len(feature_list)):
-        feature_name = f'feature_{i:02d}'
-        encoder_outputs[feature_name] = {
-            'encoder_output': torch.randn(feature_list[i][1],
-                                          dtype=torch.float32)
-        }
-        input_features[feature_name] = PseudoInputFeature(
-            feature_name,
-            feature_list[i][1],
-            type=feature_list[i][0]
-        )
-
-    return encoder_outputs, input_features
 
 
 @pytest.mark.parametrize(
