@@ -10,15 +10,24 @@ from ludwig.modules.tabnet_modules import AttentiveTransformer
 
 RANDOM_SEED = 67
 BATCH_SIZE = 16
-HIDDEN_SIZE = 8
 
 
-def test_sparsemax():
-    input_tensor = torch.tensor(
-        [[-1.0, 0.0, 1.0], [5.01, 4.0, -2.0]],
-        dtype=torch.float32
-    )
-
+@pytest.mark.parametrize(
+    'input_tensor',
+    [
+        torch.tensor([[-1.0, 0.0, 1.0], [5.01, 4.0, -2.0]],
+                     dtype=torch.float32),
+        torch.tensor(
+            [
+                [1.36762051e+8, -1.36762051e+8, 1.59594639e+20],
+                [1.59594639e+37, 1.36762051e+7, 1.26e+6]
+            ], dtype=torch.float32
+        )
+    ]
+)
+def test_sparsemax(
+        input_tensor: torch.Tensor
+) -> None:
     sparsemax = Sparsemax()
 
     output_tensor = sparsemax(input_tensor)
