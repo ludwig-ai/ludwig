@@ -28,40 +28,45 @@ def test_sparsemax():
                                             dtype=torch.float32))
 
 
+@pytest.mark.parametrize('bn_virtual_bs', [None, 7])
 @pytest.mark.parametrize(
     'external_shared_fc_layer', [True, False]
 )
 @pytest.mark.parametrize('apply_glu', [True, False])
-@pytest.mark.parametrize('output_size', [4, 12])
+@pytest.mark.parametrize('size', [4, 12])
+@pytest.mark.parametrize('input_size', [2, 6])
 def test_feature_block(
-        output_size: int,
+        input_size,
+        size: int,
         apply_glu: bool,
-        external_shared_fc_layer: bool
+        external_shared_fc_layer: bool,
+        bn_virtual_bs: Optional[int]
 ) -> None:
     # setup synthetic tensor
     torch.manual_seed(RANDOM_SEED)
-    input_tensor = torch.randn([BATCH_SIZE, HIDDEN_SIZE], dtype=torch.float32)
+    input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
 
     if external_shared_fc_layer:
         shared_fc_layer = torch.nn.Linear(
-            HIDDEN_SIZE,
-            output_size * 2 if apply_glu else output_size,
+            input_size,
+            size * 2 if apply_glu else size,
             bias=False
         )
     else:
         shared_fc_layer = None
 
     feature_block = FeatureBlock(
-        HIDDEN_SIZE,
-        size=output_size,
+        input_size,
+        size,
         apply_glu=apply_glu,
-        shared_fc_layer=shared_fc_layer
+        shared_fc_layer=shared_fc_layer,
+        bn_virtual_bs=bn_virtual_bs
     )
 
     output_tensor = feature_block(input_tensor)
 
     assert isinstance(output_tensor, torch.Tensor)
-    assert output_tensor.shape == (BATCH_SIZE, output_size)
+    assert output_tensor.shape == (BATCH_SIZE, size)
 
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
