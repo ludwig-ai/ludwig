@@ -132,8 +132,6 @@ class RayRemoteTrainer(RemoteTrainer):
 def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_shards=None, test_shards=None, **kwargs):
     model = remote_model.load()
 
-    print(f"!!! SHARDS: {len(train_shards)} RANK: {raysgd.world_rank()}")
-
     train_shard = RayDatasetShard(
         train_shards[raysgd.world_rank()], #raysgd.get_dataset_shard("train"),
         model.input_features,
