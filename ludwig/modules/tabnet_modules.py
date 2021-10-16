@@ -57,7 +57,6 @@ class TabNet(LudwigModule):
                                                )
 
         kargs = {
-            "size": size + output_size,
             "num_total_blocks": num_total_blocks,
             "num_shared_blocks": num_shared_blocks,
             "bn_momentum": bn_momentum,
@@ -68,13 +67,14 @@ class TabNet(LudwigModule):
         # first feature transformer block is built first
         # to get the shared blocks
         self.feature_transforms = torch.nn.ModuleList([
-            FeatureTransformer(input_size, **kargs)
+            FeatureTransformer(input_size, size + output_size, **kargs)
         ])
         self.attentive_transforms = torch.nn.ModuleList()
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
                     input_size,
+                    size + output_size,
                     **kargs,
                     shared_fc_layers=self.feature_transforms[
                         0].shared_fc_layers
