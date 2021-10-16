@@ -65,8 +65,13 @@ def test_feature_block(
 
     output_tensor = feature_block(input_tensor)
 
+    # check for expected structure and properties
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, size)
+
+    assert feature_block.input_shape[-1] == input_size
+    assert feature_block.output_shape[-1] == size
+    assert feature_block.input_dtype == torch.float32
 
 
 @pytest.mark.parametrize(
@@ -97,8 +102,13 @@ def test_feature_transformer(
 
     output_tensor = feature_transformer(input_tensor)
 
+    # check for expected structure and properties
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, size)
+
+    assert feature_transformer.input_shape[-1] == input_size
+    assert feature_transformer.output_shape[-1] == size
+    assert feature_transformer.input_dtype == torch.float32
 
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
@@ -132,9 +142,13 @@ def test_attentive_transformer(
     x = feature_transformer(input_tensor)
     output_tensor = attentive_transformer(x[:, output_size:], prior_scales)
 
-    # check for correctness
+    # check for expected shape and properities
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, input_size)
+
+    assert attentive_transformer.input_shape[-1] == size
+    assert attentive_transformer.output_shape[-1] == input_size
+    assert attentive_transformer.input_dtype == torch.float32
 
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
@@ -151,7 +165,7 @@ def test_tabnet(
     torch.manual_seed(RANDOM_SEED)
     input_tensor = torch.randn([BATCH_SIZE, input_size], dtype=torch.float32)
 
-    feature_transformer = TabNet(
+    tabnet = TabNet(
         input_size,
         size,
         output_size,
@@ -160,7 +174,12 @@ def test_tabnet(
         num_shared_blocks=2
     )
 
-    output = feature_transformer(input_tensor)
+    output = tabnet(input_tensor)
 
+    # check for expected shape and properties
     assert isinstance(output, tuple)
     assert output[0].shape == (BATCH_SIZE, output_size)
+
+    assert tabnet.input_shape[-1] == input_size
+    assert tabnet.output_shape[-1] == output_size
+    assert tabnet.input_dtype == torch.float32

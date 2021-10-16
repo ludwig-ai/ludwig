@@ -160,6 +160,14 @@ class TabNet(LudwigModule):
 
         return final_output, aggregated_mask, masks
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.output_size])
+
 
 class FeatureBlock(LudwigModule):
     def __init__(
@@ -213,6 +221,7 @@ class AttentiveTransformer(LudwigModule):
     ):
         super().__init__()
         self.input_size = input_size
+        self.size = size
 
         self.feature_block = FeatureBlock(
             input_size,
@@ -249,10 +258,7 @@ class AttentiveTransformer(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        tensor = torch.rand([2, *self.input_shape], dtype=torch.float32)
-        prior_scales = torch.ones(2, self.input_shape[-1])
-        output = self.forward(tensor, prior_scales)
-        return output.size()[1:]
+        return torch.Size([self.size])
 
 # adapted and modified from https://github.com/ostamand/tensorflow-tabnet/blob/master/tabnet/models/transformers.py
 class FeatureTransformer(LudwigModule):
