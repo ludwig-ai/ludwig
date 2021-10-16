@@ -166,7 +166,7 @@ def to_tf(
     tf_dataset = tf.data.Dataset.from_generator(
         make_generator,
         output_signature=output_signature
-    )
+    ).prefetch(tf.data.experimental.AUTOTUNE)
 
     return tf_dataset
 
@@ -245,14 +245,28 @@ class RayDatasetBatcher(Batcher):
 
     def _fetch_next_epoch(self):
         dataset = next(self.dataset_epoch_iterator)
-        self.dataset_batch_iter = iter(prepare_dataset_shard(
-            to_tf(
-                dataset,
-                columns=self.columns,
-                output_signature=self.output_signature,
-                batch_size=self.batch_size,
-            )
-        ))
+        # self.dataset_batch_iter = iter(prepare_dataset_shard(
+        #     to_tf(
+        #         dataset,
+        #         columns=self.columns,
+        #         output_signature=self.output_signature,
+        #         batch_size=self.batch_size,
+        #     )
+        # ))
+
+        def gen_batches():
+            for batch in dataset.iter_batches(
+                    prefetch_blocks=0,
+                    batch_size=self.batch_size,
+                    batch_format="pandas"
+            ):
+                arrays = to_numpy_dataset(batch)
+                yield {
+                    c: arrays[c] for c in self.columns
+                }
+
+        self.dataset_batch_iter = gen_batches()
+
         self._step = 0
         self._fetch_next_batch()
 
