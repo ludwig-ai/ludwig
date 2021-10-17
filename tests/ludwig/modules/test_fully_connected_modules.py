@@ -19,24 +19,24 @@ def test_fc_layer(
 ) -> None:
     torch.manual_seed(RANDOM_SEED)
     batch = torch.randn([BATCH_SIZE, INPUT_SIZE], dtype=torch.float32)
-    target_tensor = torch.ones([BATCH_SIZE, OUTPUT_SIZE], dtype=torch.float32)
+
 
     # setup layer to test
-    fc_layer = FCLayer(
+    model = FCLayer(
         INPUT_SIZE,
         output_size=OUTPUT_SIZE,
         norm=norm,
         use_bias=use_bias
     )
 
-    output_tensor = fc_layer(batch)
+    output_tensor = model(batch)
 
     # check for correct output type and shape
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, OUTPUT_SIZE)
 
     # check to confirm parameter updates
-    assert_model_parameters_updated(fc_layer, batch, target_tensor)
+    assert_model_parameters_updated(model, batch, [BATCH_SIZE, OUTPUT_SIZE])
 
 
 @pytest.mark.parametrize('residual', [True, False])
@@ -47,23 +47,22 @@ def test_fc_stack(
 ) -> None:
     torch.manual_seed(RANDOM_SEED)
     batch = torch.randn([BATCH_SIZE, INPUT_SIZE], dtype=torch.float32)
-    target_tensor = torch.ones([BATCH_SIZE, OUTPUT_SIZE], dtype=torch.float32)
 
     # setup layer to test
-    fc_stack = FCStack(
+    model = FCStack(
         INPUT_SIZE,
         default_fc_size=OUTPUT_SIZE,
         num_layers=num_layers
     )
 
     # confirm correct number of layers
-    assert len(fc_stack.layers) == num_layers
+    assert len(model.layers) == num_layers
 
-    output_tensor = fc_stack(batch)
+    output_tensor = model(batch)
 
     # check for correct output type and shape
     assert isinstance(output_tensor, torch.Tensor)
     assert output_tensor.shape == (BATCH_SIZE, OUTPUT_SIZE)
 
     # check to confirm parameter updates
-    assert_model_parameters_updated(fc_stack, batch, target_tensor)
+    assert_model_parameters_updated(model, batch, (BATCH_SIZE, OUTPUT_SIZE))

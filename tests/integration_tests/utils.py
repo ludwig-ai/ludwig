@@ -22,6 +22,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
+from typing import Union
 
 import cloudpickle
 import numpy as np
@@ -677,14 +678,14 @@ class ParameterUpdateError(Exception):
 def assert_model_parameters_updated(
         model: LudwigModule,
         batch: torch.Tensor,
-        target_tensor: torch.Tensor
+        target_tensor_shape: Union[list, tuple]
 ) -> None:
     """
     Confirms that model parameters can be updated.
     Args:
         model: (LudwigModel) model to be tested.
         batch: (torch.Tensor) synthetic batch tensor to pass into the model
-        target_tensor: synthetic tensor used to compute a loss function
+        target_tensor_shape: shape of synthetic tensor used to compute a loss function
 
     Returns: None
 
@@ -692,6 +693,7 @@ def assert_model_parameters_updated(
     # setup
     loss_function = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    target_tensor = torch.ones(target_tensor_shape, dtype=torch.float32)
 
     # capture model parameters before passing through data
     before = [(x[0], x[1].clone()) for x in model.named_parameters()]
