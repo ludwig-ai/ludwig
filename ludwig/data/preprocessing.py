@@ -1095,6 +1095,17 @@ data_format_preprocessor_registry = {
     **{fmt: TFRecordPreprocessor for fmt in TFRECORD_FORMATS},
 }
 
+import contextlib
+import time
+
+@contextlib.contextmanager
+def timeit(name):
+    start_t = time.time()
+    try:
+        yield
+    finally:
+        logger.info(f"{name}: {time.time() - start_t}")
+
 
 def build_dataset(
         dataset_df,
@@ -1127,46 +1138,51 @@ def build_dataset(
             proc_features.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
 
-    dataset_cols = cast_columns(
-        dataset_df,
-        proc_features,
-        global_preprocessing_parameters,
-        backend
-    )
+    with timeit("CAST COLUMNS"):
+        dataset_cols = cast_columns(
+            dataset_df,
+            proc_features,
+            global_preprocessing_parameters,
+            backend
+        )
 
-    metadata = build_metadata(
-        metadata,
-        dataset_cols,
-        proc_features,
-        global_preprocessing_parameters,
-        backend
-    )
+    with timeit("BUILD METADATA"):
+        metadata = build_metadata(
+            metadata,
+            dataset_cols,
+            proc_features,
+            global_preprocessing_parameters,
+            backend
+        )
 
-    proc_cols = build_data(
-        dataset_cols,
-        proc_features,
-        metadata,
-        backend,
-        skip_save_processed_input
-    )
+    with timeit("BUILD DATA"):
+        proc_cols = build_data(
+            dataset_cols,
+            proc_features,
+            metadata,
+            backend,
+            skip_save_processed_input
+        )
 
-    proc_cols[SPLIT] = get_split(
-        dataset_df,
-        force_split=global_preprocessing_parameters['force_split'],
-        split_probabilities=global_preprocessing_parameters[
-            'split_probabilities'
-        ],
-        stratify=global_preprocessing_parameters['stratify'],
-        backend=backend,
-        random_seed=random_seed
-    )
+    with timeit("TRAIN / TEST SPLIT"):
+        proc_cols[SPLIT] = get_split(
+            dataset_df,
+            force_split=global_preprocessing_parameters['force_split'],
+            split_probabilities=global_preprocessing_parameters[
+                'split_probabilities'
+            ],
+            stratify=global_preprocessing_parameters['stratify'],
+            backend=backend,
+            random_seed=random_seed
+        )
 
-    dataset = backend.df_engine.df_like(dataset_df, proc_cols)
+    with timeit("BUILD DDF"):
+        dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
-    # At this point, there should be no missing values left in the dataframe, unless
-    # the DROP_ROW preprocessing option was selected, in which case we need to drop those
-    # rows.
-    dataset = dataset.dropna()
+        # At this point, there should be no missing values left in the dataframe, unless
+        # the DROP_ROW preprocessing option was selected, in which case we need to drop those
+        # rows.
+        dataset = dataset.dropna()
 
     return dataset, metadata
 

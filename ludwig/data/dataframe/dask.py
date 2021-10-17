@@ -15,6 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
+
 import dask
 import dask.array as da
 import dask.dataframe as dd
@@ -25,6 +27,9 @@ from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords
 
 
 TMP_COLUMN = '__TMP_COLUMN__'
+
+
+logger = logging.getLogger(__name__)
 
 
 def set_scheduler(scheduler):
@@ -58,7 +63,8 @@ class DaskEngine(DataFrameEngine):
         return data.persist() if self._persist else data
 
     def compute(self, data):
-        return data.compute()
+        with ProgressBar():
+            return data.compute()
 
     def from_pandas(self, df):
         return dd.from_pandas(df, npartitions=self.parallelism)
