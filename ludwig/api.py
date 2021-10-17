@@ -70,6 +70,17 @@ from ludwig.utils.schema import validate_config
 
 logger = logging.getLogger(__name__)
 
+import contextlib
+import time
+
+@contextlib.contextmanager
+def timeit(name):
+    start_t = time.time()
+    try:
+        yield
+    finally:
+        logger.info(f"{name}: {time.time() - start_t}")
+
 
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
@@ -406,32 +417,32 @@ class LudwigModel:
                         logger.info('{}: {}'.format(
                             key, pformat(value, indent=4)))
                     logger.info('\n')
-
-                preprocessed_data = self.preprocess(
-                    dataset=dataset,
-                    training_set=training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    training_set_metadata=training_set_metadata,
-                    data_format=data_format,
-                    experiment_name=experiment_name,
-                    model_name=model_name,
-                    model_resume_path=model_resume_path,
-                    skip_save_training_description=skip_save_training_description,
-                    skip_save_training_statistics=skip_save_training_statistics,
-                    skip_save_model=skip_save_model,
-                    skip_save_progress=skip_save_progress,
-                    skip_save_log=skip_save_log,
-                    skip_save_processed_input=skip_save_processed_input,
-                    output_directory=output_directory,
-                    random_seed=random_seed,
-                    devbug=debug,
-                    **kwargs,
-                )
-                (training_set,
-                 validation_set,
-                 test_set,
-                 training_set_metadata) = preprocessed_data
+                with timeit("!!! PREPROCESSING"):
+                    preprocessed_data = self.preprocess(
+                        dataset=dataset,
+                        training_set=training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        training_set_metadata=training_set_metadata,
+                        data_format=data_format,
+                        experiment_name=experiment_name,
+                        model_name=model_name,
+                        model_resume_path=model_resume_path,
+                        skip_save_training_description=skip_save_training_description,
+                        skip_save_training_statistics=skip_save_training_statistics,
+                        skip_save_model=skip_save_model,
+                        skip_save_progress=skip_save_progress,
+                        skip_save_log=skip_save_log,
+                        skip_save_processed_input=skip_save_processed_input,
+                        output_directory=output_directory,
+                        random_seed=random_seed,
+                        devbug=debug,
+                        **kwargs,
+                    )
+                    (training_set,
+                     validation_set,
+                     test_set,
+                     training_set_metadata) = preprocessed_data
 
             self.training_set_metadata = training_set_metadata
 
@@ -521,13 +532,14 @@ class LudwigModel:
                         self.save_config(model_dir)
 
                 try:
-                    train_stats = trainer.train(
-                        self.model,
-                        training_set,
-                        validation_set=validation_set,
-                        test_set=test_set,
-                        save_path=model_dir,
-                    )
+                    with timeit("!!! TRAIN"):
+                        train_stats = trainer.train(
+                            self.model,
+                            training_set,
+                            validation_set=validation_set,
+                            test_set=test_set,
+                            save_path=model_dir,
+                        )
 
                     self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
                     train_stats = {

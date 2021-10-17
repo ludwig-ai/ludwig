@@ -23,7 +23,6 @@ import numpy as np
 import pandas as pd
 
 from dask.dataframe.extensions import make_array_nonempty
-from dask.diagnostics import ProgressBar
 import ray
 from ray.data import from_dask
 from ray.data.dataset_pipeline import DatasetPipeline
@@ -51,8 +50,7 @@ class RayDataset(object):
         # for proc_column in features.keys():
         #     df[proc_column] = df[proc_column].astype(TensorDtype())
 
-        with ProgressBar():
-            self.ds = from_dask(df)
+        self.ds = from_dask(df)
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
 
@@ -376,12 +374,14 @@ class RayDatasetBatcher(Batcher):
 
         q = queue.Queue()
 
+        batch_size = self.batch_size
+
         def producer():
             for batch in dataset.map_batches(
                 to_tensors, batch_format="pandas"
             ).iter_batches(
                 prefetch_blocks=0,
-                batch_size=self.batch_size,
+                batch_size=batch_size,
                 batch_format="pandas"
             ):
                 res = {
