@@ -1165,7 +1165,7 @@ def build_dataset(
         )
 
     with timeit("TRAIN / TEST SPLIT"):
-        proc_cols[SPLIT] = get_split(
+        split = get_split(
             dataset_df,
             force_split=global_preprocessing_parameters['force_split'],
             split_probabilities=global_preprocessing_parameters[
@@ -1175,6 +1175,8 @@ def build_dataset(
             backend=backend,
             random_seed=random_seed
         )
+        if split is not None:
+            proc_cols[SPLIT] = split
 
     with timeit("BUILD DDF"):
         dataset = backend.df_engine.df_like(dataset_df, proc_cols)
@@ -1210,68 +1212,69 @@ def build_metadata(
         metadata, dataset_cols, features, global_preprocessing_parameters, backend
 ):
     for feature in features:
-        if feature[NAME] in metadata:
-            continue
+        with timeit(f"METADATA {feature[NAME]}"):
+            if feature[NAME] in metadata:
+                continue
 
-        if PREPROCESSING in feature:
-            preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature[TYPE]],
-                feature[PREPROCESSING]
-            )
-        else:
-            preprocessing_parameters = global_preprocessing_parameters[
-                feature[TYPE]
-            ]
-
-        # deal with encoders that have fixed preprocessing
-        if 'encoder' in feature:
-            encoders_registry = get_from_registry(
-                feature[TYPE],
-                input_type_registry
-            ).encoder_registry
-            encoder_class = encoders_registry[feature['encoder']]
-            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
-                encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
+            if PREPROCESSING in feature:
                 preprocessing_parameters = merge_dict(
-                    preprocessing_parameters,
-                    resolve_pointers(encoder_fpp, feature, 'feature.')
+                    global_preprocessing_parameters[feature[TYPE]],
+                    feature[PREPROCESSING]
                 )
+            else:
+                preprocessing_parameters = global_preprocessing_parameters[
+                    feature[TYPE]
+                ]
 
-        fill_value = precompute_fill_value(
-            dataset_cols,
-            feature,
-            preprocessing_parameters,
-            backend
-        )
-        if fill_value is not None:
-            preprocessing_parameters = {
-                'computed_fill_value': fill_value,
-                **preprocessing_parameters
-            }
+            # deal with encoders that have fixed preprocessing
+            if 'encoder' in feature:
+                encoders_registry = get_from_registry(
+                    feature[TYPE],
+                    input_type_registry
+                ).encoder_registry
+                encoder_class = encoders_registry[feature['encoder']]
+                if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
+                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-        handle_missing_values(
-            dataset_cols,
-            feature,
-            preprocessing_parameters
-        )
+                    preprocessing_parameters = merge_dict(
+                        preprocessing_parameters,
+                        resolve_pointers(encoder_fpp, feature, 'feature.')
+                    )
 
-        get_feature_meta = get_from_registry(
-            feature[TYPE],
-            base_type_registry
-        ).get_feature_meta
+            fill_value = precompute_fill_value(
+                dataset_cols,
+                feature,
+                preprocessing_parameters,
+                backend
+            )
+            if fill_value is not None:
+                preprocessing_parameters = {
+                    'computed_fill_value': fill_value,
+                    **preprocessing_parameters
+                }
 
-        column = dataset_cols[feature[COLUMN]]
-        if column.dtype == object:
-            column = column.astype(str)
+            handle_missing_values(
+                dataset_cols,
+                feature,
+                preprocessing_parameters
+            )
 
-        metadata[feature[NAME]] = get_feature_meta(
-            column,
-            preprocessing_parameters,
-            backend
-        )
+            get_feature_meta = get_from_registry(
+                feature[TYPE],
+                base_type_registry
+            ).get_feature_meta
 
-        metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
+            column = dataset_cols[feature[COLUMN]]
+            if column.dtype == object:
+                column = column.astype(str)
+
+            metadata[feature[NAME]] = get_feature_meta(
+                column,
+                preprocessing_parameters,
+                backend
+            )
+
+            metadata[feature[NAME]][PREPROCESSING] = preprocessing_parameters
 
     return metadata
 
@@ -1362,8 +1365,12 @@ def get_split(
         split = dataset_df[SPLIT]
     else:
         set_random_seed(random_seed)
-
         if stratify is None or stratify not in dataset_df:
+            if backend.df_engine.partitioned:
+                # This approach is very inefficient for partitioned backends, which
+                # can split by partition
+                return None
+
             split = dataset_df.index.to_series().map(
                 lambda x: np.random.choice(3, 1, p=split_probabilities)
             ).astype(np.int8)
@@ -1517,38 +1524,43 @@ def preprocess_for_training(
                 random_seed=random_seed
             )
             training_set, test_set, validation_set, training_set_metadata = processed
-            replace_text_feature_level(
-                features,
-                [training_set, validation_set, test_set]
-            )
+            with timeit("REPLACE TEXT LEVEL FEATURE"):
+                replace_text_feature_level(
+                    features,
+                    [training_set, validation_set, test_set]
+                )
             processed = (training_set, test_set, validation_set, training_set_metadata)
 
             # cache the dataset
-            if backend.cache.can_cache(skip_save_processed_input):
-                processed = cache.put(*processed)
+            with timeit("CACHE"):
+                if backend.cache.can_cache(skip_save_processed_input):
+                    processed = cache.put(*processed)
             training_set, test_set, validation_set, training_set_metadata = processed
 
-        training_dataset = backend.dataset_manager.create(
-            training_set,
-            config,
-            training_set_metadata
-        )
-
-        validation_dataset = None
-        if validation_set is not None:
-            validation_dataset = backend.dataset_manager.create(
-                validation_set,
+        with timeit("CREATE TRAIN DATASET"):
+            training_dataset = backend.dataset_manager.create(
+                training_set,
                 config,
                 training_set_metadata
             )
 
-        test_dataset = None
-        if test_set is not None:
-            test_dataset = backend.dataset_manager.create(
-                test_set,
-                config,
-                training_set_metadata
-            )
+        with timeit("CREATE VAL DATASET"):
+            validation_dataset = None
+            if validation_set is not None:
+                validation_dataset = backend.dataset_manager.create(
+                    validation_set,
+                    config,
+                    training_set_metadata
+                )
+
+        with timeit("CREATE TEST DATASET"):
+            test_dataset = None
+            if test_set is not None:
+                test_dataset = backend.dataset_manager.create(
+                    test_set,
+                    config,
+                    training_set_metadata
+                )
 
         return (
             training_dataset,
@@ -1612,12 +1624,6 @@ def _preprocess_file_for_training(
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
 
-        # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
-        training_data, test_data, validation_data = split_dataset_ttv(
-            data,
-            SPLIT
-        )
-
     elif training_set:
         # use data_train (including _validation and _test if they are present)
         # and ignore data and train set metadata
@@ -1646,13 +1652,16 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        training_data, test_data, validation_data = split_dataset_ttv(
-            data,
-            SPLIT
-        )
-
     else:
         raise ValueError('either data or data_train have to be not None')
+
+    data = backend.df_engine.persist(data)
+    if SPLIT in data.columns:
+        training_data, test_data, validation_data = split_dataset_ttv(data, SPLIT)
+    else:
+        training_data, test_data, validation_data = data.random_split(
+            preprocessing_params['split_probabilities']
+        )
 
     return training_data, test_data, validation_data, training_set_metadata
 
@@ -1697,10 +1706,16 @@ def _preprocess_df_for_training(
         backend=backend
     )
 
-    training_set, test_set, validation_set = split_dataset_ttv(
-        dataset,
-        SPLIT
-    )
+    # dataset = backend.df_engine.persist(dataset)
+    with timeit("SPLIT DATASET TTV"):
+        if SPLIT in dataset.columns:
+            logger.info("SPLIT ON SPLIT COL")
+            training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
+        else:
+            logger.info("SPLIT IN DASK")
+            training_set, test_set, validation_set = dataset.random_split(
+                preprocessing_params['split_probabilities']
+            )
     return training_set, test_set, validation_set, training_set_metadata
 
 

@@ -25,6 +25,7 @@ import pyarrow as pa
 
 # TODO(travis): remove import of this from top-level api due to optional deps
 from dask.dataframe.extensions import make_array_nonempty
+from dask.diagnostics import ProgressBar
 import ray
 from ray.data import from_dask
 from ray.data.dataset_pipeline import DatasetPipeline
@@ -52,7 +53,8 @@ class RayDataset(object):
         # for proc_column in features.keys():
         #     df[proc_column] = df[proc_column].astype(TensorDtype())
 
-        self.ds = from_dask(df)
+        with ProgressBar():
+            self.ds = from_dask(df)
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
 
