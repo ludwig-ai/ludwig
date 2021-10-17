@@ -16,6 +16,8 @@
 # ==============================================================================
 import contextlib
 import math
+import queue
+import threading
 from functools import lru_cache
 from typing import Dict, List, Optional, Any, Iterator
 
@@ -282,133 +284,14 @@ class RayDatasetBatcher(Batcher):
 
     def _fetch_next_epoch(self):
         dataset = next(self.dataset_epoch_iterator)
-        # self.dataset_batch_iter = iter(prepare_dataset_shard(
-        #     to_tf(
-        #         dataset,
-        #         columns=self.columns,
-        #         output_signature=self.output_signature,
-        #         batch_size=self.batch_size,
-        #     )
-        # ))
 
-        # def gen_batches():
-        #     for batch in dataset.iter_batches(
-        #             prefetch_blocks=0,
-        #             batch_size=self.batch_size,
-        #             batch_format="pandas"
-        #     ):
-        #         arrays = to_numpy_dataset(batch)
-        #         yield {
-        #             c: arrays[c] for c in self.columns
-        #         }
-        #
-        # self.dataset_batch_iter = gen_batches()
-
-        columns = self.columns
-
-        # def to_tensors(block: pa.Table) -> pa.Table:
-        #     npds = to_numpy_dataset(df)
-        #     block = block.to_pandas()
-        #     block["two"] = TensorArray([pickle.loads(a) for a in block["two"]])
-        #     return pa.Table.from_pandas(block)
-        #     pa.Table()
-        #
-        #     # row = []
-        #     # for c in columns:
-        #     #     print(f"!!! {type(npds[c])} {npds[c]}")
-        #     #     t = TensorArray(npds[c])
-        #     #     row.append(t)
-        #     # return pd.DataFrame(
-        #     #     columns=columns,
-        #     #     data=[row],
-        #     # )
-        #     # for c in columns:
-        #     #     df[c] = TensorArray(npds[c])
-        #     # return df
-
-        # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-        #     npds = to_numpy_dataset(df)
-        #     return pd.DataFrame(
-        #         columns=columns,
-        #         data=[
-        #             [TensorArray(npds[c]) for c in columns]
-        #         ],
-        #     )
-        #
-        # self.dataset_batch_iter = dataset.map_batches(
-        #     to_tensors, batch_format='pandas', batch_size=self.batch_size
-        # ).iter_rows()
-
-        # def gen_batches():
-        #     for batch in dataset.map_batches(
-        #         to_tensors, batch_format="pandas"
-        #     ).iter_batches(
-        #         prefetch_blocks=0,
-        #         batch_size=self.batch_size,
-        #         batch_format="pandas"
-        #     ):
-        #         yield {
-        #             c: batch[c].to_numpy() for c in self.columns
-        #         }
-
-        # !!! BEST RESULT !!!
-        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-            for c in columns:
-                df[c] = df[c].astype(TensorDtype())
-            return df
-
-        # self.dataset_batch_iter = gen_batches()
-
-        # self.dataset_batch_iter = dataset.map_batches(
-        #     to_tensors, batch_format="pandas"
-        # ).iter_batches(
-        #     prefetch_blocks=0,
-        #     batch_size=self.batch_size,
-        #     batch_format="pandas"
-        # )
-
-        # from ray.util.queue import Queue
-
-        batch_size = self.batch_size
-
-        import threading
-        import queue
-
-        q = queue.Queue(maxsize=100)
-
-        def producer():
-            for batch in dataset.map_batches(
-                to_tensors, batch_format="pandas"
-            ).iter_batches(
-                prefetch_blocks=0,
-                batch_size=batch_size,
-                batch_format="pandas"
-            ):
-                res = {
-                    c: batch[c].to_numpy() for c in columns
-                }
-                q.put(res)
-                # print(f"!!! WRITER: {q.qsize()}")
-            q.put(None)
-
-        def async_read():
-            t = threading.Thread(target=producer)
-            t.start()
-            while True:
-                batch = q.get(block=True)
-                # print(f"!!! READER: {q.qsize()}")
-                if batch is None:
-                    break
-                yield batch
-            t.join()
-
-        self.dataset_batch_iter = async_read()
-
-        # self.dataset_batch_iter = dataset.iter_batches(
-        #     prefetch_blocks=0,
-        #     batch_size=self.batch_size,
-        #     batch_format="pandas"
-        # )
+        read_parallelism = 1
+        if read_parallelism == 1:
+            self.dataset_batch_iter = self._create_async_reader(dataset)
+        elif read_parallelism > 1:
+            self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
+        else:
+            self.dataset_batch_iter = self._create_sync_reader(dataset)
 
         self._step = 0
         self._fetch_next_batch()
@@ -423,3 +306,110 @@ class RayDatasetBatcher(Batcher):
             self._next_batch = next(self.dataset_batch_iter)
         except StopIteration:
             self._last_batch = True
+
+    def _create_sync_reader(self, dataset: ray.data.Dataset):
+        columns = self.columns
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                df[c] = df[c].astype(TensorDtype())
+            return df
+
+        def sync_read():
+            for batch in dataset.map_batches(
+                to_tensors, batch_format="pandas"
+            ).iter_batches(
+                prefetch_blocks=0,
+                batch_size=self.batch_size,
+                batch_format="pandas"
+            ):
+                yield {
+                    c: batch[c].to_numpy() for c in self.columns
+                }
+
+        return sync_read()
+
+    def _create_async_reader(self, dataset: ray.data.Dataset):
+        q = queue.Queue(maxsize=100)
+
+        columns = self.columns
+        batch_size = self.batch_size
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                df[c] = df[c].astype(TensorDtype())
+            return df
+
+        def producer():
+            for batch in dataset.map_batches(
+                    to_tensors,
+                    batch_format="pandas"
+            ).iter_batches(
+                prefetch_blocks=0,
+                batch_size=batch_size,
+                batch_format="pandas"
+            ):
+                res = {
+                    c: batch[c].to_numpy() for c in columns
+                }
+                q.put(res)
+            q.put(None)
+
+        def async_read():
+            t = threading.Thread(target=producer)
+            t.start()
+            while True:
+                batch = q.get(block=True)
+                if batch is None:
+                    break
+                yield batch
+            t.join()
+
+        return async_read()
+
+    def _create_async_parallel_reader(self, dataset: ray.data.Dataset, num_threads: int):
+        q = queue.Queue(maxsize=100)
+
+        columns = self.columns
+        batch_size = self.batch_size
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                df[c] = df[c].astype(TensorDtype())
+            return df
+
+        splits = dataset.split(n=num_threads)
+
+        def producer(i):
+            for batch in splits[i].map_batches(
+                    to_tensors,
+                    batch_format="pandas"
+            ).iter_batches(
+                prefetch_blocks=0,
+                batch_size=batch_size,
+                batch_format="pandas"
+            ):
+                res = {
+                    c: batch[c].to_numpy() for c in columns
+                }
+                q.put(res)
+            q.put(None)
+
+        def async_parallel_read():
+            threads = [threading.Thread(target=producer, args=(i,)) for i in range(num_threads)]
+            for t in threads:
+                t.start()
+
+            active_threads = num_threads
+            while True:
+                batch = q.get(block=True)
+                if batch is None:
+                    active_threads -= 1
+                    if active_threads == 0:
+                        break
+                yield batch
+
+            for t in threads:
+                t.join()
+
+        return async_parallel_read()
