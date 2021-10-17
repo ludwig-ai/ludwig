@@ -27,11 +27,12 @@ import os
 import subprocess
 import sys
 import tempfile
+import traceback
 from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.data.dataset.partitioned import RayDataset
+from ludwig.data.dataset.ray import RayDataset
 from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
@@ -63,6 +64,7 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      figure_data_format, generate_kfold_splits,
                                      load_json, save_json, load_yaml, load_dataset)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
@@ -540,7 +542,7 @@ class LudwigModel:
 
                     # save training statistics
                     if self.backend.is_coordinator():
-                        if not skip_save_training_statistics:
+                        if not skip_save_training_statistics and path_exists(os.path.dirname(training_stats_fn)):
                             save_json(training_stats_fn, train_stats)
 
                     # grab the results of the model with highest validation test performance
@@ -1135,19 +1137,27 @@ class LudwigModel:
                 batch_size = self.config[TRAINING]['batch_size']
 
             # predict
-            eval_stats, _, _ = self.evaluate(
-                eval_set,
-                data_format=data_format,
-                batch_size=batch_size,
-                output_directory=output_directory,
-                skip_save_unprocessed_output=skip_save_unprocessed_output,
-                skip_save_predictions=skip_save_predictions,
-                skip_save_eval_stats=skip_save_eval_stats,
-                collect_predictions=not skip_collect_predictions,
-                collect_overall_stats=not skip_collect_overall_stats,
-                return_type='dict',
-                debug=debug
-            )
+            try:
+                eval_stats, _, _ = self.evaluate(
+                    eval_set,
+                    data_format=data_format,
+                    batch_size=batch_size,
+                    output_directory=output_directory,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output,
+                    skip_save_predictions=skip_save_predictions,
+                    skip_save_eval_stats=skip_save_eval_stats,
+                    collect_predictions=not skip_collect_predictions,
+                    collect_overall_stats=not skip_collect_overall_stats,
+                    return_type='dict',
+                    debug=debug
+                )
+            except NotImplementedError:
+                logger.warning(
+                    "Skipping evaluation as the necessary methods are not "
+                    "supported. Full exception below:\n"
+                    f"{traceback.format_exc()}"
+                )
+                eval_stats = None
         else:
             logger.warning(f"The evaluation set {eval_set} was not provided. "
                            f"Skipping evaluation")

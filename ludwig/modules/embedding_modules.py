@@ -422,7 +422,13 @@ class EmbedSequence(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor):
+        if inputs.dtype not in [torch.int, torch.long]:
+            raise RuntimeError(
+                f'Expected tensor of type torch.int or torch.long as input.'
+                f'Received {inputs.dtype} instead.'
+            )
+
         embedded = self.embeddings(inputs)
         if self.dropout:
             embedded = self.dropout(embedded)

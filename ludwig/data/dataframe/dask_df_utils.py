@@ -18,7 +18,8 @@ def dask_to_tfrecords(
     """Store Dask.dataframe to TFRecord files."""
     makedirs(folder, exist_ok=True)
     compression_ext = get_compression_ext(compression_type)
-    filenames = [get_part_filename(i, compression_ext) for i in range(df.npartitions)]
+    filenames = [get_part_filename(i, compression_ext)
+                 for i in range(df.npartitions)]
 
     # Also write a meta data file
     write_meta(df, folder, compression_type)

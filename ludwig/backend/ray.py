@@ -31,7 +31,7 @@ from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.partitioned import RayDataset
+from ludwig.data.dataset.ray import RayDataset
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
@@ -41,40 +41,19 @@ from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer,
 logger = logging.getLogger(__name__)
 
 
-def get_dask_kwargs():
-    # TODO ray: select this more intelligently,
-    #  must be greather than or equal to number of Horovod workers
+def get_horovod_kwargs(use_gpu=None):
+    # Our goal is to have a worker per resource used for training.
+    # The priority is GPUs, but can fall back to CPUs if there are no
+    # GPUs available.
+    if use_gpu is None:
+        use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
+
+    resource = 'GPU' if use_gpu else 'CPU'
+    num_workers = int(ray.cluster_resources().get(resource, 0))
+
     return dict(
-        parallelism=int(ray.cluster_resources()['CPU'])
-    )
-
-
-def get_horovod_kwargs():
-    # TODO ray: https://github.com/horovod/horovod/issues/2702
-    resources = [node['Resources'] for node in ray.state.nodes()]
-    use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
-
-    # Our goal is to maximize the number of training resources we can
-    # form into a homogenous configuration. The priority is GPUs, but
-    # can fall back to CPUs if there are no GPUs available.
-    key = 'GPU' if use_gpu else 'CPU'
-
-    # Bucket the per node resources by the number of the target resource
-    # available on that host (equivalent to number of slots).
-    buckets = defaultdict(list)
-    for node_resources in resources:
-        buckets[int(node_resources.get(key, 0))].append(node_resources)
-
-    # Maximize for the total number of the target resource = num_slots * num_workers
-    def get_total_resources(bucket):
-        slots, resources = bucket
-        return slots * len(resources)
-
-    best_slots, best_resources = max(buckets.items(), key=get_total_resources)
-    return dict(
-        num_slots=best_slots,
-        num_hosts=len(best_resources),
-        use_gpu=use_gpu
+        num_workers=num_workers,
+        use_gpu=use_gpu,
     )
 
 
@@ -84,15 +63,19 @@ _engine_registry = {
 }
 
 
-def _get_df_engine(engine_config):
-    if engine_config is None:
+def _get_df_engine(processor):
+    logger.info(f"Ray processor params: {processor}")
+    if processor is None:
+        # TODO ray: find an informed way to set the parallelism, in practice
+        #  it looks like Dask handles this well on its own most of the time
         return DaskEngine()
 
-    engine_config = engine_config.copy()
+    processor_kwargs = processor.copy()
 
-    dtype = engine_config.pop('type', 'dask')
+    dtype = processor_kwargs.pop('type', 'dask')
     engine_cls = _engine_registry.get(dtype)
-    return engine_cls(**engine_config)
+
+    return engine_cls(**processor_kwargs)
 
 
 class RayRemoteModel:
@@ -131,8 +114,10 @@ class RayTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, trainer_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         setting = RayExecutor.create_settings(timeout_s=30)
-        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RayRemoteTrainer, executable_kwargs=trainer_kwargs)
+        self.executor = RayExecutor(
+            setting, **{**get_horovod_kwargs(), **horovod_kwargs})
+        self.executor.start(executable_cls=RayRemoteTrainer,
+                            executable_kwargs=trainer_kwargs)
 
     def train(self, model, *args, **kwargs):
         remote_model = RayRemoteModel(model)
@@ -147,7 +132,8 @@ class RayTrainer(BaseTrainer):
     def train_online(self, model, *args, **kwargs):
         remote_model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda trainer: trainer.train_online(remote_model.load(), *args, **kwargs)
+            lambda trainer: trainer.train_online(
+                remote_model.load(), *args, **kwargs)
         )
 
         weights = results[0]
@@ -249,10 +235,10 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, horovod_kwargs=None, cache_format=PARQUET, engine=None, **kwargs):
+    def __init__(self, processor=None, trainer=None, cache_format=PARQUET, **kwargs):
         super().__init__(cache_format=cache_format, **kwargs)
-        self._df_engine = _get_df_engine(engine)
-        self._horovod_kwargs = horovod_kwargs or {}
+        self._df_engine = _get_df_engine(processor)
+        self._horovod_kwargs = trainer or {}
         self._tensorflow_kwargs = {}
         if cache_format not in [PARQUET, TFRECORD]:
             raise ValueError(
@@ -269,7 +255,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 ray.init(ignore_reinit_error=True)
 
         dask.config.set(scheduler=ray_dask_get)
-        self._df_engine.set_parallelism(**get_dask_kwargs())
 
     def initialize_tensorflow(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
@@ -283,6 +268,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_predictor(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
         return RayPredictor(self._horovod_kwargs, executable_kwargs)
+
+    def set_distributed_kwargs(self, **kwargs):
+        self._horovod_kwargs = kwargs
 
     @property
     def df_engine(self):

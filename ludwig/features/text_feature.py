@@ -15,22 +15,17 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from collections.abc import Iterable
 
 import numpy as np
 import torch
-import pandas as pd
-try:
-    import dask.dataframe as dd
-except ImportError:
-    pass
+
 
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import ENCODER_REGISTRY
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
+from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
@@ -39,6 +34,7 @@ from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 from ludwig.utils.strings_utils import tokenizer_registry
+from ludwig.utils.types import DataFrame
 
 
 logger = logging.getLogger(__name__)
@@ -281,9 +277,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         inputs_exp = inputs.type(torch.int32)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
-        encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=inputs_mask
-        )
+        encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
         encoder_output[LENGTHS] = lengths
 
         return encoder_output
@@ -516,12 +510,12 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         set_default_value(output_feature, 'level', 'word')
         SequenceOutputFeature.populate_defaults(output_feature)
 
-    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+    def flatten(self, df: DataFrame) -> DataFrame:
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         df[probs_col] = df[probs_col].apply(lambda x: x.flatten())
         return df
 
-    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+    def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f'{self.feature_name}_{PROBABILITIES}'
         df[probs_col] = df[probs_col].apply(
             lambda x: x.reshape(-1, self.max_sequence_length),

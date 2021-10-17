@@ -657,12 +657,16 @@ class Trainer(BaseTrainer):
             # training_checkpoints_prefix_path = os.path.join(
             #    training_checkpoints_path, "ckpt"
             # )
-            training_progress_tracker_path = os.path.join(
-                save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
-            )
             tensorboard_log_dir = os.path.join(
                 save_path, 'logs'
             )
+        if save_path:
+            training_progress_tracker_path = os.path.join(
+                save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
+            )
+
+        self.callback(lambda c: c.on_trainer_train_setup(
+            self, save_path), coordinator_only=False)
 
         # ====== Setup session =======
         '''
@@ -1570,8 +1574,8 @@ class Trainer(BaseTrainer):
             return True
         return self.horovod.rank() == 0
 
-    def callback(self, fn):
-        if self.is_coordinator():
+    def callback(self, fn, coordinator_only=True):
+        if not coordinator_only or self.is_coordinator():
             for callback in self.callbacks:
                 fn(callback)
 

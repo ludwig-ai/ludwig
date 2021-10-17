@@ -31,7 +31,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.recurrent_modules import BasicDecoder
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry, register
-from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
+from ludwig.utils.torch_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             is_timeseries=False,
             max_sequence_length=0,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -474,7 +474,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-
         # EXPECTED SIZE OF RETURNED TENSORS
         # lengths: shape[batch_size]
         # predictions: shape [batch_size, seq_size]
@@ -729,7 +728,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
             self,
             num_classes,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
             weights_regularizer=None,
             bias_regularizer=None,
@@ -836,7 +835,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
                      input_sequence_lengths - 1,
                      # modified to use input sequence length
                      0
-                 )],
+                )],
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)

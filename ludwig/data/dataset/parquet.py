@@ -18,7 +18,7 @@ import contextlib
 import math
 
 from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.partitioned import RayDataset
+from ludwig.data.dataset.ray import RayDataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 
 from petastorm import make_batch_reader

@@ -15,21 +15,23 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+import copy
 from typing import Dict
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    pass
-import pandas as pd
+from ludwig.utils.types import DataFrame
+
 import torch
+from torch import Tensor
 
 from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.loss_modules import LOSS_INPUTS_REGISTRY
+from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
-from ludwig.utils.torch_utils import sequence_length_3D, sequence_mask, LudwigModule
+from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
+    sequence_mask
 
 import numpy as np
 
@@ -114,9 +116,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
-    #train_loss_function = None
-    #eval_loss_function = None
-
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
 
@@ -128,13 +127,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.num_fc_layers = 0
         self.fc_size = 256
         self.use_bias = True
-        self.weights_initializer = 'glorot_uniform'
+        self.weights_initializer = 'xavier_uniform'
         self.bias_initializer = 'zeros'
         self.weights_regularizer = None
         self.bias_regularizer = None
         self.activity_regularizer = None
-        # self.weights_constraint=None
-        # self.bias_constraint=None
         self.norm = None
         self.norm_params = None
         self.activation = 'relu'
@@ -156,8 +153,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_weights_regularizer=self.weights_regularizer,
             default_bias_regularizer=self.bias_regularizer,
             default_activity_regularizer=self.activity_regularizer,
-            # default_weights_constraint=self.weights_constraint,
-            # default_bias_constraint=self.bias_constraint,
             default_norm=self.norm,
             default_norm_params=self.norm_params,
             default_activation=self.activation,
@@ -200,38 +195,42 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_decoder(self, decoder_parameters):
+        # Override input_size. Features input_size may be different if the
+        # output feature has a custom FC.
+        decoder_parameters_copy = copy.copy(
+            decoder_parameters)
+        decoder_parameters_copy['input_size'] = self.fc_stack.output_shape[-1]
         return get_from_registry(self.decoder, self.decoder_registry)(
-            **decoder_parameters
+            **decoder_parameters_copy
         )
 
-    def train_loss(self, targets, predictions):
-        #return self.train_loss_function(targets, predictions)
-        return self.train_loss_function(predictions, targets)
+    def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        # TODO(shreya): Add exceptions here.
+        loss_class = type(self.train_loss_function)
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
+        return self.train_loss_function(predictions[prediction_key], targets)
 
-    def eval_loss(self, targets, predictions):
-        #return self.eval_loss_function(targets, predictions)
-        return self.eval_loss_function(predictions, targets)
+    def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        loss_class = type(self.train_loss_function)
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
+        return self.eval_loss_function(predictions[prediction_key], targets)
 
-    def update_metrics(self, targets, predictions):
-        for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS or metric == HITS_AT_K:
-                #metric_fn.update_state(targets, predictions)
-                metric_fn.update(predictions, targets)
-            else:
-                #metric_fn.update_state(targets, predictions[PREDICTIONS])
-                metric_fn.update(predictions, targets)
+    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        for _, metric_fn in self.metric_functions.items():
+            metric_class = type(metric_fn)
+            prediction_key = METRICS_INPUTS_REGISTRY[metric_class]
+            metric_fn.update(predictions[prediction_key], targets)
 
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
-            #metric_vals[metric_name] = metric_onj.result().numpy()
-            metric_vals[metric_name] = metric_onj.compute().detach().numpy().item()
+            metric_vals[metric_name] = metric_onj.compute(
+            ).detach().numpy().item()
         return metric_vals
 
     def reset_metrics(self):
         for of_name, metric_fn in self.metric_functions.items():
             if metric_fn is not None:
-                #metric_fn.reset_states()
                 metric_fn.reset()
 
     def forward(
@@ -282,7 +281,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         #   with keys: logits, lengths, projection_input
         #
 
-        if isinstance(logits, torch.Tensor):
+        if isinstance(logits, Tensor):
             logits = {'logits': logits}
 
         return {
@@ -349,7 +348,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     if len(dependency_final_hidden.shape) > 2:
                         # matrix matrix -> concat
                         assert hidden.shape[1] == \
-                               dependency_final_hidden.shape[1]
+                            dependency_final_hidden.shape[1]
                         dependencies_hidden.append(dependency_final_hidden)
                     else:
                         # matrix vector -> tile concat
@@ -521,11 +520,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         return feature_hidden
 
-    def flatten(self, df: pd.DataFrame) -> pd.DataFrame:
+    def flatten(self, df: DataFrame) -> DataFrame:
         """ Converts the output of batch_predict to a 1D array. """
         return df
 
-    def unflatten(self, df: dd.DataFrame) -> dd.DataFrame:
+    def unflatten(self, df: DataFrame) -> DataFrame:
         """ Reshapes a flattened 1D array into its original shape. """
         return df
-
