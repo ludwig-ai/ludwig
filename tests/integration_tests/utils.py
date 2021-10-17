@@ -27,6 +27,8 @@ import cloudpickle
 import numpy as np
 import pandas as pd
 
+import torch
+
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
 from ludwig.constants import VECTOR, COLUMN, NAME, PROC_COLUMN
@@ -35,6 +37,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.data_utils import read_csv, replace_file_extension
+from ludwig.utils.torch_utils import LudwigModule
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -665,3 +668,58 @@ def train_with_backend(
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
+
+
+class ParameterUpdateError(Exception):
+    pass
+
+
+def assert_model_parameters_updated(
+        model: LudwigModule,
+        batch: torch.Tensor,
+        target_tensor: torch.Tensor
+) -> None:
+    """
+    Confirms that model parameters can be updated.
+    Args:
+        model: (LudwigModel) model to be tested.
+        batch: (torch.Tensor) synthetic batch tensor to pass into the model
+        target_tensor: synthetic tensor used to compute a loss function
+
+    Returns: None
+
+    """
+    # setup
+    loss_function = torch.nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+
+    # capture model parameters before passing through data
+    before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+    # make one pass through model
+    model_output = model(batch)
+
+    # do update of model parameters
+    loss = loss_function(model_output, target_tensor)
+    loss.backward()
+    optimizer.step()  # comment out to generate no update exception for testing
+
+    # capture model parameters after one pass
+    after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+    # check for parameter updates
+    for b, a in zip(before, after):
+        # ensure parameter names match
+        if a[0] != b[0]:
+            raise RuntimeError(
+                f'During parameter update check, detected mis-matching names: '
+                f'name1: {a[0]}, name2: {b[0]}'
+            )
+
+        # ensure parameters are updated
+        if (a[1] == b[1]).all():
+            raise ParameterUpdateError(
+                f'Model parameter for {a[0]} did not update.  Before and after '
+                f'contain same contents.\nBefore model update: {b[1]}\n'
+                f'After module update: {a[1]}'
+            )
