@@ -376,9 +376,7 @@ class RayDatasetBatcher(Batcher):
 
         q = queue.Queue()
 
-        # shards = dataset.split(n=8)
-
-        def producer(i):
+        def producer():
             for batch in dataset.map_batches(
                 to_tensors, batch_format="pandas"
             ).iter_batches(
@@ -394,20 +392,15 @@ class RayDatasetBatcher(Batcher):
             q.put(None)
 
         def async_read():
-            threads = [threading.Thread(target=producer, args=(i,)) for i in range(1)]
-            for t in threads:
-                t.start()
-            producers = 1
+            t = threading.Thread(target=producer)
+            t.start()
             while True:
                 batch = q.get(block=True)
                 # print(f"!!! READER: {q.qsize()}")
                 if batch is None:
-                    producers -= 1
-                    if producers == 0:
-                        break
+                    break
                 yield batch
-            for t in threads:
-                t.join()
+            t.join()
 
         self.dataset_batch_iter = async_read()
 
