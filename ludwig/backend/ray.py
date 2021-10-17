@@ -354,6 +354,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._tensorflow_kwargs = {}
+        self._cache_format = cache_format
         if cache_format not in [RAY, PARQUET, TFRECORD]:
             raise ValueError(
                 f'Data format {cache_format} is not supported when using the Ray backend. '
@@ -377,7 +378,11 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
-        return RaySgdTrainer(self._horovod_kwargs, executable_kwargs)
+        if self._cache_format == RAY:
+            return RaySgdTrainer(self._horovod_kwargs, executable_kwargs)
+        else:
+            return RayTrainer(self._horovod_kwargs, executable_kwargs)
+
 
     def create_predictor(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
