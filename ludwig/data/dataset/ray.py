@@ -21,9 +21,7 @@ from typing import Dict, List, Optional, Any, Iterator
 
 import numpy as np
 import pandas as pd
-import pyarrow as pa
 
-# TODO(travis): remove import of this from top-level api due to optional deps
 from dask.dataframe.extensions import make_array_nonempty
 from dask.diagnostics import ProgressBar
 import ray
@@ -36,7 +34,7 @@ import tensorflow as tf
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, to_numpy_dataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
