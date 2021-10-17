@@ -71,7 +71,7 @@ class RayDataset(object):
         #     for c in features.keys():
         #         df[c] = df[c].astype(TensorDtype())
         #     return df
-        #
+
         # print(f"!!! BEFORE SCHEMA: {self.ds.schema()}")
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
         # print(f"!!! AFTER SCHEMA: {self.ds.schema()}")
@@ -168,41 +168,46 @@ class RayDatasetShard(Dataset):
         return len(self)
 
 
-# def prepare_dataset_shard(dataset_shard: tf.data.Dataset):
-#     # Disable Tensorflow autosharding since the dataset has already been
-#     # sharded.
-#     options = tf.data.Options()
-#     options.experimental_distribute.auto_shard_policy = \
-#         tf.data.experimental.AutoShardPolicy.OFF
-#     dataset = dataset_shard.with_options(options)
-#     return dataset
+def prepare_dataset_shard(dataset_shard: tf.data.Dataset):
+    # Disable Tensorflow autosharding since the dataset has already been
+    # sharded.
+    options = tf.data.Options()
+    options.experimental_distribute.auto_shard_policy = \
+        tf.data.experimental.AutoShardPolicy.OFF
+    dataset = dataset_shard.with_options(options)
+    return dataset
 
 
-# def to_tf(
-#         dataset: ray.data.Dataset,
-#         columns: List[str],
-#         output_signature: Dict[str, "tf.TypeSpec"],
-#         prefetch_blocks: int = 0,
-#         batch_size: int = 1
-# ) -> "tf.data.Dataset":
-#
-#     def make_generator():
-#         for batch in dataset.iter_batches(
-#                 prefetch_blocks=prefetch_blocks,
-#                 batch_size=batch_size,
-#                 batch_format="pandas"
-#         ):
-#             arrays = to_numpy_dataset(batch)
-#             yield {
-#                 c: arrays[c] for c in columns
-#             }
-#
-#     tf_dataset = tf.data.Dataset.from_generator(
-#         make_generator,
-#         output_signature=output_signature
-#     ).prefetch(tf.data.experimental.AUTOTUNE)
-#
-#     return tf_dataset
+def to_tf(
+        dataset: ray.data.Dataset,
+        columns: List[str],
+        output_signature: Dict[str, "tf.TypeSpec"],
+        prefetch_blocks: int = 0,
+        batch_size: int = 1
+) -> "tf.data.Dataset":
+    def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+        for c in columns:
+            df[c] = df[c].astype(TensorDtype())
+        return df
+
+    def make_generator():
+        for batch in dataset.map_batches(
+            to_tensors, batch_format="pandas"
+        ).iter_batches(
+            prefetch_blocks=prefetch_blocks,
+            batch_size=batch_size,
+            batch_format="pandas"
+        ):
+            yield {
+                c: batch[c].to_numpy() for c in columns
+            }
+
+    tf_dataset = tf.data.Dataset.from_generator(
+        make_generator,
+        output_signature=output_signature
+    ).prefetch(tf.data.experimental.AUTOTUNE)
+
+    return tf_dataset
 
 
 class RayDatasetBatcher(Batcher):
@@ -340,26 +345,77 @@ class RayDatasetBatcher(Batcher):
         #     for batch in dataset.map_batches(
         #         to_tensors, batch_format="pandas"
         #     ).iter_batches(
-        #             prefetch_blocks=0,
-        #             batch_size=self.batch_size,
-        #             batch_format="pandas"
+        #         prefetch_blocks=0,
+        #         batch_size=self.batch_size,
+        #         batch_format="pandas"
         #     ):
         #         yield {
-        #             c: batch[c] for c in self.columns
+        #             c: batch[c].to_numpy() for c in self.columns
         #         }
 
+        # !!! BEST RESULT !!!
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
                 df[c] = df[c].astype(TensorDtype())
             return df
 
-        self.dataset_batch_iter = dataset.map_batches(
-            to_tensors, batch_format="pandas"
-        ).iter_batches(
-            prefetch_blocks=0,
-            batch_size=self.batch_size,
-            batch_format="pandas"
-        )
+        # self.dataset_batch_iter = gen_batches()
+
+        # self.dataset_batch_iter = dataset.map_batches(
+        #     to_tensors, batch_format="pandas"
+        # ).iter_batches(
+        #     prefetch_blocks=0,
+        #     batch_size=self.batch_size,
+        #     batch_format="pandas"
+        # )
+
+        # from ray.util.queue import Queue
+
+        import threading
+        import queue
+
+        q = queue.Queue()
+
+        # shards = dataset.split(n=8)
+
+        def producer(i):
+            for batch in dataset.map_batches(
+                to_tensors, batch_format="pandas"
+            ).iter_batches(
+                prefetch_blocks=0,
+                batch_size=self.batch_size,
+                batch_format="pandas"
+            ):
+                res = {
+                    c: batch[c].to_numpy() for c in columns
+                }
+                q.put(res)
+                # print(f"!!! WRITER: {q.qsize()}")
+            q.put(None)
+
+        def async_read():
+            threads = [threading.Thread(target=producer, args=(i,)) for i in range(1)]
+            for t in threads:
+                t.start()
+            producers = 1
+            while True:
+                batch = q.get(block=True)
+                # print(f"!!! READER: {q.qsize()}")
+                if batch is None:
+                    producers -= 1
+                    if producers == 0:
+                        break
+                yield batch
+            for t in threads:
+                t.join()
+
+        self.dataset_batch_iter = async_read()
+
+        # self.dataset_batch_iter = dataset.iter_batches(
+        #     prefetch_blocks=0,
+        #     batch_size=self.batch_size,
+        #     batch_format="pandas"
+        # )
 
         self._step = 0
         self._fetch_next_batch()

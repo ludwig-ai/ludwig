@@ -97,6 +97,16 @@ class BaseTrainer(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown()
 
+import contextlib
+
+@contextlib.contextmanager
+def timeit(name):
+    start_t = time.time()
+    try:
+        yield
+    finally:
+        logger.info(f"{name}: {time.time() - start_t}")
+
 
 class Trainer(BaseTrainer):
     """
@@ -826,7 +836,8 @@ class Trainer(BaseTrainer):
                     self.optimizer.set_learning_rate(current_learning_rate)
 
                     # obtain batch
-                    batch = batcher.next_batch()
+                    with timeit(f"READ {progress_tracker.steps}"):
+                        batch = batcher.next_batch()
                     inputs = {
                         i_feat.feature_name: batch[i_feat.proc_column]
                         for i_feat in model.input_features.values()
@@ -840,12 +851,13 @@ class Trainer(BaseTrainer):
                     # if first_batch and self.is_coordinator() and not skip_save_log:
                     #    tf.summary.trace_on(graph=True, profiler=True)
 
-                    loss, all_losses = model.train_step(
-                        self.optimizer,
-                        inputs,
-                        targets,
-                        self.regularization_lambda
-                    )
+                    with timeit(f"UPDATE {progress_tracker.steps}"):
+                        loss, all_losses = model.train_step(
+                            self.optimizer,
+                            inputs,
+                            targets,
+                            self.regularization_lambda
+                        )
 
                     # Reintroduce for tensorboard graph
                     # if first_batch and self.is_coordinator() and not skip_save_log:
