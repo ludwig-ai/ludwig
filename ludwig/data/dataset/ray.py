@@ -369,12 +369,12 @@ class RayDatasetBatcher(Batcher):
 
         # from ray.util.queue import Queue
 
+        batch_size = self.batch_size
+
         import threading
         import queue
 
-        q = queue.Queue()
-
-        batch_size = self.batch_size
+        q = queue.Queue(maxsize=100)
 
         def producer():
             for batch in dataset.map_batches(
