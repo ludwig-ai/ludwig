@@ -70,10 +70,17 @@ def get_trainer_kwargs(use_gpu=None):
     resource = 'GPU' if use_gpu else 'CPU'
     num_workers = int(ray.cluster_resources().get(resource, 0))
 
+    # from horovod.runner.common.util import secret
+    # backend = HorovodConfig()
+    # backend.key = secret.make_secret_key()
+
+    # nic = 'ens5'
+    nic = 'lo'
+
     return dict(
         # TODO travis: fix raysgd to put settings.keys in config
         # backend='horovod',
-        backend=HorovodConfig(nics={'ens5'}),
+        backend=HorovodConfig(nics={nic}),
         num_workers=num_workers,
         use_gpu=use_gpu,
     )

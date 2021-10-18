@@ -1706,7 +1706,7 @@ def _preprocess_df_for_training(
         backend=backend
     )
 
-    # dataset = backend.df_engine.persist(dataset)
+    dataset = backend.df_engine.persist(dataset)
     with timeit("SPLIT DATASET TTV"):
         if SPLIT in dataset.columns:
             logger.info("SPLIT ON SPLIT COL")
