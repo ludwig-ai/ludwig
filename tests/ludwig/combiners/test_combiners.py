@@ -326,6 +326,11 @@ def test_sequence_combiner(
             ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
             ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
         ],
+        [  # numeric and categorical features
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 12]),  # dense encoder
+            ('category', [BATCH_SIZE, 8]),  # dense encoder
+        ],
     ]
 )
 @pytest.mark.parametrize('size', [4, 8])
