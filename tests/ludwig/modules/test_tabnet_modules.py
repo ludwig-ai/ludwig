@@ -3,7 +3,7 @@ import pytest
 
 import torch
 
-from ludwig.modules.tabnet_modules import Sparsemax
+from ludwig.utils.torch_utils import Sparsemax
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.modules.tabnet_modules import FeatureTransformer, FeatureBlock
 from ludwig.modules.tabnet_modules import AttentiveTransformer
