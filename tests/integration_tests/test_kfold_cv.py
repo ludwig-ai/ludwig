@@ -53,7 +53,7 @@ FEATURES_TO_TEST = [
         ],
         # output feature
         [
-            category_feature(vocab_size=2, reduce_input='sum')
+            category_feature(vocab_size=4, reduce_input='sum')
         ]
     ),
     FeaturesToUse(
