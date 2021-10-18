@@ -130,8 +130,8 @@ class TabNet(LudwigModule):
                 x[:, self.output_size:], prior_scales)  # [b_s, i_s]
 
             # relaxation factor 1 forces the feature to be only used once
-            prior_scales = prior_scales * (
-                        self.relaxation_factor - mask_values)  # [b_s, i_s]
+            prior_scales = prior_scales * \
+                           (self.relaxation_factor - mask_values)  # [b_s, i_s]
 
             # entropy is used to penalize the amount of sparsity
             # in feature selection
