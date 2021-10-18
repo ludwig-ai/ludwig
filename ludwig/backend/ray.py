@@ -26,6 +26,7 @@ from horovod.ray import RayExecutor
 from ray.util.dask import ray_dask_get
 
 import ray.util.sgd.v2 as raysgd
+from ray.util.sgd.v2 import HorovodConfig
 from ray.util.sgd.v2.trainer import Trainer, SGDWorkerGroup
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
@@ -70,7 +71,9 @@ def get_trainer_kwargs(use_gpu=None):
     num_workers = int(ray.cluster_resources().get(resource, 0))
 
     return dict(
-        backend='horovod',
+        # TODO travis: fix raysgd to put settings.keys in config
+        # backend='horovod',
+        backend=HorovodConfig(nics={'ens5'}),
         num_workers=num_workers,
         use_gpu=use_gpu,
     )
