@@ -55,8 +55,10 @@ def test_fc_stack(
         num_layers=num_layers
     )
 
-    # confirm correct number of layers
-    assert len(model.layers) == num_layers
+    # confirm correct number of layers and type in stack
+    assert len(model.stack) == num_layers
+    for layer in model.stack:
+        assert isinstance(layer, FCLayer)
 
     output_tensor = model(batch)
 
