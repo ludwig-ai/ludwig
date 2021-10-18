@@ -69,7 +69,7 @@ class TabNet(LudwigModule):
         self.feature_transforms = torch.nn.ModuleList([
             FeatureTransformer(input_size, size + output_size, **kargs)
         ])
-        self.attentive_transforms = torch.nn.ModuleList()
+        self.attentive_transforms = torch.nn.ModuleList([None])
         for i in range(num_steps):
             self.feature_transforms.append(
                 FeatureTransformer(
@@ -121,7 +121,7 @@ class TabNet(LudwigModule):
 
         x = self.feature_transforms[0](masked_features)  # [b_s, s + o_s]
 
-        for step_i in range(1, self.num_steps):  # todo: old value num_steps + 1
+        for step_i in range(1, self.num_steps + 1):
             #########################
             # Attentive Transformer #
             #########################
