@@ -150,24 +150,24 @@ def test_conv1d_stack(
     assert out_tensor.size()[1:] == conv1_stack.output_shape[:]
 
     # check for correct output shape
-    # last_module = conv1_stack.stack[-1]
-    # output_seq_size = expected_seq_size(
-    #     seq_size=last_module.input_shape[0],
-    #     padding=last_module.padding,
-    #     kernel_size=last_module.kernel_size,
-    #     stride=last_module.stride,
-    #     dilation=last_module.dilation,
-    #     pool_size=last_module.pool_size,
-    #     pool_padding=last_module.pool_padding,
-    #     pool_stride=last_module.pool_strides
-    # )
-    # if layers is None:
-    #     # default stack setup
-    #     assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
-    # else:
-    #     # custom stack setup
-    #     assert out_tensor.size() == (
-    #     BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
+    last_module = conv1_stack.stack[-1]
+    output_seq_size = expected_seq_size(
+        seq_size=last_module.input_shape[0],
+        padding=last_module.padding,
+        kernel_size=last_module.kernel_size,
+        stride=last_module.stride,
+        dilation=last_module.dilation,
+        pool_size=last_module.pool_size,
+        pool_padding=last_module.pool_padding,
+        pool_stride=last_module.pool_strides
+    )
+    if layers is None:
+        # default stack setup
+        assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
+    else:
+        # custom stack setup
+        assert out_tensor.size() == (
+        BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
 
 
 @pytest.mark.parametrize(
