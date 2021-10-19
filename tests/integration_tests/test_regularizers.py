@@ -6,6 +6,7 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
 from ludwig.constants import PROC_COLUMN, NAME
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
@@ -126,7 +127,7 @@ def test_encoder(test_case):
 
     # reproducible synthetic data set
     np.random.seed(RANDOM_SEED)
-    tf.random.set_seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
 
     # create synthetic data for the test
     features = [
@@ -158,9 +159,8 @@ def test_encoder(test_case):
     regularizer_losses = []
     for regularizer in [None, 'l1', 'l2', 'l1_l2']:
         # start with clean slate and make reproducible
-        tf.keras.backend.clear_session()
         np.random.seed(RANDOM_SEED)
-        tf.random.set_seed(RANDOM_SEED)
+        torch.manual_seed(RANDOM_SEED)
 
         # setup kwarg for regularizer parms
         x_coder_kwargs = dict(
@@ -188,10 +188,10 @@ def test_encoder(test_case):
 
         # special handling for image feature
         if features[0]['type'] == 'image':
-            inputs = tf.cast(inputs, tf.float32) / 255
+            inputs = inputs.type(torch.float32) / 255
 
         input_def_obj.encoder_obj(inputs)
-        regularizer_loss = tf.reduce_sum(input_def_obj.encoder_obj.losses)
+        regularizer_loss = torch.sum(input_def_obj.encoder_obj.losses)
         regularizer_losses.append(regularizer_loss)
 
     # check loss regularization loss values
@@ -249,7 +249,7 @@ def test_encoder(test_case):
 def test_decoder(test_case):
     # reproducible synthetic data set
     np.random.seed(RANDOM_SEED)
-    tf.random.set_seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
 
     # create synthetic data for the test
     features = [
@@ -269,24 +269,23 @@ def test_decoder(test_case):
 
     # create synthetic combiner layer
     combiner_outputs_rank2 = {
-        'combiner_output': tf.random.normal(
+        'combiner_output': torch.normal(
             [BATCH_SIZE, HIDDEN_SIZE],
-            dtype=tf.float32
+            dtype=torch.float32
         )
     }
 
     combiner_outputs_rank3 = {
-        'combiner_output': tf.random.normal(
+        'combiner_output': torch.normal(
             [BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
-            dtype=tf.float32
+            dtype=torch.float32
         ),
-        'encoder_output_state': tf.random.normal(
+        'encoder_output_state': torch.normal(
             [BATCH_SIZE, HIDDEN_SIZE],
-            dtype=tf.float32
+            dtype=torch.float32
         ),
-        'lengths': tf.convert_to_tensor(
-            np.array(BATCH_SIZE * [SEQ_SIZE]),
-            dtype=tf.int32
+        'lengths': torch.torch_for_numpy.numpy(
+            np.array(BATCH_SIZE * [SEQ_SIZE])
         )
     }
 
@@ -340,7 +339,7 @@ def test_decoder(test_case):
             training=True,
             mask=None
         )
-        regularizer_loss = tf.reduce_sum(output_def_obj.decoder_obj.losses)
+        regularizer_loss = torch.sum(output_def_obj.decoder_obj.losses)
         regularizer_losses.append(regularizer_loss)
 
     # check loss regularization loss values
