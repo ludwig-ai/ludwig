@@ -26,6 +26,7 @@ from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS, run_api_experiment
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import get_weights
 from tests.integration_tests.utils import sequence_feature
 
 
@@ -249,9 +250,9 @@ def test_api_training_determinism(csv_filename):
         model_3.train(dataset=data_csv, output_directory=tmpdir,
                       random_seed=rand_x)
 
-        model_weights_1 = model_1.model.get_weights()
-        model_weights_2 = model_2.model.get_weights()
-        model_weights_3 = model_3.model.get_weights()
+        model_weights_1 = get_weights(model_1.model)
+        model_weights_2 = get_weights(model_2.model)
+        model_weights_3 = get_weights(model_3.model)
 
         divergence = False
         for weight_1, weight_2 in zip(model_weights_1, model_weights_2):

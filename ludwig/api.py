@@ -656,6 +656,8 @@ class LudwigModel:
                                                   random_seed=random_seed)
 
         if not self._online_trainer:
+            if 'model' not in self.config[TRAINING]:
+                self.config[TRAINING]['model'] = self.model
             self._online_trainer = self.backend.create_trainer(
                 **self.config[TRAINING],
                 random_seed=random_seed,
@@ -1459,7 +1461,7 @@ class LudwigModel:
                 model_dir,
                 MODEL_WEIGHTS_FILE_NAME
             )
-            #self.model.load_weights(weights_save_path)
+            # self.model.load_weights(weights_save_path)
             self.model.load_state_dict(torch.load(weights_save_path))
 
         self.backend.sync_model(self.model)
