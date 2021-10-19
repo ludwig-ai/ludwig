@@ -238,7 +238,6 @@ class Predictor(BasePredictor):
                     if isinstance(output, tuple):
                         output = list(output)
 
-                    # if isinstance(output, tf.Tensor):
                     if isinstance(output, torch.Tensor):
                         output = [('', output)]
                     elif isinstance(output, dict):

@@ -1864,8 +1864,8 @@ class StackedCNNRNN(SequenceEncoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        if self.fc_stack:
-            return self.fc_stack.output_shape
+        if self.reduce_output is not None:
+            return self.recurrent_stack.output_shape[1:]
         return self.recurrent_stack.output_shape
 
     def forward(self, inputs, mask=None):
@@ -2158,7 +2158,7 @@ class StackedTransformer(SequenceEncoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        if self.fc_stack:
+        if self.reduce_output is not None:
             return self.fc_stack.output_shape
         return self.transformer_stack.output_shape
 

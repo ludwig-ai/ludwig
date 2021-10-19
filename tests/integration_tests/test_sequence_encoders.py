@@ -129,10 +129,7 @@ def test_sequence_encoders(
                 (BATCH_SIZE, TEST_STATE_SIZE)
 
     elif enc_encoder == 'cnnrnn':
-        assert encoder_out['encoder_output'].shape == \
-            (BATCH_SIZE, 4, TEST_STATE_SIZE) \
-            if enc_reduce_output is None else (BATCH_SIZE, TEST_STATE_SIZE)
-
+        assert encoder_out['encoder_output'].shape[1:] == encoder_obj.output_shape
         assert 'encoder_output_state' in encoder_out
 
         if enc_cell_type == 'lstm':
@@ -157,9 +154,7 @@ def test_sequence_encoders(
             if enc_reduce_output is None else (BATCH_SIZE, TEST_EMBEDDING_SIZE)
 
     elif enc_encoder == 'transformer':
-        assert encoder_out['encoder_output'].shape \
-            == (BATCH_SIZE, SEQ_SIZE, TEST_HIDDEN_SIZE) \
-            if enc_reduce_output is None else (BATCH_SIZE, TEST_HIDDEN_SIZE)
+        assert encoder_out['encoder_output'].shape[1:] == encoder_obj.output_shape
 
     elif enc_encoder == 'passthrough':
         assert encoder_out['encoder_output'].shape \

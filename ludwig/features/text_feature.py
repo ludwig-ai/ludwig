@@ -256,8 +256,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     max_sequence_length = None
     level = 'word'
 
-    def __init__(self, feature, max_sequence_length, encoder_obj=None):
-        super().__init__(feature, max_sequence_length, encoder_obj=encoder_obj)
+    def __init__(self, feature, encoder_obj=None):
+        super().__init__(feature, encoder_obj=encoder_obj)
         if 'pad_idx' in feature.keys():
             self.pad_idx = feature['pad_idx']
         else:
