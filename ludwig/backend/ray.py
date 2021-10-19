@@ -26,7 +26,6 @@ from horovod.ray import RayExecutor
 from ray.util.dask import ray_dask_get
 
 import ray.util.sgd.v2 as raysgd
-from ray.util.sgd.v2 import HorovodConfig
 from ray.util.sgd.v2.trainer import Trainer, SGDWorkerGroup
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
@@ -39,6 +38,9 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
+
+# TODO(travis): remove for ray 1.8
+from ludwig.backend._ray17_compat import HorovodConfig
 
 
 logger = logging.getLogger(__name__)
@@ -70,17 +72,10 @@ def get_trainer_kwargs(use_gpu=None):
     resource = 'GPU' if use_gpu else 'CPU'
     num_workers = int(ray.cluster_resources().get(resource, 0))
 
-    # from horovod.runner.common.util import secret
-    # backend = HorovodConfig()
-    # backend.key = secret.make_secret_key()
-
-    # nic = 'ens5'
-    nic = 'lo'
-
     return dict(
-        # TODO travis: fix raysgd to put settings.keys in config
+        # TODO travis: replace backend here once ray 1.8 released
         # backend='horovod',
-        backend=HorovodConfig(nics={nic}),
+        backend=HorovodConfig(),
         num_workers=num_workers,
         use_gpu=use_gpu,
     )
