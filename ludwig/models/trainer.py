@@ -54,7 +54,6 @@ from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.math_utils import (exponential_decay, learning_rate_warmup,
                                      learning_rate_warmup_distributed)
 from ludwig.utils.misc_utils import set_random_seed
-#from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
@@ -301,14 +300,12 @@ class Trainer(BaseTrainer):
         if not summary_writer:
             return
 
-        #with summary_writer.as_default():
         for feature_name, output_feature in metrics.items():
             for metric in output_feature:
                 metric_tag = "{}/epoch_{}".format(
                     feature_name, metric
                 )
                 metric_val = output_feature[metric][-1]
-                #tf.summary.scalar(metric_tag, metric_val, step=step)
                 summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
         summary_writer.flush()
 
@@ -324,23 +321,16 @@ class Trainer(BaseTrainer):
         if not train_summary_writer:
             return
 
-        #with train_summary_writer.as_default():
         # combined loss
         loss_tag = "{}/step_training_loss".format("combined")
-        #tf.summary.scalar(loss_tag, combined_loss, step=step)
         train_summary_writer.add_scalar(loss_tag, combined_loss, global_step=step)
 
         # all other losses
         for feature_name, loss in all_losses.items():
             loss_tag = "{}/step_training_loss".format(feature_name)
-            #tf.summary.scalar(loss_tag, loss, step=step)
             train_summary_writer.add_scalar(loss_tag, loss, global_step=step)
 
         if learning_rate:
-            '''
-            tf.summary.scalar("combined/step_learning_rate",
-                              learning_rate, step=step)
-            '''
             train_summary_writer.add_scalar("combined/step_learning_rate",
                               learning_rate, global_step=step)
 
@@ -511,52 +501,48 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
-        # Turn eager mode on
-        tf.config.run_functions_eagerly(True)
-
-        try:
-
-            high = None
-            count = 0
-            halving_count = 0
-            while halving_count < halving_limit:
-                gc.collect()
-                try:
-                    # re-initalize model...
-                    model = LudwigModel.create_model(config, random_seed)
-                    self.train_for_tuning(model, training_set, total_steps=3)
-                    count += 1
-                    if count >= max_trials:
-                        break
-                    low = self.batch_size
-                    prev_batch_size = self.batch_size
-                    if high:
-                        if high - low <= 1:
-                            break
-                        midval = (high + low) // 2
-                        self.batch_size = midval
-                    else:
-                        self.batch_size *= 2  # double batch size
-
-                    if self.batch_size == prev_batch_size:
-                        break
-
-                except tf.errors.ResourceExhaustedError as e:
-                    gc.collect()
-                    high = self.batch_size
-                    halving_count += 1
-                    midval = (high + low) // 2
-                    self.batch_size = midval
+        high = None
+        count = 0
+        halving_count = 0
+        while halving_count < halving_limit:
+            gc.collect()
+            try:
+                # re-initalize model...
+                model = LudwigModel.create_model(config, random_seed)
+                self.train_for_tuning(model, training_set, total_steps=3)
+                count += 1
+                if count >= max_trials:
+                    break
+                low = self.batch_size
+                prev_batch_size = self.batch_size
+                if high:
                     if high - low <= 1:
                         break
+                    midval = (high + low) // 2
+                    self.batch_size = midval
+                else:
+                    self.batch_size *= 2  # double batch size
 
-                # make sure that batch size is valid (e.g. less than size of ds)
-                if not _is_valid_batch_size(self.batch_size):
-                    self.batch_size = min(self.batch_size, len(training_set))
-
-                # edge case where bs is no longer increasing
                 if self.batch_size == prev_batch_size:
                     break
+
+            except RuntimeError as e:
+                # PyTorch only generates Runtime errors for CUDA OOM.
+                gc.collect()
+                high = self.batch_size
+                halving_count += 1
+                midval = (high + low) // 2
+                self.batch_size = midval
+                if high - low <= 1:
+                    break
+
+            # make sure that batch size is valid (e.g. less than size of ds)
+            if not _is_valid_batch_size(self.batch_size):
+                self.batch_size = min(self.batch_size, len(training_set))
+
+            # edge case where bs is no longer increasing
+            if self.batch_size == prev_batch_size:
+                break
 
             # Restore original parameters to defaults
             # self.epochs = original_epochs
@@ -566,9 +552,6 @@ class Trainer(BaseTrainer):
 
             if self.eval_batch_size == "auto":
                 self.eval_batch_size = self.batch_size
-        finally:
-            # Turn eager mode off
-            tf.config.run_functions_eagerly(False)
 
         return self.batch_size
 
@@ -685,57 +668,25 @@ class Trainer(BaseTrainer):
         validation_summary_writer = None
         test_summary_writer = None
         if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
-            '''
-            train_summary_writer = tf.summary.create_file_writer(
-                os.path.join(
-                    tensorboard_log_dir, TRAINING
-                )
-            )
-            '''
             train_summary_writer = SummaryWriter(
                 os.path.join(
                     tensorboard_log_dir, TRAINING
                 )
             )
             if validation_set is not None and validation_set.size > 0:
-                '''
-                validation_summary_writer = tf.summary.create_file_writer(
-                    os.path.join(
-                        tensorboard_log_dir, VALIDATION
-                    )
-                )
-                '''
                 validation_summary_writer = SummaryWriter(
                     os.path.join(
                         tensorboard_log_dir, VALIDATION
                     )
                 )
             if test_set is not None and test_set.size > 0:
-                '''
-                test_summary_writer = tf.summary.create_file_writer(
-                    os.path.join(
-                        tensorboard_log_dir, TEST
-                    )
-                )
-                '''
                 test_summary_writer = SummaryWriter(
                     os.path.join(
                         tensorboard_log_dir, TEST
                     )
                 )
 
-        if self.debug and self.is_coordinator():
-            # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
-            # debug_path = os.path.join(
-            #     save_path, 'debug'
-            # )
-            # tf.debugging.experimental.enable_dump_debug_info(
-            #     debug_path,
-            #     tensor_debug_mode='FULL_HEALTH',
-            #     circular_buffer_size=-1,
-            # )
-            tf.config.experimental_run_functions_eagerly(True)
-            # tf.debugging.enable_check_numerics()
+        # TODO(shreya, remove): Removed debugging logic because I couldn't find an equivalent in PyTorch.
 
         # ================ Resume logic ================
         if self.resume:
@@ -744,11 +695,6 @@ class Trainer(BaseTrainer):
             )
             if self.is_coordinator():
                 model, self.optimizer = self.resume_weights_and_optimzier(training_checkpoints_path)
-                '''
-                self.resume_weights_and_optimzier(
-                    training_checkpoints_path, checkpoint
-                )
-                '''
         else:
             (
                 train_metrics,
@@ -1394,17 +1340,6 @@ class Trainer(BaseTrainer):
         model = torch.load(os.path.join(model_weights_progress_path, 'model.pt'))
         optimizer = torch.load(os.path.join(model_weights_progress_path, 'optimizer.pt'))
         return model, optimizer
-
-    '''
-    def resume_weights_and_optimzier(
-            self,
-            model_weights_progress_path,
-            checkpoint
-    ):
-        checkpoint.restore(
-            tf.train.latest_checkpoint(model_weights_progress_path)
-        )
-    '''
 
     def reduce_learning_rate(
             self,

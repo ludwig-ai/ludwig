@@ -74,9 +74,9 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
             :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
+                   Shape: [batch x 1], type torch.int32
 
-            :param return: embeddings of shape [batch x embed size], type tf.float32
+            :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
         return embedded
@@ -124,9 +124,9 @@ class CategoricalSparseEncoder(CategoricalEncoder):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
             :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
+                   Shape: [batch x 1], type torch.int32
 
-            :param return: embeddings of shape [batch x embed size], type tf.float32
+            :param return: embeddings of shape [batch x embed size], type torch.float32
         """
         embedded = self.embed(inputs)
         return embedded
