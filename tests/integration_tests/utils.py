@@ -36,6 +36,8 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
+# Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
+# TODO(justin): Check for missing encoders.
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
     'stacked_cnn', 'transformer'

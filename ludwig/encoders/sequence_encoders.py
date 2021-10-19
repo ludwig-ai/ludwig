@@ -819,6 +819,7 @@ class StackedCNN(SequenceEncoder):
             )
 
         self.max_sequence_length = max_sequence_length
+        self.num_filters = num_filters
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
@@ -890,6 +891,12 @@ class StackedCNN(SequenceEncoder):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return self.conv1d_stack.output_shape
+        return self.fc_stack.output_shape
 
     def forward(self, inputs, mask=None):
         # todo: fixup docstring

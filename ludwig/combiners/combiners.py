@@ -60,8 +60,6 @@ class CombinerClass(LudwigModule):
     @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
-        logger.error(f'Inside CombinerClass output_shape.')
-        logger.error(f'input_features: {self.input_features}')
         pseudo_input = {}
         for k in self.input_features:
             pseudo_input[k] = {
@@ -71,7 +69,6 @@ class CombinerClass(LudwigModule):
                 )
             }
         output_tensor = self.forward(pseudo_input)
-        logger.error(f'output_tensor is: {output_tensor}')
         return output_tensor['combiner_output'].size()[1:]
 
 
