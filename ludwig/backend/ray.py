@@ -37,6 +37,7 @@ from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
+from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 # TODO(travis): remove for ray 1.8
@@ -135,6 +136,10 @@ class RayRemoteTrainer(RemoteTrainer):
 
 
 def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_shards=None, test_shards=None, **kwargs):
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    initialize_tensorflow(horovod=hvd)
+
     model = remote_model.load()
 
     train_shard = RayDatasetShard(

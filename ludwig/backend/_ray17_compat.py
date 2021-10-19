@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Optional, Set, Callable, TypeVar
+from typing import Optional, Set, TypeVar
 
 import ray
 from horovod.ray.runner import Coordinator
@@ -123,7 +123,6 @@ class HorovodBackend(Backend):
         coordinator_envs = self.coordinator.establish_rendezvous()
         node_workers = [HorovodWorkerWrapper(w) for w in worker_group.workers]
 
-        print(f"!!! KEY: {backend_config.key}")
         nics = detect_nics(
             backend_config,
             all_host_names=list(self.coordinator.hostnames),
