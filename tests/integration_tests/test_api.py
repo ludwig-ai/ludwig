@@ -158,7 +158,7 @@ def test_api_intent_classification(csv_filename):
 def test_api_intent_classification_separated(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -171,7 +171,7 @@ def test_api_intent_classification_separated(csv_filename):
 
 def test_api_train_online(csv_filename):
     input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
     data_csv = generate_data(input_features, output_features, csv_filename)
 
     config = {
@@ -189,7 +189,7 @@ def test_api_train_online(csv_filename):
 def test_api_training_set(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
         data_csv = generate_data(input_features, output_features, csv_filename)
         val_csv = shutil.copyfile(data_csv,
@@ -216,7 +216,7 @@ def test_api_training_set(csv_filename):
 def test_api_training_determinism(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
         data_csv = generate_data(input_features, output_features, csv_filename)
 
@@ -356,8 +356,8 @@ def test_api_skip_parameters_train(
         skip_save_processed_input,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=2)]
-    output_features = [category_feature(vocab_size=2)]
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=5)]
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
@@ -385,8 +385,8 @@ def test_api_skip_parameters_predict(
         skip_save_predictions,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=2)]
-    output_features = [category_feature(vocab_size=2)]
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=5)]
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
@@ -416,8 +416,8 @@ def test_api_skip_parameters_evaluate(
         skip_collect_overall_stats,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=2)]
-    output_features = [category_feature(vocab_size=2)]
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=5)]
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
@@ -445,7 +445,7 @@ def test_api_callbacks(csv_filename):
 
     with tempfile.TemporaryDirectory() as output_dir:
         input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
         config = {
             'input_features': input_features,

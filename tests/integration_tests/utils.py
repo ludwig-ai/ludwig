@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import multiprocessing
 import os
 import random
 import shutil
 import sys
 import traceback
+from typing import List
 import unittest
 import uuid
 from distutils.util import strtobool
@@ -26,6 +28,7 @@ from distutils.util import strtobool
 import cloudpickle
 import numpy as np
 import pandas as pd
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
@@ -35,6 +38,8 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.data_utils import read_csv, replace_file_extension
+
+logger = logging.getLogger(__name__)
 
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
 # TODO(justin): Check for missing encoders.
@@ -463,6 +468,10 @@ def spawn(fn):
     return wrapped_fn
 
 
+def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
+    return [param.data for param in model.parameters()]
+
+
 def run_api_experiment(input_features, output_features, data_csv):
     """
     Helper method to avoid code repetition in running an experiment
@@ -497,10 +506,10 @@ def run_api_experiment(input_features, output_features, data_csv):
         # Necessary before call to get_weights() to materialize the weights
         loaded_model.predict(dataset=data_csv)
 
-        # model_weights = model.model.get_weights()
-        # loaded_weights = loaded_model.model.get_weights()
-        # for model_weight, loaded_weight in zip(model_weights, loaded_weights):
-        #     assert np.allclose(model_weight, loaded_weight)
+        model_weights = get_weights(model.model)
+        loaded_weights = get_weights(loaded_model.model)
+        for model_weight, loaded_weight in zip(model_weights, loaded_weights):
+            assert np.allclose(model_weight, loaded_weight)
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
