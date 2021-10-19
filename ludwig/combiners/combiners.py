@@ -19,11 +19,13 @@ import logging
 from enum import Enum
 from typing import List, Dict, Optional, Type, Union
 from pydantic import BaseModel, confloat, PositiveInt, NonNegativeInt, NonNegativeFloat, create_model
+from marshmallow import Schema, fields, validate
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import concatenate
+from tensorflow.python.keras.layers.core import Dropout
 
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
@@ -146,6 +148,72 @@ class ConcatCombinerParams(BaseModel):
     dropout: confloat(ge=0.0, le=1.0) = 0.0
     flatten_inputs: bool = False
     residual: bool = False
+
+# When translating from Pydantic to marshmallow, "Optional" -> allow_none=True
+# TODO: missing vs default
+class ConcatCombinerSchema(Schema):
+    # TODO: we could even define a custom dict schema that is allowed, but complex:
+    fc_layers = fields.List(fields.Dict(), allow_none=True, missing=None)
+    # TODO: allow int strings (e.g. '123') or not?
+    num_fc_layers = fields.Int(
+        strict=True, 
+        allow_none=True, 
+        missing=None,
+        validate=validate.Range(min=0, min_inclusive=True)
+    )
+    fc_size = fields.Int(
+        strict=True, 
+        allow_none=False, 
+        missing=256,
+        validate=validate.Range(min=1, min_inclusive=True)
+    )
+    use_bias = fields.Bool(allow_none=False, missing=True)
+    weights_initializer = fields.String(
+        validate=validate.OneOf(preset_weights_initializer_registry),
+        allow_none=False,
+        missing='glorot_uniform'
+    )
+    bias_initializer = fields.String(
+        validate=validate.OneOf(preset_bias_initializer_registry),
+        allow_none=False,
+        missing='glorot_uniform'
+    )
+    weights_regularizer = fields.String(
+        validate=validate.OneOf(weights_regularizer_registry),
+        allow_none=False,
+        missing='glorot_uniform'
+    )
+    bias_regularizer = fields.String(
+        validate=validate.OneOf(bias_regularizer_registry),
+        allow_none=False,
+        missing='zeros'
+    )
+    activity_regularizer = fields.String(
+        validate=validate.OneOf(activity_regularizer_registry),
+        allow_none=True,
+        missing=None
+    )
+    norm = fields.String(
+        validate=validate.OneOf(norm_registry),
+        allow_none=True,
+        missing=None
+    )
+    norm_params = fields.Dict(
+        allow_none=True,
+        missing=None
+    )
+    activation = fields.String(
+        validate=validate.OneOf(activation_registry),
+        allow_none=False,
+        missing='relu'
+    )
+    dropout = fields.Float(
+        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
+        allow_none=False,
+        missing=0.0,
+    )
+    flatten_inputs = fields.Bool(allow_none=False, missing=False)
+    residual = fields.Bool(allow_none=False, missing=False)
 
 class ConcatCombiner(tf.keras.Model):
     def __init__(
