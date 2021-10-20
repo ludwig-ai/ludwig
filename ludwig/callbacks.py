@@ -17,9 +17,28 @@
 
 from abc import ABC
 
+from typing import Dict, Any
+
+from ludwig.data.dataset.base import Dataset
+
 
 class Callback(ABC):
     def on_cmdline(self, cmd, *args):
+        pass
+
+    def on_preprocess_start(
+            self,
+            config: Dict[str, Any]
+    ):
+        pass
+
+    def on_preprocess_end(
+            self,
+            training_set: Dataset,
+            validation_set: Dataset,
+            test_set: Dataset,
+            training_set_metadata: Dict[str, Any]
+    ):
         pass
 
     def on_hyperopt_init(self, experiment_name):
