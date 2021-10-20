@@ -26,6 +26,7 @@ from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS, run_api_experiment
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import get_weights
 from tests.integration_tests.utils import sequence_feature
 
 
@@ -146,7 +147,7 @@ def run_api_experiment_separated_datasets(
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -158,7 +159,7 @@ def test_api_intent_classification(csv_filename):
 def test_api_intent_classification_separated(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -171,7 +172,7 @@ def test_api_intent_classification_separated(csv_filename):
 
 def test_api_train_online(csv_filename):
     input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
     data_csv = generate_data(input_features, output_features, csv_filename)
 
     config = {
@@ -189,7 +190,7 @@ def test_api_train_online(csv_filename):
 def test_api_training_set(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
         data_csv = generate_data(input_features, output_features, csv_filename)
         val_csv = shutil.copyfile(data_csv,
@@ -216,7 +217,7 @@ def test_api_training_set(csv_filename):
 def test_api_training_determinism(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
         data_csv = generate_data(input_features, output_features, csv_filename)
 
@@ -249,9 +250,9 @@ def test_api_training_determinism(csv_filename):
         model_3.train(dataset=data_csv, output_directory=tmpdir,
                       random_seed=rand_x)
 
-        model_weights_1 = model_1.model.get_weights()
-        model_weights_2 = model_2.model.get_weights()
-        model_weights_3 = model_3.model.get_weights()
+        model_weights_1 = get_weights(model_1.model)
+        model_weights_2 = get_weights(model_2.model)
+        model_weights_3 = get_weights(model_3.model)
 
         divergence = False
         for weight_1, weight_2 in zip(model_weights_1, model_weights_2):
@@ -356,8 +357,8 @@ def test_api_skip_parameters_train(
         skip_save_processed_input,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=2)]
-    output_features = [category_feature(vocab_size=2)]
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=5)]
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
@@ -385,8 +386,8 @@ def test_api_skip_parameters_predict(
         skip_save_predictions,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=2)]
-    output_features = [category_feature(vocab_size=2)]
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=5)]
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
@@ -416,8 +417,8 @@ def test_api_skip_parameters_evaluate(
         skip_collect_overall_stats,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=2)]
-    output_features = [category_feature(vocab_size=2)]
+    input_features = [category_feature(vocab_size=5)]
+    output_features = [category_feature(vocab_size=5)]
 
     with tempfile.TemporaryDirectory() as output_dir:
         # Generate test data
@@ -445,7 +446,7 @@ def test_api_callbacks(csv_filename):
 
     with tempfile.TemporaryDirectory() as output_dir:
         input_features = [sequence_feature(reduce_output='sum')]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
         config = {
             'input_features': input_features,
@@ -460,7 +461,8 @@ def test_api_callbacks(csv_filename):
                                  num_examples=num_examples)
         val_csv = shutil.copyfile(data_csv,
                                   os.path.join(output_dir, 'validation.csv'))
-        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, 'test.csv'))
+        test_csv = shutil.copyfile(
+            data_csv, os.path.join(output_dir, 'test.csv'))
 
         model.train(training_set=data_csv,
                     validation_set=val_csv,
@@ -475,5 +477,7 @@ def test_api_callbacks(csv_filename):
     assert mock_callback.on_test_start.call_count == epochs
     assert mock_callback.on_test_end.call_count == epochs
 
-    assert mock_callback.on_batch_start.call_count == epochs * (num_examples / batch_size)
-    assert mock_callback.on_batch_end.call_count == epochs * (num_examples / batch_size)
+    assert mock_callback.on_batch_start.call_count == epochs * \
+        (num_examples / batch_size)
+    assert mock_callback.on_batch_end.call_count == epochs * \
+        (num_examples / batch_size)

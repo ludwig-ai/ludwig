@@ -158,7 +158,7 @@ class Embed(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         if inputs.ndim != 2 or inputs.shape[1] != 1:
             raise RuntimeError(
                 f'Embed only takes inputs of shape [batch x 1]. Received inputs with size: {inputs.size()}')
@@ -226,7 +226,7 @@ class EmbedSet(LudwigModule):
             raise ValueError(
                 f'Unsupported aggregation function {aggregation_function}')
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Params:
             inputs: Boolean multi-hot tensor of size [batch x vocab_size], where
@@ -291,7 +291,7 @@ class EmbedWeighted(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Params:
             inputs: Tensor of frequencies, where inputs[b, i] represents
@@ -422,12 +422,9 @@ class EmbedSequence(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         if inputs.dtype not in [torch.int, torch.long]:
-            raise RuntimeError(
-                f'Expected tensor of type torch.int or torch.long as input.'
-                f'Received {inputs.dtype} instead.'
-            )
+            inputs = inputs.to(torch.int)
 
         embedded = self.embeddings(inputs)
         if self.dropout:
@@ -476,7 +473,7 @@ class TokenAndPositionEmbedding(LudwigModule):
             embedding_dim=self.token_embed.embedding_size
         )
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask: Optional[torch.Tensor] = None):
         max_length = inputs.shape[-1]
         positions = torch.arange(start=0, end=max_length, step=1)
         positions_hidden = self.position_embed(positions)

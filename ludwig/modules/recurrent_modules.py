@@ -79,7 +79,7 @@ class RecurrentStack(LudwigModule):
             return torch.Size([self.sequence_size, self.hidden_size])
         return torch.Size([self.hidden_size])
 
-    def forward(self, inputs):
+    def forward(self, inputs, mask=None):
         hidden, final_state = self.layers(inputs)
 
         if isinstance(final_state, tuple):
