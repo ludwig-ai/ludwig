@@ -21,7 +21,7 @@ import pytest
 import ray
 import tensorflow as tf
 
-from ludwig.backend.ray import RayBackend, get_horovod_kwargs
+from ludwig.backend.ray import RayBackend, get_trainer_kwargs
 
 from tests.integration_tests.utils import create_data_set_to_use, spawn
 from tests.integration_tests.utils import bag_feature
@@ -40,23 +40,22 @@ from tests.integration_tests.utils import vector_feature
 
 @contextlib.contextmanager
 def ray_start_2_cpus():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        res = ray.init(
-            num_cpus=2,
-            include_dashboard=False,
-            object_store_memory=150 * 1024 * 1024,
-            # _temp_dir=tmpdir,
-        )
-        try:
-            yield res
-        finally:
-            ray.shutdown()
+    res = ray.init(
+        num_cpus=2,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        ray.shutdown()
 
 
 def run_api_experiment(config, data_parquet):
     # Sanity check that we get 4 slots over 1 host
-    kwargs = get_horovod_kwargs()
-    # assert kwargs.get('num_workers') == 2
+    kwargs = get_trainer_kwargs()
+    assert kwargs.get('num_workers') == 2
+    assert kwargs.get('resources_per_worker').get('CPU') == 1
 
     # Train on Parquet
     dask_backend = RayBackend(
