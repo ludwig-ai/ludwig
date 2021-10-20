@@ -57,105 +57,11 @@ activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
 norm_registry = ['batch', 'layer']
 activation_registry = ['relu']
 reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat']
+
+
 # reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', 'null']
-
-
 # Initializers accept presets or customized dicts (not JSON-validated):
-#
-# Note: instead of inheriting from Enum directly, define StringEnum so that
-# conversions to string work normally in rest of codebase:
-class StringEnum(str, Enum):
-    pass
-WeightsInitializerEnum = \
-    StringEnum("WeightsInitializerEnum", \
-        {k:k for k in preset_weights_initializer_registry if k != None})
-WeightsInitializerType = Union[WeightsInitializerEnum, Dict]
-# WeightsInitializerType = WeightsInitializerEnum
-BiasInitializerEnum = \
-    StringEnum("BiasInitializerEnum", \
-        {k:k for k in preset_bias_initializer_registry if k != None})
-BiasInitializerType = Union[BiasInitializerEnum, Dict]
-# BiasInitializerType = BiasInitializerEnum
-
-WeightsRegularizerType = \
-    StringEnum("WeightsRegularizerEnum",
-        {k:k for k in weights_regularizer_registry})
-BiasRegularizerType = \
-    StringEnum("BiasRegularizerEnum",
-        {k:k for k in bias_regularizer_registry})
-ActivityRegularizerType = \
-    StringEnum("ActivityRegularizerEnum",
-        {k:k for k in activity_regularizer_registry})
-NormType = \
-    StringEnum("NormEnum",
-        {k:k for k in norm_registry})
-ActivationType = \
-    StringEnum("ActivationEnum",
-        {k:k for k in activation_registry})
-ReduceOutputType = \
-    StringEnum("ReduceOutputEnum",
-        {k:k for k in reduce_output_registry})
-
-# optional_fields = list()
-# if required:
-#   fields[col_name] = (data_type, ...)
-# else:
-#   fields[col_name] = (data_type, None)
-#   optional_fields.append(col_name)
-
-# model = pydantic.create_model(name, **fields)
-
-def insert_nonetype_on_optionals_schema_extra(params_cls):
-    # Find all optional (non-required) fields in class:
-    print('here')
-    optionalParams = []
-    print(params_cls.__fields__)
-    print(params_cls.__config__.fields)
-    for param_name, field in params_cls.__fields__.items():
-        if not field.required:
-            optionalParams.append((param_name, field))
-    print(optionalParams)
-    # Note: ONLY called after the json is generated:
-    def schema_extra(schema, model):
-        print('called')
-        print(schema)
-        for param, field in optionalParams:
-            print(param)
-            print(field)
-            if 'Enum' in field.type_.__name__:
-                path = field.type_.__name__
-                original_type = schema["definitions"][path]["type"]
-                schema["definitions"][path].update({"type": ["null", original_type]})
-            else:
-                original_type = schema["properties"][param]["type"]
-                schema["properties"][param].update({"type": ["null", original_type]})
-    params_cls.__config__.schema_extra = schema_extra
-    print(params_cls.__config__.fields)
-
-def get_marshmallow_schema_as_json(schemaCls):
-    return JSONSchema().dump(schemaCls())
-
-# model.__config__.schema_extra = schema_extra
-
-# schema_json = model.schema_json()
-
-class ConcatCombinerParams(BaseModel):
-    fc_layers: Optional[List[Dict]] = None
-    num_fc_layers: Optional[NonNegativeInt] = None
-    fc_size: PositiveInt = 256
-    use_bias: bool = True
-    weights_initializer: WeightsInitializerType = 'glorot_uniform'
-    bias_initializer: BiasInitializerType = 'zeros'
-    weights_regularizer: Optional[WeightsRegularizerType] = None
-    bias_regularizer: Optional[BiasRegularizerType] = None
-    activity_regularizer: Optional[ActivityRegularizerType] = None
-    norm: Optional[NormType] = None
-    norm_params: Optional[Dict] = None
-    activation: ActivationType = 'relu'
-    dropout: confloat(ge=0.0, le=1.0) = 0.0
-    flatten_inputs: bool = False
-    residual: bool = False
-
+# TODO: Add validator for enum types
 class WeightsInitializerField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str) or isinstance(value, dict):
@@ -179,8 +85,30 @@ class WeightsInitializerField(fields.Field):
                 }
             ]
         }
-# When translating from Pydantic to marshmallow, "Optional" -> allow_none=True
-# TODO: missing vs default
+class BiasInitializerField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, str) or isinstance(value, dict):
+            return value
+        else:
+            raise ValidationError('Field should be str or dict')
+    
+    def _jsonschema_type_mapping(self):
+        # return {
+        #     'type': ['object', 'string'],
+        #     'enum': preset_weights_initializer_registry
+        # }
+        return {
+            "anyOf": [
+                {
+                    "type": "object",
+                }, 
+                {
+                    'type': 'string',
+                    'enum': preset_bias_initializer_registry
+                }
+            ]
+        }
+# TODO: missing vs default, deprecated
 class ConcatCombinerSchema(Schema):
     # TODO: we could even define a custom dict schema that is allowed, but complex:
     fc_layers = fields.List(fields.Dict(), allow_none=True, default=None)
@@ -198,17 +126,11 @@ class ConcatCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    # weights_initializer = fields.String(
-    #     validate=validate.OneOf(preset_weights_initializer_registry),
-    #     allow_none=False,
-    #     default='glorot_uniform'
-    # )
     weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
-    bias_initializer = fields.String(
-        validate=validate.OneOf(preset_bias_initializer_registry),
+    bias_initializer = BiasInitializerField(
         allow_none=False,
         default='zeros'
     )
@@ -257,7 +179,6 @@ class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features: Optional[List] = None,
-            config_params: ConcatCombinerParams = ConcatCombinerParams(),
             config_schema: Dict = ConcatCombinerSchema().dump({}),
     ):
         super().__init__()
@@ -338,10 +259,6 @@ class ConcatCombiner(tf.keras.Model):
         return return_data
 
     @staticmethod
-    def get_params_cls() -> Type[BaseModel]:
-        return ConcatCombinerParams
-
-    @staticmethod
     def get_schema_cls():
         return ConcatCombinerSchema
 
@@ -349,11 +266,7 @@ class ConcatCombiner(tf.keras.Model):
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(ConcatCombinerSchema())
 
-
-class SequenceConcatCombinerParams(BaseModel):
-    reduce_output: Optional[ReduceOutputType] = None
-    main_sequence_feature: Optional[str] = None
-
+# TODO: dataclass-typing example below:
 class SequenceConcatCombinerSchema(Schema):
     reduce_output = fields.String(
         validate=validate.OneOf(reduce_output_registry),
@@ -383,7 +296,6 @@ class SequenceConcatCombinerData:
 class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            # config_params: SequenceConcatCombinerParams = SequenceConcatCombinerParams(),
             config_schema: SequenceConcatCombinerData = SequenceConcatCombinerSchema().load({}),
             **kwargs
     ):
@@ -519,10 +431,6 @@ class SequenceConcatCombiner(tf.keras.Model):
         return return_data
 
     @staticmethod
-    def get_params_cls() -> Type[BaseModel]:
-        return SequenceConcatCombinerParams
-
-    @staticmethod
     def get_schema_cls():
         return SequenceConcatCombinerSchema
 
@@ -530,10 +438,12 @@ class SequenceConcatCombiner(tf.keras.Model):
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(SequenceConcatCombinerSchema())
 
+
+# TODO: check again in manual which fields should support null
 class SequenceCombinerSchema(Schema):
     reduce_output = fields.String(
         validate=validate.OneOf(reduce_output_registry),
-        allow_none=True, # TODO: allow setting to null?
+        allow_none=True, 
         default=None,
     )
     main_sequence_feature = fields.String(
@@ -549,15 +459,9 @@ class SequenceCombinerSchema(Schema):
     class Meta:
         unknown = INCLUDE
 
-class SequenceCombinerParams(BaseModel):
-    reduce_output: Optional[ReduceOutputType] = None
-    main_sequence_feature: Optional[str] = None
-    encoder: Optional[str] = None
-
 class SequenceCombiner(tf.keras.Model):
     def __init__(
             self,
-            # config_params: SequenceCombinerParams = SequenceCombinerParams(),
             config_schema: Dict = SequenceCombinerSchema().dump({}),
             **kwargs
     ):
@@ -565,10 +469,10 @@ class SequenceCombiner(tf.keras.Model):
         logger.debug(' {}'.format(self.name))
         config_schema = SimpleNamespace(**config_schema)
 
-        self.combiner = SequenceConcatCombiner(SequenceConcatCombinerParams(
+        self.combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema().load(dict(
             reduce_output=None,
             main_sequence_feature=config_schema.main_sequence_feature
-        ))
+        )))
 
         self.encoder_obj = get_from_registry(
             config_schema.encoder, sequence_encoder_registry)(
@@ -608,14 +512,6 @@ class SequenceCombiner(tf.keras.Model):
                 return_data[key] = value
 
         return return_data
-
-    @staticmethod
-    def get_params_cls() -> Type[BaseModel]:
-        return SequenceCombinerParams
-    
-    # @staticmethod
-    # def get_nullable_params() -> List[str]:
-    #     return ['reduce_output']
     
     @staticmethod
     def get_schema_cls():
@@ -625,19 +521,8 @@ class SequenceCombiner(tf.keras.Model):
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(SequenceCombinerSchema())
 
-class TabNetCombinerParams(BaseModel):
-        size: PositiveInt = 32 # N_a in the paper
-        output_size: PositiveInt = 32  # N_d in the paper
-        num_steps: PositiveInt = 1  # N_steps in the paper
-        num_total_blocks: PositiveInt = 4
-        num_shared_blocks: PositiveInt = 2
-        relaxation_factor: NonNegativeFloat = 1.5  # gamma in the paper
-        bn_epsilon: float = 1e-3
-        bn_momentum: float = 0.7  # m_B in the paper
-        bn_virtual_bs: Optional[PositiveInt] = None  # B_v from the paper
-        sparsity: float = 1e-5  # lambda_sparse in the paper
-        dropout: confloat(ge=0.0, le=1.0) = 0
 
+# TODO: only strict ints?
 class TabNetCombinerSchema(Schema):
     size = fields.Int(
         strict=True, 
@@ -700,11 +585,10 @@ class TabNetCombinerSchema(Schema):
     # TODO: Allow additional properties (necessary for ecd.py?)
     class Meta:
         unknown = INCLUDE
-    
+
 class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
-            # config_params: TabNetCombinerParams = TabNetCombinerParams(),
             config_schema: Dict = TabNetCombinerSchema().dump({}),
             **kwargs
     ):
@@ -777,10 +661,6 @@ class TabNetCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
-    
-    @staticmethod
-    def get_params_cls() -> Type[BaseModel]:
-        return TabNetCombinerParams
 
     @staticmethod
     def get_schema_cls():
@@ -790,30 +670,6 @@ class TabNetCombiner(tf.keras.Model):
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(TabNetCombinerSchema())
 
-class TransformerCombinerParams(BaseModel):
-        num_layers: PositiveInt = 1
-        hidden_size: PositiveInt = 256
-        num_heads: PositiveInt = 8
-        transformer_fc_size: PositiveInt = 256
-        dropout: confloat(ge=0.0, le=1.0) = 0.1
-        fc_layers: Optional[List[Dict]] = None
-        num_fc_layers: NonNegativeInt = 0
-        fc_size: PositiveInt = 256
-        use_bias: bool = True
-        weights_initializer: WeightsInitializerType = 'glorot_uniform'
-        bias_initializer: BiasInitializerType ='zeros'
-        weights_regularizer: Optional[WeightsRegularizerType] = None
-        bias_regularizer: Optional[BiasRegularizerType] = None
-        activity_regularizer: Optional[ActivityRegularizerType] = None
-        # weights_constraint=None
-        # bias_constraint=None
-        norm: Optional[NormType] = None
-        norm_params: Optional[Dict] = None
-        fc_activation: ActivationType = 'relu'
-        fc_dropout: confloat(ge=0.0, le=1.0) = 0
-        fc_residual: bool = False
-        # TODO: Note
-        reduce_output: Optional[ReduceOutputType] = 'mean'
 
 class TransformerCombinerSchema(Schema):
     num_layers = fields.Int(
@@ -845,9 +701,7 @@ class TransformerCombinerSchema(Schema):
         allow_none=False,
         default=0.1,
     )
-    # TODO: we could even define a custom dict schema that is allowed, but complex:
     fc_layers = fields.List(fields.Dict(), allow_none=True, default=None)
-    # TODO: allow int strings (e.g. '123') or not?
     num_fc_layers = fields.Int(
         strict=True, 
         allow_none=False, 
@@ -861,17 +715,11 @@ class TransformerCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    # weights_initializer = fields.String(
-    #     validate=validate.OneOf(preset_weights_initializer_registry),
-    #     allow_none=False,
-    #     default='glorot_uniform'
-    # )
     weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
-    bias_initializer = fields.String(
-        validate=validate.OneOf(preset_bias_initializer_registry),
+    bias_initializer = BiasInitializerField(
         allow_none=False,
         default='zeros'
     )
@@ -916,7 +764,6 @@ class TransformerCombinerSchema(Schema):
         default='mean'
     )
 
-    # TODO: Allow additional properties (necessary for ecd.py?)
     class Meta:
         unknown = INCLUDE
 
@@ -924,7 +771,6 @@ class TransformerCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features: Optional[List] = None,
-            # config_params: TransformerCombinerParams = TransformerCombinerParams(),
             config_schema: Dict = TransformerCombinerSchema().dump({}),
             **kwargs
     ):
@@ -1021,10 +867,6 @@ class TransformerCombiner(tf.keras.Model):
         return return_data
 
     @staticmethod
-    def get_params_cls() -> Type[BaseModel]:
-        return TransformerCombinerParams
-
-    @staticmethod
     def get_schema_cls():
         return TransformerCombinerSchema
 
@@ -1032,31 +874,6 @@ class TransformerCombiner(tf.keras.Model):
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(TransformerCombinerSchema())
 
-class TabTransformerCombinerParams(BaseModel):
-        embed_input_feature_name: Optional[Union[int, str]] = None  # None or embedding size or "add"
-        num_layers: PositiveInt = 1
-        hidden_size: PositiveInt = 256
-        num_heads: PositiveInt = 8
-        transformer_fc_size: PositiveInt = 256
-        dropout: confloat(ge=0.0, le=1.0) = 0.1
-        fc_layers: Optional[List[Dict]] = None
-        num_fc_layers: NonNegativeInt = 0
-        fc_size: PositiveInt = 256
-        use_bias: bool = True
-        weights_initializer: WeightsInitializerType = 'glorot_uniform'
-        bias_initializer: BiasInitializerType ='zeros'
-        weights_regularizer: Optional[WeightsRegularizerType] = None
-        bias_regularizer: Optional[BiasRegularizerType] = None
-        activity_regularizer: Optional[ActivityRegularizerType] = None
-        # weights_constraint=None
-        # bias_constraint=None
-        norm: Optional[NormType] = None
-        norm_params: Optional[Dict] = None
-        fc_activation: ActivationType = 'relu'
-        fc_dropout: confloat(ge=0.0, le=1.0) = 0
-        fc_residual: bool = False
-        # TODO: Note
-        reduce_output: Optional[ReduceOutputType] = 'concat'
 
 # TODO: Can generalize this (https://stackoverflow.com/questions/61614546/python-marshmallow-field-can-be-two-different-types) or use a package
 class EmbedInputFeatureNameField(fields.Field):
@@ -1105,9 +922,7 @@ class TabTransformerCombinerSchema(Schema):
         allow_none=False,
         default=0.1,
     )
-    # TODO: we could even define a custom dict schema that is allowed, but complex:
     fc_layers = fields.List(fields.Dict(), allow_none=True, default=None)
-    # TODO: allow int strings (e.g. '123') or not?
     num_fc_layers = fields.Int(
         strict=True, 
         allow_none=False, 
@@ -1121,17 +936,11 @@ class TabTransformerCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    # weights_initializer = fields.String(
-    #     validate=validate.OneOf(preset_weights_initializer_registry),
-    #     allow_none=False,
-    #     default='glorot_uniform'
-    # )
     weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
-    bias_initializer = fields.String(
-        validate=validate.OneOf(preset_bias_initializer_registry),
+    bias_initializer = BiasInitializerField(
         allow_none=False,
         default='zeros'
     )
@@ -1179,11 +988,11 @@ class TabTransformerCombinerSchema(Schema):
     # TODO: Allow additional properties (necessary for ecd.py?)
     class Meta:
         unknown = INCLUDE
+
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features: Optional[List] = None,
-            # config_params: TabTransformerCombinerParams = TabTransformerCombinerParams(),
             config_schema: TabTransformerCombinerSchema = TabTransformerCombinerSchema().dump({}),
             **kwargs
     ):
@@ -1344,10 +1153,6 @@ class TabTransformerCombiner(tf.keras.Model):
         return return_data
     
     @staticmethod
-    def get_params_cls() -> Type[BaseModel]:
-        return TabTransformerCombinerParams
-    
-    @staticmethod
     def get_schema_cls():
         return TabTransformerCombinerSchema
 
@@ -1355,24 +1160,8 @@ class TabTransformerCombiner(tf.keras.Model):
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(TabTransformerCombinerSchema())
 
-class ComparatorCombinerParams(BaseModel):
-    num_fc_layers: NonNegativeInt = 1
-    fc_size: PositiveInt = 256
-    use_bias: bool = True
-    weights_initializer: WeightsInitializerType = 'glorot_uniform'
-    bias_initializer: BiasInitializerType = 'zeros'
-    weights_regularizer: Optional[WeightsRegularizerType] = None
-    bias_regularizer: Optional[BiasRegularizerType] = None
-    activity_regularizer: Optional[ActivityRegularizerType] = None
-    # weights_constraint=None
-    # bias_constraint=None
-    norm: Optional[NormType] = None
-    norm_params: Optional[Dict] = None
-    activation: ActivationType = 'relu'
-    dropout: confloat(ge=0.0, le=1.0) = 0
 
 class ComparatorCombinerSchema(Schema):
-    # TODO: allow int strings (e.g. '123') or not?
     num_fc_layers = fields.Int(
         strict=True, 
         allow_none=False, 
@@ -1386,17 +1175,11 @@ class ComparatorCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    # weights_initializer = fields.String(
-    #     validate=validate.OneOf(preset_weights_initializer_registry),
-    #     allow_none=False,
-    #     default='glorot_uniform'
-    # )
     weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
-    bias_initializer = fields.String(
-        validate=validate.OneOf(preset_bias_initializer_registry),
+    bias_initializer = BiasInitializerField(
         allow_none=False,
         default='zeros'
     )
@@ -1443,7 +1226,6 @@ class ComparatorCombiner(tf.keras.Model):
             self,
             entity_1: Optional[List[str]] = None,
             entity_2: Optional[List[str]] = None, 
-            # config_params: ComparatorCombinerParams = ComparatorCombinerParams(),
             config_schema = ComparatorCombinerSchema().dump({}),
             **kwargs,
     ):
@@ -1575,10 +1357,6 @@ class ComparatorCombiner(tf.keras.Model):
         )
 
         return {"combiner_output": hidden}
-    
-    @staticmethod
-    def get_params_cls() -> Type[BaseModel]:
-        return ComparatorCombinerParams
 
     @staticmethod
     def get_schema_cls():
@@ -1587,6 +1365,7 @@ class ComparatorCombiner(tf.keras.Model):
     @staticmethod
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(ComparatorCombinerSchema())
+
 
 def get_combiner_class(combiner_type):
     return get_from_registry(

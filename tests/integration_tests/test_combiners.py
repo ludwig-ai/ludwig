@@ -4,27 +4,19 @@ import pytest
 import tensorflow as tf
 
 from ludwig.combiners.combiners import (
-    ComparatorCombinerParams,
     ComparatorCombinerSchema,
     ConcatCombiner,
-    ConcatCombinerParams,
     ConcatCombinerSchema,
     SequenceCombinerSchema,
     SequenceConcatCombiner,
-    SequenceConcatCombinerParams,
     SequenceCombiner,
-    SequenceCombinerParams,
     SequenceConcatCombinerSchema,
     TabNetCombiner,
-    TabNetCombinerParams,
     ComparatorCombiner,
-    ComparatorCombinerParams,
     TabNetCombinerSchema,
     TabTransformerCombinerSchema,
     TransformerCombiner,
-    TransformerCombinerParams,
     TabTransformerCombiner,
-    TabTransformerCombinerParams,
     TransformerCombinerSchema,
     sequence_encoder_registry,
 )

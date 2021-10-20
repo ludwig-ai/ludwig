@@ -269,7 +269,7 @@ def test_config_bad_combiner_types_enums():
     config['combiner']['bias_initializer'] = 'variance_scaling'
     validate_config(config)
     config['combiner']['bias_initializer'] = 'fail'
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+    with pytest.raises(ValidationError, match=r"'fail' is not of*"):
         validate_config(config)
     
     # Test weights regularizer:
