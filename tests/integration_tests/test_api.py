@@ -146,7 +146,7 @@ def run_api_experiment_separated_datasets(
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -460,7 +460,8 @@ def test_api_callbacks(csv_filename):
                                  num_examples=num_examples)
         val_csv = shutil.copyfile(data_csv,
                                   os.path.join(output_dir, 'validation.csv'))
-        test_csv = shutil.copyfile(data_csv, os.path.join(output_dir, 'test.csv'))
+        test_csv = shutil.copyfile(
+            data_csv, os.path.join(output_dir, 'test.csv'))
 
         model.train(training_set=data_csv,
                     validation_set=val_csv,
@@ -475,5 +476,7 @@ def test_api_callbacks(csv_filename):
     assert mock_callback.on_test_start.call_count == epochs
     assert mock_callback.on_test_end.call_count == epochs
 
-    assert mock_callback.on_batch_start.call_count == epochs * (num_examples / batch_size)
-    assert mock_callback.on_batch_end.call_count == epochs * (num_examples / batch_size)
+    assert mock_callback.on_batch_start.call_count == epochs * \
+        (num_examples / batch_size)
+    assert mock_callback.on_batch_end.call_count == epochs * \
+        (num_examples / batch_size)

@@ -147,25 +147,27 @@ def test_conv1d_stack(
     # check for correct output class
     assert isinstance(out_tensor, torch.Tensor)
 
+    assert out_tensor.size()[1:] == conv1_stack.output_shape[:]
+
     # check for correct output shape
-    last_module = conv1_stack.stack[-1]
-    output_seq_size = expected_seq_size(
-        seq_size=last_module.input_shape[0],
-        padding=last_module.padding,
-        kernel_size=last_module.kernel_size,
-        stride=last_module.stride,
-        dilation=last_module.dilation,
-        pool_size=last_module.pool_size,
-        pool_padding=last_module.pool_padding,
-        pool_stride=last_module.pool_strides
-    )
-    if layers is None:
-        # default stack setup
-        assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
-    else:
-        # custom stack setup
-        assert out_tensor.size() == (
-        BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
+    # last_module = conv1_stack.stack[-1]
+    # output_seq_size = expected_seq_size(
+    #     seq_size=last_module.input_shape[0],
+    #     padding=last_module.padding,
+    #     kernel_size=last_module.kernel_size,
+    #     stride=last_module.stride,
+    #     dilation=last_module.dilation,
+    #     pool_size=last_module.pool_size,
+    #     pool_padding=last_module.pool_padding,
+    #     pool_stride=last_module.pool_strides
+    # )
+    # if layers is None:
+    #     # default stack setup
+    #     assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
+    # else:
+    #     # custom stack setup
+    #     assert out_tensor.size() == (
+    #     BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
 
 
 @pytest.mark.parametrize(
@@ -267,10 +269,10 @@ def test_parallel_conv1d_stack(
         assert len(parallel_conv1d_stack.stack) == len(stacked_layers)
         assert len(parallel_conv1d_stack.stack[0].parallel_layers) == 3
         assert parallel_conv1d_stack.stack[0].parallel_layers[2].kernel_size \
-               == TEST_FILTER_SIZE0
+            == TEST_FILTER_SIZE0
         assert len(parallel_conv1d_stack.stack[1].parallel_layers) == 4
         assert parallel_conv1d_stack.stack[1].parallel_layers[3].kernel_size \
-               == TEST_FILTER_SIZE1
+            == TEST_FILTER_SIZE1
 
     # generate output tensor
     out_tensor = parallel_conv1d_stack(input)

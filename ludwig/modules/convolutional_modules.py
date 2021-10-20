@@ -137,6 +137,11 @@ class Conv1DLayer(LudwigModule):
         """ Returns the size of the input tensor without the batch dimension. """
         return (torch.Size([self.sequence_size, self.in_channels]))
 
+    @property
+    def output_shape(self):
+        """ Returns the size of the output tensor without the batch dimension. """
+        return (torch.Size([self.sequence_size, self.out_channels]))
+
     def forward(self, inputs, training=None, mask=None):
         # inputs: [batch_size, seq_size, in_channels]
         # in Torch nomenclature (N, L, C)
@@ -161,6 +166,7 @@ class Conv1DStack(LudwigModule):
     def __init__(
             self,
             in_channels=1,
+            out_channels=3,
             max_sequence_length=None,
             layers=None,
             num_layers=None,
@@ -175,8 +181,6 @@ class Conv1DStack(LudwigModule):
             default_weights_regularizer=None,
             default_bias_regularizer=None,
             default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
@@ -191,6 +195,7 @@ class Conv1DStack(LudwigModule):
 
         self.max_sequence_length = max_sequence_length
         self.in_channels = in_channels
+        self.out_channels = out_channels
 
         if layers is None:
             if num_layers is None:
@@ -308,6 +313,66 @@ class Conv1DStack(LudwigModule):
     def input_shape(self):
         """ Returns the size of the input tensor without the batch dimension. """
         return (torch.Size([self.max_sequence_length, self.in_channels]))
+
+    ###
+    # Helper function to compute expected output shape
+    # for Conv1D related layers
+    ###
+    def expected_seq_size(
+        self,
+            seq_size: int,  # input sequence size
+            padding: str,  # conv1d padding: 'same' or 'valid'
+            kernel_size: int,  # conv1d kernel size
+            stride: int,  # conv1d stride
+            dilation: int,  # conv1d dilation rate
+            pool_size: Union[None, int],  # pooling layer kernel size
+            pool_padding: str,  # pooling layer padding: 'same' or 'valid'
+            pool_stride: int,  # pooling layer stride
+    ) -> int:
+        # output shape for the convolutional layer
+        output_seq_size = get_img_output_shape(
+            img_height=0,  # img_height set to zero for 1D structure
+            img_width=seq_size,  # img_width equates to sequence size
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation
+        )
+        if pool_size is not None:
+            # pooling layer present, adjust expected output shape for pooling layer
+            output_seq_size = get_img_output_shape(
+                img_height=0,  # img_height set to zero for 1D structure
+                # img_width equates to sequence size
+                img_width=output_seq_size[1],
+                kernel_size=pool_size,
+                stride=pool_stride,
+                padding=pool_padding,
+                dilation=1  # pooling layer only support unit dilation
+            )
+        return output_seq_size[1]
+
+    @property
+    def output_shape(self):
+        """ Returns the size of the output tensor without the batch dimension. """
+        # return self.stack[-1].output_shape
+
+        # check for correct output shape
+        last_module = self.stack[-1]
+        output_seq_size = self.expected_seq_size(
+            seq_size=last_module.input_shape[0],
+            padding=last_module.padding,
+            kernel_size=last_module.kernel_size,
+            stride=last_module.stride,
+            dilation=last_module.dilation,
+            pool_size=last_module.pool_size,
+            pool_padding=last_module.pool_padding,
+            pool_stride=last_module.pool_strides
+        )
+        return torch.Size([output_seq_size, self.out_channels])
+        # else:
+        #     # custom stack setup
+        #     assert out_tensor.size() == (
+        #     BATCH_SIZE, output_seq_size, NUM_FILTERS + 2)
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -459,6 +524,19 @@ class ParallelConv1D(LudwigModule):
     def input_shape(self) -> torch.Size:
         """ Returns the size of the input tensor without the batch dimension. """
         return torch.Size([self.max_sequence_length, self.in_channels])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        """ Returns the size of the input tensor without the batch dimension. """
+        # return self.parallel_layers[-1].output_shape
+        # return torch.Size([self.max_sequence_length, len(self.parallel_layers) * self.out_channels])
+        logger.error(
+            f'self.parallel_layers[-1].output_shape is: {self.parallel_layers[-1].output_shape}')
+        logger.error(
+            f'self.max_sequence_length is: {self.max_sequence_length}')
+        logger.error(
+            f'len(self.parallel_layers) is: {len(self.parallel_layers)}')
+        return torch.Size([self.max_sequence_length, len(self.parallel_layers) * self.layers[-1]['num_filters']])
 
     def forward(self, inputs, training=None, mask=None):
         # inputs: [batch_size, seq_size, in_channels)
@@ -618,6 +696,11 @@ class ParallelConv1DStack(LudwigModule):
     def input_shape(self):
         """ Returns the size of the input tensor without the batch dimension. """
         return torch.Size([self.max_sequence_length, self.in_channels])
+
+    @property
+    def output_shape(self):
+        """ Returns the size of the input tensor without the batch dimension. """
+        return self.stack[-1].output_shape
 
     def forward(self, inputs, training=None, mask=None):
         hidden = inputs

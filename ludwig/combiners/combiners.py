@@ -60,15 +60,18 @@ class CombinerClass(LudwigModule):
     @property
     @lru_cache(maxsize=1)
     def output_shape(self) -> torch.Size:
-        psuedo_input = {}
+        logger.error(f'Inside CombinerClass output_shape.')
+        logger.error(f'input_features: {self.input_features}')
+        pseudo_input = {}
         for k in self.input_features:
-            psuedo_input[k] = {
+            pseudo_input[k] = {
                 'encoder_output': torch.rand(
                     2, *self.input_features[k].output_shape,
                     dtype=self.input_dtype
                 )
             }
-        output_tensor = self.forward(psuedo_input)
+        output_tensor = self.forward(pseudo_input)
+        logger.error(f'output_tensor is: {output_tensor}')
         return output_tensor['combiner_output'].size()[1:]
 
 
@@ -85,8 +88,6 @@ class ConcatCombiner(CombinerClass):
             weights_regularizer: Optional[str] = None,
             bias_regularizer: Optional[str] = None,
             activity_regularizer: Optional[str] = None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm: Optional[str] = None,
             norm_params: Optional[Dict] = None,
             activation: str = 'relu',
@@ -550,7 +551,7 @@ class TransformerCombiner(CombinerClass):
                 torch.prod(
                     torch.Tensor([*input_features[inp].output_shape])
                 ).type(torch.int32), hidden_size) for inp in input_features
-            ]
+             ]
         )
 
         logger.debug('  TransformerStack')
@@ -801,7 +802,7 @@ class TabTransformerCombiner(CombinerClass):
 
         batch_size = embeddable_encoder_outputs[0].shape[0] \
             if len(embeddable_encoder_outputs) > 0 else \
-        unembeddable_encoder_outputs[0].shape[0]
+            unembeddable_encoder_outputs[0].shape[0]
 
         # ================ Project & Concat embeddables ================
         if len(embeddable_encoder_outputs) > 0:
@@ -979,7 +980,7 @@ class ComparatorCombiner(CombinerClass):
             inputs: Dict,  # encoder outputs
     ) -> Dict[str, torch.Tensor]:  # encoder outputs
         assert (
-                inputs.keys() == self.required_inputs
+            inputs.keys() == self.required_inputs
         ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
 
         ############

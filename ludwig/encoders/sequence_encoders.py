@@ -218,7 +218,11 @@ class SequenceEmbedEncoder(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])
+
+    def forward(self, inputs, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
@@ -228,10 +232,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :type training: Boolean
         """
         # ================ Embeddings ================
-        # todo: need to account for other options: training and mask
-        embedded_sequence = self.embed_sequence(
-            inputs, training=training, mask=mask
-        )
+        embedded_sequence = self.embed_sequence(inputs, mask=mask)
 
         hidden = self.reduce_sequence(embedded_sequence)
 
@@ -520,7 +521,7 @@ class ParallelCNN(SequenceEncoder):
                 default_dropout=dropout,
             )
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int
@@ -530,7 +531,7 @@ class ParallelCNN(SequenceEncoder):
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(inputs)
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -542,7 +543,6 @@ class ParallelCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -553,7 +553,6 @@ class ParallelCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -567,8 +566,8 @@ class ParallelCNN(SequenceEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
             return self.fc_stack.output_shape
-        else:
-            return self.parallel_conv1d.output_shape
+        return self.parallel_conv1d.output_shape
+
 
 @register(name='stacked_cnn')
 class StackedCNN(SequenceEncoder):
@@ -892,7 +891,7 @@ class StackedCNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         # todo: fixup docstring
         """
             :param input_sequence: The input sequence fed into the encoder.
@@ -903,15 +902,10 @@ class StackedCNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (torch.bool) specifying if training
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -923,7 +917,6 @@ class StackedCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -934,7 +927,6 @@ class StackedCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -1250,7 +1242,13 @@ class StackedParallelCNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.fc_stack:
+            return self.fc_stack.output_shape
+        return self.parallel_conv1d_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         # todo: fixup docstring
         """
             :param inputs: The input sequence fed into the encoder.
@@ -1261,15 +1259,10 @@ class StackedParallelCNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (torch.bool) specifying if training
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -1281,7 +1274,6 @@ class StackedParallelCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -1292,7 +1284,6 @@ class StackedParallelCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -1548,7 +1539,13 @@ class StackedRNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.fc_stack:
+            return self.fc_stack.output_shape
+        return self.recurrent_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
@@ -1558,15 +1555,10 @@ class StackedRNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (torch.bool) specifying if training
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -1576,11 +1568,7 @@ class StackedRNN(SequenceEncoder):
         hidden = embedded_sequence
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        hidden, final_state = self.recurrent_stack(hidden, mask=mask)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1589,7 +1577,6 @@ class StackedRNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -1868,7 +1855,13 @@ class StackedCNNRNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.fc_stack:
+            return self.fc_stack.output_shape
+        return self.recurrent_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
@@ -1878,14 +1871,11 @@ class StackedCNNRNN(SequenceEncoder):
             :type regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (torch.bool) specifying if training
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
+                inputs, mask=mask
             )
         else:
             embedded_sequence = inputs
@@ -1898,15 +1888,11 @@ class StackedCNNRNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training
-        )
+        hidden, final_state = self.recurrent_stack(hidden)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1915,7 +1901,6 @@ class StackedCNNRNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -2164,7 +2149,13 @@ class StackedTransformer(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.fc_stack:
+            return self.fc_stack.output_shape
+        return self.transformer_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         # todo: review docstring for updates
         """
             :param input_sequence: The input sequence fed into the encoder.
@@ -2181,9 +2172,7 @@ class StackedTransformer(SequenceEncoder):
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -2199,7 +2188,6 @@ class StackedTransformer(SequenceEncoder):
         # ================ Transformer Layers ================
         hidden = self.transformer_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -2210,7 +2198,6 @@ class StackedTransformer(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 

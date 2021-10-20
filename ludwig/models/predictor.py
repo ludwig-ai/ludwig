@@ -130,7 +130,9 @@ class Predictor(BasePredictor):
 
         # consolidate predictions from each batch to a single tensor
         for key, pred_value_list in predictions.items():
-            predictions[key] = torch.cat(pred_value_list, dim=0).numpy()
+            # Without detach, this causes a runtime error since pred_value_list is a tensor that requires grad.
+            predictions[key] = torch.cat(
+                pred_value_list, dim=0).clone().detach().numpy()
 
         return from_numpy_dataset(predictions)
 
@@ -166,7 +168,8 @@ class Predictor(BasePredictor):
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column])
+                    o_feat.feature_name: torch.from_numpy(
+                        batch[o_feat.proc_column])
                     for o_feat in model.output_features.values()
                 }
 
@@ -189,7 +192,8 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         if collect_predictions:
             for key, pred_value_list in predictions.items():
-                predictions[key] = torch.cat(pred_value_list, dim=0).detach().numpy()
+                predictions[key] = torch.cat(
+                    pred_value_list, dim=0).clone().detach().numpy()
 
         metrics = model.get_metrics()
         metrics = self.merge_workers_metrics(metrics)
@@ -234,6 +238,7 @@ class Predictor(BasePredictor):
                     if isinstance(output, tuple):
                         output = list(output)
 
+                    # if isinstance(output, tf.Tensor):
                     if isinstance(output, torch.Tensor):
                         output = [('', output)]
                     elif isinstance(output, dict):
@@ -273,6 +278,7 @@ class Predictor(BasePredictor):
             return True
         return self._horovod.rank() == 0
 
+
 class RemotePredictor(Predictor):
     def __init__(
         self,
@@ -305,7 +311,8 @@ def calculate_overall_stats(
         feature_metadata.update(
             training_set_metadata[output_feature.feature_name])
 
-        feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
+        feature_df = predictions.loc[:,
+                                     predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1:])
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(
