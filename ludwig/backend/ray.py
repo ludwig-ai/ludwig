@@ -16,6 +16,7 @@
 # ==============================================================================
 
 import logging
+from distutils.version import LooseVersion
 from functools import partial
 from typing import Any, Dict, List
 
@@ -24,9 +25,6 @@ import pandas as pd
 import ray
 from horovod.ray import RayExecutor
 from ray.util.dask import ray_dask_get
-
-import ray.util.sgd.v2 as raysgd
-from ray.util.sgd.v2.trainer import Trainer, SGDWorkerGroup
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY
@@ -41,7 +39,16 @@ from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 # TODO(travis): remove for ray 1.8
-from ludwig.backend._ray17_compat import HorovodConfig
+_ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
+if _ray18:
+    import ray.train as rt
+    from ray.train.trainer import Trainer, TrainWorkerGroup
+    from ray.train.backends.horovod import HorovodConfig
+else:
+    import ray.util.sgd.v2 as rt
+    from ray.util.sgd.v2.trainer import Trainer
+    from ray.util.sgd.v2.trainer import SGDWorkerGroup as TrainWorkerGroup
+    from ludwig.backend._ray17_compat import HorovodConfig
 
 
 logger = logging.getLogger(__name__)
@@ -155,12 +162,12 @@ def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_s
     model = remote_model.load()
 
     train_shard = RayDatasetShard(
-        train_shards[raysgd.world_rank()], #raysgd.get_dataset_shard("train"),
+        train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
         model.input_features,
         model.output_features,
     )
 
-    val_shard = val_shards[raysgd.world_rank()] if val_shards else None #raysgd.get_dataset_shard("val")
+    val_shard = val_shards[rt.world_rank()] if val_shards else None #rt.get_dataset_shard("val")
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
@@ -168,7 +175,7 @@ def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_s
             model.output_features,
         )
 
-    test_shard = test_shards[raysgd.world_rank()] if test_shards else None #raysgd.get_dataset_shard("test")
+    test_shard = test_shards[rt.world_rank()] if test_shards else None #rt.get_dataset_shard("test")
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
@@ -200,7 +207,7 @@ class RayTrainerV2(BaseTrainer):
         remote_model = RayRemoteModel(model)
 
         # TODO(travis) remove this once `dataset` keyword is supported:
-        wg = SGDWorkerGroup(self.trainer._executor.worker_group)
+        wg = TrainWorkerGroup(self.trainer._executor.worker_group)
         workers = [w for w in wg]
 
         train_shards = training_set.pipeline().split(

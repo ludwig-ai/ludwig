@@ -18,6 +18,7 @@ import contextlib
 import math
 import queue
 import threading
+from distutils.version import LooseVersion
 from functools import lru_cache
 from typing import Dict, Optional, Any, Iterator
 
@@ -34,6 +35,9 @@ from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
+
+
+_ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 
 
 class RayDataset(object):
@@ -54,7 +58,10 @@ class RayDataset(object):
     def pipeline(self, shuffle=True) -> DatasetPipeline:
         pipe = self.ds.repeat()
         if shuffle:
-            pipe = pipe.random_shuffle()
+            if _ray18:
+                pipe = pipe.random_shuffle_each_window()
+            else:
+                pipe = pipe.random_shuffle()
         return pipe
 
     def __len__(self):
