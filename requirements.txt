@@ -18,6 +18,7 @@ dataclasses-json
 jsonschema
 marshmallow
 marshmallow-jsonschema
+marshmallow-dataclass
 filelock
 
 # new data format support
