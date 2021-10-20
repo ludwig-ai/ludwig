@@ -56,7 +56,7 @@ bias_regularizer_registry = ['l1', 'l2', 'l1_l2']
 activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
 norm_registry = ['batch', 'layer']
 activation_registry = ['relu']
-reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat']
+reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', None]
 
 
 # reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', 'null']

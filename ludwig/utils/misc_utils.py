@@ -186,8 +186,11 @@ def init_with_kwargs(cls, kwargs):
 def init_with_kwargs_schema(cls, kwargs):
     schema = cls()
     fields = schema.fields.keys()
-    return schema.load(
-        **{
+    print('INIT WITH KWARGS **********************************************')
+    print(schema)
+    print(fields)
+    return schema.dump(
+        {
             k: v for k, v in kwargs.items()
             if k in fields
         }

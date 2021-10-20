@@ -412,9 +412,9 @@ def test_tabtransformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features_def,
-        config_params=TabTransformerCombinerParams(
+        config_params=TabTransformerCombinerSchema().dump(dict(
             embed_input_feature_name='add'
-        )
+        ))
     )
 
     # concatenate encoder outputs

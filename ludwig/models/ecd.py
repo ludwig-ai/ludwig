@@ -52,7 +52,7 @@ class ECD(tf.keras.Model):
             #     combiner_def,
             # ),
             config_schema=init_with_kwargs_schema(
-                combiner_class.get_params_schema(),
+                combiner_class.get_schema_cls(),
                 combiner_def
             )
         )
