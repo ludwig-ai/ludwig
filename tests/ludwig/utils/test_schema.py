@@ -261,7 +261,7 @@ def test_config_bad_combiner_types_enums():
     config['combiner']['weights_initializer'] = {'test': 'fail'}
     validate_config(config)
     config['combiner']['weights_initializer'] = 'fail'
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+    with pytest.raises(ValidationError, match=r"'fail' is not of*"):
         validate_config(config)
     
     # Test bias initializer:

@@ -20,7 +20,8 @@ from enum import Enum
 from types import SimpleNamespace
 from typing import List, Dict, Optional, Type, Union
 from pydantic import BaseModel, confloat, PositiveInt, NonNegativeInt, NonNegativeFloat, create_model
-from marshmallow import Schema, fields, validate, INCLUDE, ValidationError, post_load
+from marshmallow import Schema, fields, validate, INCLUDE, EXCLUDE, ValidationError, post_load
+from marshmallow_jsonschema import JSONSchema
 from dataclasses import dataclass
 
 
@@ -131,6 +132,9 @@ def insert_nonetype_on_optionals_schema_extra(params_cls):
     params_cls.__config__.schema_extra = schema_extra
     print(params_cls.__config__.fields)
 
+def get_marshmallow_schema_as_json(schemaCls):
+    return JSONSchema().dump(schemaCls())
+
 # model.__config__.schema_extra = schema_extra
 
 # schema_json = model.schema_json()
@@ -152,6 +156,29 @@ class ConcatCombinerParams(BaseModel):
     flatten_inputs: bool = False
     residual: bool = False
 
+class WeightsInitializerField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, str) or isinstance(value, dict):
+            return value
+        else:
+            raise ValidationError('Field should be str or dict')
+    
+    def _jsonschema_type_mapping(self):
+        # return {
+        #     'type': ['object', 'string'],
+        #     'enum': preset_weights_initializer_registry
+        # }
+        return {
+            "anyOf": [
+                {
+                    "type": "object",
+                }, 
+                {
+                    'type': 'string',
+                    'enum': preset_weights_initializer_registry
+                }
+            ]
+        }
 # When translating from Pydantic to marshmallow, "Optional" -> allow_none=True
 # TODO: missing vs default
 class ConcatCombinerSchema(Schema):
@@ -171,8 +198,12 @@ class ConcatCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    weights_initializer = fields.String(
-        validate=validate.OneOf(preset_weights_initializer_registry),
+    # weights_initializer = fields.String(
+    #     validate=validate.OneOf(preset_weights_initializer_registry),
+    #     allow_none=False,
+    #     default='glorot_uniform'
+    # )
+    weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
@@ -313,6 +344,10 @@ class ConcatCombiner(tf.keras.Model):
     @staticmethod
     def get_schema_cls():
         return ConcatCombinerSchema
+
+    @staticmethod
+    def get_marshmallow_schema_as_json():
+        return JSONSchema().dump(ConcatCombinerSchema())
 
 
 class SequenceConcatCombinerParams(BaseModel):
@@ -491,6 +526,10 @@ class SequenceConcatCombiner(tf.keras.Model):
     def get_schema_cls():
         return SequenceConcatCombinerSchema
 
+    @staticmethod
+    def get_marshmallow_schema_as_json():
+        return JSONSchema().dump(SequenceConcatCombinerSchema())
+
 class SequenceCombinerSchema(Schema):
     reduce_output = fields.String(
         validate=validate.OneOf(reduce_output_registry),
@@ -581,6 +620,10 @@ class SequenceCombiner(tf.keras.Model):
     @staticmethod
     def get_schema_cls():
         return SequenceCombinerSchema
+
+    @staticmethod
+    def get_marshmallow_schema_as_json():
+        return JSONSchema().dump(SequenceCombinerSchema())
 
 class TabNetCombinerParams(BaseModel):
         size: PositiveInt = 32 # N_a in the paper
@@ -743,6 +786,10 @@ class TabNetCombiner(tf.keras.Model):
     def get_schema_cls():
         return TabNetCombinerSchema
 
+    @staticmethod
+    def get_marshmallow_schema_as_json():
+        return JSONSchema().dump(TabNetCombinerSchema())
+
 class TransformerCombinerParams(BaseModel):
         num_layers: PositiveInt = 1
         hidden_size: PositiveInt = 256
@@ -814,8 +861,12 @@ class TransformerCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    weights_initializer = fields.String(
-        validate=validate.OneOf(preset_weights_initializer_registry),
+    # weights_initializer = fields.String(
+    #     validate=validate.OneOf(preset_weights_initializer_registry),
+    #     allow_none=False,
+    #     default='glorot_uniform'
+    # )
+    weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
@@ -977,6 +1028,10 @@ class TransformerCombiner(tf.keras.Model):
     def get_schema_cls():
         return TransformerCombinerSchema
 
+    @staticmethod
+    def get_marshmallow_schema_as_json():
+        return JSONSchema().dump(TransformerCombinerSchema())
+
 class TabTransformerCombinerParams(BaseModel):
         embed_input_feature_name: Optional[Union[int, str]] = None  # None or embedding size or "add"
         num_layers: PositiveInt = 1
@@ -1013,7 +1068,7 @@ class EmbedInputFeatureNameField(fields.Field):
     
     def _jsonschema_type_mapping(self):
         return {
-            'type': ['string', 'int']
+            'type': ['string', 'integer']
         }
 
 class TabTransformerCombinerSchema(Schema):
@@ -1066,8 +1121,12 @@ class TabTransformerCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    weights_initializer = fields.String(
-        validate=validate.OneOf(preset_weights_initializer_registry),
+    # weights_initializer = fields.String(
+    #     validate=validate.OneOf(preset_weights_initializer_registry),
+    #     allow_none=False,
+    #     default='glorot_uniform'
+    # )
+    weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
@@ -1289,9 +1348,12 @@ class TabTransformerCombiner(tf.keras.Model):
         return TabTransformerCombinerParams
     
     @staticmethod
-    def get_params_schema():
+    def get_schema_cls():
         return TabTransformerCombinerSchema
 
+    @staticmethod
+    def get_marshmallow_schema_as_json():
+        return JSONSchema().dump(TabTransformerCombinerSchema())
 
 class ComparatorCombinerParams(BaseModel):
     num_fc_layers: NonNegativeInt = 1
@@ -1324,8 +1386,12 @@ class ComparatorCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     use_bias = fields.Bool(allow_none=False, default=True)
-    weights_initializer = fields.String(
-        validate=validate.OneOf(preset_weights_initializer_registry),
+    # weights_initializer = fields.String(
+    #     validate=validate.OneOf(preset_weights_initializer_registry),
+    #     allow_none=False,
+    #     default='glorot_uniform'
+    # )
+    weights_initializer = WeightsInitializerField(
         allow_none=False,
         default='glorot_uniform'
     )
@@ -1513,6 +1579,14 @@ class ComparatorCombiner(tf.keras.Model):
     @staticmethod
     def get_params_cls() -> Type[BaseModel]:
         return ComparatorCombinerParams
+
+    @staticmethod
+    def get_schema_cls():
+        return ComparatorCombinerSchema
+
+    @staticmethod
+    def get_marshmallow_schema_as_json():
+        return JSONSchema().dump(ComparatorCombinerSchema())
 
 def get_combiner_class(combiner_type):
     return get_from_registry(

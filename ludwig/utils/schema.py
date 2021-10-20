@@ -69,7 +69,7 @@ def get_schema():
             'preprocessing': {},
             'hyperopt': {},
         },
-        'definitions': get_custom_definitions(),
+        # 'definitions': get_custom_definitions(),
         'required': ['input_features', 'output_features']
     }
     return schema
@@ -139,39 +139,45 @@ def get_combiner_conds():
     conds = []
     for combiner_type in COMBINER_TYPES:
         combiner_cls = combiner_registry[combiner_type]
-        combiner_props = json.loads(combiner_cls.get_params_cls().schema_json())['properties']
+        # combiner_props = json.loads(combiner_cls.get_params_cls().schema_json())['properties']
+        combiner_json = (combiner_cls
+                         .get_marshmallow_schema_as_json()
+                         ['definitions']
+                         [combiner_cls.get_schema_cls().__name__]
+                         ['properties'])
         combiner_cond = create_cond(
             {'type': combiner_type},
-            combiner_props
+            combiner_json
         )
         conds.append(combiner_cond)
     return conds
 
 def get_custom_definitions():
-    defs = {}
-    for combiner_type in COMBINER_TYPES:
-        combiner_cls = combiner_registry[combiner_type]
-        full_combiner_json = json.loads(combiner_cls.get_params_cls().schema_json())
-        if 'definitions' in full_combiner_json:
-            defs = {
-                **defs,
-                **full_combiner_json['definitions']
-            }
+    pass
+    # defs = {}
+    # for combiner_type in COMBINER_TYPES:
+    #     combiner_cls = combiner_registry[combiner_type]
+    #     full_combiner_json = json.loads(combiner_cls.get_params_cls().schema_json())
+    #     if 'definitions' in full_combiner_json:
+    #         defs = {
+    #             **defs,
+    #             **full_combiner_json['definitions']
+    #         }
 
-            if hasattr(combiner_cls, "get_nullable_params"):
-                nullableParams = combiner_cls.get_nullable_params()
-                params_cls = combiner_cls.get_params_cls()
+    #         if hasattr(combiner_cls, "get_nullable_params"):
+    #             nullableParams = combiner_cls.get_nullable_params()
+    #             params_cls = combiner_cls.get_params_cls()
 
-                for nparam in nullableParams:
-                    nfield = params_cls.__fields__[nparam]
-                    print(nfield)
-                    path = nfield.type_.__name__
-                    original_type = defs[path]["type"]
-                    original_enum = defs[path]["enum"]
-                    null = None
-                    defs[path].update({"type": [null, original_type]})
-                    defs[path].update({"enum": [null] + original_enum})
-                    print(defs[path])
+    #             for nparam in nullableParams:
+    #                 nfield = params_cls.__fields__[nparam]
+    #                 print(nfield)
+    #                 path = nfield.type_.__name__
+    #                 original_type = defs[path]["type"]
+    #                 original_enum = defs[path]["enum"]
+    #                 null = None
+    #                 defs[path].update({"type": [null, original_type]})
+    #                 defs[path].update({"enum": [null] + original_enum})
+    #                 print(defs[path])
             # optionalParams = []
             # for param_name, field in params_cls.__fields__.items():
             #     if not field.required:
@@ -191,7 +197,7 @@ def get_custom_definitions():
                 # else:
                 #     original_type = defs["properties"][param]["type"]
                 #     schema["properties"][param].update({"type": ["null", original_type]})
-    return defs
+    # return defs
 
 def create_cond(if_pred, then_pred):
     return {
