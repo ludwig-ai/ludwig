@@ -54,8 +54,8 @@ def ray_start_2_cpus():
 def run_api_experiment(config, data_parquet):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
-    assert kwargs.get('num_workers') == 2
-    assert kwargs.get('resources_per_worker').get('CPU') == 1
+    assert kwargs.get('num_workers') == 1
+    assert kwargs.get('resources_per_worker').get('CPU') == 2
 
     # Train on Parquet
     dask_backend = RayBackend(
