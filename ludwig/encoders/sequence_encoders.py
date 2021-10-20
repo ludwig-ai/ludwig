@@ -78,9 +78,9 @@ class SequencePassthroughEncoder(SequenceEncoder):
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -186,7 +186,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :param weights_regularizer: The regularizer to use for the weights
                    of the encoder.
             :type weights_regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
 
         """
@@ -221,7 +221,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
     def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type inputs: Tensor
             :param training: specifying if in training mode
                    (important for dropout)
@@ -523,7 +523,7 @@ class ParallelCNN(SequenceEncoder):
     def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int
+                   Shape: [batch x sequence length], type torch.int
             :type inputs: Tensor
             :param training: bool specifying if in training mode (important for dropout)
             :type training: bool
@@ -896,14 +896,14 @@ class StackedCNN(SequenceEncoder):
         # todo: fixup docstring
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -1254,14 +1254,14 @@ class StackedParallelCNN(SequenceEncoder):
         # todo: fixup docstring
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type inputs: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -1551,14 +1551,14 @@ class StackedRNN(SequenceEncoder):
     def forward(self, inputs, training=None, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -1871,14 +1871,14 @@ class StackedCNNRNN(SequenceEncoder):
     def forward(self, inputs, training=None, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -2168,14 +2168,14 @@ class StackedTransformer(SequenceEncoder):
         # todo: review docstring for updates
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
