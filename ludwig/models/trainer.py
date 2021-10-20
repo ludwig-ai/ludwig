@@ -97,16 +97,6 @@ class BaseTrainer(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown()
 
-import contextlib
-
-@contextlib.contextmanager
-def timeit(name):
-    start_t = time.time()
-    try:
-        yield
-    finally:
-        logger.info(f"{name}: {time.time() - start_t}")
-
 
 class Trainer(BaseTrainer):
     """
@@ -836,7 +826,6 @@ class Trainer(BaseTrainer):
                     self.optimizer.set_learning_rate(current_learning_rate)
 
                     # obtain batch
-                    start_t = time.time()
                     batch = batcher.next_batch()
 
                     inputs = {
@@ -852,7 +841,6 @@ class Trainer(BaseTrainer):
                     # if first_batch and self.is_coordinator() and not skip_save_log:
                     #    tf.summary.trace_on(graph=True, profiler=True)
 
-                    start_t = time.time()
                     loss, all_losses = model.train_step(
                         self.optimizer,
                         inputs,
