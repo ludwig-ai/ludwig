@@ -130,7 +130,8 @@ class Predictor(BasePredictor):
 
         # consolidate predictions from each batch to a single tensor
         for key, pred_value_list in predictions.items():
-            # Without detach, this causes a runtime error since pred_value_list is a tensor that requires grad.
+            # Without cloning and detaching, a runtime error is raised since pred_value_list
+            # is a tensor that requires grad.
             predictions[key] = torch.cat(
                 pred_value_list, dim=0).clone().detach().numpy()
 
