@@ -86,31 +86,10 @@ class ParquetDataset(Dataset):
                 dataset = dataset.shuffle(buffer_size)
             dataset = dataset.batch(batch_size)
 
-            import threading
-            import queue
-            q = queue.Queue(maxsize=100)
-
-            def producer():
-                for batch in dataset:
-                    q.put(batch)
-                q.put(None)
-
-            def async_read():
-                t = threading.Thread(target=producer)
-                t.start()
-                while True:
-                    batch = q.get(block=True)
-                    if batch is None:
-                        break
-                    yield batch
-                t.join()
-
-            dataset_it = async_read()
-
             steps_per_epoch = math.ceil(local_samples / batch_size)
 
             batcher = IterableBatcher(self,
-                                      dataset_it,
+                                      dataset,
                                       steps_per_epoch,
                                       ignore_last=ignore_last)
             yield batcher
