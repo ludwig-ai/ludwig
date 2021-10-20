@@ -5,20 +5,27 @@ import tensorflow as tf
 
 from ludwig.combiners.combiners import (
     ComparatorCombinerParams,
+    ComparatorCombinerSchema,
     ConcatCombiner,
     ConcatCombinerParams,
+    ConcatCombinerSchema,
+    SequenceCombinerSchema,
     SequenceConcatCombiner,
     SequenceConcatCombinerParams,
     SequenceCombiner,
     SequenceCombinerParams,
+    SequenceConcatCombinerSchema,
     TabNetCombiner,
     TabNetCombinerParams,
     ComparatorCombiner,
     ComparatorCombinerParams,
+    TabNetCombinerSchema,
+    TabTransformerCombinerSchema,
     TransformerCombiner,
     TransformerCombinerParams,
     TabTransformerCombiner,
     TabTransformerCombinerParams,
+    TransformerCombinerSchema,
     sequence_encoder_registry,
 )
 
@@ -129,7 +136,8 @@ def test_concat_combiner(encoder_outputs, fc_layer):
     del encoder_outputs["feature_4"]
 
     # setup combiner to test
-    combiner = ConcatCombiner(config_params=ConcatCombinerParams(fc_layers=fc_layer))
+    # combiner = ConcatCombiner(config_params=ConcatCombinerParams(fc_layers=fc_layer))
+    combiner = ConcatCombiner(config_schema=ConcatCombinerSchema().dump(dict(fc_layers=fc_layer)))
 
     # concatenate encoder outputs
     results = combiner(encoder_outputs)
@@ -157,10 +165,10 @@ def test_concat_combiner(encoder_outputs, fc_layer):
 def test_sequence_concat_combiner(
         encoder_outputs, main_sequence_feature, reduce_output
 ):
-    combiner = SequenceConcatCombiner(SequenceConcatCombinerParams(
+    combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema().load(dict(
         main_sequence_feature=main_sequence_feature,
         reduce_output=reduce_output
-    ))
+    )))
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -192,11 +200,11 @@ def test_sequence_concat_combiner(
 def test_sequence_combiner(
         encoder_outputs, main_sequence_feature, encoder, reduce_output
 ):
-    combiner = SequenceCombiner(SequenceCombinerParams(
+    combiner = SequenceCombiner(SequenceCombinerSchema().dump(dict(
         main_sequence_feature=main_sequence_feature,
         encoder=encoder,
         reduce_output=reduce_output,
-    ))
+    )))
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -271,14 +279,14 @@ def test_tabnet_combiner(encoder_outputs_key):
     encoder_outputs = tabnet_encoder_outputs()[encoder_outputs_key]
 
     # setup combiner to test
-    combiner = TabNetCombiner(TabNetCombinerParams(
+    combiner = TabNetCombiner(TabNetCombinerSchema().dump(dict(
         size=2,
         output_size=2,
         num_steps=3,
         num_total_blocks=4,
         num_shared_blocks=2,
         dropout=0.1
-    ))
+    )))
 
     # concatenate encoder outputs
     results = combiner(encoder_outputs)
@@ -309,7 +317,7 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     combiner = ComparatorCombiner(
         entity_1, 
         entity_2, 
-        ComparatorCombinerParams(fc_layers=fc_layer, fc_size=fc_size)
+        config_schema=ComparatorCombinerSchema().dump(dict(fc_layers=fc_layer, fc_size=fc_size))
     )
 
     # concatenate encoder outputs
@@ -352,7 +360,7 @@ def test_transformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TransformerCombiner(
         input_features=input_features_def,
-        config_params=TransformerCombinerParams()
+        config_params=TransformerCombinerSchema().dump({})
     )
 
     # concatenate encoder outputs
@@ -386,7 +394,7 @@ def test_tabtransformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features_def,
-        config_params=TabTransformerCombinerParams()
+        config_params=TabTransformerCombinerSchema().dump({})
     )
 
     # concatenate encoder outputs
@@ -398,9 +406,9 @@ def test_tabtransformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features_def,
-        config_params=TabTransformerCombinerParams(
+        config_params=TabTransformerCombinerSchema().dump(dict(
             embed_input_feature_name=56
-        )
+        ))
     )
 
     # concatenate encoder outputs
