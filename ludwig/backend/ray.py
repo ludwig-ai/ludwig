@@ -47,6 +47,7 @@ from ludwig.backend._ray17_compat import HorovodConfig
 logger = logging.getLogger(__name__)
 
 
+# TODO: deprecated v0.5
 def get_horovod_kwargs(use_gpu=None):
     # Our goal is to have a worker per resource used for training.
     # The priority is GPUs, but can fall back to CPUs if there are no
@@ -70,14 +71,25 @@ def get_trainer_kwargs(use_gpu=None):
     if use_gpu is None:
         use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
 
-    resource = 'GPU' if use_gpu else 'CPU'
-    num_workers = int(ray.cluster_resources().get(resource, 0))
+    if use_gpu:
+        num_workers = int(ray.cluster_resources().get('GPU', 0))
+        resources_per_worker = None
+    else:
+        # Enforce one worker per node by requesting half the CPUs on the node
+        # TODO: use placement groups
+        resources = [node['Resources'] for node in ray.state.nodes()]
+        min_cpus = min(r['CPU'] for r in resources)
+        num_workers = len(resources)
+        resources_per_worker = {
+            'CPU': min(min_cpus / 2 + 1, min_cpus)
+        }
 
     return dict(
         # TODO travis: replace backend here once ray 1.8 released
         # backend='horovod',
         backend=HorovodConfig(),
         num_workers=num_workers,
+        resources_per_worker=resources_per_worker,
         use_gpu=use_gpu,
     )
 
@@ -175,7 +187,7 @@ def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_s
     return results, trainer.validation_field, trainer.validation_metric
 
 
-class RaySgdTrainer(BaseTrainer):
+class RayTrainerV2(BaseTrainer):
     def __init__(self, trainer_kwargs, executable_kwargs):
         self.executable_kwargs = executable_kwargs
         self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
@@ -241,7 +253,7 @@ class RaySgdTrainer(BaseTrainer):
         self.trainer.shutdown()
 
 
-class RayTrainer(BaseTrainer):
+class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         setting = RayExecutor.create_settings(timeout_s=30)
@@ -397,9 +409,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
         if self._cache_format == RAY:
-            return RaySgdTrainer(self._horovod_kwargs, executable_kwargs)
+            return RayTrainerV2(self._horovod_kwargs, executable_kwargs)
         else:
-            return RayTrainer(self._horovod_kwargs, executable_kwargs)
+            # TODO: deprecated 0.5
+            return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
 
     def create_predictor(self, **kwargs):

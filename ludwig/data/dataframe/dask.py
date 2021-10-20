@@ -63,8 +63,7 @@ class DaskEngine(DataFrameEngine):
         return data.persist() if self._persist else data
 
     def compute(self, data):
-        with ProgressBar():
-            return data.compute()
+        return data.compute()
 
     def from_pandas(self, df):
         return dd.from_pandas(df, npartitions=self.parallelism)
