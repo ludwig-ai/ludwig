@@ -17,12 +17,14 @@
 import logging
 
 from enum import Enum
-from types import SimpleNamespace
+from types import MethodWrapperType, SimpleNamespace
 from typing import List, Dict, Optional, Type, Union
+from marshmallow_jsonschema.base import ALLOW_UNIONS
 from pydantic import BaseModel, confloat, PositiveInt, NonNegativeInt, NonNegativeFloat, create_model
 from marshmallow import Schema, fields, validate, INCLUDE, EXCLUDE, ValidationError, post_load
 from marshmallow_jsonschema import JSONSchema
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import marshmallow_dataclass
 
 
 import tensorflow as tf
@@ -59,9 +61,7 @@ activation_registry = ['relu']
 reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', None]
 
 
-# reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', 'null']
 # Initializers accept presets or customized dicts (not JSON-validated):
-# TODO: Add validator for enum types
 class WeightsInitializerField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str) or isinstance(value, dict):
@@ -70,10 +70,6 @@ class WeightsInitializerField(fields.Field):
             raise ValidationError('Field should be str or dict')
     
     def _jsonschema_type_mapping(self):
-        # return {
-        #     'type': ['object', 'string'],
-        #     'enum': preset_weights_initializer_registry
-        # }
         return {
             "anyOf": [
                 {
@@ -85,6 +81,14 @@ class WeightsInitializerField(fields.Field):
                 }
             ]
         }
+WeightsInitializerType = marshmallow_dataclass.NewType(
+        name='WeightsInitializerType',
+        typ=Union[str, dict],
+        allow_none=False,
+        dump_default='glorot_uniform',
+        load_default='glorot_uniform'
+)
+
 class BiasInitializerField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str) or isinstance(value, dict):
@@ -93,10 +97,7 @@ class BiasInitializerField(fields.Field):
             raise ValidationError('Field should be str or dict')
     
     def _jsonschema_type_mapping(self):
-        # return {
-        #     'type': ['object', 'string'],
-        #     'enum': preset_weights_initializer_registry
-        # }
+
         return {
             "anyOf": [
                 {
@@ -108,78 +109,100 @@ class BiasInitializerField(fields.Field):
                 }
             ]
         }
-# TODO: missing vs default, deprecated
-class ConcatCombinerSchema(Schema):
-    # TODO: we could even define a custom dict schema that is allowed, but complex:
-    fc_layers = fields.List(fields.Dict(), allow_none=True, default=None)
-    # TODO: allow int strings (e.g. '123') or not?
-    num_fc_layers = fields.Int(
-        strict=True, 
-        allow_none=True, 
-        default=None,
-        validate=validate.Range(min=0, min_inclusive=True)
-    )
-    fc_size = fields.Int(
-        strict=True, 
-        allow_none=False, 
-        default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    use_bias = fields.Bool(allow_none=False, default=True)
-    weights_initializer = WeightsInitializerField(
-        allow_none=False,
-        default='glorot_uniform'
-    )
-    bias_initializer = BiasInitializerField(
-        allow_none=False,
-        default='zeros'
-    )
-    weights_regularizer = fields.String(
+BiasInitializerType = marshmallow_dataclass.NewType(
+    name='BiasInitializerType',
+    typ=Union[str, dict],
+    allow_none=False,
+    dump_default='zeros',
+    load_default='zeros'
+)
+
+
+@dataclass
+class ConcatCombinerData:
+    fc_layers: Optional[List[Dict]] = field(metadata=dict(
+        dump_default=None,
+        load_default=None
+    ))
+    num_fc_layers: Optional[int] = field(metadata=dict(
+        strict=True,
+        validate=validate.Range(min=0, min_inclusive=True),
+        dump_default=None,
+    ))
+    fc_size: int = field(metadata=dict(
+        strict=True,
+        validate=validate.Range(min=1, min_inclusive=True),
+        dump_default=256,
+        load_default=256,
+    ))
+    use_bias: bool = field(metadata=dict(
+        dump_default=True,
+        load_default=True,
+    ))
+    weights_initializer: WeightsInitializerType
+    bias_initializer: BiasInitializerType
+    weights_regularizer: Optional[str] = field(metadata=dict(
         validate=validate.OneOf(weights_regularizer_registry),
         allow_none=True,
-        default=None
-    )
-    bias_regularizer = fields.String(
+        dump_default=None,
+        load_default=None
+    ))
+    bias_regularizer: Optional[str] = field(metadata=dict(
         validate=validate.OneOf(bias_regularizer_registry),
         allow_none=True,
-        default=None
-    )
-    activity_regularizer = fields.String(
+        dump_default=None,
+        load_default=None
+    ))
+    activity_regularizer: Optional[str] = field(metadata=dict(
         validate=validate.OneOf(activity_regularizer_registry),
         allow_none=True,
-        default=None
-    )
-    norm = fields.String(
+        dump_default=None,
+        load_default=None
+    ))
+    norm: Optional[str] = field(metadata=dict(
         validate=validate.OneOf(norm_registry),
         allow_none=True,
-        default=None
-    )
-    norm_params = fields.Dict(
+        dump_default=None,
+        load_default=None
+    ))
+    norm_params: Optional[dict] = field(metadata=dict(
         allow_none=True,
-        default=None
-    )
-    activation = fields.String(
+        dump_default=None,
+        load_default=None
+    ))
+    activation: str = field(metadata=dict(
         validate=validate.OneOf(activation_registry),
         allow_none=False,
-        default='relu'
-    )
-    dropout = fields.Float(
+        dump_default='relu',
+        load_default='relu'
+    ))
+    dropout: float = field(metadata=dict(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
         allow_none=False,
-        default=0.0,
-    )
-    flatten_inputs = fields.Bool(allow_none=False, default=False)
-    residual = fields.Bool(allow_none=False, default=False)
+        dump_default=0.0,
+        load_default=0.0
+    ))
+    flatten_inputs: bool = field(metadata=dict(
+        allow_none=False, 
+        dump_default=False,
+        load_default=False
+    ))
+    residual: bool = field(metadata=dict(
+        allow_none=False,
+        dump_default=False,
+        load_default=False
+    ))
 
-    # TODO: Allow additional properties (necessary for ecd.py?)
     class Meta:
         unknown = INCLUDE
+
+ConcatCombinerSchema = marshmallow_dataclass.class_schema(ConcatCombinerData)()
 
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features: Optional[List] = None,
-            config_schema: Dict = ConcatCombinerSchema().dump({}),
+            config_schema: ConcatCombinerData = ConcatCombinerSchema.load({}),
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
@@ -264,39 +287,31 @@ class ConcatCombiner(tf.keras.Model):
 
     @staticmethod
     def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(ConcatCombinerSchema())
-
-# TODO: dataclass-typing example below:
-class SequenceConcatCombinerSchema(Schema):
-    reduce_output = fields.String(
-        validate=validate.OneOf(reduce_output_registry),
-        allow_none=True, # TODO: allow setting to null?
-        default=None,
-        missing=None
-    )
-    main_sequence_feature = fields.String(
-        allow_none=True,
-        default=None,
-        missing=None
-    )
-
-    # TODO: Allow additional properties (necessary for ecd.py?)
-    class Meta:
-        unknown = INCLUDE
-    
-    @post_load
-    def make_combiner(self, data, **kwargs):
-        return SequenceConcatCombinerData(**data)
+        return JSONSchema().dump(ConcatCombinerSchema)
 
 @dataclass
 class SequenceConcatCombinerData:
-    reduce_output: str
-    main_sequence_feature: str
+    reduce_output: Optional[str] = field(metadata=dict(
+        validate=validate.OneOf(reduce_output_registry),
+        # allow_none=True,
+        dump_default=None,
+        load_default=None
+    ))
+    main_sequence_feature: Optional[str] = field(metadata=dict(
+        # allow_none=True,
+        dump_default=None,
+        load_default=None
+    ))
+
+    class Meta:
+        unknown = INCLUDE
+
+SequenceConcatCombinerSchema = marshmallow_dataclass.class_schema(SequenceConcatCombinerData)()
 
 class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_schema: SequenceConcatCombinerData = SequenceConcatCombinerSchema().load({}),
+            config_schema: SequenceConcatCombinerData = SequenceConcatCombinerSchema.load({}),
             **kwargs
     ):
         super().__init__()
@@ -439,37 +454,40 @@ class SequenceConcatCombiner(tf.keras.Model):
         return JSONSchema().dump(SequenceConcatCombinerSchema())
 
 
-# TODO: check again in manual which fields should support null
-class SequenceCombinerSchema(Schema):
-    reduce_output = fields.String(
+@dataclass
+class SequenceCombinerData:
+    reduce_output: Optional[str] = field(metadata=dict(
         validate=validate.OneOf(reduce_output_registry),
-        allow_none=True, 
-        default=None,
-    )
-    main_sequence_feature = fields.String(
+        # allow_none=True,
+        dump_default=None,
+        load_default=None
+    ))
+    main_sequence_feature: Optional[str] = field(metadata=dict(
+        # allow_none=True,
+        dump_default=None,
+        load_default=None
+    ))
+    encoder: Optional[str] = field(metadata=dict(
         allow_none=True,
-        default=None
-    )
-    encoder = fields.String(
-        allow_none=True,
-        default=None
-    )
+        dump_default=None,
+        load_default=None
+    ))
 
-    # TODO: Allow additional properties (necessary for ecd.py?)
     class Meta:
         unknown = INCLUDE
 
+SequenceCombinerSchema = marshmallow_dataclass.class_schema(SequenceCombinerData)()
 class SequenceCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_schema: Dict = SequenceCombinerSchema().dump({}),
+            config_schema: SequenceCombinerData = SequenceCombinerSchema.load({}),
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
         config_schema = SimpleNamespace(**config_schema)
 
-        self.combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema().load(dict(
+        self.combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema.load(dict(
             reduce_output=None,
             main_sequence_feature=config_schema.main_sequence_feature
         )))
@@ -519,70 +537,68 @@ class SequenceCombiner(tf.keras.Model):
 
     @staticmethod
     def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(SequenceCombinerSchema())
+        return JSONSchema().dump(SequenceCombinerSchema)
 
 
-# TODO: only strict ints?
 class TabNetCombinerSchema(Schema):
     size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=32,
+        dump_default=32,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     output_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=32,
+        dump_default=32,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_steps = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=1,
+        dump_default=1,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_total_blocks = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=4,
+        dump_default=4,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_shared_blocks = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=2,
+        dump_default=2,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     relaxation_factor = fields.Float(
         validate=validate.Range(min=0, min_inclusive=True),
         allow_none=False,
-        default=1.5,
+        dump_default=1.5,
     )
     bn_epsilon = fields.Float(
         allow_none=False,
-        default=1e-3,
+        dump_default=1e-3,
     )
     bn_momentum = fields.Float(
         allow_none=False,
-        default=0.7,
+        dump_default=0.7,
     )
     bn_virtual_bs = fields.Int(
         allow_none=True,
-        default=None,
+        dump_default=None,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     sparsity = fields.Float(
         allow_none=False,
-        default=1e-5,
+        dump_default=1e-5,
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
         allow_none=False,
-        default=0.0,
+        dump_default=0.0,
     )
 
-    # TODO: Allow additional properties (necessary for ecd.py?)
     class Meta:
         unknown = INCLUDE
 
@@ -675,93 +691,93 @@ class TransformerCombinerSchema(Schema):
     num_layers = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=1,
+        dump_default=1,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     hidden_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=256,
+        dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_heads = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=8,
+        dump_default=8,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     transformer_fc_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=256,
+        dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
         allow_none=False,
-        default=0.1,
+        dump_default=0.1,
     )
-    fc_layers = fields.List(fields.Dict(), allow_none=True, default=None)
+    fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
     num_fc_layers = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=0,
+        dump_default=0,
         validate=validate.Range(min=0, min_inclusive=True)
     )
     fc_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=256,
+        dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
-    use_bias = fields.Bool(allow_none=False, default=True)
+    use_bias = fields.Bool(allow_none=False, dump_default=True)
     weights_initializer = WeightsInitializerField(
         allow_none=False,
-        default='glorot_uniform'
+        dump_default='glorot_uniform'
     )
     bias_initializer = BiasInitializerField(
         allow_none=False,
-        default='zeros'
+        dump_default='zeros'
     )
     weights_regularizer = fields.String(
         validate=validate.OneOf(weights_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     bias_regularizer = fields.String(
         validate=validate.OneOf(bias_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     activity_regularizer = fields.String(
         validate=validate.OneOf(activity_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     norm = fields.String(
         validate=validate.OneOf(norm_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     norm_params = fields.Dict(
         allow_none=True,
-        default=None
+        dump_default=None
     )
     fc_activation = fields.String(
         validate=validate.OneOf(activation_registry),
         allow_none=False,
-        default='relu'
+        dump_default='relu'
     )
     fc_dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
         allow_none=False,
-        default=0.0,
+        dump_default=0.0,
     )
-    fc_residual = fields.Bool(allow_none=False, default=False)
+    fc_residual = fields.Bool(allow_none=False, dump_default=False)
     reduce_output = fields.String(
         validate=validate.OneOf(reduce_output_registry),
         allow_none=True,
-        default='mean'
+        dump_default='mean'
     )
 
     class Meta:
@@ -875,7 +891,6 @@ class TransformerCombiner(tf.keras.Model):
         return JSONSchema().dump(TransformerCombinerSchema())
 
 
-# TODO: Can generalize this (https://stackoverflow.com/questions/61614546/python-marshmallow-field-can-be-two-different-types) or use a package
 class EmbedInputFeatureNameField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, int) or isinstance(value, str):
@@ -891,101 +906,100 @@ class EmbedInputFeatureNameField(fields.Field):
 class TabTransformerCombinerSchema(Schema):
     embed_input_feature_name = EmbedInputFeatureNameField(
         allow_none=True,
-        default=None
+        dump_default=None
     )
     num_layers = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=1,
+        dump_default=1,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     hidden_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=256,
+        dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_heads = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=8,
+        dump_default=8,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     transformer_fc_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=256,
+        dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
         allow_none=False,
-        default=0.1,
+        dump_default=0.1,
     )
-    fc_layers = fields.List(fields.Dict(), allow_none=True, default=None)
+    fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
     num_fc_layers = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=0,
+        dump_default=0,
         validate=validate.Range(min=0, min_inclusive=True)
     )
     fc_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=256,
+        dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
-    use_bias = fields.Bool(allow_none=False, default=True)
+    use_bias = fields.Bool(allow_none=False, dump_default=True)
     weights_initializer = WeightsInitializerField(
         allow_none=False,
-        default='glorot_uniform'
+        dump_default='glorot_uniform'
     )
     bias_initializer = BiasInitializerField(
         allow_none=False,
-        default='zeros'
+        dump_default='zeros'
     )
     weights_regularizer = fields.String(
         validate=validate.OneOf(weights_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     bias_regularizer = fields.String(
         validate=validate.OneOf(bias_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     activity_regularizer = fields.String(
         validate=validate.OneOf(activity_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     norm = fields.String(
         validate=validate.OneOf(norm_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     norm_params = fields.Dict(
         allow_none=True,
-        default=None
+        dump_default=None
     )
     fc_activation = fields.String(
         validate=validate.OneOf(activation_registry),
         allow_none=False,
-        default='relu'
+        dump_default='relu'
     )
     fc_dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
         allow_none=False,
-        default=0.0,
+        dump_default=0.0,
     )
-    fc_residual = fields.Bool(allow_none=False, default=False)
+    fc_residual = fields.Bool(allow_none=False, dump_default=False)
     reduce_output = fields.String(
         validate=validate.OneOf(reduce_output_registry),
         allow_none=True,
-        default='concat'
+        dump_default='concat'
     )
 
-    # TODO: Allow additional properties (necessary for ecd.py?)
     class Meta:
         unknown = INCLUDE
 
@@ -1165,59 +1179,59 @@ class ComparatorCombinerSchema(Schema):
     num_fc_layers = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=1,
+        dump_default=1,
         validate=validate.Range(min=0, min_inclusive=True)
     )
     fc_size = fields.Int(
         strict=True, 
         allow_none=False, 
-        default=256,
+        dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
-    use_bias = fields.Bool(allow_none=False, default=True)
+    use_bias = fields.Bool(allow_none=False, dump_default=True)
     weights_initializer = WeightsInitializerField(
         allow_none=False,
-        default='glorot_uniform'
+        dump_default='glorot_uniform'
     )
     bias_initializer = BiasInitializerField(
         allow_none=False,
-        default='zeros'
+        dump_default='zeros'
     )
     weights_regularizer = fields.String(
         validate=validate.OneOf(weights_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     bias_regularizer = fields.String(
         validate=validate.OneOf(bias_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     activity_regularizer = fields.String(
         validate=validate.OneOf(activity_regularizer_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     norm = fields.String(
         validate=validate.OneOf(norm_registry),
         allow_none=True,
-        default=None
+        dump_default=None
     )
     norm_params = fields.Dict(
         allow_none=True,
-        default=None
+        dump_default=None
     )
     activation = fields.String(
         validate=validate.OneOf(activation_registry),
         allow_none=False,
-        default='relu'
+        dump_default='relu'
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
         allow_none=False,
-        default=0,
+        dump_default=0,
     )
-    # TODO: Allow additional properties (necessary for ecd.py?)
+
     class Meta:
         unknown = INCLUDE
 
