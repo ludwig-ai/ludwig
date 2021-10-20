@@ -17,15 +17,40 @@
 
 from abc import ABC
 
+from typing import Dict, Any
+
+from ludwig.data.dataset.base import Dataset
+
 
 class Callback(ABC):
     def on_cmdline(self, cmd, *args):
         pass
 
+    def on_preprocess_start(
+            self,
+            config: Dict[str, Any]
+    ):
+        pass
+
+    def on_preprocess_end(
+            self,
+            training_set: Dataset,
+            validation_set: Dataset,
+            test_set: Dataset,
+            training_set_metadata: Dict[str, Any]
+    ):
+        pass
+
     def on_hyperopt_init(self, experiment_name):
         pass
 
+    def on_hyperopt_finish(self, experiment_name):
+        pass
+
     def on_hyperopt_trial_start(self, parameters):
+        pass
+
+    def on_hyperopt_trial_end(self, parameters):
         pass
 
     def on_train_init(
@@ -48,6 +73,10 @@ class Callback(ABC):
         pass
 
     def on_train_end(self, output_directory):
+        pass
+
+    def on_trainer_train_setup(self, trainer, save_path):
+        """Called in EVERY trainer (rank) before training starts."""
         pass
 
     def on_batch_start(self, trainer, progress_tracker, save_path):

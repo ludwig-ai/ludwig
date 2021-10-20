@@ -6,7 +6,7 @@ import pytest
 
 from ludwig.constants import META, TRAINING, VALIDATION, TEST, CHECKSUM
 from ludwig.data.cache.manager import CacheManager, alphanum
-from ludwig.data.dataset import PandasDatasetManager
+from ludwig.data.dataset.pandas import PandasDatasetManager
 
 from tests.integration_tests.utils import sequence_feature, category_feature, LocalTestBackend
 

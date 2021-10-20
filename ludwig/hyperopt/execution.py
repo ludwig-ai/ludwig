@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import uuid
 import copy
@@ -6,12 +7,15 @@ import json
 import multiprocessing
 import signal
 import shutil
+import threading
+import time
+import warnings
 from abc import ABC, abstractmethod
-from typing import Union
-
-from ray.tune.session import get_trial_dir, get_trial_id
+from pathlib import Path
+from typing import Union, Optional
 
 from ludwig.api import LudwigModel
+from ludwig.backend import RAY, initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import *
 from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
@@ -23,15 +27,39 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import (get_available_gpu_memory,
                                      get_from_registry,
                                      hash_dict)
+from ludwig.utils.fs_utils import has_remote_protocol, file_lock
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 try:
     import ray
+    from ray.util.queue import Queue as RayQueue
     from ray import tune
-    from ray.tune.utils import wait_for_gpu
     from ray.tune import register_trainable
+    from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
+    from ray.tune.syncer import get_cloud_sync_client
+    from ray.tune.utils import wait_for_gpu
+    from ray.tune.utils.placement_groups import PlacementGroupFactory
+    from ludwig.backend.ray import RayBackend
 except ImportError:
     ray = None
+    get_horovod_kwargs = None
+
+    class RayBackend:
+        pass
+
+    class RayRemoteTrainer:
+        pass
+
+
+# TODO: refactor this into an interface
+def _is_ray_backend(backend) -> bool:
+    if isinstance(backend, str):
+        return backend == RAY
+    return isinstance(backend, RayBackend)
+
+
+def _get_relative_checkpoints_dir_parts(path: Path):
+    return path.parts[-2:]
 
 
 class HyperoptExecutor(ABC):
@@ -717,6 +745,7 @@ class RayTuneExecutor(HyperoptExecutor):
             gpu_resources_per_trial: int = None,
             kubernetes_namespace: str = None,
             time_budget_s: Union[int, float, datetime.timedelta] = None,
+            max_concurrent_trials: Optional[int] = None,
             **kwargs
     ) -> None:
         if ray is None:
@@ -750,12 +779,27 @@ class RayTuneExecutor(HyperoptExecutor):
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
         self.time_budget_s = time_budget_s
+        self.max_concurrent_trials = max_concurrent_trials
+        self.sync_config = None
 
-    def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx):
+    @property
+    def _cpu_resources_per_trial_non_none(self):
+        return self.cpu_resources_per_trial or 1
+
+    @property
+    def _gpu_resources_per_trial_non_none(self):
+        return self.gpu_resources_per_trial or 0
+
+    def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir: Path):
+        """Get the Ray sync client and path to remote checkpoint directory."""
+        remote_checkpoint_dir = os.path.join(
+            self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir))
+        return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
+
+    def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
         for gpu_id in ray.get_gpu_ids():
             # Previous trial may not have freed its memory yet, so wait to avoid OOM
             wait_for_gpu(gpu_id)
-
         # Some config values may be JSON encoded as strings, so decode them here
         config = RayTuneSampler.decode_values(config, decode_ctx)
 
@@ -764,54 +808,154 @@ class RayTuneExecutor(HyperoptExecutor):
             copy.deepcopy(hyperopt_dict["config"]), config
         )
 
+        trial_dir = Path(tune.get_trial_dir())
+        trial_location = ray.util.get_node_ip_address()
+
         hyperopt_dict['config'] = modified_config
         hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
+        hyperopt_dict['output_directory'] = str(trial_dir)
 
         tune_executor = self
+        if is_using_ray_backend:
+            ray_queue = RayQueue(actor_options={"num_cpus": 0})
+        else:
+            ray_queue = None
+
+        def checkpoint(progress_tracker, save_path):
+            with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
+                checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                # shutil.copytree(save_path, checkpoint_model)
+                # Note: A previous implementation used shutil.copytree()
+                # however, this copying method is non atomic
+                if not os.path.isdir(checkpoint_model):
+                    copy_id = uuid.uuid4()
+                    tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                    assert os.path.exists(save_path)
+                    shutil.copytree(save_path, tmp_dst)
+                    try:
+                        os.rename(tmp_dst, checkpoint_model)
+                    except Exception:
+                        shutil.rmtree(tmp_dst)
+
+        def report(progress_tracker):
+            train_stats = {
+                TRAINING: progress_tracker.train_metrics,
+                VALIDATION: progress_tracker.vali_metrics,
+                TEST: progress_tracker.test_metrics,
+            }
+
+            metric_score = tune_executor.get_metric_score(
+                train_stats, eval_stats=None)
+            tune.report(
+                parameters=json.dumps(config, cls=NumpyEncoder),
+                metric_score=metric_score,
+                training_stats=json.dumps(
+                    train_stats[TRAINING], cls=NumpyEncoder),
+                eval_stats=json.dumps(
+                    train_stats[VALIDATION], cls=NumpyEncoder),
+                trial_id=tune.get_trial_id(),
+                trial_dir=tune.get_trial_dir()
+            )
 
         class RayTuneReportCallback(Callback):
+            def _get_sync_client_and_remote_checkpoint_dir(self):
+                # sync client has to be recreated to avoid issues with serialization
+                return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
+
+            def on_trainer_train_setup(self, trainer, save_path):
+                if is_using_ray_backend and checkpoint_dir and trial_location != ray.util.get_node_ip_address():
+                    save_path = Path(save_path)
+
+                    for path in trial_dir.glob("checkpoint*"):
+                        if path not in (save_path.parent, checkpoint_dir):
+                            shutil.rmtree(path, ignore_errors=True)
+
+                    sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
+                    sync_client.sync_down(
+                        remote_checkpoint_dir, str(trial_dir.absolute()))
+                    sync_client.wait()
+
             def on_epoch_end(self, trainer, progress_tracker, save_path):
-                with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
-                    checkpoint_model = os.path.join(checkpoint_dir, 'model')
-                    # shutil.copytree(save_path, checkpoint_model)
-                    # Note: A previous implementation used shutil.copytree()
-                    # however, this copying method is non atomic
-                    if not os.path.isdir(checkpoint_model):
-                        copy_id = uuid.uuid4()
-                        tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
-                        shutil.copytree(save_path, tmp_dst)
-                        try:
-                            os.rename(tmp_dst, checkpoint_model)
-                        except:
-                            shutil.rmtree(tmp_dst)
+                if is_using_ray_backend:
+                    save_path = Path(save_path)
+                    if trial_location != ray.util.get_node_ip_address():
+                        sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
+                        sync_client.sync_up(
+                            str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                        sync_client.wait()
+                    ray_queue.put((progress_tracker, str(save_path)))
+                    return
 
-                train_stats = {
-                    TRAINING: progress_tracker.train_metrics,
-                    VALIDATION: progress_tracker.vali_metrics,
-                    TEST: progress_tracker.test_metrics,
-                }
-
-                metric_score = tune_executor.get_metric_score(
-                    train_stats, eval_stats=None)
-                tune.report(
-                    parameters=json.dumps(config, cls=NumpyEncoder),
-                    metric_score=metric_score,
-                    training_stats=json.dumps(
-                        train_stats[TRAINING], cls=NumpyEncoder),
-                    eval_stats=json.dumps(
-                        train_stats[VALIDATION], cls=NumpyEncoder),
-                    trial_id=tune.get_trial_id(),
-                    trial_dir=tune.get_trial_dir()
-                )
+                checkpoint(progress_tracker, save_path)
+                report(progress_tracker)
 
         callbacks = hyperopt_dict.get('callbacks') or []
-        hyperopt_dict['callbacks'] = callbacks + [RayTuneReportCallback()]
+        hyperopt_dict['callbacks'] = callbacks + \
+            [RayTuneReportCallback()]
 
-        train_stats, eval_stats = run_experiment(
-            **hyperopt_dict,
-            model_resume_path=checkpoint_dir,
-            parameters=config,
-        )
+        # set tune resources
+        if is_using_ray_backend:
+            resources = tune.get_trial_resources()
+            # check if we are using at least 1 gpu per trial
+            use_gpu = bool(self._gpu_resources_per_trial_non_none)
+            # get the resources assigned to the current trial
+            current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
+
+            hvd_kwargs = {
+                'num_workers': int(current_resources),
+                'use_gpu': use_gpu,
+            }
+            hyperopt_dict['backend'].set_distributed_kwargs(**hvd_kwargs)
+
+            logger.debug(
+                f"Trial horovod kwargs: {hvd_kwargs}")
+
+        stats = []
+
+        def _run():
+            train_stats, eval_stats = run_experiment(
+                **hyperopt_dict,
+                model_resume_path=checkpoint_dir,
+                parameters=config,
+            )
+            stats.append((train_stats, eval_stats))
+
+        if is_using_ray_backend:
+            # We have to pull the results to the trial actor
+            # from worker actors, as the Tune session is running
+            # only on the trial actor
+            thread = threading.Thread(target=_run)
+            thread.daemon = True
+            thread.start()
+
+            sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir(
+                trial_dir)
+
+            def check_queue():
+                qsize = ray_queue.qsize()
+                if qsize:
+                    results = ray_queue.get_nowait_batch(qsize)
+                    sync_client.sync_down(
+                        remote_checkpoint_dir, str(trial_dir.absolute()))
+                    sync_client.wait()
+                    for progress_tracker, save_path in results:
+                        checkpoint(progress_tracker, str(
+                            trial_dir.joinpath(Path(save_path))))
+                        report(progress_tracker)
+
+            while thread.is_alive():
+                thread.join(timeout=0)
+                check_queue()
+                time.sleep(0.1)
+            thread.join()
+            check_queue()
+        else:
+            # remove threading overhead
+            _run()
+
+        if not stats:
+            raise RuntimeError("Experiment did not complete.")
+        train_stats, eval_stats = stats.pop()
 
         metric_score = self.get_metric_score(train_stats, eval_stats)
         tune.report(
@@ -855,8 +999,11 @@ class RayTuneExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ) -> RayTuneResults:
-        if isinstance(dataset, str) and not os.path.isabs(dataset):
+        if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
+
+        if isinstance(backend, str):
+            backend = initialize_backend(backend)
 
         if gpus is not None:
             raise ValueError("Parameter `gpus` is not supported when using Ray Tune. "
@@ -911,21 +1058,28 @@ class RayTuneExecutor(HyperoptExecutor):
         else:
             search_alg = None
 
-        sync_config = None
-        if self.kubernetes_namespace:
-            from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
-            sync_config = tune.SyncConfig(
-                sync_to_driver=NamespacedKubernetesSyncer(
-                    self.kubernetes_namespace)
-            )
+        if self.max_concurrent_trials:
+            assert self.max_concurrent_trials > 0, f"`max_concurrent_trials` must be greater than 0, got {self.max_concurrent_trials}"
+            if isinstance(search_alg, BasicVariantGenerator) or search_alg is None:
+                search_alg = BasicVariantGenerator(
+                    max_concurrent=self.max_concurrent_trials)
+            elif isinstance(search_alg, ConcurrencyLimiter):
+                raise ValueError(
+                    "You have specified `max_concurrent_trials`, but the search "
+                    "algorithm is already a `ConcurrencyLimiter`. FIX THIS "
+                    "by setting `max_concurrent_trials=None`."
+                )
+            else:
+                search_alg = ConcurrencyLimiter(
+                    search_alg, max_concurrent=self.max_concurrent_trials)
 
         resources_per_trial = {
-            "cpu": self.cpu_resources_per_trial or 1,
-            "gpu": self.gpu_resources_per_trial or 0,
+            "cpu": self._cpu_resources_per_trial_non_none,
+            "gpu": self._gpu_resources_per_trial_non_none,
         }
 
         def run_experiment_trial(config, checkpoint_dir=None):
-            return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx)
+            return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx, _is_ray_backend(backend))
 
         tune_config = {}
         tune_callbacks = []
@@ -934,6 +1088,27 @@ class RayTuneExecutor(HyperoptExecutor):
                 run_experiment_trial,
                 tune_config,
                 tune_callbacks,
+            )
+
+        if _is_ray_backend(backend):
+            # we can't set Trial actor's CPUs to 0 so we just go very low
+            resources_per_trial = PlacementGroupFactory(
+                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none) if self._gpu_resources_per_trial_non_none else (
+                    [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none)
+            )
+
+        if has_remote_protocol(output_directory):
+            run_experiment_trial = tune.durable(run_experiment_trial)
+            self.sync_config = tune.SyncConfig(
+                sync_to_driver=False,
+                upload_dir=output_directory
+            )
+            output_directory = None
+        elif self.kubernetes_namespace:
+            from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
+            self.sync_config = tune.SyncConfig(
+                sync_to_driver=NamespacedKubernetesSyncer(
+                    self.kubernetes_namespace)
             )
 
         register_trainable(
@@ -953,8 +1128,8 @@ class RayTuneExecutor(HyperoptExecutor):
             keep_checkpoints_num=1,
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
-            queue_trials=True,
-            sync_config=sync_config,
+            queue_trials=False,
+            sync_config=self.sync_config,
             local_dir=output_directory,
             metric=metric,
             mode=mode,
@@ -1113,6 +1288,10 @@ def run_experiment(
         random_seed=random_seed,
         debug=debug,
     )
+
+    for callback in callbacks or []:
+        callback.on_hyperopt_trial_end(parameters)
+
     return train_stats, eval_stats
 
 

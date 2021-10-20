@@ -33,9 +33,32 @@ from ludwig.utils.strings_utils import str2bool
 
 try:
     from ray import tune
+    from ray.tune.schedulers.resource_changing_scheduler import (
+        ResourceChangingScheduler, evenly_distribute_cpus_gpus, PlacementGroupFactory)
     _HAS_RAY_TUNE = True
 except ImportError:
+    evenly_distribute_cpus_gpus = None
     _HAS_RAY_TUNE = False
+
+
+def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", trial: "Trial",
+                                     result: Dict[str, Any], scheduler: "ResourceChangingScheduler"
+                                     ):
+    """Determine resources to allocate to running trials"""
+    pgf = evenly_distribute_cpus_gpus(
+        trial_runner, trial, result, scheduler)
+    # restore original base trial resources
+
+    # create bundles
+    if scheduler.base_trial_resources.required_resources.get("GPU", 0):
+        bundles = [{"CPU": 1, "GPU": 1}] * \
+            int(pgf.required_resources["GPU"])
+    else:
+        bundles = [{"CPU": 1}] * (int(pgf.required_resources["CPU"] - 0.001))
+    # we can't set Trial actor's CPUs to 0 so we just go very low
+    bundles = [{"CPU": 0.001}] + bundles
+    pgf = PlacementGroupFactory(bundles)
+    return pgf
 
 
 logger = logging.getLogger(__name__)
@@ -352,14 +375,22 @@ class RayTuneSampler(HyperoptSampler):
         if not scheduler_config:
             return None
 
+        dynamic_resource_allocation = scheduler_config.pop(
+            "dynamic_resource_allocation", False)
+
         if scheduler_config.get("type") == "pbt":
             scheduler_config.update(
                 {"hyperparam_mutations": self.search_space})
 
-        return tune.create_scheduler(
+        scheduler = tune.create_scheduler(
             scheduler_config.get("type"),
             **scheduler_config
         )
+
+        if dynamic_resource_allocation:
+            scheduler = ResourceChangingScheduler(
+                scheduler, ray_resource_allocation_function)
+        return scheduler
 
     def _get_search_space(self, parameters):
         config = {}
