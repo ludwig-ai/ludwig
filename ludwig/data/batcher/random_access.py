@@ -31,8 +31,7 @@ class RandomAccessBatcher(Batcher):
         self.ignore_last = ignore_last
         self.batch_size = batch_size
         self.total_size = len(sampler)
-        self.steps_per_epoch = int(
-            math.ceil(self.total_size / self.batch_size))
+        self.steps_per_epoch = self._compute_steps_per_epoch()
         self.index = 0
         self.step = 0
 
@@ -63,8 +62,15 @@ class RandomAccessBatcher(Batcher):
                 self.ignore_last and
                 self.index + self.batch_size >= self.total_size)
 
-    def set_epoch(self, epoch):
+    def set_epoch(self, epoch, batch_size):
+        self.batch_size = batch_size
+        self.steps_per_epoch = self._compute_steps_per_epoch()
         self.index = 0
         self.step = 0
         self.sampler.set_epoch(epoch)
         self.sample_it = iter(self.sampler)
+
+    def _compute_steps_per_epoch(self):
+        return int(
+            math.ceil(self.total_size / self.batch_size)
+        )
