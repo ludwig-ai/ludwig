@@ -976,9 +976,9 @@ class ComparatorCombiner(CombinerClass):
             self,
             inputs: Dict,  # encoder outputs
     ) -> Dict[str, torch.Tensor]:  # encoder outputs
-        assert (
-            inputs.keys() == self.required_inputs
-        ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
+        if inputs.keys() != self.required_inputs:
+            raise ValueError(
+                f"Missing inputs {self.required_inputs - set(inputs.keys())}")
 
         ############
         # Entity 1 #
