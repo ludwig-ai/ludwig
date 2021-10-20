@@ -84,7 +84,6 @@ class WeightsInitializerField(fields.Field):
 WeightsInitializerType = marshmallow_dataclass.NewType(
         name='WeightsInitializerType',
         typ=Union[str, dict],
-        allow_none=False,
         dump_default='glorot_uniform',
         load_default='glorot_uniform'
 )
@@ -112,7 +111,6 @@ class BiasInitializerField(fields.Field):
 BiasInitializerType = marshmallow_dataclass.NewType(
     name='BiasInitializerType',
     typ=Union[str, dict],
-    allow_none=False,
     dump_default='zeros',
     load_default='zeros'
 )
@@ -172,23 +170,19 @@ class ConcatCombinerData:
     ))
     activation: str = field(metadata=dict(
         validate=validate.OneOf(activation_registry),
-        allow_none=False,
         dump_default='relu',
         load_default='relu'
     ))
     dropout: float = field(metadata=dict(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        allow_none=False,
         dump_default=0.0,
         load_default=0.0
     ))
     flatten_inputs: bool = field(metadata=dict(
-        allow_none=False, 
         dump_default=False,
         load_default=False
     ))
     residual: bool = field(metadata=dict(
-        allow_none=False,
         dump_default=False,
         load_default=False
     ))
@@ -543,45 +537,37 @@ class SequenceCombiner(tf.keras.Model):
 class TabNetCombinerSchema(Schema):
     size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=32,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     output_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=32,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_steps = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=1,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_total_blocks = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=4,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_shared_blocks = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=2,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     relaxation_factor = fields.Float(
         validate=validate.Range(min=0, min_inclusive=True),
-        allow_none=False,
         dump_default=1.5,
     )
     bn_epsilon = fields.Float(
-        allow_none=False,
         dump_default=1e-3,
     )
     bn_momentum = fields.Float(
-        allow_none=False,
         dump_default=0.7,
     )
     bn_virtual_bs = fields.Int(
@@ -590,12 +576,10 @@ class TabNetCombinerSchema(Schema):
         validate=validate.Range(min=1, min_inclusive=True)
     )
     sparsity = fields.Float(
-        allow_none=False,
         dump_default=1e-5,
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        allow_none=False,
         dump_default=0.0,
     )
 
@@ -690,53 +674,44 @@ class TabNetCombiner(tf.keras.Model):
 class TransformerCombinerSchema(Schema):
     num_layers = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=1,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     hidden_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_heads = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=8,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     transformer_fc_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        allow_none=False,
         dump_default=0.1,
     )
     fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
     num_fc_layers = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=0,
         validate=validate.Range(min=0, min_inclusive=True)
     )
     fc_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
-    use_bias = fields.Bool(allow_none=False, dump_default=True)
+    use_bias = fields.Bool(dump_default=True)
     weights_initializer = WeightsInitializerField(
-        allow_none=False,
         dump_default='glorot_uniform'
     )
     bias_initializer = BiasInitializerField(
-        allow_none=False,
         dump_default='zeros'
     )
     weights_regularizer = fields.String(
@@ -765,15 +740,13 @@ class TransformerCombinerSchema(Schema):
     )
     fc_activation = fields.String(
         validate=validate.OneOf(activation_registry),
-        allow_none=False,
         dump_default='relu'
     )
     fc_dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        allow_none=False,
         dump_default=0.0,
     )
-    fc_residual = fields.Bool(allow_none=False, dump_default=False)
+    fc_residual = fields.Bool(dump_default=False)
     reduce_output = fields.String(
         validate=validate.OneOf(reduce_output_registry),
         allow_none=True,
@@ -910,53 +883,44 @@ class TabTransformerCombinerSchema(Schema):
     )
     num_layers = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=1,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     hidden_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     num_heads = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=8,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     transformer_fc_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        allow_none=False,
         dump_default=0.1,
     )
     fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
     num_fc_layers = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=0,
         validate=validate.Range(min=0, min_inclusive=True)
     )
     fc_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
-    use_bias = fields.Bool(allow_none=False, dump_default=True)
+    use_bias = fields.Bool(dump_default=True)
     weights_initializer = WeightsInitializerField(
-        allow_none=False,
         dump_default='glorot_uniform'
     )
     bias_initializer = BiasInitializerField(
-        allow_none=False,
         dump_default='zeros'
     )
     weights_regularizer = fields.String(
@@ -985,15 +949,13 @@ class TabTransformerCombinerSchema(Schema):
     )
     fc_activation = fields.String(
         validate=validate.OneOf(activation_registry),
-        allow_none=False,
         dump_default='relu'
     )
     fc_dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        allow_none=False,
         dump_default=0.0,
     )
-    fc_residual = fields.Bool(allow_none=False, dump_default=False)
+    fc_residual = fields.Bool(dump_default=False)
     reduce_output = fields.String(
         validate=validate.OneOf(reduce_output_registry),
         allow_none=True,
@@ -1178,23 +1140,19 @@ class TabTransformerCombiner(tf.keras.Model):
 class ComparatorCombinerSchema(Schema):
     num_fc_layers = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=1,
         validate=validate.Range(min=0, min_inclusive=True)
     )
     fc_size = fields.Int(
         strict=True, 
-        allow_none=False, 
         dump_default=256,
         validate=validate.Range(min=1, min_inclusive=True)
     )
-    use_bias = fields.Bool(allow_none=False, dump_default=True)
+    use_bias = fields.Bool(dump_default=True)
     weights_initializer = WeightsInitializerField(
-        allow_none=False,
         dump_default='glorot_uniform'
     )
     bias_initializer = BiasInitializerField(
-        allow_none=False,
         dump_default='zeros'
     )
     weights_regularizer = fields.String(
@@ -1223,12 +1181,10 @@ class ComparatorCombinerSchema(Schema):
     )
     activation = fields.String(
         validate=validate.OneOf(activation_registry),
-        allow_none=False,
         dump_default='relu'
     )
     dropout = fields.Float(
         validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        allow_none=False,
         dump_default=0,
     )
 
