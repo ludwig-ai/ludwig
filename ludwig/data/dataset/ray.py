@@ -19,18 +19,14 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, List, Optional, Any, Iterator
+from typing import Dict, Optional, Any, Iterator
 
-import numpy as np
 import pandas as pd
 
-from dask.dataframe.extensions import make_array_nonempty
 import ray
 from ray.data import from_dask
 from ray.data.dataset_pipeline import DatasetPipeline
-from ray.data.extensions import TensorArray, TensorDtype
-
-import tensorflow as tf
+from ray.data.extensions import TensorDtype
 
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset
@@ -40,41 +36,20 @@ from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
 
 
-@make_array_nonempty.register(TensorDtype)
-def _(dtype):
-    return TensorArray._from_sequence([0, np.nan], dtype=dtype)
-
-
 class RayDataset(object):
     """ Wrapper around ray.data.Dataset. """
 
     def __init__(self, df: DataFrame, features: Dict[str, Dict], data_hdf5_fp: Optional[str]):
-        # for proc_column in features.keys():
-        #     df[proc_column] = df[proc_column].astype(TensorDtype())
-
         self.ds = from_dask(df)
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
 
-        # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-        #     npds = to_numpy_dataset(df)
-        #     for c in features.keys():
-        #         df[c] = TensorArray(npds[c])
-        #     return df
-        #     # columns = [c for c in df.columns if c in features]
-        #     # return pd.DataFrame(
-        #     #     columns=columns,
-        #     #     data=[TensorArray(npds[c]) for c in columns]
-        #     # )
-
+        # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
         #     for c in features.keys():
         #         df[c] = df[c].astype(TensorDtype())
         #     return df
-
-        # print(f"!!! BEFORE SCHEMA: {self.ds.schema()}")
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
-        # print(f"!!! AFTER SCHEMA: {self.ds.schema()}")
 
     def pipeline(self, shuffle=True) -> DatasetPipeline:
         pipe = self.ds.repeat()
@@ -168,48 +143,6 @@ class RayDatasetShard(Dataset):
         return len(self)
 
 
-def prepare_dataset_shard(dataset_shard: tf.data.Dataset):
-    # Disable Tensorflow autosharding since the dataset has already been
-    # sharded.
-    options = tf.data.Options()
-    options.experimental_distribute.auto_shard_policy = \
-        tf.data.experimental.AutoShardPolicy.OFF
-    dataset = dataset_shard.with_options(options)
-    return dataset
-
-
-def to_tf(
-        dataset: ray.data.Dataset,
-        columns: List[str],
-        output_signature: Dict[str, "tf.TypeSpec"],
-        prefetch_blocks: int = 0,
-        batch_size: int = 1
-) -> "tf.data.Dataset":
-    def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-        for c in columns:
-            df[c] = df[c].astype(TensorDtype())
-        return df
-
-    def make_generator():
-        for batch in dataset.map_batches(
-            to_tensors, batch_format="pandas"
-        ).iter_batches(
-            prefetch_blocks=prefetch_blocks,
-            batch_size=batch_size,
-            batch_format="pandas"
-        ):
-            yield {
-                c: batch[c].to_numpy() for c in columns
-            }
-
-    tf_dataset = tf.data.Dataset.from_generator(
-        make_generator,
-        output_signature=output_signature
-    ).prefetch(tf.data.experimental.AUTOTUNE)
-
-    return tf_dataset
-
-
 class RayDatasetBatcher(Batcher):
     def __init__(
             self,
@@ -222,27 +155,6 @@ class RayDatasetBatcher(Batcher):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
-
-        input_features_signature = {
-            feature.proc_column: tf.TensorSpec(
-                shape=(None, *feature.get_input_shape()),
-                dtype=feature.get_input_dtype(),
-            )
-            for feature in input_features.values()
-        }
-
-        output_features_signature = {
-            feature.proc_column: tf.TensorSpec(
-                shape=(None, *feature.get_output_shape()),
-                dtype=feature.get_output_dtype(),
-            )
-            for feature in output_features.values()
-        }
-
-        self.output_signature = {
-            **input_features_signature,
-            **output_features_signature,
-        }
 
         self.columns = [
             f.proc_column for f in input_features.values()
@@ -291,6 +203,8 @@ class RayDatasetBatcher(Batcher):
         elif read_parallelism > 1:
             self.dataset_batch_iter = self._create_async_parallel_reader(dataset, read_parallelism)
         else:
+            # TODO: consider removing this. doesn't work currently and read performance seems generally
+            #  very good with 1 parallelism
             self.dataset_batch_iter = self._create_sync_reader(dataset)
 
         self._step = 0
