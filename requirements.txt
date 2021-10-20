@@ -16,6 +16,8 @@ tables
 fsspec
 dataclasses-json
 jsonschema
+marshmallow
+marshmallow-jsonschema
 
 # new data format support
 xlwt            # excel
