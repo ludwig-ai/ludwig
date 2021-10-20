@@ -228,8 +228,10 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :type training: Boolean
         """
         # ================ Embeddings ================
-        # todo: need to account for other options: mask
-        embedded_sequence = self.embed_sequence(inputs)
+        # todo: need to account for other options: training and mask
+        embedded_sequence = self.embed_sequence(
+            inputs, training=training, mask=mask
+        )
 
         hidden = self.reduce_sequence(embedded_sequence)
 
@@ -907,8 +909,9 @@ class StackedCNN(SequenceEncoder):
         """
         # ================ Embeddings ================
         if self.should_embed:
-            # todo: retintroduce mask parameter
-            embedded_sequence = self.embed_sequence(inputs)
+            embedded_sequence = self.embed_sequence(
+                inputs, training=training, mask=mask
+            )
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -1264,8 +1267,9 @@ class StackedParallelCNN(SequenceEncoder):
         """
         # ================ Embeddings ================
         if self.should_embed:
-            # todo: reintroduce mask parameter
-            embedded_sequence = self.embed_sequence(inputs)
+            embedded_sequence = self.embed_sequence(
+                inputs, training=training, mask=mask
+            )
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -1877,8 +1881,9 @@ class StackedCNNRNN(SequenceEncoder):
         """
         # ================ Embeddings ================
         if self.should_embed:
-            # todo: reintroduce mask parameter
-            embedded_sequence = self.embed_sequence(inputs)
+            embedded_sequence = self.embed_sequence(
+                inputs, training=training, mask=mask
+            )
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
