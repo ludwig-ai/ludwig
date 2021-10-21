@@ -129,18 +129,11 @@ class Predictor(BasePredictor):
                 progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
-
-        '''
-        for of_name, of_predictions in predictions.items():
-            for pred_name, pred_value_list in of_predictions.items():
-                predictions[of_name][pred_name] = tf.concat(pred_value_list,
-                                                            axis=0)
-                predictions[of_name][pred_name] = torch.cat(pred_value_list,
-                                                            dim=0)
-        '''
         for key, pred_value_list in predictions.items():
-            #predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
-            predictions[key] = torch.cat(pred_value_list, dim=0).numpy()
+            # Without cloning and detaching, a runtime error is raised since pred_value_list
+            # is a tensor that requires grad.
+            predictions[key] = torch.cat(
+                pred_value_list, dim=0).clone().detach().numpy()
 
         return from_numpy_dataset(predictions)
 
@@ -176,7 +169,8 @@ class Predictor(BasePredictor):
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column])
+                    o_feat.feature_name: torch.from_numpy(
+                        batch[o_feat.proc_column])
                     for o_feat in model.output_features.values()
                 }
 
@@ -198,19 +192,9 @@ class Predictor(BasePredictor):
 
         # consolidate predictions from each batch to a single tensor
         if collect_predictions:
-            '''
-            for of_name, of_predictions in predictions.items():
-                for pred_name, pred_value_list in of_predictions.items():
-                    predictions[of_name][pred_name] = tf.concat(
-                        pred_value_list, axis=0
-                    )
-                    predictions[of_name][pred_name] = torch.cat(
-                        pred_value_list, dim=0
-                    )
-            '''
             for key, pred_value_list in predictions.items():
-                #predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
-                predictions[key] = torch.cat(pred_value_list, dim=0).detach().numpy()
+                predictions[key] = torch.cat(
+                    pred_value_list, dim=0).clone().detach().numpy()
 
         metrics = model.get_metrics()
         metrics = self.merge_workers_metrics(metrics)
@@ -228,42 +212,12 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError('BucketedBatcher is not supported yet')
 
-        '''
-        # Build static graph for the trained model
-        tf.keras.backend.reset_uids()
-        keras_model_inputs = model.get_model_inputs(training=False)
-        keras_model = model.get_connected_model(inputs=keras_model_inputs,
-                                                training=False)
-
-        # Create a new model that routes activations to outputs
-        tf.keras.backend.reset_uids()
-        output_nodes = {layer_name: keras_model.get_layer(layer_name).output
-                        for layer_name in layer_names}
-        activation_model = tf.keras.Model(inputs=keras_model_inputs,
-                                          outputs=output_nodes)
-        '''
         activation_model = model
 
         with dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False
         ) as batcher:
-
-            '''
-            for layer_name, output in outputs.items():
-                if isinstance(output, tuple):
-                    output = list(output)
-
-                #if isinstance(output, tf.Tensor):
-                if isinstance(output, torch.Tensor):
-                    output = [('', output)]
-                elif isinstance(output, dict):
-                    output = [(f'_{key}', tensor)
-                              for key, tensor in output.items()]
-                elif isinstance(output, list):
-                    output = [(f'_{idx}', tensor)
-                              for idx, tensor in enumerate(output)]
-            '''
             progress_bar = tqdm(
                 desc='Collecting Tensors',
                 total=batcher.steps_per_epoch,
@@ -285,7 +239,6 @@ class Predictor(BasePredictor):
                     if isinstance(output, tuple):
                         output = list(output)
 
-                    #if isinstance(output, tf.Tensor):
                     if isinstance(output, torch.Tensor):
                         output = [('', output)]
                     elif isinstance(output, dict):
@@ -325,6 +278,7 @@ class Predictor(BasePredictor):
             return True
         return self._horovod.rank() == 0
 
+
 class RemotePredictor(Predictor):
     def __init__(
         self,
@@ -357,7 +311,8 @@ def calculate_overall_stats(
         feature_metadata.update(
             training_set_metadata[output_feature.feature_name])
 
-        feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
+        feature_df = predictions.loc[:,
+                                     predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1:])
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(

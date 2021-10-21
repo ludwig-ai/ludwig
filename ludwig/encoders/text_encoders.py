@@ -1640,14 +1640,14 @@ class FlauBERTEncoder(TextEncoder):
     }
 
     default_params = {
-        'pretrained_model_name_or_path': 'jplu/tf-flaubert-small-cased',
+        'pretrained_model_name_or_path': 'flaubert/flaubert_small_cased',
     }
 
     def __init__(
             self,
             max_sequence_length: int,
             use_pretrained: bool,
-            pretrained_model_name_or_path: str = 'jplu/tf-flaubert-small-cased',
+            pretrained_model_name_or_path: str = 'flaubert/flaubert_small_cased',
             reduce_output: str = 'sum',
             trainable: bool = True,
             vocab_size: int = 30145,

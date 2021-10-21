@@ -24,7 +24,6 @@ from ludwig.utils.torch_utils import LudwigModule, get_activation
 logger = logging.getLogger(__name__)
 
 
-# todo: clean out commented out tf code
 class FeedForwardAttentionReducer(LudwigModule):
     def __init__(self, input_size, hidden_size=256, activation='tanh'):
         super().__init__()
@@ -53,43 +52,29 @@ class MultiHeadSelfAttention(LudwigModule):
                 f"should be divisible by number of heads = {num_heads}"
             )
         self.projection_dim = hidden_size // num_heads
-        # self.query_dense = Dense(hidden_size)
         self.query_dense = nn.Linear(input_size, hidden_size)
-        # self.key_dense = Dense(hidden_size)
         self.key_dense = nn.Linear(input_size, hidden_size)
-        # self.value_dense = Dense(hidden_size)
         self.value_dense = nn.Linear(input_size, hidden_size)
-        # self.combine_heads = Dense(hidden_size)
         self.combine_heads = nn.Linear(hidden_size, hidden_size)
 
     def attention(self, query, key, value, mask=None):
-        # score = tf.matmul(query, key, transpose_b=True)
         score = torch.matmul(query, key.permute(0, 1, 3, 2))
-        # dim_key = tf.cast(tf.shape(key)[-1], tf.float32)
         dim_key = torch.tensor(key.shape[-1]).type(torch.float32)
-        # scaled_score = score / tf.math.sqrt(dim_key)
         scaled_score = score / torch.sqrt(dim_key)
         if mask:
             scaled_score = mask * scaled_score
-        # weights = tf.nn.softmax(scaled_score, axis=-1)
         weights = F.softmax(scaled_score, dim=-1)
-        # output = tf.matmul(weights, value)
         output = torch.matmul(weights, value)
         return output, weights
 
     def separate_heads(self, inputs, batch_size):
-        # inputs = tf.reshape(
-        #     inputs, (batch_size, -1, self.num_heads, self.projection_dim)
-        # )
         inputs = torch.reshape(
             inputs, (batch_size, -1, self.num_heads, self.projection_dim)
         )
-        # return tf.transpose(inputs, perm=[0, 2, 1, 3])
         return torch.permute(inputs, (0, 2, 1, 3))
 
-    def forward(self, inputs, training=None, mask=None):
-        # x.shape = [batch_size, seq_len, embedding_dim]
-        # batch_size = tf.shape(inputs)[0]
+    def forward(self, inputs: torch.Tensor, training=None, mask=None):
+        # inputs.shape = [batch_size, seq_len, embedding_dim]
         batch_size = inputs.shape[0]
         query = self.query_dense(inputs)  # (batch_size, seq_len, h)
         key = self.key_dense(inputs)  # (batch_size, seq_len, h)
@@ -104,15 +89,9 @@ class MultiHeadSelfAttention(LudwigModule):
             value, batch_size
         )  # (batch_size, num_heads, seq_len, projection_dim)
         outputs, weights = self.attention(query, key, value, mask=mask)
-        # outputs = tf.transpose(
-        #     outputs, perm=[0, 2, 1, 3]
-        # )  # (batch_size, seq_len, num_heads, projection_dim)
         outputs = torch.permute(
             outputs, (0, 2, 1, 3)
         )  # (batch_size, seq_len, num_heads, projection_dim)
-        # concat_outputs = tf.reshape(
-        #     outputs, (batch_size, -1, self.embedding_size)
-        # )  # (batch_size, seq_len, h)
         concat_outputs = torch.reshape(
             outputs, (batch_size, -1, self.embedding_size)
         )  # (batch_size, seq_len, h)
@@ -133,21 +112,14 @@ class TransformerBlock(LudwigModule):
         self.self_attention = MultiHeadSelfAttention(
             input_size, hidden_size, num_heads=num_heads
         )
-        # self.dropout1 = Dropout(dropout)
         self.dropout1 = nn.Dropout(dropout)
-        # self.layernorm1 = LayerNormalization(epsilon=1e-6)
         self.layernorm1 = nn.LayerNorm(hidden_size, eps=1e-6)
-        # self.fully_connected = Sequential(
-        #     [Dense(fc_size, activation="relu"), Dense(hidden_size)]
-        # )
         self.fully_connected = nn.Sequential(
             nn.Linear(input_size, fc_size),
             get_activation('relu'),
             nn.Linear(fc_size, hidden_size)
         )
-        # self.dropout2 = Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
-        # self.layernorm2 = LayerNormalization(epsilon=1e-6)
         self.layernorm2 = nn.LayerNorm(hidden_size, eps=1e-6)
 
     @property
@@ -196,9 +168,8 @@ class TransformerStack(LudwigModule):
             self.layers.append(layer)
             prior_input_size = self.layers[i].output_shape[-1]
 
-        # todo: revisit with solution on how to name layers for logging purposes
-        # for layer in self.layers:
-        #     logger.debug('   {}'.format(layer.name))
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer._get_name()))
 
     @property
     def input_shape(self) -> torch.Size:

@@ -57,7 +57,7 @@ def check_combiner_output(combiner, combiner_output, batch_size):
 
     # check for correct output shape
     assert combiner_output['combiner_output'].shape \
-           == (batch_size, *combiner.output_shape)
+        == (batch_size, *combiner.output_shape)
 
 
 # generates encoder outputs and minimal input feature objects for testing
@@ -221,7 +221,7 @@ def test_concat_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -253,7 +253,7 @@ def test_sequence_concat_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -297,7 +297,7 @@ def test_sequence_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -415,7 +415,7 @@ def test_transformer_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -481,7 +481,7 @@ def test_tabtransformer_combiner(
     combiner = TabTransformerCombiner(
         input_features=input_features,
         embed_input_feature_name=embed_input_feature_name,
-        ### emulates parameters passed from combiner def
+        # emulates parameters passed from combiner def
         num_layers=num_layers,  # number of transformer layers
         fc_layers=fc_layers,  # fully_connected layer definition
         reduce_output=reduce_output  # sequence reducer

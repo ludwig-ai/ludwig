@@ -17,21 +17,7 @@ import torch
 
 from ludwig.utils.misc_utils import get_from_registry
 
-'''
-optimizers_registry = {
-    'sgd': tf.keras.optimizers.SGD,
-    'stochastic_gradient_descent': tf.keras.optimizers.SGD,
-    'gd': tf.keras.optimizers.SGD,
-    'gradient_descent': tf.keras.optimizers.SGD,
-    'adam': tf.keras.optimizers.Adam,
-    'adadelta': tf.keras.optimizers.Adadelta,
-    'adagrad': tf.keras.optimizers.Adagrad,
-    'adamax': tf.keras.optimizers.Adamax,
-    'ftrl': tf.keras.optimizers.Ftrl,
-    'nadam': tf.keras.optimizers.Nadam,
-    'rmsprop': tf.keras.optimizers.RMSprop,
-}
-'''
+
 optimizers_registry = {
     'sgd': torch.optim.SGD,
     'stochastic_gradient_descent': torch.optim.SGD,
@@ -62,7 +48,6 @@ def ClippedOptimizer(params, #model params
 
 def clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
                    horovod=None, **kwargs):
-    #class _ClippedOptimizer(tf.keras.optimizers.Optimizer):
     class _ClippedOptimizer(torch.optim.Optimizer):
         def __init__(self, **kwargs):
             self.clipglobalnorm = clipglobalnorm
@@ -71,31 +56,6 @@ def clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
             self.horovod = horovod
             super(self.__class__, self).__init__(**kwargs)
 
-        '''
-        def minimize_with_tape(self, tape, loss, variables):
-            if self.horovod:
-                tape = self.horovod.DistributedGradientTape(tape)
-
-            gradients = tape.gradient(loss, variables)
-            if self.clipglobalnorm:
-                gradients, _ = tf.clip_by_global_norm(gradients,
-                                                      self.clipglobalnorm)
-            if self.clipnorm:
-                gradients = map(
-                    lambda x: tf.clip_by_norm(x, self.clipnorm),
-                    gradients
-                )
-            if self.clipvalue:
-                gradients = map(
-                    lambda x: tf.clip_by_value(
-                        x,
-                        clip_value_min=self.clipvalue[0],
-                        clip_value_max=self.clipvalue[1]
-                    ),
-                    gradients
-                )
-            self.apply_gradients(zip(gradients, variables))
-        '''
         def minimize(self, loss, variables):
             # if self.horovod:
             #     tape = self.horovod.DistributedGradientTape(tape)
