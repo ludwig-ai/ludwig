@@ -195,7 +195,7 @@ def test_kfold_cv_api_from_file():
         ]
 
         output_features = [
-            category_feature(vocab_size=2, reduce_input='sum')
+            category_feature(vocab_size=3, reduce_input='sum')
         ]
 
         generate_data(input_features, output_features, training_data_fp)
