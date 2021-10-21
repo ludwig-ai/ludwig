@@ -287,7 +287,7 @@ def cli(sys_argv):
 
     args.backend = initialize_backend(args.backend)
     if args.backend.is_coordinator():
-        print_ludwig('Test', LUDWIG_VERSION)
+        print_ludwig('Evaluate', LUDWIG_VERSION)
         logger.info('Dataset path: {}'.format(args.dataset))
         logger.info('Model path: {}'.format(args.model_path))
         logger.info('')
