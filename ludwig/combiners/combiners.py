@@ -416,6 +416,7 @@ class SequenceCombiner(CombinerClass):
 class TabNetCombiner(Module):
     def __init__(
             self,
+            input_features: Dict,
             size: int,  # N_a in the paper
             output_size: int = 32,  # N_d in the paper
             num_steps: int = 1,  # N_steps in the paper
@@ -428,13 +429,17 @@ class TabNetCombiner(Module):
             sparsity: float = 1e-5,  # lambda_sparse in the paper
             dropout=0,
             **kwargs
-    ):
+    ) -> None:
         super().__init__()
+        self.name = 'TabNetCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
+
         self.tabnet = TabNet(
-            size=size,
-            output_size=output_size,
+            self.concatenated_shape[-1],
+            size,
+            output_size,
             num_steps=num_steps,
             num_total_blocks=num_total_blocks,
             num_shared_blocks=num_shared_blocks,
@@ -446,46 +451,50 @@ class TabNetCombiner(Module):
         )
 
         if dropout > 0:
-            self.dropout = tf.keras.layers.Dropout(dropout)
+            self.dropout = torch.nn.Dropout(dropout)
         else:
             self.dropout = None
 
-    def build(self, input_shape):
-        self.flatten_layers = {
-            k: tf.keras.layers.Flatten()
-            for k in input_shape.keys()
-        }
+    # todo: tf specific remove
+    # def build(self, input_shape):
+    #     self.flatten_layers = {
+    #         k: tf.keras.layers.Flatten()
+    #         for k in input_shape.keys()
+    #     }
 
-    def call(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
+    def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
-        encoder_output_map = {
-            k: inputs[k]['encoder_output'] for k in inputs
-        }
+            inputs: torch.Tensor,  # encoder outputs
+    ) -> Dict:
+        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
         # ================ Flatten ================
+        batch_size = encoder_outputs[0].shape[0]
         encoder_outputs = [
-            self.flatten_layers[k](eo)
-            for k, eo in encoder_output_map.items()
+            torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
         ]
 
         # ================ Concat ================
         if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, 1)
+            hidden = torch.cat(encoder_outputs, 1)
         else:
             hidden = list(encoder_outputs)[0]
 
         # ================ TabNet ================
         hidden, aggregated_mask, masks = self.tabnet(
-            hidden,
-            training=training,
+            hidden
         )
         if self.dropout:
-            hidden = self.dropout(hidden, training=training)
+            hidden = self.dropout(hidden)
 
         return_data = {'combiner_output': hidden,
                        'aggregated_attention_masks': aggregated_mask,
