@@ -117,7 +117,7 @@ class Trainer(BaseTrainer):
             decay_steps=10000,
             staircase=False,
             batch_size=128,
-            eval_batch_size=0,
+            eval_batch_size=None,
             should_shuffle=True,
             shuffle_buffer_size=None,
             bucketing_field=None,
@@ -248,7 +248,7 @@ class Trainer(BaseTrainer):
         self.decay_steps = decay_steps
         self.staircase = staircase
         self.batch_size = batch_size
-        self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
+        self.eval_batch_size = batch_size if eval_batch_size is None else eval_batch_size
         self.should_shuffle = should_shuffle
         self.shuffle_buffer_size = shuffle_buffer_size
         self.bucketing_field = bucketing_field

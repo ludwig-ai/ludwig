@@ -1149,7 +1149,7 @@ class LudwigModel:
                            f"Using validation set instead")
 
         if eval_set is not None:
-            if self.config[TRAINING]['eval_batch_size'] > 0:
+            if self.config[TRAINING]['eval_batch_size']:
                 batch_size = self.config[TRAINING]['eval_batch_size']
             else:
                 batch_size = self.config[TRAINING]['batch_size']

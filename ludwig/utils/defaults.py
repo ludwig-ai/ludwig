@@ -52,7 +52,7 @@ default_training_params = {
     'regularization_lambda': 0,
     'learning_rate': 0.001,
     'batch_size': 128,
-    'eval_batch_size': 0,
+    'eval_batch_size': None,
     'early_stop': 5,
     'reduce_learning_rate_on_plateau': 0,
     'reduce_learning_rate_on_plateau_patience': 5,
