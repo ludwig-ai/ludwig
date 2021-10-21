@@ -31,6 +31,12 @@ def test_tune_batch_size_and_lr(tmpdir):
         }
 
         model = LudwigModel(config, backend=LocalTestBackend())
+
+        # check preconditions
+        assert model.config[TRAINING][BATCH_SIZE] == 'auto'
+        assert model.config[TRAINING][EVAL_BATCH_SIZE] == 'auto'
+        assert model.config[TRAINING][LEARNING_RATE] == 'auto'
+
         _, _, output_directory = model.train(
             training_set=data_csv,
             validation_set=val_csv,
@@ -38,15 +44,23 @@ def test_tune_batch_size_and_lr(tmpdir):
             output_directory=outdir
         )
 
-        # check batch size
-        assert model.config[TRAINING][BATCH_SIZE] != 'auto'
-        assert model.config[TRAINING][BATCH_SIZE] > 1
+        def check_postconditions(model):
+            # check batch size
+            assert model.config[TRAINING][BATCH_SIZE] != 'auto'
+            assert model.config[TRAINING][BATCH_SIZE] > 1
 
-        assert model.config[TRAINING][EVAL_BATCH_SIZE] != 'auto'
-        assert model.config[TRAINING][EVAL_BATCH_SIZE] > 1
+            assert model.config[TRAINING][EVAL_BATCH_SIZE] != 'auto'
+            assert model.config[TRAINING][EVAL_BATCH_SIZE] > 1
 
-        assert model.config[TRAINING][BATCH_SIZE] == model.config[TRAINING][EVAL_BATCH_SIZE]
+            assert model.config[TRAINING][BATCH_SIZE] == model.config[TRAINING][EVAL_BATCH_SIZE]
 
-        # check learning rate
-        assert model.config[TRAINING][LEARNING_RATE] != 'auto'
-        assert model.config[TRAINING][LEARNING_RATE] > 0
+            # check learning rate
+            assert model.config[TRAINING][LEARNING_RATE] != 'auto'
+            assert model.config[TRAINING][LEARNING_RATE] > 0
+
+        check_postconditions(model)
+
+        model = LudwigModel.load(os.path.join(output_directory, 'model'))
+
+        # loaded model should retain the tuned params
+        check_postconditions(model)
