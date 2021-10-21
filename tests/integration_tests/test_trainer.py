@@ -2,15 +2,12 @@ import os
 import shutil
 import tempfile
 
-import yaml
-
 from ludwig.api import LudwigModel
-from ludwig.backend import initialize_backend
-from ludwig.constants import TRAINING, BATCH_SIZE, EVAL_BATCH_SIZE
+from ludwig.constants import TRAINING, BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE
 from tests.integration_tests.utils import sequence_feature, category_feature, generate_data, LocalTestBackend
 
 
-def test_tune_batch_size(tmpdir):
+def test_tune_batch_size_and_lr(tmpdir):
     with tempfile.TemporaryDirectory() as outdir:
         input_features = [sequence_feature(reduce_output='sum')]
         output_features = [category_feature(vocab_size=2, reduce_input='sum')]
@@ -29,6 +26,7 @@ def test_tune_batch_size(tmpdir):
                 'epochs': 2,
                 'batch_size': 'auto',
                 'eval_batch_size': 'auto',
+                'learning_rate': 'auto',
             },
         }
 
@@ -40,8 +38,7 @@ def test_tune_batch_size(tmpdir):
             output_directory=outdir
         )
 
-        # Check batch size
-        print(model.config)
+        # check batch size
         assert model.config[TRAINING][BATCH_SIZE] != 'auto'
         assert model.config[TRAINING][BATCH_SIZE] > 1
 
@@ -49,3 +46,7 @@ def test_tune_batch_size(tmpdir):
         assert model.config[TRAINING][EVAL_BATCH_SIZE] > 1
 
         assert model.config[TRAINING][BATCH_SIZE] == model.config[TRAINING][EVAL_BATCH_SIZE]
+
+        # check learning rate
+        assert model.config[TRAINING][LEARNING_RATE] != 'auto'
+        assert model.config[TRAINING][LEARNING_RATE] > 0

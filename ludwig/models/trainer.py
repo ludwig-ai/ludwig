@@ -424,7 +424,7 @@ class Trainer(BaseTrainer):
         ) as batcher:
             step_count = 0
             while epoch < self.epochs and step_count < total_training_steps and not diverging:
-                batcher.set_epoch(epoch)
+                batcher.set_epoch(epoch, self.batch_size)
                 model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
                     batch = batcher.next_batch()
