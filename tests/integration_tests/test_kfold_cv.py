@@ -56,61 +56,64 @@ FEATURES_TO_TEST = [
             category_feature(vocab_size=4, reduce_input='sum')
         ]
     ),
-    FeaturesToUse(
-        # input feature
-        [
-            sequence_feature(
-                min_len=5,
-                max_len=10,
-                encoder='rnn',
-                cell_type='lstm',
-                reduce_output=None
-            )
-        ],
-        # output feature
-        [
-            sequence_feature(
-                min_len=5,
-                max_len=10,
-                decoder='generator',
-                cell_type='lstm',
-                attention='bahdanau',
-                reduce_input=None
-            )
-        ]
-    ),
-    FeaturesToUse(
-        # input feature
-        [
-            sequence_feature(
-                min_len=5,
-                max_len=10,
-                encoder='rnn',
-                cell_type='lstm',
-                reduce_output=None
-            )
-
-        ],
-        # output feature
-        [
-            sequence_feature(
-                max_len=10,
-                decoder='tagger',
-                reduce_input=None
-            )
-        ]
-    ),
-    FeaturesToUse(
-        # input feature
-        [
-            numerical_feature(normalization='zscore'),
-            numerical_feature(normalization='zscore')
-        ],
-        # output feature
-        [
-            text_feature()
-        ]
-    ),
+    # todo: re-enable this test case after output sequence feature ported
+    # FeaturesToUse(
+    #     # input feature
+    #     [
+    #         sequence_feature(
+    #             min_len=5,
+    #             max_len=10,
+    #             encoder='rnn',
+    #             cell_type='lstm',
+    #             reduce_output=None
+    #         )
+    #     ],
+    #     # output feature
+    #     [
+    #         sequence_feature(
+    #             min_len=5,
+    #             max_len=10,
+    #             decoder='generator',
+    #             cell_type='lstm',
+    #             attention='bahdanau',
+    #             reduce_input=None
+    #         )
+    #     ]
+    # ),
+    # todo: re-enable this test case after output sequence feature ported
+    # FeaturesToUse(
+    #     # input feature
+    #     [
+    #         sequence_feature(
+    #             min_len=5,
+    #             max_len=10,
+    #             encoder='rnn',
+    #             cell_type='lstm',
+    #             reduce_output=None
+    #         )
+    #
+    #     ],
+    #     # output feature
+    #     [
+    #         sequence_feature(
+    #             max_len=10,
+    #             decoder='tagger',
+    #             reduce_input=None
+    #         )
+    #     ]
+    # ),
+    # todo: re-enable this test case after output text feature ported
+    # FeaturesToUse(
+    #     # input feature
+    #     [
+    #         numerical_feature(normalization='zscore'),
+    #         numerical_feature(normalization='zscore')
+    #     ],
+    #     # output feature
+    #     [
+    #         text_feature()
+    #     ]
+    # ),
 ]
 
 
