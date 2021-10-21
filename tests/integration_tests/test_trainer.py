@@ -47,3 +47,5 @@ def test_tune_batch_size(tmpdir):
 
         assert model.config[TRAINING][EVAL_BATCH_SIZE] != 'auto'
         assert model.config[TRAINING][EVAL_BATCH_SIZE] > 1
+
+        assert model.config[TRAINING][BATCH_SIZE] == model.config[TRAINING][EVAL_BATCH_SIZE]

@@ -340,14 +340,15 @@ class Trainer(BaseTrainer):
         self,
         model,
         dataset,
-        total_steps=3,
+        batch_size: int,
+        total_steps: int = 3,
     ):
         """ function to be used by tune_batch_size """
         with dataset.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            shuffle_buffer_size=self.shuffle_buffer_size,
-            horovod=self.horovod
+            batch_size=batch_size,
+            should_shuffle=False,
+            shuffle_buffer_size=0,
+            horovod=None
         ) as batcher:
 
             step_count = 0
@@ -518,7 +519,7 @@ class Trainer(BaseTrainer):
                 try:
                     # re-initalize model...
                     model = LudwigModel.create_model(config, random_seed)
-                    self.train_for_tuning(model, training_set, total_steps=3)
+                    self.train_for_tuning(model, training_set, batch_size, total_steps=3)
                     count += 1
                     if count >= max_trials:
                         break
