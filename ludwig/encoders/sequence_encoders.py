@@ -1548,7 +1548,7 @@ class StackedRNN(SequenceEncoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        if self.fc_stack:
+        if self.reduce_output is not None:
             return self.fc_stack.output_shape
         return self.recurrent_stack.output_shape
 
