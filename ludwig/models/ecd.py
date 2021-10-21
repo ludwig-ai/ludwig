@@ -36,7 +36,6 @@ class ECD(LudwigModule):
         self._random_seed = random_seed
 
         if random_seed is not None:
-            #tf.random.set_seed(random_seed)
             torch.random.manual_seed(random_seed)
 
         super().__init__()
@@ -69,7 +68,6 @@ class ECD(LudwigModule):
         self.output_features.update(build_outputs(output_features_def, self.combiner))
 
         # ================ Combined loss metric ================
-        #self.eval_loss_metric = tf.keras.metrics.Mean()
         self.eval_loss_metric = torchmetrics.average.AverageMeter()
 
         # After constructing all layers, clear the cache to free up memory
@@ -93,6 +91,7 @@ class ECD(LudwigModule):
         }
         return inputs, targets
 
+    # TODO(shreya): Figure out model saving, loading.
     '''
     def get_connected_model(self, training=True, inputs=None):
         inputs = inputs or self.get_model_inputs(training)
@@ -196,32 +195,21 @@ class ECD(LudwigModule):
 
         return predictions
 
-    #@tf.function
     def train_step(self, optimizer, inputs, targets,
                    regularization_lambda=0.0):
-        #with tf.GradientTape() as tape:
         optimizer.zero_grad()
         model_outputs = self((inputs, targets))
         loss, all_losses = self.train_loss(
             targets, model_outputs, regularization_lambda
         )
-        '''
-        optimizer.minimize_with_tape(
-            tape, loss, self.trainable_variables
-        )
-        '''
         optimizer.minimize(loss, self.parameters())
-        # grads = tape.gradient(loss, model.trainable_weights)
-        # optimizer.apply_gradients(zip(grads, model.trainable_weights))
         return loss, all_losses
 
-    #@tf.function
     def evaluation_step(self, inputs, targets):
         predictions = self.predictions(inputs, output_features=None)
         self.update_metrics(targets, predictions)
         return predictions
 
-    #@tf.function
     def predict_step(self, inputs):
         return self.predictions(inputs, output_features=None)
 
@@ -293,25 +281,16 @@ class ECD(LudwigModule):
     ):
         def recurse_weights(model, prefix=None):
             results = []
-            #for layer in model.layers:
             for name, layer in model.named_children():
-                #layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
                 layer_prefix = f'{prefix}/{name}' if prefix else name
-                #if isinstance(layer, tf.keras.Model):
                 if isinstance(layer, Module):
                     if list(layer.children()):
                         results += recurse_weights(layer, layer_prefix)
                     else:
-                        '''
-                        results += [(f'{layer_prefix}/{w.name}', w) for w in
-                                    layer.weights]
-                        '''
                         results += [(f'{layer_prefix}/{w_name}', w) for w_name, w in
                                     layer.named_parameters()]
             return results
 
-        #connected_model = self.get_connected_model()
-        #weights = recurse_weights(connected_model)
         weights = recurse_weights(self)
         if tensor_names:
             # Check for bad tensor names

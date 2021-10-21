@@ -147,6 +147,8 @@ def test_conv1d_stack(
     # check for correct output class
     assert isinstance(out_tensor, torch.Tensor)
 
+    assert out_tensor.size()[1:] == conv1_stack.output_shape[:]
+
     # check for correct output shape
     last_module = conv1_stack.stack[-1]
     output_seq_size = expected_seq_size(
@@ -267,10 +269,10 @@ def test_parallel_conv1d_stack(
         assert len(parallel_conv1d_stack.stack) == len(stacked_layers)
         assert len(parallel_conv1d_stack.stack[0].parallel_layers) == 3
         assert parallel_conv1d_stack.stack[0].parallel_layers[2].kernel_size \
-               == TEST_FILTER_SIZE0
+            == TEST_FILTER_SIZE0
         assert len(parallel_conv1d_stack.stack[1].parallel_layers) == 4
         assert parallel_conv1d_stack.stack[1].parallel_layers[3].kernel_size \
-               == TEST_FILTER_SIZE1
+            == TEST_FILTER_SIZE1
 
     # generate output tensor
     out_tensor = parallel_conv1d_stack(input)
