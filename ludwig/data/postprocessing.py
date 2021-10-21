@@ -66,6 +66,7 @@ def _save_as_numpy(predictions, output_directory, saved_keys):
     numpy_predictions = to_numpy_dataset(predictions)
     for k, v in numpy_predictions.items():
         if k not in saved_keys:
+            k = k.replace('<', '[').replace('>', ']')  # Replace <UNK> and <PAD>
             np.save(npy_filename.format(k), v)
             saved_keys.add(k)
 
