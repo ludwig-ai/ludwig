@@ -902,6 +902,7 @@ class Trainer(BaseTrainer):
                 tables[COMBINED] = [[COMBINED, LOSS]]
 
                 # eval metrics on train
+                self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
                 self.evaluation(
                     model,
                     training_set,
