@@ -440,7 +440,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         assert len(inputs.shape) == 3
 
         encoder_output = self.encoder_obj(
-            inputs, training=training, mask=mask
+            inputs, mask=mask
         )
 
         return encoder_output
