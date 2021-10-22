@@ -154,10 +154,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask=None):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
-            inputs.dtype == torch.int32 or inputs.dtype == torch.int64
+        assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16, \
+            torch.int32, torch.int64]
         assert len(inputs.shape) == 2
 
         inputs_exp = inputs.type(torch.int32)

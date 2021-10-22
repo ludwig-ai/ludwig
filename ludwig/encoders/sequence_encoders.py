@@ -214,15 +214,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             embedding_regularizer=weights_regularizer
         )
 
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
-
-    @property
-    def output_shape(self) -> torch.Size:
-        return torch.Size([self.embedding_size])
-
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
@@ -238,6 +230,16 @@ class SequenceEmbedEncoder(SequenceEncoder):
 
         return {'encoder_output': hidden}
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    # TODO(shreya): Add general module for getting output shapes post reduction.
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output in ['none', 'None', None]:
+            self.embed_sequence.output_shape
+        return torch.Size([1])
 
 @register(name='parallel_cnn')
 class ParallelCNN(SequenceEncoder):
@@ -1552,6 +1554,9 @@ class StackedRNN(SequenceEncoder):
             return self.fc_stack.output_shape
         return self.recurrent_stack.output_shape
 
+    def input_dtype(self):
+        return torch.int32
+
     def forward(self, inputs, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
@@ -1582,10 +1587,7 @@ class StackedRNN(SequenceEncoder):
             hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
-            hidden = self.fc_stack(
-                hidden,
-                mask=mask
-            )
+            hidden = self.fc_stack(hidden, mask=mask)
 
         return {
             'encoder_output': hidden,

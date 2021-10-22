@@ -3,6 +3,7 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import SPLIT
@@ -15,7 +16,7 @@ from tests.integration_tests.utils import binary_feature, numerical_feature, \
 
 
 def test_model_save_reload_api(csv_filename, tmp_path):
-    tf.random.set_seed(1234)
+    torch.manual_seed(1234)
 
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     audio_dest_folder = os.path.join(os.getcwd(), 'generated_audio')

@@ -41,11 +41,6 @@ class ECD(LudwigModule):
         super().__init__()
 
         # ================ Inputs ================
-        '''
-        self.input_features = build_inputs(
-            input_features_def
-        )
-        '''
         self.input_features = torch.nn.ModuleDict()
         self.input_features.update(build_inputs(input_features_def))
 
@@ -58,12 +53,6 @@ class ECD(LudwigModule):
         )
 
         # ================ Outputs ================
-        '''
-        self.output_features = build_outputs(
-            output_features_def,
-            self.combiner
-        )
-        '''
         self.output_features = torch.nn.ModuleDict()
         self.output_features.update(build_outputs(output_features_def, self.combiner))
 

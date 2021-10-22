@@ -138,6 +138,10 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
+
     @staticmethod
     def update_config_with_metadata(
             input_feature, feature_metadata, *args, **kwargs

@@ -103,14 +103,12 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.uint8, torch.int64]
         assert len(inputs.shape) == 2
 
-        inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 
