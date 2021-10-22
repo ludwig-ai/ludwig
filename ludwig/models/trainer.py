@@ -758,7 +758,8 @@ class Trainer(BaseTrainer):
             # ================ Training Loop ================
             first_batch = True
             while progress_tracker.epoch < self.epochs:
-                batcher.set_epoch(progress_tracker.epoch)
+                # note that batch size may change over epochs
+                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
                 # epoch init
                 start_time = time.time()
@@ -769,9 +770,6 @@ class Trainer(BaseTrainer):
                             digits=digits_per_epochs
                         )
                     )
-
-                # needed because batch size may change
-                batcher.batch_size = progress_tracker.batch_size
 
                 # Reset the metrics at the start of the next epoch
                 model.reset_metrics()
