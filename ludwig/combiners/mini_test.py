@@ -23,35 +23,6 @@ activation_registry = ['relu']
 reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', None]
 
 
-# Initializers accept presets or customized dicts (not JSON-validated):
-class WeightsInitializerField(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, str) or isinstance(value, dict):
-            return value
-        else:
-            raise ValidationError('Field should be str or dict')
-    
-    def _jsonschema_type_mapping(self):
-        return {
-            "oneOf": [
-                {
-                    "type": "object",
-                }, 
-                {
-                    'type': 'string',
-                    'enum': preset_weights_initializer_registry
-                }
-            ]
-        }
-WeightsInitializerType = marshmallow_dataclass.NewType(
-        name='WeightsInitializerType',
-        typ=Union[str, dict],
-        field=WeightsInitializerField
-        # required=False,
-        # dump_default='glorot_uniform',
-        # load_default='glorot_uniform'
-)
-
 # Thinking about what behavior was before this PR at all, consider simple scenario
 # fc_size=1 as a default param to some combiner.
 # What does this mean in the context of JSON? If there is *any* default value at all, then we must both serialize and deserialize
@@ -59,6 +30,9 @@ WeightsInitializerType = marshmallow_dataclass.NewType(
 # we do not want to allow 'None' as an option that can be specified.
 
 def create_field_EnumType(name, enum_registry, required=False, nullable=False, **kwargs) -> Type[marshmallow_dataclass.NewType]:
+    print(kwargs)
+    print('default_enum_value' in kwargs)
+    print(required)
     if 'load_default' in kwargs or 'dump_default' in kwargs:
         raise ValidationError("Use 'default_enum_value' instead with this method.")
     if required == ('default_enum_value' in kwargs):
@@ -74,22 +48,28 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
     if not required:
         type_params['dump_default'] = kwargs['default_enum_value']
         type_params['load_default'] = kwargs['default_enum_value']
-        print(type_params)
 
     # Create the enum schema:
-    # TODO: Still need to confirm 
+    # TODO: explore better way for validation rather than in both (de)serialize methods?
     class InnerEnumField(fields.Field):
         # WARNING: I shouldn't need to override __init__, but I cannot figure out why load_default is not set through
         # the normal flow. This hack only modifies that field, so it should work for now.
         def __init__(self, **kwargs):
-            if not required:
-                kwargs['load_default'] = type_params['load_default'] 
+            print('init')
+
             super().__init__(**kwargs)
+            if not required:
+                #kwargs['load_default'] = type_params['load_default']
+                self.dump_default = type_params['dump_default']
+                self.load_default = type_params['load_default']
+            self.allow_none = nullable
+            self.required = required
 
         def _deserialize(self, value, attr, data, **kwargs):
             print('deserialize')
             if not value in allowed_enums:
                 raise ValidationError(f"Value '{value}' is not one of acceptable: {allowed_enums}")
+            print(value)
             return value
 
         def _serialize(self, value, attr, obj, **kwargs):
@@ -97,10 +77,6 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
             if not value in allowed_enums:
                 raise ValidationError(f"Value '{value}' is not one of acceptable: {allowed_enums}")
             return None if value is None else value
-            # if value is None:
-            #     return ""
-            # return "".join(str(d) for d in value)
-
 
         def _jsonschema_type_mapping(self):
             json_mapping = {'description': name}
@@ -134,12 +110,8 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
         name=name,
         typ=allowed_types,
         field=InnerEnumField,
-        #allow_none=True,
-        # _deserialize=InnerEnumField._deserialize
-        # required=required,
-        **type_params,
-        #load_default=kwargs['default_enum_value'],
-        #validate=validate.OneOf(enum_registry),
+        # allow_none=False,
+        # **type_params,
         **kwargs
     )
 
@@ -147,22 +119,6 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
         # Necessary for correct construction with dataclass:
         return Optional[t]
     return t
-
-    # return marshmallow_dataclass.NewType(
-    #     name=name,
-    #     typ=str,
-    #     validate=validate.OneOf(enum_registry),
-    #     required=required,
-    #     # dump_default=default,
-    #     # load_default=default,
-    #     **kwargs
-    # )
-
-
-    # return field(metadata=dict(
-    #     validate=validate.OneOf(enum_registry),
-    #     **kwargs
-    # ))
 
 @dataclass
 class ConcatCombinerData:
@@ -188,12 +144,33 @@ class ConcatCombinerData:
 
    # weights_initializer: WeightsInitializerType
     # bias_initializer: BiasInitializerType
-    weights_regularizer:create_field_EnumType(
+    weights_regularizer_:create_field_EnumType(
+        'WeightsRegularizerType',
+        weights_regularizer_registry,
+        required=False,
+        nullable=False,
+        default_enum_value='l2'
+    )
+    weights_regularizer_r:create_field_EnumType(
+        'WeightsRegularizerType',
+        weights_regularizer_registry,
+        required=True,
+        nullable=False,
+        #default_enum_value='l1'
+    )
+    weights_regularizer_n:create_field_EnumType(
         'WeightsRegularizerType',
         weights_regularizer_registry,
         required=False,
         nullable=True,
-        default_enum_value='l1'
+        default_enum_value='l1_l2'
+    )
+    weights_regularizer_rn:create_field_EnumType(
+        'WeightsRegularizerType',
+        weights_regularizer_registry,
+        required=True,
+        nullable=True,
+        # default_enum_value=None
     )
     # bias_regularizer: Optional[str] = field(metadata=dict(
     #     validate=validate.OneOf(bias_regularizer_registry),
@@ -238,12 +215,12 @@ class ConcatCombinerData:
     #     load_default=False
     # ))
 
-    # class Meta:
-    #     unknown = INCLUDE
+    class Meta:
+        unknown = INCLUDE
 
 ConcatCombinerSchema = marshmallow_dataclass.class_schema(ConcatCombinerData)()
-
-print(jsonGenerator.dump(ConcatCombinerSchema))
-print(json.dumps(jsonGenerator.dump(ConcatCombinerSchema)))
-print(ConcatCombinerSchema.dump({'weights_regularizer': 'l1'}))
-print(ConcatCombinerSchema.load({'weights_regularizer': 'None'}))
+print()
+# print(jsonGenerator.dump(ConcatCombinerSchema))
+# print(json.dumps(jsonGenerator.dump(ConcatCombinerSchema)))
+# print(ConcatCombinerSchema.dump({'weights_regularizer': 'l1'}))
+print(ConcatCombinerSchema.load({'weights_regularizer_rn': None, 'weights_regularizer_r': 'l1'}))
