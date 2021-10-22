@@ -32,7 +32,6 @@ from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.data.dataset.ray import RayDataset
 from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
@@ -410,31 +409,40 @@ class LudwigModel:
                             key, pformat(value, indent=4)))
                     logger.info('\n')
 
-                preprocessed_data = self.preprocess(
-                    dataset=dataset,
-                    training_set=training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    training_set_metadata=training_set_metadata,
-                    data_format=data_format,
-                    experiment_name=experiment_name,
-                    model_name=model_name,
-                    model_resume_path=model_resume_path,
-                    skip_save_training_description=skip_save_training_description,
-                    skip_save_training_statistics=skip_save_training_statistics,
-                    skip_save_model=skip_save_model,
-                    skip_save_progress=skip_save_progress,
-                    skip_save_log=skip_save_log,
-                    skip_save_processed_input=skip_save_processed_input,
-                    output_directory=output_directory,
-                    random_seed=random_seed,
-                    devbug=debug,
-                    **kwargs,
-                )
-                (training_set,
-                 validation_set,
-                 test_set,
-                 training_set_metadata) = preprocessed_data
+                for callback in self.callbacks:
+                    callback.on_preprocess_start(self.config)
+
+                try:
+                    preprocessed_data = self.preprocess(
+                        dataset=dataset,
+                        training_set=training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        training_set_metadata=training_set_metadata,
+                        data_format=data_format,
+                        experiment_name=experiment_name,
+                        model_name=model_name,
+                        model_resume_path=model_resume_path,
+                        skip_save_training_description=skip_save_training_description,
+                        skip_save_training_statistics=skip_save_training_statistics,
+                        skip_save_model=skip_save_model,
+                        skip_save_progress=skip_save_progress,
+                        skip_save_log=skip_save_log,
+                        skip_save_processed_input=skip_save_processed_input,
+                        output_directory=output_directory,
+                        random_seed=random_seed,
+                        devbug=debug,
+                        **kwargs,
+                    )
+                    (training_set,
+                     validation_set,
+                     test_set,
+                     training_set_metadata) = preprocessed_data
+                finally:
+                    for callback in self.callbacks:
+                        callback.on_preprocess_end(
+                            training_set, validation_set, test_set, training_set_metadata
+                        )
 
             self.training_set_metadata = training_set_metadata
 
@@ -887,9 +895,9 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 # TODO ray: support calculating stats on partitioned datasets
-                if isinstance(dataset, RayDataset):
+                if self.backend.df_engine.partitioned:
                     raise ValueError(
-                        'Cannot calculate overall stats on a ray dataset at this time. '
+                        'Cannot calculate overall stats on a partitioned DataFrame at this time. '
                         'Set `calculate_overall_stats=False`.'
                     )
 

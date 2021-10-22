@@ -743,7 +743,8 @@ class Trainer(BaseTrainer):
             # ================ Training Loop ================
             first_batch = True
             while progress_tracker.epoch < self.epochs:
-                batcher.set_epoch(progress_tracker.epoch)
+                # note that batch size may change over epochs
+                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
 
                 # epoch init
                 start_time = time.time()
@@ -754,9 +755,6 @@ class Trainer(BaseTrainer):
                             digits=digits_per_epochs
                         )
                     )
-
-                # needed because batch size may change
-                batcher.batch_size = progress_tracker.batch_size
 
                 # Reset the metrics at the start of the next epoch
                 model.reset_metrics()
@@ -812,6 +810,7 @@ class Trainer(BaseTrainer):
 
                     # obtain batch
                     batch = batcher.next_batch()
+
                     inputs = {
                         i_feat.feature_name: batch[i_feat.proc_column]
                         for i_feat in model.input_features.values()
@@ -1524,10 +1523,6 @@ class RemoteTrainer(Trainer):
             **kwargs
     ):
         horovod = initialize_horovod()
-        initialize_tensorflow(gpus=gpus,
-                              gpu_memory_limit=gpu_memory_limit,
-                              allow_parallel_threads=allow_parallel_threads,
-                              horovod=horovod)
         super().__init__(horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
