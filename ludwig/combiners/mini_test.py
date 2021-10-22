@@ -30,9 +30,6 @@ reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', None]
 # we do not want to allow 'None' as an option that can be specified.
 
 def create_field_EnumType(name, enum_registry, required=False, nullable=False, **kwargs) -> Type[marshmallow_dataclass.NewType]:
-    print(kwargs)
-    print('default_enum_value' in kwargs)
-    print(required)
     if 'load_default' in kwargs or 'dump_default' in kwargs:
         raise ValidationError("Use 'default_enum_value' instead with this method.")
     if required == ('default_enum_value' in kwargs):
@@ -52,28 +49,23 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
     # Create the enum schema:
     # TODO: explore better way for validation rather than in both (de)serialize methods?
     class InnerEnumField(fields.Field):
-        # WARNING: I shouldn't need to override __init__, but I cannot figure out why load_default is not set through
-        # the normal flow. This hack only modifies that field, so it should work for now.
+        # WARNING: I shouldn't need to override __init__, but I cannot figure out why load_default, allow_none,
+        # and required do not get set through the normal flow. However, behavior seems good enough for our
+        # purposes.
         def __init__(self, **kwargs):
-            print('init')
-
             super().__init__(**kwargs)
             if not required:
-                #kwargs['load_default'] = type_params['load_default']
                 self.dump_default = type_params['dump_default']
                 self.load_default = type_params['load_default']
             self.allow_none = nullable
             self.required = required
 
         def _deserialize(self, value, attr, data, **kwargs):
-            print('deserialize')
             if not value in allowed_enums:
                 raise ValidationError(f"Value '{value}' is not one of acceptable: {allowed_enums}")
-            print(value)
             return value
 
         def _serialize(self, value, attr, obj, **kwargs):
-            print('serialize')
             if not value in allowed_enums:
                 raise ValidationError(f"Value '{value}' is not one of acceptable: {allowed_enums}")
             return None if value is None else value
@@ -110,14 +102,13 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
         name=name,
         typ=allowed_types,
         field=InnerEnumField,
-        # allow_none=False,
-        # **type_params,
         **kwargs
     )
 
-    if not required:
-        # Necessary for correct construction with dataclass:
-        return Optional[t]
+    # Unnecessary if self.required is set via __init__:
+    # if not required:
+    #     # Necessary for correct construction with dataclass:
+    #     return Optional[t]
     return t
 
 @dataclass
@@ -222,5 +213,5 @@ ConcatCombinerSchema = marshmallow_dataclass.class_schema(ConcatCombinerData)()
 print()
 # print(jsonGenerator.dump(ConcatCombinerSchema))
 # print(json.dumps(jsonGenerator.dump(ConcatCombinerSchema)))
-# print(ConcatCombinerSchema.dump({'weights_regularizer': 'l1'}))
+print(ConcatCombinerSchema.dump({'weights_regularizer_rn': None, 'weights_regularizer_r': 'l1_l2'}))
 print(ConcatCombinerSchema.load({'weights_regularizer_rn': None, 'weights_regularizer_r': 'l1'}))
