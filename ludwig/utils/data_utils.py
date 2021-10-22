@@ -483,6 +483,9 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
 
 
 def split_dataset_ttv(dataset, split):
+    # Obtain distinct splits from the split column. If
+    # a split is not present in this set, then we can skip generating
+    # the dataframe for that split.
     distinct_values = dataset[split].drop_duplicates()
     if hasattr(distinct_values, "compute"):
         distinct_values = distinct_values.compute()

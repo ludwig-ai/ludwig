@@ -79,6 +79,7 @@ class RayDatasetManager(object):
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
+    # TODO(travis): consider combining this with `create` when Petastorm is dropped
     def create_inference_dataset(
             self,
             dataset: DataFrame,
@@ -86,11 +87,7 @@ class RayDatasetManager(object):
             config: Dict[str, Any],
             training_set_metadata: Dict[str, Any]
     ):
-        return RayDataset(
-            df=dataset,
-            features=get_proc_features(config),
-            data_hdf5_fp=training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-        )
+        return self.create(dataset, config, training_set_metadata)
 
     def save(
             self,

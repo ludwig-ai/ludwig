@@ -24,6 +24,7 @@ import dask
 import pandas as pd
 import ray
 from horovod.ray import RayExecutor
+from ray.data.dataset_pipeline import DatasetPipeline
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
@@ -154,7 +155,14 @@ class RayRemoteTrainer(RemoteTrainer):
         return results
 
 
-def train_fn(executable_kwargs=None, remote_model=None, train_shards=None, val_shards=None, test_shards=None, **kwargs):
+def train_fn(
+        executable_kwargs: Dict[str, Any] = None,
+        remote_model: RayRemoteModel = None,
+        train_shards: List[DatasetPipeline] = None,
+        val_shards: List[DatasetPipeline] = None,
+        test_shards: List[DatasetPipeline] = None,
+        **kwargs
+):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
     initialize_tensorflow(horovod=hvd)
