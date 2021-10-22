@@ -9,7 +9,6 @@ import marshmallow_dataclass
 from ludwig.modules.initializer_modules import initializers_registry
 import json
 
-
 jsonGenerator = JSONSchema()
 
 # Declare/shortcut to parameter registries:
@@ -78,7 +77,15 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
         print(type_params)
 
     # Create the enum schema:
+    # TODO: Still need to confirm 
     class InnerEnumField(fields.Field):
+        # WARNING: I shouldn't need to override __init__, but I cannot figure out why load_default is not set through
+        # the normal flow. This hack only modifies that field, so it should work for now.
+        def __init__(self, **kwargs):
+            if not required:
+                kwargs['load_default'] = type_params['load_default'] 
+            super().__init__(**kwargs)
+
         def _deserialize(self, value, attr, data, **kwargs):
             print('deserialize')
             if not value in allowed_enums:
@@ -87,7 +94,9 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
 
         def _serialize(self, value, attr, obj, **kwargs):
             print('serialize')
-            return "test"
+            if not value in allowed_enums:
+                raise ValidationError(f"Value '{value}' is not one of acceptable: {allowed_enums}")
+            return None if value is None else value
             # if value is None:
             #     return ""
             # return "".join(str(d) for d in value)
@@ -125,11 +134,11 @@ def create_field_EnumType(name, enum_registry, required=False, nullable=False, *
         name=name,
         typ=allowed_types,
         field=InnerEnumField,
-        allow_none=True,
+        #allow_none=True,
         # _deserialize=InnerEnumField._deserialize
         # required=required,
-        # **type_params,
-        load_default=kwargs['default_enum_value'],
+        **type_params,
+        #load_default=kwargs['default_enum_value'],
         #validate=validate.OneOf(enum_registry),
         **kwargs
     )
@@ -236,5 +245,5 @@ ConcatCombinerSchema = marshmallow_dataclass.class_schema(ConcatCombinerData)()
 
 print(jsonGenerator.dump(ConcatCombinerSchema))
 print(json.dumps(jsonGenerator.dump(ConcatCombinerSchema)))
-print(ConcatCombinerSchema.dump({}))
-print(ConcatCombinerSchema.load({}))
+print(ConcatCombinerSchema.dump({'weights_regularizer': 'l1'}))
+print(ConcatCombinerSchema.load({'weights_regularizer': 'None'}))
