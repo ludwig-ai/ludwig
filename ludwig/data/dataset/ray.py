@@ -185,7 +185,8 @@ class RayDatasetBatcher(Batcher):
     def last_batch(self):
         return self._last_batch
 
-    def set_epoch(self, epoch):
+    def set_epoch(self, epoch, batch_size):
+        self.batch_size = batch_size
         if epoch != self._epoch:
             self._fetch_next_epoch()
             self._epoch = epoch
