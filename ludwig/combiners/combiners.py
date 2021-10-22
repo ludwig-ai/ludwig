@@ -16,11 +16,9 @@
 # ==============================================================================
 import logging
 
-from enum import Enum
 from types import MethodWrapperType, SimpleNamespace
 from typing import List, Dict, Optional, Type, Union
 from marshmallow_jsonschema.base import ALLOW_UNIONS
-from pydantic import BaseModel, confloat, PositiveInt, NonNegativeInt, NonNegativeFloat, create_model
 from marshmallow import Schema, fields, validate, INCLUDE, EXCLUDE, ValidationError, post_load
 from marshmallow_jsonschema import JSONSchema
 from dataclasses import dataclass, field
@@ -49,6 +47,7 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
+jsonGenerator = JSONSchema()
 
 # Declare/shortcut to parameter registries:
 preset_weights_initializer_registry = list(initializers_registry.keys())
@@ -533,13 +532,13 @@ class SequenceCombiner(tf.keras.Model):
     def get_marshmallow_schema_as_json():
         return JSONSchema().dump(SequenceCombinerSchema)
 
-
-class TabNetCombinerSchema(Schema):
-    size = fields.Int(
-        strict=True, 
+@dataclass
+class TabNetCombinerData:
+    size: int = field(metadata=dict(
+        strict=True,
+        validate=validate.Range(min=1, min_inclusive=True),
         dump_default=32,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
+    ))
     output_size = fields.Int(
         strict=True, 
         dump_default=32,

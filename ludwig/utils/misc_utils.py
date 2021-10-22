@@ -173,25 +173,11 @@ def get_proc_features(config):
 def get_proc_features_from_lists(*args):
     return {feature[PROC_COLUMN]: feature for features in args for feature in features}
 
-
-def init_with_kwargs(cls, kwargs):
-    fields = cls.__fields__.keys()
-    return cls(
-        **{
-            k: v for k, v in kwargs.items()
-            if k in fields
-        }
-    )
-
-def init_with_kwargs_schema(cls, kwargs):
-    schema = cls()
-    fields = schema.fields.keys()
-    print('INIT WITH KWARGS **********************************************')
-    print(schema)
-    print(fields)
-    return schema.dump(
-        {
-            k: v for k, v in kwargs.items()
-            if k in fields
-        }
-    )
+# def init_with_kwargs(cls, kwargs):
+#     fields = cls.__fields__.keys()
+#     return cls(
+#         **{
+#             k: v for k, v in kwargs.items()
+#             if k in fields
+#         }
+#     )

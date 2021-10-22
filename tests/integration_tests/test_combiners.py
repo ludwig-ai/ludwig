@@ -157,7 +157,7 @@ def test_concat_combiner(encoder_outputs, fc_layer):
 def test_sequence_concat_combiner(
         encoder_outputs, main_sequence_feature, reduce_output
 ):
-    combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema().load(dict(
+    combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema.load(dict(
         main_sequence_feature=main_sequence_feature,
         reduce_output=reduce_output
     )))
