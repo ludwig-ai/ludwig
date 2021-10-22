@@ -112,7 +112,7 @@ class Predictor(BasePredictor):
             while not batcher.last_batch():
                 batch = batcher.next_batch()
                 preds = self._predict(model, batch)
-                predictions = self._accumulate_preds(preds, predictions)
+                self._accumulate_preds(preds, predictions)
 
                 if self.is_coordinator():
                     progress_bar.update(1)
