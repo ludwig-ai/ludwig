@@ -23,7 +23,8 @@ from marshmallow import Schema, fields, validate, INCLUDE, EXCLUDE, ValidationEr
 from marshmallow_jsonschema import JSONSchema
 from dataclasses import dataclass, field
 import marshmallow_dataclass
-
+from tensorflow.python.keras.utils.generic_utils import default
+import ludwig.utils.schema_utils as lus
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
@@ -40,7 +41,6 @@ from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.modules.initializer_modules import initializers_registry
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
@@ -49,142 +49,64 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 jsonGenerator = JSONSchema()
 
-# Declare/shortcut to parameter registries:
-preset_weights_initializer_registry = list(initializers_registry.keys())
-preset_bias_initializer_registry = list(initializers_registry.keys())
-weights_regularizer_registry = ['l1', 'l2', 'l1_l2']
-bias_regularizer_registry = ['l1', 'l2', 'l1_l2']
-activity_regularizer_registry = ['l1', 'l2', 'l1_l2']
-norm_registry = ['batch', 'layer']
-activation_registry = ['relu']
-reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', None]
-
-
-# Initializers accept presets or customized dicts (not JSON-validated):
-class WeightsInitializerField(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, str) or isinstance(value, dict):
-            return value
-        else:
-            raise ValidationError('Field should be str or dict')
-    
-    def _jsonschema_type_mapping(self):
-        return {
-            "anyOf": [
-                {
-                    "type": "object",
-                }, 
-                {
-                    'type': 'string',
-                    'enum': preset_weights_initializer_registry
-                }
-            ]
-        }
-WeightsInitializerType = marshmallow_dataclass.NewType(
-        name='WeightsInitializerType',
-        typ=Union[str, dict],
-        dump_default='glorot_uniform',
-        load_default='glorot_uniform'
-)
-
-class BiasInitializerField(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, str) or isinstance(value, dict):
-            return value
-        else:
-            raise ValidationError('Field should be str or dict')
-    
-    def _jsonschema_type_mapping(self):
-
-        return {
-            "anyOf": [
-                {
-                    "type": "object",
-                }, 
-                {
-                    'type': 'string',
-                    'enum': preset_bias_initializer_registry
-                }
-            ]
-        }
-BiasInitializerType = marshmallow_dataclass.NewType(
-    name='BiasInitializerType',
-    typ=Union[str, dict],
-    dump_default='zeros',
-    load_default='zeros'
-)
-
-
 @dataclass
 class ConcatCombinerData:
-    fc_layers: Optional[List[Dict]] = field(metadata=dict(
-        dump_default=None,
-        load_default=None
-    ))
+    # weights_initializer: lus.WeightsInitializerType
+    # bias_initializer: lus.BiasInitializerType
+    weights_regularizer: lus.create_type_EnumType(
+        'WeightsRegularizerType',
+        lus.weights_regularizer_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    bias_regularizer: lus.create_type_EnumType(
+        'BiasRegularizerType',
+        lus.bias_regularizer_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    activity_regularizer: lus.create_type_EnumType(
+        'ActivityRegularizerType',
+        lus.activity_regularizer_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    norm: lus.create_type_EnumType(
+        'NormType',
+        lus.norm_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    activation: lus.create_type_EnumType(
+        'ActivationType', 
+        lus.activation_registry, 
+        default_enum_value='relu'
+    )
+    fc_size: Optional[int] = lus.create_field_PositiveInt(256)
+    use_bias: Optional[bool] = lus.create_field_StrictBoolean(True)
+    dropout: Optional[float] = lus.create_field_NormalizedFloat(0.0)
+    flatten_inputs: Optional[bool] = lus.create_field_StrictBoolean(False)
+    residual: Optional[bool] = lus.create_field_StrictBoolean(False)
+
     num_fc_layers: Optional[int] = field(metadata=dict(
         strict=True,
         validate=validate.Range(min=0, min_inclusive=True),
         dump_default=None,
-    ))
-    fc_size: int = field(metadata=dict(
-        strict=True,
-        validate=validate.Range(min=1, min_inclusive=True),
-        dump_default=256,
-        load_default=256,
-    ))
-    use_bias: bool = field(metadata=dict(
-        dump_default=True,
-        load_default=True,
-    ))
-    weights_initializer: WeightsInitializerType
-    bias_initializer: BiasInitializerType
-    weights_regularizer: Optional[str] = field(metadata=dict(
-        validate=validate.OneOf(weights_regularizer_registry),
-        allow_none=True,
-        dump_default=None,
         load_default=None
     ))
-    bias_regularizer: Optional[str] = field(metadata=dict(
-        validate=validate.OneOf(bias_regularizer_registry),
-        allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
-    activity_regularizer: Optional[str] = field(metadata=dict(
-        validate=validate.OneOf(activity_regularizer_registry),
-        allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
-    norm: Optional[str] = field(metadata=dict(
-        validate=validate.OneOf(norm_registry),
-        allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
+
     norm_params: Optional[dict] = field(metadata=dict(
         allow_none=True,
         dump_default=None,
         load_default=None
     ))
-    activation: str = field(metadata=dict(
-        validate=validate.OneOf(activation_registry),
-        dump_default='relu',
-        load_default='relu'
-    ))
-    dropout: float = field(metadata=dict(
-        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        dump_default=0.0,
-        load_default=0.0
-    ))
-    flatten_inputs: bool = field(metadata=dict(
-        dump_default=False,
-        load_default=False
-    ))
-    residual: bool = field(metadata=dict(
-        dump_default=False,
-        load_default=False
-    ))
+    fc_layers: Optional[List[dict]] = field(default_factory=list,
+        metadata=dict(
+            dump_default=None,
+            load_default=None
+        )
+    )
+
 
     class Meta:
         unknown = INCLUDE

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import marshmallow_dataclass
 from ludwig.modules.initializer_modules import initializers_registry
 import json
+import ludwig.utils.schema_utils as lus
 
 jsonGenerator = JSONSchema()
 
@@ -22,6 +23,32 @@ norm_registry = ['batch', 'layer']
 activation_registry = ['relu']
 reduce_output_registry = ['sum', 'mean', 'sqrt', 'concat', None]
 
+def create_field_NonNegativeInt(f_default: Optional[int]=None, **kwargs) -> Type[field]:
+    if f_default is not None:
+        kwargs = {
+            **kwargs,
+            **dict(
+                load_default=f_default,
+                dump_default=f_default
+            )
+        }
+        # kwargs['dump_default'] = f_default
+        # kwargs['load_default'] = f_default
+    metadata={
+        **dict(
+            strict=True,
+            validate=validate.Range(min=0, min_inclusive=True),
+        ),
+        **kwargs
+    }
+    print(metadata)
+    return field(metadata={
+        **dict(
+            strict=True,
+            validate=validate.Range(min=0, min_inclusive=True),
+        ),
+        **kwargs
+    })
 
 # Thinking about what behavior was before this PR at all, consider simple scenario
 # fc_size=1 as a default param to some combiner.
@@ -132,6 +159,7 @@ class ConcatCombinerData:
     #     dump_default=True,
     #     load_default=True,
     # ))
+    activation: create_field_EnumType('ActivationType', activation_registry, default_enum_value='relu')
 
    # weights_initializer: WeightsInitializerType
     # bias_initializer: BiasInitializerType
@@ -163,55 +191,89 @@ class ConcatCombinerData:
         nullable=True,
         # default_enum_value=None
     )
-    # bias_regularizer: Optional[str] = field(metadata=dict(
-    #     validate=validate.OneOf(bias_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None,
-    #     load_default=None
-    # ))
-    # test: Union[str, dict] = field()
-    # activity_regularizer: Optional[str] = field(metadata=dict(
-    #     validate=validate.OneOf(activity_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None,
-    #     load_default=None
-    # ))
-    # norm: Optional[str] = field(metadata=dict(
-    #     validate=validate.OneOf(norm_registry),
-    #     allow_none=True,
-    #     dump_default=None,
-    #     load_default=None
-    # ))
-    # norm_params: Optional[dict] = field(metadata=dict(
-    #     allow_none=True,
-    #     dump_default=None,
-    #     load_default=None
-    # ))
-    # activation: str = field(metadata=dict(
-    #     validate=validate.OneOf(activation_registry),
-    #     dump_default='relu',
-    #     load_default='relu'
-    # ))
-    # dropout: float = field(metadata=dict(
-    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-    #     dump_default=0.0,
-    #     load_default=0.0
-    # ))
-    # flatten_inputs: bool = field(metadata=dict(
-    #     dump_default=False,
-    #     load_default=False
-    # ))
-    # residual: bool = field(metadata=dict(
-    #     dump_default=False,
-    #     load_default=False
-    # ))
+
+    fc_size: Optional[int] = create_field_NonNegativeInt(f_default=256)
+
+    fc_layers: List[dict] = field(default_factory=list,
+        metadata=dict(
+            dump_default=None,
+            load_default=None
+        )
+    )
 
     class Meta:
         unknown = INCLUDE
 
 ConcatCombinerSchema = marshmallow_dataclass.class_schema(ConcatCombinerData)()
-print()
+# print()
 # print(jsonGenerator.dump(ConcatCombinerSchema))
 # print(json.dumps(jsonGenerator.dump(ConcatCombinerSchema)))
-print(ConcatCombinerSchema.dump({'weights_regularizer_rn': None, 'weights_regularizer_r': 'l1_l2'}))
-print(ConcatCombinerSchema.load({'weights_regularizer_rn': None, 'weights_regularizer_r': 'l1'}))
+# print(ConcatCombinerSchema.dump({'weights_regularizer_rn': None, 'weights_regularizer_r': 'l1_l2'}))
+# print(ConcatCombinerSchema.load({'weights_regularizer_rn': None, 'weights_regularizer_r': 'l1'}))
+
+
+@dataclass
+class TestData:
+    # weights_initializer: lus.WeightsInitializerType
+    # bias_initializer: lus.BiasInitializerType
+    weights_regularizer: lus.create_type_EnumType(
+        'WeightsRegularizerType',
+        lus.weights_regularizer_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    bias_regularizer: lus.create_type_EnumType(
+        'BiasRegularizerType',
+        lus.bias_regularizer_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    activity_regularizer: lus.create_type_EnumType(
+        'ActivityRegularizerType',
+        lus.activity_regularizer_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    norm: lus.create_type_EnumType(
+        'NormType',
+        lus.norm_registry,
+        nullable=True,
+        default_enum_value=None
+    )
+    activation: lus.create_type_EnumType(
+        'ActivationType', 
+        lus.activation_registry, 
+        default_enum_value='relu'
+    )
+    # use_bias: lus.create_type_StrictBoolean(False)
+
+    fc_size: Optional[int] = lus.create_field_PositiveInt(256)
+    use_bias: Optional[bool] = lus.create_field_StrictBoolean(True)
+    dropout: Optional[float] = lus.create_field_NormalizedFloat(0.0)
+    flatten_inputs: Optional[bool] = lus.create_field_StrictBoolean(False)
+    residual: Optional[bool] = lus.create_field_StrictBoolean(False)
+
+    num_fc_layers: Optional[int] = field(metadata=dict(
+        strict=True,
+        validate=validate.Range(min=0, min_inclusive=True),
+        dump_default=None,
+        load_default=None
+    ))
+
+    norm_params: Optional[dict] = field(metadata=dict(
+        allow_none=True,
+        dump_default=None,
+        load_default=None
+    ))
+    fc_layers: Optional[List[dict]] = field(default_factory=list,
+        metadata=dict(
+            dump_default=None,
+            load_default=None
+        )
+    )
+    class Meta:
+        unknown = INCLUDE
+
+TestSchema = marshmallow_dataclass.class_schema(TestData)()
+print(TestSchema.dump({}))
+print(TestSchema.load({}))

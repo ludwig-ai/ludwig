@@ -10,7 +10,8 @@ from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.misc_utils import get_from_registry, init_with_kwargs, init_with_kwargs_schema
+from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.schema_utils import init_with_kwargs_schema
 
 logger = logging.getLogger(__name__)
 
