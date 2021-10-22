@@ -164,8 +164,8 @@ class ResNetEncoder(ImageEncoder):
 
     def __init__(
             self,
-            img_height: int,
-            img_width: int,
+            height: int = None,
+            width: int = None,
             resnet_size: int = 50,
             first_in_channels: int = 3,
             out_channels: int = 16,
@@ -192,6 +192,8 @@ class ResNetEncoder(ImageEncoder):
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        img_height = height
+        img_width = width
 
         self._input_shape = (first_in_channels, img_height, img_width)
 
