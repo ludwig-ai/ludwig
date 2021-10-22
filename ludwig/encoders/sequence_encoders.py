@@ -220,7 +220,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.embedding_size])
+        return torch.Size([self.embed_sequence.embedding_size])
 
     def forward(self, inputs, mask=None):
         """

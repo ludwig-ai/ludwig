@@ -205,7 +205,7 @@ def test_server_integration_with_audio(single_record, csv_filename):
         numerical_feature(normalization='zscore')
     ]
     output_features = [
-        category_feature(vocab_size=2),
+        category_feature(vocab_size=4),
         numerical_feature()
     ]
 

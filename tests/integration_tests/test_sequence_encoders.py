@@ -185,5 +185,32 @@ def test_passthrough_encoder(
 
     assert 'encoder_output' in encoder_out
     assert encoder_out['encoder_output'].shape \
-        == (BATCH_SIZE, SEQ_SIZE, 1) \
+           == (BATCH_SIZE, SEQ_SIZE, 1) \
         if enc_reduce_output is None else (BATCH_SIZE, 1)
+
+
+# test to ensure correct handling of vocab_size and embedding_size specifications
+@pytest.mark.parametrize('enc_embedding_size', [TEST_VOCAB_SIZE - 8,
+                                                TEST_VOCAB_SIZE,
+                                                TEST_VOCAB_SIZE + 8])
+def test_sequence_embed_encoder(
+        enc_embedding_size: int,
+        input_sequence: torch.Tensor
+) -> None:
+    encoder_parameters['embedding_size'] = enc_embedding_size
+
+    # retrieve encoder to test
+    encoder_obj = get_from_registry("embed", SEQUENCE_ENCODER_REGISTRY)(
+        **encoder_parameters
+    )
+
+    encoder_out = encoder_obj(input_sequence)
+
+    # check to make sure shape is correct depending on relationship
+    # of vocab_size and embedding_size
+    if enc_embedding_size > TEST_VOCAB_SIZE:
+        assert (BATCH_SIZE, *encoder_obj.output_shape) \
+               == (BATCH_SIZE, TEST_VOCAB_SIZE)
+    else:
+        assert (BATCH_SIZE, *encoder_obj.output_shape) \
+               == (BATCH_SIZE, enc_embedding_size)
