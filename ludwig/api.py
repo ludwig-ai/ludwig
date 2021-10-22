@@ -32,7 +32,6 @@ from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.data.dataset.ray import RayDataset
 from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
@@ -897,9 +896,9 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 # TODO ray: support calculating stats on partitioned datasets
-                if isinstance(dataset, RayDataset):
+                if self.backend.df_engine.partitioned:
                     raise ValueError(
-                        'Cannot calculate overall stats on a ray dataset at this time. '
+                        'Cannot calculate overall stats on a partitioned DataFrame at this time. '
                         'Set `calculate_overall_stats=False`.'
                     )
 

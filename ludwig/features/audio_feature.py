@@ -437,7 +437,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.float32
-        assert len(inputs.shape) == 3
+        assert len(inputs.shape) == 3, f"expected 3D shape, found: {inputs.shape}"
 
         encoder_output = self.encoder_obj(
             inputs, training=training, mask=mask

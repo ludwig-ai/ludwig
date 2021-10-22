@@ -828,6 +828,7 @@ class Trainer(BaseTrainer):
 
                     # obtain batch
                     batch = batcher.next_batch()
+
                     inputs = {
                         i_feat.feature_name: batch[i_feat.proc_column]
                         for i_feat in model.input_features.values()
@@ -1535,10 +1536,6 @@ class RemoteTrainer(Trainer):
             **kwargs
     ):
         horovod = initialize_horovod()
-        initialize_tensorflow(gpus=gpus,
-                              gpu_memory_limit=gpu_memory_limit,
-                              allow_parallel_threads=allow_parallel_threads,
-                              horovod=horovod)
         super().__init__(horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
