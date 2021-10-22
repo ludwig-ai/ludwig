@@ -23,7 +23,7 @@ import tensorflow as tf
 
 from ludwig.backend.ray import RayBackend, get_trainer_kwargs
 
-from tests.integration_tests.utils import create_data_set_to_use, spawn
+from tests.integration_tests.utils import create_data_set_to_use, spawn, audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
@@ -65,7 +65,7 @@ def run_api_experiment(config, data_parquet):
         trainer={
             'num_workers': 2,
             'resources_per_worker': {
-                'CPU': 0,
+                'CPU': 0.1,
             }
         }
     )
@@ -153,3 +153,12 @@ def test_ray_sequence():
         )
     ]
     run_test_parquet(input_features, output_features)
+
+
+@pytest.mark.distributed
+def test_ray_audio():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
+        input_features = [audio_feature(folder=audio_dest_folder)]
+        output_features = [binary_feature()]
+        run_test_parquet(input_features, output_features)

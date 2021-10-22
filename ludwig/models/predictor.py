@@ -35,6 +35,10 @@ class BasePredictor(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def predict_single(self, model, batch):
+        raise NotImplementedError()
+
+    @abstractmethod
     def batch_evaluation(
             self,
             model,
@@ -107,20 +111,8 @@ class Predictor(BasePredictor):
             predictions = defaultdict(list)
             while not batcher.last_batch():
                 batch = batcher.next_batch()
-
-                inputs = {
-                    i_feat.feature_name: batch[i_feat.proc_column]
-                    for i_feat in model.input_features.values()
-                }
-
-                preds = model.predict_step(inputs)
-
-                # accumulate predictions from batch for each output feature
-                for of_name, of_preds in preds.items():
-                    for pred_name, pred_values in of_preds.items():
-                        if pred_name not in EXCLUE_PRED_SET:
-                            key = f'{of_name}_{pred_name}'
-                            predictions[key].append(pred_values)
+                preds = self._predict(model, batch)
+                predictions = self._accumulate_preds(preds, predictions)
 
                 if self.is_coordinator():
                     progress_bar.update(1)
@@ -129,10 +121,36 @@ class Predictor(BasePredictor):
                 progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
-        for key, pred_value_list in predictions.items():
-            predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
+        self._concat_preds(predictions)
 
         return from_numpy_dataset(predictions)
+
+    def predict_single(self, model, batch):
+        predictions = defaultdict(list)
+        preds = self._predict(model, batch)
+        self._accumulate_preds(preds, predictions)
+        self._concat_preds(predictions)
+        return from_numpy_dataset(predictions)
+
+    def _predict(self, model, batch):
+        inputs = {
+            i_feat.feature_name: batch[i_feat.proc_column]
+            for i_feat in model.input_features.values()
+        }
+
+        return model.predict_step(inputs)
+
+    def _accumulate_preds(self, preds, predictions):
+        # accumulate predictions from batch for each output feature
+        for of_name, of_preds in preds.items():
+            for pred_name, pred_values in of_preds.items():
+                if pred_name not in EXCLUE_PRED_SET:
+                    key = f'{of_name}_{pred_name}'
+                    predictions[key].append(pred_values)
+
+    def _concat_preds(self, predictions):
+        for key, pred_value_list in predictions.items():
+            predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
 
     def batch_evaluation(
             self,

@@ -1167,6 +1167,16 @@ def build_dataset(
     if split is not None:
         proc_cols[SPLIT] = split
 
+    for feature in features:
+        name = feature[NAME]
+        proc_column = feature[PROC_COLUMN]
+        reshape = metadata[name].get('reshape')
+        if reshape is not None:
+            proc_cols[proc_column] = backend.df_engine.map_objects(
+                proc_cols[proc_column],
+                lambda x: x.reshape(-1)
+            )
+
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
     # At this point, there should be no missing values left in the dataframe, unless

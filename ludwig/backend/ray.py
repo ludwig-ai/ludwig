@@ -21,14 +21,16 @@ from functools import partial
 from typing import Any, Dict, List
 
 import dask
+import numpy as np
 import pandas as pd
 import ray
 from horovod.ray import RayExecutor
 from ray.data.dataset_pipeline import DatasetPipeline
+from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY
+from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.pandas import PandasDataset
@@ -158,6 +160,7 @@ class RayRemoteTrainer(RemoteTrainer):
 def train_fn(
         executable_kwargs: Dict[str, Any] = None,
         remote_model: RayRemoteModel = None,
+        training_set_metadata: Dict[str, Any] = None,
         train_shards: List[DatasetPipeline] = None,
         val_shards: List[DatasetPipeline] = None,
         test_shards: List[DatasetPipeline] = None,
@@ -173,6 +176,7 @@ def train_fn(
         train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
         model.input_features,
         model.output_features,
+        training_set_metadata,
     )
 
     val_shard = val_shards[rt.world_rank()] if val_shards else None #rt.get_dataset_shard("val")
@@ -181,6 +185,7 @@ def train_fn(
             val_shard,
             model.input_features,
             model.output_features,
+            training_set_metadata,
         )
 
     test_shard = test_shards[rt.world_rank()] if test_shards else None #rt.get_dataset_shard("test")
@@ -189,6 +194,7 @@ def train_fn(
             test_shard,
             model.input_features,
             model.output_features,
+            training_set_metadata,
         )
 
     trainer = RayRemoteTrainer(**executable_kwargs)
@@ -232,6 +238,7 @@ class RayTrainerV2(BaseTrainer):
             'train_shards': train_shards,
             'val_shards': val_shards,
             'test_shards': test_shards,
+            'training_set_metadata': training_set.training_set_metadata,
             **kwargs
         }
 
@@ -312,8 +319,8 @@ class RayLegacyTrainer(BaseTrainer):
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, horovod_kwargs, predictor_kwargs):
-        # TODO ray: use horovod_kwargs to allocate GPU model replicas
+    def __init__(self, **predictor_kwargs):
+        self.batch_size = predictor_kwargs.get('batch_size', 128)
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
 
@@ -324,13 +331,30 @@ class RayPredictor(BasePredictor):
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
         batch_predictor = self.get_batch_infer_model(
-            remote_model, predictor_kwargs, output_columns, dataset.features,
-            dataset.data_hdf5_fp, *args, **kwargs
+            remote_model,
+            predictor_kwargs,
+            output_columns,
+            dataset.features,
+            dataset.training_set_metadata,
+            *args,
+            **kwargs
         )
+
+        columns = [
+           f.proc_column for f in model.input_features.values()
+        ]
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                df[c] = df[c].astype(TensorDtype())
+            return df
 
         num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
         dask_dataset = dataset.ds.map_batches(
-            batch_predictor, 
+            to_tensors, batch_format='pandas'
+        ).map_batches(
+            batch_predictor,
+            batch_size=self.batch_size,
             compute='actors',
             batch_format='pandas',
             num_gpus=num_gpus
@@ -340,6 +364,11 @@ class RayPredictor(BasePredictor):
             dask_dataset = of_feature.unflatten(dask_dataset)
 
         return dask_dataset
+
+    def predict_single(self, model, batch):
+        raise NotImplementedError(
+            "predict_single can only be called on a local predictor"
+        )
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
@@ -368,8 +397,8 @@ class RayPredictor(BasePredictor):
             remote_model: RayRemoteModel,
             predictor_kwargs: Dict[str, Any],
             output_columns: List[str],
-            features: List[Dict],
-            data_hdf5_fp: str,
+            features: Dict[str, Dict],
+            training_set_metadata: Dict[str, Any],
             *args, **kwargs
     ):
         class BatchInferModel:
@@ -377,18 +406,34 @@ class RayPredictor(BasePredictor):
                 self.model = remote_model.load()
                 self.output_columns = output_columns
                 self.features = features
-                self.data_hdf5_fp = data_hdf5_fp
+                self.training_set_metadata = training_set_metadata
+                self.reshape_map = {
+                    f[PROC_COLUMN]: training_set_metadata[f[NAME]].get('reshape')
+                    for f in features.values()
+                }
                 predictor = Predictor(**predictor_kwargs)
-                self.batch_predict = partial(predictor.batch_predict, *args, **kwargs)
+                self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-                pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
-                predictions = self.batch_predict(model=self.model, dataset=pd_ds)
+                dataset = self._prepare_batch(df)
+                predictions = self.predict(model=self.model, batch=dataset)
 
                 for output_feature in self.model.output_features.values():
                     predictions = output_feature.flatten(predictions)
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
+
+            def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+                res = {
+                    c: batch[c].to_numpy() for c in self.features.keys()
+                }
+
+                for c in self.features.keys():
+                    reshape = self.reshape_map.get(c)
+                    if reshape is not None:
+                        res[c] = res[c].reshape((-1, *reshape))
+
+                return res
 
         return BatchInferModel
 
@@ -432,7 +477,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_predictor(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
-        return RayPredictor(self._horovod_kwargs, executable_kwargs)
+        return RayPredictor(**executable_kwargs)
 
     def set_distributed_kwargs(self, **kwargs):
         self._horovod_kwargs = kwargs

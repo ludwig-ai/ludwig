@@ -20,8 +20,9 @@ import queue
 import threading
 from distutils.version import LooseVersion
 from functools import lru_cache
-from typing import Dict, Optional, Any, Iterator
+from typing import Dict, Any, Iterator
 
+import numpy as np
 import pandas as pd
 
 import ray
@@ -43,10 +44,11 @@ _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 class RayDataset(object):
     """ Wrapper around ray.data.Dataset. """
 
-    def __init__(self, df: DataFrame, features: Dict[str, Dict], data_hdf5_fp: Optional[str]):
+    def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
         self.ds = from_dask(df)
         self.features = features
-        self.data_hdf5_fp = data_hdf5_fp
+        self.training_set_metadata = training_set_metadata
+        self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -76,7 +78,7 @@ class RayDatasetManager(object):
         return RayDataset(
             dataset,
             get_proc_features(config),
-            training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            training_set_metadata
         )
 
     # TODO(travis): consider combining this with `create` when Petastorm is dropped
@@ -116,10 +118,12 @@ class RayDatasetShard(Dataset):
             dataset_shard: DatasetPipeline,
             input_features: Dict[str, InputFeature],
             output_features: Dict[str, OutputFeature],
+            training_set_metadata: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
         self.input_features = input_features
         self.output_features = output_features
+        self.training_set_metadata = training_set_metadata
         self.dataset_iter = dataset_shard.iter_datasets()
 
     @contextlib.contextmanager
@@ -133,6 +137,7 @@ class RayDatasetShard(Dataset):
             self.dataset_iter,
             self.input_features,
             self.output_features,
+            self.training_set_metadata,
             batch_size,
             self.size,
         )
@@ -153,18 +158,30 @@ class RayDatasetBatcher(Batcher):
             dataset_epoch_iterator: Iterator[ray.data.Dataset],
             input_features: Dict[str, InputFeature],
             output_features: Dict[str, OutputFeature],
+            training_set_metadata: Dict[str, Any],
             batch_size: int,
             samples_per_epoch: int,
     ):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
+        self.training_set_metadata = training_set_metadata
 
         self.columns = [
             f.proc_column for f in input_features.values()
         ] + [
             f.proc_column for f in output_features.values()
         ]
+
+        features = {
+            **input_features,
+            **output_features,
+        }
+
+        self.reshape_map = {
+            f.proc_column: training_set_metadata[f.feature_name].get('reshape')
+            for f in features.values()
+        }
 
         self.dataset_batch_iter = None
         self._epoch = 0
@@ -226,13 +243,29 @@ class RayDatasetBatcher(Batcher):
         except StopIteration:
             self._last_batch = True
 
-    def _create_sync_reader(self, dataset: ray.data.Dataset):
+    def _to_tensors_fn(self):
         columns = self.columns
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
                 df[c] = df[c].astype(TensorDtype())
             return df
+        return to_tensors
+
+    def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+        res = {
+            c: batch[c].to_numpy() for c in self.columns
+        }
+
+        for c in self.columns:
+            reshape = self.reshape_map.get(c)
+            if reshape is not None:
+                res[c] = res[c].reshape((-1, *reshape))
+
+        return res
+
+    def _create_sync_reader(self, dataset: ray.data.Dataset):
+        to_tensors = self._to_tensors_fn()
 
         def sync_read():
             for batch in dataset.map_batches(
@@ -242,22 +275,16 @@ class RayDatasetBatcher(Batcher):
                 batch_size=self.batch_size,
                 batch_format="pandas"
             ):
-                yield {
-                    c: batch[c].to_numpy() for c in self.columns
-                }
+                yield self._prepare_batch(batch)
 
         return sync_read()
 
     def _create_async_reader(self, dataset: ray.data.Dataset):
         q = queue.Queue(maxsize=100)
 
-        columns = self.columns
         batch_size = self.batch_size
 
-        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-            for c in columns:
-                df[c] = df[c].astype(TensorDtype())
-            return df
+        to_tensors = self._to_tensors_fn()
 
         def producer():
             for batch in dataset.map_batches(
@@ -268,9 +295,7 @@ class RayDatasetBatcher(Batcher):
                 batch_size=batch_size,
                 batch_format="pandas"
             ):
-                res = {
-                    c: batch[c].to_numpy() for c in columns
-                }
+                res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
 
@@ -289,14 +314,9 @@ class RayDatasetBatcher(Batcher):
     def _create_async_parallel_reader(self, dataset: ray.data.Dataset, num_threads: int):
         q = queue.Queue(maxsize=100)
 
-        columns = self.columns
         batch_size = self.batch_size
 
-        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-            for c in columns:
-                df[c] = df[c].astype(TensorDtype())
-            return df
-
+        to_tensors = self._to_tensors_fn()
         splits = dataset.split(n=num_threads)
 
         def producer(i):
@@ -308,9 +328,7 @@ class RayDatasetBatcher(Batcher):
                 batch_size=batch_size,
                 batch_format="pandas"
             ):
-                res = {
-                    c: batch[c].to_numpy() for c in columns
-                }
+                res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
 
