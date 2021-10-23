@@ -1217,12 +1217,15 @@ class ResNetBlockLayer(LudwigModule):
             kernel_size=1,
             stride=stride)
 
-        self.layers = [
-            block_fn(
-                img_height, img_width, first_in_channels, out_channels, stride,
-                batch_norm_momentum, batch_norm_epsilon, projection_shortcut
-            )
-        ]
+        self.layers = torch.nn.ModuleList(
+            [
+                block_fn(
+                    img_height, img_width, first_in_channels, out_channels,
+                    stride,
+                    batch_norm_momentum, batch_norm_epsilon, projection_shortcut
+                )
+            ]
+        )
         in_channels, img_height, img_width = self.layers[-1].output_shape
 
         for _ in range(1, num_blocks):
@@ -1312,7 +1315,7 @@ class ResNet(LudwigModule):
         block_sizes, block_strides = self.get_blocks(
             resnet_size, block_sizes, block_strides)
 
-        self.layers = []
+        self.layers = torch.nn.ModuleList()
         self.layers.append(Conv2DLayerFixedPadding(
             img_height=img_height,
             img_width=img_width,
