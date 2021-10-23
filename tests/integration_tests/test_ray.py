@@ -242,7 +242,7 @@ def test_ray_image():
             ),
         ]
         output_features = [binary_feature()]
-        run_test_parquet(input_features, output_features, num_examples=50)
+        run_test_parquet(input_features, output_features)
 
 
 @pytest.mark.distributed
