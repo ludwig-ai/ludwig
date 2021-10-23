@@ -666,7 +666,8 @@ class Conv2DLayer(LudwigModule):
     ):
         super().__init__()
 
-        self.layers = []
+        self.layers = torch.nn.ModuleList()
+
         self._input_shape = (in_channels, img_height, img_width)
         pool_stride = pool_stride or pool_kernel_size
 
@@ -847,7 +848,7 @@ class Conv2DStack(LudwigModule):
             if 'pool_dilation' not in layer:
                 layer['pool_dilation'] = default_pool_dilation
 
-        self.stack = []
+        self.stack = torch.nn.ModuleList()
 
         in_channels = first_in_channels
         for i, layer in enumerate(self.layers):
@@ -929,7 +930,7 @@ class Conv2DLayerFixedPadding(LudwigModule):
     ):
         super().__init__()
 
-        self.layers = []
+        self.layers = torch.nn.ModuleList()
         self._input_shape = (in_channels, img_height, img_width)
 
         padding = 'same'
