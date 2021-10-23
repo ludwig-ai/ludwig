@@ -152,10 +152,13 @@ def _read_image_buffer(v):
     # read in file buffer to obtain ndarray of image, then
     # convert to torch tensor and permute tensor to be channel first
     # format, i.e., [height, width, channels] -> [channels, height, width]
-    return torch.permute(
+    image = torch.permute(
         torch.tensor(imread(v.file.read(), image_type_suffix)),
         (2, 0, 1)
     )
+    print(
+        f'\n>>>> REST SERVER, file {v.filename}, image {image}')  # todo: debugging
+    return image
 
 
 def convert_input(form, input_features):

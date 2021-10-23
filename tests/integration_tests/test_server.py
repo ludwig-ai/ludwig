@@ -156,6 +156,7 @@ def test_server_integration_with_images(csv_filename):
     data_df = read_csv(rel_path)
 
     # One-off prediction
+    print(f'\n>>>>>>start one-off prediction test')  # todo: debugging
     first_entry = data_df.T.to_dict()[0]
     data, files = convert_to_form(first_entry)
     server_response = client.post('/predict', data=data, files=files)
@@ -165,6 +166,7 @@ def test_server_integration_with_images(csv_filename):
     server_response_keys = sorted(list(server_response.keys()))
     assert server_response_keys == sorted(output_keys_for(output_features))
 
+    print(f'\n>>>>>> doing model prediction')  # todo: debugging
     model_output, _ = model.predict(
         dataset=[first_entry], data_format=dict
     )

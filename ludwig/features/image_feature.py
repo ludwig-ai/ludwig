@@ -197,20 +197,31 @@ class ImageFeatureMixin:
         """
 
         explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
-        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and \
+                                preprocessing_parameters[NUM_CHANNELS]
 
         if explicit_num_channels:
-            first_image = read_image(first_img_entry, preprocessing_parameters[NUM_CHANNELS])
+            first_image = read_image(first_img_entry,
+                                     preprocessing_parameters[NUM_CHANNELS])
         else:
             first_image = read_image(first_img_entry)
 
+        print(
+            f'\n>>>>>> _finalize_preprocessing_parameters: {first_img_entry if isinstance(first_img_entry, str) else "tensor"}'
+            f' {first_image}'
+        )
+
         inferred_sample = None
-        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
-            sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-            sample = [read_image(get_image_from_path(src_path, img)) for img in input_feature_col.head(sample_size)]
+        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (
+                explicit_height_width and explicit_num_channels):
+            sample_size = min(len(input_feature_col),
+                              preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
+            sample = [read_image(get_image_from_path(src_path, img)) for img in
+                      input_feature_col.head(sample_size)]
             inferred_sample = [img for img in sample if img is not None]
             if len(inferred_sample) == 0:
-                raise ValueError("No readable images in sample, image dimensions cannot be inferred")
+                raise ValueError(
+                    "No readable images in sample, image dimensions cannot be inferred")
 
         should_resize = False
         if explicit_height_width:
