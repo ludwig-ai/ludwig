@@ -309,7 +309,7 @@ class ImageFeatureMixin:
         )
 
         if not isinstance(first_img_entry, str) \
-                and not isinstance(first_img_entry, np.ndarray):
+                and not isinstance(first_img_entry, torch.Tensor):
             raise ValueError(
                 'Invalid image feature data type.  Detected type is {}, '
                 'expect either string for file path or numpy array.'

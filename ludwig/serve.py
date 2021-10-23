@@ -24,6 +24,8 @@ import tempfile
 import pandas as pd
 from imageio import imread
 
+import torch
+
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, AUDIO
 from ludwig.contrib import add_contrib_callback_args
@@ -147,8 +149,13 @@ def _read_image_buffer(v):
     # get image format type, e.g., 'jpg', 'png', etc.
     image_type_suffix = os.path.splitext(v.filename)[1][1:]
 
-    # read in file buffer to obtain ndarray of image
-    return imread(v.file.read(), image_type_suffix)
+    # read in file buffer to obtain ndarray of image, then
+    # convert to torch tensor and permute tensor to be channel first
+    # format, i.e., [height, width, channels] -> [channels, height, width]
+    return torch.permute(
+        torch.tensor(imread(v.file.read(), image_type_suffix)),
+        (2, 0, 1)
+    )
 
 
 def convert_input(form, input_features):
