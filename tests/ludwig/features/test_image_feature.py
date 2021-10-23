@@ -97,3 +97,24 @@ def test_image_input_feature(
     encoder_output = input_feature_obj(input_tensor)
     assert encoder_output['encoder_output'].shape == \
            (BATCH_SIZE, *input_feature_obj.output_shape)
+
+    # todo: remove code
+    # # test for parameter updates
+    # before = [(x[0], x[1].clone()) for x in input_feature_obj.named_parameters()]
+    # loss_function = torch.nn.MSELoss()
+    # optimizer = torch.optim.SGD(input_feature_obj.parameters(), lr=0.1)
+    # target_tensor = torch.ones(encoder_output['encoder_output'].shape, dtype=torch.float32)
+    #
+    # # do parameter update
+    # loss = loss_function(encoder_output['encoder_output'], target_tensor)
+    # loss.backward()
+    # optimizer.step()
+    #
+    # after = [(x[0], x[1].clone()) for x in input_feature_obj.named_parameters()]
+    #
+    # # check for parameter update
+    # for b, a in zip(before, after):
+    #     if not (b[1] != a[1]).any():
+    #         raise RuntimeError(
+    #             f'no parameter update for {a[0]}'
+    #         )
