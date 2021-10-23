@@ -75,7 +75,13 @@ def run_api_experiment(config, data_parquet):
     assert kwargs.get('resources_per_worker').get('CPU') == 2
 
     # Train on Parquet
-    train_with_backend(RAY_BACKEND_CONFIG, config, dataset=data_parquet, evaluate=False)
+    model = train_with_backend(
+        RAY_BACKEND_CONFIG, config, dataset=data_parquet, evaluate=False
+    )
+
+    assert isinstance(model.backend, RayBackend)
+    assert model.backend.df_engine.parallelism == \
+           RAY_BACKEND_CONFIG['processor']['parallelism']
 
 
 def run_split_api_experiment(config, data_parquet):
