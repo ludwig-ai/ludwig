@@ -1,37 +1,15 @@
-from typing import Optional, Type, Union
-
-import marshmallow_dataclass
 from dataclasses import field
 from marshmallow import fields, validate, ValidationError
 
 from ludwig.modules.initializer_modules import initializers_registry
 from ludwig.modules.reduction_modules import reduce_mode_registry
 
-_initializer_options = [
-    'identity',
-    'zeros',
-    'ones',
-    'orthogonal',
-    'normal',
-    'uniform',
-    'truncated_normal',
-    'variance_scaling',
-    'glorot_normal',
-    'glorot_uniform',
-    'xavier_normal',
-    'xavier_uniform',
-    'he_normal',
-    'he_uniform',
-    'lecun_normal',
-    'lecun_uniform',
-]
 
-
-def InitializerOptions(default=None, nullable=False):
+def InitializerOptions(default=None):
     return StringOptions(
-        _initializer_options,
+        list(initializers_registry.keys()),
         default=default,
-        nullable=nullable
+        nullable=True
     )
 
 

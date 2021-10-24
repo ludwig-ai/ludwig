@@ -15,25 +15,17 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import List, Dict, Optional, Union, Any
 
-from types import MethodWrapperType, SimpleNamespace
-from typing import List, Dict, Optional, Type, Union, Any
-
-from tensorflow.python.keras.utils.generic_utils import default
-import ludwig.utils.schema_utils as schema
-
-from marshmallow import Schema, fields, validate, INCLUDE
-from marshmallow_jsonschema import JSONSchema
-from dataclasses import field
-import marshmallow_dataclass
+from marshmallow import INCLUDE
 from marshmallow_dataclass import dataclass
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import concatenate
-from tensorflow.python.keras.layers.core import Dropout
 
+import ludwig.utils.schema_utils as schema
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
@@ -49,7 +41,6 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
-
 
 
 sequence_encoder_registry = {
