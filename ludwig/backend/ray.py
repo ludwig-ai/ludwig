@@ -39,9 +39,10 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 # TODO(travis): remove for ray 1.8
+from ludwig.utils.torch_utils import initialize_pytorch
+
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 if _ray18:
     import ray.train as rt
@@ -127,16 +128,10 @@ def _get_df_engine(processor):
 
 class RayRemoteModel:
     def __init__(self, model: ECD):
-        buf = save_weights_to_buffer(model)
-        self.cls = type(model)
-        self.args = model.get_args()
-        self.state = ray.put(buf)
+        self.model = model
 
     def load(self):
-        obj = self.cls(*self.args)
-        buf = ray.get(self.state)
-        load_weights_from_buffer(obj, buf)
-        return obj
+        return self.model
 
 
 class RayRemoteTrainer(RemoteTrainer):
@@ -144,17 +139,10 @@ class RayRemoteTrainer(RemoteTrainer):
         super().__init__(*args, **kwargs)
 
     def train(self, *args, **kwargs):
-        results = super().train(*args, **kwargs)
-        if results is not None:
-            model, *stats = results
-            results = (save_weights_to_buffer(model), *stats)
-        return results
+        return super().train(*args, **kwargs)
 
     def train_online(self, *args, **kwargs):
-        results = super().train_online(*args, **kwargs)
-        if results is not None:
-            results = save_weights_to_buffer(results)
-        return results
+        return super().train_online(*args, **kwargs)
 
 
 def train_fn(
@@ -168,7 +156,7 @@ def train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
-    initialize_tensorflow(horovod=hvd)
+    initialize_pytorch(horovod=hvd)
 
     model = remote_model.load()
 
@@ -256,9 +244,7 @@ class RayTrainerV2(BaseTrainer):
             # },
         )[0]
 
-        weights, *stats = results
-        load_weights_from_buffer(model, weights)
-        return (model, *stats)
+        return results
 
     def train_online(self, model, *args, **kwargs):
         raise NotImplementedError()
@@ -291,9 +277,7 @@ class RayLegacyTrainer(BaseTrainer):
             lambda trainer: trainer.train(remote_model.load(), *args, **kwargs)
         )
 
-        weights, *stats = results[0]
-        load_weights_from_buffer(model, weights)
-        return (model, *stats)
+        return results
 
     def train_online(self, model, *args, **kwargs):
         remote_model = RayRemoteModel(model)
@@ -302,9 +286,7 @@ class RayLegacyTrainer(BaseTrainer):
                 remote_model.load(), *args, **kwargs)
         )
 
-        weights = results[0]
-        load_weights_from_buffer(model, weights)
-        return model
+        return results[0]
 
     @property
     def validation_field(self):
@@ -461,9 +443,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         dask.config.set(scheduler=ray_dask_get)
 
-    def initialize_tensorflow(self, **kwargs):
+    def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
-        initialize_tensorflow(gpus=-1)
+        initialize_pytorch(gpus=-1)
         self._tensorflow_kwargs = kwargs
 
     def create_trainer(self, **kwargs):

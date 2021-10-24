@@ -199,9 +199,9 @@ class LudwigModel:
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup TensorFlow
-        self.backend.initialize_tensorflow(gpus=gpus,
-                                           gpu_memory_limit=gpu_memory_limit,
-                                           allow_parallel_threads=allow_parallel_threads)
+        self.backend.initialize_pytorch(gpus=gpus,
+                                        gpu_memory_limit=gpu_memory_limit,
+                                        allow_parallel_threads=allow_parallel_threads)
 
         # setup model
         self.model = None

@@ -53,8 +53,8 @@ def ray_start_2_cpus():
 def run_api_experiment(config, data_parquet):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
-    assert kwargs.get('num_workers') == 1
-    assert kwargs.get('resources_per_worker').get('CPU') == 2
+    assert kwargs.get('num_workers') == 1, kwargs
+    assert kwargs.get('resources_per_worker').get('CPU') == 2, kwargs
 
     # Train on Parquet
     dask_backend = RayBackend(
@@ -79,7 +79,6 @@ def run_test_parquet(
     run_fn=run_api_experiment,
     expect_error=False
 ):
-    tf.config.experimental_run_functions_eagerly(True)
     with ray_start_2_cpus():
         config = {
             'input_features': input_features,
