@@ -483,16 +483,22 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
 
 
 def split_dataset_ttv(dataset, split):
-    training_set = split_dataset(dataset, split, 0)
-    validation_set = split_dataset(dataset, split, 1)
-    test_set = split_dataset(dataset, split, 2)
+    # Obtain distinct splits from the split column. If
+    # a split is not present in this set, then we can skip generating
+    # the dataframe for that split.
+    distinct_values = dataset[split].drop_duplicates()
+    if hasattr(distinct_values, "compute"):
+        distinct_values = distinct_values.compute()
+    distinct_values = set(distinct_values.values.tolist())
+
+    training_set = split_dataset(dataset, split, 0) if 0 in distinct_values else None
+    validation_set = split_dataset(dataset, split, 1) if 1 in distinct_values else None
+    test_set = split_dataset(dataset, split, 2) if 2 in distinct_values else None
     return training_set, test_set, validation_set
 
 
 def split_dataset(dataset, split, value_to_split=0):
     split_df = dataset[dataset[split] == value_to_split]
-    if len(split_df) == 0:
-        return None
     return split_df.reset_index()
 
 
