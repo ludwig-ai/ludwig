@@ -113,10 +113,12 @@ EXECUTORS = [
 ]
 
 
+# TODO ray: replace legacy parquet with ray format
 RAY_BACKEND_KWARGS = {
     'processor': {
         'parallelism': 4
     },
+    'cache_format': 'parquet'
 }
 
 
