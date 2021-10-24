@@ -103,14 +103,14 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml=pytest.xml tests
+        pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
 
     - name: Upload Unit Test Results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-          path: pytest.xml
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+        path: pytest.xml
 
   publish-test-results:
     name: "Publish Unit Tests Results"
