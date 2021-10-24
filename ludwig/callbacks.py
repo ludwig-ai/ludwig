@@ -19,6 +19,8 @@ from abc import ABC
 
 from typing import Dict, Any
 
+from deprecation import deprecated
+
 from ludwig.data.dataset.base import Dataset
 
 
@@ -44,7 +46,21 @@ class Callback(ABC):
     def on_hyperopt_init(self, experiment_name):
         pass
 
+    def on_hyperopt_preprocessing_start(self, experiment_name):
+        pass
+
+    def on_hyperopt_preprocessing_end(self, experiment_name):
+        pass
+
+    def on_hyperopt_start(self, experiment_name):
+        pass
+
+    def on_hyperopt_end(self, experiment_name):
+        pass
+
+    @deprecated
     def on_hyperopt_finish(self, experiment_name):
+        # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
         pass
 
     def on_hyperopt_trial_start(self, parameters):
