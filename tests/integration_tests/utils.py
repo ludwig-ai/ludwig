@@ -662,7 +662,7 @@ def train_with_backend(
             _, eval_preds, _ = model.evaluate(dataset=dataset)
             assert eval_preds is not None
 
-        return model.model.get_weights()
+        return model
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
