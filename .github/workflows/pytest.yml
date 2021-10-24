@@ -22,9 +22,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [ 3.7, 3.8 ]
+        python-version: [ 3.6, 3.7, 3.8 ]
         test-markers: [ "not distributed", "distributed" ]
         include:
+          - python-version: 3.6
+            tensorflow-version: 2.3.1
           - python-version: 3.7
             tensorflow-version: 2.5.0
           - python-version: 3.8
