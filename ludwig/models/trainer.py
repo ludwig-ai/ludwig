@@ -731,6 +731,13 @@ class Trainer(BaseTrainer):
                 last_increase_batch_size=0,
             )
 
+        if self.horovod:
+            # Horovod: broadcast initial variable states from rank 0 to all other processes.
+            # This is necessary to ensure consistent initialization of all workers when
+            # training is started with random weights or restored from a checkpoint.
+            self.horovod.broadcast_parameters(model.state_dict(), root_rank=0)
+            self.horovod.broadcast_optimizer_state(self.optimizer, root_rank=0)
+
         set_random_seed(self.random_seed)
         with training_set.initialize_batcher(
             batch_size=self.batch_size,
@@ -741,7 +748,6 @@ class Trainer(BaseTrainer):
         ) as batcher:
 
             # ================ Training Loop ================
-            first_batch = True
             while progress_tracker.epoch < self.epochs:
                 # note that batch size may change over epochs
                 batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
@@ -848,18 +854,6 @@ class Trainer(BaseTrainer):
                             step=progress_tracker.steps,
                             learning_rate=current_learning_rate,
                         )
-
-                    if self.horovod and first_batch:
-                        # Horovod: broadcast initial variable states from rank 0 to all other processes.
-                        # This is necessary to ensure consistent initialization of all workers when
-                        # training is started with random weights or restored from a checkpoint.
-                        #
-                        # Note: broadcast should be done after the first gradient step to ensure
-                        # optimizer initialization.
-                        self.horovod.broadcast_variables(model.variables,
-                                                         root_rank=0)
-                        self.horovod.broadcast_variables(
-                            self.optimizer.variables(), root_rank=0)
 
                     progress_tracker.steps += 1
                     if self.is_coordinator():

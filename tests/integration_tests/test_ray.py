@@ -102,21 +102,23 @@ def run_test_parquet(
 @pytest.mark.distributed
 def test_ray_tabular():
     input_features = [
-        sequence_feature(reduce_output='sum'),
+        # sequence_feature(reduce_output='sum'),
+        # numerical_feature(normalization='zscore'),
+        # set_feature(),
+        # binary_feature(),
+        # bag_feature(),
+        # vector_feature(),
+        # h3_feature(),
+        # date_feature(),
+        category_feature(vocab_size=2, reduce_input='sum'),
         numerical_feature(normalization='zscore'),
-        set_feature(),
-        binary_feature(),
-        bag_feature(),
-        vector_feature(),
-        h3_feature(),
-        date_feature(),
     ]
     output_features = [
-        category_feature(vocab_size=2, reduce_input='sum'),
-        binary_feature(),
-        set_feature(max_len=3, vocab_size=5),
+        # category_feature(vocab_size=2, reduce_input='sum'),
+        # binary_feature(),
+        # set_feature(max_len=3, vocab_size=5),
         numerical_feature(normalization='zscore'),
-        vector_feature(),
+        # vector_feature(),
     ]
     run_test_parquet(input_features, output_features)
 

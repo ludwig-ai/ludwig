@@ -33,7 +33,6 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
@@ -126,14 +125,6 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
-class RayRemoteModel:
-    def __init__(self, model: ECD):
-        self.model = model
-
-    def load(self):
-        return self.model
-
-
 class RayRemoteTrainer(RemoteTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -147,7 +138,7 @@ class RayRemoteTrainer(RemoteTrainer):
 
 def train_fn(
         executable_kwargs: Dict[str, Any] = None,
-        remote_model: RayRemoteModel = None,
+        model: "LudwigModel" = None,
         training_set_metadata: Dict[str, Any] = None,
         train_shards: List[DatasetPipeline] = None,
         val_shards: List[DatasetPipeline] = None,
@@ -157,8 +148,6 @@ def train_fn(
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
     initialize_pytorch(horovod=hvd)
-
-    model = remote_model.load()
 
     train_shard = RayDatasetShard(
         train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
@@ -206,7 +195,6 @@ class RayTrainerV2(BaseTrainer):
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         executable_kwargs = self.executable_kwargs
-        remote_model = RayRemoteModel(model)
 
         # TODO(travis) remove this once `dataset` keyword is supported:
         wg = TrainWorkerGroup(self.trainer._executor.worker_group)
@@ -234,7 +222,7 @@ class RayTrainerV2(BaseTrainer):
             lambda config: train_fn(**config),
             config={
                 'executable_kwargs': executable_kwargs,
-                'remote_model': remote_model,
+                'model': model,
                 **kwargs
             },
             # dataset={
@@ -272,18 +260,16 @@ class RayLegacyTrainer(BaseTrainer):
                             executable_kwargs=executable_kwargs)
 
     def train(self, model, *args, **kwargs):
-        remote_model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda trainer: trainer.train(remote_model.load(), *args, **kwargs)
+            lambda trainer: trainer.train(model, *args, **kwargs)
         )
 
         return results
 
     def train_online(self, model, *args, **kwargs):
-        remote_model = RayRemoteModel(model)
         results = self.executor.execute(
             lambda trainer: trainer.train_online(
-                remote_model.load(), *args, **kwargs)
+                model, *args, **kwargs)
         )
 
         return results[0]
@@ -309,11 +295,10 @@ class RayPredictor(BasePredictor):
     def batch_predict(self, model: ECD, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
 
-        remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
         batch_predictor = self.get_batch_infer_model(
-            remote_model,
+            model,
             predictor_kwargs,
             output_columns,
             dataset.features,
@@ -376,7 +361,7 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
             self,
-            remote_model: RayRemoteModel,
+            model: "LudwigModel",
             predictor_kwargs: Dict[str, Any],
             output_columns: List[str],
             features: Dict[str, Dict],
@@ -385,7 +370,7 @@ class RayPredictor(BasePredictor):
     ):
         class BatchInferModel:
             def __init__(self):
-                self.model = remote_model.load()
+                self.model = model
                 self.output_columns = output_columns
                 self.features = features
                 self.training_set_metadata = training_set_metadata
