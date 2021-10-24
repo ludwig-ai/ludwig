@@ -4,22 +4,23 @@ import pytest
 import tensorflow as tf
 
 from ludwig.combiners.combiners import (
-    ComparatorCombinerSchema,
+    ComparatorCombinerConfig,
     ConcatCombiner,
-    ConcatCombinerSchema,
-    SequenceCombinerSchema,
+    ConcatCombinerConfig,
+    SequenceCombinerConfig,
     SequenceConcatCombiner,
     SequenceCombiner,
-    SequenceConcatCombinerSchema,
+    SequenceConcatCombinerConfig,
     TabNetCombiner,
     ComparatorCombiner,
-    TabNetCombinerSchema,
-    TabTransformerCombinerSchema,
+    TabNetCombinerConfig,
+    TabTransformerCombinerConfig,
     TransformerCombiner,
     TabTransformerCombiner,
-    TransformerCombinerSchema,
+    TransformerCombinerConfig,
     sequence_encoder_registry,
 )
+from ludwig.utils.schema_utils import load_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -128,8 +129,7 @@ def test_concat_combiner(encoder_outputs, fc_layer):
     del encoder_outputs["feature_4"]
 
     # setup combiner to test
-    # combiner = ConcatCombiner(config_params=ConcatCombinerParams(fc_layers=fc_layer))
-    combiner = ConcatCombiner(config_schema=ConcatCombinerSchema().dump(dict(fc_layers=fc_layer)))
+    combiner = ConcatCombiner(config=load_config(ConcatCombinerConfig, fc_layers=fc_layer))
 
     # concatenate encoder outputs
     results = combiner(encoder_outputs)
@@ -157,10 +157,11 @@ def test_concat_combiner(encoder_outputs, fc_layer):
 def test_sequence_concat_combiner(
         encoder_outputs, main_sequence_feature, reduce_output
 ):
-    combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema.load(dict(
+    combiner = SequenceConcatCombiner(config=load_config(
+        SequenceConcatCombinerConfig,
         main_sequence_feature=main_sequence_feature,
         reduce_output=reduce_output
-    )))
+    ))
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -192,11 +193,12 @@ def test_sequence_concat_combiner(
 def test_sequence_combiner(
         encoder_outputs, main_sequence_feature, encoder, reduce_output
 ):
-    combiner = SequenceCombiner(SequenceCombinerSchema().dump(dict(
+    combiner = SequenceCombiner(config=load_config(
+        SequenceCombinerConfig,
         main_sequence_feature=main_sequence_feature,
         encoder=encoder,
         reduce_output=reduce_output,
-    )))
+    ))
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -271,14 +273,15 @@ def test_tabnet_combiner(encoder_outputs_key):
     encoder_outputs = tabnet_encoder_outputs()[encoder_outputs_key]
 
     # setup combiner to test
-    combiner = TabNetCombiner(TabNetCombinerSchema().dump(dict(
+    combiner = TabNetCombiner(config=load_config(
+        TabNetCombinerConfig,
         size=2,
         output_size=2,
         num_steps=3,
         num_total_blocks=4,
         num_shared_blocks=2,
         dropout=0.1
-    )))
+    ))
 
     # concatenate encoder outputs
     results = combiner(encoder_outputs)
@@ -307,9 +310,13 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
     print(fc_size)
     combiner = ComparatorCombiner(
-        entity_1, 
-        entity_2, 
-        config_schema=ComparatorCombinerSchema().dump(dict(fc_layers=fc_layer, fc_size=fc_size))
+        config=load_config(
+            ComparatorCombinerConfig,
+            entity_1=entity_1,
+            entity_2=entity_2,
+            fc_layers=fc_layer,
+            fc_size=fc_size
+        )
     )
 
     # concatenate encoder outputs
@@ -352,7 +359,7 @@ def test_transformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TransformerCombiner(
         input_features=input_features_def,
-        config_params=TransformerCombinerSchema().dump({})
+        config=load_config(TransformerCombinerConfig)
     )
 
     # concatenate encoder outputs
@@ -386,7 +393,7 @@ def test_tabtransformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features_def,
-        config_params=TabTransformerCombinerSchema().dump({})
+        config=load_config(TabTransformerCombinerConfig)
     )
 
     # concatenate encoder outputs
@@ -398,9 +405,10 @@ def test_tabtransformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features_def,
-        config_params=TabTransformerCombinerSchema().dump(dict(
+        config=load_config(
+            TabTransformerCombinerConfig,
             embed_input_feature_name=56
-        ))
+        )
     )
 
     # concatenate encoder outputs
@@ -412,9 +420,10 @@ def test_tabtransformer_combiner(encoder_outputs):
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features_def,
-        config_params=TabTransformerCombinerSchema().dump(dict(
+        config=load_config(
+            TabTransformerCombinerConfig,
             embed_input_feature_name='add'
-        ))
+        )
     )
 
     # concatenate encoder outputs

@@ -11,7 +11,7 @@ from ludwig.features.feature_registries import input_type_registry, \
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.schema_utils import init_with_kwargs
+from ludwig.utils.schema_utils import load_config_with_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ECD(tf.keras.Model):
         # ================ Combiner ================
         logger.debug('Combiner {}'.format(combiner_def[TYPE]))
         combiner_class = get_combiner_class(combiner_def[TYPE])
-        config, kwargs = init_with_kwargs(
+        config, kwargs = load_config_with_kwargs(
             combiner_class.get_params_cls(),
             combiner_def,
         )

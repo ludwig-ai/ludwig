@@ -1,4 +1,6 @@
 from dataclasses import field
+
+import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
 
 from ludwig.modules.initializer_modules import initializers_registry
@@ -115,9 +117,15 @@ class EmbedInputFeatureNameField(fields.Field):
         }
 
 
-def init_with_kwargs(cls, kwargs):
+def load_config(cls, **kwargs):
+    schema = marshmallow_dataclass.class_schema(cls.__name__)()
+    return schema.load(kwargs)
+
+
+def load_config_with_kwargs(cls, kwargs):
     fields = cls.__fields__.keys()
-    return cls(
+    return load_config(
+        cls,
         **{
             k: v for k, v in kwargs.items()
             if k in fields
