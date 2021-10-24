@@ -245,6 +245,7 @@ def test_ray_image():
         run_test_parquet(input_features, output_features)
 
 
+@pytest.mark.skip(reason="flaky: ray is running out of resources")
 @pytest.mark.distributed
 def test_ray_split():
     input_features = [
