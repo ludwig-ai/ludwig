@@ -14,10 +14,7 @@ FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
 RUN apt-get -y update && apt-get -y install \
     git \
     libsndfile1 \
-    cmake \
-    libcudnn7=7.6.5.32-1+cuda10.1 \
-    libnccl2=2.7.8-1+cuda10.1 \
-    libnccl-dev=2.7.8-1+cuda10.1
+    cmake
 
 WORKDIR /ludwig
 
