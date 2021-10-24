@@ -114,7 +114,7 @@ jobs:
 
   publish-test-results:
     name: "Publish Unit Tests Results"
-    needs: build-and-test
+    needs: pytest
     runs-on: ubuntu-latest
     if: always()
 
