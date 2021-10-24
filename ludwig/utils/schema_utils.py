@@ -51,7 +51,7 @@ def PositiveInteger(default=None):
     return field(metadata={
         'marshmallow_field': fields.Integer(
             validate=validate.Range(min=1),
-            allow_none=True,
+            allow_none=default is None,
         )
     }, default=default)
 

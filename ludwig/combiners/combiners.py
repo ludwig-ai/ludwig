@@ -51,6 +51,18 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
+
+sequence_encoder_registry = {
+    'stacked_cnn': StackedCNN,
+    'parallel_cnn': ParallelCNN,
+    'stacked_parallel_cnn': StackedParallelCNN,
+    'rnn': StackedRNN,
+    'cnnrnn': StackedCNNRNN,
+    # todo: add transformer
+    # 'transformer': StackedTransformer,
+}
+
+
 @dataclass
 class ConcatCombinerConfig:
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
@@ -78,6 +90,7 @@ class ConcatCombiner(tf.keras.Model):
             self,
             input_features: Optional[List] = None,
             config: ConcatCombinerConfig = None,
+            **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
@@ -173,6 +186,7 @@ class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
             config: SequenceConcatCombinerConfig = None,
+            **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
@@ -311,47 +325,29 @@ class SequenceConcatCombiner(tf.keras.Model):
 
 
 @dataclass
-class SequenceCombinerData:
-    # reduce_output: Optional[str] = field(metadata=dict(
-    #     validate=validate.OneOf(reduce_output_registry),
-    #     # allow_none=True,
-    #     dump_default=None,
-    #     load_default=None
-    # ))
-    # main_sequence_feature: Optional[str] = field(metadata=dict(
-    #     # allow_none=True,
-    #     dump_default=None,
-    #     load_default=None
-    # ))
-    # encoder: Optional[str] = field(metadata=dict(
-    #     allow_none=True,
-    #     dump_default=None,
-    #     load_default=None
-    # ))
+class SequenceCombinerConfig:
+    main_sequence_feature: Optional[str] = None
+    reduce_output: Optional[str] = schema.StringOptions(['sum', 'mean', 'sqrt'])
+    encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
 
     class Meta:
         unknown = INCLUDE
 
-SequenceCombinerSchema = marshmallow_dataclass.class_schema(SequenceCombinerData)()
+
 class SequenceCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_schema: SequenceCombinerData = SequenceCombinerSchema.load({}),
+            config: SequenceCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
-        config_schema = SimpleNamespace(**config_schema)
-
-        self.combiner = SequenceConcatCombiner(SequenceConcatCombinerSchema.load(dict(
-            reduce_output=None,
-            main_sequence_feature=config_schema.main_sequence_feature
-        )))
+        self.combiner = SequenceConcatCombiner(config)
 
         self.encoder_obj = get_from_registry(
-            config_schema.encoder, sequence_encoder_registry)(
+            config.encoder, sequence_encoder_registry)(
             should_embed=False,
-            reduce_output=config_schema.reduce_output,
+            reduce_output=config.reduce_output,
             **kwargs
         )
 
@@ -389,90 +385,51 @@ class SequenceCombiner(tf.keras.Model):
     
     @staticmethod
     def get_schema_cls():
-        return SequenceCombinerSchema
+        return SequenceCombinerConfig
 
-    @staticmethod
-    def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(SequenceCombinerSchema)
 
 @dataclass
 class TabNetCombinerConfig:
-    size: int = field(metadata=dict(
-        strict=True,
-        validate=validate.Range(min=1, min_inclusive=True),
-        dump_default=32,
-    ))
-    output_size = fields.Int(
-        strict=True, 
-        dump_default=32,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    num_steps = fields.Int(
-        strict=True, 
-        dump_default=1,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    num_total_blocks = fields.Int(
-        strict=True, 
-        dump_default=4,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    num_shared_blocks = fields.Int(
-        strict=True, 
-        dump_default=2,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    relaxation_factor = fields.Float(
-        validate=validate.Range(min=0, min_inclusive=True),
-        dump_default=1.5,
-    )
-    bn_epsilon = fields.Float(
-        dump_default=1e-3,
-    )
-    bn_momentum = fields.Float(
-        dump_default=0.7,
-    )
-    bn_virtual_bs = fields.Int(
-        allow_none=True,
-        dump_default=None,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    sparsity = fields.Float(
-        dump_default=1e-5,
-    )
-    dropout = fields.Float(
-        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        dump_default=0.0,
-    )
+    size: int = schema.PositiveInteger(default=32)
+    output_size: int = schema.PositiveInteger(default=32)
+    num_steps: int = schema.NonNegativeInteger(default=1)
+    num_total_blocks: int = schema.NonNegativeInteger(default=4)
+    num_shared_blocks: int = schema.NonNegativeInteger(default=2)
+    relaxation_factor: float = 1.5
+    bn_epsilon: float = 1e-3
+    bn_momentum: float = 0.7
+    bn_virtual_bs: Optional[int] = schema.PositiveInteger()
+    sparsity: float = 1e-5
+    dropout: float = 0.0
 
     class Meta:
         unknown = INCLUDE
 
+
 class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_schema: TabNetCombinerConfig = None,
+            config: TabNetCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
-        config_schema = SimpleNamespace(**config_schema)
 
         self.tabnet = TabNet(
-            size=config_schema.size,
-            output_size=config_schema.output_size,
-            num_steps=config_schema.num_steps,
-            num_total_blocks=config_schema.num_total_blocks,
-            num_shared_blocks=config_schema.num_shared_blocks,
-            relaxation_factor=config_schema.relaxation_factor,
-            bn_epsilon=config_schema.bn_epsilon,
-            bn_momentum=config_schema.bn_momentum,
-            bn_virtual_bs=config_schema.bn_virtual_bs,
-            sparsity=config_schema.sparsity
+            size=config.size,
+            output_size=config.output_size,
+            num_steps=config.num_steps,
+            num_total_blocks=config.num_total_blocks,
+            num_shared_blocks=config.num_shared_blocks,
+            relaxation_factor=config.relaxation_factor,
+            bn_epsilon=config.bn_epsilon,
+            bn_momentum=config.bn_momentum,
+            bn_virtual_bs=config.bn_virtual_bs,
+            sparsity=config.sparsity
         )
 
-        if config_schema.dropout > 0:
-            self.dropout = tf.keras.layers.Dropout(config_schema.dropout)
+        if config.dropout > 0:
+            self.dropout = tf.keras.layers.Dropout(config.dropout)
         else:
             self.dropout = None
 
@@ -526,11 +483,7 @@ class TabNetCombiner(tf.keras.Model):
 
     @staticmethod
     def get_schema_cls():
-        return TabNetCombinerSchema
-
-    @staticmethod
-    def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(TabNetCombinerSchema())
+        return TabNetCombinerConfig
 
 
 class TransformerCombinerSchema(Schema):
@@ -1209,19 +1162,9 @@ def get_combiner_class(combiner_type):
 combiner_registry = {
     'concat': ConcatCombiner,
     'sequence_concat': SequenceConcatCombiner,
-    # 'sequence': SequenceCombiner,
+    'sequence': SequenceCombiner,
     # 'tabnet': TabNetCombiner,
     # 'comparator': ComparatorCombiner,
     # "transformer": TransformerCombiner,
     # "tabtransformer": TabTransformerCombiner,
-}
-
-sequence_encoder_registry = {
-    'stacked_cnn': StackedCNN,
-    'parallel_cnn': ParallelCNN,
-    'stacked_parallel_cnn': StackedParallelCNN,
-    'rnn': StackedRNN,
-    'cnnrnn': StackedCNNRNN,
-    # todo: add transformer
-    # 'transformer': StackedTransformer,
 }
