@@ -145,6 +145,8 @@ def get_combiner_conds():
         schema = marshmallow_dataclass.class_schema(schema_cls)()
         schema_json = JSONSchema().dump(schema)
         combiner_json = schema_json['definitions'][schema_cls.__name__]['properties']
+
+        # TODO: add type to schema: https://github.com/lovasoa/marshmallow_dataclass/issues/62
         combiner_cond = create_cond(
             {'type': combiner_type},
             combiner_json

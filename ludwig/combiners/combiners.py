@@ -176,7 +176,7 @@ class ConcatCombiner(tf.keras.Model):
 @dataclass
 class SequenceConcatCombinerConfig:
     main_sequence_feature: Optional[str] = None
-    reduce_output: Optional[str] = schema.StringOptions(['sum', 'mean', 'sqrt'])
+    reduce_output: Optional[str] = schema.ReductionOptions()
 
     class Meta:
         unknown = INCLUDE
@@ -327,7 +327,7 @@ class SequenceConcatCombiner(tf.keras.Model):
 @dataclass
 class SequenceCombinerConfig:
     main_sequence_feature: Optional[str] = None
-    reduce_output: Optional[str] = schema.StringOptions(['sum', 'mean', 'sqrt'])
+    reduce_output: Optional[str] = schema.ReductionOptions()
     encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
 
     class Meta:
@@ -507,11 +507,7 @@ class TransformerCombinerConfig:
     fc_activation: str = 'relu'
     fc_dropout: float = 0.0
     fc_residual: bool = False
-    reduce_output: str = schema.StringOptions(
-        ['sum', 'mean', 'sqrt'],
-        default='mean',
-        nullable=False
-    )
+    reduce_output: str = schema.ReductionOptions(default='mean')
 
     class Meta:
         unknown = INCLUDE
@@ -620,150 +616,76 @@ class TransformerCombiner(tf.keras.Model):
         return TransformerCombinerConfig
 
 
-class EmbedInputFeatureNameField(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, int) or isinstance(value, str):
-            return value
-        else:
-            raise ValidationError('Field should be int or str')
-    
-    def _jsonschema_type_mapping(self):
-        return {
-            'type': ['string', 'integer']
-        }
-
-class TabTransformerCombinerSchema(Schema):
-    # embed_input_feature_name = EmbedInputFeatureNameField(
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # num_layers = fields.Int(
-    #     strict=True,
-    #     dump_default=1,
-    #     validate=validate.Range(min=1, min_inclusive=True)
-    # )
-    # hidden_size = fields.Int(
-    #     strict=True,
-    #     dump_default=256,
-    #     validate=validate.Range(min=1, min_inclusive=True)
-    # )
-    # num_heads = fields.Int(
-    #     strict=True,
-    #     dump_default=8,
-    #     validate=validate.Range(min=1, min_inclusive=True)
-    # )
-    # transformer_fc_size = fields.Int(
-    #     strict=True,
-    #     dump_default=256,
-    #     validate=validate.Range(min=1, min_inclusive=True)
-    # )
-    # dropout = fields.Float(
-    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-    #     dump_default=0.1,
-    # )
-    # fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
-    # num_fc_layers = fields.Int(
-    #     strict=True,
-    #     dump_default=0,
-    #     validate=validate.Range(min=0, min_inclusive=True)
-    # )
-    # fc_size = fields.Int(
-    #     strict=True,
-    #     dump_default=256,
-    #     validate=validate.Range(min=1, min_inclusive=True)
-    # )
-    # use_bias = fields.Bool(dump_default=True)
-    # weights_initializer = WeightsInitializerField(
-    #     dump_default='glorot_uniform'
-    # )
-    # bias_initializer = BiasInitializerField(
-    #     dump_default='zeros'
-    # )
-    # weights_regularizer = fields.String(
-    #     validate=validate.OneOf(weights_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # bias_regularizer = fields.String(
-    #     validate=validate.OneOf(bias_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # activity_regularizer = fields.String(
-    #     validate=validate.OneOf(activity_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # norm = fields.String(
-    #     validate=validate.OneOf(norm_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # norm_params = fields.Dict(
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # fc_activation = fields.String(
-    #     validate=validate.OneOf(activation_registry),
-    #     dump_default='relu'
-    # )
-    # fc_dropout = fields.Float(
-    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-    #     dump_default=0.0,
-    # )
-    # fc_residual = fields.Bool(dump_default=False)
-    # reduce_output = fields.String(
-    #     validate=validate.OneOf(reduce_output_registry),
-    #     allow_none=True,
-    #     dump_default='concat'
-    # )
+@dataclass
+class TabTransformerCombinerConfig:
+    embed_input_feature_name: Optional[Union[str, int]] = schema.Embed()
+    num_layers: int = schema.PositiveInteger(default=1)
+    hidden_size: int = schema.NonNegativeInteger(default=256)
+    num_heads: int = schema.NonNegativeInteger(default=8)
+    transformer_fc_size: int = schema.NonNegativeInteger(default=256)
+    dropout: float = 0.1
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    fc_activation: str = 'relu'
+    fc_dropout: float = 0.0
+    fc_residual: bool = False
+    reduce_output: str = schema.ReductionOptions(default='concat')
 
     class Meta:
         unknown = INCLUDE
+
 
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features: Optional[List] = None,
-            config_schema: TabTransformerCombinerSchema = TabTransformerCombinerSchema().dump({}),
+            config: TabTransformerCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
-        config_schema = SimpleNamespace(**config_schema)
 
-        if config_schema.reduce_output is None:
+        if config.reduce_output is None:
             raise ValueError("TabTransformer requires the `resude_output` "
                              "parametr")
-        self.reduce_output = config_schema.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config_schema.reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         self.supports_masking = True
         self.layer_norm = LayerNormalization()
 
-        self.embed_input_feature_name = config_schema.embed_input_feature_name
+        self.embed_input_feature_name = config.embed_input_feature_name
         if self.embed_input_feature_name:
             vocab = [i_f for i_f in input_features
                      if i_f[TYPE] != NUMERICAL or i_f[TYPE] != BINARY]
             if self.embed_input_feature_name == 'add':
-                self.embed_i_f_name_layer = Embed(vocab, config_schema.hidden_size,
+                self.embed_i_f_name_layer = Embed(vocab, config.hidden_size,
                                                   force_embedding_size=True)
-                projector_size = config_schema.hidden_size
+                projector_size = config.hidden_size
             elif isinstance(self.embed_input_feature_name, int):
-                if self.embed_input_feature_name > config_schema.hidden_size:
+                if self.embed_input_feature_name > config.hidden_size:
                     raise ValueError(
                         "TabTransformer parameter "
                         "`embed_input_feature_name` "
                         "specified integer value ({}) "
                         "needs to be smaller than "
                         "`hidden_size` ({}).".format(
-                            self.embed_input_feature_name, config_schema.hidden_size
+                            self.embed_input_feature_name, config.hidden_size
                         ))
                 self.embed_i_f_name_layer = Embed(
                     vocab,
                     self.embed_input_feature_name,
                     force_embedding_size=True,
                 )
-                projector_size = config_schema.hidden_size - self.embed_input_feature_name
+                projector_size = config.hidden_size - self.embed_input_feature_name
             else:
                 raise ValueError("TabTransformer parameter "
                                  "`embed_input_feature_name` "
@@ -771,7 +693,7 @@ class TabTransformerCombiner(tf.keras.Model):
                                  "the current value is "
                                  "{}".format(self.embed_input_feature_name))
         else:
-            projector_size = config_schema.hidden_size
+            projector_size = config.hidden_size
 
         logger.debug('  Projectors')
         self.projectors = [Dense(projector_size) for i_f in input_features
@@ -781,32 +703,32 @@ class TabTransformerCombiner(tf.keras.Model):
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
-            hidden_size=config_schema.hidden_size,
-            num_heads=config_schema.num_heads,
-            fc_size=config_schema.transformer_fc_size,
-            num_layers=config_schema.num_layers,
-            dropout=config_schema.dropout
+            hidden_size=config.hidden_size,
+            num_heads=config.num_heads,
+            fc_size=config.transformer_fc_size,
+            num_layers=config.num_layers,
+            dropout=config.dropout
         )
 
         logger.debug('  FCStack')
 
         self.fc_stack = FCStack(
-            layers=config_schema.fc_layers,
-            num_layers=config_schema.num_fc_layers,
-            default_fc_size=config_schema.fc_size,
-            default_use_bias=config_schema.use_bias,
-            default_weights_initializer=config_schema.weights_initializer,
-            default_bias_initializer=config_schema.bias_initializer,
-            default_weights_regularizer=config_schema.weights_regularizer,
-            default_bias_regularizer=config_schema.bias_regularizer,
-            default_activity_regularizer=config_schema.activity_regularizer,
+            layers=config.fc_layers,
+            num_layers=config.num_fc_layers,
+            default_fc_size=config.fc_size,
+            default_use_bias=config.use_bias,
+            default_weights_initializer=config.weights_initializer,
+            default_bias_initializer=config.bias_initializer,
+            default_weights_regularizer=config.weights_regularizer,
+            default_bias_regularizer=config.bias_regularizer,
+            default_activity_regularizer=config.activity_regularizer,
             # default_weights_constraint=weights_constraint,
             # default_bias_constraint=bias_constraint,
-            default_norm=config_schema.norm,
-            default_norm_params=config_schema.norm_params,
-            default_activation=config_schema.fc_activation,
-            default_dropout=config_schema.fc_dropout,
-            fc_residual=config_schema.fc_residual,
+            default_norm=config.norm,
+            default_norm_params=config.norm_params,
+            default_activation=config.fc_activation,
+            default_dropout=config.fc_dropout,
+            fc_residual=config.fc_residual,
         )
 
     def call(
@@ -1104,8 +1026,8 @@ combiner_registry = {
     'concat': ConcatCombiner,
     'sequence_concat': SequenceConcatCombiner,
     'sequence': SequenceCombiner,
-    # 'tabnet': TabNetCombiner,
-    # 'comparator': ComparatorCombiner,
-    # "transformer": TransformerCombiner,
-    # "tabtransformer": TabTransformerCombiner,
+    'tabnet': TabNetCombiner,
+    'comparator': ComparatorCombiner,
+    "transformer": TransformerCombiner,
+    "tabtransformer": TabTransformerCombiner,
 }

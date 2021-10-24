@@ -1,10 +1,11 @@
-from marshmallow import Schema, fields, validate, INCLUDE, EXCLUDE, ValidationError, post_load
-from marshmallow_jsonschema import JSONSchema
-from dataclasses import dataclass, field
-import marshmallow_dataclass
-from typing import List, Dict, Optional, Type, Union
-from ludwig.modules.initializer_modules import initializers_registry
+from typing import Optional, Type, Union
 
+import marshmallow_dataclass
+from dataclasses import field
+from marshmallow import fields, validate, ValidationError
+
+from ludwig.modules.initializer_modules import initializers_registry
+from ludwig.modules.reduction_modules import reduce_mode_registry
 
 _initializer_options = [
     'identity',
@@ -31,6 +32,18 @@ def InitializerOptions(default=None, nullable=False):
         _initializer_options,
         default=default,
         nullable=nullable
+    )
+
+
+def ReductionOptions(default=None):
+    options = [
+        mode for mode in reduce_mode_registry.keys()
+        if mode is not None
+    ]
+    return StringOptions(
+        options,
+        default=default,
+        nullable=default is None
     )
 
 
@@ -81,6 +94,42 @@ def Dict():
             allow_none=True,
         )
     }, default=None)
+
+
+def Embed():
+    return field(metadata={
+        'marshmallow_field': EmbedInputFeatureNameField(allow_none=True)
+    }, default=None)
+
+
+_embed_options = ['add']
+
+
+class EmbedInputFeatureNameField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return value
+
+        if isinstance(value, str):
+            if value not in _embed_options:
+                raise ValidationError(
+                    f"Expected one of: {_embed_options}, found: {value}"
+                )
+            return value
+
+        if isinstance(value, int):
+            return value
+
+        raise ValidationError('Field should be int or str')
+
+    def _jsonschema_type_mapping(self):
+        return {
+            'oneOf': [
+                {'type': 'string', 'enum': _embed_options},
+                {'type': 'integer'},
+                {'type': 'null'}
+            ]
+        }
 
 
 def init_with_kwargs_schema(cls, kwargs):
