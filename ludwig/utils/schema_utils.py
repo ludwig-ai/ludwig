@@ -6,6 +6,83 @@ from typing import List, Dict, Optional, Type, Union
 from ludwig.modules.initializer_modules import initializers_registry
 
 
+_initializer_options = [
+    'identity',
+    'zeros',
+    'ones',
+    'orthogonal',
+    'normal',
+    'uniform',
+    'truncated_normal',
+    'variance_scaling',
+    'glorot_normal',
+    'glorot_uniform',
+    'xavier_normal',
+    'xavier_uniform',
+    'he_normal',
+    'he_uniform',
+    'lecun_normal',
+    'lecun_uniform',
+]
+
+
+def InitializerOptions(default=None, nullable=False):
+    return StringOptions(
+        *_initializer_options,
+        default=default,
+        nullable=nullable
+    )
+
+
+def RegularizerOptions(nullable=True):
+    return StringOptions('l1', 'l2', 'l1_l2', nullable=nullable)
+
+
+def StringOptions(*options, default=None, nullable=True):
+    return field(metadata={
+        'marshmallow_field': fields.String(
+            validate=validate.OneOf(options),
+            allow_none=nullable,
+        )
+    }, default=default)
+
+
+def PositiveInteger(default=None):
+    return field(metadata={
+        'marshmallow_field': fields.Integer(
+            validate=validate.Range(min=1),
+            allow_none=True,
+        )
+    }, default=default)
+
+
+def NonNegativeInteger(default=None):
+    return field(metadata={
+        'marshmallow_field': fields.Integer(
+            validate=validate.Range(min=0),
+            allow_none=True,
+        )
+    }, default=default)
+
+
+def DictList():
+    return field(metadata={
+        'marshmallow_field': fields.List(
+            fields.Dict(fields.String()),
+            allow_none=True,
+        )
+    }, default=None)
+
+
+def Dict():
+    return field(metadata={
+        'marshmallow_field': fields.Dict(
+            fields.String(),
+            allow_none=True,
+        )
+    }, default=None)
+
+
 def init_with_kwargs_schema(cls, kwargs):
     schema = cls()
     fields = schema.fields.keys()

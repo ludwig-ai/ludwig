@@ -16,7 +16,9 @@
 # ==============================================================================
 import json
 
+import marshmallow_dataclass
 from jsonschema import validate
+from marshmallow_jsonschema import JSONSchema
 
 from ludwig.combiners.combiners import combiner_registry
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -139,11 +141,10 @@ def get_combiner_conds():
     conds = []
     for combiner_type in COMBINER_TYPES:
         combiner_cls = combiner_registry[combiner_type]
-        combiner_json = (combiner_cls
-                         .get_marshmallow_schema_as_json()
-                         ['definitions']
-                         [combiner_cls.get_schema_cls().__name__]
-                         ['properties'])
+        schema_cls = combiner_cls.get_schema_cls()
+        schema = marshmallow_dataclass.class_schema(schema_cls)()
+        schema_json = JSONSchema().dump(schema)
+        combiner_json = schema_json['definitions'][schema_cls.__name__]['properties']
         combiner_cond = create_cond(
             {'type': combiner_type},
             combiner_json

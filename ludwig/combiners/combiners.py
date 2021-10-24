@@ -17,14 +17,16 @@
 import logging
 
 from types import MethodWrapperType, SimpleNamespace
-from typing import List, Dict, Optional, Type, Union
-from marshmallow_jsonschema.base import ALLOW_UNIONS
-from marshmallow import Schema, fields, validate, INCLUDE, EXCLUDE, ValidationError, post_load
-from marshmallow_jsonschema import JSONSchema
-from dataclasses import dataclass, field
-import marshmallow_dataclass
+from typing import List, Dict, Optional, Type, Union, Any
+
 from tensorflow.python.keras.utils.generic_utils import default
-import ludwig.utils.schema_utils as lus
+import ludwig.utils.schema_utils as schema
+
+from marshmallow import Schema, fields, validate, INCLUDE
+from marshmallow_jsonschema import JSONSchema
+from dataclasses import field
+import marshmallow_dataclass
+from marshmallow_dataclass import dataclass
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
@@ -47,114 +49,71 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
-jsonGenerator = JSONSchema()
+
 
 @dataclass
-class ConcatCombinerData:
-    # weights_initializer: lus.WeightsInitializerType
-    # bias_initializer: lus.BiasInitializerType
-    weights_regularizer: lus.create_type_EnumType(
-        'WeightsRegularizerType',
-        lus.weights_regularizer_registry,
-        nullable=True,
-        default_enum_value=None
-    )
-    bias_regularizer: lus.create_type_EnumType(
-        'BiasRegularizerType',
-        lus.bias_regularizer_registry,
-        nullable=True,
-        default_enum_value=None
-    )
-    activity_regularizer: lus.create_type_EnumType(
-        'ActivityRegularizerType',
-        lus.activity_regularizer_registry,
-        nullable=True,
-        default_enum_value=None
-    )
-    norm: lus.create_type_EnumType(
-        'NormType',
-        lus.norm_registry,
-        nullable=True,
-        default_enum_value=None
-    )
-    activation: lus.create_type_EnumType(
-        'ActivationType', 
-        lus.activation_registry, 
-        default_enum_value='relu'
-    )
-    fc_size: Optional[int] = lus.create_field_PositiveInt(256)
-    use_bias: Optional[bool] = lus.create_field_StrictBoolean(True)
-    dropout: Optional[float] = lus.create_field_NormalizedFloat(0.0)
-    flatten_inputs: Optional[bool] = lus.create_field_StrictBoolean(False)
-    residual: Optional[bool] = lus.create_field_StrictBoolean(False)
-
-    num_fc_layers: Optional[int] = field(metadata=dict(
-        strict=True,
-        validate=validate.Range(min=0, min_inclusive=True),
-        dump_default=None,
-        load_default=None
-    ))
-
-    norm_params: Optional[dict] = field(metadata=dict(
-        allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
-    fc_layers: Optional[List[dict]] = field(default_factory=list,
-        metadata=dict(
-            dump_default=None,
-            load_default=None
-        )
-    )
-
+class ConcatCombinerConfig:
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions('batch', 'layer')
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = 'relu'
+    dropout: float = 0.0
+    flatten_inputs: bool = False
+    residual: bool = False
 
     class Meta:
         unknown = INCLUDE
 
-ConcatCombinerSchema = marshmallow_dataclass.class_schema(ConcatCombinerData)()
 
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features: Optional[List] = None,
-            config_schema: ConcatCombinerData = ConcatCombinerSchema.load({}),
+            config: ConcatCombinerConfig = None,
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
-        config_schema = SimpleNamespace(**config_schema)
 
-        self.flatten_inputs = config_schema.flatten_inputs
+        self.flatten_inputs = config.flatten_inputs
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if config_schema.fc_layers is None and \
-                config_schema.num_fc_layers is not None:
+        if config.fc_layers is None and \
+                config.num_fc_layers is not None:
             fc_layers = []
-            for i in range(config_schema.num_fc_layers):
-                fc_layers.append({'fc_size': config_schema.fc_size})
+            for i in range(config.num_fc_layers):
+                fc_layers.append({'fc_size': config.fc_size})
 
-        if config_schema.fc_layers is not None:
+        if config.fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                layers=config_schema.fc_layers,
-                num_layers=config_schema.num_fc_layers,
-                default_fc_size=config_schema.fc_size,
-                default_use_bias=config_schema.use_bias,
-                default_weights_initializer=config_schema.weights_initializer,
-                default_bias_initializer=config_schema.bias_initializer,
-                default_weights_regularizer=config_schema.weights_regularizer,
-                default_bias_regularizer=config_schema.bias_regularizer,
-                default_activity_regularizer=config_schema.activity_regularizer,
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=config_schema.norm,
-                default_norm_params=config_schema.norm_params,
-                default_activation=config_schema.activation,
-                default_dropout=config_schema.dropout,
-                residual=config_schema.residual,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+                residual=config.residual,
             )
 
-        if input_features and len(input_features) == 1 and config_schema.fc_layers is None:
+        if input_features and len(input_features) == 1 and config.fc_layers is None:
             self.supports_masking = True
 
     def call(
@@ -198,11 +157,8 @@ class ConcatCombiner(tf.keras.Model):
 
     @staticmethod
     def get_schema_cls():
-        return ConcatCombinerSchema
+        return ConcatCombinerConfig
 
-    @staticmethod
-    def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(ConcatCombinerSchema)
 
 @dataclass
 class SequenceConcatCombinerData:
