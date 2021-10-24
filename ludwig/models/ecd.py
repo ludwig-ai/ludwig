@@ -47,7 +47,7 @@ class ECD(tf.keras.Model):
         logger.debug('Combiner {}'.format(combiner_def[TYPE]))
         combiner_class = get_combiner_class(combiner_def[TYPE])
         config, kwargs = load_config_with_kwargs(
-            combiner_class.get_params_cls(),
+            combiner_class.get_schema_cls(),
             combiner_def,
         )
         self.combiner = combiner_class(

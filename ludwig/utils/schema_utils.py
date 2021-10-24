@@ -123,7 +123,8 @@ def load_config(cls, **kwargs):
 
 
 def load_config_with_kwargs(cls, kwargs):
-    fields = cls.__fields__.keys()
+    schema = marshmallow_dataclass.class_schema(cls)()
+    fields = schema.fields.keys()
     return load_config(
         cls,
         **{
