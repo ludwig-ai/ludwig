@@ -507,7 +507,7 @@ class TransformerCombinerConfig:
     fc_activation: str = 'relu'
     fc_dropout: float = 0.0
     fc_residual: bool = False
-    reduce_output: str = schema.ReductionOptions(default='mean')
+    reduce_output: Optional[str] = schema.ReductionOptions(default='mean')
 
     class Meta:
         unknown = INCLUDE

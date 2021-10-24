@@ -36,12 +36,8 @@ def InitializerOptions(default=None, nullable=False):
 
 
 def ReductionOptions(default=None):
-    options = [
-        mode for mode in reduce_mode_registry.keys()
-        if mode is not None
-    ]
     return StringOptions(
-        options,
+        list(reduce_mode_registry.keys()),
         default=default,
         nullable=True,
     )
