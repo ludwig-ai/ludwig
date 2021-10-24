@@ -74,6 +74,15 @@ def NonNegativeInteger(default=None):
     }, default=default)
 
 
+def FloatRange(default=None, **kwargs):
+    return field(metadata={
+        'marshmallow_field': fields.Float(
+            validate=validate.Range(**kwargs),
+            allow_none=default is None,
+        )
+    }, default=default)
+
+
 def DictList():
     return field(metadata={
         'marshmallow_field': fields.List(

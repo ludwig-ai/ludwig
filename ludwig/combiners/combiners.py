@@ -77,7 +77,7 @@ class ConcatCombinerConfig:
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
-    dropout: float = 0.0
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
     flatten_inputs: bool = False
     residual: bool = False
 
@@ -400,7 +400,7 @@ class TabNetCombinerConfig:
     bn_momentum: float = 0.7
     bn_virtual_bs: Optional[int] = schema.PositiveInteger()
     sparsity: float = 1e-5
-    dropout: float = 0.0
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
 
     class Meta:
         unknown = INCLUDE
@@ -492,7 +492,7 @@ class TransformerCombinerConfig:
     hidden_size: int = schema.NonNegativeInteger(default=256)
     num_heads: int = schema.NonNegativeInteger(default=8)
     transformer_fc_size: int = schema.NonNegativeInteger(default=256)
-    dropout: float = 0.1
+    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
@@ -505,7 +505,7 @@ class TransformerCombinerConfig:
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
-    fc_dropout: float = 0.0
+    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
     fc_residual: bool = False
     reduce_output: Optional[str] = schema.ReductionOptions(default='mean')
 
@@ -623,7 +623,7 @@ class TabTransformerCombinerConfig:
     hidden_size: int = schema.NonNegativeInteger(default=256)
     num_heads: int = schema.NonNegativeInteger(default=8)
     transformer_fc_size: int = schema.NonNegativeInteger(default=256)
-    dropout: float = 0.1
+    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
@@ -636,7 +636,7 @@ class TabTransformerCombinerConfig:
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
-    fc_dropout: float = 0.0
+    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
     fc_residual: bool = False
     reduce_output: str = schema.ReductionOptions(default='concat')
 
@@ -826,7 +826,7 @@ class ComparatorCombinerConfig:
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
-    dropout: float = 0.0
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
 
     class Meta:
         unknown = INCLUDE
