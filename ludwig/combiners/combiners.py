@@ -808,134 +808,94 @@ class TabTransformerCombiner(tf.keras.Model):
     
     @staticmethod
     def get_schema_cls():
-        return TabTransformerCombinerSchema
-
-    @staticmethod
-    def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(TabTransformerCombinerSchema())
+        return TabTransformerCombinerConfig
 
 
-class ComparatorCombinerSchema(Schema):
-    # num_fc_layers = fields.Int(
-    #     strict=True,
-    #     dump_default=1,
-    #     validate=validate.Range(min=0, min_inclusive=True)
-    # )
-    # fc_size = fields.Int(
-    #     strict=True,
-    #     dump_default=256,
-    #     validate=validate.Range(min=1, min_inclusive=True)
-    # )
-    # use_bias = fields.Bool(dump_default=True)
-    # weights_initializer = WeightsInitializerField(
-    #     dump_default='glorot_uniform'
-    # )
-    # bias_initializer = BiasInitializerField(
-    #     dump_default='zeros'
-    # )
-    # weights_regularizer = fields.String(
-    #     validate=validate.OneOf(weights_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # bias_regularizer = fields.String(
-    #     validate=validate.OneOf(bias_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # activity_regularizer = fields.String(
-    #     validate=validate.OneOf(activity_regularizer_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # norm = fields.String(
-    #     validate=validate.OneOf(norm_registry),
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # norm_params = fields.Dict(
-    #     allow_none=True,
-    #     dump_default=None
-    # )
-    # activation = fields.String(
-    #     validate=validate.OneOf(activation_registry),
-    #     dump_default='relu'
-    # )
-    # dropout = fields.Float(
-    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-    #     dump_default=0,
-    # )
+@dataclass
+class ComparatorCombinerConfig:
+    num_fc_layers: int = schema.NonNegativeInteger(default=1)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = 'relu'
+    dropout: float = 0.0
 
     class Meta:
         unknown = INCLUDE
+
 
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
             self,
             entity_1: Optional[List[str]] = None,
             entity_2: Optional[List[str]] = None, 
-            config_schema = ComparatorCombinerSchema().dump({}),
+            config: ComparatorCombinerConfig = None,
             **kwargs,
     ):
         super().__init__()
         logger.debug(" {}".format(self.name))
-        config_schema = SimpleNamespace(**config_schema)
 
         self.fc_stack = None
 
         # todo future: this may be redundant, check
         # if fc_layers is None and num_fc_layers is not None:
         fc_layers = []
-        for i in range(config_schema.num_fc_layers):
-            fc_layers.append({"fc_size": config_schema.fc_size})
+        for i in range(config.num_fc_layers):
+            fc_layers.append({"fc_size": config.fc_size})
 
         if fc_layers is not None:
             logger.debug("  FCStack")
             self.e1_fc_stack = FCStack(
                 layers=fc_layers,
-                num_layers=config_schema.num_fc_layers,
-                default_fc_size=config_schema.fc_size,
-                default_use_bias=config_schema.use_bias,
-                default_weights_initializer=config_schema.weights_initializer,
-                default_bias_initializer=config_schema.bias_initializer,
-                default_weights_regularizer=config_schema.weights_regularizer,
-                default_bias_regularizer=config_schema.bias_regularizer,
-                default_activity_regularizer=config_schema.activity_regularizer,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=config_schema.norm,
-                default_norm_params=config_schema.norm_params,
-                default_activation=config_schema.activation,
-                default_dropout=config_schema.dropout,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
             )
             self.e2_fc_stack = FCStack(
                 layers=fc_layers,
-                num_layers=config_schema.num_fc_layers,
-                default_fc_size=config_schema.fc_size,
-                default_use_bias=config_schema.use_bias,
-                default_weights_initializer=config_schema.weights_initializer,
-                default_bias_initializer=config_schema.bias_initializer,
-                default_weights_regularizer=config_schema.weights_regularizer,
-                default_bias_regularizer=config_schema.bias_regularizer,
-                default_activity_regularizer=config_schema.activity_regularizer,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=config_schema.norm,
-                default_norm_params=config_schema.norm_params,
-                default_activation=config_schema.activation,
-                default_dropout=config_schema.dropout,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
             )
 
         # todo: this should actually be the size of the last fc layer,
         #  not just fc_size
         # todo: set initializer and regularization
-        self.bilinear_weights = tf.random.normal([config_schema.fc_size, config_schema.fc_size],
+        self.bilinear_weights = tf.random.normal([config.fc_size, config.fc_size],
                                                  dtype=tf.float32)
 
         self.entity_1 = entity_1
         self.entity_2 = entity_2
         self.required_inputs = set(entity_1 + entity_2)
-        self.fc_size = config_schema.fc_size
+        self.fc_size = config.fc_size
 
     def call(self, inputs, training=None, mask=None,
              **kwargs):  # encoder outputs
@@ -1008,11 +968,7 @@ class ComparatorCombiner(tf.keras.Model):
 
     @staticmethod
     def get_schema_cls():
-        return ComparatorCombinerSchema
-
-    @staticmethod
-    def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(ComparatorCombinerSchema())
+        return ComparatorCombinerConfig
 
 
 def get_combiner_class(combiner_type):
