@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM tensorflow/tensorflow:2.4.1-gpu
+FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
 
 RUN apt-get -y update && apt-get -y install \
     git \
