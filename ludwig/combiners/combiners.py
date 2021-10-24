@@ -813,6 +813,8 @@ class TabTransformerCombiner(tf.keras.Model):
 
 @dataclass
 class ComparatorCombinerConfig:
+    entity_1: List[str]
+    entity_2: List[str]
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
@@ -833,8 +835,6 @@ class ComparatorCombinerConfig:
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
             self,
-            entity_1: Optional[List[str]] = None,
-            entity_2: Optional[List[str]] = None, 
             config: ComparatorCombinerConfig = None,
             **kwargs,
     ):
@@ -892,9 +892,9 @@ class ComparatorCombiner(tf.keras.Model):
         self.bilinear_weights = tf.random.normal([config.fc_size, config.fc_size],
                                                  dtype=tf.float32)
 
-        self.entity_1 = entity_1
-        self.entity_2 = entity_2
-        self.required_inputs = set(entity_1 + entity_2)
+        self.entity_1 = config.entity_1
+        self.entity_2 = config.entity_2
+        self.required_inputs = set(config.entity_1 + config.entity_2)
         self.fc_size = config.fc_size
 
     def call(self, inputs, training=None, mask=None,
