@@ -118,7 +118,7 @@ class EmbedInputFeatureNameField(fields.Field):
 
 
 def load_config(cls, **kwargs):
-    schema = marshmallow_dataclass.class_schema(cls.__name__)()
+    schema = marshmallow_dataclass.class_schema(cls)()
     return schema.load(kwargs)
 
 
