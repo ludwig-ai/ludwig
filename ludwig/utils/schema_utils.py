@@ -28,17 +28,17 @@ _initializer_options = [
 
 def InitializerOptions(default=None, nullable=False):
     return StringOptions(
-        *_initializer_options,
+        _initializer_options,
         default=default,
         nullable=nullable
     )
 
 
 def RegularizerOptions(nullable=True):
-    return StringOptions('l1', 'l2', 'l1_l2', nullable=nullable)
+    return StringOptions(['l1', 'l2', 'l1_l2'], nullable=nullable)
 
 
-def StringOptions(*options, default=None, nullable=True):
+def StringOptions(options, default=None, nullable=True):
     return field(metadata={
         'marshmallow_field': fields.String(
             validate=validate.OneOf(options),

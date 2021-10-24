@@ -62,7 +62,7 @@ class ConcatCombinerConfig:
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
     activity_regularizer: Optional[str] = schema.RegularizerOptions()
-    norm: Optional[str] = schema.StringOptions('batch', 'layer')
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
     dropout: float = 0.0
@@ -161,38 +161,27 @@ class ConcatCombiner(tf.keras.Model):
 
 
 @dataclass
-class SequenceConcatCombinerData:
-    reduce_output: Optional[str] = field(metadata=dict(
-        validate=validate.OneOf(reduce_output_registry),
-        # allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
-    main_sequence_feature: Optional[str] = field(metadata=dict(
-        # allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
+class SequenceConcatCombinerConfig:
+    main_sequence_feature: Optional[str] = None
+    reduce_output: Optional[str] = schema.StringOptions(['sum', 'mean', 'sqrt'])
 
     class Meta:
         unknown = INCLUDE
 
-SequenceConcatCombinerSchema = marshmallow_dataclass.class_schema(SequenceConcatCombinerData)()
 
 class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_schema: SequenceConcatCombinerData = SequenceConcatCombinerSchema.load({}),
-            **kwargs
+            config: SequenceConcatCombinerConfig = None,
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        self.reduce_output = config_schema.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config_schema.reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
-        self.main_sequence_feature = config_schema.main_sequence_feature
+        self.main_sequence_feature = config.main_sequence_feature
 
     def __call__(
             self,
@@ -318,11 +307,7 @@ class SequenceConcatCombiner(tf.keras.Model):
 
     @staticmethod
     def get_schema_cls():
-        return SequenceConcatCombinerSchema
-
-    @staticmethod
-    def get_marshmallow_schema_as_json():
-        return JSONSchema().dump(SequenceConcatCombinerSchema())
+        return SequenceConcatCombinerConfig
 
 
 @dataclass
