@@ -312,22 +312,22 @@ class SequenceConcatCombiner(tf.keras.Model):
 
 @dataclass
 class SequenceCombinerData:
-    reduce_output: Optional[str] = field(metadata=dict(
-        validate=validate.OneOf(reduce_output_registry),
-        # allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
-    main_sequence_feature: Optional[str] = field(metadata=dict(
-        # allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
-    encoder: Optional[str] = field(metadata=dict(
-        allow_none=True,
-        dump_default=None,
-        load_default=None
-    ))
+    # reduce_output: Optional[str] = field(metadata=dict(
+    #     validate=validate.OneOf(reduce_output_registry),
+    #     # allow_none=True,
+    #     dump_default=None,
+    #     load_default=None
+    # ))
+    # main_sequence_feature: Optional[str] = field(metadata=dict(
+    #     # allow_none=True,
+    #     dump_default=None,
+    #     load_default=None
+    # ))
+    # encoder: Optional[str] = field(metadata=dict(
+    #     allow_none=True,
+    #     dump_default=None,
+    #     load_default=None
+    # ))
 
     class Meta:
         unknown = INCLUDE
@@ -396,7 +396,7 @@ class SequenceCombiner(tf.keras.Model):
         return JSONSchema().dump(SequenceCombinerSchema)
 
 @dataclass
-class TabNetCombinerData:
+class TabNetCombinerConfig:
     size: int = field(metadata=dict(
         strict=True,
         validate=validate.Range(min=1, min_inclusive=True),
@@ -451,7 +451,7 @@ class TabNetCombinerData:
 class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
-            config_schema: Dict = TabNetCombinerSchema().dump({}),
+            config_schema: TabNetCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
@@ -534,86 +534,86 @@ class TabNetCombiner(tf.keras.Model):
 
 
 class TransformerCombinerSchema(Schema):
-    num_layers = fields.Int(
-        strict=True, 
-        dump_default=1,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    hidden_size = fields.Int(
-        strict=True, 
-        dump_default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    num_heads = fields.Int(
-        strict=True, 
-        dump_default=8,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    transformer_fc_size = fields.Int(
-        strict=True, 
-        dump_default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    dropout = fields.Float(
-        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        dump_default=0.1,
-    )
-    fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
-    num_fc_layers = fields.Int(
-        strict=True, 
-        dump_default=0,
-        validate=validate.Range(min=0, min_inclusive=True)
-    )
-    fc_size = fields.Int(
-        strict=True, 
-        dump_default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    use_bias = fields.Bool(dump_default=True)
-    weights_initializer = WeightsInitializerField(
-        dump_default='glorot_uniform'
-    )
-    bias_initializer = BiasInitializerField(
-        dump_default='zeros'
-    )
-    weights_regularizer = fields.String(
-        validate=validate.OneOf(weights_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    bias_regularizer = fields.String(
-        validate=validate.OneOf(bias_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    activity_regularizer = fields.String(
-        validate=validate.OneOf(activity_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    norm = fields.String(
-        validate=validate.OneOf(norm_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    norm_params = fields.Dict(
-        allow_none=True,
-        dump_default=None
-    )
-    fc_activation = fields.String(
-        validate=validate.OneOf(activation_registry),
-        dump_default='relu'
-    )
-    fc_dropout = fields.Float(
-        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        dump_default=0.0,
-    )
-    fc_residual = fields.Bool(dump_default=False)
-    reduce_output = fields.String(
-        validate=validate.OneOf(reduce_output_registry),
-        allow_none=True,
-        dump_default='mean'
-    )
+    # num_layers = fields.Int(
+    #     strict=True,
+    #     dump_default=1,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # hidden_size = fields.Int(
+    #     strict=True,
+    #     dump_default=256,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # num_heads = fields.Int(
+    #     strict=True,
+    #     dump_default=8,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # transformer_fc_size = fields.Int(
+    #     strict=True,
+    #     dump_default=256,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # dropout = fields.Float(
+    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
+    #     dump_default=0.1,
+    # )
+    # fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
+    # num_fc_layers = fields.Int(
+    #     strict=True,
+    #     dump_default=0,
+    #     validate=validate.Range(min=0, min_inclusive=True)
+    # )
+    # fc_size = fields.Int(
+    #     strict=True,
+    #     dump_default=256,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # use_bias = fields.Bool(dump_default=True)
+    # weights_initializer = WeightsInitializerField(
+    #     dump_default='glorot_uniform'
+    # )
+    # bias_initializer = BiasInitializerField(
+    #     dump_default='zeros'
+    # )
+    # weights_regularizer = fields.String(
+    #     validate=validate.OneOf(weights_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # bias_regularizer = fields.String(
+    #     validate=validate.OneOf(bias_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # activity_regularizer = fields.String(
+    #     validate=validate.OneOf(activity_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # norm = fields.String(
+    #     validate=validate.OneOf(norm_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # norm_params = fields.Dict(
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # fc_activation = fields.String(
+    #     validate=validate.OneOf(activation_registry),
+    #     dump_default='relu'
+    # )
+    # fc_dropout = fields.Float(
+    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
+    #     dump_default=0.0,
+    # )
+    # fc_residual = fields.Bool(dump_default=False)
+    # reduce_output = fields.String(
+    #     validate=validate.OneOf(reduce_output_registry),
+    #     allow_none=True,
+    #     dump_default='mean'
+    # )
 
     class Meta:
         unknown = INCLUDE
@@ -739,90 +739,90 @@ class EmbedInputFeatureNameField(fields.Field):
         }
 
 class TabTransformerCombinerSchema(Schema):
-    embed_input_feature_name = EmbedInputFeatureNameField(
-        allow_none=True,
-        dump_default=None
-    )
-    num_layers = fields.Int(
-        strict=True, 
-        dump_default=1,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    hidden_size = fields.Int(
-        strict=True, 
-        dump_default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    num_heads = fields.Int(
-        strict=True, 
-        dump_default=8,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    transformer_fc_size = fields.Int(
-        strict=True, 
-        dump_default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    dropout = fields.Float(
-        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        dump_default=0.1,
-    )
-    fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
-    num_fc_layers = fields.Int(
-        strict=True, 
-        dump_default=0,
-        validate=validate.Range(min=0, min_inclusive=True)
-    )
-    fc_size = fields.Int(
-        strict=True, 
-        dump_default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    use_bias = fields.Bool(dump_default=True)
-    weights_initializer = WeightsInitializerField(
-        dump_default='glorot_uniform'
-    )
-    bias_initializer = BiasInitializerField(
-        dump_default='zeros'
-    )
-    weights_regularizer = fields.String(
-        validate=validate.OneOf(weights_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    bias_regularizer = fields.String(
-        validate=validate.OneOf(bias_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    activity_regularizer = fields.String(
-        validate=validate.OneOf(activity_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    norm = fields.String(
-        validate=validate.OneOf(norm_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    norm_params = fields.Dict(
-        allow_none=True,
-        dump_default=None
-    )
-    fc_activation = fields.String(
-        validate=validate.OneOf(activation_registry),
-        dump_default='relu'
-    )
-    fc_dropout = fields.Float(
-        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        dump_default=0.0,
-    )
-    fc_residual = fields.Bool(dump_default=False)
-    reduce_output = fields.String(
-        validate=validate.OneOf(reduce_output_registry),
-        allow_none=True,
-        dump_default='concat'
-    )
+    # embed_input_feature_name = EmbedInputFeatureNameField(
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # num_layers = fields.Int(
+    #     strict=True,
+    #     dump_default=1,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # hidden_size = fields.Int(
+    #     strict=True,
+    #     dump_default=256,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # num_heads = fields.Int(
+    #     strict=True,
+    #     dump_default=8,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # transformer_fc_size = fields.Int(
+    #     strict=True,
+    #     dump_default=256,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # dropout = fields.Float(
+    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
+    #     dump_default=0.1,
+    # )
+    # fc_layers = fields.List(fields.Dict(), allow_none=True, dump_default=None)
+    # num_fc_layers = fields.Int(
+    #     strict=True,
+    #     dump_default=0,
+    #     validate=validate.Range(min=0, min_inclusive=True)
+    # )
+    # fc_size = fields.Int(
+    #     strict=True,
+    #     dump_default=256,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # use_bias = fields.Bool(dump_default=True)
+    # weights_initializer = WeightsInitializerField(
+    #     dump_default='glorot_uniform'
+    # )
+    # bias_initializer = BiasInitializerField(
+    #     dump_default='zeros'
+    # )
+    # weights_regularizer = fields.String(
+    #     validate=validate.OneOf(weights_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # bias_regularizer = fields.String(
+    #     validate=validate.OneOf(bias_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # activity_regularizer = fields.String(
+    #     validate=validate.OneOf(activity_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # norm = fields.String(
+    #     validate=validate.OneOf(norm_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # norm_params = fields.Dict(
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # fc_activation = fields.String(
+    #     validate=validate.OneOf(activation_registry),
+    #     dump_default='relu'
+    # )
+    # fc_dropout = fields.Float(
+    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
+    #     dump_default=0.0,
+    # )
+    # fc_residual = fields.Bool(dump_default=False)
+    # reduce_output = fields.String(
+    #     validate=validate.OneOf(reduce_output_registry),
+    #     allow_none=True,
+    #     dump_default='concat'
+    # )
 
     class Meta:
         unknown = INCLUDE
@@ -1000,55 +1000,55 @@ class TabTransformerCombiner(tf.keras.Model):
 
 
 class ComparatorCombinerSchema(Schema):
-    num_fc_layers = fields.Int(
-        strict=True, 
-        dump_default=1,
-        validate=validate.Range(min=0, min_inclusive=True)
-    )
-    fc_size = fields.Int(
-        strict=True, 
-        dump_default=256,
-        validate=validate.Range(min=1, min_inclusive=True)
-    )
-    use_bias = fields.Bool(dump_default=True)
-    weights_initializer = WeightsInitializerField(
-        dump_default='glorot_uniform'
-    )
-    bias_initializer = BiasInitializerField(
-        dump_default='zeros'
-    )
-    weights_regularizer = fields.String(
-        validate=validate.OneOf(weights_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    bias_regularizer = fields.String(
-        validate=validate.OneOf(bias_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    activity_regularizer = fields.String(
-        validate=validate.OneOf(activity_regularizer_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    norm = fields.String(
-        validate=validate.OneOf(norm_registry),
-        allow_none=True,
-        dump_default=None
-    )
-    norm_params = fields.Dict(
-        allow_none=True,
-        dump_default=None
-    )
-    activation = fields.String(
-        validate=validate.OneOf(activation_registry),
-        dump_default='relu'
-    )
-    dropout = fields.Float(
-        validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
-        dump_default=0,
-    )
+    # num_fc_layers = fields.Int(
+    #     strict=True,
+    #     dump_default=1,
+    #     validate=validate.Range(min=0, min_inclusive=True)
+    # )
+    # fc_size = fields.Int(
+    #     strict=True,
+    #     dump_default=256,
+    #     validate=validate.Range(min=1, min_inclusive=True)
+    # )
+    # use_bias = fields.Bool(dump_default=True)
+    # weights_initializer = WeightsInitializerField(
+    #     dump_default='glorot_uniform'
+    # )
+    # bias_initializer = BiasInitializerField(
+    #     dump_default='zeros'
+    # )
+    # weights_regularizer = fields.String(
+    #     validate=validate.OneOf(weights_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # bias_regularizer = fields.String(
+    #     validate=validate.OneOf(bias_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # activity_regularizer = fields.String(
+    #     validate=validate.OneOf(activity_regularizer_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # norm = fields.String(
+    #     validate=validate.OneOf(norm_registry),
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # norm_params = fields.Dict(
+    #     allow_none=True,
+    #     dump_default=None
+    # )
+    # activation = fields.String(
+    #     validate=validate.OneOf(activation_registry),
+    #     dump_default='relu'
+    # )
+    # dropout = fields.Float(
+    #     validate=validate.Range(min=0, max=1, min_inclusive=True, max_inclusive=True),
+    #     dump_default=0,
+    # )
 
     class Meta:
         unknown = INCLUDE
@@ -1209,11 +1209,11 @@ def get_combiner_class(combiner_type):
 combiner_registry = {
     'concat': ConcatCombiner,
     'sequence_concat': SequenceConcatCombiner,
-    'sequence': SequenceCombiner,
-    'tabnet': TabNetCombiner,
-    'comparator': ComparatorCombiner,
-    "transformer": TransformerCombiner,
-    "tabtransformer": TabTransformerCombiner,
+    # 'sequence': SequenceCombiner,
+    # 'tabnet': TabNetCombiner,
+    # 'comparator': ComparatorCombiner,
+    # "transformer": TransformerCombiner,
+    # "tabtransformer": TabTransformerCombiner,
 }
 
 sequence_encoder_registry = {
