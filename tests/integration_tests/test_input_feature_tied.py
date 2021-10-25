@@ -35,9 +35,12 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
         InputFeatureOptions('binary', None, True),
         InputFeatureOptions('category', {'vocab': ['a', 'b', 'c']}, True),
         InputFeatureOptions('set', {'vocab': ['a', 'b', 'c']}, True),
-        InputFeatureOptions('sequence', {'vocab': ['x', 'y', 'z']}, True),
-        InputFeatureOptions('text', {'vocab': ['a', 'b', 'c']}, True),
-        InputFeatureOptions('timeseries', {'should_embed': False}, True),
+        InputFeatureOptions(
+            'sequence', {'max_sequence_length': 10, 'vocab': ['x', 'y', 'z']}, True),
+        InputFeatureOptions(
+            'text', {'max_sequence_length': 10, 'vocab': ['a', 'b', 'c']}, True),
+        InputFeatureOptions(
+            'timeseries', {'max_sequence_length': 10, 'should_embed': False}, True),
         InputFeatureOptions(
             'audio',
             {'embedding_size': 64, 'max_sequence_length': 16,
@@ -55,9 +58,12 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
         InputFeatureOptions('binary', None, False),
         InputFeatureOptions('category', {'vocab': ['a', 'b', 'c']}, False),
         InputFeatureOptions('set', {'vocab': ['a', 'b', 'c']}, False),
-        InputFeatureOptions('sequence', {'vocab': ['x', 'y', 'z']}, False),
-        InputFeatureOptions('text', {'vocab': ['a', 'b', 'c']}, False),
-        InputFeatureOptions('timeseries', {'should_embed': False}, False),
+        InputFeatureOptions(
+            'sequence', {'max_sequence_length': 10, 'vocab': ['x', 'y', 'z']}, False),
+        InputFeatureOptions(
+            'text', {'max_sequence_length': 10, 'vocab': ['a', 'b', 'c']}, False),
+        InputFeatureOptions(
+            'timeseries', {'max_sequence_length': 10, 'should_embed': False}, False),
         InputFeatureOptions(
             'audio',
             {'embedding_size': 64, 'max_sequence_length': 16,
@@ -95,11 +101,11 @@ def test_tied_micro_level(input_feature_options):
     if input_feature_options.tie_features:
         # should be same encoder
         assert input_features['input_feature_1'].encoder_obj is \
-               input_features['input_feature_2'].encoder_obj
+            input_features['input_feature_2'].encoder_obj
     else:
         # no tied parameter, encoders should be different
         assert input_features['input_feature_1'].encoder_obj is not \
-               input_features['input_feature_2'].encoder_obj
+            input_features['input_feature_2'].encoder_obj
 
 
 # TiedUseCase namedtuple structure:
@@ -114,7 +120,7 @@ TiedUseCase = namedtuple('TiedUseCase', 'input_feature output_feature')
     [
         TiedUseCase(numerical_feature, numerical_feature),
         TiedUseCase(text_feature, category_feature),
-        TiedUseCase(sequence_feature, sequence_feature)
+        # TiedUseCase(sequence_feature, sequence_feature)
     ]
 )
 def test_tied_macro_level(tied_use_case: TiedUseCase, csv_filename: str):
