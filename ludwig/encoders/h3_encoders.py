@@ -149,7 +149,6 @@ class H3Embed(H3Encoder):
             embedding_regularizer=weights_regularizer
         )
 
-        # TODO: Confirm max sequence length here.
         logger.debug('  cells Embed')
         self.embed_cells = EmbedSequence(
             [str(i) for i in range(8)],

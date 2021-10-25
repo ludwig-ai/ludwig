@@ -1510,9 +1510,7 @@ class LudwigModel:
 
         # save model weights
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        # self.model.save_weights(model_weights_path)
         torch.save(self.model.state_dict(), model_weights_path)
-
 
         # save training set metadata
         training_set_metadata_path = os.path.join(

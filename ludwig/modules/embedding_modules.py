@@ -435,13 +435,10 @@ class EmbedSequence(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        # TODO(shreya): Check if this is correct
         return torch.Size([self.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
-        # Excludes batch size and input size (dynamic).
-        # TODO(shreya): Check if this is correct
         return torch.Size([self.max_sequence_length, self.embedding_size])
 
 

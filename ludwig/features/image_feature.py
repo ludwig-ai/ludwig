@@ -470,7 +470,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         for key in ['height', 'width', 'num_channels', 'scaling']:
             input_feature[key] = feature_metadata[PREPROCESSING][key]
 
-        # TODO(shreya): Should we remove 'height', 'width' and just have 'img_height' and 'img_width' everywhere?
+        # TODO(shreya, Jim): Remove this once Jim's code is merged.
         for key in ['height', 'width']:
             input_feature[f'img_{key}'] = feature_metadata[PREPROCESSING][key]
 
