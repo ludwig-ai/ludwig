@@ -80,66 +80,66 @@ def run_experiment(input_features, output_features, **kwargs):
         # numerical features
         (numerical_feature(), numerical_feature(), None),
         (
-                numerical_feature(normalization='minmax'),
-                numerical_feature(),
-                {'loss': {'type': 'mean_squared_error'}}
+            numerical_feature(normalization='minmax'),
+            numerical_feature(),
+            {'loss': {'type': 'mean_squared_error'}}
         ),
         (
-                numerical_feature(normalization='zscore'),
-                numerical_feature(),
-                {'loss': {'type': 'mean_absolute_error'}}
+            numerical_feature(normalization='zscore'),
+            numerical_feature(),
+            {'loss': {'type': 'mean_absolute_error'}}
         ),
-    #
-    #     # binary feature
-    #     (binary_feature(), binary_feature(), None),
-    #
-    #     # Categorical feature
+        #
+        #     # binary feature
+        #     (binary_feature(), binary_feature(), None),
+        #
+        #     # Categorical feature
         (category_feature(), category_feature(), None),
         (
-                category_feature(),
-                category_feature(),
-                {'loss': {'type': 'softmax_cross_entropy'}}
+            category_feature(),
+            category_feature(),
+            {'loss': {'type': 'softmax_cross_entropy'}}
         ),
-    #     (
-    #             category_feature(),
-    #             category_feature(),
-    #             {'loss': {
-    #                 'type': 'sampled_softmax_cross_entropy',
-    #                 'sampler': 'fixed_unigram',
-    #                 'negative_samples': 10
-    #             }
-    #             }
-    #     ),
-    #     (
-    #             category_feature(),
-    #             category_feature(),
-    #             {'loss': {
-    #                 'type': 'sampled_softmax_cross_entropy',
-    #                 'sampler': 'uniform',
-    #                 'negative_samples': 10
-    #             }
-    #             }
-    #     ),
-    #     (
-    #             category_feature(),
-    #             category_feature(),
-    #             {'loss': {
-    #                 'type': 'sampled_softmax_cross_entropy',
-    #                 'sampler': 'log_uniform',
-    #                 'negative_samples': 10
-    #             }
-    #             }
-    #     ),
-    #     (
-    #             category_feature(),
-    #             category_feature(),
-    #             {'loss': {
-    #                 'type': 'sampled_softmax_cross_entropy',
-    #                 'sampler': 'learned_unigram',
-    #                 'negative_samples': 10
-    #             }
-    #             }
-    #     )
+        #     (
+        #             category_feature(),
+        #             category_feature(),
+        #             {'loss': {
+        #                 'type': 'sampled_softmax_cross_entropy',
+        #                 'sampler': 'fixed_unigram',
+        #                 'negative_samples': 10
+        #             }
+        #             }
+        #     ),
+        #     (
+        #             category_feature(),
+        #             category_feature(),
+        #             {'loss': {
+        #                 'type': 'sampled_softmax_cross_entropy',
+        #                 'sampler': 'uniform',
+        #                 'negative_samples': 10
+        #             }
+        #             }
+        #     ),
+        #     (
+        #             category_feature(),
+        #             category_feature(),
+        #             {'loss': {
+        #                 'type': 'sampled_softmax_cross_entropy',
+        #                 'sampler': 'log_uniform',
+        #                 'negative_samples': 10
+        #             }
+        #             }
+        #     ),
+        #     (
+        #             category_feature(),
+        #             category_feature(),
+        #             {'loss': {
+        #                 'type': 'sampled_softmax_cross_entropy',
+        #                 'sampler': 'learned_unigram',
+        #                 'negative_samples': 10
+        #             }
+        #             }
+        #     )
     ]
 )
 def test_feature(input_test_feature, output_test_feature,
@@ -169,12 +169,12 @@ def test_feature(input_test_feature, output_test_feature,
          [category_feature(vocab_size=5), category_feature(vocab_size=7)]),
         ([category_feature()],
          [numerical_feature(), numerical_feature()]),
-        ([category_feature()],
-         [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
+        # ([category_feature()],
+        #  [sequence_feature(vocab_size=5), sequence_feature(vocab_size=7)]),
         ([set_feature(vocab_size=5)],
          [set_feature(vocab_size=5), set_feature(vocab_size=7)]),
-        ([category_feature()],
-         [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
+        # ([category_feature()],
+        #  [text_feature(vocab_size=5), text_feature(vocab_size=7)]),
         ([category_feature()],
          [vector_feature(), vector_feature()]),
         ([vector_feature()],
@@ -200,6 +200,7 @@ def test_category_int_dtype(tmpdir):
     csv_fname = generate_data(input_features, output_features,
                               os.path.join(tmpdir, 'dataset.csv'))
     df = pd.read_csv(csv_fname)
+    logger.error(f'df: {df}')
 
     distinct_values = df[feature[NAME]].drop_duplicates().values
     value_map = {v: idx for idx, v in enumerate(distinct_values)}

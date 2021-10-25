@@ -224,8 +224,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
-            metric_vals[metric_name] = metric_onj.compute(
-            ).detach().numpy().item()
+            try:
+                metric_vals[metric_name] = metric_onj.compute(
+                ).detach().numpy().item()
+            except Exception as e:
+                logger.error(
+                    f'Caught exception computing metric: {metric_name}. Exception: {e}')
         return metric_vals
 
     def reset_metrics(self):
