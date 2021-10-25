@@ -15,13 +15,17 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import List
+from typing import List, Dict, Optional, Union, Any
+
+from marshmallow import INCLUDE
+from marshmallow_dataclass import dataclass
 
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import concatenate
 
+import ludwig.utils.schema_utils as schema
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
@@ -39,64 +43,81 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
+sequence_encoder_registry = {
+    'stacked_cnn': StackedCNN,
+    'parallel_cnn': ParallelCNN,
+    'stacked_parallel_cnn': StackedParallelCNN,
+    'rnn': StackedRNN,
+    'cnnrnn': StackedCNNRNN,
+    # todo: add transformer
+    # 'transformer': StackedTransformer,
+}
+
+
+@dataclass
+class ConcatCombinerConfig:
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = 'relu'
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    flatten_inputs: bool = False
+    residual: bool = False
+
+    class Meta:
+        unknown = INCLUDE
+
+
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features=None,
-            fc_layers=None,
-            num_fc_layers=None,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation='relu',
-            dropout=0,
-            flatten_inputs=False,
-            residual=False,
+            input_features: Optional[List] = None,
+            config: ConcatCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        self.flatten_inputs = flatten_inputs
+        self.flatten_inputs = config.flatten_inputs
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if fc_layers is None and \
-                num_fc_layers is not None:
+        if config.fc_layers is None and \
+                config.num_fc_layers is not None:
             fc_layers = []
-            for i in range(num_fc_layers):
-                fc_layers.append({'fc_size': fc_size})
+            for i in range(config.num_fc_layers):
+                fc_layers.append({'fc_size': config.fc_size})
 
-        if fc_layers is not None:
+        if config.fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout=dropout,
-                residual=residual,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+                residual=config.residual,
             )
 
-        if input_features and len(input_features) == 1 and fc_layers is None:
+        if input_features and len(input_features) == 1 and config.fc_layers is None:
             self.supports_masking = True
 
     def call(
@@ -138,22 +159,34 @@ class ConcatCombiner(tf.keras.Model):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return ConcatCombinerConfig
+
+
+@dataclass
+class SequenceConcatCombinerConfig:
+    main_sequence_feature: Optional[str] = None
+    reduce_output: Optional[str] = schema.ReductionOptions()
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            reduce_output=None,
-            main_sequence_feature=None,
+            config: SequenceConcatCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
-        self.main_sequence_feature = main_sequence_feature
+        self.main_sequence_feature = config.main_sequence_feature
 
     def __call__(
             self,
@@ -277,27 +310,35 @@ class SequenceConcatCombiner(tf.keras.Model):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return SequenceConcatCombinerConfig
+
+
+@dataclass
+class SequenceCombinerConfig:
+    main_sequence_feature: Optional[str] = None
+    reduce_output: Optional[str] = schema.ReductionOptions()
+    encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class SequenceCombiner(tf.keras.Model):
     def __init__(
             self,
-            reduce_output=None,
-            main_sequence_feature=None,
-            encoder=None,
+            config: SequenceCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
-
-        self.combiner = SequenceConcatCombiner(
-            reduce_output=None,
-            main_sequence_feature=main_sequence_feature
-        )
+        self.combiner = SequenceConcatCombiner(config)
 
         self.encoder_obj = get_from_registry(
-            encoder, sequence_encoder_registry)(
+            config.encoder, sequence_encoder_registry)(
             should_embed=False,
-            reduce_output=reduce_output,
+            reduce_output=config.reduce_output,
             **kwargs
         )
 
@@ -332,42 +373,54 @@ class SequenceCombiner(tf.keras.Model):
                 return_data[key] = value
 
         return return_data
+    
+    @staticmethod
+    def get_schema_cls():
+        return SequenceCombinerConfig
+
+
+@dataclass
+class TabNetCombinerConfig:
+    size: int = schema.PositiveInteger(default=32)
+    output_size: int = schema.PositiveInteger(default=32)
+    num_steps: int = schema.NonNegativeInteger(default=1)
+    num_total_blocks: int = schema.NonNegativeInteger(default=4)
+    num_shared_blocks: int = schema.NonNegativeInteger(default=2)
+    relaxation_factor: float = 1.5
+    bn_epsilon: float = 1e-3
+    bn_momentum: float = 0.7
+    bn_virtual_bs: Optional[int] = schema.PositiveInteger()
+    sparsity: float = 1e-5
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+
+    class Meta:
+        unknown = INCLUDE
 
 
 class TabNetCombiner(tf.keras.Model):
     def __init__(
             self,
-            size: int = 32,  # N_a in the paper
-            output_size: int = 32,  # N_d in the paper
-            num_steps: int = 1,  # N_steps in the paper
-            num_total_blocks: int = 4,
-            num_shared_blocks: int = 2,
-            relaxation_factor: float = 1.5,  # gamma in the paper
-            bn_epsilon: float = 1e-3,
-            bn_momentum: float = 0.7,  # m_B in the paper
-            bn_virtual_bs: int = None,  # B_v from the paper
-            sparsity: float = 1e-5,  # lambda_sparse in the paper
-            dropout=0,
+            config: TabNetCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
         self.tabnet = TabNet(
-            size=size,
-            output_size=output_size,
-            num_steps=num_steps,
-            num_total_blocks=num_total_blocks,
-            num_shared_blocks=num_shared_blocks,
-            relaxation_factor=relaxation_factor,
-            bn_epsilon=bn_epsilon,
-            bn_momentum=bn_momentum,
-            bn_virtual_bs=bn_virtual_bs,
-            sparsity=sparsity
+            size=config.size,
+            output_size=config.output_size,
+            num_steps=config.num_steps,
+            num_total_blocks=config.num_total_blocks,
+            num_shared_blocks=config.num_shared_blocks,
+            relaxation_factor=config.relaxation_factor,
+            bn_epsilon=config.bn_epsilon,
+            bn_momentum=config.bn_momentum,
+            bn_virtual_bs=config.bn_virtual_bs,
+            sparsity=config.sparsity
         )
 
-        if dropout > 0:
-            self.dropout = tf.keras.layers.Dropout(dropout)
+        if config.dropout > 0:
+            self.dropout = tf.keras.layers.Dropout(config.dropout)
         else:
             self.dropout = None
 
@@ -419,74 +472,84 @@ class TabNetCombiner(tf.keras.Model):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return TabNetCombinerConfig
+
+
+@dataclass
+class TransformerCombinerConfig:
+    num_layers: int = schema.PositiveInteger(default=1)
+    hidden_size: int = schema.NonNegativeInteger(default=256)
+    num_heads: int = schema.NonNegativeInteger(default=8)
+    transformer_fc_size: int = schema.NonNegativeInteger(default=256)
+    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    fc_activation: str = 'relu'
+    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    fc_residual: bool = False
+    reduce_output: Optional[str] = schema.ReductionOptions(default='mean')
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class TransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features=None,
-            num_layers=1,
-            hidden_size=256,
-            num_heads=8,
-            transformer_fc_size=256,
-            dropout=0.1,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            fc_activation='relu',
-            fc_dropout=0,
-            fc_residual=False,
-            reduce_output='mean',
+            input_features: Optional[List] = None,
+            config: TransformerCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
         logger.debug('  Projectors')
-        self.projectors = [Dense(hidden_size) for _ in input_features]
+        self.projectors = [Dense(config.hidden_size) for _ in input_features]
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            fc_size=transformer_fc_size,
-            num_layers=num_layers,
-            dropout=dropout
+            hidden_size=config.hidden_size,
+            num_heads=config.num_heads,
+            fc_size=config.transformer_fc_size,
+            num_layers=config.num_layers,
+            dropout=config.dropout
         )
 
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
-                layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=fc_activation,
-                default_dropout=fc_dropout,
-                fc_residual=fc_residual,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.fc_activation,
+                default_dropout=config.fc_dropout,
+                fc_residual=config.fc_residual,
             )
 
     def call(
@@ -539,71 +602,81 @@ class TransformerCombiner(tf.keras.Model):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return TransformerCombinerConfig
+
+
+@dataclass
+class TabTransformerCombinerConfig:
+    embed_input_feature_name: Optional[Union[str, int]] = schema.Embed()
+    num_layers: int = schema.PositiveInteger(default=1)
+    hidden_size: int = schema.NonNegativeInteger(default=256)
+    num_heads: int = schema.NonNegativeInteger(default=8)
+    transformer_fc_size: int = schema.NonNegativeInteger(default=256)
+    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    fc_activation: str = 'relu'
+    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    fc_residual: bool = False
+    reduce_output: str = schema.ReductionOptions(default='concat')
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class TabTransformerCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features=None,
-            embed_input_feature_name=None,  # None or embedding size or "add"
-            num_layers=1,
-            hidden_size=256,
-            num_heads=8,
-            transformer_fc_size=256,
-            dropout=0.1,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='glorot_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            fc_activation='relu',
-            fc_dropout=0,
-            fc_residual=False,
-            reduce_output='concat',
+            input_features: Optional[List] = None,
+            config: TabTransformerCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-        if reduce_output is None:
+        if config.reduce_output is None:
             raise ValueError("TabTransformer requires the `resude_output` "
                              "parametr")
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         self.supports_masking = True
         self.layer_norm = LayerNormalization()
 
-        self.embed_input_feature_name = embed_input_feature_name
+        self.embed_input_feature_name = config.embed_input_feature_name
         if self.embed_input_feature_name:
             vocab = [i_f for i_f in input_features
                      if i_f[TYPE] != NUMERICAL or i_f[TYPE] != BINARY]
             if self.embed_input_feature_name == 'add':
-                self.embed_i_f_name_layer = Embed(vocab, hidden_size,
+                self.embed_i_f_name_layer = Embed(vocab, config.hidden_size,
                                                   force_embedding_size=True)
-                projector_size = hidden_size
+                projector_size = config.hidden_size
             elif isinstance(self.embed_input_feature_name, int):
-                if self.embed_input_feature_name > hidden_size:
+                if self.embed_input_feature_name > config.hidden_size:
                     raise ValueError(
                         "TabTransformer parameter "
                         "`embed_input_feature_name` "
                         "specified integer value ({}) "
                         "needs to be smaller than "
                         "`hidden_size` ({}).".format(
-                            self.embed_input_feature_name, hidden_size
+                            self.embed_input_feature_name, config.hidden_size
                         ))
                 self.embed_i_f_name_layer = Embed(
                     vocab,
                     self.embed_input_feature_name,
                     force_embedding_size=True,
                 )
-                projector_size = hidden_size - self.embed_input_feature_name
+                projector_size = config.hidden_size - self.embed_input_feature_name
             else:
                 raise ValueError("TabTransformer parameter "
                                  "`embed_input_feature_name` "
@@ -611,7 +684,7 @@ class TabTransformerCombiner(tf.keras.Model):
                                  "the current value is "
                                  "{}".format(self.embed_input_feature_name))
         else:
-            projector_size = hidden_size
+            projector_size = config.hidden_size
 
         logger.debug('  Projectors')
         self.projectors = [Dense(projector_size) for i_f in input_features
@@ -621,31 +694,32 @@ class TabTransformerCombiner(tf.keras.Model):
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            fc_size=transformer_fc_size,
-            num_layers=num_layers,
-            dropout=dropout
+            hidden_size=config.hidden_size,
+            num_heads=config.num_heads,
+            fc_size=config.transformer_fc_size,
+            num_layers=config.num_layers,
+            dropout=config.dropout
         )
 
         logger.debug('  FCStack')
+
         self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
+            layers=config.fc_layers,
+            num_layers=config.num_fc_layers,
+            default_fc_size=config.fc_size,
+            default_use_bias=config.use_bias,
+            default_weights_initializer=config.weights_initializer,
+            default_bias_initializer=config.bias_initializer,
+            default_weights_regularizer=config.weights_regularizer,
+            default_bias_regularizer=config.bias_regularizer,
+            default_activity_regularizer=config.activity_regularizer,
             # default_weights_constraint=weights_constraint,
             # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=fc_activation,
-            default_dropout=fc_dropout,
-            fc_residual=fc_residual,
+            default_norm=config.norm,
+            default_norm_params=config.norm_params,
+            default_activation=config.fc_activation,
+            default_dropout=config.fc_dropout,
+            fc_residual=config.fc_residual,
         )
 
     def call(
@@ -722,28 +796,37 @@ class TabTransformerCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
+    
+    @staticmethod
+    def get_schema_cls():
+        return TabTransformerCombinerConfig
+
+
+@dataclass
+class ComparatorCombinerConfig:
+    entity_1: List[str]
+    entity_2: List[str]
+    num_fc_layers: int = schema.NonNegativeInteger(default=1)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = 'relu'
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+
+    class Meta:
+        unknown = INCLUDE
 
 
 class ComparatorCombiner(tf.keras.Model):
     def __init__(
             self,
-            entity_1: List[str],
-            entity_2: List[str],
-            # fc_layers=None,
-            num_fc_layers=1,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer="glorot_uniform",
-            bias_initializer="zeros",
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            activation="relu",
-            dropout=0,
+            config: ComparatorCombinerConfig = None,
             **kwargs,
     ):
         super().__init__()
@@ -754,56 +837,56 @@ class ComparatorCombiner(tf.keras.Model):
         # todo future: this may be redundant, check
         # if fc_layers is None and num_fc_layers is not None:
         fc_layers = []
-        for i in range(num_fc_layers):
-            fc_layers.append({"fc_size": fc_size})
+        for i in range(config.num_fc_layers):
+            fc_layers.append({"fc_size": config.fc_size})
 
         if fc_layers is not None:
             logger.debug("  FCStack")
             self.e1_fc_stack = FCStack(
                 layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout=dropout,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
             )
             self.e2_fc_stack = FCStack(
                 layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout=dropout,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
             )
 
         # todo: this should actually be the size of the last fc layer,
         #  not just fc_size
         # todo: set initializer and regularization
-        self.bilinear_weights = tf.random.normal([fc_size, fc_size],
+        self.bilinear_weights = tf.random.normal([config.fc_size, config.fc_size],
                                                  dtype=tf.float32)
 
-        self.entity_1 = entity_1
-        self.entity_2 = entity_2
-        self.required_inputs = set(entity_1 + entity_2)
-        self.fc_size = fc_size
+        self.entity_1 = config.entity_1
+        self.entity_2 = config.entity_2
+        self.required_inputs = set(config.entity_1 + config.entity_2)
+        self.fc_size = config.fc_size
 
     def call(self, inputs, training=None, mask=None,
              **kwargs):  # encoder outputs
@@ -874,6 +957,10 @@ class ComparatorCombiner(tf.keras.Model):
 
         return {"combiner_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return ComparatorCombinerConfig
+
 
 def get_combiner_class(combiner_type):
     return get_from_registry(
@@ -890,14 +977,4 @@ combiner_registry = {
     'comparator': ComparatorCombiner,
     "transformer": TransformerCombiner,
     "tabtransformer": TabTransformerCombiner,
-}
-
-sequence_encoder_registry = {
-    'stacked_cnn': StackedCNN,
-    'parallel_cnn': ParallelCNN,
-    'stacked_parallel_cnn': StackedParallelCNN,
-    'rnn': StackedRNN,
-    'cnnrnn': StackedCNNRNN,
-    # todo: add transformer
-    # 'transformer': StackedTransformer,
 }
