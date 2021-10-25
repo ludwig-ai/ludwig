@@ -200,7 +200,6 @@ def test_category_int_dtype(tmpdir):
     csv_fname = generate_data(input_features, output_features,
                               os.path.join(tmpdir, 'dataset.csv'))
     df = pd.read_csv(csv_fname)
-    logger.error(f'df: {df}')
 
     distinct_values = df[feature[NAME]].drop_duplicates().values
     value_map = {v: idx for idx, v in enumerate(distinct_values)}
