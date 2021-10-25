@@ -123,6 +123,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
             encoder_obj: Optional[LudwigModule] = None
     ):
         super().__init__(feature)
+        self.overwrite_defaults(feature)
         feature['input_size'] = feature['vector_size']
         if encoder_obj:
             self.encoder_obj = encoder_obj
