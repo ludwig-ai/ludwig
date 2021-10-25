@@ -266,7 +266,7 @@ def test_config_bad_combiner_types_enums():
     
     # Test bias initializer:
     del config['combiner']['weights_initializer']
-    config['combiner']['bias_initializer'] = 'variance_scaling'
+    config['combiner']['bias_initializer'] = 'kaiming_uniform'
     validate_config(config)
     config['combiner']['bias_initializer'] = 'fail'
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
