@@ -39,7 +39,8 @@ import pandas as pd
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO
+from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO, \
+    EVAL_BATCH_SIZE
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -507,24 +508,35 @@ class LudwigModel:
                     )
 
                 # auto tune batch size
-                if self.config[TRAINING][BATCH_SIZE] == AUTO:
+                if self.config[TRAINING][BATCH_SIZE] == AUTO or \
+                        self.config[TRAINING][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
                     tuned_batch_size = trainer.tune_batch_size(
                         self.config,
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING][BATCH_SIZE] = tuned_batch_size
+
+                    # TODO(travis): pass these in as args to trainer when we call train,
+                    #  to avoid setting state on possibly remote trainer
+                    if self.config[TRAINING][BATCH_SIZE] == AUTO:
+                        self.config[TRAINING][BATCH_SIZE] = tuned_batch_size
+                        trainer.batch_size = tuned_batch_size
+
+                    if self.config[TRAINING][EVAL_BATCH_SIZE] == AUTO:
+                        self.config[TRAINING][EVAL_BATCH_SIZE] = tuned_batch_size
+                        trainer.eval_batch_size = tuned_batch_size
 
                 # auto tune learning rate
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
-                    new_learning_rate = trainer.tune_learning_rate(
+                    tuned_learning_rate = trainer.tune_learning_rate(
                         self.config,
                         LudwigModel.create_model(self.config, random_seed),
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING][LEARNING_RATE] = new_learning_rate
+                    self.config[TRAINING][LEARNING_RATE] = tuned_learning_rate
+                    trainer.learning_rate = tuned_learning_rate
 
                 # train model
                 if self.backend.is_coordinator():
@@ -1147,7 +1159,7 @@ class LudwigModel:
                            f"Using validation set instead")
 
         if eval_set is not None:
-            if self.config[TRAINING]['eval_batch_size'] > 0:
+            if self.config[TRAINING]['eval_batch_size']:
                 batch_size = self.config[TRAINING]['eval_batch_size']
             else:
                 batch_size = self.config[TRAINING]['batch_size']
