@@ -39,6 +39,7 @@ TestCase = namedtuple('TestCase', 'output_features validation_metrics')
             [category_feature()],
             ['loss', 'accuracy', 'hits_at_k']
         ),
+        # TODO(#1333): Re-enable.
         # TestCase(
         #     [text_feature()],
         #     ['loss', 'token_accuracy', 'last_accuracy', 'edit_distance',
