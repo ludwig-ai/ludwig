@@ -308,7 +308,8 @@ class Trainer(BaseTrainer):
                     feature_name, metric
                 )
                 metric_val = output_feature[metric][-1]
-                summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
+                summary_writer.add_scalar(
+                    metric_tag, metric_val, global_step=step)
         summary_writer.flush()
 
     @classmethod
@@ -325,7 +326,8 @@ class Trainer(BaseTrainer):
 
         # combined loss
         loss_tag = "{}/step_training_loss".format("combined")
-        train_summary_writer.add_scalar(loss_tag, combined_loss, global_step=step)
+        train_summary_writer.add_scalar(
+            loss_tag, combined_loss, global_step=step)
 
         # all other losses
         for feature_name, loss in all_losses.items():
@@ -334,7 +336,7 @@ class Trainer(BaseTrainer):
 
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate",
-                              learning_rate, global_step=step)
+                                            learning_rate, global_step=step)
 
         train_summary_writer.flush()
 
@@ -697,7 +699,8 @@ class Trainer(BaseTrainer):
                 training_progress_tracker_path
             )
             if self.is_coordinator():
-                model, self.optimizer = self.resume_weights_and_optimzier(training_checkpoints_path)
+                model, self.optimizer = self.resume_weights_and_optimzier(
+                    training_checkpoints_path)
         else:
             (
                 train_metrics,
@@ -747,7 +750,8 @@ class Trainer(BaseTrainer):
             first_batch = True
             while progress_tracker.epoch < self.epochs:
                 # note that batch size may change over epochs
-                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
+                batcher.set_epoch(progress_tracker.epoch,
+                                  progress_tracker.batch_size)
 
                 # epoch init
                 start_time = time.time()
@@ -997,13 +1001,13 @@ class Trainer(BaseTrainer):
                 else:
                     # there's no validation, so we save the model at each iteration
                     if self.is_coordinator() and not self.skip_save_model:
-                        #model.save_weights(model_weights_path)
+                        # model.save_weights(model_weights_path)
                         torch.save(model.state_dict(), model_weights_path)
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
                     if not self.skip_save_progress:
-                        #checkpoint_manager.save()
+                        # checkpoint_manager.save()
                         os.makedirs(training_checkpoints_path, exist_ok=True)
                         '''
                         torch.save(model, os.path.join(training_checkpoints_path, 'model.pt'))
@@ -1096,9 +1100,11 @@ class Trainer(BaseTrainer):
                 .metric_functions.keys()
 
             for metric in metric_names:
-                score = results[output_feature][metric]
-                metrics_log[output_feature][metric].append(score)
-                scores.append(score)
+                if metric in results[output_feature]:
+                    # Some metrics may have been excepted and excluded from results.
+                    score = results[output_feature][metric]
+                    metrics_log[output_feature][metric].append(score)
+                    scores.append(score)
 
             tables[output_feature].append(scores)
 
@@ -1164,7 +1170,7 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
             if self.is_coordinator() and not skip_save_model:
-                #model.save_weights(model_weights_path)
+                # model.save_weights(model_weights_path)
                 torch.save(model.state_dict(), model_weights_path)
                 logger.info(
                     'Validation {} on {} improved, model saved'.format(
@@ -1340,8 +1346,10 @@ class Trainer(BaseTrainer):
             self,
             model_weights_progress_path
     ):
-        model = torch.load(os.path.join(model_weights_progress_path, 'model.pt'))
-        optimizer = torch.load(os.path.join(model_weights_progress_path, 'optimizer.pt'))
+        model = torch.load(os.path.join(
+            model_weights_progress_path, 'model.pt'))
+        optimizer = torch.load(os.path.join(
+            model_weights_progress_path, 'optimizer.pt'))
         return model, optimizer
 
     def reduce_learning_rate(
