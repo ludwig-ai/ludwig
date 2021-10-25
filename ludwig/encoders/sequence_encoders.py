@@ -238,7 +238,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output in ['none', 'None', None]:
-            self.embed_sequence.output_shape
+            self.embed_sequence.embedding_size
         return torch.Size([1])
 
 @register(name='parallel_cnn')
