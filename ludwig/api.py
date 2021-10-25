@@ -676,19 +676,12 @@ class LudwigModel:
                                                   random_seed=random_seed)
 
         if not self._online_trainer:
-            if 'model' not in self.config[TRAINING]:
-                self._online_trainer = self.backend.create_trainer(
-                    **self.config[TRAINING],
-                    model=self.model,
-                    random_seed=random_seed,
-                    debug=debug
-                )
-            else:
-                self._online_trainer = self.backend.create_trainer(
-                    **self.config[TRAINING],
-                    random_seed=random_seed,
-                    debug=debug
-                )
+            self._online_trainer = self.backend.create_trainer(
+                **self.config[TRAINING],
+                model=self.model,
+                random_seed=random_seed,
+                debug=debug
+            )
 
         self.model = self._online_trainer.train_online(
             self.model,
