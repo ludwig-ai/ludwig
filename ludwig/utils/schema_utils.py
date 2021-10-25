@@ -3,13 +3,13 @@ from dataclasses import field
 import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
 
-from ludwig.modules.initializer_modules import initializers_registry
+from ludwig.utils.torch_utils import initializer_registry
 from ludwig.modules.reduction_modules import reduce_mode_registry
 
 
 def InitializerOptions(default=None):
     return StringOptions(
-        list(initializers_registry.keys()),
+        list(initializer_registry.keys()),
         default=default,
         nullable=True
     )
