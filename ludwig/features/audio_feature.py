@@ -1,3 +1,4 @@
+
 #! /usr/bin/env python
 # coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
@@ -434,7 +435,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
                 'max_sequence_length has to be defined - '
                 'check "update_config_with_metadata()"')
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32
         assert len(inputs.shape) == 3, f"expected 3D shape, found: {inputs.shape}"
@@ -448,6 +449,10 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length, self.embedding_size])
+
+    @property
+    def input_dtype(self):
+        return torch.float32
 
     @staticmethod
     def update_config_with_metadata(

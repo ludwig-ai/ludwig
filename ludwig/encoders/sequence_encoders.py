@@ -98,7 +98,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
     def __init__(
             self,
             vocab,
-            max_sequence_length=None,
+            max_sequence_length,
             representation='dense',
             embedding_size=256,
             embeddings_trainable=True,
@@ -205,6 +205,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
         self.embed_sequence = EmbedSequence(
             vocab,
             embedding_size,
+            max_sequence_length=self.max_sequence_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -225,9 +226,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
         """
         # ================ Embeddings ================
         embedded_sequence = self.embed_sequence(inputs, mask=mask)
-
         hidden = self.reduce_sequence(embedded_sequence)
-
         return {'encoder_output': hidden}
 
     @property
@@ -238,8 +237,9 @@ class SequenceEmbedEncoder(SequenceEncoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output in ['none', 'None', None]:
-            self.embed_sequence.embedding_size
-        return torch.Size([1])
+            self.embed_sequence.output_shape
+        return torch.Size([self.embed_sequence.output_shape[-1]])
+
 
 @register(name='parallel_cnn')
 class ParallelCNN(SequenceEncoder):
@@ -269,8 +269,6 @@ class ParallelCNN(SequenceEncoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -468,6 +466,7 @@ class ParallelCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -478,8 +477,9 @@ class ParallelCNN(SequenceEncoder):
             )
 
         logger.debug('  ParallelConv1D')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.parallel_conv1d = ParallelConv1D(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             max_sequence_length=self.max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -490,8 +490,6 @@ class ParallelCNN(SequenceEncoder):
             default_weights_regularizer=weights_regularizer,
             default_bias_regularizer=bias_regularizer,
             default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -505,7 +503,6 @@ class ParallelCNN(SequenceEncoder):
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 self.parallel_conv1d.output_shape[-1],
-                # num parallel * conv_layer output size
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -515,8 +512,6 @@ class ParallelCNN(SequenceEncoder):
                 default_weights_regularizer=weights_regularizer,
                 default_bias_regularizer=bias_regularizer,
                 default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
@@ -832,6 +827,7 @@ class StackedCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -842,8 +838,9 @@ class StackedCNN(SequenceEncoder):
             )
 
         logger.debug('  Conv1DStack')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.conv1d_stack = Conv1DStack(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -1194,6 +1191,7 @@ class StackedParallelCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -1203,9 +1201,10 @@ class StackedParallelCNN(SequenceEncoder):
                 embedding_regularizer=weights_regularizer
             )
 
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         logger.debug('  ParallelConv1DStack')
         self.parallel_conv1d_stack = ParallelConv1DStack(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             stacked_layers=self.stacked_layers,
             max_sequence_length=max_sequence_length,
             default_num_filters=num_filters,
@@ -1488,6 +1487,7 @@ class StackedRNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -1498,8 +1498,9 @@ class StackedRNN(SequenceEncoder):
             )
 
         logger.debug('  RecurrentStack')
+        input_size = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.recurrent_stack = RecurrentStack(
-            input_size=embedding_size,
+            input_size=input_size,
             hidden_size=state_size,
             cell_type=cell_type,
             sequence_size=max_sequence_length,
@@ -1630,7 +1631,6 @@ class StackedCNNRNN(SequenceEncoder):
             unit_forget_bias=True,
             recurrent_initializer='orthogonal',
             recurrent_regularizer=None,
-            # recurrent_constraint=None,
             dropout=0.0,
             recurrent_dropout=0.0,
             fc_layers=None,
@@ -1642,8 +1642,6 @@ class StackedCNNRNN(SequenceEncoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -1776,6 +1774,7 @@ class StackedCNNRNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -1786,8 +1785,9 @@ class StackedCNNRNN(SequenceEncoder):
             )
 
         logger.debug('  Conv1DStack')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.conv1d_stack = Conv1DStack(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -1950,8 +1950,6 @@ class StackedTransformer(SequenceEncoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
