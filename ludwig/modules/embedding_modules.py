@@ -463,6 +463,7 @@ class TokenAndPositionEmbedding(LudwigModule):
         self.token_embed = EmbedSequence(
             vocab=vocab,
             embedding_size=embedding_size,
+            max_sequence_length=max_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
