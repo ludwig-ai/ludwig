@@ -197,7 +197,6 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         feature['input_size'] = self.input_shape
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -259,8 +258,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     def __init__(self, feature):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
-        feature['input_size'] = self.input_shape[-1]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -320,7 +317,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
         self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
         self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RMSEMetric()
-        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric()
+        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric(
+        )
         self.metric_functions[R2] = R2Score()
 
     def get_prediction_set(self):

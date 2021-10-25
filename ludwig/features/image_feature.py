@@ -146,8 +146,8 @@ class ImageFeatureMixin:
             # img = img_padded
             if num_channels > img_num_channels:
                 extra_channels = num_channels - img_num_channels
-                img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
-
+                img = torch.nn.functional.pad(
+                    img, [0, 0, 0, 0, 0, extra_channels])
 
             if img_num_channels != num_channels:
                 logger.warning(
@@ -175,7 +175,7 @@ class ImageFeatureMixin:
                 "to be provided. "
                 "Additional information: "
                 "https://ludwig-ai.github.io/ludwig-docs/user_guide/#image-features-preprocessing"
-                    .format([img_height, img_width, num_channels], img.shape)
+                .format([img_height, img_width, num_channels], img.shape)
             )
 
         return img
@@ -197,20 +197,25 @@ class ImageFeatureMixin:
         """
 
         explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
-        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[
+            NUM_CHANNELS]
 
         if explicit_num_channels:
-            first_image = read_image(first_img_entry, preprocessing_parameters[NUM_CHANNELS])
+            first_image = read_image(
+                first_img_entry, preprocessing_parameters[NUM_CHANNELS])
         else:
             first_image = read_image(first_img_entry)
 
         inferred_sample = None
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
-            sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-            sample = [read_image(get_image_from_path(src_path, img)) for img in input_feature_col.head(sample_size)]
+            sample_size = min(len(input_feature_col),
+                              preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
+            sample = [read_image(get_image_from_path(src_path, img))
+                      for img in input_feature_col.head(sample_size)]
             inferred_sample = [img for img in sample if img is not None]
             if len(inferred_sample) == 0:
-                raise ValueError("No readable images in sample, image dimensions cannot be inferred")
+                raise ValueError(
+                    "No readable images in sample, image dimensions cannot be inferred")
 
         should_resize = False
         if explicit_height_width:
@@ -234,14 +239,17 @@ class ImageFeatureMixin:
                 should_resize = True
 
                 height_avg = min(
-                    sum(x.shape[0] for x in inferred_sample) / len(inferred_sample),
+                    sum(x.shape[0]
+                        for x in inferred_sample) / len(inferred_sample),
                     preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT])
                 width_avg = min(
-                    sum(x.shape[1] for x in inferred_sample) / len(inferred_sample),
+                    sum(x.shape[1]
+                        for x in inferred_sample) / len(inferred_sample),
                     preprocessing_parameters[INFER_IMAGE_MAX_WIDTH])
 
                 height, width = round(height_avg), round(width_avg)
-                logger.debug("Inferring height: {0} and width: {1}".format(height, width))
+                logger.debug(
+                    "Inferring height: {0} and width: {1}".format(height, width))
             elif first_image is not None:
                 height, width = first_image.shape[0], first_image.shape[1]
             else:
@@ -256,7 +264,8 @@ class ImageFeatureMixin:
             user_specified_num_channels = False
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 user_specified_num_channels = True
-                num_channels = round(sum(num_channels_in_image(x) for x in inferred_sample) / len(inferred_sample))
+                num_channels = round(sum(num_channels_in_image(x)
+                                     for x in inferred_sample) / len(inferred_sample))
             elif first_image is not None:
                 num_channels = num_channels_in_image(first_image)
             else:
@@ -292,7 +301,7 @@ class ImageFeatureMixin:
 
         num_processes = preprocessing_parameters['num_processes']
         if PREPROCESSING in feature and 'num_processes' in feature[
-            PREPROCESSING]:
+                PREPROCESSING]:
             num_processes = feature[PREPROCESSING]['num_processes']
 
         src_path = None
@@ -313,7 +322,7 @@ class ImageFeatureMixin:
             raise ValueError(
                 'Invalid image feature data type.  Detected type is {}, '
                 'expect either string for file path or numpy array.'
-                    .format(type(first_img_entry))
+                .format(type(first_img_entry))
             )
 
         first_img_entry = get_image_from_path(src_path, first_img_entry)
@@ -375,7 +384,8 @@ class ImageFeatureMixin:
                     res = pool.map(
                         read_image_and_resize, all_img_entries
                     )
-                    proc_df[feature[PROC_COLUMN]] = [x if x is not None else default_image for x in res]
+                    proc_df[feature[PROC_COLUMN]] = [
+                        x if x is not None else default_image for x in res]
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -415,7 +425,8 @@ class ImageFeatureMixin:
                 )
                 for i, img_entry in enumerate(all_img_entries):
                     res = read_image_and_resize(img_entry)
-                    image_dataset[i, :height, :width, :] = res if res is not None else default_image
+                    image_dataset[i, :height, :width,
+                                  :] = res if res is not None else default_image
                 h5_file.flush()
 
             proc_df[feature[PROC_COLUMN]] = np.arange(num_images)
@@ -431,7 +442,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:

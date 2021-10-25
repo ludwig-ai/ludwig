@@ -75,7 +75,8 @@ class BagFeatureMixin:
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
         def to_vector(set_str):
-            bag_vector = np.zeros((len(metadata['str2idx']),), dtype=np.float32)
+            bag_vector = np.zeros(
+                (len(metadata['str2idx']),), dtype=np.float32)
             col_counter = Counter(set_str_to_idx(
                 set_str,
                 metadata['str2idx'],
@@ -112,7 +113,6 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:

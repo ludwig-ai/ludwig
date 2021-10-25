@@ -110,7 +110,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -119,14 +118,15 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
-               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+            inputs.dtype == torch.int32 or inputs.dtype == torch.int64
+        assert len(inputs.shape) == 1 or (
+            len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs.unsqueeze(dim=1)
 
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
-            inputs = inputs.type(torch.IntTensor)
+            inputs = inputs.to(torch.int32)
         encoder_output = self.encoder_obj(inputs)
 
         return {'encoder_output': encoder_output}
@@ -169,7 +169,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     def __init__(self, feature):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()

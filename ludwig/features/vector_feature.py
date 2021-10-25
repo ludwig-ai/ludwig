@@ -120,10 +120,9 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def __init__(
             self,
             feature: Dict[str, Any],
-            encoder_obj: Optional[LudwigModule]=None
+            encoder_obj: Optional[LudwigModule] = None
     ):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         feature['input_size'] = feature['vector_size']
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -184,7 +183,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     def __init__(self, feature):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         self._input_shape = feature['input_size']
         feature['output_size'] = feature['vector_size']
         self.decoder_obj = self.initialize_decoder(feature)

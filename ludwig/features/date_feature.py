@@ -42,7 +42,7 @@ class DateFeatureMixin:
 
     preprocessing_schema = {
         'missing_value_strategy': {'type': 'string', 'enum':
-            MISSING_VALUE_STRATEGY_OPTIONS},
+                                   MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'string'},
         'computed_fill_value': {'type': 'string'},
         'datetime_format': {'type': ['string', 'null']},
@@ -74,7 +74,7 @@ class DateFeatureMixin:
                 'The preprocessing fill in value will be used.'
                 'For more details: '
                 'https://ludwig.ai/user_guide/#date-features-preprocessing'
-                    .format(date_str)
+                .format(date_str)
             )
             fill_value = preprocessing_parameters['fill_value']
             if fill_value != '':
@@ -83,8 +83,8 @@ class DateFeatureMixin:
                 datetime_obj = datetime.now()
 
         yearday = (
-                datetime_obj.toordinal() -
-                date(datetime_obj.year, 1, 1).toordinal() + 1
+            datetime_obj.toordinal() -
+            date(datetime_obj.year, 1, 1).toordinal() + 1
         )
 
         midnight = datetime_obj.replace(
@@ -129,7 +129,6 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:

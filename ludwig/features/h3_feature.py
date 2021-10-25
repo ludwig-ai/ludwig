@@ -42,7 +42,7 @@ class H3FeatureMixin:
 
     preprocessing_schema = {
         'missing_value_strategy': {'type': 'string', 'enum':
-            MISSING_VALUE_STRATEGY_OPTIONS},
+                                   MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'integer'},
         'computed_fill_value': {'type': 'integer'},
     }
@@ -66,7 +66,7 @@ class H3FeatureMixin:
             components['base_cell']
         ]
         cells_padding = [H3_PADDING_VALUE] * (
-                MAX_H3_RESOLUTION - len(components['cells'])
+            MAX_H3_RESOLUTION - len(components['cells'])
         )
         return header + components['cells'] + cells_padding
 
@@ -97,7 +97,6 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:

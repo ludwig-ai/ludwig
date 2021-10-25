@@ -148,7 +148,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -210,7 +209,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def __init__(self, feature):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
