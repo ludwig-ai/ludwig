@@ -245,7 +245,6 @@ class SequenceEmbedEncoder(SequenceEncoder):
         if self.reduce_output in ['none', 'None', None]:
             self.embed_sequence.output_shape
         elif self.reduce_output == 'concat':
-            # TODO(shreya): Doesn't handle the case when concat reducer goes to reduce last.
             embed_shape = self.embed_sequence.output_shape
             return torch.Size([embed_shape[-1] * embed_shape[-2]])
         return torch.Size([self.embed_sequence.output_shape[-1]])

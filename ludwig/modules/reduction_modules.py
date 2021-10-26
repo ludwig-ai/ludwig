@@ -80,22 +80,7 @@ class ReduceConcat(LudwigModule):
         self.reduce_last = ReduceLast()
 
     def forward(self, inputs, mask=None):
-        # TODO(shreya): Is this still the case in PyTorch?
-        if inputs.shape[-2] is None or inputs.shape[-1] is None:
-            # this the case of outputs coming from rnn encoders
-            logger.warning('  WARNING: '
-                           'The sequence length dimension is undefined '
-                           '(probably because of an RNN based encoder), '
-                           'so the sequence cannot be reduced '
-                           'by concatenation. '
-                           'Last will be used instead.')
-            return self.reduce_last(inputs)
-        else:
-            return torch.reshape(
-                inputs,
-                (-1, inputs.shape[-2] * inputs.shape[-1])
-            )
-
+        return inputs.reshape(-1, inputs.shape[-1] * inputs.shape[-2])
 
 
 class ReduceNone(LudwigModule):
