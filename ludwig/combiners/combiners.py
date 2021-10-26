@@ -16,14 +16,18 @@
 # ==============================================================================
 from abc import abstractmethod
 import logging
-from typing import Union, Optional, List, Dict
 from functools import lru_cache
+from typing import List, Dict, Optional, Union, Any
+
+from marshmallow import INCLUDE
+from marshmallow_dataclass import dataclass
 
 import torch
 from torch.nn import Module, ModuleList, Linear
 from ludwig.utils.torch_utils import LudwigModule, \
     sequence_mask as torch_sequence_mask
 
+import ludwig.utils.schema_utils as schema
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
@@ -39,6 +43,17 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
+
+
+sequence_encoder_registry = {
+    'stacked_cnn': StackedCNN,
+    'parallel_cnn': ParallelCNN,
+    'stacked_parallel_cnn': StackedParallelCNN,
+    'rnn': StackedRNN,
+    'cnnrnn': StackedCNNRNN,
+    # todo: add transformer
+    # 'transformer': StackedTransformer,
+}
 
 
 # super class to house common properties
@@ -72,25 +87,33 @@ class CombinerClass(LudwigModule):
         return output_tensor['combiner_output'].size()[1:]
 
 
+@dataclass
+class ConcatCombinerConfig:
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = 'relu'
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    flatten_inputs: bool = False
+    residual: bool = False
+
+    class Meta:
+        unknown = INCLUDE
+
+
 class ConcatCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict = None,
-            fc_layers: Union[list, None] = None,
-            num_fc_layers: Optional[int] = None,
-            fc_size: int = 256,
-            use_bias: bool = True,
-            weights_initializer: str = 'xavier_uniform',
-            bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
-            norm: Optional[str] = None,
-            norm_params: Optional[Dict] = None,
-            activation: str = 'relu',
-            dropout: float = 0,
-            flatten_inputs: bool = False,
-            residual: bool = False,
+            config: ConcatCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
@@ -98,41 +121,41 @@ class ConcatCombiner(CombinerClass):
         self.input_features = input_features
         logger.debug(' {}'.format(self.name))
 
-        self.flatten_inputs = flatten_inputs
+        self.flatten_inputs = config.flatten_inputs
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if fc_layers is None and \
-                num_fc_layers is not None:
+        if config.fc_layers is None and \
+                config.num_fc_layers is not None:
             fc_layers = []
-            for i in range(num_fc_layers):
-                fc_layers.append({'fc_size': fc_size})
+            for i in range(config.num_fc_layers):
+                fc_layers.append({'fc_size': config.fc_size})
 
-        self.fc_layers = fc_layers
+        self.fc_layers = config.fc_layers
 
-        if fc_layers is not None:
+        if config.fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 first_layer_input_size=self.concatenated_shape[-1],
-                layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout=dropout,
-                residual=residual,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+                residual=config.residual,
             )
 
-        if input_features and len(input_features) == 1 and fc_layers is None:
+        if input_features and len(input_features) == 1 and config.fc_layers is None:
             self.supports_masking = True
 
     @property
@@ -176,13 +199,25 @@ class ConcatCombiner(CombinerClass):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return ConcatCombinerConfig
+
+
+@dataclass
+class SequenceConcatCombinerConfig:
+    main_sequence_feature: Optional[str] = None
+    reduce_output: Optional[str] = schema.ReductionOptions()
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class SequenceConcatCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict,
-            reduce_output: Optional[str] = None,
-            main_sequence_feature: Optional[str] = None,
+            config: SequenceConcatCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
@@ -190,11 +225,11 @@ class SequenceConcatCombiner(CombinerClass):
         logger.debug(' {}'.format(self.name))
 
         self.input_features = input_features
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
-        self.main_sequence_feature = main_sequence_feature
+        self.main_sequence_feature = config.main_sequence_feature
 
     @property
     def concatenated_shape(self) -> torch.Size:
@@ -335,14 +370,26 @@ class SequenceConcatCombiner(CombinerClass):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return SequenceConcatCombinerConfig
+
+
+@dataclass
+class SequenceCombinerConfig:
+    main_sequence_feature: Optional[str] = None
+    reduce_output: Optional[str] = schema.ReductionOptions()
+    encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class SequenceCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict,
-            reduce_output: Optional[str] = None,
-            main_sequence_feature: Optional[str] = None,
-            encoder: Optional[str] = None,
+            config: SequenceCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
@@ -354,7 +401,7 @@ class SequenceCombiner(CombinerClass):
         self.combiner = SequenceConcatCombiner(
             input_features,
             reduce_output=None,
-            main_sequence_feature=main_sequence_feature
+            main_sequence_feature=config.main_sequence_feature
         )
 
         logger.debug(
@@ -363,9 +410,9 @@ class SequenceCombiner(CombinerClass):
         )
 
         self.encoder_obj = get_from_registry(
-            encoder, sequence_encoder_registry)(
+            config.encoder, sequence_encoder_registry)(
             should_embed=False,
-            reduce_output=reduce_output,
+            reduce_output=config.reduce_output,
             embedding_size=self.combiner.output_shape[1],
             max_sequence_length=self.combiner.output_shape[0],
             **kwargs
@@ -412,22 +459,34 @@ class SequenceCombiner(CombinerClass):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return SequenceCombinerConfig
+
+
+@dataclass
+class TabNetCombinerConfig:
+    size: int = schema.PositiveInteger(default=32)  # N_a in the paper
+    output_size: int = schema.PositiveInteger(default=32)  # N_d in the paper
+    num_steps: int = schema.NonNegativeInteger(default=1)  # N_steps in the paper
+    num_total_blocks: int = schema.NonNegativeInteger(default=4)
+    num_shared_blocks: int = schema.NonNegativeInteger(default=2)
+    relaxation_factor: float = 1.5  # gamma in the paper
+    bn_epsilon: float = 1e-3
+    bn_momentum: float = 0.7  # m_B in the paper
+    bn_virtual_bs: Optional[int] = schema.PositiveInteger()  # B_v from the paper
+    sparsity: float = 1e-5  # lambda_sparse in the paper
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class TabNetCombiner(Module):
     def __init__(
             self,
             input_features: Dict,
-            size: int,  # N_a in the paper
-            output_size: int = 32,  # N_d in the paper
-            num_steps: int = 1,  # N_steps in the paper
-            num_total_blocks: int = 4,
-            num_shared_blocks: int = 2,
-            relaxation_factor: float = 1.5,  # gamma in the paper
-            bn_epsilon: float = 1e-3,
-            bn_momentum: float = 0.7,  # m_B in the paper
-            bn_virtual_bs: int = None,  # B_v from the paper
-            sparsity: float = 1e-5,  # lambda_sparse in the paper
-            dropout=0,
+            config: TabNetCombinerConfig = None,
             **kwargs
     ) -> None:
         super().__init__()
@@ -438,20 +497,20 @@ class TabNetCombiner(Module):
 
         self.tabnet = TabNet(
             self.concatenated_shape[-1],
-            size,
-            output_size,
-            num_steps=num_steps,
-            num_total_blocks=num_total_blocks,
-            num_shared_blocks=num_shared_blocks,
-            relaxation_factor=relaxation_factor,
-            bn_epsilon=bn_epsilon,
-            bn_momentum=bn_momentum,
-            bn_virtual_bs=bn_virtual_bs,
-            sparsity=sparsity
+            config.size,
+            config.output_size,
+            num_steps=config.num_steps,
+            num_total_blocks=config.num_total_blocks,
+            num_shared_blocks=config.num_shared_blocks,
+            relaxation_factor=config.relaxation_factor,
+            bn_epsilon=config.bn_epsilon,
+            bn_momentum=config.bn_momentum,
+            bn_virtual_bs=config.bn_virtual_bs,
+            sparsity=config.sparsity
         )
 
-        if dropout > 0:
-            self.dropout = torch.nn.Dropout(dropout)
+        if config.dropout > 0:
+            self.dropout = torch.nn.Dropout(config.dropout)
         else:
             self.dropout = None
 
@@ -507,33 +566,43 @@ class TabNetCombiner(Module):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return TabNetCombinerConfig
+
+
+@dataclass
+class TransformerCombinerConfig:
+    num_layers: int = schema.PositiveInteger(default=1)
+    hidden_size: int = schema.NonNegativeInteger(default=256)
+    num_heads: int = schema.NonNegativeInteger(default=8)
+    transformer_fc_size: int = schema.NonNegativeInteger(default=256)
+    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    fc_activation: str = 'relu'
+    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    fc_residual: bool = False
+    reduce_output: Optional[str] = schema.ReductionOptions(default='mean')
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class TransformerCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: Dict = None,
-            num_layers: int = 1,
-            hidden_size: int = 256,
-            num_heads: int = 8,
-            transformer_fc_size: int = 256,
-            dropout: float = 0.1,
-            fc_layers: Optional[list] = None,
-            num_fc_layers: int = 0,
-            fc_size: int = 256,
-            use_bias: bool = True,
-            weights_initializer: str = 'xavier_uniform',
-            bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm: Optional[str] = None,
-            norm_params: Optional[Dict] = None,
-            fc_activation: str = 'relu',
-            fc_dropout: float = 0,
-            fc_residual: bool = False,
-            reduce_output: Optional[str] = 'mean',
+            input_features: Optional[List] = None,
+            config: TransformerCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
@@ -541,8 +610,8 @@ class TransformerCombiner(CombinerClass):
         logger.debug(' {}'.format(self.name))
 
         self.input_features = input_features
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -556,41 +625,41 @@ class TransformerCombiner(CombinerClass):
             [Linear(
                 torch.prod(
                     torch.Tensor([*input_features[inp].output_shape])
-                ).type(torch.int32), hidden_size) for inp in input_features
+                ).type(torch.int32), config.hidden_size) for inp in input_features
              ]
         )
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
-            input_size=hidden_size,
+            input_size=config.hidden_size,
             sequence_size=self.sequence_size,
-            hidden_size=hidden_size,
-            num_heads=num_heads,
-            fc_size=transformer_fc_size,
-            num_layers=num_layers,
-            dropout=dropout
+            hidden_size=config.hidden_size,
+            num_heads=config.num_heads,
+            fc_size=config.transformer_fc_size,
+            num_layers=config.num_layers,
+            dropout=config.dropout
         )
 
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 self.transformer_stack.output_shape[-1],
-                layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                layers=config.fc_layers,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=fc_activation,
-                default_dropout=fc_dropout,
-                fc_residual=fc_residual,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.fc_activation,
+                default_dropout=config.fc_dropout,
+                fc_residual=config.fc_residual,
             )
 
     @property
@@ -641,72 +710,82 @@ class TransformerCombiner(CombinerClass):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return TransformerCombinerConfig
+
+
+@dataclass
+class TabTransformerCombinerConfig:
+    embed_input_feature_name: Optional[Union[str, int]] = schema.Embed()
+    num_layers: int = schema.PositiveInteger(default=1)
+    hidden_size: int = schema.NonNegativeInteger(default=256)
+    num_heads: int = schema.NonNegativeInteger(default=8)
+    transformer_fc_size: int = schema.NonNegativeInteger(default=256)
+    dropout: float = schema.FloatRange(default=0.1, min=0, max=1)
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=0)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    fc_activation: str = 'relu'
+    fc_dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+    fc_residual: bool = False
+    reduce_output: str = schema.ReductionOptions(default='concat')
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class TabTransformerCombiner(CombinerClass):
     def __init__(
             self,
-            input_features=None,
-            embed_input_feature_name=None,  # None or embedding size or "add"
-            num_layers=1,
-            hidden_size=256,
-            num_heads=8,
-            transformer_fc_size=256,
-            dropout=0.1,
-            fc_layers=None,
-            num_fc_layers=0,
-            fc_size=256,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm=None,
-            norm_params=None,
-            fc_activation='relu',
-            fc_dropout=0,
-            fc_residual=False,
-            reduce_output='concat',
+            input_features: Optional[List] = None,
+            config: TabTransformerCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
         self.name = "TabTransformerCombiner"
         logger.debug('Initializing {}'.format(self.name))
 
-        if reduce_output is None:
+        if config.reduce_output is None:
             raise ValueError("TabTransformer requires the `reduce_output` "
                              "parameter")
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_output = config.reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         self.supports_masking = True
 
-        self.embed_input_feature_name = embed_input_feature_name
+        self.embed_input_feature_name = config.embed_input_feature_name
         if self.embed_input_feature_name:
             vocab = [i_f for i_f in input_features
                      if input_features[i_f].type != NUMERICAL
                      or input_features[i_f].type != BINARY]
             if self.embed_input_feature_name == 'add':
-                self.embed_i_f_name_layer = Embed(vocab, hidden_size,
+                self.embed_i_f_name_layer = Embed(vocab, config.hidden_size,
                                                   force_embedding_size=True)
-                projector_size = hidden_size
+                projector_size = config.hidden_size
             elif isinstance(self.embed_input_feature_name, int):
-                if self.embed_input_feature_name > hidden_size:
+                if self.embed_input_feature_name > config.hidden_size:
                     raise ValueError(
                         "TabTransformer parameter "
                         "`embed_input_feature_name` "
                         "specified integer value ({}) "
                         "needs to be smaller than "
                         "`hidden_size` ({}).".format(
-                            self.embed_input_feature_name, hidden_size
+                            self.embed_input_feature_name, config.hidden_size
                         ))
                 self.embed_i_f_name_layer = Embed(
                     vocab,
                     self.embed_input_feature_name,
                     force_embedding_size=True,
                 )
-                projector_size = hidden_size - self.embed_input_feature_name
+                projector_size = config.hidden_size - self.embed_input_feature_name
             else:
                 raise ValueError("TabTransformer parameter "
                                  "`embed_input_feature_name` "
@@ -714,7 +793,7 @@ class TabTransformerCombiner(CombinerClass):
                                  "the current value is "
                                  "{}".format(self.embed_input_feature_name))
         else:
-            projector_size = hidden_size
+            projector_size = config.hidden_size
 
         logger.debug('  Projectors')
         self.unembeddable_features = []
@@ -745,14 +824,14 @@ class TabTransformerCombiner(CombinerClass):
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
-            input_size=hidden_size,
+            input_size=config.hidden_size,
             sequence_size=len(self.embeddable_features),
-            hidden_size=hidden_size,
+            hidden_size=config.hidden_size,
             # todo: can we just use projector_size? # hidden_size,
-            num_heads=num_heads,
-            fc_size=transformer_fc_size,
-            num_layers=num_layers,
-            dropout=dropout
+            num_heads=config.num_heads,
+            fc_size=config.transformer_fc_size,
+            num_layers=config.num_layers,
+            dropout=config.dropout
         )
 
         logger.debug('  FCStack')
@@ -760,7 +839,7 @@ class TabTransformerCombiner(CombinerClass):
             self.transformer_stack.layers[-1].output_shape[-1]
 
         # determine input size to fully connected layer based on reducer
-        if reduce_output == 'concat':
+        if config.reduce_output == 'concat':
             num_embeddable_features = len(self.embeddable_features)
             fc_input_size = num_embeddable_features * transformer_hidden_size
         else:
@@ -768,22 +847,22 @@ class TabTransformerCombiner(CombinerClass):
                 if len(self.embeddable_features) > 0 else 0
         self.fc_stack = FCStack(
             fc_input_size + concatenated_unembeddable_encoders_size,
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
+            layers=config.fc_layers,
+            num_layers=config.num_fc_layers,
+            default_fc_size=config.fc_size,
+            default_use_bias=config.use_bias,
+            default_weights_initializer=config.weights_initializer,
+            default_bias_initializer=config.bias_initializer,
+            default_weights_regularizer=config.weights_regularizer,
+            default_bias_regularizer=config.bias_regularizer,
+            default_activity_regularizer=config.activity_regularizer,
             # default_weights_constraint=weights_constraint,
             # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=fc_activation,
-            default_dropout=fc_dropout,
-            fc_residual=fc_residual,
+            default_norm=config.norm,
+            default_norm_params=config.norm_params,
+            default_activation=config.fc_activation,
+            default_dropout=config.fc_dropout,
+            fc_residual=config.fc_residual,
         )
 
     @staticmethod
@@ -882,28 +961,38 @@ class TabTransformerCombiner(CombinerClass):
 
         return return_data
 
+    @staticmethod
+    def get_schema_cls():
+        return TabTransformerCombinerConfig
+
+
+@dataclass
+class ComparatorCombinerConfig:
+    entity_1: List[str]
+    entity_2: List[str]
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
+    num_fc_layers: int = schema.NonNegativeInteger(default=1)
+    fc_size: int = schema.PositiveInteger(default=256)
+    use_bias: bool = True
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_regularizer: Optional[str] = schema.RegularizerOptions()
+    bias_regularizer: Optional[str] = schema.RegularizerOptions()
+    activity_regularizer: Optional[str] = schema.RegularizerOptions()
+    norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
+    norm_params: Optional[dict] = schema.Dict()
+    activation: str = 'relu'
+    dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
+
+    class Meta:
+        unknown = INCLUDE
+
 
 class ComparatorCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict,
-            entity_1: List[str],
-            entity_2: List[str],
-            fc_layers: Optional[list] = None,
-            num_fc_layers: int = 1,
-            fc_size: int = 256,
-            use_bias: bool = True,
-            weights_initializer: str = "xavier_uniform",
-            bias_initializer: str = "zeros",
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
-            # weights_constraint=None,
-            # bias_constraint=None,
-            norm: Optional[str] = None,
-            norm_params: Optional[Dict] = None,
-            activation: str = "relu",
-            dropout: float = 0,
+            config: ComparatorCombinerConfig = None,
             **kwargs,
     ):
         super().__init__()
@@ -911,56 +1000,57 @@ class ComparatorCombiner(CombinerClass):
         logger.debug("Entering {}".format(self.name))
 
         self.input_features = input_features
-        self.entity_1 = entity_1
-        self.entity_2 = entity_2
-        self.required_inputs = set(entity_1 + entity_2)
-        self.fc_size = fc_size
+        self.entity_1 = config.entity_1
+        self.entity_2 = config.entity_2
+        self.required_inputs = set(config.entity_1 + config.entity_2)
+        self.fc_size = config.fc_size
 
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if fc_layers is None and num_fc_layers is not None:
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
             fc_layers = []
-            for i in range(num_fc_layers):
-                fc_layers.append({"fc_size": fc_size})
+            for i in range(config.num_fc_layers):
+                fc_layers.append({"fc_size": config.fc_size})
 
         if fc_layers is not None:
             logger.debug("Setting up FCStack")
             self.e1_fc_stack = FCStack(
-                self.get_entity_shape(entity_1)[-1],
+                self.get_entity_shape(config.entity_1)[-1],
                 layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout=dropout,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
             )
             self.e2_fc_stack = FCStack(
-                self.get_entity_shape(entity_2)[-1],
+                self.get_entity_shape(config.entity_2)[-1],
                 layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
+                num_layers=config.num_fc_layers,
+                default_fc_size=config.fc_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_weights_regularizer=config.weights_regularizer,
+                default_bias_regularizer=config.bias_regularizer,
+                default_activity_regularizer=config.activity_regularizer,
                 # default_weights_constraint=weights_constraint,
                 # default_bias_constraint=bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout=dropout,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
             )
 
         self.last_fc_layer_fc_size = fc_layers[-1]['fc_size']
@@ -1058,6 +1148,10 @@ class ComparatorCombiner(CombinerClass):
 
         return {"combiner_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return ComparatorCombinerConfig
+
 
 def get_combiner_class(combiner_type):
     return get_from_registry(
@@ -1074,14 +1168,4 @@ combiner_registry = {
     'comparator': ComparatorCombiner,
     "transformer": TransformerCombiner,
     "tabtransformer": TabTransformerCombiner,
-}
-
-sequence_encoder_registry = {
-    'stacked_cnn': StackedCNN,
-    'parallel_cnn': ParallelCNN,
-    'stacked_parallel_cnn': StackedParallelCNN,
-    'rnn': StackedRNN,
-    'cnnrnn': StackedCNNRNN,
-    # todo: add transformer
-    # 'transformer': StackedTransformer,
 }

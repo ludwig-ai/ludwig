@@ -136,7 +136,12 @@ class LudwigModule(Module):
     def _compute_output_shape(self) -> torch.Size:
         output_tensor = self.forward(
             torch.rand(2, *self.input_shape).type(self.input_dtype))
-        return output_tensor.size()[1:]
+        if isinstance(output_tensor, torch.Tensor):
+            return output_tensor.size()[1:]
+        elif isinstance(output_tensor, dict) and 'encoder_output' in output_tensor:
+            return output_tensor['encoder_output'].size()[1:]
+        else:
+            raise ValueError('Unknown output tensor type.')
 
 
 class Dense(LudwigModule):

@@ -28,7 +28,8 @@ TestCase = namedtuple('TestCase', 'output_features validation_metrics')
     [
         TestCase(
             [numerical_feature()],
-            ['loss', 'mean_squared_error', 'mean_absolute_error', 'r2']
+            ['root_mean_squared_percentage_error', 'mean_squared_error',
+                'mean_absolute_error', 'r2', 'root_mean_squared_error']
         ),
         TestCase(
             [binary_feature()],
@@ -38,11 +39,12 @@ TestCase = namedtuple('TestCase', 'output_features validation_metrics')
             [category_feature()],
             ['loss', 'accuracy', 'hits_at_k']
         ),
-        TestCase(
-            [text_feature()],
-            ['loss', 'token_accuracy', 'last_accuracy', 'edit_distance',
-             'perplexity']
-        )
+        # TODO(#1333): Re-enable.
+        # TestCase(
+        #     [text_feature()],
+        #     ['loss', 'token_accuracy', 'last_accuracy', 'edit_distance',
+        #      'perplexity']
+        # )
     ]
 )
 def test_validation_metrics(test_case: TestCase, csv_filename: str):
@@ -54,8 +56,8 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
         for metric in test_case.validation_metrics:
             test_scenarios.append((of_name, metric))
             if len(test_case.output_features) == 1:
-                # it shoudl work when there's only one output feature
-                # and the metric applyys to the output feature type,
+                # it should work when there's only one output feature
+                # and the metric applies to the output feature type,
                 # the output feature name should be replacing combined
                 # and a warning should be printed about the substitution
                 test_scenarios.append(('combined', metric))

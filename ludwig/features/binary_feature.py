@@ -121,13 +121,14 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
-        assert len(inputs.shape) in [1, 2]
-        inputs_exp = inputs[:, None]
-        encoder_outputs = self.encoder_obj(
-            inputs_exp)
+        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+
+        if len(inputs.shape) == 1:
+            inputs = inputs[:, None]
+        encoder_outputs = self.encoder_obj(inputs)
         return encoder_outputs
 
     @property
@@ -140,10 +141,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        try:
-            return torch.Size(self.encoder_obj.output_shape)
-        except:
-            logger.exception("foo")
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(

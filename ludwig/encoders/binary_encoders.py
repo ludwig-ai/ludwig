@@ -48,7 +48,7 @@ class BinaryPassthroughEncoder(BinaryEncoder):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type torch.float32
@@ -56,9 +56,9 @@ class BinaryPassthroughEncoder(BinaryEncoder):
         return {'encoder_output': inputs}
 
     @property
-    def input_shape(self) -> torch.Size:
+    def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
     @property
-    def output_shape(self) -> torch.Size:
-        return self.input_shape
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])

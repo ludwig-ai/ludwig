@@ -441,7 +441,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
-
     def create_predictor(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
         return RayPredictor(**executable_kwargs)

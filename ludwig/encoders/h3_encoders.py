@@ -153,6 +153,7 @@ class H3Embed(H3Encoder):
         self.embed_cells = EmbedSequence(
             [str(i) for i in range(8)],
             embedding_size,
+            max_sequence_length=(H3_INPUT_SIZE - 4),
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,

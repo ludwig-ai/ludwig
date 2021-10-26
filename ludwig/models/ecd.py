@@ -9,6 +9,7 @@ from ludwig.features.feature_registries import input_type_registry, \
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import LudwigModule
 
 import torch
@@ -41,29 +42,23 @@ class ECD(LudwigModule):
         super().__init__()
 
         # ================ Inputs ================
-        '''
-        self.input_features = build_inputs(
-            input_features_def
-        )
-        '''
         self.input_features = torch.nn.ModuleDict()
         self.input_features.update(build_inputs(input_features_def))
 
         # ================ Combiner ================
         logger.debug('Combiner {}'.format(combiner_def[TYPE]))
         combiner_class = get_combiner_class(combiner_def[TYPE])
+        config, kwargs = load_config_with_kwargs(
+            combiner_class.get_schema_cls(),
+            combiner_def,
+        )
         self.combiner = combiner_class(
             input_features=self.input_features,
-            **combiner_def,
+            config=config,
+            **kwargs
         )
 
         # ================ Outputs ================
-        '''
-        self.output_features = build_outputs(
-            output_features_def,
-            self.combiner
-        )
-        '''
         self.output_features = torch.nn.ModuleDict()
         self.output_features.update(build_outputs(output_features_def, self.combiner))
 

@@ -27,6 +27,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
+from typing import Dict, Any
 
 from random import random
 from re import M
@@ -38,6 +39,7 @@ from tabulate import tabulate
 from tqdm import tqdm
 
 from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
+from ludwig.data.dataset.base import Dataset
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
@@ -118,7 +120,7 @@ class Trainer(BaseTrainer):
             decay_steps=10000,
             staircase=False,
             batch_size=128,
-            eval_batch_size=0,
+            eval_batch_size=None,
             should_shuffle=True,
             shuffle_buffer_size=None,
             bucketing_field=None,
@@ -249,7 +251,7 @@ class Trainer(BaseTrainer):
         self.decay_steps = decay_steps
         self.staircase = staircase
         self.batch_size = batch_size
-        self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
+        self.eval_batch_size = batch_size if eval_batch_size is None else eval_batch_size
         self.should_shuffle = should_shuffle
         self.shuffle_buffer_size = shuffle_buffer_size
         self.bucketing_field = bucketing_field
@@ -305,8 +307,13 @@ class Trainer(BaseTrainer):
                 metric_tag = "{}/epoch_{}".format(
                     feature_name, metric
                 )
-                metric_val = output_feature[metric][-1]
-                summary_writer.add_scalar(metric_tag, metric_val, global_step=step)
+                try:
+                    metric_val = output_feature[metric][-1]
+                    summary_writer.add_scalar(
+                        metric_tag, metric_val, global_step=step)
+                except IndexError:
+                    logger.warning(
+                        f'Error computing metrics for {feature_name} {metric}.')
         summary_writer.flush()
 
     @classmethod
@@ -323,7 +330,8 @@ class Trainer(BaseTrainer):
 
         # combined loss
         loss_tag = "{}/step_training_loss".format("combined")
-        train_summary_writer.add_scalar(loss_tag, combined_loss, global_step=step)
+        train_summary_writer.add_scalar(
+            loss_tag, combined_loss, global_step=step)
 
         # all other losses
         for feature_name, loss in all_losses.items():
@@ -332,7 +340,7 @@ class Trainer(BaseTrainer):
 
         if learning_rate:
             train_summary_writer.add_scalar("combined/step_learning_rate",
-                              learning_rate, global_step=step)
+                                            learning_rate, global_step=step)
 
         train_summary_writer.flush()
 
@@ -340,14 +348,15 @@ class Trainer(BaseTrainer):
         self,
         model,
         dataset,
-        total_steps=3,
+        batch_size: int,
+        total_steps: int = 3,
     ):
         """ function to be used by tune_batch_size """
         with dataset.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            shuffle_buffer_size=self.shuffle_buffer_size,
-            horovod=self.horovod
+            batch_size=batch_size,
+            should_shuffle=False,
+            shuffle_buffer_size=0,
+            horovod=None
         ) as batcher:
 
             step_count = 0
@@ -375,7 +384,7 @@ class Trainer(BaseTrainer):
         self,
         config,
         model,
-        training_set,
+        training_set: Dataset,
         random_seed: int = default_random_seed,
         min_lr: float = 1e-8,
         max_lr: float = 1.0,
@@ -383,11 +392,11 @@ class Trainer(BaseTrainer):
         mode: str = "exponential",
         early_stop_threshold: int = 3,
         beta: float = 0.98
-    ):
+    ) -> float:
         # TODO (ASN): Circle back on how we want to set default placeholder value
         # Currently, since self.learning_rate is originally set to auto, we provide a
         # placeholder starting value (namely, .001)
-        self.learning_rate = 0.001
+        learning_rate = 0.001
 
         current_learning_rate = min_lr
         losses = []
@@ -423,7 +432,7 @@ class Trainer(BaseTrainer):
         ) as batcher:
             step_count = 0
             while epoch < self.epochs and step_count < total_training_steps and not diverging:
-                batcher.set_epoch(epoch)
+                batcher.set_epoch(epoch, self.batch_size)
                 model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
                     batch = batcher.next_batch()
@@ -473,17 +482,17 @@ class Trainer(BaseTrainer):
 
         optimal_lr = get_optimal_lr(losses, learning_rates)
         if optimal_lr:
-            self.learning_rate = optimal_lr
-        return self.learning_rate
+            learning_rate = optimal_lr
+        return learning_rate
 
     def tune_batch_size(
         self,
-        config,
-        training_set,
+        config: Dict[str, Any],
+        training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 10,
         halving_limit: int = 3
-    ):
+    ) -> int:
         from ludwig.api import LudwigModel
 
         def _is_valid_batch_size(batch_size):
@@ -492,68 +501,68 @@ class Trainer(BaseTrainer):
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value (namely, 128)
-        self.batch_size = 128
+        batch_size = 128
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
+
         # Set temporary values
         self.skip_save_model = True
         self.skip_save_progress = True
         self.skip_save_log = True
 
-        high = None
-        count = 0
-        halving_count = 0
-        while halving_count < halving_limit:
-            gc.collect()
-            try:
-                # re-initalize model...
-                model = LudwigModel.create_model(config, random_seed)
-                self.train_for_tuning(model, training_set, total_steps=3)
-                count += 1
-                if count >= max_trials:
-                    break
-                low = self.batch_size
-                prev_batch_size = self.batch_size
-                if high:
+        try:
+            high = None
+            count = 0
+            halving_count = 0
+            while halving_count < halving_limit:
+                gc.collect()
+
+                low = batch_size
+                prev_batch_size = batch_size
+                try:
+                    # re-initalize model...
+                    model = LudwigModel.create_model(config, random_seed)
+                    self.train_for_tuning(model, training_set, batch_size, total_steps=3)
+                    count += 1
+                    if count >= max_trials:
+                        break
+                    if high:
+                        if high - low <= 1:
+                            break
+                        midval = (high + low) // 2
+                        batch_size = midval
+                    else:
+                        batch_size *= 2  # double batch size
+
+                    if batch_size == prev_batch_size:
+                        break
+
+                except RuntimeError as e:
+                    # PyTorch only generates Runtime errors for CUDA OOM.
+                    gc.collect()
+                    high = batch_size
+                    halving_count += 1
+                    midval = (high + low) // 2
+                    batch_size = midval
                     if high - low <= 1:
                         break
-                    midval = (high + low) // 2
-                    self.batch_size = midval
-                else:
-                    self.batch_size *= 2  # double batch size
 
-                if self.batch_size == prev_batch_size:
+                # make sure that batch size is valid (e.g. less than size of ds)
+                if not _is_valid_batch_size(batch_size):
+                    batch_size = min(batch_size, len(training_set))
+
+                # edge case where bs is no longer increasing
+                if batch_size == prev_batch_size:
                     break
-
-            except RuntimeError as e:
-                # PyTorch only generates Runtime errors for CUDA OOM.
-                gc.collect()
-                high = self.batch_size
-                halving_count += 1
-                midval = (high + low) // 2
-                self.batch_size = midval
-                if high - low <= 1:
-                    break
-
-            # make sure that batch size is valid (e.g. less than size of ds)
-            if not _is_valid_batch_size(self.batch_size):
-                self.batch_size = min(self.batch_size, len(training_set))
-
-            # edge case where bs is no longer increasing
-            if self.batch_size == prev_batch_size:
-                break
-
+        finally:
             # Restore original parameters to defaults
             # self.epochs = original_epochs
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-            if self.eval_batch_size == "auto":
-                self.eval_batch_size = self.batch_size
-
-        return self.batch_size
+        return batch_size
 
     def train(
             self,
@@ -694,7 +703,8 @@ class Trainer(BaseTrainer):
                 training_progress_tracker_path
             )
             if self.is_coordinator():
-                model, self.optimizer = self.resume_weights_and_optimzier(training_checkpoints_path)
+                model, self.optimizer = self.resume_weights_and_optimzier(
+                    training_checkpoints_path)
         else:
             (
                 train_metrics,
@@ -750,7 +760,8 @@ class Trainer(BaseTrainer):
             # ================ Training Loop ================
             while progress_tracker.epoch < self.epochs:
                 # note that batch size may change over epochs
-                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
+                batcher.set_epoch(progress_tracker.epoch,
+                                  progress_tracker.batch_size)
 
                 # epoch init
                 start_time = time.time()
@@ -880,6 +891,7 @@ class Trainer(BaseTrainer):
                 tables[COMBINED] = [[COMBINED, LOSS]]
 
                 # eval metrics on train
+                self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
                 self.evaluation(
                     model,
                     training_set,
@@ -987,13 +999,13 @@ class Trainer(BaseTrainer):
                 else:
                     # there's no validation, so we save the model at each iteration
                     if self.is_coordinator() and not self.skip_save_model:
-                        #model.save_weights(model_weights_path)
+                        # model.save_weights(model_weights_path)
                         torch.save(model.state_dict(), model_weights_path)
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
                     if not self.skip_save_progress:
-                        #checkpoint_manager.save()
+                        # checkpoint_manager.save()
                         os.makedirs(training_checkpoints_path, exist_ok=True)
                         '''
                         torch.save(model, os.path.join(training_checkpoints_path, 'model.pt'))
@@ -1086,9 +1098,11 @@ class Trainer(BaseTrainer):
                 .metric_functions.keys()
 
             for metric in metric_names:
-                score = results[output_feature][metric]
-                metrics_log[output_feature][metric].append(score)
-                scores.append(score)
+                if metric in results[output_feature]:
+                    # Some metrics may have been excepted and excluded from results.
+                    score = results[output_feature][metric]
+                    metrics_log[output_feature][metric].append(score)
+                    scores.append(score)
 
             tables[output_feature].append(scores)
 
@@ -1154,7 +1168,7 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
             if self.is_coordinator() and not skip_save_model:
-                #model.save_weights(model_weights_path)
+                # model.save_weights(model_weights_path)
                 torch.save(model.state_dict(), model_weights_path)
                 logger.info(
                     'Validation {} on {} improved, model saved'.format(
@@ -1330,8 +1344,10 @@ class Trainer(BaseTrainer):
             self,
             model_weights_progress_path
     ):
-        model = torch.load(os.path.join(model_weights_progress_path, 'model.pt'))
-        optimizer = torch.load(os.path.join(model_weights_progress_path, 'optimizer.pt'))
+        model = torch.load(os.path.join(
+            model_weights_progress_path, 'model.pt'))
+        optimizer = torch.load(os.path.join(
+            model_weights_progress_path, 'optimizer.pt'))
         return model, optimizer
 
     def reduce_learning_rate(
