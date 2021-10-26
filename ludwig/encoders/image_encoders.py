@@ -44,8 +44,8 @@ class Stacked2DCNN(ImageEncoder):
 
     def __init__(
             self,
-            height: int = None,
-            width: int = None,
+            height: int,
+            width: int,
             conv_layers: Optional[List[Dict]] = None,
             num_conv_layers: Optional[int] = None,
             num_channels: int = None,
@@ -169,8 +169,8 @@ class ResNetEncoder(ImageEncoder):
 
     def __init__(
             self,
-            height: int = None,
-            width: int = None,
+            height: int,
+            width: int,
             resnet_size: int = 50,
             num_channels: int = 3,
             out_channels: int = 16,
@@ -260,8 +260,8 @@ class MLPMixerEncoder(ImageEncoder):
 
     def __init__(
             self,
-            height: int = None,
-            width: int = None,
+            height: int,
+            width: int,
             num_channels: int = None,
             patch_size: int = 16,
             embed_size: int = 512,
@@ -314,8 +314,8 @@ class MLPMixerEncoder(ImageEncoder):
 class ViTEncoder(ImageEncoder):
     def __init__(
             self,
-            height: int = None,
-            width: int = None,
+            height: int,
+            width: int,
             num_channels: int = 3,
             use_pretrained: bool = True,
             pretrained_model: str = 'google/vit-base-patch16-224',
