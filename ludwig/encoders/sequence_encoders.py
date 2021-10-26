@@ -199,8 +199,6 @@ class SequenceEmbedEncoder(SequenceEncoder):
         if self.reduce_output is None:
             self.supports_masking = True
 
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-
         logger.debug('  EmbedSequence')
         self.embed_sequence = EmbedSequence(
             vocab,
@@ -214,6 +212,14 @@ class SequenceEmbedEncoder(SequenceEncoder):
             embedding_initializer=weights_initializer,
             embedding_regularizer=weights_regularizer
         )
+
+        reduction_kwargs = {}
+        if reduce_output == 'attention':
+            reduction_kwargs = {
+                'input_size': self.embed_sequence.output_shape[-1]
+            }
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output, **reduction_kwargs)
 
     def forward(self, inputs: torch.Tensor, mask=None):
         """
@@ -238,6 +244,10 @@ class SequenceEmbedEncoder(SequenceEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output in ['none', 'None', None]:
             self.embed_sequence.output_shape
+        elif self.reduce_output == 'concat':
+            # TODO(shreya): Doesn't handle the case when concat reducer goes to reduce last.
+            embed_shape = self.embed_sequence.output_shape
+            return torch.Size([embed_shape[-1] * embed_shape[-2]])
         return torch.Size([self.embed_sequence.output_shape[-1]])
 
 
