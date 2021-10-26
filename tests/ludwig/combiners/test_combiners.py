@@ -307,15 +307,15 @@ def test_sequence_combiner(
             'main_sequence_feature': main_sequence_feature,
             'encoder': encoder,
             'reduce_output': reduce_output,
+            # following emulates encoder parameters passed in from config file
+            'fc_size': FC_SIZE,
+            'num_fc_layers': 3,
         }
     )
     combiner = SequenceConcatCombiner(
         input_features=input_features_dict,
         config=config,
         **kwargs,
-        # following emulates encoder parameters passed in from config file
-        fc_size=FC_SIZE,
-        num_fc_layers=3,
     )
 
     # confirm correctness of input_shape property
