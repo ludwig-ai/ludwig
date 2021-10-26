@@ -72,21 +72,17 @@ def test_collect_weights(csv_filename):
         model, output_dir = _train(*_prepare_data(csv_filename))
         model_path = os.path.join(output_dir, 'model')
         weights = [w for name, w in model.model.collect_weights()]
-
-        # 1 for input embeddings.
-        # 1 for combiner embeddings.
-        # 2 for the decoder classifier (w and b).
-        assert len(weights) == 4
+        assert len(weights) == 3
 
         # Load model from disk to ensure correct weight names
         model_loaded = LudwigModel.load(model_path)
         tensor_names = [name for name, w in model_loaded.collect_weights()]
-        assert len(tensor_names) == 4
+        assert len(tensor_names) == 3
 
         with tempfile.TemporaryDirectory() as output_directory:
             filenames = collect_weights(model_path, tensor_names,
                                         output_directory)
-            assert len(filenames) == 4
+            assert len(filenames) == 3
 
             for weight, filename in zip(weights, filenames):
                 saved_weight = np.load(filename)
