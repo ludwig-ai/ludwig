@@ -23,7 +23,7 @@ def test_stacked2d_cnn(
     assert outputs['encoder_output'].shape[1:] == stacked_2d_cnn.output_shape
 
 
-@pytest.mark.parametrize('height, width, num_channels',
+@pytest.mark.parametrize('height,width,num_channels',
                          [(224, 224, 1), (224, 224, 3)])
 def test_resnet_encoder(height: int, width: int, num_channels: int):
     resnet = ResNetEncoder(height=height, width=width,
