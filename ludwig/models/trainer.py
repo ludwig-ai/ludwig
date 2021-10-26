@@ -307,9 +307,13 @@ class Trainer(BaseTrainer):
                 metric_tag = "{}/epoch_{}".format(
                     feature_name, metric
                 )
-                metric_val = output_feature[metric][-1]
-                summary_writer.add_scalar(
-                    metric_tag, metric_val, global_step=step)
+                try:
+                    metric_val = output_feature[metric][-1]
+                    summary_writer.add_scalar(
+                        metric_tag, metric_val, global_step=step)
+                except IndexError:
+                    logger.warning(
+                        f'Error computing metrics for {feature_name} {metric}.')
         summary_writer.flush()
 
     @classmethod
