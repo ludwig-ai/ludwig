@@ -119,8 +119,9 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
-               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+            inputs.dtype == torch.int32 or inputs.dtype == torch.int64
+        assert len(inputs.shape) == 1 or (
+            len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs.unsqueeze(dim=1)
@@ -246,7 +247,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # softmax_cross_entropy loss metric
         self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric()
         self.metric_functions[ACCURACY] = CategoryAccuracy()
-        self.metric_functions[HITS_AT_K] = HitsAtKMetric(top_k=self.top_k)
+        if self.decoder_obj.num_classes > self.top_k:
+            # Required by torchmetrics.
+            self.metric_functions[HITS_AT_K] = HitsAtKMetric(top_k=self.top_k)
 
     @staticmethod
     def update_config_with_metadata(

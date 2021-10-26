@@ -5,7 +5,6 @@ from typing import Optional, Union, List, Tuple, Dict
 import pytest
 import torch
 
-from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.combiners.combiners import (
     ConcatCombiner,
     SequenceConcatCombiner,
@@ -14,8 +13,16 @@ from ludwig.combiners.combiners import (
     ComparatorCombiner,
     TransformerCombiner,
     TabTransformerCombiner,
+    ConcatCombinerConfig,
+    SequenceConcatCombinerConfig,
+    SequenceCombinerConfig,
+    TabNetCombinerConfig,
+    ComparatorCombinerConfig,
+    TransformerCombinerConfig,
+    TabTransformerCombinerConfig,
     sequence_encoder_registry,
 )
+from ludwig.utils.schema_utils import load_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -214,25 +221,19 @@ def test_concat_combiner(
             del input_features_dict[feature]
 
     # setup combiner to test with pseudo input features
-    config, kwargs = load_config_with_kwargs(
-        ConcatCombiner.get_schema_cls(),
-        {  # simulated combiner definition for unit test
-            'fc_layers': fc_layer,
-            'flatten_inputs': flatten_inputs
-        }
-    )
-    combiner = ConcatCombiner(
-        input_features=input_features_dict,
-        config=config,
-        **kwargs
-    )
+    combiner = ConcatCombiner(input_features_dict,
+                              config=load_config(
+                                  ConcatCombinerConfig,
+                                  fc_layers=fc_layer,
+                                  flatten_inputs=flatten_inputs
+                              ))
 
     # confirm correctness of input_shape property
     assert isinstance(combiner.input_shape, dict)
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -253,17 +254,13 @@ def test_sequence_concat_combiner(
     encoder_outputs_dict, input_feature_dict = encoder_outputs
 
     # setup combiner for testing
-    config, kwargs = load_config_with_kwargs(
-        SequenceConcatCombiner.get_schema_cls(),
-        {  # simulated combiner definition for unit test
-            'main_sequence_feature': main_sequence_feature,
-            'reduce_output': reduce_output
-        }
-    )
     combiner = SequenceConcatCombiner(
-        input_features=input_feature_dict,
-        config=config,
-        **kwargs
+        input_feature_dict,
+        config=load_config(
+            SequenceConcatCombinerConfig,
+            main_sequence_feature=main_sequence_feature,
+            reduce_output=reduce_output
+        )
     )
 
     # confirm correctness of input_shape property
@@ -300,22 +297,18 @@ def test_sequence_combiner(
 ) -> None:
     encoder_outputs_dict, input_features_dict = encoder_outputs
 
-    # setup combiner for testing
-    config, kwargs = load_config_with_kwargs(
-        SequenceCombiner.get_schema_cls(),
-        {  # simulated combiner definition for unit test
-            'main_sequence_feature': main_sequence_feature,
-            'encoder': encoder,
-            'reduce_output': reduce_output,
-            # following emulates encoder parameters passed in from config file
-            'fc_size': FC_SIZE,
-            'num_fc_layers': 3,
-        }
-    )
-    combiner = SequenceConcatCombiner(
-        input_features=input_features_dict,
-        config=config,
-        **kwargs,
+    combiner = SequenceCombiner(
+        input_features_dict,
+        config=load_config(
+            SequenceCombinerConfig,
+            main_sequence_feature=main_sequence_feature,
+            encoder=encoder,
+            reduce_output=reduce_output,
+
+        ),
+        # following emulates encoder parameters passed in from config file
+        fc_size=FC_SIZE,
+        num_fc_layers=3,
     )
 
     # confirm correctness of input_shape property
@@ -323,7 +316,7 @@ def test_sequence_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -368,22 +361,18 @@ def test_tabnet_combiner(
 ) -> None:
     encoder_outputs, input_features = features_to_test
 
-    # setup combiner for testing
-    config, kwargs = load_config_with_kwargs(
-        TabNetCombiner.get_schema_cls(),
-        {  # simulated combiner definition for unit test
-            'size': size,
-            'output_size': output_size,
-            'num_steps': 3,
-            'num_total_blocks': 4,
-            'num_shared_blocks': 2,
-            'dropout': 0.1
-        }
-    )
+    # setup combiner to test
     combiner = TabNetCombiner(
-        input_features=input_features,
-        config=config,
-        **kwargs,
+        input_features,
+        config=load_config(
+            TabNetCombinerConfig,
+            size=size,
+            output_size=output_size,
+            num_steps=3,
+            num_total_blocks=4,
+            num_shared_blocks=2,
+            dropout=0.1
+        )
     )
 
     # concatenate encoder outputs
@@ -417,21 +406,15 @@ def test_comparator_combiner(
 
     # setup combiner to test set to 256 for case when none as it's the default size
     fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
-
-    # setup combiner for testing
-    config, kwargs = load_config_with_kwargs(
-        ComparatorCombiner.get_schema_cls(),
-        {  # simulated combiner definition for unit test
-            'entity_1': entity_1,
-            'entity_2': entity_2,
-            'fc_layers': fc_layer,
-            'fc_size': fc_size
-        }
-    )
     combiner = ComparatorCombiner(
-        input_features=input_features_dict,
-        config=config,
-        **kwargs,
+        input_features_dict,
+        config=load_config(
+            ComparatorCombinerConfig,
+            entity_1=entity_1,
+            entity_2=entity_2,
+            fc_layers=fc_layer,
+            fc_size=fc_size
+        )
     )
 
     # concatenate encoder outputs
@@ -450,16 +433,10 @@ def test_transformer_combiner(
 ) -> None:
     encoder_outputs_dict, input_feature_dict = encoder_outputs
 
-    # setup combiner for testing
-    config, kwargs = load_config_with_kwargs(
-        TransformerCombiner.get_schema_cls(),
-        {  # simulated combiner definition for unit test
-        }
-    )
+    # setup combiner to test
     combiner = TransformerCombiner(
         input_features=input_feature_dict,
-        config=config,
-        **kwargs,
+        config=load_config(TransformerCombinerConfig)
     )
 
     # confirm correctness of input_shape property
@@ -529,21 +506,17 @@ def test_tabtransformer_combiner(
     # retrieve simulated encoder outputs and input features for the test
     encoder_outputs, input_features = features_to_test
 
-    # setup combiner for testing
-    config, kwargs = load_config_with_kwargs(
-        TabTransformerCombiner.get_schema_cls(),
-        {  # simulated combiner definition for unit test
-            'embed_input_feature_name': embed_input_feature_name,
-            # emulates parameters passed from combiner def
-            'num_layers': num_layers,  # number of transformer layers
-            'fc_layers': fc_layers,  # fully_connected layer definition
-            'reduce_output': reduce_output  # sequence reducer
-        }
-    )
+    # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features,
-        config=config,
-        **kwargs,
+        config=load_config(
+            TabTransformerCombinerConfig,
+            embed_input_feature_name=embed_input_feature_name,
+            # emulates parameters passed from combiner def
+            num_layers=num_layers,  # number of transformer layers
+            fc_layers=fc_layers,  # fully_connected layer definition
+            reduce_output=reduce_output  # sequence reducer
+        )
     )
 
     # concatenate encoder outputs

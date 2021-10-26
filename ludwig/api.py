@@ -199,10 +199,10 @@ class LudwigModel:
             backend or self.config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
-        # setup TensorFlow
-        self.backend.initialize_tensorflow(gpus=gpus,
-                                           gpu_memory_limit=gpu_memory_limit,
-                                           allow_parallel_threads=allow_parallel_threads)
+        # setup PyTorch env (GPU allocation, etc.)
+        self.backend.initialize_pytorch(gpus=gpus,
+                                        gpu_memory_limit=gpu_memory_limit,
+                                        allow_parallel_threads=allow_parallel_threads)
 
         # setup model
         self.model = None
@@ -1404,11 +1404,11 @@ class LudwigModel:
         ```
 
         """
-        # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
+        # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         backend_param = backend
         backend = initialize_backend(backend)
-        backend.initialize_tensorflow(
+        backend.initialize_pytorch(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads
