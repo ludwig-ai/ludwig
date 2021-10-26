@@ -476,10 +476,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         for key in ['height', 'width', 'num_channels', 'scaling']:
             input_feature[key] = feature_metadata[PREPROCESSING][key]
 
-        # TODO(shreya, Jim): Remove this once Jim's code is merged.
-        for key in ['height', 'width']:
-            input_feature[f'img_{key}'] = feature_metadata[PREPROCESSING][key]
-
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
