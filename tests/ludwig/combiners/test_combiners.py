@@ -13,8 +13,10 @@ from ludwig.combiners.combiners import (
     ComparatorCombiner,
     TransformerCombiner,
     TabTransformerCombiner,
-    sequence_encoder_registry,
+    sequence_encoder_registry, ConcatCombinerConfig, SequenceConcatCombinerConfig, SequenceCombinerConfig,
+    TabNetCombinerConfig, ComparatorCombinerConfig, TransformerCombinerConfig, TabTransformerCombinerConfig,
 )
+from ludwig.utils.schema_utils import load_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -213,8 +215,12 @@ def test_concat_combiner(
             del input_features_dict[feature]
 
     # setup combiner to test with pseudo input features
-    combiner = ConcatCombiner(input_features_dict, fc_layers=fc_layer,
-                              flatten_inputs=flatten_inputs)
+    combiner = ConcatCombiner(input_features_dict,
+                              config=load_config(
+                                  ConcatCombinerConfig,
+                                  fc_layers=fc_layer,
+                                  flatten_inputs=flatten_inputs
+                              ))
 
     # confirm correctness of input_shape property
     assert isinstance(combiner.input_shape, dict)
@@ -244,8 +250,11 @@ def test_sequence_concat_combiner(
     # setup combiner for testing
     combiner = SequenceConcatCombiner(
         input_feature_dict,
-        main_sequence_feature=main_sequence_feature,
-        reduce_output=reduce_output
+        config=load_config(
+            SequenceConcatCombinerConfig,
+            main_sequence_feature=main_sequence_feature,
+            reduce_output=reduce_output
+        )
     )
 
     # confirm correctness of input_shape property
@@ -284,9 +293,13 @@ def test_sequence_combiner(
 
     combiner = SequenceCombiner(
         input_features_dict,
-        main_sequence_feature=main_sequence_feature,
-        encoder=encoder,
-        reduce_output=reduce_output,
+        config=load_config(
+            SequenceCombinerConfig,
+            main_sequence_feature=main_sequence_feature,
+            encoder=encoder,
+            reduce_output=reduce_output,
+
+        ),
         # following emulates encoder parameters passed in from config file
         fc_size=FC_SIZE,
         num_fc_layers=3,
@@ -345,12 +358,15 @@ def test_tabnet_combiner(
     # setup combiner to test
     combiner = TabNetCombiner(
         input_features,
-        size=size,
-        output_size=output_size,
-        num_steps=3,
-        num_total_blocks=4,
-        num_shared_blocks=2,
-        dropout=0.1
+        config=load_config(
+            TabNetCombinerConfig,
+            size=size,
+            output_size=output_size,
+            num_steps=3,
+            num_total_blocks=4,
+            num_shared_blocks=2,
+            dropout=0.1
+        )
     )
 
     # concatenate encoder outputs
@@ -385,8 +401,14 @@ def test_comparator_combiner(
     # setup combiner to test set to 256 for case when none as it's the default size
     fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
     combiner = ComparatorCombiner(
-        input_features_dict, entity_1, entity_2,
-        fc_layers=fc_layer, fc_size=fc_size
+        input_features_dict,
+        config=load_config(
+            ComparatorCombinerConfig,
+            entity_1=entity_1,
+            entity_2=entity_2,
+            fc_layers=fc_layer,
+            fc_size=fc_size
+        )
     )
 
     # concatenate encoder outputs
@@ -407,7 +429,8 @@ def test_transformer_combiner(
 
     # setup combiner to test
     combiner = TransformerCombiner(
-        input_features=input_feature_dict
+        input_features=input_feature_dict,
+        config=load_config(TransformerCombinerConfig)
     )
 
     # confirm correctness of input_shape property
@@ -480,11 +503,14 @@ def test_tabtransformer_combiner(
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features,
-        embed_input_feature_name=embed_input_feature_name,
-        # emulates parameters passed from combiner def
-        num_layers=num_layers,  # number of transformer layers
-        fc_layers=fc_layers,  # fully_connected layer definition
-        reduce_output=reduce_output  # sequence reducer
+        config=load_config(
+            TabTransformerCombinerConfig,
+            embed_input_feature_name=embed_input_feature_name,
+            # emulates parameters passed from combiner def
+            num_layers=num_layers,  # number of transformer layers
+            fc_layers=fc_layers,  # fully_connected layer definition
+            reduce_output=reduce_output  # sequence reducer
+        )
     )
 
     # concatenate encoder outputs
