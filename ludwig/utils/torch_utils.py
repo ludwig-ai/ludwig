@@ -281,3 +281,15 @@ class Sparsemax(torch.nn.Module):
 
     def forward(self, input):
         return sparsemax(input, self.dim)
+
+
+def initialize_pytorch(
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        horovod=None
+):
+    # TODO(travis): implement gpu pinning
+    if horovod is not None:
+        if torch.cuda.is_available():
+            torch.cuda.set_device(horovod.local_rank())

@@ -23,7 +23,7 @@ from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset import create_dataset_manager
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
-from ludwig.utils.tf_utils import initialize_tensorflow
+from ludwig.utils.torch_utils import initialize_pytorch
 
 
 class Backend(ABC):
@@ -44,7 +44,7 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def initialize_tensorflow(self, *args, **kwargs):
+    def initialize_pytorch(self, *args, **kwargs):
         raise NotImplementedError()
 
     @contextmanager
@@ -93,8 +93,8 @@ class LocalPreprocessingMixin:
 
 
 class LocalTrainingMixin:
-    def initialize_tensorflow(self, *args, **kwargs):
-        initialize_tensorflow(*args, **kwargs)
+    def initialize_pytorch(self, *args, **kwargs):
+        initialize_pytorch(*args, **kwargs)
 
     def create_trainer(self, **kwargs):
         return Trainer(**kwargs)

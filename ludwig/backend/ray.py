@@ -33,15 +33,15 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
 # TODO(travis): remove for ray 1.8
+from ludwig.utils.torch_utils import initialize_pytorch
+
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 if _ray18:
     import ray.train as rt
@@ -125,41 +125,20 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
-class RayRemoteModel:
-    def __init__(self, model: ECD):
-        buf = save_weights_to_buffer(model)
-        self.cls = type(model)
-        self.args = model.get_args()
-        self.state = ray.put(buf)
-
-    def load(self):
-        obj = self.cls(*self.args)
-        buf = ray.get(self.state)
-        load_weights_from_buffer(obj, buf)
-        return obj
-
-
 class RayRemoteTrainer(RemoteTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def train(self, *args, **kwargs):
-        results = super().train(*args, **kwargs)
-        if results is not None:
-            model, *stats = results
-            results = (save_weights_to_buffer(model), *stats)
-        return results
+        return super().train(*args, **kwargs)
 
     def train_online(self, *args, **kwargs):
-        results = super().train_online(*args, **kwargs)
-        if results is not None:
-            results = save_weights_to_buffer(results)
-        return results
+        return super().train_online(*args, **kwargs)
 
 
 def train_fn(
         executable_kwargs: Dict[str, Any] = None,
-        remote_model: RayRemoteModel = None,
+        model: "LudwigModel" = None,
         training_set_metadata: Dict[str, Any] = None,
         train_shards: List[DatasetPipeline] = None,
         val_shards: List[DatasetPipeline] = None,
@@ -168,9 +147,7 @@ def train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
-    initialize_tensorflow(horovod=hvd)
-
-    model = remote_model.load()
+    initialize_pytorch(horovod=hvd)
 
     train_shard = RayDatasetShard(
         train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
@@ -218,7 +195,6 @@ class RayTrainerV2(BaseTrainer):
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         executable_kwargs = self.executable_kwargs
-        remote_model = RayRemoteModel(model)
 
         # TODO(travis) remove this once `dataset` keyword is supported:
         wg = TrainWorkerGroup(self.trainer._executor.worker_group)
@@ -246,7 +222,7 @@ class RayTrainerV2(BaseTrainer):
             lambda config: train_fn(**config),
             config={
                 'executable_kwargs': executable_kwargs,
-                'remote_model': remote_model,
+                'model': model,
                 **kwargs
             },
             # dataset={
@@ -256,9 +232,7 @@ class RayTrainerV2(BaseTrainer):
             # },
         )[0]
 
-        weights, *stats = results
-        load_weights_from_buffer(model, weights)
-        return (model, *stats)
+        return results
 
     def train_online(self, model, *args, **kwargs):
         raise NotImplementedError()
@@ -286,25 +260,19 @@ class RayLegacyTrainer(BaseTrainer):
                             executable_kwargs=executable_kwargs)
 
     def train(self, model, *args, **kwargs):
-        remote_model = RayRemoteModel(model)
         results = self.executor.execute(
-            lambda trainer: trainer.train(remote_model.load(), *args, **kwargs)
+            lambda trainer: trainer.train(model, *args, **kwargs)
         )
 
-        weights, *stats = results[0]
-        load_weights_from_buffer(model, weights)
-        return (model, *stats)
+        return results
 
     def train_online(self, model, *args, **kwargs):
-        remote_model = RayRemoteModel(model)
         results = self.executor.execute(
             lambda trainer: trainer.train_online(
-                remote_model.load(), *args, **kwargs)
+                model, *args, **kwargs)
         )
 
-        weights = results[0]
-        load_weights_from_buffer(model, weights)
-        return model
+        return results[0]
 
     @property
     def validation_field(self):
@@ -327,11 +295,10 @@ class RayPredictor(BasePredictor):
     def batch_predict(self, model: ECD, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
 
-        remote_model = RayRemoteModel(model)
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
         batch_predictor = self.get_batch_infer_model(
-            remote_model,
+            model,
             predictor_kwargs,
             output_columns,
             dataset.features,
@@ -394,7 +361,7 @@ class RayPredictor(BasePredictor):
 
     def get_batch_infer_model(
             self,
-            remote_model: RayRemoteModel,
+            model: "LudwigModel",
             predictor_kwargs: Dict[str, Any],
             output_columns: List[str],
             features: Dict[str, Dict],
@@ -403,7 +370,7 @@ class RayPredictor(BasePredictor):
     ):
         class BatchInferModel:
             def __init__(self):
-                self.model = remote_model.load()
+                self.model = model
                 self.output_columns = output_columns
                 self.features = features
                 self.training_set_metadata = training_set_metadata
@@ -461,9 +428,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         dask.config.set(scheduler=ray_dask_get)
 
-    def initialize_tensorflow(self, **kwargs):
+    def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
-        initialize_tensorflow(gpus=-1)
+        initialize_pytorch(gpus=-1)
         self._tensorflow_kwargs = kwargs
 
     def create_trainer(self, **kwargs):

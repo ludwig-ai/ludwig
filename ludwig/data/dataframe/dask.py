@@ -23,7 +23,6 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataframe.dask_df_utils import dask_to_tfrecords
 
 
 TMP_COLUMN = '__TMP_COLUMN__'
@@ -90,12 +89,13 @@ class DaskEngine(DataFrameEngine):
 
     def to_tfrecord(self, df, path):
         """Implementations of data frame to tfrecords."""
-        with ProgressBar():
-            dask_to_tfrecords(
-                df,
-                path,
-                compression_type="GZIP",
-                compression_level=9)
+        # with ProgressBar():
+        #     dask_to_tfrecords(
+        #         df,
+        #         path,
+        #         compression_type="GZIP",
+        #         compression_level=9)
+        raise NotImplementedError("TFRecord not yet supported for Dask")
 
     @property
     def array_lib(self):
