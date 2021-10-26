@@ -147,6 +147,7 @@ class Classifier(Decoder):
         logger.debug(' {}'.format(self.name))
 
         logger.debug('  Dense')
+        self.num_classes = num_classes
         self.dense = Dense(
             input_size=input_size,
             output_size=num_classes,

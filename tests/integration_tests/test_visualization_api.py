@@ -162,7 +162,7 @@ def test_learning_curves_vis_api(experiment_to_use):
                 file_format=viz_output
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 4 == len(figure_cnt)
+            assert 3 == len(figure_cnt)
 
 
 def test_compare_performance_vis_api(experiment_to_use):
@@ -938,4 +938,3 @@ def test_hyperopt_hiplot_vis_api(hyperopt_results):
 
         # test for generatated html page
         assert os.path.isfile(os.path.join(vis_dir, 'hyperopt_hiplot.html'))
-
