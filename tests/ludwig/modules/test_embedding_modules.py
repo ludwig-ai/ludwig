@@ -71,10 +71,11 @@ def test_embed_sequence(
     embed = EmbedSequence(
         vocab=vocab,
         embedding_size=embedding_size,
+        max_sequence_length=10,
         representation=representation,
     )
     inputs = torch.randint(0, 2, size=(2, 10))
     outputs = embed(inputs)
-    assert outputs.shape[2:] == embed.output_shape
+    assert outputs.shape[1:] == embed.output_shape
 
 # TODO: Test TokenAndPositionEmbedding
