@@ -32,7 +32,6 @@ from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.data.dataset.ray import RayDataset
 from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
@@ -40,7 +39,8 @@ import pandas as pd
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO
+from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO, \
+    EVAL_BATCH_SIZE
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -410,31 +410,40 @@ class LudwigModel:
                             key, pformat(value, indent=4)))
                     logger.info('\n')
 
-                preprocessed_data = self.preprocess(
-                    dataset=dataset,
-                    training_set=training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    training_set_metadata=training_set_metadata,
-                    data_format=data_format,
-                    experiment_name=experiment_name,
-                    model_name=model_name,
-                    model_resume_path=model_resume_path,
-                    skip_save_training_description=skip_save_training_description,
-                    skip_save_training_statistics=skip_save_training_statistics,
-                    skip_save_model=skip_save_model,
-                    skip_save_progress=skip_save_progress,
-                    skip_save_log=skip_save_log,
-                    skip_save_processed_input=skip_save_processed_input,
-                    output_directory=output_directory,
-                    random_seed=random_seed,
-                    devbug=debug,
-                    **kwargs,
-                )
-                (training_set,
-                 validation_set,
-                 test_set,
-                 training_set_metadata) = preprocessed_data
+                for callback in self.callbacks:
+                    callback.on_preprocess_start(self.config)
+
+                try:
+                    preprocessed_data = self.preprocess(
+                        dataset=dataset,
+                        training_set=training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        training_set_metadata=training_set_metadata,
+                        data_format=data_format,
+                        experiment_name=experiment_name,
+                        model_name=model_name,
+                        model_resume_path=model_resume_path,
+                        skip_save_training_description=skip_save_training_description,
+                        skip_save_training_statistics=skip_save_training_statistics,
+                        skip_save_model=skip_save_model,
+                        skip_save_progress=skip_save_progress,
+                        skip_save_log=skip_save_log,
+                        skip_save_processed_input=skip_save_processed_input,
+                        output_directory=output_directory,
+                        random_seed=random_seed,
+                        devbug=debug,
+                        **kwargs,
+                    )
+                    (training_set,
+                     validation_set,
+                     test_set,
+                     training_set_metadata) = preprocessed_data
+                finally:
+                    for callback in self.callbacks:
+                        callback.on_preprocess_end(
+                            training_set, validation_set, test_set, training_set_metadata
+                        )
 
             self.training_set_metadata = training_set_metadata
 
@@ -499,24 +508,35 @@ class LudwigModel:
                     )
 
                 # auto tune batch size
-                if self.config[TRAINING][BATCH_SIZE] == AUTO:
+                if self.config[TRAINING][BATCH_SIZE] == AUTO or \
+                        self.config[TRAINING][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
                     tuned_batch_size = trainer.tune_batch_size(
                         self.config,
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING][BATCH_SIZE] = tuned_batch_size
+
+                    # TODO(travis): pass these in as args to trainer when we call train,
+                    #  to avoid setting state on possibly remote trainer
+                    if self.config[TRAINING][BATCH_SIZE] == AUTO:
+                        self.config[TRAINING][BATCH_SIZE] = tuned_batch_size
+                        trainer.batch_size = tuned_batch_size
+
+                    if self.config[TRAINING][EVAL_BATCH_SIZE] == AUTO:
+                        self.config[TRAINING][EVAL_BATCH_SIZE] = tuned_batch_size
+                        trainer.eval_batch_size = tuned_batch_size
 
                 # auto tune learning rate
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
-                    new_learning_rate = trainer.tune_learning_rate(
+                    tuned_learning_rate = trainer.tune_learning_rate(
                         self.config,
                         LudwigModel.create_model(self.config, random_seed),
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING][LEARNING_RATE] = new_learning_rate
+                    self.config[TRAINING][LEARNING_RATE] = tuned_learning_rate
+                    trainer.learning_rate = tuned_learning_rate
 
                 # train model
                 if self.backend.is_coordinator():
@@ -656,19 +676,12 @@ class LudwigModel:
                                                   random_seed=random_seed)
 
         if not self._online_trainer:
-            if 'model' not in self.config[TRAINING]:
-                self._online_trainer = self.backend.create_trainer(
-                    **self.config[TRAINING],
-                    model=self.model,
-                    random_seed=random_seed,
-                    debug=debug
-                )
-            else:
-                self._online_trainer = self.backend.create_trainer(
-                    **self.config[TRAINING],
-                    random_seed=random_seed,
-                    debug=debug
-                )
+            self._online_trainer = self.backend.create_trainer(
+                **self.config[TRAINING],
+                model=self.model,
+                random_seed=random_seed,
+                debug=debug
+            )
 
         self.model = self._online_trainer.train_online(
             self.model,
@@ -887,9 +900,9 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 # TODO ray: support calculating stats on partitioned datasets
-                if isinstance(dataset, RayDataset):
+                if self.backend.df_engine.partitioned:
                     raise ValueError(
-                        'Cannot calculate overall stats on a ray dataset at this time. '
+                        'Cannot calculate overall stats on a partitioned DataFrame at this time. '
                         'Set `calculate_overall_stats=False`.'
                     )
 
@@ -1139,7 +1152,7 @@ class LudwigModel:
                            f"Using validation set instead")
 
         if eval_set is not None:
-            if self.config[TRAINING]['eval_batch_size'] > 0:
+            if self.config[TRAINING]['eval_batch_size']:
                 batch_size = self.config[TRAINING]['eval_batch_size']
             else:
                 batch_size = self.config[TRAINING]['batch_size']
@@ -1502,7 +1515,7 @@ class LudwigModel:
 
         # save model weights
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        self.model.save_weights(model_weights_path)
+        torch.save(self.model.state_dict(), model_weights_path)
 
         # save training set metadata
         training_set_metadata_path = os.path.join(

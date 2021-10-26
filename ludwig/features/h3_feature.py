@@ -103,14 +103,12 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.uint8, torch.int64]
         assert len(inputs.shape) == 2
 
-        inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 
@@ -121,6 +119,10 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([H3_VECTOR_LENGTH])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(

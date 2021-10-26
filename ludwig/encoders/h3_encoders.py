@@ -64,6 +64,7 @@ class H3Embed(H3Encoder):
             activation: str = 'relu',
             dropout: float = 0,
             reduce_output: str = 'sum',
+            **kwargs
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
@@ -152,6 +153,7 @@ class H3Embed(H3Encoder):
         self.embed_cells = EmbedSequence(
             [str(i) for i in range(8)],
             embedding_size,
+            max_sequence_length=(H3_INPUT_SIZE - 4),
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -251,6 +253,7 @@ class H3WeightedSum(H3Encoder):
             norm_params: Dict = None,
             activation: str = 'relu',
             dropout: float = 0,
+            **kwargs
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual
@@ -370,7 +373,8 @@ class H3RNN(H3Encoder):
             activity_regularizer: Optional[str] = None,
             dropout: float = 0.0,
             recurrent_dropout: float = 0.0,
-            reduce_output: str = 'last'
+            reduce_output: str = 'last',
+            **kwargs
     ):
         """
             :param embedding_size: it is the maximum embedding size, the actual

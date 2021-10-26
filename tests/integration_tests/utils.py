@@ -659,7 +659,8 @@ def train_with_backend(
             test_set=test_set,
             skip_save_processed_input=True,
             skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            skip_save_unprocessed_output=True,
+            skip_save_log=True,
         )
 
         if dataset is None:
@@ -673,7 +674,7 @@ def train_with_backend(
             _, eval_preds, _ = model.evaluate(dataset=dataset)
             assert eval_preds is not None
 
-        return model.model.get_weights()
+        return model
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)

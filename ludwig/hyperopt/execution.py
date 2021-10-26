@@ -1288,6 +1288,10 @@ def run_experiment(
         random_seed=random_seed,
         debug=debug,
     )
+
+    for callback in callbacks or []:
+        callback.on_hyperopt_trial_end(parameters)
+
     return train_stats, eval_stats
 
 

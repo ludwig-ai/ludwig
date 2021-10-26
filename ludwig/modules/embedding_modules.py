@@ -389,6 +389,7 @@ class EmbedSequence(LudwigModule):
             self,
             vocab: List[str],
             embedding_size: int,
+            max_sequence_length: int,
             representation: str = 'dense',
             embeddings_trainable: bool = True,
             pretrained_embeddings: Optional[str] = None,
@@ -402,6 +403,7 @@ class EmbedSequence(LudwigModule):
         self.supports_masking = True
 
         self.vocab_size = len(vocab)
+        self.max_sequence_length = max_sequence_length
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
@@ -424,7 +426,10 @@ class EmbedSequence(LudwigModule):
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         if inputs.dtype not in [torch.int, torch.long]:
-            inputs = inputs.to(torch.int)
+            raise RuntimeError(
+                f'Expected tensor of type torch.int or torch.long as input.'
+                f'Received {inputs.dtype} instead.'
+            )
 
         embedded = self.embeddings(inputs)
         if self.dropout:
@@ -433,12 +438,11 @@ class EmbedSequence(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.vocab_size])
+        return torch.Size([self.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
-        # Excludes batch size and input size (dynamic).
-        return torch.Size([self.embedding_size])
+        return torch.Size([self.max_sequence_length, self.embedding_size])
 
 
 class TokenAndPositionEmbedding(LudwigModule):
@@ -459,6 +463,7 @@ class TokenAndPositionEmbedding(LudwigModule):
         self.token_embed = EmbedSequence(
             vocab=vocab,
             embedding_size=embedding_size,
+            max_sequence_length=max_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,

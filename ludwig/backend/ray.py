@@ -16,31 +16,48 @@
 # ==============================================================================
 
 import logging
-from collections import defaultdict
+from distutils.version import LooseVersion
 from functools import partial
 from typing import Any, Dict, List
 
 import dask
+import numpy as np
 import pandas as pd
 import ray
 from horovod.ray import RayExecutor
+from ray.data.dataset_pipeline import DatasetPipeline
+from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING
+from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.ray import RayDataset
+from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
+from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
+
+# TODO(travis): remove for ray 1.8
+_ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
+if _ray18:
+    import ray.train as rt
+    from ray.train.trainer import Trainer, TrainWorkerGroup
+    from ray.train.backends.horovod import HorovodConfig
+else:
+    import ray.util.sgd.v2 as rt
+    from ray.util.sgd.v2.trainer import Trainer
+    from ray.util.sgd.v2.trainer import SGDWorkerGroup as TrainWorkerGroup
+    from ludwig.backend._ray17_compat import HorovodConfig
 
 
 logger = logging.getLogger(__name__)
 
 
+# TODO: deprecated v0.5
 def get_horovod_kwargs(use_gpu=None):
     # Our goal is to have a worker per resource used for training.
     # The priority is GPUs, but can fall back to CPUs if there are no
@@ -53,6 +70,36 @@ def get_horovod_kwargs(use_gpu=None):
 
     return dict(
         num_workers=num_workers,
+        use_gpu=use_gpu,
+    )
+
+
+def get_trainer_kwargs(use_gpu=None):
+    # Our goal is to have a worker per resource used for training.
+    # The priority is GPUs, but can fall back to CPUs if there are no
+    # GPUs available.
+    if use_gpu is None:
+        use_gpu = int(ray.cluster_resources().get('GPU', 0)) > 0
+
+    if use_gpu:
+        num_workers = int(ray.cluster_resources().get('GPU', 0))
+        resources_per_worker = None
+    else:
+        # Enforce one worker per node by requesting half the CPUs on the node
+        # TODO: use placement groups
+        resources = [node['Resources'] for node in ray.state.nodes()]
+        min_cpus = min(r['CPU'] for r in resources)
+        num_workers = len(resources)
+        resources_per_worker = {
+            'CPU': min(min_cpus / 2 + 1, min_cpus)
+        }
+
+    return dict(
+        # TODO travis: replace backend here once ray 1.8 released
+        # backend='horovod',
+        backend=HorovodConfig(),
+        num_workers=num_workers,
+        resources_per_worker=resources_per_worker,
         use_gpu=use_gpu,
     )
 
@@ -110,14 +157,133 @@ class RayRemoteTrainer(RemoteTrainer):
         return results
 
 
-class RayTrainer(BaseTrainer):
-    def __init__(self, horovod_kwargs, trainer_kwargs):
+def train_fn(
+        executable_kwargs: Dict[str, Any] = None,
+        remote_model: RayRemoteModel = None,
+        training_set_metadata: Dict[str, Any] = None,
+        train_shards: List[DatasetPipeline] = None,
+        val_shards: List[DatasetPipeline] = None,
+        test_shards: List[DatasetPipeline] = None,
+        **kwargs
+):
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    initialize_tensorflow(horovod=hvd)
+
+    model = remote_model.load()
+
+    train_shard = RayDatasetShard(
+        train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
+        model.input_features,
+        model.output_features,
+        training_set_metadata,
+    )
+
+    val_shard = val_shards[rt.world_rank()] if val_shards else None #rt.get_dataset_shard("val")
+    if val_shard is not None:
+        val_shard = RayDatasetShard(
+            val_shard,
+            model.input_features,
+            model.output_features,
+            training_set_metadata,
+        )
+
+    test_shard = test_shards[rt.world_rank()] if test_shards else None #rt.get_dataset_shard("test")
+    if test_shard is not None:
+        test_shard = RayDatasetShard(
+            test_shard,
+            model.input_features,
+            model.output_features,
+            training_set_metadata,
+        )
+
+    trainer = RayRemoteTrainer(**executable_kwargs)
+    results = trainer.train(
+        model,
+        train_shard,
+        val_shard,
+        test_shard,
+        **kwargs
+    )
+    return results, trainer.validation_field, trainer.validation_metric
+
+
+class RayTrainerV2(BaseTrainer):
+    def __init__(self, trainer_kwargs, executable_kwargs):
+        self.executable_kwargs = executable_kwargs
+        self.trainer = Trainer(**{**get_trainer_kwargs(), **trainer_kwargs})
+        self.trainer.start()
+        self._validation_field = None
+        self._validation_metric = None
+
+    def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
+        executable_kwargs = self.executable_kwargs
+        remote_model = RayRemoteModel(model)
+
+        # TODO(travis) remove this once `dataset` keyword is supported:
+        wg = TrainWorkerGroup(self.trainer._executor.worker_group)
+        workers = [w for w in wg]
+
+        train_shards = training_set.pipeline().split(
+            n=len(workers), locality_hints=workers, equal=True
+        )
+        val_shards = validation_set.pipeline(shuffle=False).split(
+            n=len(workers), locality_hints=workers
+        ) if validation_set else None
+        test_shards = test_set.pipeline(shuffle=False).split(
+            n=len(workers), locality_hints=workers
+        ) if test_set else None
+
+        kwargs = {
+            'train_shards': train_shards,
+            'val_shards': val_shards,
+            'test_shards': test_shards,
+            'training_set_metadata': training_set.training_set_metadata,
+            **kwargs
+        }
+
+        results, self._validation_field, self._validation_metric = self.trainer.run(
+            lambda config: train_fn(**config),
+            config={
+                'executable_kwargs': executable_kwargs,
+                'remote_model': remote_model,
+                **kwargs
+            },
+            # dataset={
+            #     'train': training_set.pipeline(),
+            #     'val': validation_set.pipeline() if validation_set else None,
+            #     'test': test_set.pipeline() if test_set else None,
+            # },
+        )[0]
+
+        weights, *stats = results
+        load_weights_from_buffer(model, weights)
+        return (model, *stats)
+
+    def train_online(self, model, *args, **kwargs):
+        raise NotImplementedError()
+
+    @property
+    def validation_field(self):
+        return self._validation_field
+
+    @property
+    def validation_metric(self):
+        return self._validation_metric
+
+    def shutdown(self):
+        self.trainer.shutdown()
+
+
+class RayLegacyTrainer(BaseTrainer):
+    def __init__(self, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
         setting = RayExecutor.create_settings(timeout_s=30)
+
         self.executor = RayExecutor(
             setting, **{**get_horovod_kwargs(), **horovod_kwargs})
         self.executor.start(executable_cls=RayRemoteTrainer,
-                            executable_kwargs=trainer_kwargs)
+                            executable_kwargs=executable_kwargs)
 
     def train(self, model, *args, **kwargs):
         remote_model = RayRemoteModel(model)
@@ -153,8 +319,8 @@ class RayTrainer(BaseTrainer):
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, horovod_kwargs, predictor_kwargs):
-        # TODO ray: use horovod_kwargs to allocate GPU model replicas
+    def __init__(self, **predictor_kwargs):
+        self.batch_size = predictor_kwargs.get('batch_size', 128)
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
 
@@ -165,13 +331,30 @@ class RayPredictor(BasePredictor):
         predictor_kwargs = self.predictor_kwargs
         output_columns = get_output_columns(model.output_features)
         batch_predictor = self.get_batch_infer_model(
-            remote_model, predictor_kwargs, output_columns, dataset.features,
-            dataset.data_hdf5_fp, *args, **kwargs
+            remote_model,
+            predictor_kwargs,
+            output_columns,
+            dataset.features,
+            dataset.training_set_metadata,
+            *args,
+            **kwargs
         )
+
+        columns = [
+           f.proc_column for f in model.input_features.values()
+        ]
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                df[c] = df[c].astype(TensorDtype())
+            return df
 
         num_gpus = int(ray.cluster_resources().get('GPU', 0) > 0)
         dask_dataset = dataset.ds.map_batches(
-            batch_predictor, 
+            to_tensors, batch_format='pandas'
+        ).map_batches(
+            batch_predictor,
+            batch_size=self.batch_size,
             compute='actors',
             batch_format='pandas',
             num_gpus=num_gpus
@@ -181,6 +364,11 @@ class RayPredictor(BasePredictor):
             dask_dataset = of_feature.unflatten(dask_dataset)
 
         return dask_dataset
+
+    def predict_single(self, model, batch):
+        raise NotImplementedError(
+            "predict_single can only be called on a local predictor"
+        )
 
     def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError(
@@ -209,8 +397,8 @@ class RayPredictor(BasePredictor):
             remote_model: RayRemoteModel,
             predictor_kwargs: Dict[str, Any],
             output_columns: List[str],
-            features: List[Dict],
-            data_hdf5_fp: str,
+            features: Dict[str, Dict],
+            training_set_metadata: Dict[str, Any],
             *args, **kwargs
     ):
         class BatchInferModel:
@@ -218,29 +406,46 @@ class RayPredictor(BasePredictor):
                 self.model = remote_model.load()
                 self.output_columns = output_columns
                 self.features = features
-                self.data_hdf5_fp = data_hdf5_fp
+                self.training_set_metadata = training_set_metadata
+                self.reshape_map = {
+                    f[PROC_COLUMN]: training_set_metadata[f[NAME]].get('reshape')
+                    for f in features.values()
+                }
                 predictor = Predictor(**predictor_kwargs)
-                self.batch_predict = partial(predictor.batch_predict, *args, **kwargs)
+                self.predict = partial(predictor.predict_single, *args, **kwargs)
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-                pd_ds = PandasDataset(df, self.features, self.data_hdf5_fp)
-                predictions = self.batch_predict(model=self.model, dataset=pd_ds)
+                dataset = self._prepare_batch(df)
+                predictions = self.predict(model=self.model, batch=dataset)
 
                 for output_feature in self.model.output_features.values():
                     predictions = output_feature.flatten(predictions)
                 ordered_predictions = predictions[self.output_columns]
                 return ordered_predictions
 
+            def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+                res = {
+                    c: batch[c].to_numpy() for c in self.features.keys()
+                }
+
+                for c in self.features.keys():
+                    reshape = self.reshape_map.get(c)
+                    if reshape is not None:
+                        res[c] = res[c].reshape((-1, *reshape))
+
+                return res
+
         return BatchInferModel
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, processor=None, trainer=None, cache_format=PARQUET, **kwargs):
+    def __init__(self, processor=None, trainer=None, cache_format=RAY, **kwargs):
         super().__init__(cache_format=cache_format, **kwargs)
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._tensorflow_kwargs = {}
-        if cache_format not in [PARQUET, TFRECORD]:
+        self._cache_format = cache_format
+        if cache_format not in [RAY, PARQUET, TFRECORD]:
             raise ValueError(
                 f'Data format {cache_format} is not supported when using the Ray backend. '
                 f'Try setting to `parquet`.'
@@ -263,11 +468,15 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
-        return RayTrainer(self._horovod_kwargs, executable_kwargs)
+        if self._cache_format == RAY:
+            return RayTrainerV2(self._horovod_kwargs, executable_kwargs)
+        else:
+            # TODO: deprecated 0.5
+            return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
     def create_predictor(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
-        return RayPredictor(self._horovod_kwargs, executable_kwargs)
+        return RayPredictor(**executable_kwargs)
 
     def set_distributed_kwargs(self, **kwargs):
         self._horovod_kwargs = kwargs
