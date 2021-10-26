@@ -18,6 +18,7 @@ import shutil
 import tempfile
 
 import numpy as np
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights
@@ -71,7 +72,10 @@ def test_collect_weights(csv_filename):
     try:
         model, output_dir = _train(*_prepare_data(csv_filename))
         model_path = os.path.join(output_dir, 'model')
-        weights = [w for name, w in model.model.collect_weights()]
+
+        #  1 for the encoder (embeddings),
+        #  2 for the decoder classifier (w and b).
+        weights = [w for _, w in model.model.collect_weights()]
         assert len(weights) == 3
 
         # Load model from disk to ensure correct weight names
