@@ -90,8 +90,8 @@ def test_collect_weights(csv_filename):
 
             for weight, filename in zip(weights, filenames):
                 saved_weight = np.load(filename)
-                assert np.allclose(weight.detach().numpy(), saved_weight,
-                                   rtol=1.e-4), filename
+                assert torch.allclose(weight, torch.from_numpy(saved_weight),
+                                      rtol=1.e-4), filename
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
