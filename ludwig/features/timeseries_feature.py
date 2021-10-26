@@ -161,22 +161,23 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         # initialize encoder for time series
         super().__init__(feature, encoder_obj=encoder_obj)
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.float16 or inputs.dtype == torch.float32 \
-               or inputs.dtype == torch.float64
+        assert inputs.dtype in [torch.float16, torch.float32, torch.float64]
         assert len(inputs.shape) == 2
 
         inputs_exp = inputs.type(torch.float32)
-        encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
+        encoder_output = self.encoder_obj(inputs_exp, mask=mask)
 
         return encoder_output
 
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
+
+    @property
+    def input_dtype(self):
+        return torch.float32
 
     @staticmethod
     def update_config_with_metadata(

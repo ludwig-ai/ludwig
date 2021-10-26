@@ -78,9 +78,9 @@ class SequencePassthroughEncoder(SequenceEncoder):
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
@@ -98,7 +98,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
     def __init__(
             self,
             vocab,
-            max_sequence_length=None,
+            max_sequence_length,
             representation='dense',
             embedding_size=256,
             embeddings_trainable=True,
@@ -186,7 +186,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :param weights_regularizer: The regularizer to use for the weights
                    of the encoder.
             :type weights_regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
 
         """
@@ -205,6 +205,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
         self.embed_sequence = EmbedSequence(
             vocab,
             embedding_size,
+            max_sequence_length=self.max_sequence_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -214,28 +215,30 @@ class SequenceEmbedEncoder(SequenceEncoder):
             embedding_regularizer=weights_regularizer
         )
 
-    @property
-    def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
-
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type inputs: Tensor
             :param training: specifying if in training mode
                    (important for dropout)
             :type training: Boolean
         """
         # ================ Embeddings ================
-        # todo: need to account for other options: training and mask
-        embedded_sequence = self.embed_sequence(
-            inputs, training=training, mask=mask
-        )
-
+        embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
-
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    # TODO(shreya): Add general module for getting output shapes post reduction.
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output in ['none', 'None', None]:
+            self.embed_sequence.output_shape
+        return torch.Size([self.embed_sequence.output_shape[-1]])
 
 
 @register(name='parallel_cnn')
@@ -266,8 +269,6 @@ class ParallelCNN(SequenceEncoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -465,6 +466,7 @@ class ParallelCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -475,8 +477,9 @@ class ParallelCNN(SequenceEncoder):
             )
 
         logger.debug('  ParallelConv1D')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.parallel_conv1d = ParallelConv1D(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             max_sequence_length=self.max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -487,8 +490,6 @@ class ParallelCNN(SequenceEncoder):
             default_weights_regularizer=weights_regularizer,
             default_bias_regularizer=bias_regularizer,
             default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -502,7 +503,6 @@ class ParallelCNN(SequenceEncoder):
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 self.parallel_conv1d.output_shape[-1],
-                # num parallel * conv_layer output size
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -512,25 +512,23 @@ class ParallelCNN(SequenceEncoder):
                 default_weights_regularizer=weights_regularizer,
                 default_bias_regularizer=bias_regularizer,
                 default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
             )
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int
+                   Shape: [batch x sequence length], type torch.int
             :type inputs: Tensor
             :param training: bool specifying if in training mode (important for dropout)
             :type training: bool
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(inputs)
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -542,7 +540,6 @@ class ParallelCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -553,7 +550,6 @@ class ParallelCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -567,8 +563,8 @@ class ParallelCNN(SequenceEncoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
             return self.fc_stack.output_shape
-        else:
-            return self.parallel_conv1d.output_shape
+        return self.parallel_conv1d.output_shape
+
 
 @register(name='stacked_cnn')
 class StackedCNN(SequenceEncoder):
@@ -820,6 +816,7 @@ class StackedCNN(SequenceEncoder):
             )
 
         self.max_sequence_length = max_sequence_length
+        self.num_filters = num_filters
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
@@ -830,6 +827,7 @@ class StackedCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -840,8 +838,9 @@ class StackedCNN(SequenceEncoder):
             )
 
         logger.debug('  Conv1DStack')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.conv1d_stack = Conv1DStack(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -892,26 +891,27 @@ class StackedCNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return self.conv1d_stack.output_shape
+        return self.fc_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         # todo: fixup docstring
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -923,7 +923,6 @@ class StackedCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -934,7 +933,6 @@ class StackedCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -1193,6 +1191,7 @@ class StackedParallelCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -1202,9 +1201,10 @@ class StackedParallelCNN(SequenceEncoder):
                 embedding_regularizer=weights_regularizer
             )
 
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         logger.debug('  ParallelConv1DStack')
         self.parallel_conv1d_stack = ParallelConv1DStack(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             stacked_layers=self.stacked_layers,
             max_sequence_length=max_sequence_length,
             default_num_filters=num_filters,
@@ -1250,26 +1250,27 @@ class StackedParallelCNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.fc_stack:
+            return self.fc_stack.output_shape
+        return self.parallel_conv1d_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         # todo: fixup docstring
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type inputs: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -1281,7 +1282,6 @@ class StackedParallelCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -1292,7 +1292,6 @@ class StackedParallelCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -1488,6 +1487,7 @@ class StackedRNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -1498,8 +1498,9 @@ class StackedRNN(SequenceEncoder):
             )
 
         logger.debug('  RecurrentStack')
+        input_size = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.recurrent_stack = RecurrentStack(
-            input_size=embedding_size,
+            input_size=input_size,
             hidden_size=state_size,
             cell_type=cell_type,
             sequence_size=max_sequence_length,
@@ -1548,25 +1549,29 @@ class StackedRNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        return self.recurrent_stack.output_shape
+
+    def input_dtype(self):
+        return torch.int32
+
+    def forward(self, inputs, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -1576,22 +1581,14 @@ class StackedRNN(SequenceEncoder):
         hidden = embedded_sequence
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        hidden, final_state = self.recurrent_stack(hidden, mask=mask)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
             hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
-            hidden = self.fc_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+            hidden = self.fc_stack(hidden, mask=mask)
 
         return {
             'encoder_output': hidden,
@@ -1634,7 +1631,6 @@ class StackedCNNRNN(SequenceEncoder):
             unit_forget_bias=True,
             recurrent_initializer='orthogonal',
             recurrent_regularizer=None,
-            # recurrent_constraint=None,
             dropout=0.0,
             recurrent_dropout=0.0,
             fc_layers=None,
@@ -1646,8 +1642,6 @@ class StackedCNNRNN(SequenceEncoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -1780,6 +1774,7 @@ class StackedCNNRNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -1790,8 +1785,9 @@ class StackedCNNRNN(SequenceEncoder):
             )
 
         logger.debug('  Conv1DStack')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.conv1d_stack = Conv1DStack(
-            in_channels=embedding_size,
+            in_channels=in_channels,
             max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -1868,24 +1864,27 @@ class StackedCNNRNN(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.recurrent_stack.output_shape[1:]
+        return self.recurrent_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
+                inputs, mask=mask
             )
         else:
             embedded_sequence = inputs
@@ -1898,15 +1897,11 @@ class StackedCNNRNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training
-        )
+        hidden, final_state = self.recurrent_stack(hidden)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1915,7 +1910,6 @@ class StackedCNNRNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
@@ -1956,8 +1950,6 @@ class StackedTransformer(SequenceEncoder):
             weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -2164,26 +2156,30 @@ class StackedTransformer(SequenceEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        return self.transformer_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         # todo: review docstring for updates
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tensor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
@@ -2199,7 +2195,6 @@ class StackedTransformer(SequenceEncoder):
         # ================ Transformer Layers ================
         hidden = self.transformer_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -2210,7 +2205,6 @@ class StackedTransformer(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 

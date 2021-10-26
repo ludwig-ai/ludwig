@@ -15,6 +15,9 @@ tables
 fsspec
 dataclasses-json
 jsonschema
+marshmallow
+marshmallow-jsonschema
+marshmallow-dataclass
 tensorboard
 torchmetrics
 filelock

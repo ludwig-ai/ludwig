@@ -120,8 +120,10 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
                inputs.dtype == torch.int32 or inputs.dtype == torch.int64
-        assert len(inputs.shape) == 1
-        inputs = inputs.unsqueeze(dim=1)
+        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+
+        if len(inputs.shape) == 1:
+            inputs = inputs.unsqueeze(dim=1)
 
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
             inputs = inputs.type(torch.IntTensor)

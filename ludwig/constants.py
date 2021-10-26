@@ -135,10 +135,12 @@ CHECKSUM = "checksum"
 HDF5 = "hdf5"
 PARQUET = "parquet"
 TFRECORD = "tfrecord"
+RAY = "ray"
 
 SRC = 'dataset_src'
 
 BATCH_SIZE = 'batch_size'
+EVAL_BATCH_SIZE = 'eval_batch_size'
 LEARNING_RATE = 'learning_rate'
 AUTO = 'auto'
 CONFIG = 'config'

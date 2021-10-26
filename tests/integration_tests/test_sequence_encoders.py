@@ -1,4 +1,5 @@
 import pytest
+import logging
 from typing import Union
 import numpy as np
 import torch
@@ -7,6 +8,8 @@ from ludwig.utils.misc_utils import get_from_registry
 from tests.integration_tests.utils import ENCODERS
 from ludwig.encoders.sequence_encoders import \
     ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 TEST_VOCAB_SIZE = 132
 TEST_HIDDEN_SIZE = 32
@@ -90,22 +93,22 @@ def test_sequence_encoders(
     if enc_encoder == 'parallel_cnn':
         number_parallel_cnn_layers = PARALLEL_CNN_LAYERS
         output_dimension = encoder_parameters['num_filters'] \
-                           * number_parallel_cnn_layers
+            * number_parallel_cnn_layers
         assert encoder_out['encoder_output'].shape == \
-               (BATCH_SIZE, SEQ_SIZE, output_dimension) \
+            (BATCH_SIZE, SEQ_SIZE, output_dimension) \
             if enc_reduce_output is None else (BATCH_SIZE, output_dimension)
 
     elif enc_encoder == 'stacked_parallel_cnn':
         number_parallel_cnn_layers = PARALLEL_CNN_LAYERS
         output_dimension = encoder_parameters['num_filters'] \
-                           * number_parallel_cnn_layers
+            * number_parallel_cnn_layers
         assert encoder_out['encoder_output'].shape == \
-               (BATCH_SIZE, SEQ_SIZE, output_dimension) \
+            (BATCH_SIZE, SEQ_SIZE, output_dimension) \
             if enc_reduce_output is None else (BATCH_SIZE, output_dimension)
 
     elif enc_encoder == 'rnn':
         assert encoder_out['encoder_output'].shape == \
-               (BATCH_SIZE, SEQ_SIZE, TEST_STATE_SIZE) \
+            (BATCH_SIZE, SEQ_SIZE, TEST_STATE_SIZE) \
             if enc_reduce_output is None else (BATCH_SIZE, TEST_STATE_SIZE)
 
         assert 'encoder_output_state' in encoder_out
@@ -116,58 +119,52 @@ def test_sequence_encoders(
             assert isinstance(encoder_out['encoder_output_state'][1],
                               torch.Tensor)
             assert encoder_out['encoder_output_state'][0].shape == \
-                   (BATCH_SIZE, TEST_STATE_SIZE)
+                (BATCH_SIZE, TEST_STATE_SIZE)
             assert encoder_out['encoder_output_state'][1].shape == \
-                   (BATCH_SIZE, TEST_STATE_SIZE)
+                (BATCH_SIZE, TEST_STATE_SIZE)
         else:
             assert isinstance(encoder_out['encoder_output_state'],
                               torch.Tensor)
             assert encoder_out['encoder_output_state'].shape == \
-                   (BATCH_SIZE, TEST_STATE_SIZE)
+                (BATCH_SIZE, TEST_STATE_SIZE)
 
     elif enc_encoder == 'cnnrnn':
-        assert encoder_out['encoder_output'].shape == \
-               (BATCH_SIZE, 4, TEST_STATE_SIZE) \
-            if enc_reduce_output is None else (BATCH_SIZE, TEST_STATE_SIZE)
-
+        assert encoder_out['encoder_output'].shape[1:] == encoder_obj.output_shape
         assert 'encoder_output_state' in encoder_out
 
         if enc_cell_type == 'lstm':
             assert isinstance(encoder_out['encoder_output_state'],
                               tuple)
             assert encoder_out['encoder_output_state'][0].shape \
-                   == (BATCH_SIZE, TEST_STATE_SIZE)
+                == (BATCH_SIZE, TEST_STATE_SIZE)
             assert encoder_out['encoder_output_state'][1].shape \
-                   == (BATCH_SIZE, TEST_STATE_SIZE)
+                == (BATCH_SIZE, TEST_STATE_SIZE)
         else:
             assert isinstance(encoder_out['encoder_output_state'],
                               torch.Tensor)
             assert encoder_out['encoder_output_state'].shape \
-                   == (BATCH_SIZE, TEST_STATE_SIZE)
+                == (BATCH_SIZE, TEST_STATE_SIZE)
 
     elif enc_encoder == 'stacked_cnn':
-        assert encoder_out['encoder_output'].shape \
-               == (BATCH_SIZE, 1, TEST_NUM_FILTERS) \
-            if enc_reduce_output is None else (BATCH_SIZE, TEST_NUM_FILTERS)
+        assert encoder_out['encoder_output'].shape[1:] == encoder_obj.output_shape
 
     elif enc_encoder == 'embed':
         assert encoder_out['encoder_output'].shape \
-               == (BATCH_SIZE, SEQ_SIZE, TEST_EMBEDDING_SIZE) \
+            == (BATCH_SIZE, SEQ_SIZE, TEST_EMBEDDING_SIZE) \
             if enc_reduce_output is None else (BATCH_SIZE, TEST_EMBEDDING_SIZE)
 
     elif enc_encoder == 'transformer':
-        assert encoder_out['encoder_output'].shape \
-               == (BATCH_SIZE, SEQ_SIZE, TEST_HIDDEN_SIZE) \
-            if enc_reduce_output is None else (BATCH_SIZE, TEST_HIDDEN_SIZE)
+        assert encoder_out['encoder_output'].shape[1:] == encoder_obj.output_shape
 
     elif enc_encoder == 'passthrough':
         assert encoder_out['encoder_output'].shape \
-               == (BATCH_SIZE, SEQ_SIZE, 1) \
+            == (BATCH_SIZE, SEQ_SIZE, 1) \
             if enc_reduce_output is None else (BATCH_SIZE, 1)
 
     else:
         raise ValueError('{} is an invalid encoder specification'
                          .format(enc_encoder))
+
 
 @pytest.mark.parametrize('enc_reduce_output',
                          [None, 'sum', 'last', 'mean', 'max', 'concat'])
@@ -188,5 +185,5 @@ def test_passthrough_encoder(
 
     assert 'encoder_output' in encoder_out
     assert encoder_out['encoder_output'].shape \
-           == (BATCH_SIZE, SEQ_SIZE, 1) \
+        == (BATCH_SIZE, SEQ_SIZE, 1) \
         if enc_reduce_output is None else (BATCH_SIZE, 1)
