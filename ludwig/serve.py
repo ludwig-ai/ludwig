@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
+import io
 import json
 import logging
 import os
@@ -22,9 +23,9 @@ import sys
 import tempfile
 
 import pandas as pd
-from imageio import imread
 
 import torch
+from torchvision.io import decode_image
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, AUDIO
@@ -146,19 +147,11 @@ def _write_file(v, files):
 
 
 def _read_image_buffer(v):
-    # get image format type, e.g., 'jpg', 'png', etc.
-    image_type_suffix = os.path.splitext(v.filename)[1][1:]
-
-    # read in file buffer to obtain ndarray of image, then
-    # convert to torch tensor and permute tensor to be channel first
-    # format, i.e., [height, width, channels] -> [channels, height, width]
-    image = torch.permute(
-        torch.tensor(imread(v.file.read(), image_type_suffix)),
-        (2, 0, 1)
-    )
-    print(
-        f'\n>>>> REST SERVER, file {v.filename}, image {image}')  # todo: debugging
-    return image
+    # read bytes sent via REST API and convert to image tensor
+    # in [channels, height, width] format
+    byte_string = io.BytesIO(v.file.read()).read()
+    image = decode_image(torch.frombuffer(byte_string, dtype=torch.uint8))
+    return image  # channels, height, width
 
 
 def convert_input(form, input_features):

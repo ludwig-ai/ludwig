@@ -206,11 +206,6 @@ class ImageFeatureMixin:
         else:
             first_image = read_image(first_img_entry)
 
-        print(
-            f'\n>>>>>> _finalize_preprocessing_parameters: {first_img_entry if isinstance(first_img_entry, str) else "tensor"}'
-            f' {first_image}'
-        )
-
         inferred_sample = None
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (
                 explicit_height_width and explicit_num_channels):

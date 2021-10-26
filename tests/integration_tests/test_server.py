@@ -20,6 +20,8 @@ import shutil
 import sys
 import pytest
 
+import numpy as np
+
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from ludwig.utils.data_utils import read_csv
@@ -95,8 +97,7 @@ def convert_to_form(entry):
     for k, v in entry.items():
         if type(v) == str and os.path.exists(v):
             file = open(v, 'rb')
-            files.append((k, (v, file.read(), 'image/jpeg')))
-            file.close()
+            files.append((k, (v, file.read(), 'application/octet-stream')))
         else:
             data[k] = v
     return data, files
@@ -139,6 +140,7 @@ def test_server_integration_with_images(csv_filename):
         numerical_feature()
     ]
 
+    np.random.seed(123)  # reproducible synthetic data
     rel_path = generate_data(input_features, output_features, csv_filename)
     model, output_dir = train_model(input_features, output_features,
                                     data_csv=rel_path)
@@ -156,7 +158,6 @@ def test_server_integration_with_images(csv_filename):
     data_df = read_csv(rel_path)
 
     # One-off prediction
-    print(f'\n>>>>>>start one-off prediction test')  # todo: debugging
     first_entry = data_df.T.to_dict()[0]
     data, files = convert_to_form(first_entry)
     server_response = client.post('/predict', data=data, files=files)
@@ -166,7 +167,6 @@ def test_server_integration_with_images(csv_filename):
     server_response_keys = sorted(list(server_response.keys()))
     assert server_response_keys == sorted(output_keys_for(output_features))
 
-    print(f'\n>>>>>> doing model prediction')  # todo: debugging
     model_output, _ = model.predict(
         dataset=[first_entry], data_format=dict
     )
