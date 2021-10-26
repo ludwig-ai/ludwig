@@ -29,7 +29,7 @@ from tests.integration_tests.utils import category_feature, generate_data, \
 def _prepare_data(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     input_features[0]['encoder'] = ENCODERS[0]
 
@@ -57,7 +57,7 @@ def _train(input_features, output_features, data_csv, **kwargs):
 @spawn
 def _get_layers(model_path):
     model = LudwigModel.load(model_path)
-    return [name for name, _ in model.model.named_parameters()]
+    return [name for name, _ in model.model.named_children()]
 
 
 @spawn
@@ -113,7 +113,7 @@ def test_collect_activations(csv_filename):
                                              layers,
                                              csv_filename,
                                              output_directory)
-            assert len(filenames) == len(layers)
+            assert len(filenames) < len(layers)
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
