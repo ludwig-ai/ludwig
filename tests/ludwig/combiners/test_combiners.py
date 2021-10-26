@@ -13,8 +13,14 @@ from ludwig.combiners.combiners import (
     ComparatorCombiner,
     TransformerCombiner,
     TabTransformerCombiner,
-    sequence_encoder_registry, ConcatCombinerConfig, SequenceConcatCombinerConfig, SequenceCombinerConfig,
-    TabNetCombinerConfig, ComparatorCombinerConfig, TransformerCombinerConfig, TabTransformerCombinerConfig,
+    ConcatCombinerConfig,
+    SequenceConcatCombinerConfig,
+    SequenceCombinerConfig,
+    TabNetCombinerConfig,
+    ComparatorCombinerConfig,
+    TransformerCombinerConfig,
+    TabTransformerCombinerConfig,
+    sequence_encoder_registry,
 )
 from ludwig.utils.schema_utils import load_config
 
