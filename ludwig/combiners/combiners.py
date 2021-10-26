@@ -400,8 +400,10 @@ class SequenceCombiner(CombinerClass):
 
         self.combiner = SequenceConcatCombiner(
             input_features,
-            reduce_output=None,
-            main_sequence_feature=config.main_sequence_feature
+            config=SequenceConcatCombinerConfig(
+                reduce_output=None,
+                main_sequence_feature=config.main_sequence_feature
+            )
         )
 
         logger.debug(
