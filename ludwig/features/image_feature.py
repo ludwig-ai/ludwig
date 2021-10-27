@@ -197,20 +197,26 @@ class ImageFeatureMixin:
         """
 
         explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
-        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and \
+                                preprocessing_parameters[NUM_CHANNELS]
 
         if explicit_num_channels:
-            first_image = read_image(first_img_entry, preprocessing_parameters[NUM_CHANNELS])
+            first_image = read_image(first_img_entry,
+                                     preprocessing_parameters[NUM_CHANNELS])
         else:
             first_image = read_image(first_img_entry)
 
         inferred_sample = None
-        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
-            sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-            sample = [read_image(get_image_from_path(src_path, img)) for img in input_feature_col.head(sample_size)]
+        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (
+                explicit_height_width and explicit_num_channels):
+            sample_size = min(len(input_feature_col),
+                              preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
+            sample = [read_image(get_image_from_path(src_path, img)) for img in
+                      input_feature_col.head(sample_size)]
             inferred_sample = [img for img in sample if img is not None]
             if len(inferred_sample) == 0:
-                raise ValueError("No readable images in sample, image dimensions cannot be inferred")
+                raise ValueError(
+                    "No readable images in sample, image dimensions cannot be inferred")
 
         should_resize = False
         if explicit_height_width:
@@ -309,7 +315,7 @@ class ImageFeatureMixin:
         )
 
         if not isinstance(first_img_entry, str) \
-                and not isinstance(first_img_entry, np.ndarray):
+                and not isinstance(first_img_entry, torch.Tensor):
             raise ValueError(
                 'Invalid image feature data type.  Detected type is {}, '
                 'expect either string for file path or numpy array.'
@@ -469,10 +475,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     ):
         for key in ['height', 'width', 'num_channels', 'scaling']:
             input_feature[key] = feature_metadata[PREPROCESSING][key]
-
-        # TODO(shreya, Jim): Remove this once Jim's code is merged.
-        for key in ['height', 'width']:
-            input_feature[f'img_{key}'] = feature_metadata[PREPROCESSING][key]
 
     @staticmethod
     def populate_defaults(input_feature):

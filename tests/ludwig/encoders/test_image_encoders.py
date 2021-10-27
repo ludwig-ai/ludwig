@@ -7,43 +7,47 @@ from ludwig.encoders.image_encoders import Stacked2DCNN, ResNetEncoder,\
 
 
 @pytest.mark.parametrize(
-    'img_height,img_width,num_conv_layers,first_in_channels', [(224, 224, 5, 3)]
+    'height,width,num_conv_layers,num_channels', [(224, 224, 5, 3)]
 )
 def test_stacked2d_cnn(
-        img_height: int,
-        img_width: int,
+        height: int,
+        width: int,
         num_conv_layers: int,
-        first_in_channels: int
+        num_channels: int
 ):
-    
     stacked_2d_cnn = Stacked2DCNN(
-        img_height, img_width, num_conv_layers=num_conv_layers, 
-        first_in_channels=first_in_channels)
-    inputs = torch.rand(2, first_in_channels, img_height, img_width)
+        height=height, width=width, num_conv_layers=num_conv_layers,
+        num_channels=num_channels)
+    inputs = torch.rand(2, num_channels, height, width)
     outputs = stacked_2d_cnn(inputs)
     assert outputs['encoder_output'].shape[1:] == stacked_2d_cnn.output_shape
 
 
-@pytest.mark.parametrize('img_height,img_width', [(224, 224)])
-def test_resnet_encoder(img_height: int, img_width: int):
-    resnet = ResNetEncoder(img_height, img_width)
-    inputs = torch.rand(2, 3, img_height, img_width)
+@pytest.mark.parametrize('height,width,num_channels',
+                         [(224, 224, 1), (224, 224, 3)])
+def test_resnet_encoder(height: int, width: int, num_channels: int):
+    resnet = ResNetEncoder(height=height, width=width,
+                           num_channels=num_channels)
+    inputs = torch.rand(2, num_channels, height, width)
     outputs = resnet(inputs)
     assert outputs['encoder_output'].shape[1:] == resnet.output_shape
 
 
-@pytest.mark.parametrize('img_height,img_width,in_channels', [(224, 224, 3)])
-def test_mlp_mixer_encoder(img_height: int, img_width: int, in_channels:int):
-    mlp_mixer = MLPMixerEncoder(img_height, img_width, in_channels)
-    inputs = torch.rand(2, in_channels, img_height, img_width)
+@pytest.mark.parametrize('height,width,num_channels', [(224, 224, 3)])
+def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
+    mlp_mixer = MLPMixerEncoder(height=height, width=width,
+                                num_channels=num_channels)
+    inputs = torch.rand(2, num_channels, height, width)
     outputs = mlp_mixer(inputs)
     assert outputs['encoder_output'].shape[1:] == mlp_mixer.output_shape
 
 
-@pytest.mark.parametrize('img_height,in_channels', [(224, 3)])
+@pytest.mark.parametrize('image_size,num_channels', [(224, 3)])
 @pytest.mark.parametrize('use_pretrained', [True, False])
-def test_vit_encoder(img_height: int, in_channels: int, use_pretrained: bool):
-    vit = ViTEncoder(img_height=img_height, use_pretrained=use_pretrained)
-    inputs = torch.rand(2, in_channels, img_height, img_height)
+def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
+    vit = ViTEncoder(height=image_size, width=image_size,
+                     num_channels=num_channels,
+                     use_pretrained=use_pretrained)
+    inputs = torch.rand(2, num_channels, image_size, image_size)
     outputs = vit(inputs)
     assert outputs['encoder_output'].shape[1:] == vit.output_shape

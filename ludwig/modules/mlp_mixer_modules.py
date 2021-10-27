@@ -160,9 +160,9 @@ class MLPMixer(LudwigModule):
 
         self.avg_pool = avg_pool
         if self.avg_pool:
-            self._output_shape = (embed_size,)
+            self._output_shape = torch.Size((embed_size,))
         else:
-            self._output_shape = (n_patches, embed_size)
+            self._output_shape = torch.Size((n_patches, embed_size))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert inputs.shape[1:] == self.input_shape
