@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 from collections.abc import Iterable
-from typing import BinaryIO, Optional, TextIO, Tuple, Union
+from typing import BinaryIO, Optional, TextIO, Tuple, Union, List
 from io import BytesIO
 from urllib.error import HTTPError
 
@@ -34,11 +34,15 @@ from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
 logger = logging.getLogger(__name__)
 
   
-def get_gray_default_image(height, width, num_channels):
+def get_gray_default_image(
+        height: int,
+        width: int,
+        num_channels: int
+) -> np.ndarray:
     return np.full((height, width, num_channels), 128, dtype=np.uint8)
 
 
-def get_average_image(image_lst):
+def get_average_image(image_lst: List[np.ndarray]) -> np.array:
     return np.mean([x for x in image_lst if x is not None], axis=(0))
 
 
@@ -179,9 +183,9 @@ def crop_or_pad(
 
 def resize_image(
         img: torch.Tensor,
-        new_size: Union[int, Tuple[int]],
+        new_size: Union[int, Tuple[int, int]],
         resize_method: str
-):
+) -> torch.Tensor:
     try:
         import torchvision.transforms.functional as F
     except ImportError:

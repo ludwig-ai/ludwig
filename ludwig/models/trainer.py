@@ -29,10 +29,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Dict, Any
 
-from random import random
-from re import M
 import numpy as np
-
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from tabulate import tabulate
@@ -50,6 +47,7 @@ from ludwig.modules.metric_modules import (get_improved_fun,
                                            get_initial_validation_value)
 from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
+from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
@@ -147,6 +145,7 @@ class Trainer(BaseTrainer):
             random_seed=default_random_seed,
             horovod=None,
             debug=False,
+            device=None,
             **kwargs
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable
@@ -242,6 +241,13 @@ class Trainer(BaseTrainer):
         :type: list
         :param random_seed: Default initialization for the random seeds
         :type: Float
+        :param horovod: Horovod parameters
+        :type horovod: dict
+        :param debug: Enables debugging mode, which prints out a lot of
+                information about the training process.
+        :type debug: Boolean
+        :param device: The device to load the model on from a saved checkpoint.
+        :type device: str
         """
         self.epochs = epochs
         self.regularization_lambda = regularization_lambda
@@ -279,6 +285,7 @@ class Trainer(BaseTrainer):
         self.debug = debug
         self.received_sigint = False
         self.callbacks = callbacks or []
+        self.device = device
 
         if self.horovod:
             self.learning_rate *= self.horovod.size()
@@ -291,6 +298,12 @@ class Trainer(BaseTrainer):
             horovod=horovod,
             **optimizer
         )
+
+        if self.device is None:
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            else:
+                self.device = 'cpu'
 
     @classmethod
     def write_epoch_summary(
@@ -307,9 +320,13 @@ class Trainer(BaseTrainer):
                 metric_tag = "{}/epoch_{}".format(
                     feature_name, metric
                 )
-                metric_val = output_feature[metric][-1]
-                summary_writer.add_scalar(
-                    metric_tag, metric_val, global_step=step)
+                try:
+                    metric_val = output_feature[metric][-1]
+                    summary_writer.add_scalar(
+                        metric_tag, metric_val, global_step=step)
+                except IndexError:
+                    logger.warning(
+                        f'Error computing metrics for {feature_name} {metric}.')
         summary_writer.flush()
 
     @classmethod
@@ -657,17 +674,12 @@ class Trainer(BaseTrainer):
             self, save_path), coordinator_only=False)
 
         # ====== Setup session =======
-        '''
         checkpoint = checkpoint_manager = None
         if self.is_coordinator():
-            checkpoint = tf.train.Checkpoint(
-                optimizer=self.optimizer,
-                model=model
-            )
-            checkpoint_manager = tf.train.CheckpointManager(
-                checkpoint, training_checkpoints_path, max_to_keep=1
-            )
-        '''
+            checkpoint = Checkpoint(model=model, optimizer=self.optimizer)
+            checkpoint_manager = CheckpointManager(
+                checkpoint, training_checkpoints_path, device=self.device,
+                max_to_keep=1)
 
         train_summary_writer = None
         validation_summary_writer = None
@@ -699,8 +711,8 @@ class Trainer(BaseTrainer):
                 training_progress_tracker_path
             )
             if self.is_coordinator():
-                model, self.optimizer = self.resume_weights_and_optimzier(
-                    training_checkpoints_path)
+                self.resume_weights_and_optimzier(
+                    training_checkpoints_path, checkpoint)
         else:
             (
                 train_metrics,
@@ -737,6 +749,13 @@ class Trainer(BaseTrainer):
                 last_increase_batch_size=0,
             )
 
+        if self.horovod:
+            # Horovod: broadcast initial variable states from rank 0 to all other processes.
+            # This is necessary to ensure consistent initialization of all workers when
+            # training is started with random weights or restored from a checkpoint.
+            self.horovod.broadcast_parameters(model.state_dict(), root_rank=0)
+            self.horovod.broadcast_optimizer_state(self.optimizer, root_rank=0)
+
         set_random_seed(self.random_seed)
         with training_set.initialize_batcher(
             batch_size=self.batch_size,
@@ -747,7 +766,6 @@ class Trainer(BaseTrainer):
         ) as batcher:
 
             # ================ Training Loop ================
-            first_batch = True
             while progress_tracker.epoch < self.epochs:
                 # note that batch size may change over epochs
                 batcher.set_epoch(progress_tracker.epoch,
@@ -855,18 +873,6 @@ class Trainer(BaseTrainer):
                             step=progress_tracker.steps,
                             learning_rate=current_learning_rate,
                         )
-
-                    if self.horovod and first_batch:
-                        # Horovod: broadcast initial variable states from rank 0 to all other processes.
-                        # This is necessary to ensure consistent initialization of all workers when
-                        # training is started with random weights or restored from a checkpoint.
-                        #
-                        # Note: broadcast should be done after the first gradient step to ensure
-                        # optimizer initialization.
-                        self.horovod.broadcast_variables(model.variables,
-                                                         root_rank=0)
-                        self.horovod.broadcast_variables(
-                            self.optimizer.variables(), root_rank=0)
 
                     progress_tracker.steps += 1
                     if self.is_coordinator():
@@ -1001,18 +1007,12 @@ class Trainer(BaseTrainer):
                 else:
                     # there's no validation, so we save the model at each iteration
                     if self.is_coordinator() and not self.skip_save_model:
-                        # model.save_weights(model_weights_path)
                         torch.save(model.state_dict(), model_weights_path)
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
                     if not self.skip_save_progress:
-                        # checkpoint_manager.save()
-                        os.makedirs(training_checkpoints_path, exist_ok=True)
-                        '''
-                        torch.save(model, os.path.join(training_checkpoints_path, 'model.pt'))
-                        torch.save(self.optimizer, os.path.join(training_checkpoints_path, 'optimizer.pt'))
-                        '''
+                        checkpoint_manager.save(progress_tracker.epoch)
                         progress_tracker.save(
                             os.path.join(
                                 save_path,
@@ -1170,7 +1170,6 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
             if self.is_coordinator() and not skip_save_model:
-                # model.save_weights(model_weights_path)
                 torch.save(model.state_dict(), model_weights_path)
                 logger.info(
                     'Validation {} on {} improved, model saved'.format(
@@ -1344,13 +1343,11 @@ class Trainer(BaseTrainer):
 
     def resume_weights_and_optimzier(
             self,
-            model_weights_progress_path
+            model_weights_progress_path: str,
+            checkpoint: Checkpoint,
     ):
-        model = torch.load(os.path.join(
-            model_weights_progress_path, 'model.pt'))
-        optimizer = torch.load(os.path.join(
-            model_weights_progress_path, 'optimizer.pt'))
-        return model, optimizer
+        CheckpointManager.load_latest_checkpoint(
+            checkpoint, model_weights_progress_path, self.device)
 
     def reduce_learning_rate(
             self,
