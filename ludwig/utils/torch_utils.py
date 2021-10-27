@@ -1,13 +1,18 @@
+import os
+import warnings
 from abc import abstractmethod
 from functools import lru_cache
 
-from typing import Optional
+from typing import Optional, List, Tuple, Union
 
 import math
 import torch
 from torch import nn
 from torch.nn import Module, ModuleDict
 from torch.autograd import Function
+
+
+_TORCH_INIT_PARAMS: Optional[Tuple] = None
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
@@ -284,12 +289,71 @@ class Sparsemax(torch.nn.Module):
 
 
 def initialize_pytorch(
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        horovod=None
+        gpus: Optional[Union[int, str, List[int]]] = None,
+        gpu_memory_limit: Optional[float] = None,
+        allow_parallel_threads: bool = True,
+        horovod: Optional["horovod.torch"] = None
 ):
-    # TODO(travis): implement gpu pinning
-    if horovod is not None:
-        if torch.cuda.is_available():
-            torch.cuda.set_device(horovod.local_rank())
+    use_horovod = horovod is not None
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
+    if _TORCH_INIT_PARAMS is not None:
+        if _TORCH_INIT_PARAMS != param_tuple:
+            warnings.warn(
+                'PyTorch has already been initialized. Changes to `gpus`, '
+                '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
+                'Start a new Python process to modify these values.')
+        return
+
+    # For reproducivility / determinism, set parallel threads to 1.
+    # For performance, leave unset to allow PyTorch to select the best value automatically.
+    if not allow_parallel_threads:
+        torch.set_num_threads(1)
+        torch.set_num_interop_threads(1)
+
+    gpu_device_count = torch.cuda.device_count()
+    if horovod is not None and gpus is None:
+        if 0 < gpu_device_count < horovod.local_size():
+            warnings.warn(
+                f'Horovod: disabling GPU support! This host is running with '
+                f'{horovod.local_size()} worker processes but only {gpu_device_count} '
+                f'GPUs. To enable GPU training, reduce the number of worker processes '
+                f'on this host to match the number of GPUs.')
+            gpus = [-1]
+        else:
+            gpus = [horovod.local_rank()]
+
+    if isinstance(gpus, int):
+        gpus = [gpus]
+    elif isinstance(gpus, str):
+        gpus = gpus.strip()
+        gpus = [int(g) for g in gpus.split(",")]
+
+    if gpus and len(gpus) == 1 and gpus[0] == -1:
+        # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    elif torch.cuda.is_available():
+        # Set visible devices so GPU utilization is isolated
+        # (no GPU contention between workers).
+        if gpus is not None:
+            if len(gpus) == 1:
+                torch.cuda.set_device(gpus[0])
+            elif len(gpus) > 1:
+                os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in gpus)
+
+        # Limit the amount of memory that can be consumed per GPU
+        if gpu_memory_limit is not None:
+            for gpu in gpus or range(gpu_device_count):
+                torch.cuda.memory.set_per_process_memory_fraction(
+                    gpu_memory_limit, gpu
+                )
+
+    _set_torch_init_params(param_tuple)
+
+
+def _set_torch_init_params(params: Optional[Tuple]):
+    global _TORCH_INIT_PARAMS
+    _TORCH_INIT_PARAMS = params
+
+
+def _get_torch_init_params() -> Optional[Tuple]:
+    return _TORCH_INIT_PARAMS
