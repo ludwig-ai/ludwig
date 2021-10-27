@@ -1007,18 +1007,12 @@ class Trainer(BaseTrainer):
                 else:
                     # there's no validation, so we save the model at each iteration
                     if self.is_coordinator() and not self.skip_save_model:
-                        # TODO(shreya): Confirm that optimizer state not needed here
                         torch.save(model.state_dict(), model_weights_path)
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
                     if not self.skip_save_progress:
                         checkpoint_manager.save(progress_tracker.epoch)
-                        # os.makedirs(training_checkpoints_path, exist_ok=True)
-
-                        # torch.save(model, os.path.join(training_checkpoints_path, 'model.pt'))
-                        # torch.save(self.optimizer, os.path.join(training_checkpoints_path, 'optimizer.pt'))
-
                         progress_tracker.save(
                             os.path.join(
                                 save_path,
@@ -1176,8 +1170,6 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
             if self.is_coordinator() and not skip_save_model:
-                # model.save_weights(model_weights_path)
-                # TODO(shreya): Confirm that optimizer weights not needed here.
                 torch.save(model.state_dict(), model_weights_path)
                 logger.info(
                     'Validation {} on {} improved, model saved'.format(
