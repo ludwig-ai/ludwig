@@ -363,20 +363,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     else:
                         # matrix vector -> tile concat
                         sequence_max_length = hidden.shape[1]
-                        '''
-                        multipliers = tf.concat(
-                            [[1], [sequence_max_length], [1]],
-                            0
-                        )
-                        '''
                         multipliers = (1, sequence_max_length, 1)
-
-                        '''
-                        tiled_representation = tf.tile(
-                            tf.expand_dims(dependency_final_hidden, 1),
-                            multipliers
-                        )
-                        '''
                         tiled_representation = torch.tile(
                             torch.unsqueeze(dependency_final_hidden, 1),
                             multipliers
@@ -384,16 +371,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
                         # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
-                        '''
-                        mask = tf.sequence_mask(
-                            sequence_length,
-                            sequence_max_length
-                        )
-                        tiled_representation = tf.multiply(
-                            tiled_representation,
-                            tf.cast(mask[:, :, tf.newaxis], dtype=tf.float32)
-                        )
-                        '''
                         mask = sequence_mask(
                             sequence_length,
                             sequence_max_length
