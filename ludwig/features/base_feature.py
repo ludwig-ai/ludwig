@@ -166,9 +166,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         if self.dependencies:
             self.dependency_reducers = {}
             for dependency in self.dependencies:
-                self.dependency_reducers[dependency] = SequenceReducer(
-                    reduce_mode=self.reduce_dependencies
-                )
+                if self.reduce_dependencies == 'attention':
+                    self.dependency_reducers[dependency] = SequenceReducer(
+                        reduce_mode=self.reduce_dependencies,
+                        input_size=feature['input_size']
+                    )
+                else:
+                    self.dependency_reducers[dependency] = SequenceReducer(
+                        reduce_mode=self.reduce_dependencies
+                    )
 
     def create_input(self):
         return torch.rand(self.output_shape, dtype=self.get_output_dtype())
