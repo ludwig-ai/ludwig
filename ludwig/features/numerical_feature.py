@@ -198,7 +198,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature['input_size'] = self.input_shape
+        feature['input_size'] = self.input_shape[-1]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
