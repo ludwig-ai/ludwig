@@ -145,6 +145,7 @@ class Trainer(BaseTrainer):
             random_seed=default_random_seed,
             horovod=None,
             debug=False,
+            device=None,
             **kwargs
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable
@@ -240,6 +241,13 @@ class Trainer(BaseTrainer):
         :type: list
         :param random_seed: Default initialization for the random seeds
         :type: Float
+        :param horovod: Horovod parameters
+        :type horovod: dict
+        :param debug: Enables debugging mode, which prints out a lot of
+                information about the training process.
+        :type debug: Boolean
+        :param device: The device to load the model on from a saved checkpoint.
+        :type device: str
         """
         self.epochs = epochs
         self.regularization_lambda = regularization_lambda
@@ -277,6 +285,7 @@ class Trainer(BaseTrainer):
         self.debug = debug
         self.received_sigint = False
         self.callbacks = callbacks or []
+        self.device = device
 
         if self.horovod:
             self.learning_rate *= self.horovod.size()
@@ -289,6 +298,12 @@ class Trainer(BaseTrainer):
             horovod=horovod,
             **optimizer
         )
+
+        if self.device is None:
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            else:
+                self.device = 'cpu'
 
     @classmethod
     def write_epoch_summary(
@@ -663,7 +678,7 @@ class Trainer(BaseTrainer):
         if self.is_coordinator():
             checkpoint = Checkpoint(model=model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(
-                checkpoint, training_checkpoints_path, device='cuda',
+                checkpoint, training_checkpoints_path, device=self.device,
                 max_to_keep=1)
 
         train_summary_writer = None
@@ -696,8 +711,8 @@ class Trainer(BaseTrainer):
                 training_progress_tracker_path
             )
             if self.is_coordinator():
-                model, self.optimizer = self.resume_weights_and_optimzier(
-                    training_checkpoints_path, checkpoint, 'cuda')
+                self.resume_weights_and_optimzier(
+                    training_checkpoints_path, checkpoint)
         else:
             (
                 train_metrics,
@@ -1338,9 +1353,9 @@ class Trainer(BaseTrainer):
             self,
             model_weights_progress_path: str,
             checkpoint: Checkpoint,
-            device: str
     ):
-        CheckpointManager.load_latest_checkpoint(checkpoint, model_weights_progress_path, device)
+        CheckpointManager.load_latest_checkpoint(
+            checkpoint, model_weights_progress_path, self.device)
 
     def reduce_learning_rate(
             self,
