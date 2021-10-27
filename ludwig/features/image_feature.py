@@ -360,7 +360,7 @@ class ImageFeatureMixin:
             # Number of processes to run in parallel for preprocessing
             metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
-            metadata[feature[NAME]]['reshape'] = (height, width, num_channels)
+            metadata[feature[NAME]]['reshape'] = (num_channels, height, width)
 
             # Split the dataset into pools only if we have an explicit request to use
             # multiple processes. In case we have multiple input images use the
