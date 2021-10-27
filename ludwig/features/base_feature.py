@@ -169,7 +169,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 if self.reduce_dependencies == 'attention':
                     self.dependency_reducers[dependency] = SequenceReducer(
                         reduce_mode=self.reduce_dependencies,
-                        input_size=feature['input_size']
+                        input_size=feature['input_size']   # todo: not correct placeholder
                     )
                 else:
                     self.dependency_reducers[dependency] = SequenceReducer(
