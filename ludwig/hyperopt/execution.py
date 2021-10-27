@@ -587,6 +587,10 @@ class RayTuneExecutor(HyperoptExecutor):
                              "Configure GPU resources with Ray and set `gpu_resources_per_trial` in your "
                              "hyperopt config.")
 
+        if gpu_memory_limit is None and 0 < self.gpu_resources_per_trial < 1:
+            # Enforce fractional GPU utilization
+            gpu_memory_limit = self.gpu_resources_per_trial
+
         hyperopt_dict = dict(
             config=config,
             dataset=dataset,
