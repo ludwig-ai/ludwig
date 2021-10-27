@@ -85,6 +85,10 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
+        if self.input_dtype == torch.int32:
+            return torch.randint(100, self.input_shape)
+        if self.input_dtype == torch.long:
+            return torch.randint(100, self.input_shape)
         return torch.rand(self.input_shape, dtype=self.input_dtype)
 
     @staticmethod
@@ -171,6 +175,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 )
 
     def create_input(self):
+        if self.get_output_dtype() == torch.int32:
+            return torch.randint(100, self.output_shape)
+        if self.get_output_dtype() == torch.long:
+            return torch.randint(100, self.output_shape)
         return torch.rand(self.output_shape, dtype=self.get_output_dtype())
 
     @abstractmethod
