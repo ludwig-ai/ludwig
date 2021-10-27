@@ -29,33 +29,6 @@ from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def export_savedmodel(
-        model_path: str,
-        output_path: str = 'savedmodel',
-        **kwargs
-) -> None:
-    """Exports a model to SavedModel
-
-    # Inputs
-
-    :param model_path: (str) filepath to pre-trained model.
-    :param output_path: (str, default: `'savedmodel'`) directory to store the
-        savedmodel
-
-    # Return
-    :returns: (`None`)
-    """
-    logger.info('Model path: {}'.format(model_path))
-    logger.info('Output path: {}'.format(output_path))
-    logger.info('\n')
-
-    model = LudwigModel.load(model_path)
-    os.makedirs(output_path, exist_ok=True)
-    model.save_savedmodel(output_path)
-
-    logger.info('Saved to: {0}'.format(output_path))
-
-
 def export_neuropod(
         model_path,
         output_path='neuropod',
@@ -113,65 +86,6 @@ def export_mlflow(
     export_model(model_path, output_path, registered_model_name)
 
     logger.info('Saved to: {0}'.format(output_path))
-
-
-def cli_export_savedmodel(sys_argv):
-    parser = argparse.ArgumentParser(
-        description='This script loads a pretrained model '
-                    'and saves it as a SavedModel.',
-        prog='ludwig export_savedmodel',
-        usage='%(prog)s [options]'
-    )
-
-    # ----------------
-    # Model parameters
-    # ----------------
-    parser.add_argument(
-        '-m',
-        '--model_path',
-        help='model to load',
-        required=True
-    )
-
-    # -----------------
-    # Output parameters
-    # -----------------
-    parser.add_argument(
-        '-od',
-        '--output_path',
-        type=str,
-        help='path where to save the export model',
-        required=True
-    )
-
-    # ------------------
-    # Runtime parameters
-    # ------------------
-    parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
-    )
-
-    add_contrib_callback_args(parser)
-    args = parser.parse_args(sys_argv)
-
-    args.callbacks = args.callbacks or []
-    for callback in args.callbacks:
-        callback.on_cmdline('export_savedmodel', *sys_argv)
-
-    args.logging_level = logging_level_registry[args.logging_level]
-    logging.getLogger('ludwig').setLevel(
-        args.logging_level
-    )
-    global logger
-    logger = logging.getLogger('ludwig.export')
-
-    print_ludwig('Export SavedModel', LUDWIG_VERSION)
-
-    export_savedmodel(**vars(args))
 
 
 def cli_export_neuropod(sys_argv):
@@ -306,9 +220,7 @@ def cli_export_mlflow(sys_argv):
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        if sys.argv[1] == 'savedmodel':
-            cli_export_savedmodel(sys.argv[2:])
-        elif sys.argv[1] == 'neuropod':
+        if sys.argv[1] == 'neuropod':
             cli_export_neuropod(sys.argv[2:])
         else:
             print('Unrecognized command')

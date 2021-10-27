@@ -60,14 +60,14 @@ class ECD(LudwigModule):
 
         # ================ Outputs ================
         self.output_features = torch.nn.ModuleDict()
-        self.output_features.update(build_outputs(output_features_def, self.combiner))
+        self.output_features.update(build_outputs(
+            output_features_def, self.combiner))
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.average.AverageMeter()
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
-
 
     def get_model_inputs(self, training=True):
         inputs = {
@@ -85,18 +85,6 @@ class ECD(LudwigModule):
             self.output_features.items()
         }
         return inputs, targets
-
-    # TODO(shreya): Figure out model saving, loading.
-    '''
-    def get_connected_model(self, training=True, inputs=None):
-        inputs = inputs or self.get_model_inputs(training)
-        outputs = self.call(inputs)
-        return tf.keras.Model(inputs=inputs, outputs=outputs)
-    '''
-
-    def save_savedmodel(self, save_path):
-        keras_model = self.get_connected_model(training=False)
-        keras_model.save(save_path)
 
     def forward(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
@@ -266,7 +254,7 @@ class ECD(LudwigModule):
     def reset_metrics(self):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
-        #self.eval_loss_metric.reset_states()
+        # self.eval_loss_metric.reset_states()
         self.eval_loss_metric.reset()
 
     def collect_weights(

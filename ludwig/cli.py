@@ -53,11 +53,10 @@ Available sub-commands:
    collect_summary       Prints names of weights and layers activations to use with other collect commands
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
-   export_savedmodel     Exports Ludwig models to SavedModel
    export_neuropod       Exports Ludwig models to Neuropod
    export_mlflow         Exports Ludwig models to MLflow
    preprocess            Preprocess data and saves it into HDF5 and JSON format
-   synthesize_dataset    Creates synthetic data for tesing purposes
+   synthesize_dataset    Creates synthetic data for testing purposes
 ''')
         parser.add_argument('command', help='Subcommand to run')
         # parse_args defaults to [1:] for args, but you need to
@@ -109,10 +108,6 @@ Available sub-commands:
     def collect_activations(self):
         from ludwig import collect
         collect.cli_collect_activations(sys.argv[2:])
-
-    def export_savedmodel(self):
-        from ludwig import export
-        export.cli_export_savedmodel(sys.argv[2:])
 
     def export_neuropod(self):
         from ludwig import export

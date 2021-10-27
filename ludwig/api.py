@@ -1529,7 +1529,7 @@ class LudwigModel:
             save_path: str
     ) -> None:
         """
-        Save config to specoficed location.
+        Save config to specified location.
 
         # Inputs
 
@@ -1546,28 +1546,6 @@ class LudwigModel:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
         save_json(model_hyperparameters_path, self.config)
-
-    def save_savedmodel(self, save_path: str) -> None:
-        """This function allows to save models on disk
-
-        # Inputs
-
-        :param  save_path: (str) path to the directory where the SavedModel
-                is going to be saved.
-
-        # Return
-
-        :return: `None`
-
-        # Example usage
-
-        ```python
-        ludwig_model.save_for_serving(save_path)
-        ```
-
-        """
-        self._check_initialization()
-        self.model.save_savedmodel(save_path)
 
     def _check_initialization(self):
         if self.model is None or \
