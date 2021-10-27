@@ -177,6 +177,7 @@ def test_ray_tabular():
     run_test_parquet(input_features, output_features)
 
 
+@pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
 def test_ray_text():
     input_features = [
@@ -188,6 +189,7 @@ def test_ray_text():
     run_test_parquet(input_features, output_features)
 
 
+@pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
 def test_ray_sequence():
     input_features = [
