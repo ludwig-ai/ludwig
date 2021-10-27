@@ -117,21 +117,6 @@ def get_class_attributes(c):
     )
 
 
-def get_available_gpu_memory():
-    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
-
-    COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
-    try:
-        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[
-                           1:]
-        memory_free_values = [int(x.split()[0])
-                              for i, x in enumerate(memory_free_info)]
-    except Exception as e:
-        print('"nvidia-smi" is probably not installed.', e)
-
-    return memory_free_values
-
-
 def get_output_directory(
         output_directory,
         experiment_name,

@@ -1,5 +1,4 @@
 import datetime
-import logging
 import os
 import uuid
 import copy
@@ -9,10 +8,11 @@ import signal
 import shutil
 import threading
 import time
-import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Optional
+
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY, initialize_backend
@@ -24,11 +24,8 @@ from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import (get_available_gpu_memory,
-                                     get_from_registry,
-                                     hash_dict)
-from ludwig.utils.fs_utils import has_remote_protocol, file_lock
-from ludwig.utils.tf_utils import get_available_gpus_cuda_string
+from ludwig.utils.misc_utils import get_from_registry, hash_dict
+from ludwig.utils.fs_utils import has_remote_protocol
 
 try:
     import ray
@@ -322,7 +319,6 @@ class ParallelExecutor(HyperoptExecutor):
     num_workers = 2
     epsilon = 0.01
     epsilon_memory = 100
-    TF_REQUIRED_MEMORY_PER_WORKER = 100
 
     def __init__(
             self,
@@ -345,27 +341,21 @@ class ParallelExecutor(HyperoptExecutor):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     def _run_experiment(self, hyperopt_dict: dict) -> TrialResults:
-        parameters = hyperopt_dict["parameters"]
-        train_stats, eval_stats = run_experiment(**hyperopt_dict)
-        metric_score = self.get_metric_score(train_stats, eval_stats)
+        parameters = hyperopt_dict['parameters']
 
-        return TrialResults(
-            parameters=parameters,
-            metric_score=metric_score,
-            training_stats=train_stats,
-            eval_stats=eval_stats,
-        )
-
-    def _run_experiment_gpu(self, hyperopt_dict: dict) -> TrialResults:
-        gpu_id_meta = self.queue.get()
-        try:
-            parameters = hyperopt_dict['parameters']
+        gpu_id_meta = None
+        if self.queue is not None:
+            gpu_id_meta = self.queue.get()
             hyperopt_dict["gpus"] = gpu_id_meta["gpu_id"]
             hyperopt_dict["gpu_memory_limit"] = gpu_id_meta["gpu_memory_limit"]
+
+        try:
             train_stats, eval_stats = run_experiment(**hyperopt_dict)
             metric_score = self.get_metric_score(train_stats, eval_stats)
         finally:
-            self.queue.put(gpu_id_meta)
+            if self.queue is not None:
+                self.queue.put(gpu_id_meta)
+
         return TrialResults(
             parameters=parameters,
             metric_score=metric_score,
@@ -408,10 +398,15 @@ class ParallelExecutor(HyperoptExecutor):
         ctx = multiprocessing.get_context('spawn')
 
         if gpus is None:
-            gpus = get_available_gpus_cuda_string()
+            gpus = [i for i in range(torch.cuda.device_count())]
 
-        if gpus is not None:
+        if isinstance(gpus, int):
+            gpus = str(gpus)
+        if isinstance(gpus, str):
+            gpus = [int(g) for g in gpus.strip().split(",")]
+        num_gpus = len(gpus)
 
+        if torch.cuda.is_available() and num_gpus > 0:
             num_available_cpus = ctx.cpu_count()
 
             if self.num_workers > num_available_cpus:
@@ -423,20 +418,14 @@ class ParallelExecutor(HyperoptExecutor):
                     )
                 )
 
-            if isinstance(gpus, int):
-                gpus = str(gpus)
-            gpus = gpus.strip()
-            gpu_ids = gpus.split(",")
-            num_gpus = len(gpu_ids)
 
-            available_gpu_memory_list = get_available_gpu_memory()
+            available_gpu_memory_list = [1.0 for _ in range(torch.cuda.device_count())]
             gpu_ids_meta = {}
 
             if num_gpus < self.num_workers:
                 fraction = (num_gpus / self.num_workers) - self.epsilon
-                for gpu_id in gpu_ids:
-                    available_gpu_memory = available_gpu_memory_list[
-                        int(gpu_id)]
+                for gpu_id in gpus:
+                    available_gpu_memory = available_gpu_memory_list[int(gpu_id)]
                     required_gpu_memory = fraction * available_gpu_memory
 
                     if gpu_memory_limit is None:
@@ -450,9 +439,7 @@ class ParallelExecutor(HyperoptExecutor):
                                 self.num_workers,
                                 gpu_id, available_gpu_memory)
                         )
-                        new_gpu_memory_limit = required_gpu_memory - \
-                            (
-                                self.TF_REQUIRED_MEMORY_PER_WORKER * self.num_workers)
+                        new_gpu_memory_limit = required_gpu_memory
                     else:
                         new_gpu_memory_limit = gpu_memory_limit
                         if new_gpu_memory_limit > available_gpu_memory:
@@ -502,7 +489,7 @@ class ParallelExecutor(HyperoptExecutor):
                         "gpu_memory_limit": new_gpu_memory_limit,
                         "process_per_gpu": process_per_gpu}
             else:
-                for gpu_id in gpu_ids:
+                for gpu_id in gpus:
                     gpu_ids_meta[gpu_id] = {
                         "gpu_memory_limit": gpu_memory_limit,
                         "process_per_gpu": 1}
@@ -510,13 +497,15 @@ class ParallelExecutor(HyperoptExecutor):
             manager = ctx.Manager()
             self.queue = manager.Queue()
 
-            for gpu_id in gpu_ids:
+            for gpu_id in gpus:
                 process_per_gpu = gpu_ids_meta[gpu_id]["process_per_gpu"]
                 gpu_memory_limit = gpu_ids_meta[gpu_id]["gpu_memory_limit"]
                 for _ in range(process_per_gpu):
                     gpu_id_meta = {"gpu_id": gpu_id,
                                    "gpu_memory_limit": gpu_memory_limit}
                     self.queue.put(gpu_id_meta)
+        else:
+            self.queue = None
 
         pool = ctx.Pool(self.num_workers,
                         ParallelExecutor.init_worker)
@@ -569,12 +558,8 @@ class ParallelExecutor(HyperoptExecutor):
                     )
                 trials += len(sampled_parameters)
 
-                if gpus is not None:
-                    batch_results = pool.map(self._run_experiment_gpu,
-                                             hyperopt_parameters)
-                else:
-                    batch_results = pool.map(self._run_experiment,
-                                             hyperopt_parameters)
+                batch_results = pool.map(self._run_experiment,
+                                         hyperopt_parameters)
 
                 self.hyperopt_sampler.update_batch(
                     (result.parameters, result.metric_score)
