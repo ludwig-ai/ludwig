@@ -78,8 +78,6 @@ SAMPLERS = [
 
 EXECUTORS = [
     {"type": "serial"},
-    {"type": "parallel", "num_workers": 4},
-    {"type": "fiber", "num_workers": 4},
 ]
 
 
@@ -89,10 +87,6 @@ EXECUTORS = [
 def test_hyperopt_executor(sampler, executor, csv_filename,
                            validate_output_feature=False,
                            validation_metric=None):
-    if executor['type'] == 'fiber' and sampler['type'] == 'grid':
-        # This test is very slow and doesn't give us additional converage
-        pytest.skip('Skipping Fiber grid search')
-
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
