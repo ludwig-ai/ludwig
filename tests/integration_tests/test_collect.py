@@ -107,7 +107,8 @@ def test_collect_activations(csv_filename):
         with tempfile.TemporaryDirectory() as output_directory:
             # [last_hidden, logits, projection_input]
             filenames = _collect_activations(model_path,
-                                             layers,
+                                             [name for name,
+                                                 _ in model.model.named_children()],
                                              csv_filename,
                                              output_directory)
             assert len(filenames) == 3
