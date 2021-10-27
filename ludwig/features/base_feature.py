@@ -363,10 +363,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                             0
                         )
                         '''
-                        multipliers = torch.cat(
-                            [[1], [sequence_max_length], [1]],
-                            dim=0
-                        )
+                        multipliers = (1, sequence_max_length, 1)
 
                         '''
                         tiled_representation = tf.tile(

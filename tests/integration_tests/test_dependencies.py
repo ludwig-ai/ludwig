@@ -108,8 +108,8 @@ def test_multiple_dependencies(
 
     # confirm size of resutling concat_dependencies() call
     if len(hidden_shape) > 2:
-        assert results.shape.as_list() == \
-               [BATCH_SIZE, SEQ_SIZE, expected_hidden_size]
+        assert results.shape == \
+               (BATCH_SIZE, SEQ_SIZE, expected_hidden_size)
     else:
         assert results.shape == (BATCH_SIZE, expected_hidden_size)
 
