@@ -18,7 +18,7 @@ import logging
 import os
 from functools import partial
 from multiprocessing import Pool
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 import numpy as np
 import torch
@@ -97,7 +97,7 @@ class ImageFeatureMixin:
             num_channels: int,
             resize_method: str,
             user_specified_num_channels: bool
-    ) -> torch.Tensor:
+    ) -> Optional[np.ndarray]:
         """
         :param img_entry Union[str, 'numpy.array']: if str file path to the
                 image else numpy.array of the image itself
@@ -107,7 +107,7 @@ class ImageFeatureMixin:
         :param resize_method: type of resizing method
         :param num_channels: expected number of channels in the first image
         :param user_specified_num_channels: did the user specify num channels?
-        :return: image object
+        :return: image object as a numoy array
 
         Helper method to read and resize an image according to model defn.
         If the user doesn't specify a number of channels, we use the first image
@@ -148,7 +148,6 @@ class ImageFeatureMixin:
                 extra_channels = num_channels - img_num_channels
                 img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
 
-
             if img_num_channels != num_channels:
                 logger.warning(
                     "Image has {0} channels, where as {1} "
@@ -178,7 +177,7 @@ class ImageFeatureMixin:
                     .format([img_height, img_width, num_channels], img.shape)
             )
 
-        return img
+        return img.numpy()
 
     @staticmethod
     def _finalize_preprocessing_parameters(
