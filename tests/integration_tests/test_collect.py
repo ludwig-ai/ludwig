@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os
 import shutil
 import tempfile
@@ -103,17 +104,13 @@ def test_collect_activations(csv_filename):
         model, output_dir = _train(*_prepare_data(csv_filename))
         model_path = os.path.join(output_dir, 'model')
 
-        # [input_features.weight, decoder.weight, decoder.bias]
-        layers = _get_layers(model_path)
-        assert len(layers) > 0
-
         with tempfile.TemporaryDirectory() as output_directory:
             # [last_hidden, logits, projection_input]
             filenames = _collect_activations(model_path,
                                              layers,
                                              csv_filename,
                                              output_directory)
-            assert len(filenames) < len(layers)
+            assert len(filenames) == 3
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
