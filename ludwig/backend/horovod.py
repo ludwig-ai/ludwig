@@ -44,8 +44,8 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
         # to all other ranks
-        self._horovod.broadcast_variables(model.variables,
-                                          root_rank=0)
+        self._horovod.broadcast_parameters(model.state_dict(),
+                                           root_rank=0)
 
     def broadcast_return(self, fn):
         """Returns the result of calling `fn` on coordinator, broadcast to all other ranks.
