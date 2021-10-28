@@ -202,7 +202,7 @@ def print_model_summary(
     # https://pypi.org/project/torch-summary/
     # torchsummary.summary(model.model, model.model.get_model_inputs(training=False))
 
-    print('\nModel children:\n')
+    print('\nModules:\n')
     for name, _ in model.model.named_children():
         print(name)
 

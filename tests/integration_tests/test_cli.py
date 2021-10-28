@@ -322,7 +322,7 @@ def test_collect_summary_activations_weights_cli(csv_filename):
         stdout = completed_process.stdout.decode('utf-8')
 
         # TODO(justin): Check that more summary information was printed using torchsummary.
-        assert 'Model children' in stdout
+        assert 'Modules' in stdout
         assert 'Parameters' in stdout
 
 
