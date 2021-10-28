@@ -165,16 +165,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         )
         if self.dependencies:
             self.dependency_reducers = torch.nn.ModuleDict()
+            # todo: re-evaluate need for separate handling of `attention` reducer
+            #       currently this code does not support `attention`
             for dependency in self.dependencies:
-                if self.reduce_dependencies == 'attention':
-                    self.dependency_reducers[dependency] = SequenceReducer(
-                        reduce_mode=self.reduce_dependencies,
-                        input_size=feature['input_size']   # todo: not correct placeholder
-                    )
-                else:
-                    self.dependency_reducers[dependency] = SequenceReducer(
-                        reduce_mode=self.reduce_dependencies
-                    )
+                self.dependency_reducers[dependency] = SequenceReducer(
+                    reduce_mode=self.reduce_dependencies
+                )
 
     def create_input(self):
         return torch.rand(self.output_shape, dtype=self.get_output_dtype())
