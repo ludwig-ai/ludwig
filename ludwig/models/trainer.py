@@ -45,7 +45,7 @@ from ludwig.globals import is_progressbar_disabled
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import (get_improved_fun,
                                            get_initial_validation_value)
-from ludwig.modules.optimization_modules import ClippedOptimizer
+from ludwig.modules.optimization_modules import create_optimizer_with_clipper
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json, save_json
@@ -293,8 +293,8 @@ class Trainer(BaseTrainer):
         # ================ Optimizer ================
         if optimizer is None:
             optimizer = {TYPE: 'Adam'}
-        self.optimizer = ClippedOptimizer(
-            model.parameters(),
+        self.optimizer, self.clipper = create_optimizer_with_clipper(
+            model,
             horovod=horovod,
             **optimizer
         )
@@ -304,6 +304,40 @@ class Trainer(BaseTrainer):
                 self.device = 'cuda'
             else:
                 self.device = 'cpu'
+
+    def train_step(self, model, inputs, targets):
+        self.optimizer.zero_grad()
+
+        # Obtain model predictions and loss
+        model_outputs = model((inputs, targets))
+        loss, all_losses = model.train_loss(
+            targets, model_outputs, self.regularization_lambda
+        )
+
+        # Begin the backward pass
+        variables = model.parameters()
+        loss.backward()
+
+        if self.horovod:
+            # Wait for gradient aggregation to complete before clipping the gradients
+            self.optimizer.synchronize()
+
+        # Clip gradients
+        self.clipper.clip_grads(variables)
+
+        # Apply gradient updates
+        if self.horovod:
+            # Because we already synchronized above, we can doing so here
+            with self.optimizer.skip_synchronize():
+                self.optimizer.step()
+        else:
+            self.optimizer.step()
+
+        return loss, all_losses
+
+    def set_learning_rate(self, learning_rate):
+        for g in self.optimizer.param_groups:
+            g['lr'] = learning_rate
 
     @classmethod
     def write_epoch_summary(
@@ -384,11 +418,10 @@ class Trainer(BaseTrainer):
                     for o_feat in model.output_features.values()
                 }
 
-                model.train_step(
-                    self.optimizer,
+                self.train_step(
+                    model,
                     inputs,
-                    targets,
-                    self.regularization_lambda
+                    targets
                 )
                 step_count += 1
         return model
@@ -458,11 +491,10 @@ class Trainer(BaseTrainer):
                         for o_feat in model.output_features.values()
                     }
 
-                    loss, _ = model.train_step(
-                        self.optimizer,
+                    loss, _ = self.train_step(
+                        model,
                         inputs,
                         targets,
-                        self.regularization_lambda
                     )
                     # compute smoothed loss
                     avg_loss = beta * avg_loss + (1-beta) * loss
@@ -488,7 +520,7 @@ class Trainer(BaseTrainer):
                         current_learning_rate = linear_scheduler(
                             current_learning_rate, step_count)
 
-                    self.optimizer.set_learning_rate(current_learning_rate)
+                    self.set_learning_rate(current_learning_rate)
                     step_count += 1
 
                 epoch += 1
@@ -831,7 +863,7 @@ class Trainer(BaseTrainer):
                             batcher.step,
                             batcher.steps_per_epoch
                         )
-                    self.optimizer.set_learning_rate(current_learning_rate)
+                    self.set_learning_rate(current_learning_rate)
 
                     # obtain batch
                     batch = batcher.next_batch()
@@ -849,11 +881,10 @@ class Trainer(BaseTrainer):
                     # if first_batch and self.is_coordinator() and not skip_save_log:
                     #    tf.summary.trace_on(graph=True, profiler=True)
 
-                    loss, all_losses = model.train_step(
-                        self.optimizer,
+                    loss, all_losses = self.train_step(
+                        model,
                         inputs,
                         targets,
-                        self.regularization_lambda
                     )
 
                     # Reintroduce for tensorboard graph
@@ -1069,11 +1100,10 @@ class Trainer(BaseTrainer):
                     for o_feat in model.output_features.values()
                 }
 
-                model.train_step(
-                    self.optimizer,
+                self.train_step(
+                    model,
                     inputs,
                     targets,
-                    self.regularization_lambda
                 )
 
                 progress_bar.update(1)

@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from dataclasses import dataclass
+from typing import Optional, Iterable
+
 import torch
 
 from ludwig.utils.misc_utils import get_from_registry
@@ -33,54 +36,45 @@ optimizers_registry = {
 }
 
 
-def ClippedOptimizer(params, #model params
-                     type='sgd',
-                     clipglobalnorm=5.0,
-                     clipnorm=None,
-                     clipvalue=None,
-                     horovod=None,
-                     **kwargs):
-    #optimizer = get_from_registry(type.lower(), optimizers_registry)(**kwargs)
-    optimizer = get_from_registry(type.lower(), optimizers_registry)
-    return clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
-                          horovod=horovod, **kwargs)
+@dataclass
+class Clipper:
+    clipglobalnorm: Optional[float] = 0.5
+    clipnorm: Optional[float] = None
+    clipvalue: Optional[float] = None
+
+    def clip_grads(self, variables: Iterable[torch.Tensor]):
+        if self.clipglobalnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
+        if self.clipnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
+        if self.clipvalue:
+            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
 
 
-def clip_optimizer(params, optimizer, clipglobalnorm, clipnorm, clipvalue,
-                   horovod=None, **kwargs):
-    class _ClippedOptimizer(torch.optim.Optimizer):
-        def __init__(self, **kwargs):
-            self.clipglobalnorm = clipglobalnorm
-            self.clipnorm = clipnorm
-            self.clipvalue = clipvalue
-            self.horovod = horovod
-            super(self.__class__, self).__init__(**kwargs)
+def create_optimizer_with_clipper(
+    model,
+    type='sgd',
+    clipglobalnorm=5.0,
+    clipnorm=None,
+    clipvalue=None,
+    horovod=None,
+    **kwargs
+):
+    optimizer_cls = get_from_registry(type.lower(), optimizers_registry)
+    optimizer = create_optimizer(optimizer_cls, model, horovod, **kwargs)
+    clipper = Clipper(
+        clipglobalnorm=clipglobalnorm,
+        clipnorm=clipnorm,
+        clipvalue=clipvalue
+    )
+    return optimizer, clipper
 
-        def minimize(self, loss, variables):
-            # if self.horovod:
-            #     tape = self.horovod.DistributedGradientTape(tape)
 
-            loss.backward()
-            if self.clipglobalnorm:
-                torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
-            if self.clipnorm:
-                for x in variables:
-                    torch.nn.utils.clip_grad_norm_(x, self.clipglobalnorm)
-            if self.clipvalue:
-                for x in variables:
-                    torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
-
-            self.step()
-
-        def set_learning_rate(self, learning_rate):
-            #self.lr.assign(learning_rate)
-            for g in self.param_groups:
-                g['lr'] = learning_rate
-    '''
-    cls = type(optimizer.__class__.__name__, (optimizer.__class__,),
-               dict(_ClippedOptimizer.__dict__))
-    '''
-    cls = type(optimizer.__name__, (optimizer,),
-               dict(_ClippedOptimizer.__dict__))
-    #return cls.from_config(optimizer.get_config())
-    return cls(params=params, **kwargs)
+def create_optimizer(optimizer_cls, model, horovod=None, **kwargs):
+    optimizer = optimizer_cls(params=model.parameters(), **kwargs)
+    if horovod:
+        optimizer = horovod.DistributedOptimizer(
+            optimizer,
+            named_parameters=model.named_parameters(),
+        )
+    return optimizer
