@@ -164,7 +164,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             reduce_mode=self.reduce_input
         )
         if self.dependencies:
-            self.dependency_reducers = {}
+            self.dependency_reducers = torch.nn.ModuleDict()
             for dependency in self.dependencies:
                 if self.reduce_dependencies == 'attention':
                     self.dependency_reducers[dependency] = SequenceReducer(
