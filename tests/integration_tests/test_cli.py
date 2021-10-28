@@ -177,40 +177,42 @@ def test_train_cli_horovod(csv_filename):
         )
 
 
-@pytest.mark.distributed
-def test_export_savedmodel_cli(csv_filename):
-    """Test exporting Ludwig model to Tensorflows savedmodel format."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir,
-                                       'config.yaml')
-        dataset_filename = _prepare_data(csv_filename,
-                                         config_filename)
-        _run_ludwig('train',
-                    dataset=dataset_filename,
-                    config_file=config_filename,
-                    output_directory=tmpdir)
-        _run_ludwig('export_savedmodel',
-                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-                    output_path=os.path.join(tmpdir, 'savedmodel')
-                    )
+# TODO(https://github.com/ludwig-ai/ludwig/projects/3#card-71743513): Re-enable.
+# @pytest.mark.distributed
+# def test_export_savedmodel_cli(csv_filename):
+#     """Test exporting Ludwig model to Tensorflows savedmodel format."""
+#     with tempfile.TemporaryDirectory() as tmpdir:
+#         config_filename = os.path.join(tmpdir,
+#                                        'config.yaml')
+#         dataset_filename = _prepare_data(csv_filename,
+#                                          config_filename)
+#         _run_ludwig('train',
+#                     dataset=dataset_filename,
+#                     config_file=config_filename,
+#                     output_directory=tmpdir)
+#         _run_ludwig('export_savedmodel',
+#                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+#                     output_path=os.path.join(tmpdir, 'savedmodel')
+#                     )
 
 
-@pytest.mark.distributed
-def test_export_neuropod_cli(csv_filename):
-    """Test exporting Ludwig model to neuropod format."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_filename = os.path.join(tmpdir,
-                                       'config.yaml')
-        dataset_filename = _prepare_data(csv_filename,
-                                         config_filename)
-        _run_ludwig('train',
-                    dataset=dataset_filename,
-                    config_file=config_filename,
-                    output_directory=tmpdir)
-        _run_ludwig('export_neuropod',
-                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-                    output_path=os.path.join(tmpdir, 'neuropod')
-                    )
+# TODO: Enable or remove.
+# @pytest.mark.distributed
+# def test_export_neuropod_cli(csv_filename):
+#     """Test exporting Ludwig model to neuropod format."""
+#     with tempfile.TemporaryDirectory() as tmpdir:
+#         config_filename = os.path.join(tmpdir,
+#                                        'config.yaml')
+#         dataset_filename = _prepare_data(csv_filename,
+#                                          config_filename)
+#         _run_ludwig('train',
+#                     dataset=dataset_filename,
+#                     config_file=config_filename,
+#                     output_directory=tmpdir)
+#         _run_ludwig('export_neuropod',
+#                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+#                     output_path=os.path.join(tmpdir, 'neuropod')
+#                     )
 
 
 @pytest.mark.distributed
@@ -319,53 +321,9 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                                         )
         stdout = completed_process.stdout.decode('utf-8')
 
-        # parse output of collect_summary to find tensor names to use
-        # in the collect_wights and collect_activations.
-        # This part of test is sensitive to output format of collect_summary
-        # search for substring with layer names
-        layers = re.search(
-            "Layers(\w|\d|\:|\/|\n)*Weights",
-            stdout
-        )
-        substring = stdout[layers.start(): layers.end()]
-
-        # extract layer names
-        layers_list = []
-        with StringIO(substring) as f:
-            for _, line in enumerate(f):
-                if not (line[:6] == 'Layers' or line[:6] == 'Weight') and len(
-                        line) > 1:
-                    layers_list.append(line[:-1])
-
-        # search for substring with weights names
-        weights = re.search(
-            "Weights(\w|\d|\:|\/|\n)*",
-            stdout
-        )
-        substring = stdout[weights.start(): weights.end()]
-
-        # extract weights names
-        weights_list = []
-        with StringIO(substring) as f:
-            for _, line in enumerate(f):
-                if (not (line[:6] == 'Layers' or line[:6] == 'Weight')
-                        and len(line) > 1):
-                    weights_list.append(line[:-1])
-
-        # collect activations
-        _run_ludwig('collect_activations',
-                    dataset=dataset_filename,
-                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-                    layers=' '.join(layers_list),
-                    output_directory=tmpdir
-                    )
-
-        # collect weights
-        _run_ludwig('collect_weights',
-                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-                    tensors=' '.join(weights_list),
-                    output_directory=tmpdir
-                    )
+        # TODO(justin): Check that more summary information was printed using torchsummary.
+        assert 'Model children' in stdout
+        assert 'Parameters' in stdout
 
 
 @pytest.mark.distributed
