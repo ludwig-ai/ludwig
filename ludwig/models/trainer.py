@@ -307,20 +307,27 @@ class Trainer(BaseTrainer):
 
     def train_step(self, model, inputs, targets):
         self.optimizer.zero_grad()
+
+        # Obtain model predictions and loss
         model_outputs = model((inputs, targets))
         loss, all_losses = model.train_loss(
             targets, model_outputs, self.regularization_lambda
         )
 
+        # Begin the backward pass
         variables = model.parameters()
         loss.backward()
 
         if self.horovod:
+            # Wait for gradient aggregation to complete before clipping the gradients
             self.optimizer.synchronize()
 
+        # Clip gradients
         self.clipper.clip_grads(variables)
 
+        # Apply gradient updates
         if self.horovod:
+            # Because we already synchronized above, we can doing so here
             with self.optimizer.skip_synchronize():
                 self.optimizer.step()
         else:
