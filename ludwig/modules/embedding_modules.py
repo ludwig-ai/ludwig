@@ -447,7 +447,7 @@ class EmbedSequence(LudwigModule):
 
 class TokenAndPositionEmbedding(LudwigModule):
     def __init__(self,
-                 max_length,
+                 max_sequence_length,
                  vocab,
                  embedding_size,
                  representation='dense',
@@ -460,10 +460,12 @@ class TokenAndPositionEmbedding(LudwigModule):
                  embedding_regularizer=None
                  ):
         super().__init__()
+        self.max_sequence_length = max_sequence_length
+        self.embedding_size = embedding_size
         self.token_embed = EmbedSequence(
             vocab=vocab,
             embedding_size=embedding_size,
-            max_sequence_length=max_length,
+            max_sequence_length=max_sequence_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -474,9 +476,17 @@ class TokenAndPositionEmbedding(LudwigModule):
             embedding_regularizer=embedding_regularizer
         )
         self.position_embed = nn.Embedding(
-            num_embeddings=len(vocab),
+            num_embeddings=max_sequence_length,
             embedding_dim=self.token_embed.embedding_size
         )
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.token_embed.output_shape
 
     def forward(self, inputs, mask: Optional[torch.Tensor] = None):
         max_length = inputs.shape[-1]

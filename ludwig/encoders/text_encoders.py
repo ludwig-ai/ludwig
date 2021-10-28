@@ -1043,7 +1043,7 @@ class TransformerXLEncoder(TextEncoder):
             self.transformer.train()
         self.max_sequence_length = max_sequence_length
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor,  mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         transformer_outputs = self.transformer(inputs)
         hidden = transformer_outputs[0]
 
