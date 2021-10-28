@@ -190,16 +190,6 @@ class ECD(LudwigModule):
 
         return predictions
 
-    def train_step(self, optimizer, inputs, targets,
-                   regularization_lambda=0.0):
-        optimizer.zero_grad()
-        model_outputs = self((inputs, targets))
-        loss, all_losses = self.train_loss(
-            targets, model_outputs, regularization_lambda
-        )
-        optimizer.minimize(loss, self.parameters())
-        return loss, all_losses
-
     def evaluation_step(self, inputs, targets):
         predictions = self.predictions(inputs, output_features=None)
         self.update_metrics(targets, predictions)
