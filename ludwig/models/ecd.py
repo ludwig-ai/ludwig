@@ -63,7 +63,7 @@ class ECD(LudwigModule):
         self.output_features.update(build_outputs(output_features_def, self.combiner))
 
         # ================ Combined loss metric ================
-        self.eval_loss_metric = torchmetrics.average.AverageMeter()
+        self.eval_loss_metric = torchmetrics.MeanMetric()
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
