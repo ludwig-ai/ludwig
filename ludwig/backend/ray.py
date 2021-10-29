@@ -274,6 +274,54 @@ class RayTrainerV2(BaseTrainer):
         self.trainer.shutdown()
 
 
+def legacy_train_fn(
+        trainer: RayRemoteTrainer = None,
+        remote_model: RayRemoteModel = None,
+        training_set_metadata: Dict[str, Any] = None,
+        features: Dict[str, Dict] = None,
+        train_shards: List[DatasetPipeline] = None,
+        val_shards: List[DatasetPipeline] = None,
+        test_shards: List[DatasetPipeline] = None,
+        **kwargs
+):
+    # Pin GPU before loading the model to prevent memory leaking onto other devices
+    hvd = initialize_horovod()
+    initialize_tensorflow(horovod=hvd)
+
+    model = remote_model.load()
+
+    train_shard = RayDatasetShard(
+        train_shards[hvd.rank()],
+        features,
+        training_set_metadata,
+    )
+
+    val_shard = val_shards[hvd.rank()] if val_shards else None
+    if val_shard is not None:
+        val_shard = RayDatasetShard(
+            val_shard,
+            features,
+            training_set_metadata,
+        )
+
+    test_shard = test_shards[hvd.rank()] if test_shards else None
+    if test_shard is not None:
+        test_shard = RayDatasetShard(
+            test_shard,
+            features,
+            training_set_metadata,
+        )
+
+    results = trainer.train(
+        model,
+        train_shard,
+        val_shard,
+        test_shard,
+        **kwargs
+    )
+    return results
+
+
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs, executable_kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
@@ -299,8 +347,11 @@ class RayLegacyTrainer(BaseTrainer):
         ) if test_set else None
 
         results = self.executor.execute(
-            lambda trainer: trainer.train(
-                remote_model.load(),
+            lambda trainer: legacy_train_fn(
+                trainer,
+                remote_model,
+                training_set.training_set_metadata,
+                training_set.features,
                 train_shards,
                 val_shards,
                 test_shards,
