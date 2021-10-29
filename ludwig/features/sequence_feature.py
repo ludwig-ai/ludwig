@@ -148,6 +148,9 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
+        # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
+        if 'vocab' in feature:
+            feature['vocab_size'] = len(feature['vocab'])
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -156,8 +159,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     def forward(self, inputs: torch.Tensor, mask=None):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16, \
-            torch.int32, torch.int64]
+        assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16,
+                                torch.int32, torch.int64]
         assert len(inputs.shape) == 2
 
         inputs_exp = inputs.type(torch.int32)

@@ -2120,14 +2120,12 @@ class StackedTransformer(SequenceEncoder):
             )
 
             if embedding_size != hidden_size:
-                logger.debug('  project_to_embed_size Dense')
-                print(f'embedding_size: {embedding_size}')
-                print(f'vocab: {vocab}')
-                self.project_to_hidden_size = nn.Linear(embedding_size,
+                logger.debug('  project_to_embed_size')
+                self.project_to_hidden_size = nn.Linear(self.embed_sequence.output_shape[1],
                                                         hidden_size)
                 self.should_project = True
         else:
-            logger.debug('  project_to_embed_size Dense')
+            logger.debug('  project_to_embed_size')
             self.project_to_hidden_size = nn.Linear(1, hidden_size)
             self.should_project = True
 
@@ -2188,16 +2186,10 @@ class StackedTransformer(SequenceEncoder):
                    (important for dropout)
             :type is_training: Tensor
         """
-        print(f'inputs: {inputs}')
 
         # ================ Embeddings ================
         if self.should_embed:
-            print('Should embed.')
-            print(f'inputs.size(): {inputs.size()}')
             embedded_sequence = self.embed_sequence(inputs, mask=mask)
-            print(f'embedded_sequence.size(): {embedded_sequence.size()}')
-            print(
-                f'self.embed_sequence.output_shape: {self.embed_sequence.output_shape}')
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:

@@ -15,7 +15,7 @@
 # ==============================================================================
 
 
-from typing import Optional, Union
+from typing import Optional, Union, List
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -40,6 +40,7 @@ class MAELoss(L1Loss):
 
 class RMSELoss(nn.Module):
     """ Root mean square error. """
+
     def __init__(self, **kwargs):
         super().__init__()
         self.mse = nn.MSELoss(**kwargs)
@@ -50,6 +51,7 @@ class RMSELoss(nn.Module):
 
 class RMSPELoss(nn.Module):
     """ Root mean square percentage error. """
+
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -68,7 +70,8 @@ class BWCEWLoss(nn.Module):
             confidence_penalty: int = 0,
             **kwargs):
         super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=positive_class_weight, **kwargs)
+        self.loss_fn = nn.BCEWithLogitsLoss(
+            pos_weight=positive_class_weight, **kwargs)
         self.robust_lambda = robust_lambda
         self.confidence_penalty = confidence_penalty
 
@@ -91,13 +94,17 @@ class BWCEWLoss(nn.Module):
 
 
 class SoftmaxCrossEntropyLoss(nn.Module):
-    def __init__(self, class_weights: Optional[Tensor]=None, **kwargs):
+    def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
         Params:
-            class_weights: 1D tensor of length equal to number of classes.
+            class_weights: List or 1D tensor of length equal to number of classes.
         """
         super().__init__()
-        self.loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+        if class_weights:
+            self.loss_fn = nn.CrossEntropyLoss(
+                weight=torch.Tensor(class_weights))
+        else:
+            self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         """
@@ -168,16 +175,18 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 
 
 class SigmoidCrossEntropyLoss(nn.Module):
-    def __init__(self, class_weights: Optional[Tensor] = None, **kwargs):
+    def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
         Params:
-            class_weights: 1D tensor of length equal to number of classes.
+            class_weights: List or 1D tensor of length equal to number of classes.
         """
         super().__init__()
-        self.loss_fn = nn.BCEWithLogitsLoss(
-            reduction='none',
-            pos_weight=class_weights
-        )
+        if class_weights:
+            self.loss_fn = nn.BCEWithLogitsLoss(
+                reduction='none',
+                pos_weight=torch.Tensor(class_weights))
+        else:
+            self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         if preds.ndim != 2:
