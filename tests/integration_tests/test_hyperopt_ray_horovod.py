@@ -322,6 +322,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
         config['hyperopt'] = hyperopt_configs
         run_hyperopt(config, dataset_parquet, ray_mock_dir)
 
+
 @spawn
 def run_hyperopt(
         config, rel_path, out_dir,
@@ -331,6 +332,7 @@ def run_hyperopt(
         callback = TestCallback()
         hyperopt_results = hyperopt(
             config,
+            backend=RayBackend(**RAY_BACKEND_KWARGS),
             dataset=rel_path,
             output_directory=out_dir,
             experiment_name=experiment_name,
