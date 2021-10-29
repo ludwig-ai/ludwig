@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 
 import ray
-from ray.data import from_dask
+from ray.data import from_dask, read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
@@ -45,7 +45,8 @@ class RayDataset(Dataset):
     """ Wrapper around ray.data.Dataset. """
 
     def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
-        self.ds = from_dask(df)
+        # TODO(travis): move read_parquet to cache layer after removing petastorm
+        self.ds = from_dask(df) if not isinstance(df, str) else read_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
@@ -118,13 +119,11 @@ class RayDatasetManager(object):
             training_set_metadata: Dict[str, Any],
             tag: str
     ):
-        # TODO(travis): optionally save dataset to Parquet for reuse
-        return dataset
+        self.backend.df_engine.to_parquet(dataset, cache_path)
+        return cache_path
 
     def can_cache(self, skip_save_processed_input):
-        # TODO(travis): enable caching
-        # return self.backend.is_coordinator()
-        return False
+        return not skip_save_processed_input
 
     @property
     def data_format(self):
