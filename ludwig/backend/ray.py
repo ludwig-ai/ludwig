@@ -161,6 +161,7 @@ def train_fn(
         executable_kwargs: Dict[str, Any] = None,
         remote_model: RayRemoteModel = None,
         training_set_metadata: Dict[str, Any] = None,
+        features: Dict[str, Dict] = None,
         train_shards: List[DatasetPipeline] = None,
         val_shards: List[DatasetPipeline] = None,
         test_shards: List[DatasetPipeline] = None,
@@ -174,8 +175,7 @@ def train_fn(
 
     train_shard = RayDatasetShard(
         train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
-        model.input_features,
-        model.output_features,
+        features,
         training_set_metadata,
     )
 
@@ -183,8 +183,7 @@ def train_fn(
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
-            model.input_features,
-            model.output_features,
+            features,
             training_set_metadata,
         )
 
@@ -192,8 +191,7 @@ def train_fn(
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
-            model.input_features,
-            model.output_features,
+            features,
             training_set_metadata,
         )
 
@@ -239,6 +237,7 @@ class RayTrainerV2(BaseTrainer):
             'val_shards': val_shards,
             'test_shards': test_shards,
             'training_set_metadata': training_set.training_set_metadata,
+            'features': training_set.features,
             **kwargs
         }
 

@@ -25,6 +25,7 @@ import pytest
 import ray
 from ray.tune.sync_client import get_sync_client
 
+from ludwig.api import LudwigModel
 from ludwig.backend.ray import RayBackend
 from ludwig.callbacks import Callback
 
@@ -149,6 +150,17 @@ class MockRayTuneExecutor(RayTuneExecutor):
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
 
+class TestCallback(Callback):
+    def __init__(self):
+        self.preprocessed = False
+
+    def on_hyperopt_preprocessing_start(self, *args, **kwargs):
+        self.preprocessed = True
+
+    def on_hyperopt_start(self, *args, **kwargs):
+        assert self.preprocessed
+
+
 @contextlib.contextmanager
 def ray_start_4_cpus():
     res = ray.init(
@@ -171,6 +183,7 @@ def ray_mock_dir():
         yield path
     finally:
         shutil.rmtree(path)
+
 
 @spawn
 def run_hyperopt_executor(
@@ -210,14 +223,25 @@ def run_hyperopt_executor(
         hyperopt_sampler = get_build_hyperopt_sampler(
             sampler["type"])(goal, parameters, **sampler)
 
+        # preprocess
+        backend = RayBackend(**RAY_BACKEND_KWARGS)
+        model = LudwigModel(config=config, backend=backend)
+        training_set, validation_set, test_set, training_set_metadata = model.preprocess(
+            dataset=dataset_parquet,
+        )
+
+        # hyperopt
         hyperopt_executor = MockRayTuneExecutor(
             hyperopt_sampler, output_feature, metric, split, **executor)
         hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 
         hyperopt_executor.execute(
             config,
-            dataset=dataset_parquet,
-            backend=RayBackend(**RAY_BACKEND_KWARGS),
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            backend=backend,
             output_directory=ray_mock_dir,
             skip_save_processed_input=True,
             skip_save_unprocessed_output=True
@@ -303,16 +327,6 @@ def run_hyperopt(
         config, rel_path, out_dir,
         experiment_name='ray_hyperopt',
 ):
-    class TestCallback(Callback):
-        def __init__(self):
-            self.preprocessed = False
-
-        def on_hyperopt_preprocessing_start(self, *args, **kwargs):
-            self.preprocessed = True
-
-        def on_hyperopt_start(self, *args, **kwargs):
-            assert self.preprocessed
-
     with ray_start_4_cpus():
         callback = TestCallback()
         hyperopt_results = hyperopt(

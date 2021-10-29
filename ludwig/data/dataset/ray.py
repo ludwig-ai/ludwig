@@ -30,9 +30,9 @@ from ray.data import from_dask
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
+from ludwig.constants import NAME
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset
-from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
@@ -41,7 +41,7 @@ from ludwig.utils.types import DataFrame
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 
 
-class RayDataset(object):
+class RayDataset(Dataset):
     """ Wrapper around ray.data.Dataset. """
 
     def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
@@ -66,8 +66,27 @@ class RayDataset(object):
                 pipe = pipe.random_shuffle()
         return pipe
 
+    @contextlib.contextmanager
+    def initialize_batcher(self, batch_size=128,
+                           should_shuffle=True,
+                           shuffle_buffer_size=None,
+                           seed=0,
+                           ignore_last=False,
+                           horovod=None):
+        yield RayDatasetBatcher(
+            self.ds.repeat().iter_datasets(),
+            self.features,
+            self.training_set_metadata,
+            batch_size,
+            self.size,
+        )
+
     def __len__(self):
         return self.ds.count()
+
+    @property
+    def size(self):
+        return len(self)
 
 
 class RayDatasetManager(object):
@@ -116,13 +135,11 @@ class RayDatasetShard(Dataset):
     def __init__(
             self,
             dataset_shard: DatasetPipeline,
-            input_features: Dict[str, InputFeature],
-            output_features: Dict[str, OutputFeature],
+            features: Dict[str, Dict],
             training_set_metadata: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
-        self.input_features = input_features
-        self.output_features = output_features
+        self.features = features
         self.training_set_metadata = training_set_metadata
         self.dataset_iter = dataset_shard.iter_datasets()
 
@@ -135,8 +152,7 @@ class RayDatasetShard(Dataset):
                            horovod=None):
         yield RayDatasetBatcher(
             self.dataset_iter,
-            self.input_features,
-            self.output_features,
+            self.features,
             self.training_set_metadata,
             batch_size,
             self.size,
@@ -156,8 +172,7 @@ class RayDatasetBatcher(Batcher):
     def __init__(
             self,
             dataset_epoch_iterator: Iterator[ray.data.Dataset],
-            input_features: Dict[str, InputFeature],
-            output_features: Dict[str, OutputFeature],
+            features: Dict[str, Dict],
             training_set_metadata: Dict[str, Any],
             batch_size: int,
             samples_per_epoch: int,
@@ -167,20 +182,10 @@ class RayDatasetBatcher(Batcher):
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
 
-        self.columns = [
-            f.proc_column for f in input_features.values()
-        ] + [
-            f.proc_column for f in output_features.values()
-        ]
-
-        features = {
-            **input_features,
-            **output_features,
-        }
-
+        self.columns = list(features.keys())
         self.reshape_map = {
-            f.proc_column: training_set_metadata[f.feature_name].get('reshape')
-            for f in features.values()
+            proc_column: training_set_metadata[feature[NAME]].get('reshape')
+            for proc_column, feature in features.values()
         }
 
         self.dataset_batch_iter = None
