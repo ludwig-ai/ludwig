@@ -26,6 +26,7 @@ import ray
 from ray.tune.sync_client import get_sync_client
 
 from ludwig.backend.ray import RayBackend
+from ludwig.callbacks import Callback
 
 from ludwig.hyperopt.execution import (
     RayTuneExecutor, _get_relative_checkpoints_dir_parts)
@@ -301,15 +302,25 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
 def run_hyperopt(
         config, rel_path, out_dir,
         experiment_name='ray_hyperopt',
-        callbacks=None,
 ):
+    class TestCallback(Callback):
+        def __init__(self):
+            self.preprocessed = False
+
+        def on_hyperopt_preprocessing_start(self, *args, **kwargs):
+            self.preprocessed = True
+
+        def on_hyperopt_start(self, *args, **kwargs):
+            assert self.preprocessed
+
     with ray_start_4_cpus():
+        callback = TestCallback()
         hyperopt_results = hyperopt(
             config,
             dataset=rel_path,
             output_directory=out_dir,
             experiment_name=experiment_name,
-            callbacks=callbacks,
+            callbacks=[callback],
         )
 
         # check for return results

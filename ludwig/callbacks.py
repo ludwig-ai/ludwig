@@ -58,7 +58,6 @@ class Callback(ABC):
     def on_hyperopt_end(self, experiment_name):
         pass
 
-    @deprecated
     def on_hyperopt_finish(self, experiment_name):
         # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
         pass
