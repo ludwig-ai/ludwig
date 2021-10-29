@@ -93,7 +93,7 @@ jobs:
         HOROVOD_WITHOUT_TENSORFLOW: 1
         HOROVOD_WITHOUT_MXNET: 1
       run: |
-        HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.tensotorch_built(); print('SUCCESS')" || true)
+        HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
         if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
           pip uninstall -y horovod
           pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
