@@ -132,7 +132,6 @@ class Embed(LudwigModule):
             embeddings_on_cpu: bool = False,
             dropout: float = 0.0,
             embedding_initializer: Optional[Union[str, Dict]] = None,
-            embedding_regularizer: str = None
     ):
         super().__init__()
         self.supports_masking = True
@@ -148,10 +147,6 @@ class Embed(LudwigModule):
             embeddings_on_cpu=embeddings_on_cpu,
             embedding_initializer=embedding_initializer,
         )
-
-        if embedding_regularizer:
-            self.add_loss(lambda: reg_loss(
-                self.embeddings, embedding_regularizer))
 
         if dropout > 0:
             self.dropout = torch.nn.Dropout(p=dropout)
@@ -191,7 +186,6 @@ class EmbedSet(LudwigModule):
             embeddings_on_cpu: bool = False,
             dropout: float = 0.0,
             embedding_initializer: Optional[Union[str, Dict]] = None,
-            embedding_regularizer: str = None,
             aggregation_function: str = 'sum'
     ):
         super().__init__()
@@ -208,10 +202,6 @@ class EmbedSet(LudwigModule):
             embeddings_on_cpu=embeddings_on_cpu,
             embedding_initializer=embedding_initializer,
         )
-
-        if embedding_regularizer:
-            self.add_loss(lambda: reg_loss(
-                self.embeddings, embedding_regularizer))
 
         if dropout > 0:
             self.dropout = torch.nn.Dropout(p=dropout)
@@ -397,7 +387,6 @@ class EmbedSequence(LudwigModule):
             embeddings_on_cpu: bool = False,
             dropout: float = 0.0,
             embedding_initializer: Optional[str] = None,
-            embedding_regularizer: Optional[str] = None
     ):
         super().__init__()
         self.supports_masking = True
@@ -414,10 +403,6 @@ class EmbedSequence(LudwigModule):
             embeddings_on_cpu=embeddings_on_cpu,
             embedding_initializer=embedding_initializer,
         )
-
-        if embedding_regularizer:
-            self.add_loss(lambda: reg_loss(
-                self.embeddings, embedding_regularizer))
 
         if dropout > 0:
             self.dropout = nn.Dropout(dropout)
@@ -457,7 +442,6 @@ class TokenAndPositionEmbedding(LudwigModule):
                  embeddings_on_cpu=False,
                  dropout=0.0,
                  embedding_initializer=None,
-                 embedding_regularizer=None
                  ):
         super().__init__()
         self.max_sequence_length = max_sequence_length
@@ -473,7 +457,6 @@ class TokenAndPositionEmbedding(LudwigModule):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=embedding_initializer,
-            embedding_regularizer=embedding_regularizer
         )
         self.position_embed = nn.Embedding(
             num_embeddings=max_sequence_length,

@@ -157,9 +157,6 @@ class Dense(LudwigModule):
         use_bias=True,
         weights_initializer='xavier_uniform',
         bias_initializer='zeros',
-        weights_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
     ):
         super().__init__()
         self.dense = nn.Linear(
@@ -173,25 +170,9 @@ class Dense(LudwigModule):
         bias_initializer = initializer_registry[bias_initializer]
         bias_initializer(self.dense.bias)
 
-        if weights_regularizer:
-            self.add_loss(lambda: reg_loss(
-                self.dense.weight, weights_regularizer))
-
-        if bias_regularizer:
-            self.add_loss(lambda: reg_loss(self.dense.bias, bias_regularizer))
-
-        if activity_regularizer:
-            # Handle in forward call
-            self.add_loss(lambda: self.activation_loss)
-
-        self.activity_regularizer = activity_regularizer
-
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         batch_size = input.shape[0]
         output = torch.squeeze(self.dense(input), dim=-1)
-        if self.activity_regularizer:
-            self.activation_loss = reg_loss(
-                output, self.activity_regularizer) / batch_size
         return output
 
 

@@ -56,9 +56,6 @@ class H3Embed(H3Encoder):
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
             norm: str = None,
             norm_params: Dict = None,
             activation: str = 'relu',
@@ -104,7 +101,6 @@ class H3Embed(H3Encoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  edge Embed')
@@ -118,7 +114,6 @@ class H3Embed(H3Encoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  resolution Embed')
@@ -132,7 +127,6 @@ class H3Embed(H3Encoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  base cell Embed')
@@ -146,7 +140,6 @@ class H3Embed(H3Encoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  cells Embed')
@@ -161,7 +154,6 @@ class H3Embed(H3Encoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  FCStack')
@@ -173,9 +165,6 @@ class H3Embed(H3Encoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -246,9 +235,6 @@ class H3WeightedSum(H3Encoder):
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
             norm: Optional[str] = None,
             norm_params: Dict = None,
             activation: str = 'relu',
@@ -287,9 +273,6 @@ class H3WeightedSum(H3Encoder):
             dropout=dropout,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
             reduce_output='None'
         )
 
@@ -306,9 +289,6 @@ class H3WeightedSum(H3Encoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -367,10 +347,6 @@ class H3RNN(H3Encoder):
             weights_initializer: str = 'xavier_uniform',
             recurrent_initializer: str = 'orthogonal',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            recurrent_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
             dropout: float = 0.0,
             recurrent_dropout: float = 0.0,
             reduce_output: str = 'last',
@@ -426,18 +402,6 @@ class H3RNN(H3Encoder):
             :type recurrent_initializer: string
             :param bias_initializer: Initializer for the bias vector
             :type bias_initializer: string
-            :param weights_regularizer: regularizer applied to the weights
-                   (kernel) matrix
-            :type weights_regularizer: string
-            :param recurrent_regularizer: Regularizer for the recurrent weights
-                   matrix
-            :type recurrent_regularizer: string
-            :param bias_regularizer: regularized function applied to bias
-                vector.
-            :type bias_regularizer: string
-            :param activity_regularizer: Regularizer applied to the output of
-                the layer (activation)
-            :type activity_regularizer: string
             :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
             :type dropout: float
@@ -453,9 +417,6 @@ class H3RNN(H3Encoder):
             dropout=dropout,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
             reduce_output='None'
         )
 

@@ -218,7 +218,12 @@ class ECD(LudwigModule):
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
+        print("\n\n\nPrinting losses now")
+
         for loss in self.losses():
+
+            print(loss)
+
             if hasattr(loss, "loss_name"):
                 # this assumes that all losses with a loss_name are not
                 # regularization losses and should be added
@@ -245,21 +250,14 @@ class ECD(LudwigModule):
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
             of_obj.update_metrics(targets[of_name], predictions[of_name])
-        '''
-        self.eval_loss_metric.update_state(
-            self.eval_loss(targets, predictions)[0]
-        )
-        '''
-        self.eval_loss_metric.update(
-            self.eval_loss(targets, predictions)[0]
-        )
+
+        self.eval_loss_metric.update(self.eval_loss(targets, predictions)[0])
 
     def get_metrics(self):
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
         all_of_metrics[COMBINED] = {
-            #LOSS: self.eval_loss_metric.result().numpy()
             LOSS: self.eval_loss_metric.compute().detach().numpy().item()
         }
         return all_of_metrics

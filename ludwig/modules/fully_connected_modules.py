@@ -43,9 +43,6 @@ class FCLayer(LudwigModule):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -57,19 +54,6 @@ class FCLayer(LudwigModule):
         self.input_size = input_size
         self.output_size = output_size
 
-        '''
-        self.layers.append(Dense(
-            units=fc_size,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            # weights_constraint=weights_constraint,
-            # bias_constraint=bias_constraint,
-        ))
-        '''
         fc = Linear(
             in_features=input_size,
             out_features=output_size,
@@ -84,17 +68,6 @@ class FCLayer(LudwigModule):
         if use_bias:
             bias_initializer = initializer_registry[bias_initializer]
             bias_initializer(fc.bias)
-
-        self.activity_regularizer = None
-
-        if weights_regularizer:
-            self.add_loss(lambda: reg_loss(fc.weight, weights_regularizer))
-        if bias_regularizer:
-            self.add_loss(lambda: reg_loss(fc.bias, bias_regularizer))
-        if activity_regularizer:
-            # Handle in forward call
-            self.activity_regularizer = activity_regularizer
-            self.add_loss(lambda: self.activation_loss)
 
         if norm and norm_params is None:
             norm_params = {}
@@ -126,9 +99,6 @@ class FCLayer(LudwigModule):
 
         for i, layer in enumerate(self.layers):
             hidden = layer(hidden)
-            if i == self.activation_index and self.activity_regularizer:
-                self.activation_loss = reg_loss(
-                    hidden, self.activity_regularizer) / batch_size
 
         return hidden
 
@@ -145,9 +115,6 @@ class FCStack(LudwigModule):
             default_use_bias=True,
             default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
-            default_weights_regularizer=None,
-            default_bias_regularizer=None,
-            default_activity_regularizer=None,
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
@@ -180,12 +147,6 @@ class FCStack(LudwigModule):
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
                 layer['bias_initializer'] = default_bias_initializer
-            if 'weights_regularizer' not in layer:
-                layer['weights_regularizer'] = default_weights_regularizer
-            if 'bias_regularizer' not in layer:
-                layer['bias_regularizer'] = default_bias_regularizer
-            if 'activity_regularizer' not in layer:
-                layer['activity_regularizer'] = default_activity_regularizer
             if 'norm' not in layer:
                 layer['norm'] = default_norm
             if 'norm_params' not in layer:
@@ -206,9 +167,6 @@ class FCStack(LudwigModule):
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
-                    weights_regularizer=layer['weights_regularizer'],
-                    bias_regularizer=layer['bias_regularizer'],
-                    activity_regularizer=layer['activity_regularizer'],
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
