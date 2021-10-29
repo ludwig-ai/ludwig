@@ -250,6 +250,7 @@ def run_hyperopt_executor(
         )
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
@@ -257,6 +258,7 @@ def test_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir):
     run_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
     run_hyperopt_executor({"type": "ray", "num_samples": 2},
@@ -267,6 +269,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
                           validation_metric=ACCURACY)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
 def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):

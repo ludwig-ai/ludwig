@@ -1109,7 +1109,7 @@ class RayTuneExecutor(HyperoptExecutor):
                 if self._gpu_resources_per_trial_non_none
                 else [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none
             )
-
+git
         if has_remote_protocol(output_directory):
             run_experiment_trial = tune.durable(run_experiment_trial)
             self.sync_config = tune.SyncConfig(
