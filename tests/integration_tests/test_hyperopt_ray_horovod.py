@@ -115,10 +115,12 @@ EXECUTORS = [
 ]
 
 
+# TODO ray: replace legacy parquet with ray format
 RAY_BACKEND_KWARGS = {
     'processor': {
         'parallelism': 4
     },
+    'cache_format': 'parquet'
 }
 
 
@@ -284,7 +286,11 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "num_fc_layers": 2},
-            "training": {"epochs": 4, "learning_rate": 0.001}
+            "training": {"epochs": 4, "learning_rate": 0.001},
+            'backend': {
+                'type': 'ray',
+                **RAY_BACKEND_KWARGS
+            }
         }
 
         output_feature_name = output_features[0]['name']
@@ -312,10 +318,6 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
             'validation_metrics': 'loss',
             'executor': {'type': 'ray'},
             'sampler': {'type': 'ray', 'num_samples': 2},
-            'backend': {
-                'type': 'ray',
-                **RAY_BACKEND_KWARGS
-            }
         }
 
         # add hyperopt parameter space to the config
@@ -332,7 +334,6 @@ def run_hyperopt(
         callback = TestCallback()
         hyperopt_results = hyperopt(
             config,
-            backend=RayBackend(**RAY_BACKEND_KWARGS),
             dataset=rel_path,
             output_directory=out_dir,
             experiment_name=experiment_name,
