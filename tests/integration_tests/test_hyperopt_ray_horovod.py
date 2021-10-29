@@ -115,12 +115,12 @@ EXECUTORS = [
 ]
 
 
-# TODO ray: replace legacy parquet with ray format
+# TODO ray: replace legacy mode when Ray Train supports placement groups
 RAY_BACKEND_KWARGS = {
     'processor': {
         'parallelism': 4
     },
-    'cache_format': 'parquet'
+    'use_legacy': True
 }
 
 
