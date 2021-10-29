@@ -228,7 +228,6 @@ def run_hyperopt_executor(
         model = LudwigModel(config=config, backend=backend)
         training_set, validation_set, test_set, training_set_metadata = model.preprocess(
             dataset=dataset_parquet,
-            skip_save_processed_input=False,
         )
 
         # hyperopt
