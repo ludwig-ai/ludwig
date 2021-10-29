@@ -19,8 +19,6 @@ from abc import ABC
 
 from typing import Dict, Any
 
-from deprecation import deprecated
-
 from ludwig.data.dataset.base import Dataset
 
 
