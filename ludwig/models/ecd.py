@@ -1,9 +1,15 @@
 import copy
 import logging
 from collections import OrderedDict
+from typing import Any, Dict, List, Tuple, Union
+
+import torch
+import torchmetrics
+from torch.nn import Module
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import *
+from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -11,10 +17,6 @@ from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import LudwigModule
-
-import torch
-from torch.nn import Module
-import torchmetrics
 
 logger = logging.getLogger(__name__)
 
@@ -98,13 +100,27 @@ class ECD(LudwigModule):
         keras_model = self.get_connected_model(training=False)
         keras_model.save(save_path)
 
-    def forward(self, inputs, training=None, mask=None):
-        # parameter inputs is a dict feature_name -> tensor / ndarray
-        # or
-        # parameter (inputs, targets) where
-        #   inputs is a dict feature_name -> tensor/ndarray
-        #   targets is dict feature_name -> tensor/ndarray
+    def forward(
+            self,
+            inputs: Union[
+                Dict[str, torch.Tensor],
+                Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            ],
+            mask=None
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Forward pass of the model.
 
+        Args:
+            inputs: Inputs to the model. Can be a dictionary of input names to
+                input tensors or a tuple of (inputs, targets) where inputs is
+                a dictionary of input names to input tensors and targets is a
+                dictionary of target names to target tensors.
+            mask: A mask for the inputs.
+        
+        Returns:
+            A dictionary of output names to output tensors.
+        """
         if isinstance(inputs, tuple):
             inputs, targets = inputs
             for target_feature_name, target_value in targets.items():
@@ -135,11 +151,7 @@ class ECD(LudwigModule):
                 # during prediction they are omitted
                 decoder_inputs = (decoder_inputs, targets[output_feature_name])
 
-            decoder_outputs = decoder(
-                decoder_inputs,
-                training=training,
-                mask=mask
-            )
+            decoder_outputs = decoder(decoder_inputs, mask=mask)
             output_logits[output_feature_name] = decoder_outputs
             output_last_hidden[output_feature_name] = decoder_outputs[
                 'last_hidden']
@@ -178,7 +190,6 @@ class ECD(LudwigModule):
                 "of output features"
             )
 
-        #outputs = self.call(inputs, training=False)
         outputs = self(inputs, training=False)
 
         predictions = {}
@@ -283,9 +294,9 @@ class ECD(LudwigModule):
 
 
 def build_inputs(
-        input_features_def,
+        input_features_def: List[Dict[str, Any]],
         **kwargs
-):
+) -> Dict[str, InputFeature]:
     input_features = OrderedDict()
     input_features_def = topological_sort_feature_dependencies(
         input_features_def)
@@ -298,7 +309,11 @@ def build_inputs(
     return input_features
 
 
-def build_single_input(input_feature_def, other_input_features, **kwargs):
+def build_single_input(
+        input_feature_def: Dict[str, Any],
+        other_input_features: Dict[str, InputFeature],
+        **kwargs
+) -> InputFeature:
     logger.debug('Input {} feature {}'.format(
         input_feature_def[TYPE],
         input_feature_def[NAME]
