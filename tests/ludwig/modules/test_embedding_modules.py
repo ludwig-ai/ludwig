@@ -78,4 +78,23 @@ def test_embed_sequence(
     outputs = embed(inputs)
     assert outputs.shape[1:] == embed.output_shape
 
-# TODO: Test TokenAndPositionEmbedding
+
+@pytest.mark.parametrize('vocab', [['a', 'b', 'c']])
+@pytest.mark.parametrize('embedding_size', [10])
+@pytest.mark.parametrize('representation', ['dense', 'sparse'])
+def test_token_and_position_embedding(
+        vocab: List[str],
+        embedding_size: int,
+        representation: str,
+):
+    embed = TokenAndPositionEmbedding(
+        vocab=vocab,
+        embedding_size=embedding_size,
+        max_sequence_length=10,
+        representation=representation,
+    )
+    inputs = torch.randint(0, 2, size=(2, 10))
+    outputs = embed(inputs)
+    print(f'embedding_size: {embedding_size}')
+    print(f'outputs.size(): {outputs.size()}')
+    assert outputs.shape[1:] == embed.output_shape

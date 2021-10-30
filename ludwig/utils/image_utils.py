@@ -33,7 +33,7 @@ from ludwig.utils.fs_utils import open_file, is_http, upgrade_http
 
 logger = logging.getLogger(__name__)
 
-  
+
 def get_gray_default_image(
         height: int,
         width: int,
@@ -53,10 +53,12 @@ def get_image_from_http_bytes(img_entry):
     if data.status_code == 404:
         upgraded = upgrade_http(img_entry)
         if upgraded:
-            logger.info(f'reading image url {img_entry} failed. upgrading to https and retrying')
+            logger.info(
+                f'reading image url {img_entry} failed. upgrading to https and retrying')
             return get_image_from_http_bytes(upgraded)
         else:
-            raise requests.exceptions.HTTPError(f'reading image url {img_entry} failed and cannot be upgraded to https')
+            raise requests.exceptions.HTTPError(
+                f'reading image url {img_entry} failed and cannot be upgraded to https')
     return BytesIO(data.raw.read())
 
 
@@ -92,8 +94,8 @@ def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
         return imghdr.what(img) is not None
     except:
         return False
-      
-      
+
+
 # For image inference, want to bias towards both readable images, but also account for unreadable (i.e. expired) urls
 # with image extensions
 def is_image_score(src_path, img_entry):
@@ -107,7 +109,7 @@ def is_image_score(src_path, img_entry):
 @functools.lru_cache(maxsize=32)
 def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None) -> torch.Tensor:
     """ Returns a tensor with CHW format.
-    
+
     If num_channels is not provided, he image is read in unchanged format.
     """
     if isinstance(img, str):
@@ -126,7 +128,7 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
             'pip install ludwig[image]'
         )
         sys.exit(-1)
-    
+
     try:
         if num_channels == 1:
             return read_image(img, mode=ImageReadMode.GRAY)
@@ -137,17 +139,19 @@ def read_image_from_str(img: str, num_channels: Optional[int] = None) -> torch.T
         elif num_channels == 4:
             return read_image(img, mode=ImageReadMode.RGB_ALPHA)
         else:
-            raise ValueError(f'Invalid num_channels={num_channels}, value must be one of 1, 2, 3, 4.')
+            return read_image(img)
     except HTTPError as e:
         upgraded = upgrade_http(img)
         if upgraded:
-            logger.info(f'reading image url {img} failed due to {e}. upgrading to https and retrying')
+            logger.info(
+                f'reading image url {img} failed due to {e}. upgrading to https and retrying')
             return read_image(upgraded)
-        logger.info(f'reading image url {img} failed due to {e} and cannot be upgraded to https')
+        logger.info(
+            f'reading image url {img} failed due to {e} and cannot be upgraded to https')
         return None
     except Exception as e:
-        logger.info(f'reading image url {img} failed', e)
-        return None
+        logger.info(
+            f'reading image url {img} failed with error: ', e)
 
 
 def pad(
@@ -245,7 +249,8 @@ def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
     elif type(prop) == np.ndarray and prop.size == 2:
         return prop.astype(int)
     else:
-        raise TypeError(f'prop must be int or iterable of length 2, but is {prop}.')
+        raise TypeError(
+            f'prop must be int or iterable of length 2, but is {prop}.')
 
 
 def get_img_output_shape(

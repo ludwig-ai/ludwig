@@ -432,7 +432,7 @@ class LudwigModel:
                         skip_save_processed_input=skip_save_processed_input,
                         output_directory=output_directory,
                         random_seed=random_seed,
-                        devbug=debug,
+                        debug=debug,
                         **kwargs,
                     )
                     (training_set,
