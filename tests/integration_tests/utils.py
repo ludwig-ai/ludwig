@@ -688,14 +688,31 @@ def train_with_backend(
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
-# creates synthetic data and update feature definitions
-# This covers pre-processing functionality and
-# converting raw data to input specific tensors.
+
 def setup_input_feature_test(
         batch_size: int = None,
         feature_definition: Dict = None,
         feature_class: Type[InputFeature] = None
 ) -> Tuple:
+    """
+    Creates synthetic data and update feature definitions
+    This covers pre-processing functionality and converting raw data
+    to input specific tensors.
+
+    Args:
+        batch_size (int): Number of synthetic records to create for testing.
+        feature_definition (dict): Ludwig configuration specification for the
+            feature under test.
+        feature_class (Tupe[InputFeature]): Class of the input feature under
+            test.
+
+    Returns:
+        Tuple(input_tensor, feature_definition)
+        input_tensor (Torch.tensor): tensor created from the raw syntentic data.
+            Shape will vary based on the type of input feature being tested.
+        feature_definition (dict): feature definition dictionary updated with
+            metadata collected during pre-processing.
+    """
     # generate synthetic raw data for testing
     np.random.seed(1919)
     dataset = build_synthetic_dataset(
@@ -731,10 +748,6 @@ def setup_input_feature_test(
     return input_tensor, feature_definition
 
 
-# creates synthetic data and update feature definitions
-# This covers pre-processing functionality and
-# converting raw data to combiner output specific tensors.
-# This setup assumes no dependencies
 def setup_output_feature_test(
         batch_size: int = None,
         hidden_size: int = None,
@@ -742,6 +755,30 @@ def setup_output_feature_test(
         feature_definition: Dict = None,
         feature_class: Type[OutputFeature] = None
 ) -> Tuple:
+    """
+    Creates synthetic data and update feature definitions.
+    This covers pre-processing functionality and
+    converting raw data to combiner output specific tensors.
+    This setup assumes no dependencies for the output feature
+    under test.
+    Args:
+        batch_size (int): Number of synthetic records to create for testing.
+        hidden_size (int): Size of the hidden dimension for the simulate
+            combiner output.
+        seq_size (int): If specified, simulated combiner output will be a
+            sequence of the specified size.
+        feature_definition (dict): Ludwig configuration specification for the
+            feature under test.
+        feature_class (Tupe[OutputFeature]): Class of the output feature under
+            test.
+
+    Returns:
+        Tuple((combiner_output, None), feature_definition)
+        combiner_output (dict): simulated combiner output containing shaped
+            per the function arguments, e.g, [batch_size, hidden_size]
+        feature_definition (dict): feature definition dictionary updated with
+            metadata collected during pre-processing.
+    """
     # generate synthetic raw data for testing
     np.random.seed(1919)
     dataset = build_synthetic_dataset(
