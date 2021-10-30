@@ -735,6 +735,8 @@ def setup_input_feature_test(
 # This covers pre-processing functionality and
 # converting raw data to combiner output specific tensors.
 # This setup assumes no dependencies
+# todo: revisit when output sequence work is complete need to assess to deal
+#       with rnn state tensor, which is not currently supported
 def setup_output_feature_test(
         batch_size: int = None,
         hidden_size: int = None,
