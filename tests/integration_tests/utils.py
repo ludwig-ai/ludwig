@@ -813,7 +813,8 @@ def setup_output_feature_test(
     else:
         # todo: revisit when output sequence work is complete need to assess to deal
         #       with rnn state tensor, which is not currently supported
-        pass
+        combiner_output = torch.randn([batch_size, seq_size, hidden_size],
+                                      dtype=torch.float32)
 
     # update feature definition with combiner output hidden size
     feature_definition['input_size'] = hidden_size
