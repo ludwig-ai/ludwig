@@ -34,9 +34,9 @@ def test_sequence_input_feature(
 
     # setup synthetic tensor and feature definition
     input_tensor, feature_definition = setup_input_feature_test(
-        BATCH_SIZE,
-        feature_to_test,
-        SequenceInputFeature
+        batch_size=BATCH_SIZE,
+        feature_definition=feature_to_test,
+        feature_class=SequenceInputFeature
     )
 
     # create sequence input feature object
