@@ -116,6 +116,8 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        if feature['encoder'] == 'dense':
+            feature['input_size'] = 1
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -128,7 +130,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
-        encoder_outputs = self.encoder_obj(inputs)
+        encoder_outputs = self.encoder_obj(inputs.type(torch.float32))
         return encoder_outputs
 
     @property
