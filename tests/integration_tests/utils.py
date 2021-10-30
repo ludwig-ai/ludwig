@@ -702,7 +702,7 @@ def setup_input_feature_test(
         batch_size,
         [feature_definition]
     )
-    raw_data = '\n'.join([r[0] for r in dataset])
+    raw_data = '\n'.join([str(r[0]) for r in dataset])
     df = pd.read_csv(io.StringIO(raw_data))
 
     # preprocess raw data to create feature specific tensors
@@ -713,12 +713,11 @@ def setup_input_feature_test(
         training_set_metadata=metadata
     )
     feature_class.update_config_with_metadata(
-        feature_definition,
+        feature_definition
         metadata[feature_definition['name']]
     )
     input_tensor = torch.tensor(
-        np.vstack(input_data[feature_definition['proc_column']]),
-        dtype=torch.int32
+        np.vstack(input_data[feature_definition['proc_column']])
     )
 
     return input_tensor, feature_definition
