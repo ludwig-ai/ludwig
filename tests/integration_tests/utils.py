@@ -15,12 +15,13 @@
 # ==============================================================================
 import logging
 import multiprocessing
+import io
 import os
 import random
 import shutil
 import sys
 import traceback
-from typing import List
+from typing import List, Tuple, Dict, Type
 import unittest
 import uuid
 from distutils.util import strtobool
@@ -35,7 +36,9 @@ from ludwig.backend import LocalBackend
 from ludwig.constants import VECTOR, COLUMN, NAME, PROC_COLUMN
 from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
+from ludwig.data.preprocessing import DataFramePreprocessor
 from ludwig.experiment import experiment_cli
+from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
@@ -683,3 +686,39 @@ def train_with_backend(
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
+
+
+# creates synthetic data and update input feature definition to
+# test input features.  This covers pre-processing functionality and
+# converting raw data to input specific tensors.
+def setup_input_feature_test(
+        batch_size: int,
+        feature_definition: Dict,
+        feature_class: Type[InputFeature]
+) -> Tuple:
+    # generate synthetic raw data for testing
+    np.random.seed(1919)
+    dataset = build_synthetic_dataset(
+        batch_size,
+        [feature_definition]
+    )
+    raw_data = '\n'.join([r[0] for r in dataset])
+    df = pd.read_csv(io.StringIO(raw_data))
+
+    # preprocess raw data to create feature specific tensors
+    metadata = {}
+    input_data, _, _, metadata = DataFramePreprocessor.preprocess_for_training(
+        [feature_definition],
+        training_set=df,
+        training_set_metadata=metadata
+    )
+    feature_class.update_config_with_metadata(
+        feature_definition,
+        metadata[feature_definition['name']]
+    )
+    input_tensor = torch.tensor(
+        np.vstack(input_data[feature_definition['proc_column']]),
+        dtype=torch.int32
+    )
+
+    return input_tensor, feature_definition
