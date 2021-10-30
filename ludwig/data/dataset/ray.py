@@ -184,7 +184,7 @@ class RayDatasetBatcher(Batcher):
         self.columns = list(features.keys())
         self.reshape_map = {
             proc_column: training_set_metadata[feature[NAME]].get('reshape')
-            for proc_column, feature in features.values()
+            for proc_column, feature in features.items()
         }
 
         self.dataset_batch_iter = None
