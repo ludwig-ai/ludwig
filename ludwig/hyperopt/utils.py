@@ -2,7 +2,7 @@ import json
 import logging
 import os
 
-
+from ludwig.constants import HYPEROPT, PARAMETERS, PREPROCESSING
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.print_utils import print_boxed
@@ -39,3 +39,11 @@ def load_json_values(d):
         k: load_json_value(v)
         for k, v in d.items()
     }
+
+
+def should_tune_preprocessing(config):
+    parameters = config[HYPEROPT][PARAMETERS]
+    for param_name in parameters.keys():
+        if f"{PREPROCESSING}." in param_name:
+            return True
+    return False
