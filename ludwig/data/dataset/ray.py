@@ -44,8 +44,12 @@ _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 class RayDataset(Dataset):
     """ Wrapper around ray.data.Dataset. """
 
-    def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
-        # TODO(travis): move read_parquet to cache layer after removing petastorm
+    def __init__(
+            self,
+            df: Union[DataFrame, str],
+            features: Dict[str, Dict],
+            training_set_metadata: Dict[str, Any]
+    ):
         self.ds = from_dask(df) if not isinstance(df, str) else read_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
