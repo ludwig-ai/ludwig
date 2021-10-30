@@ -20,7 +20,7 @@ import numpy as np
 
 from ludwig.constants import PREPROCESSING, TRAINING
 from ludwig.data.batcher.random_access import RandomAccessBatcher
-from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import to_numpy_dataset, DATA_TRAIN_HDF5_FP
@@ -82,7 +82,7 @@ class PandasDataset(Dataset):
         yield batcher
 
 
-class PandasDatasetManager(object):
+class PandasDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
@@ -93,12 +93,7 @@ class PandasDatasetManager(object):
             training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         )
 
-    def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
-        return self.create(
-            dataset, config, training_set_metadata
-        )
-
-    def save(self, cache_path, dataset, config, training_set_metadata, tag):
+    def save(self, cache_path, dataset, training_set_metadata, tag):
         data_utils.save_hdf5(cache_path, dataset)
         if tag == TRAINING:
             training_set_metadata[DATA_TRAIN_HDF5_FP] = cache_path

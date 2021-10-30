@@ -18,6 +18,10 @@
 import contextlib
 from abc import ABC, abstractmethod
 
+from typing import Dict, Any, Union
+
+from ludwig.utils.types import DataFrame
+
 
 class Dataset(ABC):
     @abstractmethod
@@ -32,3 +36,30 @@ class Dataset(ABC):
                            ignore_last=False,
                            horovod=None):
         raise NotImplementedError()
+
+
+class DatasetManager(ABC):
+    @abstractmethod
+    def create(
+            self,
+            dataset: DataFrame,
+            config: Dict[str, Any],
+            training_set_metadata: Dict[str, Any]
+    ) -> Dataset:
+        raise NotImplementedError()
+
+    def save(
+            self,
+            cache_path: str,
+            dataset: DataFrame,
+            training_set_metadata: Dict[str, Any],
+            tag: str
+    ) -> Union[DataFrame, str]:
+        raise NotImplementedError()
+
+    def can_cache(self, skip_save_processed_input: bool) -> bool:
+        return not skip_save_processed_input
+
+    @property
+    def data_format(self) -> str:
+        return 'parquet'

@@ -20,7 +20,7 @@ import queue
 import threading
 from distutils.version import LooseVersion
 from functools import lru_cache
-from typing import Dict, Any, Iterator
+from typing import Dict, Any, Iterator, Union
 
 import numpy as np
 import pandas as pd
@@ -32,7 +32,7 @@ from ray.data.extensions import TensorDtype
 
 from ludwig.constants import NAME
 from ludwig.data.batcher.base import Batcher
-from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
@@ -89,43 +89,37 @@ class RayDataset(Dataset):
         return len(self)
 
 
-class RayDatasetManager(object):
+class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: DataFrame, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def create(
+            self,
+            dataset: DataFrame,
+            config: Dict[str, Any],
+            training_set_metadata: Dict[str, Any]
+    ) -> RayDataset:
         return RayDataset(
             dataset,
             get_proc_features(config),
             training_set_metadata
         )
 
-    # TODO(travis): consider combining this with `create` when Petastorm is dropped
-    def create_inference_dataset(
-            self,
-            dataset: DataFrame,
-            tag: str,
-            config: Dict[str, Any],
-            training_set_metadata: Dict[str, Any]
-    ):
-        return self.create(dataset, config, training_set_metadata)
-
     def save(
             self,
             cache_path: str,
             dataset: DataFrame,
-            config: Dict[str, Any],
             training_set_metadata: Dict[str, Any],
             tag: str
-    ):
+    ) -> str:
         self.backend.df_engine.to_parquet(dataset, cache_path)
         return cache_path
 
-    def can_cache(self, skip_save_processed_input):
+    def can_cache(self, skip_save_processed_input: bool) -> bool:
         return not skip_save_processed_input
 
     @property
-    def data_format(self):
+    def data_format(self) -> str:
         return 'parquet'
 
 

@@ -56,7 +56,6 @@ class DatasetCache:
         training_set = self.dataset_manager.save(
             self.cache_map[TRAINING],
             training_set,
-            self.config,
             training_set_metadata,
             TRAINING,
         )
@@ -66,7 +65,6 @@ class DatasetCache:
             test_set = self.dataset_manager.save(
                 self.cache_map[TEST],
                 test_set,
-                self.config,
                 training_set_metadata,
                 TEST,
             )
@@ -76,7 +74,6 @@ class DatasetCache:
             validation_set = self.dataset_manager.save(
                 self.cache_map[VALIDATION],
                 validation_set,
-                self.config,
                 training_set_metadata,
                 VALIDATION,
             )
