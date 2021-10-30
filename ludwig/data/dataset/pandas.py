@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+from abc import ABC
 
 import numpy as np
 
@@ -82,10 +83,7 @@ class PandasDataset(Dataset):
         yield batcher
 
 
-class PandasDatasetManager(DatasetManager):
-    def __init__(self, backend):
-        self.backend = backend
-
+class PandasDatasetManager(DatasetManager, ABC):
     def create(self, dataset, config, training_set_metadata):
         return PandasDataset(
             dataset,
@@ -100,7 +98,7 @@ class PandasDatasetManager(DatasetManager):
         return dataset
 
     def can_cache(self, skip_save_processed_input):
-        return self.backend.is_coordinator() and \
+        return self.is_coordinator() and \
                not skip_save_processed_input
 
     @property

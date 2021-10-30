@@ -14,7 +14,7 @@ from tests.integration_tests.utils import sequence_feature, category_feature, Lo
 @pytest.mark.parametrize('use_split', [True, False], ids=['split', 'no_split'])
 @pytest.mark.parametrize('use_cache_dir', [True, False], ids=['cache_dir', 'no_cache_dir'])
 def test_cache_dataset(use_cache_dir, use_split, tmpdir):
-    dataset_manager = PandasDatasetManager(backend=LocalTestBackend())
+    dataset_manager = LocalTestBackend()
     cache_dir = os.path.join(tmpdir, 'cache') if use_cache_dir else None
     manager = CacheManager(dataset_manager, cache_dir=cache_dir)
 

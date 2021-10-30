@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 
 from typing import Dict, Any, Union
 
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.types import DataFrame
 
 
@@ -58,8 +59,15 @@ class DatasetManager(ABC):
         raise NotImplementedError()
 
     def can_cache(self, skip_save_processed_input: bool) -> bool:
-        return not skip_save_processed_input
+        raise NotImplementedError()
 
     @property
     def data_format(self) -> str:
-        return 'parquet'
+        raise NotImplementedError()
+
+    @property
+    def df_engine(self) -> DataFrameEngine:
+        raise NotImplementedError()
+
+    def is_coordinator(self) -> bool:
+        raise NotImplementedError()

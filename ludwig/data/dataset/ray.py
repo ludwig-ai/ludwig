@@ -18,6 +18,7 @@ import contextlib
 import math
 import queue
 import threading
+from abc import ABC
 from distutils.version import LooseVersion
 from functools import lru_cache
 from typing import Dict, Any, Iterator, Union
@@ -93,10 +94,7 @@ class RayDataset(Dataset):
         return len(self)
 
 
-class RayDatasetManager(DatasetManager):
-    def __init__(self, backend):
-        self.backend = backend
-
+class RayDatasetManager(DatasetManager, ABC):
     def create(
             self,
             dataset: DataFrame,
@@ -116,7 +114,7 @@ class RayDatasetManager(DatasetManager):
             training_set_metadata: Dict[str, Any],
             tag: str
     ) -> str:
-        self.backend.df_engine.to_parquet(dataset, cache_path)
+        self.df_engine.to_parquet(dataset, cache_path)
         return cache_path
 
     def can_cache(self, skip_save_processed_input: bool) -> bool:

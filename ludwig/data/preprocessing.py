@@ -1543,7 +1543,7 @@ def preprocess_for_training(
             training_set, test_set, validation_set, training_set_metadata = processed
 
         logger.debug("create training dataset")
-        training_dataset = backend.dataset_manager.create(
+        training_dataset = backend.create(
             training_set,
             config,
             training_set_metadata
@@ -1552,7 +1552,7 @@ def preprocess_for_training(
         validation_dataset = None
         if validation_set is not None:
             logger.debug("create validation dataset")
-            validation_dataset = backend.dataset_manager.create(
+            validation_dataset = backend.create(
                 validation_set,
                 config,
                 training_set_metadata
@@ -1561,7 +1561,7 @@ def preprocess_for_training(
         test_dataset = None
         if test_set is not None:
             logger.debug("create test dataset")
-            test_dataset = backend.dataset_manager.create(
+            test_dataset = backend.create(
                 test_set,
                 config,
                 training_set_metadata
@@ -1858,7 +1858,7 @@ def preprocess_for_prediction(
         'output_features': output_features,
     }
 
-    dataset = backend.dataset_manager.create(
+    dataset = backend.create(
         dataset,
         split,
         config,

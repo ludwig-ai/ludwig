@@ -33,7 +33,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
-from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
+from ludwig.data.dataset.ray import RayDataset, RayDatasetShard, RayDatasetManager
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
@@ -471,9 +471,9 @@ class RayPredictor(BasePredictor):
         return BatchInferModel
 
 
-class RayBackend(RemoteTrainingMixin, Backend):
+class RayBackend(RemoteTrainingMixin, RayDatasetManager, Backend):
     def __init__(self, processor=None, trainer=None, use_legacy_trainer=False, **kwargs):
-        super().__init__(cache_format=RAY, **kwargs)
+        super().__init__(**kwargs)
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._tensorflow_kwargs = {}

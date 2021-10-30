@@ -20,24 +20,20 @@ from contextlib import contextmanager
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
-from ludwig.data.dataset import create_dataset_manager
+from ludwig.data.dataset.base import DatasetManager
+from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.torch_utils import initialize_pytorch
 
 
-class Backend(ABC):
-    def __init__(self, cache_dir=None, cache_format=None):
-        self._dataset_manager = create_dataset_manager(self, cache_format)
-        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
+class Backend(DatasetManager, ABC):
+    def __init__(self, cache_dir=None):
+        self._cache_manager = CacheManager(self, cache_dir)
 
     @property
     def cache(self):
         return self._cache_manager
-
-    @property
-    def dataset_manager(self):
-        return self._dataset_manager
 
     @abstractmethod
     def initialize(self):
@@ -123,7 +119,12 @@ class RemoteTrainingMixin:
         return True
 
 
-class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
+class LocalBackend(
+    LocalPreprocessingMixin,
+    LocalTrainingMixin,
+    PandasDatasetManager,
+    Backend
+):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
