@@ -78,25 +78,6 @@ class DaskEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
-    def to_parquet(self, df, path):
-        with ProgressBar():
-            df.to_parquet(
-                path,
-                engine='pyarrow',
-                write_index=False,
-                schema='infer',
-            )
-
-    def to_tfrecord(self, df, path):
-        """Implementations of data frame to tfrecords."""
-        # with ProgressBar():
-        #     dask_to_tfrecords(
-        #         df,
-        #         path,
-        #         compression_type="GZIP",
-        #         compression_level=9)
-        raise NotImplementedError("TFRecord not yet supported for Dask")
-
     @property
     def array_lib(self):
         return da
