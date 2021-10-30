@@ -24,12 +24,10 @@ class Dataset(ABC):
     def __len__(self):
         raise NotImplementedError()
 
-    # TODO(travis): will not need shuffle_buffer_size after removing Petastorm
     @contextlib.contextmanager
     @abstractmethod
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
-                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):
