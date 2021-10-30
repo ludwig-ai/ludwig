@@ -250,7 +250,7 @@ class RayTrainerV2(BaseTrainer):
 
 def legacy_train_fn(
         trainer: RayRemoteTrainer = None,
-        remote_model: RayRemoteModel = None,
+        remote_model: "LudwigModel" = None,
         training_set_metadata: Dict[str, Any] = None,
         features: Dict[str, Dict] = None,
         train_shards: List[DatasetPipeline] = None,
@@ -260,7 +260,7 @@ def legacy_train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
-    initialize_tensorflow(horovod=hvd)
+    initialize_pytorch(horovod=hvd)
 
     model = remote_model.load()
 
@@ -307,8 +307,6 @@ class RayLegacyTrainer(BaseTrainer):
                             executable_kwargs=executable_kwargs)
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
-        remote_model = RayRemoteModel(model)
-
         # TODO(travis): enable after dropping petastorm
         # workers = self.executor.driver.workers
         # train_shards = training_set.pipeline().split(
@@ -324,7 +322,7 @@ class RayLegacyTrainer(BaseTrainer):
         # results = self.executor.execute(
         #     lambda trainer: legacy_train_fn(
         #         trainer,
-        #         remote_model,
+        #         model,
         #         training_set.training_set_metadata,
         #         training_set.features,
         #         train_shards,
@@ -335,7 +333,7 @@ class RayLegacyTrainer(BaseTrainer):
 
         results = self.executor.execute(
             lambda trainer: trainer.train(
-                remote_model.load(),
+                model,
                 training_set,
                 validation_set,
                 test_set,
