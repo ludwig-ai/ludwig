@@ -100,129 +100,7 @@ def setup_model_scaffolding(
         yield model, batcher
 
 
-# todo: retire this version if test_sequence_encoders.py is accepted
-# test sequence input features
-# pytest parameters:
-#   enc_cell_type: encoder cell types
-#   enc_encoder: sequence input feature encoder
-@pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
-@pytest.mark.parametrize('enc_encoder', ENCODERS)
-def test_sequence_encoders(
-        enc_encoder,
-        enc_cell_type,
-        generate_sequence_training_data
-):
-    # retrieve pre-computed dataset and features
-    raw_df = generate_sequence_training_data[0]
-    input_features = generate_sequence_training_data[1]
-    output_features = generate_sequence_training_data[2]
-    input_feature_name = input_features[0]['name']
-    input_features[0]['encoder'] = enc_encoder
-    input_features[0]['cell_type'] = enc_cell_type
-
-    with setup_model_scaffolding(
-        raw_df,
-        input_features,
-        output_features
-    ) as (model, batcher):
-
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-            inputs = {
-                i_feat.feature_name: batch[i_feat.proc_column]
-                for i_feat in model.model.input_features.values()
-            }
-
-            # retrieve encoder to test
-            encoder = model.model.input_features[input_feature_name].encoder_obj
-            encoder_out = encoder(
-                torch.tensor(inputs[input_feature_name], dtype=torch.int32)
-            )
-            # check encoder output for proper content, type and shape
-            proc_column = model.model.input_features[
-                input_feature_name].proc_column
-            batch_size = batch[proc_column].shape[0]
-            seq_size = input_features[0]['max_len']
-
-            assert 'encoder_output' in encoder_out
-            assert isinstance(encoder_out['encoder_output'], torch.Tensor)
-
-            if enc_encoder == 'parallel_cnn':
-                number_parallel_cnn_layers = \
-                    len(model.model.input_features[
-                            input_feature_name].encoder_obj.conv_layers)
-                hidden_size = input_features[0][
-                                  'num_filters'] * number_parallel_cnn_layers
-                assert encoder_out['encoder_output'].shape == \
-                       (batch_size, seq_size, hidden_size)
-
-            elif enc_encoder == 'stacked_parallel_cnn':
-                number_parallel_cnn_layers = \
-                    len(model.model.input_features[input_feature_name] \
-                        .encoder_obj.parallel_conv1d_stack \
-                        .stacked_parallel_layers[0])
-                hidden_size = input_features[0][
-                                  'num_filters'] * number_parallel_cnn_layers
-                assert encoder_out['encoder_output'].shape == \
-                       (batch_size, seq_size, hidden_size)
-
-            elif enc_encoder == 'rnn':
-                assert encoder_out['encoder_output'].shape == \
-                       (batch_size, seq_size, TEST_STATE_SIZE)
-
-                assert 'encoder_output_state' in encoder_out
-                if enc_cell_type == 'lstm':
-                    assert isinstance(encoder_out['encoder_output_state'],
-                                      tuple)
-                    assert isinstance(encoder_out['encoder_output_state'][0],
-                                      torch.Tensor)
-                    assert isinstance(encoder_out['encoder_output_state'][1],
-                                      torch.Tensor)
-                    assert encoder_out['encoder_output_state'][0].shape == \
-                           (batch_size, TEST_STATE_SIZE)
-                    assert encoder_out['encoder_output_state'][1].shape == \
-                           (batch_size, TEST_STATE_SIZE)
-                else:
-                    assert isinstance(encoder_out['encoder_output_state'],
-                                      torch.Tensor)
-                    assert encoder_out['encoder_output_state'].shape == \
-                           (batch_size, TEST_STATE_SIZE)
-
-            elif enc_encoder == 'cnnrnn':
-                assert encoder_out['encoder_output'].shape == \
-                       (batch_size, 1, TEST_STATE_SIZE)
-                assert 'encoder_output_state' in encoder_out
-
-                if enc_cell_type == 'lstm':
-                    assert isinstance(encoder_out['encoder_output_state'],
-                                      tuple)
-                    assert encoder_out['encoder_output_state'][0].shape \
-                           == (batch_size, TEST_STATE_SIZE)
-                    assert encoder_out['encoder_output_state'][1].shape \
-                           == (batch_size, TEST_STATE_SIZE)
-                else:
-                    assert isinstance(encoder_out['encoder_output_state'],
-                                      torch.Tensor)
-                    assert encoder_out['encoder_output_state'].shape \
-                           == (batch_size, TEST_STATE_SIZE)
-
-            elif enc_encoder == 'stacked_cnn':
-                assert encoder_out['encoder_output'].shape \
-                       == (batch_size, 1, TEST_NUM_FILTERS)
-
-            elif enc_encoder == 'embed':
-                assert encoder_out['encoder_output'].shape \
-                       == (batch_size, seq_size, TEST_EMBEDDING_SIZE)
-
-            elif enc_encoder == 'transformer':
-                assert encoder_out['encoder_output'].shape \
-                       == (batch_size, seq_size, TEST_HIDDEN_SIZE)
-
-            else:
-                raise ValueError('{} is an invalid encoder specification' \
-                                 .format(enc_encoder))
-
-
+# todo: refactor test once torch sequence generator work is complete
 #
 # tests output feature sequence with `Generator` decoder
 # pytest parameters
@@ -323,6 +201,7 @@ def test_sequence_decoders(
         assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
 
 
+# todo: refactor test once torch sequence generator work is complete
 #
 # final sanity test.  Checks a subset of sequence parameters
 #
