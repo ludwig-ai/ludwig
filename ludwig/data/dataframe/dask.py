@@ -78,6 +78,15 @@ class DaskEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
 
+    def to_parquet(self, df, path):
+        with ProgressBar():
+            df.to_parquet(
+                path,
+                engine='pyarrow',
+                write_index=False,
+                schema='infer',
+            )
+
     @property
     def array_lib(self):
         return da

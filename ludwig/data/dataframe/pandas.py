@@ -53,6 +53,9 @@ class PandasEngine(DataFrameEngine):
     def reduce_objects(self, series, reduce_fn):
         return reduce_fn(series)
 
+    def to_parquet(self, df, path):
+        df.to_parquet(path, engine='pyarrow')
+
     @property
     def array_lib(self):
         return np

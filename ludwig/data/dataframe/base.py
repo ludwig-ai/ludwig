@@ -51,6 +51,10 @@ class DataFrameEngine(ABC):
     def reduce_objects(self, series, reduce_fn):
         raise NotImplementedError()
 
+    @abstractmethod
+    def to_parquet(self, df, path):
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def array_lib(self):

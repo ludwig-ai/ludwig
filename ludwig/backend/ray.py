@@ -307,36 +307,26 @@ class RayLegacyTrainer(BaseTrainer):
                             executable_kwargs=executable_kwargs)
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
-        # TODO(travis): enable after dropping petastorm
-        # workers = self.executor.driver.workers
-        # train_shards = training_set.pipeline().split(
-        #     n=len(workers), locality_hints=workers, equal=True
-        # )
-        # val_shards = validation_set.pipeline(shuffle=False).split(
-        #     n=len(workers), locality_hints=workers
-        # ) if validation_set else None
-        # test_shards = test_set.pipeline(shuffle=False).split(
-        #     n=len(workers), locality_hints=workers
-        # ) if test_set else None
-
-        # results = self.executor.execute(
-        #     lambda trainer: legacy_train_fn(
-        #         trainer,
-        #         model,
-        #         training_set.training_set_metadata,
-        #         training_set.features,
-        #         train_shards,
-        #         val_shards,
-        #         test_shards,
-        #         **kwargs)
-        # )
+        workers = self.executor.driver.workers
+        train_shards = training_set.pipeline().split(
+            n=len(workers), locality_hints=workers, equal=True
+        )
+        val_shards = validation_set.pipeline(shuffle=False).split(
+            n=len(workers), locality_hints=workers
+        ) if validation_set else None
+        test_shards = test_set.pipeline(shuffle=False).split(
+            n=len(workers), locality_hints=workers
+        ) if test_set else None
 
         results = self.executor.execute(
-            lambda trainer: trainer.train(
+            lambda trainer: legacy_train_fn(
+                trainer,
                 model,
-                training_set,
-                validation_set,
-                test_set,
+                training_set.training_set_metadata,
+                training_set.features,
+                train_shards,
+                val_shards,
+                test_shards,
                 **kwargs)
         )
 
@@ -482,17 +472,12 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, processor=None, trainer=None, cache_format=RAY, **kwargs):
-        super().__init__(cache_format=cache_format, **kwargs)
+    def __init__(self, processor=None, trainer=None, use_legacy_trainer=False, **kwargs):
+        super().__init__(cache_format=RAY, **kwargs)
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._tensorflow_kwargs = {}
-        self._cache_format = cache_format
-        if cache_format not in [RAY, PARQUET, TFRECORD]:
-            raise ValueError(
-                f'Data format {cache_format} is not supported when using the Ray backend. '
-                f'Try setting to `parquet`.'
-            )
+        self._use_legacy_trainer = use_legacy_trainer
 
     def initialize(self):
         if not ray.is_initialized():
@@ -511,7 +496,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, **kwargs):
         executable_kwargs = {**kwargs, **self._tensorflow_kwargs}
-        if self._cache_format == RAY:
+        if not self._use_legacy_trainer:
             return RayTrainerV2(self._horovod_kwargs, executable_kwargs)
         else:
             # TODO: deprecated 0.5
