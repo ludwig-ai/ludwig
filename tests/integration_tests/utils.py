@@ -713,7 +713,7 @@ def setup_input_feature_test(
         training_set_metadata=metadata
     )
     feature_class.update_config_with_metadata(
-        feature_definition
+        feature_definition,
         metadata[feature_definition['name']]
     )
     input_tensor = torch.tensor(
