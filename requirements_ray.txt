@@ -1,4 +1,6 @@
 ray[default,tune]>=1.7.0
+dask[dataframe]<2021.3.1  # https://github.com/ray-project/ray/issues/14992
+pyarrow>=2.0.0
 pickle5
 tensorboardX<2.3
 GPUtil
