@@ -112,19 +112,13 @@ jobs:
         name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
         path: pytest.xml
 
-  publish-test-results:
-    name: "Publish Unit Tests Results"
-    needs: pytest
+  event_file:
+    name: "Event File"
     runs-on: ubuntu-latest
-    if: always()
 
     steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: artifacts
-
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          files: artifacts/**/*.xml
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: Event File
+        path: ${{ github.event_path }}

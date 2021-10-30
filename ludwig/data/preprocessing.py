@@ -1624,7 +1624,8 @@ def _preprocess_file_for_training(
             skip_save_processed_input=skip_save_processed_input
         )
 
-        if backend.is_coordinator() and not skip_save_processed_input:
+        # TODO(travis): implement saving split for Ray
+        if backend.is_coordinator() and not skip_save_processed_input and SPLIT in data.columns:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])

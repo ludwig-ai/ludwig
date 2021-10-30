@@ -8,7 +8,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 
 from ludwig.api import LudwigModel
 from ludwig.backend import RAY, initialize_backend
@@ -32,6 +32,7 @@ try:
     from ray.tune.syncer import get_cloud_sync_client
     from ray.tune.utils import wait_for_gpu
     from ray.tune.utils.placement_groups import PlacementGroupFactory
+    from ray.tune.sync_client import CommandBasedClient
     from ludwig.backend.ray import RayBackend
 except ImportError:
     ray = None
@@ -367,8 +368,13 @@ class RayTuneExecutor(HyperoptExecutor):
     def _gpu_resources_per_trial_non_none(self):
         return self.gpu_resources_per_trial or 0
 
-    def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir: Path):
+    def _get_sync_client_and_remote_checkpoint_dir(
+            self, trial_dir: Path
+    ) -> Optional[Tuple["CommandBasedClient", str]]:
         """Get the Ray sync client and path to remote checkpoint directory."""
+        if self.sync_config is None:
+            return None
+
         remote_checkpoint_dir = os.path.join(
             self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir))
         return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
@@ -435,7 +441,9 @@ class RayTuneExecutor(HyperoptExecutor):
             )
 
         class RayTuneReportCallback(Callback):
-            def _get_sync_client_and_remote_checkpoint_dir(self):
+            def _get_sync_client_and_remote_checkpoint_dir(
+                    self
+            ) -> Optional[Tuple["CommandBasedClient", str]]:
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
 
@@ -447,19 +455,23 @@ class RayTuneExecutor(HyperoptExecutor):
                         if path not in (save_path.parent, checkpoint_dir):
                             shutil.rmtree(path, ignore_errors=True)
 
-                    sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
-                    sync_client.sync_down(
-                        remote_checkpoint_dir, str(trial_dir.absolute()))
-                    sync_client.wait()
+                    sync_info = self._get_sync_client_and_remote_checkpoint_dir()
+                    if sync_info is not None:
+                        sync_client, remote_checkpoint_dir = sync_info
+                        sync_client.sync_down(
+                            remote_checkpoint_dir, str(trial_dir.absolute()))
+                        sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
                 if is_using_ray_backend:
                     save_path = Path(save_path)
                     if trial_location != ray.util.get_node_ip_address():
-                        sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir()
-                        sync_client.sync_up(
-                            str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                        sync_client.wait()
+                        sync_info = self._get_sync_client_and_remote_checkpoint_dir()
+                        if sync_info is not None:
+                            sync_client, remote_checkpoint_dir = sync_info
+                            sync_client.sync_up(
+                                str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                            sync_client.wait()
                     ray_queue.put((progress_tracker, str(save_path)))
                     return
 
@@ -497,7 +509,8 @@ class RayTuneExecutor(HyperoptExecutor):
             )
             stats.append((train_stats, eval_stats))
 
-        if is_using_ray_backend:
+        sync_info = self._get_sync_client_and_remote_checkpoint_dir(trial_dir)
+        if is_using_ray_backend and sync_info is not None:
             # We have to pull the results to the trial actor
             # from worker actors, as the Tune session is running
             # only on the trial actor
@@ -505,8 +518,7 @@ class RayTuneExecutor(HyperoptExecutor):
             thread.daemon = True
             thread.start()
 
-            sync_client, remote_checkpoint_dir = self._get_sync_client_and_remote_checkpoint_dir(
-                trial_dir)
+            sync_client, remote_checkpoint_dir = sync_info
 
             def check_queue():
                 qsize = ray_queue.qsize()
@@ -674,8 +686,9 @@ class RayTuneExecutor(HyperoptExecutor):
         if _is_ray_backend(backend):
             # we can't set Trial actor's CPUs to 0 so we just go very low
             resources_per_trial = PlacementGroupFactory(
-                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none) if self._gpu_resources_per_trial_non_none else (
-                    [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none)
+                [{"CPU": 0.001}] + ([{"CPU": 1, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
+                if self._gpu_resources_per_trial_non_none
+                else [{"CPU": 0.001}] + [{"CPU": 1}] * self._cpu_resources_per_trial_non_none
             )
 
         if has_remote_protocol(output_directory):

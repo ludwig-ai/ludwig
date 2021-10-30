@@ -25,7 +25,9 @@ import pytest
 import ray
 from ray.tune.sync_client import get_sync_client
 
+from ludwig.api import LudwigModel
 from ludwig.backend.ray import RayBackend
+from ludwig.callbacks import Callback
 
 from ludwig.hyperopt.execution import (
     RayTuneExecutor, _get_relative_checkpoints_dir_parts)
@@ -113,12 +115,12 @@ EXECUTORS = [
 ]
 
 
-# TODO ray: replace legacy parquet with ray format
+# TODO ray: replace legacy mode when Ray Train supports placement groups
 RAY_BACKEND_KWARGS = {
     'processor': {
         'parallelism': 4
     },
-    'cache_format': 'parquet'
+    'use_legacy': True
 }
 
 
@@ -150,6 +152,17 @@ class MockRayTuneExecutor(RayTuneExecutor):
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
 
+class TestCallback(Callback):
+    def __init__(self):
+        self.preprocessed = False
+
+    def on_hyperopt_preprocessing_start(self, *args, **kwargs):
+        self.preprocessed = True
+
+    def on_hyperopt_start(self, *args, **kwargs):
+        assert self.preprocessed
+
+
 @contextlib.contextmanager
 def ray_start_4_cpus():
     res = ray.init(
@@ -172,6 +185,7 @@ def ray_mock_dir():
         yield path
     finally:
         shutil.rmtree(path)
+
 
 @spawn
 def run_hyperopt_executor(
@@ -211,20 +225,32 @@ def run_hyperopt_executor(
         hyperopt_sampler = get_build_hyperopt_sampler(
             sampler["type"])(goal, parameters, **sampler)
 
+        # preprocess
+        backend = RayBackend(**RAY_BACKEND_KWARGS)
+        model = LudwigModel(config=config, backend=backend)
+        training_set, validation_set, test_set, training_set_metadata = model.preprocess(
+            dataset=dataset_parquet,
+        )
+
+        # hyperopt
         hyperopt_executor = MockRayTuneExecutor(
             hyperopt_sampler, output_feature, metric, split, **executor)
         hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 
         hyperopt_executor.execute(
             config,
-            dataset=dataset_parquet,
-            backend=RayBackend(**RAY_BACKEND_KWARGS),
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            backend=backend,
             output_directory=ray_mock_dir,
             skip_save_processed_input=True,
             skip_save_unprocessed_output=True
         )
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
@@ -232,6 +258,7 @@ def test_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir):
     run_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
     run_hyperopt_executor({"type": "ray", "num_samples": 2},
@@ -242,6 +269,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
                           validation_metric=ACCURACY)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
 def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
@@ -261,7 +289,11 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "num_fc_layers": 2},
-            "training": {"epochs": 4, "learning_rate": 0.001}
+            "training": {"epochs": 4, "learning_rate": 0.001},
+            'backend': {
+                'type': 'ray',
+                **RAY_BACKEND_KWARGS
+            }
         }
 
         output_feature_name = output_features[0]['name']
@@ -289,29 +321,26 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
             'validation_metrics': 'loss',
             'executor': {'type': 'ray'},
             'sampler': {'type': 'ray', 'num_samples': 2},
-            'backend': {
-                'type': 'ray',
-                **RAY_BACKEND_KWARGS
-            }
         }
 
         # add hyperopt parameter space to the config
         config['hyperopt'] = hyperopt_configs
         run_hyperopt(config, dataset_parquet, ray_mock_dir)
 
+
 @spawn
 def run_hyperopt(
         config, rel_path, out_dir,
         experiment_name='ray_hyperopt',
-        callbacks=None,
 ):
     with ray_start_4_cpus():
+        callback = TestCallback()
         hyperopt_results = hyperopt(
             config,
             dataset=rel_path,
             output_directory=out_dir,
             experiment_name=experiment_name,
-            callbacks=callbacks,
+            callbacks=[callback],
         )
 
         # check for return results
