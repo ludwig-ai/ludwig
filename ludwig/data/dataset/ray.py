@@ -31,7 +31,7 @@ from ray.data import from_dask, read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
-from ludwig.constants import NAME
+from ludwig.constants import NAME, PARQUET
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
@@ -122,7 +122,7 @@ class RayDatasetManager(DatasetManager, ABC):
 
     @property
     def data_format(self) -> str:
-        return 'parquet'
+        return PARQUET
 
 
 class RayDatasetShard(Dataset):

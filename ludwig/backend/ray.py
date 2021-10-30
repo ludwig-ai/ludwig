@@ -30,7 +30,7 @@ from ray.data.extensions import TensorDtype
 from ray.util.dask import ray_dask_get
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
-from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
+from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetShard, RayDatasetManager
