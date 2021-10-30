@@ -21,7 +21,7 @@ import random
 import shutil
 import sys
 import traceback
-from typing import List, Tuple, Dict, Type
+from typing import List, Tuple, Dict, Type, Optional
 import unittest
 import uuid
 from distutils.util import strtobool
@@ -38,7 +38,7 @@ from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import DataFramePreprocessor
 from ludwig.experiment import experiment_cli
-from ludwig.features.base_feature import InputFeature
+from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
@@ -688,13 +688,13 @@ def train_with_backend(
         shutil.rmtree(output_dir, ignore_errors=True)
 
 
-# creates synthetic data and update input feature definition to
-# test input features.  This covers pre-processing functionality and
+# creates synthetic data and update feature definitions
+# This covers pre-processing functionality and
 # converting raw data to input specific tensors.
 def setup_input_feature_test(
-        batch_size: int,
-        feature_definition: Dict,
-        feature_class: Type[InputFeature]
+        batch_size: int = None,
+        feature_definition: Dict = None,
+        feature_class: Type[InputFeature] = None
 ) -> Tuple:
     # generate synthetic raw data for testing
     np.random.seed(1919)
@@ -705,19 +705,85 @@ def setup_input_feature_test(
     raw_data = '\n'.join([str(r[0]) for r in dataset])
     df = pd.read_csv(io.StringIO(raw_data))
 
-    # preprocess raw data to create feature specific tensors
+    # preprocess raw data to create feature specific tensors and generate metadata
     metadata = {}
     input_data, _, _, metadata = DataFramePreprocessor.preprocess_for_training(
         [feature_definition],
         training_set=df,
         training_set_metadata=metadata
     )
+
+    # update feature definitions with defaults where required
+    feature_class.populate_defaults(feature_definition)
+
+    # enrich feature definition with metadata from pre-processing
     feature_class.update_config_with_metadata(
         feature_definition,
         metadata[feature_definition['name']]
     )
+
+    # convert to torch tensor
     input_tensor = torch.tensor(
         np.vstack(input_data[feature_definition['proc_column']])
     )
 
+    # pass back generated tensor and updated feature definition
     return input_tensor, feature_definition
+
+
+# creates synthetic data and update feature definitions
+# This covers pre-processing functionality and
+# converting raw data to combiner output specific tensors.
+# This setup assumes no dependencies
+def setup_output_feature_test(
+        batch_size: int = None,
+        hidden_size: int = None,
+        seq_size: Optional[int] = None,
+        feature_definition: Dict = None,
+        feature_class: Type[OutputFeature] = None
+) -> Tuple:
+    # generate synthetic raw data for testing
+    np.random.seed(1919)
+    dataset = build_synthetic_dataset(
+        batch_size,
+        [feature_definition]
+    )
+    raw_data = '\n'.join([str(r[0]) for r in dataset])
+    df = pd.read_csv(io.StringIO(raw_data))
+
+    # preprocess raw data to create feature specific tensors and generate metadata
+    # we just care about generated metadata
+    metadata = {}
+    _, _, _, metadata = DataFramePreprocessor.preprocess_for_training(
+        [feature_definition],
+        training_set=df,
+        training_set_metadata=metadata
+    )
+
+    # update feature definitions with defaults where required
+    feature_class.populate_defaults(feature_definition)
+
+    # enrich feature definition with metadata from pre-processing
+    feature_class.update_config_with_metadata(
+        feature_definition,
+        metadata[feature_definition['name']]
+    )
+
+    # generate simulated combiner output
+    if seq_size is None:
+        combiner_output = torch.randn([batch_size, hidden_size],
+                                      dtype=torch.float32)
+    else:
+        pass
+
+    # update feature definition with combiner output hidden size
+    feature_definition['input_size'] = hidden_size
+
+    # construct data structure to feed into output feature
+    combiner_output = {
+        'combiner_output': combiner_output
+    }
+
+    # pass back generated tensor and updated feature definition
+    # No dependencies
+    return (combiner_output, None), feature_definition
