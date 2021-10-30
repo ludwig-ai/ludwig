@@ -121,6 +121,7 @@ EXECUTOR = "executor"
 MINIMIZE = "minimize"
 MAXIMIZE = "maximize"
 SAMPLER = "sampler"
+PARAMETERS = "parameters"
 
 NAME = "name"
 COLUMN = "column"
