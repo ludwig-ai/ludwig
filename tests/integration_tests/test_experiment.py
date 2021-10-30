@@ -186,7 +186,8 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
 #     )
 
 
-def test_experiment_multi_input_intent_classification(csv_filename):
+@pytest.mark.parametrize('encoder', ENCODERS)
+def test_experiment_multi_input_intent_classification(csv_filename, encoder):
     # Multiple inputs, Single category output
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
@@ -197,9 +198,8 @@ def test_experiment_multi_input_intent_classification(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    for encoder in ENCODERS:
-        input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, dataset=rel_path)
+    input_features[0]['encoder'] = encoder
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_multiclass_with_class_weights(csv_filename):
@@ -716,24 +716,23 @@ def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    for encoder in ENCODERS[:-2]:
-        logger.error('sequence combiner. encoders: {0}, {1}'.format(
-            encoder,
-            encoder
-        ))
-        input_features[0]['encoder'] = encoder
-        input_features[1]['encoder'] = encoder
+    logger.error('sequence combiner. encoders: {0}, {1}'.format(
+        sequence_combiner_encoder,
+        sequence_combiner_encoder
+    ))
+    input_features[0]['encoder'] = sequence_combiner_encoder
+    input_features[1]['encoder'] = sequence_combiner_encoder
 
-        config['input_features'] = input_features
+    config['input_features'] = input_features
 
-        exp_dir_name = experiment_cli(
-            config,
-            skip_save_processed_input=False,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
-            dataset=rel_path
-        )
-        shutil.rmtree(exp_dir_name, ignore_errors=True)
+    exp_dir_name = experiment_cli(
+        config,
+        skip_save_processed_input=False,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        dataset=rel_path
+    )
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
 def test_experiment_model_resume(csv_filename):

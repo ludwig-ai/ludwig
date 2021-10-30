@@ -107,9 +107,9 @@ class ImageFeatureMixin:
         :param resize_method: type of resizing method
         :param num_channels: expected number of channels in the first image
         :param user_specified_num_channels: did the user specify num channels?
-        :return: image object as a numoy array
+        :return: image object as a numpy array
 
-        Helper method to read and resize an image according to model defn.
+        Helper method to read and resize an image according to model definition.
         If the user doesn't specify a number of channels, we use the first image
         in the dataset as the source of truth. If any image in the dataset
         doesn't have the same number of channels as the first image,
@@ -124,6 +124,7 @@ class ImageFeatureMixin:
             logger.info(f"{img_entry} cannot be read")
             return None
         img_num_channels = num_channels_in_image(img)
+        # Convert to grayscale if needed.
         if num_channels == 1 and img_num_channels != 1:
             img = grayscale(img)
             img_num_channels = 1
@@ -132,12 +133,6 @@ class ImageFeatureMixin:
             img = resize_image(img, (img_height, img_width), resize_method)
 
         if user_specified_num_channels:
-
-            if num_channels == 1 and (
-                    img_num_channels == 3 or img_num_channels == 4):
-                img = grayscale(img)
-                img_num_channels = 1
-
             # Number of channels is specified by the user
             # img_padded = np.zeros((img_height, img_width, num_channels),
             #                       dtype=np.uint8)
