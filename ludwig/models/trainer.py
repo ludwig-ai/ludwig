@@ -31,7 +31,10 @@ from random import random
 from re import M
 import numpy as np
 import tensorflow as tf
+from typing import Dict, Any
+
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAINING_CHECKPOINTS_DIR_PATH,
@@ -114,7 +117,7 @@ class Trainer(BaseTrainer):
             decay_steps=10000,
             staircase=False,
             batch_size=128,
-            eval_batch_size=0,
+            eval_batch_size=None,
             should_shuffle=True,
             shuffle_buffer_size=None,
             bucketing_field=None,
@@ -245,7 +248,7 @@ class Trainer(BaseTrainer):
         self.decay_steps = decay_steps
         self.staircase = staircase
         self.batch_size = batch_size
-        self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
+        self.eval_batch_size = batch_size if eval_batch_size is None else eval_batch_size
         self.should_shuffle = should_shuffle
         self.shuffle_buffer_size = shuffle_buffer_size
         self.bucketing_field = bucketing_field
@@ -337,14 +340,15 @@ class Trainer(BaseTrainer):
         self,
         model,
         dataset,
-        total_steps=3,
+        batch_size: int,
+        total_steps: int = 3,
     ):
         """ function to be used by tune_batch_size """
         with dataset.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            shuffle_buffer_size=self.shuffle_buffer_size,
-            horovod=self.horovod
+            batch_size=batch_size,
+            should_shuffle=False,
+            shuffle_buffer_size=0,
+            horovod=None
         ) as batcher:
 
             step_count = 0
@@ -372,7 +376,7 @@ class Trainer(BaseTrainer):
         self,
         config,
         model,
-        training_set,
+        training_set: Dataset,
         random_seed: int = default_random_seed,
         min_lr: float = 1e-8,
         max_lr: float = 1.0,
@@ -380,11 +384,11 @@ class Trainer(BaseTrainer):
         mode: str = "exponential",
         early_stop_threshold: int = 3,
         beta: float = 0.98
-    ):
+    ) -> float:
         # TODO (ASN): Circle back on how we want to set default placeholder value
         # Currently, since self.learning_rate is originally set to auto, we provide a
         # placeholder starting value (namely, .001)
-        self.learning_rate = 0.001
+        learning_rate = 0.001
 
         current_learning_rate = min_lr
         losses = []
@@ -420,7 +424,7 @@ class Trainer(BaseTrainer):
         ) as batcher:
             step_count = 0
             while epoch < self.epochs and step_count < total_training_steps and not diverging:
-                batcher.set_epoch(epoch)
+                batcher.set_epoch(epoch, self.batch_size)
                 model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
                     batch = batcher.next_batch()
@@ -470,17 +474,17 @@ class Trainer(BaseTrainer):
 
         optimal_lr = get_optimal_lr(losses, learning_rates)
         if optimal_lr:
-            self.learning_rate = optimal_lr
-        return self.learning_rate
+            learning_rate = optimal_lr
+        return learning_rate
 
     def tune_batch_size(
         self,
-        config,
-        training_set,
+        config: Dict[str, Any],
+        training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 10,
         halving_limit: int = 3
-    ):
+    ) -> int:
         from ludwig.api import LudwigModel
 
         def _is_valid_batch_size(batch_size):
@@ -489,10 +493,11 @@ class Trainer(BaseTrainer):
         # TODO (ASN) : Circle back on how we want to set default placeholder value
         # Currently, since self.batch_size is originally set to auto, we provide a
         # placeholder starting value (namely, 128)
-        self.batch_size = 128
+        batch_size = 128
         skip_save_model = self.skip_save_model
         skip_save_progress = self.skip_save_progress
         skip_save_log = self.skip_save_log
+
         # Set temporary values
         self.skip_save_model = True
         self.skip_save_progress = True
@@ -508,56 +513,54 @@ class Trainer(BaseTrainer):
             halving_count = 0
             while halving_count < halving_limit:
                 gc.collect()
+
+                low = batch_size
+                prev_batch_size = batch_size
                 try:
                     # re-initalize model...
                     model = LudwigModel.create_model(config, random_seed)
-                    self.train_for_tuning(model, training_set, total_steps=3)
+                    self.train_for_tuning(model, training_set, batch_size, total_steps=3)
                     count += 1
                     if count >= max_trials:
                         break
-                    low = self.batch_size
-                    prev_batch_size = self.batch_size
                     if high:
                         if high - low <= 1:
                             break
                         midval = (high + low) // 2
-                        self.batch_size = midval
+                        batch_size = midval
                     else:
-                        self.batch_size *= 2  # double batch size
+                        batch_size *= 2  # double batch size
 
-                    if self.batch_size == prev_batch_size:
+                    if batch_size == prev_batch_size:
                         break
 
                 except tf.errors.ResourceExhaustedError as e:
                     gc.collect()
-                    high = self.batch_size
+                    high = batch_size
                     halving_count += 1
                     midval = (high + low) // 2
-                    self.batch_size = midval
+                    batch_size = midval
                     if high - low <= 1:
                         break
 
                 # make sure that batch size is valid (e.g. less than size of ds)
-                if not _is_valid_batch_size(self.batch_size):
-                    self.batch_size = min(self.batch_size, len(training_set))
+                if not _is_valid_batch_size(batch_size):
+                    batch_size = min(batch_size, len(training_set))
 
                 # edge case where bs is no longer increasing
-                if self.batch_size == prev_batch_size:
+                if batch_size == prev_batch_size:
                     break
-
+        finally:
             # Restore original parameters to defaults
             # self.epochs = original_epochs
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-            if self.eval_batch_size == "auto":
-                self.eval_batch_size = self.batch_size
-        finally:
             # Turn eager mode off
             tf.config.run_functions_eagerly(False)
 
-        return self.batch_size
+        return batch_size
 
     def train(
             self,
@@ -901,6 +904,7 @@ class Trainer(BaseTrainer):
                 tables[COMBINED] = [[COMBINED, LOSS]]
 
                 # eval metrics on train
+                self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
                 self.evaluation(
                     model,
                     training_set,
