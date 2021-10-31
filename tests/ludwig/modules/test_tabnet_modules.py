@@ -83,6 +83,8 @@ def test_feature_block(
     assert feature_block.output_shape[-1] == size
     assert feature_block.input_dtype == torch.float32
 
+    assert_model_parameters_updated(feature_block, output_tensor)
+
 
 @pytest.mark.parametrize(
     'num_total_blocks, num_shared_blocks',
@@ -119,6 +121,8 @@ def test_feature_transformer(
     assert feature_transformer.input_shape[-1] == input_size
     assert feature_transformer.output_shape[-1] == size
     assert feature_transformer.input_dtype == torch.float32
+
+    assert_model_parameters_updated(feature_transformer, output_tensor)
 
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
