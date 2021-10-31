@@ -11,7 +11,7 @@ from tests.integration_tests.utils import assert_model_parameters_updated, \
     assert_model_parameters_updated_loop
 
 RANDOM_SEED = 1919
-BATCH_SIZE = 8  # 16  #2
+BATCH_SIZE = 2  # 8  # 16  #2
 
 
 @pytest.mark.parametrize(
@@ -202,4 +202,4 @@ def test_tabnet(
     assert tabnet.input_dtype == torch.float32
 
     # assert_model_parameters_updated(tabnet, output[0])
-    assert_model_parameters_updated_loop(tabnet, input_tensor, 50)
+    assert_model_parameters_updated_loop(tabnet, input_tensor)
