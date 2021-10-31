@@ -15,8 +15,11 @@ tables
 fsspec
 dataclasses-json
 jsonschema
+marshmallow
+marshmallow-jsonschema
+marshmallow-dataclass
 tensorboard
-torchmetrics
+torchmetrics>=0.6.0
 filelock
 
 # new data format support

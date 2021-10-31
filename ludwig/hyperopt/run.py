@@ -5,6 +5,7 @@ from typing import Union, List
 import pandas as pd
 import yaml
 
+from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.hyperopt.execution import RayTuneExecutor, executor_registry
 from ludwig.backend import Backend, initialize_backend, LocalBackend
@@ -14,7 +15,7 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler, sampler_registry
-from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats
+from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import open_file, makedirs
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values, get_class_attributes
@@ -287,9 +288,40 @@ def hyperopt(
             '`ray` backend with `ray` executor.'
         )
 
-    if callbacks:
-        for callback in callbacks:
-            callback.on_hyperopt_init(experiment_name)
+    for callback in callbacks or []:
+        callback.on_hyperopt_init(experiment_name)
+
+    if not should_tune_preprocessing(config):
+        # preprocessing is not being tuned, so generate it once before starting trials
+        for callback in callbacks or []:
+            callback.on_hyperopt_preprocessing_start(experiment_name)
+
+        model = LudwigModel(
+            config=config,
+            backend=backend,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            callbacks=callbacks,
+        )
+
+        training_set, validation_set, test_set, training_set_metadata = model.preprocess(
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            skip_save_processed_input=skip_save_processed_input,
+            random_seed=random_seed,
+        )
+        dataset = None
+
+        for callback in callbacks or []:
+            callback.on_hyperopt_preprocessing_end(experiment_name)
+
+    for callback in callbacks or []:
+        callback.on_hyperopt_start(experiment_name)
 
     hyperopt_results = hyperopt_executor.execute(
         config,
@@ -336,6 +368,10 @@ def hyperopt(
 
             save_hyperopt_stats(hyperopt_stats, output_directory)
             logger.info('Hyperopt stats saved to: {}'.format(output_directory))
+
+    for callback in callbacks or []:
+        callback.on_hyperopt_end(experiment_name)
+        callback.on_hyperopt_finish(experiment_name)
 
     logger.info('Finished hyperopt')
 

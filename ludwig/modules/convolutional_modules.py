@@ -666,7 +666,8 @@ class Conv2DLayer(LudwigModule):
     ):
         super().__init__()
 
-        self.layers = []
+        self.layers = torch.nn.ModuleList()
+
         self._input_shape = (in_channels, img_height, img_width)
         pool_stride = pool_stride or pool_kernel_size
 
@@ -847,7 +848,7 @@ class Conv2DStack(LudwigModule):
             if 'pool_dilation' not in layer:
                 layer['pool_dilation'] = default_pool_dilation
 
-        self.stack = []
+        self.stack = torch.nn.ModuleList()
 
         in_channels = first_in_channels
         for i, layer in enumerate(self.layers):
@@ -929,7 +930,7 @@ class Conv2DLayerFixedPadding(LudwigModule):
     ):
         super().__init__()
 
-        self.layers = []
+        self.layers = torch.nn.ModuleList()
         self._input_shape = (in_channels, img_height, img_width)
 
         padding = 'same'
@@ -1216,12 +1217,15 @@ class ResNetBlockLayer(LudwigModule):
             kernel_size=1,
             stride=stride)
 
-        self.layers = [
-            block_fn(
-                img_height, img_width, first_in_channels, out_channels, stride,
-                batch_norm_momentum, batch_norm_epsilon, projection_shortcut
-            )
-        ]
+        self.layers = torch.nn.ModuleList(
+            [
+                block_fn(
+                    img_height, img_width, first_in_channels, out_channels,
+                    stride,
+                    batch_norm_momentum, batch_norm_epsilon, projection_shortcut
+                )
+            ]
+        )
         in_channels, img_height, img_width = self.layers[-1].output_shape
 
         for _ in range(1, num_blocks):
@@ -1311,7 +1315,7 @@ class ResNet(LudwigModule):
         block_sizes, block_strides = self.get_blocks(
             resnet_size, block_sizes, block_strides)
 
-        self.layers = []
+        self.layers = torch.nn.ModuleList()
         self.layers.append(Conv2DLayerFixedPadding(
             img_height=img_height,
             img_width=img_width,

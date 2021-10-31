@@ -1128,6 +1128,7 @@ def build_dataset(
             proc_features.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
 
+    logger.debug("cast columns")
     dataset_cols = cast_columns(
         dataset_df,
         proc_features,
@@ -1135,6 +1136,7 @@ def build_dataset(
         backend
     )
 
+    logger.debug("build metadata")
     metadata = build_metadata(
         metadata,
         dataset_cols,
@@ -1143,6 +1145,7 @@ def build_dataset(
         backend
     )
 
+    logger.debug("build data")
     proc_cols = build_data(
         dataset_cols,
         proc_features,
@@ -1151,7 +1154,8 @@ def build_dataset(
         skip_save_processed_input
     )
 
-    proc_cols[SPLIT] = get_split(
+    logger.debug("get split")
+    split = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -1161,6 +1165,21 @@ def build_dataset(
         backend=backend,
         random_seed=random_seed
     )
+    if split is not None:
+        proc_cols[SPLIT] = split
+
+    # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
+    #  conversion with Tensor columns. Can remove for 1.8.
+    if backend.df_engine.partitioned:
+        for feature in features:
+            name = feature[NAME]
+            proc_column = feature[PROC_COLUMN]
+            reshape = metadata[name].get('reshape')
+            if reshape is not None:
+                proc_cols[proc_column] = backend.df_engine.map_objects(
+                    proc_cols[proc_column],
+                    lambda x: x.reshape(-1)
+                )
 
     dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
@@ -1352,8 +1371,12 @@ def get_split(
         split = dataset_df[SPLIT]
     else:
         set_random_seed(random_seed)
-
         if stratify is None or stratify not in dataset_df:
+            if backend.df_engine.partitioned:
+                # This approach is very inefficient for partitioned backends, which
+                # can split by partition
+                return None
+
             split = dataset_df.index.to_series().map(
                 lambda x: np.random.choice(3, 1, p=split_probabilities)
             ).astype(np.int8)
@@ -1515,9 +1538,11 @@ def preprocess_for_training(
 
             # cache the dataset
             if backend.cache.can_cache(skip_save_processed_input):
+                logger.debug("cache processed data")
                 processed = cache.put(*processed)
             training_set, test_set, validation_set, training_set_metadata = processed
 
+        logger.debug("create training dataset")
         training_dataset = backend.dataset_manager.create(
             training_set,
             config,
@@ -1526,6 +1551,7 @@ def preprocess_for_training(
 
         validation_dataset = None
         if validation_set is not None:
+            logger.debug("create validation dataset")
             validation_dataset = backend.dataset_manager.create(
                 validation_set,
                 config,
@@ -1534,6 +1560,7 @@ def preprocess_for_training(
 
         test_dataset = None
         if test_set is not None:
+            logger.debug("create test dataset")
             test_dataset = backend.dataset_manager.create(
                 test_set,
                 config,
@@ -1597,16 +1624,11 @@ def _preprocess_file_for_training(
             skip_save_processed_input=skip_save_processed_input
         )
 
-        if backend.is_coordinator() and not skip_save_processed_input:
+        # TODO(travis): implement saving split for Ray
+        if backend.is_coordinator() and not skip_save_processed_input and SPLIT in data.columns:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
-
-        # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
-        training_data, test_data, validation_data = split_dataset_ttv(
-            data,
-            SPLIT
-        )
 
     elif training_set:
         # use data_train (including _validation and _test if they are present)
@@ -1636,13 +1658,18 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        training_data, test_data, validation_data = split_dataset_ttv(
-            data,
-            SPLIT
-        )
-
     else:
         raise ValueError('either data or data_train have to be not None')
+
+    data = backend.df_engine.persist(data)
+    if SPLIT in data.columns:
+        logger.debug("split on split column")
+        training_data, test_data, validation_data = split_dataset_ttv(data, SPLIT)
+    else:
+        logger.debug("split randomly by partition")
+        training_data, test_data, validation_data = data.random_split(
+            preprocessing_params['split_probabilities']
+        )
 
     return training_data, test_data, validation_data, training_set_metadata
 
@@ -1687,10 +1714,15 @@ def _preprocess_df_for_training(
         backend=backend
     )
 
-    training_set, test_set, validation_set = split_dataset_ttv(
-        dataset,
-        SPLIT
-    )
+    dataset = backend.df_engine.persist(dataset)
+    if SPLIT in dataset.columns:
+        logger.debug("split on split column")
+        training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
+    else:
+        logger.debug("split randomly by partition")
+        training_set, test_set, validation_set = dataset.random_split(
+            preprocessing_params['split_probabilities']
+        )
     return training_set, test_set, validation_set, training_set_metadata
 
 

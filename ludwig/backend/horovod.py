@@ -21,7 +21,7 @@ from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.horovod_utils import initialize_horovod
-from ludwig.utils.tf_utils import initialize_tensorflow
+from ludwig.utils.torch_utils import initialize_pytorch
 
 
 class HorovodBackend(LocalPreprocessingMixin, Backend):
@@ -32,8 +32,8 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def initialize(self):
         self._horovod = initialize_horovod()
 
-    def initialize_tensorflow(self, *args, **kwargs):
-        initialize_tensorflow(*args, horovod=self._horovod, **kwargs)
+    def initialize_pytorch(self, *args, **kwargs):
+        initialize_pytorch(*args, horovod=self._horovod, **kwargs)
 
     def create_trainer(self, **kwargs):
         return Trainer(horovod=self._horovod, **kwargs)
@@ -44,8 +44,8 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
         # to all other ranks
-        self._horovod.broadcast_variables(model.variables,
-                                          root_rank=0)
+        self._horovod.broadcast_parameters(model.state_dict(),
+                                           root_rank=0)
 
     def broadcast_return(self, fn):
         """Returns the result of calling `fn` on coordinator, broadcast to all other ranks.

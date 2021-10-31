@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import os.path
 import uuid
@@ -24,7 +25,9 @@ import pytest
 import ray
 from ray.tune.sync_client import get_sync_client
 
+from ludwig.api import LudwigModel
 from ludwig.backend.ray import RayBackend
+from ludwig.callbacks import Callback
 
 from ludwig.hyperopt.execution import (
     RayTuneExecutor, _get_relative_checkpoints_dir_parts)
@@ -112,6 +115,15 @@ EXECUTORS = [
 ]
 
 
+# TODO ray: replace legacy mode when Ray Train supports placement groups
+RAY_BACKEND_KWARGS = {
+    'processor': {
+        'parallelism': 4
+    },
+    'use_legacy': True
+}
+
+
 def _get_config(sampler, executor):
     input_features = [
         numerical_feature(), numerical_feature()
@@ -140,13 +152,29 @@ class MockRayTuneExecutor(RayTuneExecutor):
         return mock_storage_client(remote_checkpoint_dir), remote_checkpoint_dir
 
 
-@pytest.fixture
+class TestCallback(Callback):
+    def __init__(self):
+        self.preprocessed = False
+
+    def on_hyperopt_preprocessing_start(self, *args, **kwargs):
+        self.preprocessed = True
+
+    def on_hyperopt_start(self, *args, **kwargs):
+        assert self.preprocessed
+
+
+@contextlib.contextmanager
 def ray_start_4_cpus():
-    address_info = ray.init(num_cpus=4)
+    res = ray.init(
+        num_cpus=4,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
     try:
-        yield address_info
+        yield res
     finally:
         ray.shutdown()
+
 
 @pytest.fixture
 def ray_mock_dir():
@@ -158,66 +186,81 @@ def ray_mock_dir():
     finally:
         shutil.rmtree(path)
 
+
 @spawn
 def run_hyperopt_executor(
     sampler, executor, csv_filename, ray_mock_dir,
     validate_output_feature=False,
     validation_metric=None,
 ):
-    config = _get_config(sampler, executor)
+    with ray_start_4_cpus():
+        config = _get_config(sampler, executor)
 
-    csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
-    dataset_csv = generate_data(
-        config['input_features'], config['output_features'], csv_filename, num_examples=100)
-    dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
+        csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
+        dataset_csv = generate_data(
+            config['input_features'], config['output_features'], csv_filename, num_examples=100)
+        dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
 
-    config = merge_with_defaults(config)
+        config = merge_with_defaults(config)
 
-    hyperopt_config = config["hyperopt"]
+        hyperopt_config = config["hyperopt"]
 
-    if validate_output_feature:
-        hyperopt_config['output_feature'] = config['output_features'][0]['name']
-    if validation_metric:
-        hyperopt_config['validation_metric'] = validation_metric
+        if validate_output_feature:
+            hyperopt_config['output_feature'] = config['output_features'][0]['name']
+        if validation_metric:
+            hyperopt_config['validation_metric'] = validation_metric
 
-    update_hyperopt_params_with_defaults(hyperopt_config)
+        update_hyperopt_params_with_defaults(hyperopt_config)
 
-    parameters = hyperopt_config["parameters"]
-    if sampler.get("search_alg", {}).get("type", "") == 'bohb':
-        # bohb does not support grid_search search space
-        del parameters['combiner.num_steps']
+        parameters = hyperopt_config["parameters"]
+        if sampler.get("search_alg", {}).get("type", "") == 'bohb':
+            # bohb does not support grid_search search space
+            del parameters['combiner.num_steps']
 
-    split = hyperopt_config["split"]
-    output_feature = hyperopt_config["output_feature"]
-    metric = hyperopt_config["metric"]
-    goal = hyperopt_config["goal"]
+        split = hyperopt_config["split"]
+        output_feature = hyperopt_config["output_feature"]
+        metric = hyperopt_config["metric"]
+        goal = hyperopt_config["goal"]
 
-    hyperopt_sampler = get_build_hyperopt_sampler(
-        sampler["type"])(goal, parameters, **sampler)
+        hyperopt_sampler = get_build_hyperopt_sampler(
+            sampler["type"])(goal, parameters, **sampler)
 
-    hyperopt_executor = MockRayTuneExecutor(
-        hyperopt_sampler, output_feature, metric, split, **executor)
-    hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
+        # preprocess
+        backend = RayBackend(**RAY_BACKEND_KWARGS)
+        model = LudwigModel(config=config, backend=backend)
+        training_set, validation_set, test_set, training_set_metadata = model.preprocess(
+            dataset=dataset_parquet,
+        )
 
-    hyperopt_executor.execute(
-        config,
-        dataset=dataset_parquet,
-        backend=RayBackend(processor={'parallelism': 4,}),
-        output_directory=ray_mock_dir,
-        skip_save_processed_input=True,
-        skip_save_unprocessed_output=True
-    )
+        # hyperopt
+        hyperopt_executor = MockRayTuneExecutor(
+            hyperopt_sampler, output_feature, metric, split, **executor)
+        hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
+
+        hyperopt_executor.execute(
+            config,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            backend=backend,
+            output_directory=ray_mock_dir,
+            skip_save_processed_input=True,
+            skip_save_unprocessed_output=True
+        )
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename, ray_start_4_cpus, ray_mock_dir):
+def test_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir):
     run_hyperopt_executor(sampler, executor, csv_filename, ray_mock_dir)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
-def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus, ray_mock_dir):
+def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
     run_hyperopt_executor({"type": "ray", "num_samples": 2},
                           {"type": "ray"},
                           csv_filename,
@@ -226,78 +269,84 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_start_4_cpus, ray_mock_
                           validation_metric=ACCURACY)
 
 
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
-def test_hyperopt_run_hyperopt(csv_filename, ray_start_4_cpus, ray_mock_dir):
-    input_features = [
-        numerical_feature(), numerical_feature()
-    ]
-    output_features = [
-        binary_feature()
-    ]
+def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
+        input_features = [
+            numerical_feature(), numerical_feature()
+        ]
+        output_features = [
+            binary_feature()
+        ]
 
-    csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
-    dataset_csv = generate_data(
-        input_features, output_features, csv_filename, num_examples=100)
-    dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
+        csv_filename = os.path.join(ray_mock_dir, 'dataset.csv')
+        dataset_csv = generate_data(
+            input_features, output_features, csv_filename, num_examples=100)
+        dataset_parquet = create_data_set_to_use('parquet', dataset_csv)
 
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        "training": {"epochs": 4, "learning_rate": 0.001}
-    }
-
-    output_feature_name = output_features[0]['name']
-
-    hyperopt_configs = {
-        "parameters": {
-            "training.learning_rate": {
-                "space": "loguniform",
-                "lower": 0.001,
-                "upper": 0.1,
-            },
-            output_feature_name + ".fc_size": {
-                "space": "randint",
-                "lower": 32,
-                "upper": 256
-            },
-            output_feature_name + ".num_fc_layers": {
-                "space": "randint",
-                "lower": 2,
-                "upper": 6
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "num_fc_layers": 2},
+            "training": {"epochs": 4, "learning_rate": 0.001},
+            'backend': {
+                'type': 'ray',
+                **RAY_BACKEND_KWARGS
             }
-        },
-        "goal": "minimize",
-        'output_feature': output_feature_name,
-        'validation_metrics': 'loss',
-        'executor': {'type': 'ray'},
-        'sampler': {'type': 'ray', 'num_samples': 2},
-        'backend': {'type': 'ray', 'processor': {'parallelism': 4}}
-    }
+        }
 
-    # add hyperopt parameter space to the config
-    config['hyperopt'] = hyperopt_configs
-    run_hyperopt(config, dataset_parquet, ray_mock_dir)
+        output_feature_name = output_features[0]['name']
+
+        hyperopt_configs = {
+            "parameters": {
+                "training.learning_rate": {
+                    "space": "loguniform",
+                    "lower": 0.001,
+                    "upper": 0.1,
+                },
+                output_feature_name + ".fc_size": {
+                    "space": "randint",
+                    "lower": 32,
+                    "upper": 256
+                },
+                output_feature_name + ".num_fc_layers": {
+                    "space": "randint",
+                    "lower": 2,
+                    "upper": 6
+                }
+            },
+            "goal": "minimize",
+            'output_feature': output_feature_name,
+            'validation_metrics': 'loss',
+            'executor': {'type': 'ray'},
+            'sampler': {'type': 'ray', 'num_samples': 2},
+        }
+
+        # add hyperopt parameter space to the config
+        config['hyperopt'] = hyperopt_configs
+        run_hyperopt(config, dataset_parquet, ray_mock_dir)
+
 
 @spawn
 def run_hyperopt(
         config, rel_path, out_dir,
         experiment_name='ray_hyperopt',
-        callbacks=None,
 ):
-    hyperopt_results = hyperopt(
-        config,
-        dataset=rel_path,
-        output_directory=out_dir,
-        experiment_name=experiment_name,
-        callbacks=callbacks,
-    )
+    with ray_start_4_cpus():
+        callback = TestCallback()
+        hyperopt_results = hyperopt(
+            config,
+            dataset=rel_path,
+            output_directory=out_dir,
+            experiment_name=experiment_name,
+            callbacks=[callback],
+        )
 
-    # check for return results
-    assert isinstance(hyperopt_results, RayTuneResults)
+        # check for return results
+        assert isinstance(hyperopt_results, RayTuneResults)
 
-    # check for existence of the hyperopt statistics file
-    assert os.path.isfile(
-        os.path.join(out_dir, 'hyperopt_statistics.json')
-    )
+        # check for existence of the hyperopt statistics file
+        assert os.path.isfile(
+            os.path.join(out_dir, 'hyperopt_statistics.json')
+        )

@@ -164,7 +164,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             reduce_mode=self.reduce_input
         )
         if self.dependencies:
-            self.dependency_reducers = {}
+            self.dependency_reducers = torch.nn.ModuleDict()
+            # todo: re-evaluate need for separate handling of `attention` reducer
+            #       currently this code does not support `attention`
             for dependency in self.dependencies:
                 self.dependency_reducers[dependency] = SequenceReducer(
                     reduce_mode=self.reduce_dependencies
@@ -224,8 +226,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
-            metric_vals[metric_name] = metric_onj.compute(
-            ).detach().numpy().item()
+            try:
+                metric_vals[metric_name] = metric_onj.compute(
+                ).detach().numpy().item()
+            except Exception as e:
+                logger.error(
+                    f'Caught exception computing metric: {metric_name}. Exception: {e}')
         return metric_vals
 
     def reset_metrics(self):
@@ -353,23 +359,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     else:
                         # matrix vector -> tile concat
                         sequence_max_length = hidden.shape[1]
-                        '''
-                        multipliers = tf.concat(
-                            [[1], [sequence_max_length], [1]],
-                            0
-                        )
-                        '''
-                        multipliers = torch.cat(
-                            [[1], [sequence_max_length], [1]],
-                            dim=0
-                        )
-
-                        '''
-                        tiled_representation = tf.tile(
-                            tf.expand_dims(dependency_final_hidden, 1),
-                            multipliers
-                        )
-                        '''
+                        multipliers = (1, sequence_max_length, 1)
                         tiled_representation = torch.tile(
                             torch.unsqueeze(dependency_final_hidden, 1),
                             multipliers
@@ -377,16 +367,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
                         # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
-                        '''
-                        mask = tf.sequence_mask(
-                            sequence_length,
-                            sequence_max_length
-                        )
-                        tiled_representation = tf.multiply(
-                            tiled_representation,
-                            tf.cast(mask[:, :, tf.newaxis], dtype=tf.float32)
-                        )
-                        '''
                         mask = sequence_mask(
                             sequence_length,
                             sequence_max_length

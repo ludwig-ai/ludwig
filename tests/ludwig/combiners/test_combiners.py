@@ -1,7 +1,7 @@
 import logging
 from collections import OrderedDict
 import numpy as np
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List, Tuple, Dict
 import pytest
 import torch
 
@@ -13,8 +13,16 @@ from ludwig.combiners.combiners import (
     ComparatorCombiner,
     TransformerCombiner,
     TabTransformerCombiner,
+    ConcatCombinerConfig,
+    SequenceConcatCombinerConfig,
+    SequenceCombinerConfig,
+    TabNetCombinerConfig,
+    ComparatorCombinerConfig,
+    TransformerCombinerConfig,
+    TabTransformerCombinerConfig,
     sequence_encoder_registry,
 )
+from ludwig.utils.schema_utils import load_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -57,7 +65,30 @@ def check_combiner_output(combiner, combiner_output, batch_size):
 
     # check for correct output shape
     assert combiner_output['combiner_output'].shape \
-           == (batch_size, *combiner.output_shape)
+        == (batch_size, *combiner.output_shape)
+
+
+# generates encoder outputs and minimal input feature objects for testing
+@pytest.fixture
+def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
+    # feature_list: list of tuples that define the output_shape and type
+    #    of input features to generate.  tuple[0] is input feature type,
+    #    tuple[1] is expected encoder output shape for the input feature
+    encoder_outputs = {}
+    input_features = {}
+    for i in range(len(feature_list)):
+        feature_name = f'feature_{i:02d}'
+        encoder_outputs[feature_name] = {
+            'encoder_output': torch.randn(feature_list[i][1],
+                                          dtype=torch.float32)
+        }
+        input_features[feature_name] = PseudoInputFeature(
+            feature_name,
+            feature_list[i][1],
+            type=feature_list[i][0]
+        )
+
+    return encoder_outputs, input_features
 
 
 # set up simulated encoder outputs
@@ -165,8 +196,12 @@ def encoder_comparator_outputs():
 @pytest.mark.parametrize("flatten_inputs", [True, False])
 @pytest.mark.parametrize("fc_layer",
                          [None, [{"fc_size": FC_SIZE}, {"fc_size": FC_SIZE}]])
-def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
-                         number_inputs):
+def test_concat_combiner(
+        encoder_outputs: Tuple,
+        fc_layer: Optional[List[Dict]],
+        flatten_inputs: bool,
+        number_inputs: Optional[int]
+) -> None:
     encoder_outputs_dict, input_features_dict = encoder_outputs
 
     # setup encoder inputs to combiner based on test case
@@ -186,15 +221,19 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
             del input_features_dict[feature]
 
     # setup combiner to test with pseudo input features
-    combiner = ConcatCombiner(input_features_dict, fc_layers=fc_layer,
-                              flatten_inputs=flatten_inputs)
+    combiner = ConcatCombiner(input_features_dict,
+                              config=load_config(
+                                  ConcatCombinerConfig,
+                                  fc_layers=fc_layer,
+                                  flatten_inputs=flatten_inputs
+                              ))
 
     # confirm correctness of input_shape property
     assert isinstance(combiner.input_shape, dict)
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # combine encoder outputs
     combiner_output = combiner(encoder_outputs_dict)
@@ -207,16 +246,21 @@ def test_concat_combiner(encoder_outputs, fc_layer, flatten_inputs,
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_concat_combiner(
-        encoder_outputs, main_sequence_feature, reduce_output
-):
+        encoder_outputs: Tuple,
+        main_sequence_feature: Optional[str],
+        reduce_output: Optional[str]
+) -> None:
     # extract encoder outputs and input feature dictionaries
     encoder_outputs_dict, input_feature_dict = encoder_outputs
 
     # setup combiner for testing
     combiner = SequenceConcatCombiner(
         input_feature_dict,
-        main_sequence_feature=main_sequence_feature,
-        reduce_output=reduce_output
+        config=load_config(
+            SequenceConcatCombinerConfig,
+            main_sequence_feature=main_sequence_feature,
+            reduce_output=reduce_output
+        )
     )
 
     # confirm correctness of input_shape property
@@ -224,7 +268,7 @@ def test_sequence_concat_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -246,15 +290,22 @@ def test_sequence_concat_combiner(
 @pytest.mark.parametrize("encoder", sequence_encoder_registry)
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
-        encoder_outputs, main_sequence_feature, encoder, reduce_output
-):
+        encoder_outputs: Tuple,
+        main_sequence_feature: Optional[str],
+        encoder: str,
+        reduce_output: Optional[str]
+) -> None:
     encoder_outputs_dict, input_features_dict = encoder_outputs
 
     combiner = SequenceCombiner(
         input_features_dict,
-        main_sequence_feature=main_sequence_feature,
-        encoder=encoder,
-        reduce_output=reduce_output,
+        config=load_config(
+            SequenceCombinerConfig,
+            main_sequence_feature=main_sequence_feature,
+            encoder=encoder,
+            reduce_output=reduce_output,
+
+        ),
         # following emulates encoder parameters passed in from config file
         fc_size=FC_SIZE,
         num_fc_layers=3,
@@ -265,7 +316,7 @@ def test_sequence_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -282,71 +333,70 @@ def test_sequence_combiner(
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
 
 
-def tabnet_encoder_outputs():
-    # Need to do this in a function, otherwise TF will try to initialize
-    # too early
-    return {
-        'batch_128': {
-            'feature_1': {
-                'encoder_output': torch.randn(
-                    [128, 1],
-                    dtype=torch.float32
-                )
-            },
-            'feature_2': {
-                'encoder_output': torch.randn(
-                    [128, 1],
-                    dtype=torch.float32
-                )
-            },
-        },
-        'inputs': {
-            'feature_1': {
-                'encoder_output': tf.keras.Input(
-                    (),
-                    dtype=torch.float32,
-                    name='feature_1',
-                )
-            },
-            'feature_2': {
-                'encoder_output': tf.keras.Input(
-                    (),
-                    dtype=torch.float32,
-                    name='feature_2',
-                )
-            },
-        }
-    }
-
-
-@pytest.mark.parametrize("encoder_outputs_key", ['batch_128', 'inputs'])
-def test_tabnet_combiner(encoder_outputs_key):
-    encoder_outputs = tabnet_encoder_outputs()[encoder_outputs_key]
+@pytest.mark.parametrize(
+    'feature_list',  # defines parameter for fixture features_to_test()
+    [
+        [  # only numeric features
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
+        ],
+        [  # only numeric features
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 1]),  # passthrough encoder
+        ],
+        [  # numeric and categorical features
+            ('binary', [BATCH_SIZE, 1]),  # passthrough encoder
+            ('numerical', [BATCH_SIZE, 12]),  # dense encoder
+            ('category', [BATCH_SIZE, 8]),  # dense encoder
+        ],
+    ]
+)
+@pytest.mark.parametrize('size', [4, 8])
+@pytest.mark.parametrize('output_size', [6, 10])
+def test_tabnet_combiner(
+        features_to_test: Dict,
+        size: int,
+        output_size: int
+) -> None:
+    encoder_outputs, input_features = features_to_test
 
     # setup combiner to test
     combiner = TabNetCombiner(
-        size=2,
-        output_size=2,
-        num_steps=3,
-        num_total_blocks=4,
-        num_shared_blocks=2,
-        dropout=0.1
+        input_features,
+        config=load_config(
+            TabNetCombinerConfig,
+            size=size,
+            output_size=output_size,
+            num_steps=3,
+            num_total_blocks=4,
+            num_shared_blocks=2,
+            dropout=0.1
+        )
     )
 
     # concatenate encoder outputs
-    results = combiner(encoder_outputs)
+    combiner_output = combiner(encoder_outputs)
 
     # required key present
-    assert 'combiner_output' in results
-    assert 'attention_masks' in results
+    assert 'combiner_output' in combiner_output
+    assert 'attention_masks' in combiner_output
+    assert 'aggregated_attention_masks' in combiner_output
+
+    assert isinstance(combiner_output['combiner_output'], torch.Tensor)
+    assert combiner_output['combiner_output'].shape == (BATCH_SIZE, output_size)
 
 
 @pytest.mark.parametrize("fc_layer",
                          [None, [{"fc_size": 64}, {"fc_size": 32}]])
 @pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
-def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
-                             entity_2):
+def test_comparator_combiner(
+        encoder_comparator_outputs: Tuple,
+        fc_layer: Optional[List[Dict]],
+        entity_1: str,
+        entity_2: str
+) -> None:
     encoder_comparator_outputs_dict, input_features_dict = encoder_comparator_outputs
     # clean out unneeded encoder outputs since we only have 2 layers
     del encoder_comparator_outputs_dict["text_feature_3"]
@@ -357,8 +407,14 @@ def test_comparator_combiner(encoder_comparator_outputs, fc_layer, entity_1,
     # setup combiner to test set to 256 for case when none as it's the default size
     fc_size = fc_layer[0]["fc_size"] if fc_layer else 256
     combiner = ComparatorCombiner(
-        input_features_dict, entity_1, entity_2,
-        fc_layers=fc_layer, fc_size=fc_size
+        input_features_dict,
+        config=load_config(
+            ComparatorCombinerConfig,
+            entity_1=entity_1,
+            entity_2=entity_2,
+            fc_layers=fc_layer,
+            fc_size=fc_size
+        )
     )
 
     # concatenate encoder outputs
@@ -379,7 +435,8 @@ def test_transformer_combiner(
 
     # setup combiner to test
     combiner = TransformerCombiner(
-        input_features=input_feature_dict
+        input_features=input_feature_dict,
+        config=load_config(TransformerCombinerConfig)
     )
 
     # confirm correctness of input_shape property
@@ -387,7 +444,7 @@ def test_transformer_combiner(
     for k in encoder_outputs_dict:
         assert k in combiner.input_shape
         assert encoder_outputs_dict[k]['encoder_output'].shape[1:] \
-               == combiner.input_shape[k]
+            == combiner.input_shape[k]
 
     # calculate expected hidden size for concatenated tensors
     hidden_size = 0
@@ -403,29 +460,6 @@ def test_transformer_combiner(
 
     # check for correctness of combiner output
     check_combiner_output(combiner, combiner_output, BATCH_SIZE)
-
-
-# generates encoder outputs and minimal input feature objects for testing
-@pytest.fixture
-def features_to_test(feature_list: List[Tuple[str, list]]) -> Tuple[dict, dict]:
-    # feature_list: list of tuples that define the output_shape and type
-    #    of input features to generate.  tuple[0] is input feature type,
-    #    tuple[1] is expected encoder output shape for the input feature
-    encoder_outputs = {}
-    input_features = {}
-    for i in range(len(feature_list)):
-        feature_name = f'feature_{i:02d}'
-        encoder_outputs[feature_name] = {
-            'encoder_output': torch.randn(feature_list[i][1],
-                                          dtype=torch.float32)
-        }
-        input_features[feature_name] = PseudoInputFeature(
-            feature_name,
-            feature_list[i][1],
-            type=feature_list[i][0]
-        )
-
-    return encoder_outputs, input_features
 
 
 @pytest.mark.parametrize(
@@ -475,11 +509,14 @@ def test_tabtransformer_combiner(
     # setup combiner to test
     combiner = TabTransformerCombiner(
         input_features=input_features,
-        embed_input_feature_name=embed_input_feature_name,
-        ### emulates parameters passed from combiner def
-        num_layers=num_layers,  # number of transformer layers
-        fc_layers=fc_layers,  # fully_connected layer definition
-        reduce_output=reduce_output  # sequence reducer
+        config=load_config(
+            TabTransformerCombinerConfig,
+            embed_input_feature_name=embed_input_feature_name,
+            # emulates parameters passed from combiner def
+            num_layers=num_layers,  # number of transformer layers
+            fc_layers=fc_layers,  # fully_connected layer definition
+            reduce_output=reduce_output  # sequence reducer
+        )
     )
 
     # concatenate encoder outputs

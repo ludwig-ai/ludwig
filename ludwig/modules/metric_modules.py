@@ -19,8 +19,8 @@ from typing import Callable, Optional
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
-from torchmetrics import Accuracy, AUROC, AverageMeter, IoU, MeanAbsoluteError,\
-    MeanSquaredError, Metric, R2Score as _R2Score
+from torchmetrics import Accuracy, AUROC, IoU, MeanAbsoluteError,\
+    MeanSquaredError, Metric, R2Score as _R2Score, MeanMetric as _MeanMetric
 
 from ludwig.constants import *
 from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss,\
@@ -89,7 +89,7 @@ class MeanMetric(Metric):
     """ Abstract class for computing mean of metrics. """
     def __init__(self):
         super().__init__()
-        self.avg = AverageMeter()
+        self.avg = _MeanMetric()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         self.avg.update(self.get_current_value(preds, target))

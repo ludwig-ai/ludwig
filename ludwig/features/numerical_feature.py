@@ -198,22 +198,20 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature['input_size'] = self.input_shape
+        feature['input_size'] = self.input_shape[-1]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
-        assert len(inputs.shape) == 1
+        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
-        #inputs_exp = inputs[:, tf.newaxis]
-        inputs_exp = inputs[:, None]
-        inputs_encoded = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
+        if len(inputs.shape) == 1:
+            inputs = inputs[:, None]
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 

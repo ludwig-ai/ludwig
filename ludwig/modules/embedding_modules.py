@@ -158,7 +158,7 @@ class Embed(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         if inputs.ndim != 2 or inputs.shape[1] != 1:
             raise RuntimeError(
                 f'Embed only takes inputs of shape [batch x 1]. Received inputs with size: {inputs.size()}')
@@ -226,7 +226,7 @@ class EmbedSet(LudwigModule):
             raise ValueError(
                 f'Unsupported aggregation function {aggregation_function}')
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Params:
             inputs: Boolean multi-hot tensor of size [batch x vocab_size], where
@@ -291,7 +291,7 @@ class EmbedWeighted(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Params:
             inputs: Tensor of frequencies, where inputs[b, i] represents
@@ -389,6 +389,7 @@ class EmbedSequence(LudwigModule):
             self,
             vocab: List[str],
             embedding_size: int,
+            max_sequence_length: int,
             representation: str = 'dense',
             embeddings_trainable: bool = True,
             pretrained_embeddings: Optional[str] = None,
@@ -402,6 +403,7 @@ class EmbedSequence(LudwigModule):
         self.supports_masking = True
 
         self.vocab_size = len(vocab)
+        self.max_sequence_length = max_sequence_length
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
@@ -422,7 +424,7 @@ class EmbedSequence(LudwigModule):
         else:
             self.dropout = None
 
-    def forward(self, inputs: torch.Tensor):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         if inputs.dtype not in [torch.int, torch.long]:
             raise RuntimeError(
                 f'Expected tensor of type torch.int or torch.long as input.'
@@ -436,17 +438,16 @@ class EmbedSequence(LudwigModule):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.vocab_size])
+        return torch.Size([self.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
-        # Excludes batch size and input size (dynamic).
-        return torch.Size([self.embedding_size])
+        return torch.Size([self.max_sequence_length, self.embedding_size])
 
 
 class TokenAndPositionEmbedding(LudwigModule):
     def __init__(self,
-                 max_length,
+                 max_sequence_length,
                  vocab,
                  embedding_size,
                  representation='dense',
@@ -459,9 +460,12 @@ class TokenAndPositionEmbedding(LudwigModule):
                  embedding_regularizer=None
                  ):
         super().__init__()
+        self.max_sequence_length = max_sequence_length
+        self.embedding_size = embedding_size
         self.token_embed = EmbedSequence(
             vocab=vocab,
             embedding_size=embedding_size,
+            max_sequence_length=max_sequence_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -472,11 +476,19 @@ class TokenAndPositionEmbedding(LudwigModule):
             embedding_regularizer=embedding_regularizer
         )
         self.position_embed = nn.Embedding(
-            num_embeddings=len(vocab),
+            num_embeddings=max_sequence_length,
             embedding_dim=self.token_embed.embedding_size
         )
 
-    def forward(self, inputs, training=None, mask=None):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.token_embed.output_shape
+
+    def forward(self, inputs, mask: Optional[torch.Tensor] = None):
         max_length = inputs.shape[-1]
         positions = torch.arange(start=0, end=max_length, step=1)
         positions_hidden = self.position_embed(positions)

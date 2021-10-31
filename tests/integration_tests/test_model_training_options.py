@@ -7,6 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 from sklearn.model_selection import train_test_split
 
 from ludwig import globals as global_vars
@@ -178,28 +179,20 @@ def test_model_progress_save(
     )
 
     # ========== Check for required result data sets =============
+    model_dir = os.path.join(output_dir, 'model')
+    files = [f for f in os.listdir(model_dir) if re.match(r'model_weights', f)]
     if skip_save_model:
-        model_dir = os.path.join(output_dir, 'model')
-        files = [f for f in os.listdir(model_dir) if
-                 re.match(r'model_weights', f)]
         assert len(files) == 0
     else:
-        model_dir = os.path.join(output_dir, 'model')
-        files = [f for f in os.listdir(model_dir) if
-                 re.match(r'model_weights', f)]
-        # at least one .index and one .data file, but .data may be more
-        assert len(files) >= 2
-        assert os.path.isfile(
-            os.path.join(output_dir, 'model', 'checkpoint'))
+        assert len(files) == 1
 
+    training_checkpoints_dir = os.path.join(
+        output_dir, 'model', 'training_checkpoints')
+    training_checkpoints = os.listdir(training_checkpoints_dir)
     if skip_save_progress:
-        assert not os.path.isdir(
-            os.path.join(output_dir, 'model', 'training_checkpoints')
-        )
+        assert len(training_checkpoints) == 0
     else:
-        assert os.path.isdir(
-            os.path.join(output_dir, 'model', 'training_checkpoints')
-        )
+        assert len(training_checkpoints) > 0
 
 
 @pytest.mark.parametrize('optimizer', ['sgd', 'adam'])
@@ -330,9 +323,8 @@ def test_regularization(generated_data, tmp_path):
 
     regularization_losses = []
     for regularizer in [None, 'l1', 'l2', 'l1_l2']:
-        tf.keras.backend.clear_session()
         np.random.seed(RANDOM_SEED)
-        tf.random.set_seed(RANDOM_SEED)
+        torch.manual_seed(RANDOM_SEED)
 
         # setup regularization parameters
         config['output_features'][0][
@@ -383,7 +375,7 @@ def test_regularization(generated_data, tmp_path):
 def test_cache_checksum(csv_filename, tmp_path):
     # setup for training
     input_features = [category_feature(vocab_size=5)]
-    output_features = [category_feature(vocab_size=2)]
+    output_features = [category_feature(vocab_size=2, top_k=2)]
 
     source_dataset = os.path.join(tmp_path, csv_filename)
     source_dataset = generate_data(input_features, output_features,
@@ -402,14 +394,12 @@ def test_cache_checksum(csv_filename, tmp_path):
     # conduct initial training
     output_directory = os.path.join(tmp_path, 'results')
     model = LudwigModel(config, backend=backend)
-    _, _, train_output_directory1 = \
-        model.train(dataset=source_dataset, output_directory=output_directory)
+    model.train(dataset=source_dataset, output_directory=output_directory)
     first_training_timestamp = os.path.getmtime(cache_fname)
 
     # conduct second training, should not force recreating hdf5
     model = LudwigModel(config, backend=backend)
-    _, _, train_output_directory2 = \
-        model.train(dataset=source_dataset, output_directory=output_directory)
+    model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
 
     # time stamps should be the same
@@ -419,8 +409,7 @@ def test_cache_checksum(csv_filename, tmp_path):
     prior_training_timestamp = current_training_timestamp
     config['preprocessing']['text']['most_common_word'] = 2000
     model = LudwigModel(config, backend=backend)
-    _, _, train_output_directory3 = \
-        model.train(dataset=source_dataset, output_directory=output_directory)
+    model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamp should differ
@@ -430,8 +419,7 @@ def test_cache_checksum(csv_filename, tmp_path):
     prior_training_timestamp = current_training_timestamp
     os.utime(source_dataset)
     model = LudwigModel(config, backend=backend)
-    _, _, train_output_directory4 = \
-        model.train(dataset=source_dataset, output_directory=output_directory)
+    model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different
@@ -443,8 +431,7 @@ def test_cache_checksum(csv_filename, tmp_path):
     input_features[0]['preprocessing'] = {'lowercase': True}
     config['input_features'] = input_features
     model = LudwigModel(config, backend=backend)
-    _, _, train_output_directory5 = \
-        model.train(dataset=source_dataset, output_directory=output_directory)
+    model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different
@@ -457,8 +444,7 @@ def test_cache_checksum(csv_filename, tmp_path):
                                    source_dataset)
     config['input_features'] = input_features
     model = LudwigModel(config, backend=backend)
-    _, _, train_output_directory5 = \
-        model.train(dataset=source_dataset, output_directory=output_directory)
+    model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different
@@ -468,8 +454,7 @@ def test_cache_checksum(csv_filename, tmp_path):
     prior_training_timestamp = current_training_timestamp
     global_vars.LUDWIG_VERSION = 'new_version'
     model = LudwigModel(config, backend=backend)
-    _, _, train_output_directory5 = \
-        model.train(dataset=source_dataset, output_directory=output_directory)
+    model.train(dataset=source_dataset, output_directory=output_directory)
     current_training_timestamp = os.path.getmtime(cache_fname)
 
     # timestamps should be different

@@ -44,18 +44,18 @@ class Stacked2DCNN(ImageEncoder):
 
     def __init__(
             self,
-            img_height: int,
-            img_width: int,
+            height: int,
+            width: int,
             conv_layers: Optional[List[Dict]] = None,
             num_conv_layers: Optional[int] = None,
-            first_in_channels: int = None,
+            num_channels: int = None,
             out_channels: int = 32,
             kernel_size: Union[int, Tuple[int]] = 3,
             stride: Union[int, Tuple[int]] = 1,
             padding: Union[int, Tuple[int], str] = 'valid',
             dilation: Union[int, Tuple[int]] = 1,
             conv_bias: bool = True,
-            padding_mode: str ='zeros',
+            padding_mode: str = 'zeros',
             conv_norm: Optional[str] = None,
             conv_norm_params: Optional[Dict[str, Any]] = None,
             conv_activation: str = 'relu',
@@ -84,6 +84,11 @@ class Stacked2DCNN(ImageEncoder):
         super().__init__()
 
         logger.debug(' {}'.format(self.name))
+
+        # map parameter input feature config names to internal names
+        img_height = height
+        img_width = width
+        first_in_channels = num_channels
 
         self._input_shape = (first_in_channels, img_height, img_width)
 
@@ -164,10 +169,10 @@ class ResNetEncoder(ImageEncoder):
 
     def __init__(
             self,
-            img_height: int,
-            img_width: int,
+            height: int,
+            width: int,
             resnet_size: int = 50,
-            first_in_channels: int = 3,
+            num_channels: int = 3,
             out_channels: int = 16,
             kernel_size: Union[int, Tuple[int]] = 3,
             conv_stride: Union[int, Tuple[int]] = 1,
@@ -192,6 +197,10 @@ class ResNetEncoder(ImageEncoder):
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        # map parameter input feature config names to internal names
+        img_height = height
+        img_width = width
+        first_in_channels = num_channels
 
         self._input_shape = (first_in_channels, img_height, img_width)
 
@@ -251,9 +260,9 @@ class MLPMixerEncoder(ImageEncoder):
 
     def __init__(
             self,
-            img_height: int,
-            img_width: int,
-            in_channels: int,
+            height: int,
+            width: int,
+            num_channels: int = None,
             patch_size: int = 16,
             embed_size: int = 512,
             token_size: int = 2048,
@@ -265,6 +274,10 @@ class MLPMixerEncoder(ImageEncoder):
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        # map parameter input feature config names to internal names
+        img_height = height
+        img_width = width
+        in_channels = num_channels
 
         self._input_shape = (in_channels, img_height, img_width)
 
@@ -301,9 +314,9 @@ class MLPMixerEncoder(ImageEncoder):
 class ViTEncoder(ImageEncoder):
     def __init__(
             self,
-            img_height: int,
-            img_width: int = None,
-            in_channels: int = 3,
+            height: int,
+            width: int,
+            num_channels: int = 3,
             use_pretrained: bool = True,
             pretrained_model: str = 'google/vit-base-patch16-224',
             hidden_size: int = 768,
@@ -337,6 +350,11 @@ class ViTEncoder(ImageEncoder):
                 'In order to install all image feature dependencies run '
                 'pip install ludwig[image]'
             )
+
+        # map parameter input feature config names to internal names
+        img_height = height
+        img_width = width
+        in_channels = num_channels
 
         img_width = img_width or img_height
         if img_width != img_height:

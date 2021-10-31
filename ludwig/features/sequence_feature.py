@@ -148,24 +148,25 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
+        # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
+        if 'vocab' in feature:
+            feature['vocab_size'] = len(feature['vocab'])
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor, mask=None):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
-               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
+        assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16,
+                                torch.int32, torch.int64]
         assert len(inputs.shape) == 2
 
         inputs_exp = inputs.type(torch.int32)
         inputs_mask = torch.not_equal(inputs, 0)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
-        encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=inputs_mask
-        )
+        encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
@@ -195,7 +196,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return super().output_shape
+        return self.encoder_obj.output_shape
 
     encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
@@ -501,7 +502,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 # create mask only tokens for sequence length
                 seq_prob = row[probs_col]
                 length = row[lengths_col]
-                mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
+                mask = np.arange(
+                    seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
                 return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
             # commenting probabilities out because usually it is huge:

@@ -44,7 +44,7 @@ class PassthroughEncoder(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self.input_size)
+        return torch.Size([self.input_size])
 
     @property
     def output_shape(self) -> torch.Size:

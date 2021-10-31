@@ -14,13 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import time
 
 try:
-    #import horovod.tensorflow
     import horovod.torch
 
-    #_HVD = horovod.tensorflow
     _HVD = horovod.torch
 except (ModuleNotFoundError, ImportError):
     _HVD = None

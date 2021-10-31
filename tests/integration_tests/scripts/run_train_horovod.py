@@ -19,7 +19,7 @@ import os
 import shutil
 import sys
 
-import horovod.tensorflow as hvd
+import horovod.torch as hvd
 import numpy as np
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -62,9 +62,9 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         loaded_model = LudwigModel.load(model_dir)
 
         # Model loading should broadcast weights from coordinator
-        loaded_weights = loaded_model.model.get_weights()
-        bcast_weights = hvd.broadcast_object(loaded_weights)
-        for loaded, bcast in zip(loaded_weights, bcast_weights):
+        loaded_state = loaded_model.model.state_dict()
+        bcast_state = hvd.broadcast_object(loaded_state)
+        for loaded, bcast in zip(loaded_state.values(), bcast_state.values()):
             assert np.allclose(loaded, bcast)
     finally:
         if output_dir:

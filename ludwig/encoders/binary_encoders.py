@@ -51,13 +51,13 @@ class BinaryPassthroughEncoder(BinaryEncoder):
     def forward(self, inputs):
         """
             :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.float32
+                   Shape: [batch x 1], type torch.float32
         """
         return {'encoder_output': inputs}
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.embedding_size])
+        return torch.Size([1])
 
     @property
     def input_shape(self) -> torch.Size:

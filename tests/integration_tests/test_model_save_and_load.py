@@ -1,8 +1,10 @@
 import os.path
+import random
 import tempfile
 
 import numpy as np
 import pandas as pd
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import SPLIT
@@ -15,7 +17,9 @@ from tests.integration_tests.utils import binary_feature, numerical_feature, \
 
 
 def test_model_save_reload_api(csv_filename, tmp_path):
-    tf.random.set_seed(1234)
+    torch.manual_seed(1)
+    random.seed(1)
+    np.random.seed(1)
 
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     audio_dest_folder = os.path.join(os.getcwd(), 'generated_audio')
@@ -42,8 +46,9 @@ def test_model_save_reload_api(csv_filename, tmp_path):
         binary_feature(),
         numerical_feature(),
         category_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3),
+        # TODO(shreya): Reintroduce sequence and text after sequence output feature.
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
         set_feature(vocab_size=3),
         vector_feature(),
     ]
@@ -102,21 +107,21 @@ def test_model_save_reload_api(csv_filename, tmp_path):
         for if_name in ludwig_model1.model.input_features:
             if1 = ludwig_model1.model.input_features[if_name]
             if2 = ludwig_model2.model.input_features[if_name]
-            for if1_w, if2_w in zip(if1.encoder_obj.weights,
-                                    if2.encoder_obj.weights):
-                assert np.allclose(if1_w.numpy(), if2_w.numpy())
+            for if1_w, if2_w in zip(if1.encoder_obj.parameters(),
+                                    if2.encoder_obj.parameters()):
+                assert torch.allclose(if1_w, if2_w)
 
         c1 = ludwig_model1.model.combiner
         c2 = ludwig_model2.model.combiner
-        for c1_w, c2_w in zip(c1.weights, c2.weights):
-            assert np.allclose(c1_w.numpy(), c2_w.numpy())
+        for c1_w, c2_w in zip(c1.parameters(), c2.parameters()):
+            assert torch.allclose(c1_w, c2_w)
 
         for of_name in ludwig_model1.model.output_features:
             of1 = ludwig_model1.model.output_features[of_name]
             of2 = ludwig_model2.model.output_features[of_name]
-            for of1_w, of2_w in zip(of1.decoder_obj.weights,
-                                    of2.decoder_obj.weights):
-                assert np.allclose(of1_w.numpy(), of2_w.numpy())
+            for of1_w, of2_w in zip(of1.decoder_obj.parameters(),
+                                    of2.decoder_obj.parameters()):
+                assert torch.allclose(of1_w, of2_w)
 
     # Test saving and loading the model explicitly
     with tempfile.TemporaryDirectory() as tmpdir:

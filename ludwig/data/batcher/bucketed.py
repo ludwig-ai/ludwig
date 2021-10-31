@@ -50,8 +50,7 @@ class BucketedBatcher(Batcher):
         self.batch_size = batch_size
         self.total_size = min(map(len, dataset.get_dataset().values()))
         self.bucket_sizes = np.array([x for x in map(len, self.buckets_idcs)])
-        self.steps_per_epoch = int(
-            np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size))))
+        self.steps_per_epoch = self._compute_steps_per_epoch()
         self.indices = np.array([0] * buckets)
         self.step = 0
         self.epoch = 0
@@ -103,10 +102,17 @@ class BucketedBatcher(Batcher):
                        self.indices + self.batch_size < self.bucket_sizes
                    ))
 
-    def set_epoch(self, epoch):
+    def set_epoch(self, epoch, batch_size):
         self.indices = np.array([0] * len(self.buckets_idcs))
         self.step = 0
         self.epoch = epoch
+        self.batch_size = batch_size
+        self.steps_per_epoch = self._compute_steps_per_epoch()
+
+    def _compute_steps_per_epoch(self) -> int:
+        return int(
+            np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size)))
+        )
 
 
 # todo future: reintroduce the bucketed batcher
