@@ -7,9 +7,10 @@ from ludwig.utils.torch_utils import Sparsemax
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.modules.tabnet_modules import FeatureTransformer, FeatureBlock
 from ludwig.modules.tabnet_modules import AttentiveTransformer
+from tests.integration_tests.utils import assert_model_parameters_updated
 
-RANDOM_SEED = 67
-BATCH_SIZE = 16
+RANDOM_SEED = 1919
+BATCH_SIZE = 8  # 16  #2
 
 
 @pytest.mark.parametrize(
@@ -159,6 +160,8 @@ def test_attentive_transformer(
     assert attentive_transformer.output_shape[-1] == input_size
     assert attentive_transformer.input_dtype == torch.float32
 
+    assert_model_parameters_updated(attentive_transformer, output_tensor)
+
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
 @pytest.mark.parametrize('size', [2, 4, 8])
@@ -192,3 +195,5 @@ def test_tabnet(
     assert tabnet.input_shape[-1] == input_size
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
+
+    assert_model_parameters_updated(tabnet, output[0])

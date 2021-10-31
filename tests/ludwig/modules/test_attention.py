@@ -1,6 +1,8 @@
 import pytest
+import torch
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
+from tests.integration_tests.utils import assert_model_parameters_updated
 
 
 @pytest.mark.parametrize('input_hidden_size', [128, 256, 512])
@@ -12,15 +14,21 @@ def test_feed_forward_attention_reducer(
         input_hidden_size
 ):
     # Generate synthetic data
-    current_inputs = tf.random.normal(
+    current_inputs = torch.randn(
         [input_batch_size, input_seq_size, input_hidden_size],
-        dtype=tf.float32
+        dtype=torch.float32
     )
 
     # instantiate feed forward attention reducer
-    feed_forward_attention_reducer = FeedForwardAttentionReducer()
+    feed_forward_attention_reducer = FeedForwardAttentionReducer(
+        input_size=input_hidden_size)
 
     result = feed_forward_attention_reducer(current_inputs)
 
     # ensure returned tensor is the correct shape
-    assert result.shape.as_list() == [input_batch_size, input_hidden_size]
+    assert result.shape == (input_batch_size, input_hidden_size)
+
+    assert_model_parameters_updated(
+        feed_forward_attention_reducer,
+        result
+    )
