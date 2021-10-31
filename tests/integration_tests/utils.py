@@ -752,7 +752,7 @@ def assert_model_parameters_updated_loop(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
     # generate initial model output tensor
     model_output = model(model_input)
@@ -802,8 +802,17 @@ def assert_model_parameters_updated_loop(
             print(f'\n>>>> parameter updated at step {step}')
             break
         elif step >= max_steps:
+            parameters_not_updated = []
+            for updated, b, a in zip(parameter_updated, before, after):
+                if not updated:
+                    parameters_not_updated.append(
+                        f'\nParameter {b[0]} not updated:\n'
+                        f'\tbefore model forward() pass: {b[1]}\n'
+                        f'\tafter model forward() pass: {a[1]}'
+                    )
             raise ParameterUpdateError(
                 f'Not all model parameters updated after {step} tries.'
+                f'{"".join(parameters_not_updated)}'
             )
 
         step += 1
