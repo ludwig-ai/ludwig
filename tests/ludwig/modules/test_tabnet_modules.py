@@ -7,7 +7,8 @@ from ludwig.utils.torch_utils import Sparsemax
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.modules.tabnet_modules import FeatureTransformer, FeatureBlock
 from ludwig.modules.tabnet_modules import AttentiveTransformer
-from tests.integration_tests.utils import assert_model_parameters_updated
+from tests.integration_tests.utils import assert_model_parameters_updated, \
+    assert_model_parameters_updated_loop
 
 RANDOM_SEED = 1919
 BATCH_SIZE = 8  # 16  #2
@@ -200,4 +201,5 @@ def test_tabnet(
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
 
-    assert_model_parameters_updated(tabnet, output[0])
+    # assert_model_parameters_updated(tabnet, output[0])
+    assert_model_parameters_updated_loop(tabnet, input_tensor, 50)
