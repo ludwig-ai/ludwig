@@ -732,3 +732,78 @@ def assert_model_parameters_updated(
                 f'contain same contents.\nBefore model update: {b[1]}\n'
                 f'After module update: {a[1]}'
             )
+
+
+def assert_model_parameters_updated_loop(
+        model: LudwigModule,
+        model_input: torch.Tensor,
+        max_steps: int = 4
+) -> None:
+    """
+    Confirms that model parameters can be updated.
+    Args:
+        model: (LudwigModel) model to be tested.
+        model_input: (torch.Tensor) input for model
+        max_steps: (int) maximum number of steps allowed to test for parameter
+            updates.
+
+    Returns: None
+
+    """
+    # setup
+    loss_function = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+    # generate initial model output tensor
+    model_output = model(model_input)
+
+    # create target tensor
+    if isinstance(model_output, torch.Tensor):
+        target_tensor = torch.ones(model_output.shape, dtype=model_output.dtype)
+    elif isinstance(model_output, tuple):
+        target_tensor = torch.ones(model_output[0].shape,
+                                   dtype=model_output[0].dtype)
+    else:
+        raise RuntimeError(
+            'Unable to setup target tensor for model parameter update testing.'
+        )
+
+    # todo: is test for all parameters eventually getting updated?
+    # # capture model parameters before doing parameter update pass
+    # before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+    step = 1
+    while True:
+        # make pass through model
+        model_output = model(model_input)
+
+        # todo: this is for all model parameters are updated during a cycle
+        # capture model parameters before doing parameter update pass
+        before = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+        # do update of model parameters
+        if isinstance(model_output, torch.Tensor):
+            loss = loss_function(model_output, target_tensor)
+        else:
+            loss = loss_function(model_output[0], target_tensor)
+        loss.backward()
+        optimizer.step()  # comment out to generate no update exception for testing
+
+        # capture model parameters after one pass
+        after = [(x[0], x[1].clone()) for x in model.named_parameters()]
+
+        # check for parameter updates
+        parameter_updated = []
+        for b, a in zip(before, after):
+            parameter_updated.append((a[1] != b[1]).any())
+
+        # check to see if parameters were updated in all layers
+        if all(parameter_updated):
+            print(f'\n>>>> parameter updated at step {step}')
+            break
+        elif step >= max_steps:
+            raise ParameterUpdateError(
+                f'Not all model parameters updated after {step} tries.'
+            )
+
+        step += 1
