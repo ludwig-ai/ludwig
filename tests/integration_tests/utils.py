@@ -695,15 +695,14 @@ class ParameterUpdateError(Exception):
 
 def assert_model_parameters_updated(
         model: LudwigModule,
-        batch: torch.Tensor,
-        target_tensor_shape: Union[list, tuple]
+        model_output: torch.Tensor,
+
 ) -> None:
     """
     Confirms that model parameters can be updated.
     Args:
         model: (LudwigModel) model to be tested.
-        batch: (torch.Tensor) synthetic batch tensor to pass into the model
-        target_tensor_shape: shape of synthetic tensor used to compute a loss function
+        model_output: (torch.Tensor) output tensor from model
 
     Returns: None
 
@@ -711,13 +710,10 @@ def assert_model_parameters_updated(
     # setup
     loss_function = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-    target_tensor = torch.ones(target_tensor_shape, dtype=torch.float32)
+    target_tensor = torch.ones(model_output.shape, dtype=model_output.dtype)
 
-    # capture model parameters before passing through data
+    # capture model parameters before doing parameter update pass
     before = [(x[0], x[1].clone()) for x in model.named_parameters()]
-
-    # make one pass through model
-    model_output = model(batch)
 
     # do update of model parameters
     loss = loss_function(model_output, target_tensor)
@@ -729,15 +725,8 @@ def assert_model_parameters_updated(
 
     # check for parameter updates
     for b, a in zip(before, after):
-        # ensure parameter names match
-        if a[0] != b[0]:
-            raise RuntimeError(
-                f'During parameter update check, detected mis-matching names: '
-                f'name1: {a[0]}, name2: {b[0]}'
-            )
-
         # ensure parameters are updated
-        if (a[1] == b[1]).all():
+        if not (a[1] != b[1]).any():
             raise ParameterUpdateError(
                 f'Model parameter for {a[0]} did not update.  Before and after '
                 f'contain same contents.\nBefore model update: {b[1]}\n'
