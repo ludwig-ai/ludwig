@@ -207,11 +207,14 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        assert len(inputs.shape) == 1 or (
+                    len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
-        inputs_encoded = self.encoder_obj(inputs)
+
+        # ensure inputs are torch.float32 to avoid problems with use of nn.Linear
+        inputs_encoded = self.encoder_obj(inputs.type(torch.float32))
 
         return inputs_encoded
 
