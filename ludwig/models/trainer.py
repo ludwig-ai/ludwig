@@ -55,6 +55,8 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 from tabulate import tabulate
 from tqdm import tqdm
 
+from tensorboard.plugins.hparams import api as hp
+
 logger = logging.getLogger(__name__)
 
 
@@ -287,6 +289,54 @@ class Trainer(BaseTrainer):
             horovod=horovod,
             **optimizer
         )
+
+    @classmethod
+    def write_hparam_summary(
+            cls,
+            train_summary_writer,
+            epochs,
+            learning_rate,
+            batch_size,
+            early_stop,
+            warmup_epochs,
+    ):
+        if not train_summary_writer:
+            return
+
+        HP_EPOCHS = hp.HParam('epochs')
+        HP_LEARNING_RATE = hp.HParam('learning_rate')
+        HP_BATCH_SIZE = hp.HParam('batch_size')
+        HP_EARLY_STOP = hp.HParam('early_stop')
+        HP_WARMUP_EPOCHS = hp.HParam('warmup_epochs')
+
+        # We can track the validation metric by setting this to the nametag of
+        # the metric already logged to the summary writer. I know I'm lazy :)
+        # TODO: set this using the actual values and do not use a fixed one
+        METRIC_LOSS = 'combined/epoch_loss'
+
+        with train_summary_writer.as_default():
+            hp.hparams_config(
+                hparams=[
+                    HP_EPOCHS,
+                    HP_LEARNING_RATE,
+                    HP_BATCH_SIZE,
+                    HP_EARLY_STOP,
+                    HP_WARMUP_EPOCHS
+                ],
+                metrics=[
+                    hp.Metric(METRIC_LOSS, display_name='loss')
+                ],
+            )
+            hparams = {
+                HP_EPOCHS: epochs,
+                HP_LEARNING_RATE: learning_rate,
+                HP_BATCH_SIZE: batch_size,
+                HP_EARLY_STOP: early_stop,
+                HP_WARMUP_EPOCHS: warmup_epochs,
+            }
+            hp.hparams(hparams)
+
+        train_summary_writer.flush()
 
     @classmethod
     def write_epoch_summary(
@@ -748,6 +798,15 @@ class Trainer(BaseTrainer):
                 last_learning_rate_reduction=0,
                 last_increase_batch_size=0,
             )
+
+        self.write_hparam_summary(
+            train_summary_writer=train_summary_writer,
+            epochs=self.epochs,
+            learning_rate=self.learning_rate,
+            batch_size=self.batch_size,
+            early_stop=self.early_stop,
+            warmup_epochs=self.learning_rate_warmup_epochs
+        )
 
         set_random_seed(self.random_seed)
         with training_set.initialize_batcher(
