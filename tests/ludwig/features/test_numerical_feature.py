@@ -24,10 +24,10 @@ def test_numerical_input_feature(enc_encoder: str) -> None:
     )
 
     # instantiate binary input feature object
-    input_feature_obj = NumericalInputFeature(feature_definition)
+    feature_obj = NumericalInputFeature(feature_definition)
 
     # pass synthetic binary tensor through the input feature
-    encoder_output = input_feature_obj(input_tensor)
+    encoder_output = feature_obj(input_tensor)
 
     # confirm correctness of the the binary encoder output
     assert isinstance(encoder_output, dict)
@@ -66,11 +66,11 @@ def test_numerical_output_feature(
     )
 
     # instantiate binary output feature object
-    input_feature_obj = NumericalOutputFeature(feature_definition)
+    feature_obj = NumericalOutputFeature(feature_definition)
 
     # pass synthetic binary tensor through the input feature
     # specify no dependencies
-    feature_output = input_feature_obj(input_for_output_feature)
+    feature_output = feature_obj(input_for_output_feature)
 
     # confirm correctness of the the binary encoder output structure
     assert isinstance(feature_output, dict)
