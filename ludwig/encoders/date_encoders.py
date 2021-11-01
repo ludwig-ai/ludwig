@@ -54,9 +54,6 @@ class DateEmbed(DateEncoder):
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
             norm: Optional[str] = None,
             norm_params: Optional[Dict] = None,
             activation: str = 'relu',
@@ -92,15 +89,6 @@ class DateEmbed(DateEncoder):
             :type weights_initializer: string
             :param bias_initializer: Initializer for the bias vector.
             :type bias_initializer: string
-            :param weights_regularizer: regularizer applied to the weights
-                (kernel) matrix.
-            :type weights_regularizer: string
-            :param bias_regularizer: regularizer function applied to bias
-                vector.
-            :type bias_regularizer: string
-            :param activity_regularizer: Regularizer applied to the output of
-                the layer (activation).
-            :type activity_regularizer: string
             :param norm: type of normalization to use 'batch' or 'layer'.
             :type norm: string, default None
             :param norm_params: parameters to pass to normalization function.
@@ -122,9 +110,6 @@ class DateEmbed(DateEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=None,
             default_norm_params=None,
             default_activation=None,
@@ -141,7 +126,6 @@ class DateEmbed(DateEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  day Embed')
@@ -154,7 +138,6 @@ class DateEmbed(DateEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  weekday Embed')
@@ -167,7 +150,6 @@ class DateEmbed(DateEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  yearday Embed')
@@ -180,7 +162,6 @@ class DateEmbed(DateEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  hour Embed')
@@ -193,7 +174,6 @@ class DateEmbed(DateEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  minute Embed')
@@ -206,7 +186,6 @@ class DateEmbed(DateEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  second Embed')
@@ -219,7 +198,6 @@ class DateEmbed(DateEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         # Summed sizes of all of the embeddings.
@@ -244,9 +222,6 @@ class DateEmbed(DateEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -309,9 +284,6 @@ class DateWave(DateEncoder):
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
             norm: Optional[str] = None,
             norm_params: Optional[Dict] = None,
             activation: str = 'relu',
@@ -333,15 +305,6 @@ class DateWave(DateEncoder):
             :type weights_initializer: string
             :param bias_initializer: Initializer for the bias vector.
             :type bias_initializer: string
-            :param weights_regularizer: regularizer applied to the weights
-                (kernel) matrix.
-            :type weights_regularizer: string
-            :param bias_regularizer: regularizer function applied to bias
-                vector.
-            :type bias_regularizer: string
-            :param activity_regularizer: Regularizer applied to the output of
-                the layer (activation).
-            :type activity_regularizer: string
             :param norm: type of normalization to use 'batch' or 'layer'.
             :type norm: string, default None
             :param norm_params: parameters to pass to normalization function.
@@ -363,9 +326,6 @@ class DateWave(DateEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=None,
             default_norm_params=None,
             default_activation=None,
@@ -388,9 +348,6 @@ class DateWave(DateEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,

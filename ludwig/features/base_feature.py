@@ -129,9 +129,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.use_bias = True
         self.weights_initializer = 'xavier_uniform'
         self.bias_initializer = 'zeros'
-        self.weights_regularizer = None
-        self.bias_regularizer = None
-        self.activity_regularizer = None
         self.norm = None
         self.norm_params = None
         self.activation = 'relu'
@@ -150,9 +147,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_use_bias=self.use_bias,
             default_weights_initializer=self.weights_initializer,
             default_bias_initializer=self.bias_initializer,
-            default_weights_regularizer=self.weights_regularizer,
-            default_bias_regularizer=self.bias_regularizer,
-            default_activity_regularizer=self.activity_regularizer,
             default_norm=self.norm,
             default_norm_params=self.norm_params,
             default_activation=self.activation,

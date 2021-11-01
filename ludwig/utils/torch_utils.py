@@ -82,9 +82,27 @@ def get_activation(activation):
     return activations[activation]()
 
 
-def reg_loss(input_tensor, regularizer, l1=0.01, l2=0.01):
-    l1_reg = l1 * torch.sum(torch.abs(input_tensor))
-    l2_reg = l2 * torch.sum(torch.square(input_tensor))
+def reg_loss(
+        model: nn.Module,
+        regularizer: str,
+        l1: float = 0.01,
+        l2: float = 0.01
+):
+    """
+    Computes the regularization loss for a given model.
+
+    Parameters:
+        model: torch.nn.Module object to compute regularization loss for.
+        regularizer: regularizer to use (currently l1, l2 and l1_l2 supported).
+        l1: L1 regularization coefficient.
+        l2: L2 regularization coefficient.
+
+    Returns:
+        Regularization loss for the model (float).
+    """
+
+    l1_reg = l1 * sum(torch.abs(p).sum() for p in model.parameters())
+    l2_reg = l2 * sum(torch.square(p).sum() for p in model.parameters())
 
     if regularizer == "l1":
         return l1_reg
@@ -157,9 +175,6 @@ class Dense(LudwigModule):
         use_bias=True,
         weights_initializer='xavier_uniform',
         bias_initializer='zeros',
-        weights_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
     ):
         super().__init__()
         self.dense = nn.Linear(
@@ -173,25 +188,9 @@ class Dense(LudwigModule):
         bias_initializer = initializer_registry[bias_initializer]
         bias_initializer(self.dense.bias)
 
-        if weights_regularizer:
-            self.add_loss(lambda: reg_loss(
-                self.dense.weight, weights_regularizer))
-
-        if bias_regularizer:
-            self.add_loss(lambda: reg_loss(self.dense.bias, bias_regularizer))
-
-        if activity_regularizer:
-            # Handle in forward call
-            self.add_loss(lambda: self.activation_loss)
-
-        self.activity_regularizer = activity_regularizer
-
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         batch_size = input.shape[0]
         output = torch.squeeze(self.dense(input), dim=-1)
-        if self.activity_regularizer:
-            self.activation_loss = reg_loss(
-                output, self.activity_regularizer) / batch_size
         return output
 
 

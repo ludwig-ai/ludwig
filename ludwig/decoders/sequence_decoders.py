@@ -71,9 +71,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             reduce_input='sum',
             **kwargs
     ):
@@ -111,10 +108,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         #     state_size,
         #     use_bias=use_bias,
         #     kernel_initializer=weights_initializer,
-        #     bias_initializer=bias_initializer,
-        #     kernel_regularizer=weights_regularizer,
-        #     bias_regularizer=bias_regularizer,
-        #     activity_regularizer=activity_regularizer
+        #     bias_initializer=bias_initializer
         # )
         #
         # logger.debug('  Embedding')
@@ -122,8 +116,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         #     input_dim=self.num_classes + 1,  # account for GO_SYMBOL
         #     output_dim=embedding_size,
         #     embeddings_initializer=weights_initializer,
-        #     embeddings_regularizer=weights_regularizer,
-        #     activity_regularizer=activity_regularizer
         # )
         # logger.debug('  project output Dense')
         # self.dense_layer = Dense(
@@ -131,9 +123,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         #     use_bias=use_bias,
         #     kernel_initializer=weights_initializer,
         #     bias_initializer=bias_initializer,
-        #     kernel_regularizer=weights_regularizer,
-        #     bias_regularizer=bias_regularizer,
-        #     activity_regularizer=activity_regularizer
         # )
         # rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
         # rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
@@ -730,9 +719,6 @@ class SequenceTaggerDecoder(SequenceDecoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             attention=False,
             attention_embedding_size=256,
             attention_num_heads=8,
@@ -758,10 +744,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
             units=num_classes,
             use_bias=use_bias,
             kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            bias_initializer=bias_initializer
         )
 
     def call(

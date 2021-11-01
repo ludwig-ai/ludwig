@@ -95,9 +95,6 @@ class ConcatCombinerConfig:
     use_bias: bool = True
     weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
@@ -142,11 +139,6 @@ class ConcatCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,
@@ -585,9 +577,6 @@ class TransformerCombinerConfig:
     use_bias: bool = True
     weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -651,11 +640,6 @@ class TransformerCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.fc_activation,
@@ -730,9 +714,6 @@ class TabTransformerCombinerConfig:
     use_bias: bool = True
     weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -854,11 +835,6 @@ class TabTransformerCombiner(CombinerClass):
             default_use_bias=config.use_bias,
             default_weights_initializer=config.weights_initializer,
             default_bias_initializer=config.bias_initializer,
-            default_weights_regularizer=config.weights_regularizer,
-            default_bias_regularizer=config.bias_regularizer,
-            default_activity_regularizer=config.activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=config.norm,
             default_norm_params=config.norm_params,
             default_activation=config.fc_activation,
@@ -977,9 +953,6 @@ class ComparatorCombinerConfig:
     use_bias: bool = True
     weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
@@ -1025,11 +998,6 @@ class ComparatorCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,
@@ -1043,11 +1011,6 @@ class ComparatorCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,

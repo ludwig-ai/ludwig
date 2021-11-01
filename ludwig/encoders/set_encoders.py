@@ -53,9 +53,6 @@ class SetSparseEncoder(SetEncoder):
             use_bias: bool = True,
             weights_initializer: str = 'xavier_uniform',
             bias_initializer: str = 'zeros',
-            weights_regularizer: Optional[str] = None,
-            bias_regularizer: Optional[str] = None,
-            activity_regularizer: Optional[str] = None,
             norm: Optional[str] = None,
             norm_params: Optional[Dict[str, Any]] = None,
             activation: str = 'relu',
@@ -77,7 +74,6 @@ class SetSparseEncoder(SetEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer,
         )
 
         logger.debug('  FCStack')
@@ -90,9 +86,6 @@ class SetSparseEncoder(SetEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,

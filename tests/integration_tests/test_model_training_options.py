@@ -313,7 +313,7 @@ def test_regularization(generated_data, tmp_path):
         'training': {
             'epochs': 1,
             'batch_size': 16,
-            'regularization_lambda': 1
+            'regularization_lambda': 1,
         }
     }
 
@@ -327,12 +327,7 @@ def test_regularization(generated_data, tmp_path):
         torch.manual_seed(RANDOM_SEED)
 
         # setup regularization parameters
-        config['output_features'][0][
-            'weights_regularizer'] = regularizer
-        config['output_features'][0][
-            'bias_regularizer'] = regularizer
-        config['output_features'][0][
-            'activity_regularizer'] = regularizer
+        config['training']['regularization_type'] = regularizer
 
         # run experiment
         _, _, _, _, output_dir = experiment_cli(

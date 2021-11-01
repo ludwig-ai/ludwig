@@ -278,7 +278,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             self,
 #             hidden,
 #             hidden_size,
-#             regularizer=None,
 #             dropout=None,
 #             is_training=None,
 #             **kwargs
@@ -307,7 +306,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             self.decoder_obj,
 #             hidden,
 #             hidden_size,
-#             regularizer=regularizer,
 #             is_timeseries=True
 #         )
 #

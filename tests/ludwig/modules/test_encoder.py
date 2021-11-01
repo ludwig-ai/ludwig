@@ -27,9 +27,6 @@ from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
 
-L1_REGULARIZER = 'l1'
-L2_REGULARIZER = 'l2'
-NO_REGULARIZER = None
 DROPOUT = 0.5
 
 
@@ -102,9 +99,6 @@ def test_image_encoders_resnet():
     # Test the resnet encoder for images
     encoder_args = {
         'resnet_size': 8, 'num_filters': 8, 'fc_size': 28,
-        'weights_regularizer': L1_REGULARIZER,
-        'bias_regularizer': L1_REGULARIZER,
-        'activity_regularizer': L1_REGULARIZER,
         'dropout': DROPOUT
     }
     image_size = (10, 10, 3)
@@ -148,12 +142,6 @@ def test_image_encoders_stacked_2dcnn():
     # Test the resnet encoder for images
     encoder_args = {
         'num_conv_layers': 2, 'num_filters': 16, 'fc_size': 28,
-        'conv_activity_regularizer': L1_REGULARIZER,
-        'conv_weights_regularizer': L1_REGULARIZER,
-        'conv_bias_regularizer': L1_REGULARIZER,
-        'fc_activity_regularizer': L1_REGULARIZER,
-        'fc_weights_regularizer': L1_REGULARIZER,
-        'fc_bias_regularizer': L1_REGULARIZER,
         'dropout': DROPOUT
 
     }
@@ -202,9 +190,6 @@ def test_image_encoders_mlpmixer():
     encoder_args = {
         'patch_size': 5, 'embed_size': 8, 'token_size': 32,
         'channel_dim': 16, 'num_layers': 2,
-        'weights_regularizer': L1_REGULARIZER,
-        'bias_regularizer': L1_REGULARIZER,
-        'activity_regularizer': L1_REGULARIZER,
         'dropout': DROPOUT
     }
     image_size = (10, 10, 3)
@@ -267,7 +252,6 @@ def test_sequence_encoder_embed():
         for trainable in [True, False]:
             encoder_args['reduce_output'] = reduce_output
             encoder_args['embeddings_trainable'] = trainable
-            encoder_args['weights_regularizer'] = L1_REGULARIZER
             encoder_args['dropout'] = DROPOUT
             encoder = create_encoder(SequenceEmbedEncoder, encoder_args)
 
@@ -324,9 +308,6 @@ def test_sequence_encoders():
                                  StackedCNNRNN]:
                 encoder_args['reduce_output'] = reduce_output
                 encoder_args['embeddings_trainable'] = trainable
-                encoder_args['weights_regularizer'] = L1_REGULARIZER
-                encoder_args['bias_regularizer'] = L1_REGULARIZER
-                encoder_args['activity_regularizer'] = L1_REGULARIZER
                 encoder_args['dropout'] = DROPOUT
                 encoder_args['dropout'] = DROPOUT
                 encoder_args['recurrent_dropout'] = DROPOUT
