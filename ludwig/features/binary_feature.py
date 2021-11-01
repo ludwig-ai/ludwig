@@ -116,7 +116,10 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        self.encoder_obj = self.initialize_encoder(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
