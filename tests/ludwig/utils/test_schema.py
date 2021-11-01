@@ -272,37 +272,9 @@ def test_config_bad_combiner_types_enums():
     config['combiner']['bias_initializer'] = 'fail'
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
         validate_config(config)
-    
-    # TODO(shreya): This should fail. Confirm before removing.
-    # Test weights regularizer:
-    del config['combiner']['bias_initializer']
-    config['combiner']['weights_regularizer'] = 'l1'
-    validate_config(config)
-    config['combiner']['weights_regularizer'] = 'fail'
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
-    
-    # TODO(shreya): This should fail. Confirm before removing.
-    # Test bias regularizer:
-    del config['combiner']['weights_regularizer']
-    config['combiner']['bias_regularizer'] = 'l1_l2'
-    validate_config(config)
-    config['combiner']['bias_regularizer'] = 'fail'
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
-    
-    # TODO(shreya): This should fail. Confirm before removing.
-    # Test activity regularizer:
-    del config['combiner']['bias_regularizer']
-    config['combiner']['activity_regularizer'] = 'l1_l2'
-    validate_config(config)
-    config['combiner']['activity_regularizer'] = 'fail'
-    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
-    
-    # TODO(shreya): This should fail. Confirm before removing.
+
     # Test norm:
-    del config['combiner']['activity_regularizer']
+    del config['combiner']['bias_initializer']
     config['combiner']['norm'] = 'batch'
     validate_config(config)
     config['combiner']['norm'] = 'fail'

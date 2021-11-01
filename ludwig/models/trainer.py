@@ -32,8 +32,8 @@ from typing import Dict, Any
 import numpy as np
 import torch
 from tabulate import tabulate
-from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
 from ludwig.data.dataset.base import Dataset

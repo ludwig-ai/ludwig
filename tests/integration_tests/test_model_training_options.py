@@ -301,75 +301,69 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     assert train_losses[last_epoch - 1] < train_losses[0]
 
 
-# TODO(shreya): Figure out what to do about this.
-# def test_regularization(generated_data, tmp_path):
-#     input_features, output_features = get_feature_configs()
+def test_regularization(generated_data, tmp_path):
+    input_features, output_features = get_feature_configs()
 
-#     config = {
-#         'input_features': input_features,
-#         'output_features': output_features,
-#         'combiner': {
-#             'type': 'concat'
-#         },
-#         'training': {
-#             'epochs': 1,
-#             'batch_size': 16,
-#             'regularization_lambda': 1
-#         }
-#     }
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {
+            'type': 'concat'
+        },
+        'training': {
+            'epochs': 1,
+            'batch_size': 16,
+            'regularization_lambda': 1,
+        }
+    }
 
-#     # create sub-directory to store results
-#     results_dir = tmp_path / 'results'
-#     results_dir.mkdir()
+    # create sub-directory to store results
+    results_dir = tmp_path / 'results'
+    results_dir.mkdir()
 
-#     regularization_losses = []
-#     for regularizer in [None, 'l1', 'l2', 'l1_l2']:
-#         np.random.seed(RANDOM_SEED)
-#         torch.manual_seed(RANDOM_SEED)
+    regularization_losses = []
+    for regularizer in [None, 'l1', 'l2', 'l1_l2']:
+        np.random.seed(RANDOM_SEED)
+        torch.manual_seed(RANDOM_SEED)
 
-#         # setup regularization parameters
-#         config['output_features'][0][
-#             'weights_regularizer'] = regularizer
-#         config['output_features'][0][
-#             'bias_regularizer'] = regularizer
-#         config['output_features'][0][
-#             'activity_regularizer'] = regularizer
+        # setup regularization parameters
+        config['training']['regularization_type'] = regularizer
 
-#         # run experiment
-#         _, _, _, _, output_dir = experiment_cli(
-#             training_set=generated_data.train_df,
-#             validation_set=generated_data.validation_df,
-#             test_set=generated_data.test_df,
-#             output_directory=str(results_dir),
-#             config=config,
-#             experiment_name='regularization',
-#             model_name=str(regularizer),
-#             skip_save_processed_input=True,
-#             skip_save_progress=True,
-#             skip_save_unprocessed_output=True,
-#             skip_save_model=True,
-#             skip_save_log=True
-#         )
+        # run experiment
+        _, _, _, _, output_dir = experiment_cli(
+            training_set=generated_data.train_df,
+            validation_set=generated_data.validation_df,
+            test_set=generated_data.test_df,
+            output_directory=str(results_dir),
+            config=config,
+            experiment_name='regularization',
+            model_name=str(regularizer),
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True,
+            skip_save_model=True,
+            skip_save_log=True
+        )
 
-#         # test existence of required files
-#         train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
-#         metadata_fp = os.path.join(output_dir, 'description.json')
-#         assert os.path.isfile(train_stats_fp)
-#         assert os.path.isfile(metadata_fp)
+        # test existence of required files
+        train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
+        metadata_fp = os.path.join(output_dir, 'description.json')
+        assert os.path.isfile(train_stats_fp)
+        assert os.path.isfile(metadata_fp)
 
-#         # retrieve results so we can compare training loss with regularization
-#         with open(train_stats_fp, 'r') as f:
-#             train_stats = json.load(f)
+        # retrieve results so we can compare training loss with regularization
+        with open(train_stats_fp, 'r') as f:
+            train_stats = json.load(f)
 
-#         # retrieve training losses for all epochs
-#         train_losses = np.array(train_stats['training']['combined']['loss'])
-#         regularization_losses.append(train_losses[0])
+        # retrieve training losses for all epochs
+        train_losses = np.array(train_stats['training']['combined']['loss'])
+        regularization_losses.append(train_losses[0])
 
-#     # create a set of losses
-#     regularization_losses_set = set(regularization_losses)
+    # create a set of losses
+    regularization_losses_set = set(regularization_losses)
 
-#     # ensure all losses obtained with the different methods are different
-#     assert len(regularization_losses) == len(regularization_losses_set)
+    # ensure all losses obtained with the different methods are different
+    assert len(regularization_losses) == len(regularization_losses_set)
 
 
 # test cache checksum function

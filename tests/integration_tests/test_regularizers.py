@@ -14,8 +14,6 @@ from tests.integration_tests.utils import binary_feature, category_feature,\
 from ludwig.api import LudwigModel
 
 BATCH_SIZE = 32
-HIDDEN_SIZE = 128
-SEQ_SIZE = 10
 RANDOM_SEED = 42
 IMAGE_DIR = tempfile.mkdtemp()
 
@@ -41,7 +39,11 @@ IMAGE_DIR = tempfile.mkdtemp()
         ),
         (
             [category_feature(representation='dense')],
-            [numerical_feature()]
+            [numerical_feature(
+                decoder='regressor',
+                loss={'type': 'mean_squared_error'},
+                num_fc_layers=5
+            )]
         ),
         (
             [date_feature()],
