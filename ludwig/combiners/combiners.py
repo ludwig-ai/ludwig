@@ -125,15 +125,14 @@ class ConcatCombiner(CombinerClass):
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if config.fc_layers is None and \
-                config.num_fc_layers is not None:
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
             fc_layers = []
             for i in range(config.num_fc_layers):
                 fc_layers.append({'fc_size': config.fc_size})
 
-        self.fc_layers = config.fc_layers
-
-        if config.fc_layers is not None:
+        self.fc_layers = fc_layers
+        if self.fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 first_layer_input_size=self.concatenated_shape[-1],
@@ -155,7 +154,7 @@ class ConcatCombiner(CombinerClass):
                 residual=config.residual,
             )
 
-        if input_features and len(input_features) == 1 and config.fc_layers is None:
+        if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
 
     @property
