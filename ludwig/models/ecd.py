@@ -3,6 +3,7 @@ import logging
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import torch
 import torchmetrics
 from torch.nn import Module
@@ -104,6 +105,7 @@ class ECD(LudwigModule):
             self,
             inputs: Union[
                 Dict[str, torch.Tensor],
+                Dict[str, np.ndarray],
                 Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
             ],
             mask=None
