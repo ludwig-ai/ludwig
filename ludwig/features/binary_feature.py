@@ -124,7 +124,8 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        assert len(inputs.shape) == 1 or (
+            len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]

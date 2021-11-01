@@ -110,80 +110,82 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
 
 
-# TODO(#133): Re-enable.
-# def test_experiment_seq_seq(csv_filename):
-#     # Single Sequence input, single sequence output
-#     # Only the following encoders are working
-#     input_features = [text_feature(reduce_output=None, encoder='rnn')]
-#     output_features = [text_feature(reduce_input=None, decoder='tagger')]
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+def test_experiment_seq_seq(csv_filename):
+    # Single Sequence input, single sequence output
+    # Only the following encoders are working
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [text_feature(reduce_input=None, decoder='tagger')]
 
-#     # Generate test data
-#     rel_path = generate_data(input_features, output_features, csv_filename)
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
-#     encoders2 = ['cnnrnn', 'stacked_cnn']
-#     for encoder in encoders2:
-#         logger.info('seq to seq test, Encoder: {0}'.format(encoder))
-#         input_features[0]['encoder'] = encoder
-#         run_experiment(input_features, output_features, dataset=rel_path)
-
-
-# def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
-#     # seq-to-seq test to use config file instead of dictionary
-#     input_features = [text_feature(reduce_output=None, encoder='embed')]
-#     output_features = [
-#         text_feature(reduce_input=None, vocab_size=3, decoder='tagger')
-#     ]
-
-#     # Save the config to a yaml file
-#     config = {
-#         'input_features': input_features,
-#         'output_features': output_features,
-#         'combiner': {'type': 'concat', 'fc_size': 14},
-#         'training': {'epochs': 2}
-#     }
-#     with open(yaml_filename, 'w') as yaml_out:
-#         yaml.safe_dump(config, yaml_out)
-
-#     rel_path = generate_data(input_features, output_features, csv_filename)
-#     run_experiment(
-#         None, None, dataset=rel_path, config=yaml_filename
-#     )
+    encoders2 = ['cnnrnn', 'stacked_cnn']
+    for encoder in encoders2:
+        logger.info('seq to seq test, Encoder: {0}'.format(encoder))
+        input_features[0]['encoder'] = encoder
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
-# def test_experiment_seq_seq_train_test_valid(tmpdir):
-#     # seq-to-seq test to use train, test, validation files
-#     input_features = [text_feature(reduce_output=None, encoder='rnn')]
-#     output_features = [
-#         text_feature(reduce_input=None, vocab_size=3, decoder='tagger')
-#     ]
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
+    # seq-to-seq test to use config file instead of dictionary
+    input_features = [text_feature(reduce_output=None, encoder='embed')]
+    output_features = [
+        text_feature(reduce_input=None, vocab_size=3, decoder='tagger')
+    ]
 
-#     train_csv = generate_data(
-#         input_features, output_features, os.path.join(tmpdir, 'train.csv')
-#     )
-#     test_csv = generate_data(
-#         input_features, output_features, os.path.join(tmpdir, 'test.csv'), 20
-#     )
-#     valdation_csv = generate_data(
-#         input_features, output_features, os.path.join(tmpdir, 'val.csv'), 20
-#     )
+    # Save the config to a yaml file
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {'type': 'concat', 'fc_size': 14},
+        'training': {'epochs': 2}
+    }
+    with open(yaml_filename, 'w') as yaml_out:
+        yaml.safe_dump(config, yaml_out)
 
-#     run_experiment(
-#         input_features,
-#         output_features,
-#         training_set=train_csv,
-#         test_set=test_csv,
-#         validation_set=valdation_csv
-#     )
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(
+        None, None, dataset=rel_path, config=yaml_filename
+    )
 
-#     input_features[0]['encoder'] = 'parallel_cnn'
-#     # Save intermediate output
-#     run_experiment(
-#         input_features,
-#         output_features,
-#         training_set=train_csv,
-#         test_set=test_csv,
-#         validation_set=valdation_csv
-#     )
+
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+def test_experiment_seq_seq_train_test_valid(tmpdir):
+    # seq-to-seq test to use train, test, validation files
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [
+        text_feature(reduce_input=None, vocab_size=3, decoder='tagger')
+    ]
+
+    train_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, 'train.csv')
+    )
+    test_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, 'test.csv'), 20
+    )
+    valdation_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, 'val.csv'), 20
+    )
+
+    run_experiment(
+        input_features,
+        output_features,
+        training_set=train_csv,
+        test_set=test_csv,
+        validation_set=valdation_csv
+    )
+
+    input_features[0]['encoder'] = 'parallel_cnn'
+    # Save intermediate output
+    run_experiment(
+        input_features,
+        output_features,
+        training_set=train_csv,
+        test_set=test_csv,
+        validation_set=valdation_csv
+    )
 
 
 @pytest.mark.parametrize('encoder', ENCODERS)
@@ -225,59 +227,59 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-# TODO(#133): Re-enable.
-# @pytest.mark.parametrize(
-#     'output_features',
-#     [
-#         # baseline test case
-#         [
-#             category_feature(vocab_size=2, reduce_input='sum'),
-#             sequence_feature(vocab_size=10, max_len=5),
-#             numerical_feature()
-#         ],
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+@pytest.mark.parametrize(
+    'output_features',
+    [
+        # baseline test case
+        [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            sequence_feature(vocab_size=10, max_len=5),
+            numerical_feature()
+        ],
 
-#         # use generator as decoder
-#         [
-#             category_feature(vocab_size=2, reduce_input='sum'),
-#             sequence_feature(vocab_size=10, max_len=5, decoder='generator'),
-#             numerical_feature()
-#         ],
+        # use generator as decoder
+        [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            sequence_feature(vocab_size=10, max_len=5, decoder='generator'),
+            numerical_feature()
+        ],
 
-#         # Generator decoder and reduce_input = None
-#         [
-#             category_feature(vocab_size=2, reduce_input='sum'),
-#             sequence_feature(max_len=5, decoder='generator',
-#                              reduce_input=None),
-#             numerical_feature(normalization='minmax')
-#         ],
+        # Generator decoder and reduce_input = None
+        [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            sequence_feature(max_len=5, decoder='generator',
+                             reduce_input=None),
+            numerical_feature(normalization='minmax')
+        ],
 
-#         # output features with dependencies single dependency
-#         generate_output_features_with_dependencies('feat3', ['feat1']),
+        # output features with dependencies single dependency
+        generate_output_features_with_dependencies('feat3', ['feat1']),
 
-#         # output features with dependencies multiple dependencies
-#         generate_output_features_with_dependencies('feat3',
-#                                                    ['feat1', 'feat2']),
+        # output features with dependencies multiple dependencies
+        generate_output_features_with_dependencies('feat3',
+                                                   ['feat1', 'feat2']),
 
-#         # output features with dependencies multiple dependencies
-#         generate_output_features_with_dependencies('feat2',
-#                                                    ['feat1', 'feat3']),
+        # output features with dependencies multiple dependencies
+        generate_output_features_with_dependencies('feat2',
+                                                   ['feat1', 'feat3']),
 
-#         # output features with dependencies
-#         generate_output_features_with_dependencies('feat1', ['feat2'])
-#     ]
-# )
-# def test_experiment_multiple_seq_seq(csv_filename, output_features):
-#     input_features = [
-#         text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
-#         numerical_feature(normalization='zscore'),
-#         category_feature(vocab_size=10, embedding_size=5),
-#         set_feature(),
-#         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
-#     ]
-#     output_features = output_features
+        # output features with dependencies
+        generate_output_features_with_dependencies('feat1', ['feat2'])
+    ]
+)
+def test_experiment_multiple_seq_seq(csv_filename, output_features):
+    input_features = [
+        text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
+        numerical_feature(normalization='zscore'),
+        category_feature(vocab_size=10, embedding_size=5),
+        set_feature(),
+        sequence_feature(vocab_size=10, max_len=10, encoder='embed')
+    ]
+    output_features = output_features
 
-#     rel_path = generate_data(input_features, output_features, csv_filename)
-#     run_experiment(input_features, output_features, dataset=rel_path)
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('skip_save_processed_input', [True, False])
@@ -615,62 +617,64 @@ def test_experiment_tied_weights(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
-# @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
-# @pytest.mark.parametrize('attention', [False, True])
-# def test_sequence_tagger(
-#         enc_cell_type,
-#         attention,
-#         csv_filename
-# ):
-#     # Define input and output features
-#     input_features = [
-#         sequence_feature(
-#             max_len=10,
-#             encoder='rnn',
-#             cell_type=enc_cell_type,
-#             reduce_output=None
-#         )
-#     ]
-#     output_features = [
-#         sequence_feature(
-#             max_len=10,
-#             decoder='tagger',
-#             attention=attention,
-#             reduce_input=None
-#         )
-#     ]
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize('attention', [False, True])
+def test_sequence_tagger(
+        enc_cell_type,
+        attention,
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        sequence_feature(
+            max_len=10,
+            encoder='rnn',
+            cell_type=enc_cell_type,
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            attention=attention,
+            reduce_input=None
+        )
+    ]
 
-#     # Generate test data
-#     rel_path = generate_data(input_features, output_features, csv_filename)
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
-#     # run the experiment
-#     run_experiment(input_features, output_features, dataset=rel_path)
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
-# def test_sequence_tagger_text(
-#         csv_filename
-# ):
-#     # Define input and output features
-#     input_features = [
-#         text_feature(
-#             max_len=10,
-#             encoder='rnn',
-#             reduce_output=None
-#         )
-#     ]
-#     output_features = [
-#         sequence_feature(
-#             max_len=10,
-#             decoder='tagger',
-#             reduce_input=None
-#         )
-#     ]
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+def test_sequence_tagger_text(
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        text_feature(
+            max_len=10,
+            encoder='rnn',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            reduce_input=None
+        )
+    ]
 
-#     # Generate test data
-#     rel_path = generate_data(input_features, output_features, csv_filename)
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
-#     # run the experiment
-#     run_experiment(input_features, output_features, dataset=rel_path)
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('sequence_combiner_encoder', ENCODERS[:-2])
@@ -786,30 +790,31 @@ def test_experiment_timeseries(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
-# def test_visual_question_answering(csv_filename):
-#     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
-#     input_features = [
-#         image_feature(
-#             folder=image_dest_folder,
-#             encoder='resnet',
-#             preprocessing={
-#                 'in_memory': True,
-#                 'height': 8,
-#                 'width': 8,
-#                 'num_channels': 3,
-#                 'num_processes': 5
-#             },
-#             fc_size=8,
-#             num_filters=8
-#         ),
-#         text_feature(encoder='embed', min_len=1, level='word'),
-#     ]
-#     output_features = [sequence_feature(decoder='generator', cell_type='lstm')]
-#     rel_path = generate_data(input_features, output_features, csv_filename)
-#     run_experiment(input_features, output_features, dataset=rel_path)
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+def test_visual_question_answering(csv_filename):
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder='resnet',
+            preprocessing={
+                'in_memory': True,
+                'height': 8,
+                'width': 8,
+                'num_channels': 3,
+                'num_processes': 5
+            },
+            fc_size=8,
+            num_filters=8
+        ),
+        text_feature(encoder='embed', min_len=1, level='word'),
+    ]
+    output_features = [sequence_feature(decoder='generator', cell_type='lstm')]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
-#     # Delete the temporary data created
-#     shutil.rmtree(image_dest_folder)
+    # Delete the temporary data created
+    shutil.rmtree(image_dest_folder)
 
 
 def test_image_resizing_num_channel_handling(csv_filename):
@@ -912,19 +917,20 @@ def test_experiment_vector_feature_2(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-# def test_experiment_sampled_softmax(csv_filename):
-#     # Multiple inputs, Single category output
-#     input_features = [text_feature(vocab_size=10, min_len=1)]
-#     output_features = [category_feature(
-#         vocab_size=500,
-#         loss={'type': 'sampled_softmax_cross_entropy'}
-#     )]
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+def test_experiment_sampled_softmax(csv_filename):
+    # Multiple inputs, Single category output
+    input_features = [text_feature(vocab_size=10, min_len=1)]
+    output_features = [category_feature(
+        vocab_size=500,
+        loss={'type': 'sampled_softmax_cross_entropy'}
+    )]
 
-#     # Generate test data
-#     rel_path = generate_data(input_features, output_features, csv_filename,
-#                              num_examples=10000)
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename,
+                             num_examples=10000)
 
-#     run_experiment(input_features, output_features, dataset=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 if __name__ == '__main__':

@@ -89,11 +89,11 @@ def run_experiment(input_features, output_features, **kwargs):
             numerical_feature(),
             {'loss': {'type': 'mean_absolute_error'}}
         ),
-        #
-        #     # binary feature
-        #     (binary_feature(), binary_feature(), None),
-        #
-        #     # Categorical feature
+
+        # binary feature
+        (binary_feature(), binary_feature(), None),
+
+        # Categorical feature
         (category_feature(), category_feature(), None),
         (
             category_feature(),
