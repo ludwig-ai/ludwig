@@ -775,6 +775,8 @@ def assert_model_parameters_updated_loop(
 
     step = 1
     while True:
+        model.train(True)
+
         # make pass through model
         model_output = model(model_input)
 
