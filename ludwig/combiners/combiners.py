@@ -93,8 +93,7 @@ class ConcatCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
@@ -226,8 +225,7 @@ class SequenceConcatCombiner(CombinerClass):
 
         self.input_features = input_features
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(
-            reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
         self.main_sequence_feature = config.main_sequence_feature
@@ -380,8 +378,7 @@ class SequenceConcatCombiner(CombinerClass):
 class SequenceCombinerConfig:
     main_sequence_feature: Optional[str] = None
     reduce_output: Optional[str] = schema.ReductionOptions()
-    encoder: Optional[str] = schema.StringOptions(
-        list(sequence_encoder_registry.keys()))
+    encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
 
     class Meta:
         unknown = INCLUDE
@@ -472,15 +469,13 @@ class SequenceCombiner(CombinerClass):
 class TabNetCombinerConfig:
     size: int = schema.PositiveInteger(default=32)  # N_a in the paper
     output_size: int = schema.PositiveInteger(default=32)  # N_d in the paper
-    num_steps: int = schema.NonNegativeInteger(
-        default=1)  # N_steps in the paper
+    num_steps: int = schema.NonNegativeInteger(default=1)  # N_steps in the paper
     num_total_blocks: int = schema.NonNegativeInteger(default=4)
     num_shared_blocks: int = schema.NonNegativeInteger(default=2)
     relaxation_factor: float = 1.5  # gamma in the paper
     bn_epsilon: float = 1e-3
     bn_momentum: float = 0.7  # m_B in the paper
-    # B_v from the paper
-    bn_virtual_bs: Optional[int] = schema.PositiveInteger()
+    bn_virtual_bs: Optional[int] = schema.PositiveInteger()  # B_v from the paper
     sparsity: float = 1e-5  # lambda_sparse in the paper
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
 
@@ -588,8 +583,7 @@ class TransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
@@ -618,8 +612,7 @@ class TransformerCombiner(CombinerClass):
 
         self.input_features = input_features
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(
-            reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -735,8 +728,7 @@ class TabTransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
@@ -767,8 +759,7 @@ class TabTransformerCombiner(CombinerClass):
             raise ValueError("TabTransformer requires the `reduce_output` "
                              "parameter")
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(
-            reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
         self.supports_masking = True
 
         self.embed_input_feature_name = config.embed_input_feature_name
@@ -984,8 +975,7 @@ class ComparatorCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
