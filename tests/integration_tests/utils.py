@@ -752,17 +752,18 @@ def assert_model_parameters_updated_loop(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=100)
 
     # generate initial model output tensor
     model_output = model(model_input)
 
     # create target tensor
     if isinstance(model_output, torch.Tensor):
-        target_tensor = torch.ones(model_output.shape, dtype=model_output.dtype)
+        target_tensor = torch.randn(model_output.shape,
+                                    dtype=model_output.dtype)
     elif isinstance(model_output, tuple):
-        target_tensor = torch.ones(model_output[0].shape,
-                                   dtype=model_output[0].dtype)
+        target_tensor = torch.randn(model_output[0].shape,
+                                    dtype=model_output[0].dtype)
     else:
         raise RuntimeError(
             'Unable to setup target tensor for model parameter update testing.'
@@ -806,9 +807,9 @@ def assert_model_parameters_updated_loop(
             for updated, b, a in zip(parameter_updated, before, after):
                 if not updated:
                     parameters_not_updated.append(
-                        f'\nParameter {b[0]} not updated:\n'
-                        f'\tbefore model forward() pass: {b[1]}\n'
-                        f'\tafter model forward() pass: {a[1]}'
+                        f'\nParameter {a[0]} not updated:\n'
+                        f'\tbefore model forward() pass (requires grad:{b[1].requires_grad}): {b[1]}\n'
+                        f'\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}'
                     )
             raise ParameterUpdateError(
                 f'Not all model parameters updated after {step} tries.'
