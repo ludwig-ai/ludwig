@@ -60,14 +60,14 @@ class ECD(LudwigModule):
 
         # ================ Outputs ================
         self.output_features = torch.nn.ModuleDict()
-        self.output_features.update(build_outputs(output_features_def, self.combiner))
+        self.output_features.update(build_outputs(
+            output_features_def, self.combiner))
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
-
 
     def get_model_inputs(self, training=True):
         inputs = {
@@ -256,7 +256,6 @@ class ECD(LudwigModule):
     def reset_metrics(self):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
-        #self.eval_loss_metric.reset_states()
         self.eval_loss_metric.reset()
 
     def collect_weights(
@@ -264,32 +263,20 @@ class ECD(LudwigModule):
             tensor_names=None,
             **kwargs
     ):
-        def recurse_weights(model, prefix=None):
-            results = []
-            for name, layer in model.named_children():
-                layer_prefix = f'{prefix}/{name}' if prefix else name
-                if isinstance(layer, Module):
-                    if list(layer.children()):
-                        results += recurse_weights(layer, layer_prefix)
-                    else:
-                        results += [(f'{layer_prefix}/{w_name}', w) for w_name, w in
-                                    layer.named_parameters()]
-            return results
+        """Returns named parameters filtered against `tensor_names` if not None."""
+        if not tensor_names:
+            return self.named_parameters()
 
-        weights = recurse_weights(self)
-        if tensor_names:
-            # Check for bad tensor names
-            weight_set = set(name for name, w in weights)
-            for name in tensor_names:
-                if name not in weight_set:
-                    raise ValueError(
-                        f'Tensor {name} not present in the model graph')
+        # Check for bad tensor names.
+        weight_names = set(name for name, _ in self.named_parameters())
+        for name in tensor_names:
+            if name not in weight_names:
+                raise ValueError(
+                    f'Requested tensor name filter "{name}" not present in the model graph')
 
-            # Filter the weights
-            tensor_set = set(tensor_names)
-            weights = [(name, w) for name, w in weights if name in tensor_set]
-
-        return weights
+        # Apply filter.
+        tensor_set = set(tensor_names)
+        return [named_param for named_param in self.named_parameters() if named_param[0] in tensor_set]
 
     def get_args(self):
         return self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed

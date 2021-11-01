@@ -44,7 +44,7 @@ def collect_activations(
         batch_size: int = 128,
         output_directory: str = 'results',
         gpus: List[str] = None,
-        gpu_memory_limit: int =None,
+        gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
@@ -179,7 +179,7 @@ def save_tensors(collected_tensors, output_directory):
             output_directory,
             make_safe_filename(tensor_name) + '.npy'
         )
-        np.save(np_filename, tensor_value.numpy())
+        np.save(np_filename, tensor_value.detach().numpy())
         filenames.append(np_filename)
     return filenames
 
@@ -280,8 +280,6 @@ def cli_collect_activations(sys_argv):
         nargs='+',
         required=True
     )
-
-
 
     # -------------------------
     # Output results parameters
