@@ -21,6 +21,7 @@ import sys
 from typing import List, Union
 
 import numpy as np
+import torchinfo
 
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS,  Backend
@@ -198,9 +199,9 @@ def print_model_summary(
     :return: (`None`)
     """
     model = LudwigModel.load(model_path)
-    # TODO(justin): Enable when torchsummary supports dict inputs.
-    # https://pypi.org/project/torch-summary/
-    # torchsummary.summary(model.model, model.model.get_model_inputs(training=False))
+    # Model's dict inputs are wrapped in a list, required by torchinfo.
+    torchinfo.summary(
+        model.model, input_data=[model.model.get_model_inputs(training=False)])
 
     print('\nModules:\n')
     for name, _ in model.model.named_children():
