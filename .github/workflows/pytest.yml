@@ -35,7 +35,7 @@ jobs:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
 
-    name: py${{ matrix.python-version  }}, tf${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
+    name: py${{ matrix.python-version  }}, torch${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
     timeout-minutes: 50
     steps:
@@ -59,9 +59,9 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-tf${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
+        key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-py${{ matrix.python-version }}-tf${{ matrix.pytorch-version }}-
+          ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
 
     - name: Install dependencies
       env:
