@@ -20,6 +20,7 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
