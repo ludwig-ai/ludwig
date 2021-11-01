@@ -31,17 +31,18 @@ from typing import Dict, Any
 
 import numpy as np
 import torch
-from torch.utils.tensorboard import SummaryWriter
 from tabulate import tabulate
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
 from ludwig.data.dataset.base import Dataset
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
-from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
-from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
-from ludwig.globals import is_progressbar_disabled
+from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
+                            MODEL_WEIGHTS_FILE_NAME,
+                            TRAINING_CHECKPOINTS_DIR_PATH,
+                            TRAINING_PROGRESS_TRACKER_FILE_NAME,
+                            is_progressbar_disabled)
+from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import (get_improved_fun,
                                            get_initial_validation_value)
@@ -112,6 +113,7 @@ class Trainer(BaseTrainer):
             optimizer=None,
             epochs=100,
             regularization_lambda=0.0,
+            regularization_type=None,
             learning_rate=0.001,
             decay=False,
             decay_rate=0.96,
@@ -161,6 +163,8 @@ class Trainer(BaseTrainer):
         :type save_path: filepath (str)
         :param regularization_lambda: Strength of the $L2$ regularization
         :type regularization_lambda: Integer
+        :param regularization_type: Type of regularization, (l1, l2, l1_l2).
+        :type regularization_type: str
         :param epochs: Number of epochs the algorithm is intended to be run over
         :type epochs: Integer
         :param learning_rate: Learning rate for the algorithm, represents how
@@ -251,6 +255,7 @@ class Trainer(BaseTrainer):
         """
         self.epochs = epochs
         self.regularization_lambda = regularization_lambda
+        self.regularization_type = regularization_type
         self.learning_rate = learning_rate
         self.decay = decay
         self.decay_rate = decay_rate
@@ -305,13 +310,16 @@ class Trainer(BaseTrainer):
             else:
                 self.device = 'cpu'
 
-    def train_step(self, model, inputs, targets):
+    def train_step(self, model: ECD, inputs, targets):
         self.optimizer.zero_grad()
 
         # Obtain model predictions and loss
         model_outputs = model((inputs, targets))
         loss, all_losses = model.train_loss(
-            targets, model_outputs, self.regularization_lambda
+            targets,
+            model_outputs,
+            self.regularization_type,
+            self.regularization_lambda
         )
 
         # Begin the backward pass

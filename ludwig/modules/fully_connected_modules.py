@@ -20,7 +20,7 @@ from torch.nn import (Linear, LayerNorm, Dropout, ModuleList,
                       BatchNorm1d, BatchNorm2d)
 
 from ludwig.utils.torch_utils import LudwigModule, initializer_registry, \
-    activations, reg_loss
+    activations
 
 logger = logging.getLogger(__name__)
 

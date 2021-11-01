@@ -1,7 +1,7 @@
 import copy
 import logging
 from collections import OrderedDict
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torchmetrics
@@ -16,7 +16,7 @@ from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.schema_utils import load_config_with_kwargs
-from ludwig.utils.torch_utils import LudwigModule
+from ludwig.utils.torch_utils import LudwigModule, reg_loss
 
 logger = logging.getLogger(__name__)
 
@@ -190,13 +190,12 @@ class ECD(LudwigModule):
                 "of output features"
             )
 
-        outputs = self(inputs, training=False)
+        outputs = self(inputs)
 
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                outputs[of_name],
-                training=False
+                outputs[of_name]
             )
 
         return predictions
@@ -209,7 +208,13 @@ class ECD(LudwigModule):
     def predict_step(self, inputs):
         return self.predictions(inputs, output_features=None)
 
-    def train_loss(self, targets, predictions, regularization_lambda=0.0):
+    def train_loss(
+            self,
+            targets,
+            predictions,
+            regularization_type: Optional[str] = None,
+            regularization_lambda: Optional[float] = None
+    ):
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
@@ -218,20 +223,17 @@ class ECD(LudwigModule):
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
-        print("\n\n\nPrinting losses now")
-
         for loss in self.losses():
+            train_loss += loss
 
-            print(loss)
-
-            if hasattr(loss, "loss_name"):
-                # this assumes that all losses with a loss_name are not
-                # regularization losses and should be added
-                # to the total loss as they are
-                train_loss += loss
-            else:
-                # this assumes all unnamed losses are regularization losses
-                train_loss += regularization_lambda * loss
+        # Add regularization loss
+        if regularization_type is not None:
+                train_loss += reg_loss(
+                self,
+                regularization_type,
+                l1=regularization_lambda,
+                l2=regularization_lambda
+            )
 
         return train_loss, of_train_losses
 

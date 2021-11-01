@@ -143,6 +143,7 @@ def test_config_tabnet():
             'decay_rate': 0.9,
             'staircase': True,
             'regularization_lambda': 1,
+            'regularization_type': 'l2',
             'validation_field': 'label',
         }
     }
