@@ -809,10 +809,10 @@ def assert_model_parameters_updated_loop(
                     parameters_not_updated.append(
                         f'\nParameter {a[0]} not updated:\n'
                         f'\tbefore model forward() pass (requires grad:{b[1].requires_grad}): {b[1]}\n'
-                        f'\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}'
+                        f'\tafter model forward() pass (requires grad:{a[1].requires_grad}): {a[1]}\n'
                     )
             raise ParameterUpdateError(
-                f'Not all model parameters updated after {step} tries.'
+                f'Not all model parameters updated after {step} tries.\n'
                 f'{"".join(parameters_not_updated)}'
             )
 
