@@ -116,15 +116,13 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        if encoder_obj:
-            self.encoder_obj = encoder_obj
-        else:
-            self.encoder_obj = self.initialize_encoder(feature)
+        self.encoder_obj = self.initialize_encoder(feature)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        assert len(inputs.shape) == 1 or (
+            len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]

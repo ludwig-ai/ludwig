@@ -53,6 +53,8 @@ class BinaryPassthroughEncoder(BinaryEncoder):
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type torch.float32
         """
+        if inputs.dtype == torch.bool:
+            return {'encoder_output': inputs.to(torch.float32)}
         return {'encoder_output': inputs}
 
     @property
