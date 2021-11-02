@@ -189,9 +189,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             inputs,  # logits
             **kwargs
     ):
-        logits = inputs[LOGITS]
-
-        probabilities = torch.sigmoid(logits)
+        probabilities = torch.sigmoid(inputs.logits)
 
         predictions = torch.greater_equal(probabilities, self.threshold)
         predictions = predictions.type(torch.int64)
@@ -199,7 +197,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return {
             PREDICTIONS: predictions,
             PROBABILITIES: probabilities,
-            LOGITS: logits
+            LOGITS: inputs.logits
         }
 
     def _setup_loss(self):

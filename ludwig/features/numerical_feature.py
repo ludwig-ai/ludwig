@@ -207,7 +207,8 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        assert len(inputs.shape) == 1 or (
+            len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
@@ -270,8 +271,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs, **kwargs):  # logits
-        logits = inputs[LOGITS]
-        predictions = logits
+        predictions = inputs.logits
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
@@ -297,7 +297,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                     )
                 )
 
-        return {PREDICTIONS: predictions, LOGITS: logits}
+        return {PREDICTIONS: predictions, LOGITS: inputs.logits}
 
     def _setup_loss(self):
         if self.loss[TYPE] == "mean_squared_error":
@@ -320,7 +320,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
         self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
         self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RMSEMetric()
-        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric()
+        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric(
+        )
         self.metric_functions[R2] = R2Score()
 
     def get_prediction_set(self):

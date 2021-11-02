@@ -20,6 +20,7 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_prediction
@@ -28,6 +29,7 @@ from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, vector_feature, image_feature, \
     audio_feature, timeseries_feature, date_feature, h3_feature, set_feature, \
     bag_feature, LocalTestBackend
+from tests.integration_tests import utils
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -46,7 +48,7 @@ def test_savedmodel(csv_filename, should_load_model):
 
         # Single sequence input, single category output
         input_features = [
-            # binary_feature(),
+            binary_feature(),
             # numerical_feature(),
             # category_feature(vocab_size=3),
             # sequence_feature(vocab_size=3),
@@ -65,9 +67,9 @@ def test_savedmodel(csv_filename, should_load_model):
             category_feature(vocab_size=3),
             binary_feature(),
             numerical_feature(),
-            sequence_feature(vocab_size=3),
-            text_feature(vocab_size=3),
-            set_feature(vocab_size=3),
+            # sequence_feature(vocab_size=3),
+            # text_feature(vocab_size=3),
+            # set_feature(vocab_size=3),
             vector_feature()
         ]
 
@@ -130,7 +132,7 @@ def test_savedmodel(csv_filename, should_load_model):
         ###################################################
         ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
         loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
-        loaded_weights = deepcopy(ludwig_model.model.trainable_variables)
+        loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
 
         #################################################
         # restore savedmodel, obtain predictions and weights
@@ -154,27 +156,24 @@ def test_savedmodel(csv_filename, should_load_model):
         of_name = list(ludwig_model.model.output_features.keys())[0]
 
         data_to_predict = {
-            name: tf.convert_to_tensor(
-                dataset.dataset[feature.proc_column],
-                dtype=feature.get_input_dtype()
-            )
+            name: torch.from_numpy(dataset.dataset[feature.proc_column])
             for name, feature in ludwig_model.model.input_features.items()
         }
+        logits = restored_model(data_to_predict)
 
-        logits = restored_model(data_to_predict, False, None)
+        restored_predictions = torch.argmax(
+            # Restoring from torchscript drops the names of NamedTuples.
+            logits[of_name][1], -1)
 
-        restored_predictions = tf.argmax(
-            logits[of_name]['logits'],
-            -1,
-            name='predictions_{}'.format(of_name)
-        )
-        restored_predictions = tf.map_fn(
-            lambda idx: training_set_metadata[of_name]['idx2str'][idx],
-            restored_predictions,
-            dtype=tf.string
-        )
+        print(
+            f'original_predictions_df[predictions_column_name]: {original_predictions_df[predictions_column_name]}')
+        print(
+            f"training_set_metadata[of_name]: {training_set_metadata[of_name]}")
+        print(f'restored_predictions: {restored_predictions}')
+        restored_predictions = [training_set_metadata[of_name]
+                                ['idx2str'][idx] for idx in restored_predictions]
 
-        restored_weights = deepcopy(restored_model.trainable_variables)
+        restored_weights = deepcopy(list(restored_model.parameters()))
 
         #########
         # Cleanup
@@ -186,37 +185,17 @@ def test_savedmodel(csv_filename, should_load_model):
         # Check if weights and predictions are the same
         ###############################################
 
-        # check for same number of weights as original model
-        assert len(original_weights) == len(loaded_weights)
-        assert len(original_weights) == len(restored_weights)
+        # Check to weight values match the original model.
+        assert utils.is_all_close(original_weights, loaded_weights)
+        assert utils.is_all_close(original_weights, restored_weights)
 
-        # check to ensure weight valuess match the original model
-        loaded_weights_match = np.all(
-            [np.all(np.isclose(original_weights[i].numpy(),
-                               loaded_weights[i].numpy())) for i in
-             range(len(original_weights))]
-        )
-
-        original_weights = sorted(original_weights, key=lambda w: w.name)
-        restored_weights = sorted(restored_weights, key=lambda w: w.name)
-
-        restored_weights_match = np.all(
-            [np.all(np.isclose(original_weights[i].numpy(),
-                               restored_weights[i].numpy())) for i in
-             range(len(original_weights))]
-        )
-
-        assert loaded_weights_match and restored_weights_match
-
-        #  Are predictions identical to original ones?
-        loaded_predictions_match = np.all(
+        # Check that predictions are identical to the original model.
+        assert np.all(
             original_predictions_df[predictions_column_name] ==
             loaded_prediction_df[predictions_column_name]
         )
 
-        restored_predictions_match = np.all(
+        assert np.all(
             original_predictions_df[predictions_column_name] ==
-            restored_predictions.numpy().astype('str')
+            restored_predictions
         )
-
-        assert loaded_predictions_match and restored_predictions_match

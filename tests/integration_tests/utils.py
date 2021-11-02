@@ -477,6 +477,18 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
     return [param.data for param in model.parameters()]
 
 
+def is_all_close(list_tensors_1, list_tensors_2):
+    '''Returns whether all of list_tensors_1 is close to list_tensors_2.'''
+    assert len(list_tensors_1) == len(list_tensors_2)
+    for i in range(len(list_tensors_1)):
+        assert list_tensors_1[i].size() == list_tensors_2[i].size()
+
+    is_close_values = [torch.isclose(
+        list_tensors_1[i], list_tensors_2[i]) for i in range(len(list_tensors_1))]
+    return torch.all(torch.Tensor(
+        [torch.all(is_close_value) for is_close_value in is_close_values]))
+
+
 def run_api_experiment(input_features, output_features, data_csv):
     """
     Helper method to avoid code repetition in running an experiment

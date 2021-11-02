@@ -85,6 +85,10 @@ class ReduceConcat(LudwigModule):
 
 class ReduceNone(LudwigModule):
 
+    @property
+    def input_shape(self):
+        return torch.Size([1])
+
     def forward(self, inputs, mask=None):
         return inputs
 

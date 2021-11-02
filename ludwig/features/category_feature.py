@@ -195,10 +195,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             inputs,  # logits
             **kwargs
     ):
-        logits = inputs[LOGITS]
-
-        probabilities = torch.softmax(logits, -1)
-        predictions = torch.argmax(logits, -1)
+        probabilities = torch.softmax(inputs.logits, -1)
+        predictions = torch.argmax(inputs.logits, -1)
         predictions = predictions.long()
 
         # EXPECTED SHAPE OF RETURNED TENSORS
@@ -208,7 +206,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return {
             PREDICTIONS: predictions,
             PROBABILITIES: probabilities,
-            LOGITS: logits
+            LOGITS: inputs.logits
         }
 
     def get_prediction_set(self):

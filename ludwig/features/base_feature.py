@@ -16,7 +16,7 @@
 import logging
 from abc import ABC, abstractmethod
 import copy
-from typing import Dict
+from typing import Dict, NamedTuple
 
 from ludwig.utils.types import DataFrame
 
@@ -36,6 +36,17 @@ from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+class OutputFeatureOutput(NamedTuple):
+    last_hidden: torch.Tensor
+    logits: torch.Tensor
+    # projection_input: torch.Tensor = torch.Tensor([0])
+
+
+# class GenericFeatureOutput(NamedTuple):
+#     last_hidden: torch.Tensor
+#     logits: torch.Tensor
 
 
 class BaseFeature:
@@ -204,7 +215,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
         prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
-        return self.train_loss_function(predictions[prediction_key], targets)
+        print(f'predictions: {predictions}')
+        print(f'prediction_key: {prediction_key}')
+        return self.train_loss_function(getattr(predictions, prediction_key), targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
@@ -237,8 +250,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def forward(
             self,
             inputs,
-            # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
-            training=None,
             mask=None
     ):
         # account for output feature target
@@ -283,11 +294,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         if isinstance(logits, Tensor):
             logits = {'logits': logits}
 
-        return {
-            # last_hidden used for dependencies processing
-            'last_hidden': hidden,
-            **logits
-        }
+        # For multi-class features, we must choose a consistent tuple subset.
+        return OutputFeatureOutput(last_hidden=hidden, logits=logits[LOGITS])
 
     def overall_statistics_metadata(self):
         """Additional metadata used to extend `training_set_metadata`.

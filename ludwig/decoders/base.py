@@ -39,3 +39,7 @@ class Decoder(LudwigModule, ABC):
     @property
     def name(self):
         return self.__class__.__name__
+
+    @property
+    def get_output_namedtuple(self):
+        pass

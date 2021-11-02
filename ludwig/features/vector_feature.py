@@ -120,7 +120,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def __init__(
             self,
             feature: Dict[str, Any],
-            encoder_obj: Optional[LudwigModule]=None
+            encoder_obj: Optional[LudwigModule] = None
     ):
         super().__init__(feature)
         self.overwrite_defaults(feature)
@@ -204,7 +204,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             inputs,  # logits
             **kwargs
     ):
-        return {PREDICTIONS: inputs[LOGITS], LOGITS: inputs[LOGITS]}
+        return {PREDICTIONS: inputs.logits, LOGITS: inputs.logits}
 
     def _setup_loss(self):
         if self.loss[TYPE] == 'mean_squared_error':

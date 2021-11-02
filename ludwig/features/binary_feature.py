@@ -187,7 +187,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs, **kwargs):  # hidden
-        logits = inputs[LOGITS]
+        logits = getattr(inputs, LOGITS)
         probabilities = torch.sigmoid(logits)
         predictions = probabilities >= self.threshold
         return {
