@@ -130,7 +130,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
         encoder_outputs = self.encoder_obj(inputs)
-        return encoder_outputs
+        return {'encoder_output': encoder_outputs}
 
     @property
     def input_dtype(self):
