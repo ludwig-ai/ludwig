@@ -5,7 +5,7 @@ import torch
 from ludwig.utils.torch_utils import LudwigModule
 
 
-def test_output_shapes(
+def assert_output_shapes(
         module: LudwigModule,
         input_shape: Tuple[int]
 ):
