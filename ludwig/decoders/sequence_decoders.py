@@ -146,7 +146,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         #     )
         #     logger.debug('  {}'.format(self.decoder_rnncell))
 
-    def _logits_training(self, inputs, target, training=None):
+    def _logits_training(self, inputs, target):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
         encoder_end_state = self.prepare_encoder_output_state(inputs)
 
@@ -581,13 +581,11 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             decoder_outputs = self.decoder_beam_search(
                 encoder_output,
                 encoder_end_state=encoder_output_state,
-                training=training
             )
         else:
             decoder_outputs = self.decoder_greedy(
                 encoder_output,
                 encoder_end_state=encoder_output_state,
-                training=training
             )
 
         logits, lengths, preds, last_preds, probs = decoder_outputs
@@ -599,7 +597,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             inputs,  # encoder_output, encoder_output_state
             training=None
     ):
-        decoder_outputs = self.call(inputs, training=training)
+        decoder_outputs = self.call(inputs)
         logits, lengths, preds, last_preds, probs = decoder_outputs
 
         return {
@@ -765,7 +763,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
                     len(hidden.shape)))
 
         if self.attention:
-            hidden = self.self_attention(hidden, training=training, mask=mask)
+            hidden = self.self_attention(hidden, mask=mask)
 
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)
@@ -780,19 +778,18 @@ class SequenceTaggerDecoder(SequenceDecoder):
     def _logits_training(
             self,
             inputs,
-            training=None,
             mask=None,
             *args,
             **kwarg
     ):
-        return self.call(inputs, training=training, mask=mask)
+        return self.call(inputs, mask=mask)
 
     def _predictions_eval(
             self,
             inputs,  # encoder_output, encoder_output_state, lengths
             training=None
     ):
-        outputs = self.call(inputs, training=training)
+        outputs = self.call(inputs)
         logits = outputs[LOGITS]
         input_sequence_lengths = inputs[
             LENGTHS]  # retrieve input sequence length
