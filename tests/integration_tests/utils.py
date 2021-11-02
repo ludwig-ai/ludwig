@@ -743,7 +743,7 @@ def assert_model_parameters_updated_loop(
     Confirms that model parameters can be updated.
     Args:
         model: (LudwigModel) model to be tested.
-        model_input: (torch.Tensor) input for model
+        model_input_args: (tuple) input for model
         max_steps: (int) maximum number of steps allowed to test for parameter
             updates.
 
