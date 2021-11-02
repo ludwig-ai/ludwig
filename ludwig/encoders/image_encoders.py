@@ -267,6 +267,9 @@ class MLPMixerEncoder(ImageEncoder):
         img_width = width
         in_channels = num_channels
 
+        if num_channels is None:
+            raise RuntimeError('num_channels must not be None')
+
         self._input_shape = (in_channels, img_height, img_width)
 
         logger.debug('  MLPMixer')
