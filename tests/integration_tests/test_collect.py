@@ -21,7 +21,7 @@ import numpy as np
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.collect import collect_activations, collect_weights
+from ludwig.collect import collect_activations, collect_weights, print_model_summary
 from tests.integration_tests.utils import category_feature, generate_data, \
     sequence_feature, spawn, ENCODERS
 
@@ -114,3 +114,10 @@ def test_collect_activations(csv_filename):
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
+
+
+def test_print_model_summary(csv_filename):
+    output_dir = None
+    model, output_dir = _train(*_prepare_data(csv_filename))
+    model_path = os.path.join(output_dir, 'model')
+    print_model_summary(model_path)

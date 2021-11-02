@@ -85,7 +85,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
-        return torch.rand(self.input_shape, dtype=self.input_dtype)
+        return torch.rand([2, *self.input_shape]).to(self.input_dtype)
 
     @staticmethod
     @abstractmethod

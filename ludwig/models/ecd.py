@@ -89,14 +89,6 @@ class ECD(LudwigModule):
         }
         return inputs, targets
 
-    # TODO(shreya): Figure out model saving, loading.
-    '''
-    def get_connected_model(self, training=True, inputs=None):
-        inputs = inputs or self.get_model_inputs(training)
-        outputs = self.call(inputs)
-        return tf.keras.Model(inputs=inputs, outputs=outputs)
-    '''
-
     def save_savedmodel(self, save_path):
         keras_model = self.get_connected_model(training=False)
         keras_model.save(save_path)
@@ -119,20 +111,29 @@ class ECD(LudwigModule):
                 a dictionary of input names to input tensors and targets is a
                 dictionary of target names to target tensors.
             mask: A mask for the inputs.
-        
+
         Returns:
             A dictionary of output names to output tensors.
         """
         if isinstance(inputs, tuple):
             inputs, targets = inputs
+            # Convert targets to tensors.
             for target_feature_name, target_value in targets.items():
-                targets[target_feature_name] = torch.from_numpy(target_value)
-                # inputs dict is converted to tensor in loop below
+                if not isinstance(target_value, torch.Tensor):
+                    targets[target_feature_name] = torch.from_numpy(
+                        target_value)
+                else:
+                    targets[target_feature_name] = target_value
         else:
             targets = None
         assert inputs.keys() == self.input_features.keys()
+
+        # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
-            inputs[input_feature_name] = torch.from_numpy(input_values)
+            if not isinstance(input_values, torch.Tensor):
+                inputs[input_feature_name] = torch.from_numpy(input_values)
+            else:
+                inputs[input_feature_name] = input_values
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
@@ -230,7 +231,7 @@ class ECD(LudwigModule):
 
         # Add regularization loss
         if regularization_type is not None:
-                train_loss += reg_loss(
+            train_loss += reg_loss(
                 self,
                 regularization_type,
                 l1=regularization_lambda,
