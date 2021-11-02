@@ -24,7 +24,7 @@ from typing import List
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import Union
+from typing import Union, Tuple
 
 import cloudpickle
 import numpy as np
@@ -736,7 +736,7 @@ def assert_model_parameters_updated(
 
 def assert_model_parameters_updated_loop(
         model: LudwigModule,
-        model_input: torch.Tensor,
+        model_input_args: Tuple,
         max_steps: int = 4
 ) -> None:
     """
@@ -755,7 +755,7 @@ def assert_model_parameters_updated_loop(
     optimizer = torch.optim.SGD(model.parameters(), lr=100)
 
     # generate initial model output tensor
-    model_output = model(model_input)
+    model_output = model(*model_input_args)
 
     # create target tensor
     if isinstance(model_output, torch.Tensor):
@@ -778,7 +778,7 @@ def assert_model_parameters_updated_loop(
         model.train(True)
 
         # make pass through model
-        model_output = model(model_input)
+        model_output = model(*model_input_args)
 
         # todo: this is for all model parameters are updated during a cycle
         # capture model parameters before doing parameter update pass
