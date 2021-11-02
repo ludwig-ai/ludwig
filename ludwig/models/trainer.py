@@ -1536,6 +1536,7 @@ class RemoteTrainer(Trainer):
             **kwargs
     ):
         horovod = initialize_horovod()
+        initialize_tensorflow(horovod=horovod)
         super().__init__(horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
