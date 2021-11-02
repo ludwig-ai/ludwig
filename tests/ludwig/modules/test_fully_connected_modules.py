@@ -37,7 +37,7 @@ def test_fc_layer(
     assert output_tensor.shape == (BATCH_SIZE, OUTPUT_SIZE)
 
     # check to confirm parameter updates
-    assert_model_parameters_updated(model, output_tensor)
+    assert_model_parameters_updated_loop(model, batch)
 
 
 @pytest.mark.parametrize('residual', [True, False])
