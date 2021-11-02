@@ -95,7 +95,7 @@ class MeanMetric(Metric):
         self.avg.update(self.get_current_value(preds, target))
 
     def compute(self) -> Tensor:
-        return self.avg.compute()
+        return self.avg.compute()[0]
 
     @abstractmethod
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
@@ -168,7 +168,6 @@ class SigmoidCrossEntropyMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
-
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.sigmoid_cross_entropy_function(preds, target)
 
