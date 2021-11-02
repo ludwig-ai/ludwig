@@ -84,7 +84,7 @@ def test_feature_block(
     assert feature_block.output_shape[-1] == size
     assert feature_block.input_dtype == torch.float32
 
-    assert_model_parameters_updated(feature_block, output_tensor)
+    assert_model_parameters_updated_loop(feature_block, (input_tensor,))
 
 
 @pytest.mark.parametrize(
@@ -123,7 +123,7 @@ def test_feature_transformer(
     assert feature_transformer.output_shape[-1] == size
     assert feature_transformer.input_dtype == torch.float32
 
-    assert_model_parameters_updated(feature_transformer, output_tensor)
+    assert_model_parameters_updated_loop(feature_transformer, (input_tensor,))
 
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
@@ -165,13 +165,16 @@ def test_attentive_transformer(
     assert attentive_transformer.output_shape[-1] == input_size
     assert attentive_transformer.input_dtype == torch.float32
 
-    assert_model_parameters_updated(attentive_transformer, output_tensor)
+    assert_model_parameters_updated_loop(
+        attentive_transformer,
+        (x[:, output_size:], prior_scales)
+    )
 
 
-@pytest.mark.parametrize('virtual_batch_size', [None, 7])
+@pytest.mark.parametrize('virtual_batch_size', [None, 2, 4, 8])
 @pytest.mark.parametrize('size', [2, 4, 8])
-@pytest.mark.parametrize('output_size', [2, 4, 12])
-@pytest.mark.parametrize('input_size', [2])
+@pytest.mark.parametrize('output_size', [2, 4, 8])
+@pytest.mark.parametrize('input_size', [2, 4, 8])
 def test_tabnet(
         input_size: int,
         output_size: int,
@@ -202,4 +205,4 @@ def test_tabnet(
     assert tabnet.input_dtype == torch.float32
 
     # assert_model_parameters_updated(tabnet, output[0])
-    assert_model_parameters_updated_loop(tabnet, input_tensor)
+    assert_model_parameters_updated_loop(tabnet, (input_tensor,))
