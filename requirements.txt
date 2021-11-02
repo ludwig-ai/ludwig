@@ -19,7 +19,6 @@ marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass
 tensorboard
-torchinfo
 torchmetrics>=0.6.0
 filelock
 
