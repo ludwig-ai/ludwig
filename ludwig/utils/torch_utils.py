@@ -188,6 +188,10 @@ class Dense(LudwigModule):
         bias_initializer = initializer_registry[bias_initializer]
         bias_initializer(self.dense.bias)
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return self.dense.input_shape
+
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         batch_size = input.shape[0]
         output = torch.squeeze(self.dense(input), dim=-1)

@@ -32,7 +32,6 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
 @pytest.mark.distributed
 @pytest.mark.parametrize('should_load_model', [True, False])
 def test_savedmodel(csv_filename, should_load_model):
@@ -47,15 +46,15 @@ def test_savedmodel(csv_filename, should_load_model):
 
         # Single sequence input, single category output
         input_features = [
-            binary_feature(),
-            numerical_feature(),
-            category_feature(vocab_size=3),
-            sequence_feature(vocab_size=3),
-            text_feature(vocab_size=3),
-            vector_feature(),
-            image_feature(image_dest_folder),
-            audio_feature(audio_dest_folder),
-            timeseries_feature(),
+            # binary_feature(),
+            # numerical_feature(),
+            # category_feature(vocab_size=3),
+            # sequence_feature(vocab_size=3),
+            # text_feature(vocab_size=3),
+            # vector_feature(),
+            # image_feature(image_dest_folder),
+            # audio_feature(audio_dest_folder),
+            # timeseries_feature(),
             date_feature(),
             h3_feature(),
             set_feature(vocab_size=3),
