@@ -125,7 +125,7 @@ class BasicDecoder:  # (tfa.seq2seq.BasicDecoder):
 
     # Ludwig specific implementation of BasicDecoder.step() method
     def step(self, time, inputs, state, training=None, name=None):
-        cell_outputs, cell_state = self.cell(inputs, state, training=training)
+        cell_outputs, cell_state = self.cell(inputs, state)
         cell_state = tf.nest.pack_sequence_as(state,
                                               tf.nest.flatten(cell_state))
 

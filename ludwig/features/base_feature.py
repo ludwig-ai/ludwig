@@ -254,7 +254,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         hidden = self.prepare_decoder_inputs(
             combiner_output,
             other_output_hidden,
-            training=training,
             mask=mask
         )
 
@@ -268,8 +267,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 combiner_outputs['encoder_output_state']
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
-        logits = self.logits(logits_input, target=target,
-                             training=training)
+        logits = self.logits(logits_input, target=target)
 
         # most of the cases the output of self.logits() is a tensor
         # there are three special cases:
@@ -410,7 +408,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def output_specific_fully_connected(
             self,
             inputs,  # feature_hidden
-            training=None,
             mask=None
     ):
         feature_hidden = inputs
@@ -432,7 +429,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # pass it through fc_stack
         feature_hidden = self.fc_stack(
             feature_hidden,
-            training=training,
             mask=mask
         )
         feature_hidden_size = feature_hidden.shape[-1]
@@ -457,7 +453,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             self,
             combiner_output,
             other_output_features,
-            training=None,
             mask=None
     ):
         """
@@ -488,7 +483,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # ================ Output-wise Fully Connected ================
         feature_hidden = self.output_specific_fully_connected(
             feature_hidden,
-            training=training,
             mask=mask
         )
 

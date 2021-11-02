@@ -175,11 +175,11 @@ class FCStack(LudwigModule):
             )
         self.residual = residual
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         hidden = inputs
         prev_fc_layer_size = self.input_size
         for layer in self.stack:
-            out = layer(hidden, training=training)
+            out = layer(hidden)
             if self.residual and layer.fc_size == prev_fc_layer_size:
                 hidden = hidden + out
             else:

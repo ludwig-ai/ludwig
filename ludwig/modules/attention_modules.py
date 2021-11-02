@@ -175,10 +175,10 @@ class TransformerStack(LudwigModule):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.sequence_size, self.input_size])
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         hidden = inputs
         for layer in self.layers:
-            hidden = layer(hidden, training=training, mask=mask)
+            hidden = layer(hidden, mask=mask)
         return hidden
 
 # todo future: maybe reintroduce these attention function
