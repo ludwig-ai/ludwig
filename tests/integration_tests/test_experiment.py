@@ -728,7 +728,7 @@ def test_experiment_sequence_combiner_with_embed_encoder_fails(csv_filename):
         shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
-@ pytest.mark.parametrize('sequence_encoder', ENCODERS[1:])
+@pytest.mark.parametrize('sequence_encoder', ENCODERS[1:])
 def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
     config = {
         'input_features': [
@@ -826,7 +826,7 @@ def test_experiment_timeseries(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@ pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 def test_visual_question_answering(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features = [
@@ -911,7 +911,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     shutil.rmtree(image_dest_folder)
 
 
-@ pytest.mark.parametrize('encoder', ['wave', 'embed'])
+@pytest.mark.parametrize('encoder', ['wave', 'embed'])
 def test_experiment_date(encoder, csv_filename):
     input_features = [date_feature()]
     output_features = [category_feature(vocab_size=2)]
@@ -923,7 +923,7 @@ def test_experiment_date(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@ pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
+@pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
 def test_experiment_h3(encoder, csv_filename):
     input_features = [h3_feature()]
     output_features = [binary_feature()]
@@ -953,7 +953,7 @@ def test_experiment_vector_feature_2(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@ pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 def test_experiment_sampled_softmax(csv_filename):
     # Multiple inputs, Single category output
     input_features = [text_feature(vocab_size=10, min_len=1)]
