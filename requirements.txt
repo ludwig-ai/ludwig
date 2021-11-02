@@ -20,6 +20,7 @@ marshmallow-jsonschema
 marshmallow-dataclass
 tensorboard
 torchmetrics>=0.6.0
+torchinfo
 filelock
 
 # new data format support

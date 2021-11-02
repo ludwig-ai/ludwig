@@ -50,6 +50,7 @@ default_training_params = {
     'optimizer': {TYPE: 'adam'},
     'epochs': 100,
     'regularization_lambda': 0,
+    'regularization_type': 'l2',
     'learning_rate': 0.001,
     'batch_size': 128,
     'eval_batch_size': None,

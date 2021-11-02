@@ -29,6 +29,7 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.fixture(scope='module')
 def generate_deterministic_sequence(num_records=200):
     in_vocab = [x + str(d) for x in list("abcde") for d in range(1, 4)]
@@ -58,6 +59,7 @@ def generate_deterministic_sequence(num_records=200):
 # testing only a subset of options to reduce test run time
 # combinations selected to test are the major tensor structures/sizes expected
 # to be encountered: AttentionWrapperState, BeamSearchDecoderState, None
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize('loss_sampler',
                          ['learned_unigram', 'fixed_unigram',
                           'log_uniform', 'uniform'])
@@ -129,6 +131,7 @@ def test_sequence_generator(
     results = experiment_cli(dataset=df, **args)
 
 
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
 @pytest.mark.parametrize('attention', [False, True])
 def test_sequence_tagger(

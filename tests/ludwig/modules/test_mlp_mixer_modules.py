@@ -1,6 +1,6 @@
 import pytest
 
-from .test_utils import test_output_shapes
+from .test_utils import assert_output_shapes
 from ludwig.modules.mlp_mixer_modules import MLP, MixerBlock, MLPMixer
 
 
@@ -13,7 +13,7 @@ def test_mlp(
         hidden_size: int,
         out_features: int
 ):
-    test_output_shapes(
+    assert_output_shapes(
         module=MLP(in_features, hidden_size, out_features),
         input_shape=(in_features,)
     )
@@ -29,7 +29,7 @@ def test_mixer_block(
         token_dim: int,
         channel_dim: int,
 ):
-    test_output_shapes(
+    assert_output_shapes(
         module=MixerBlock(embed_size, n_patches, token_dim, channel_dim),
         input_shape=(n_patches, embed_size)
     )
@@ -41,7 +41,7 @@ def test_mlp_mixer(
     img_width: int,
     in_channels: int
 ):
-    test_output_shapes(
+    assert_output_shapes(
         module=MLPMixer(img_height, img_width, in_channels),
         input_shape=(3, img_height, img_width)
     )

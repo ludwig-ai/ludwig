@@ -41,11 +41,6 @@ class Conv1DLayer(LudwigModule):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -78,21 +73,12 @@ class Conv1DLayer(LudwigModule):
         self.layers = nn.ModuleList()
 
         self.layers.append(nn.Conv1d(
-            # filters=num_filters,
             in_channels=in_channels,
             out_channels=out_channels,
             kernel_size=(kernel_size,),
             stride=(strides,),
             padding=padding,
-            dilation=(dilation,),
-            # use_bias=use_bias,
-            # kernel_initializer=weights_initializer,
-            # bias_initializer=bias_initializer,
-            # kernel_regularizer=weights_regularizer,
-            # bias_regularizer=bias_regularizer,
-            # activity_regularizer=activity_regularizer,
-            # kernel_constraint=None,
-            # bias_constraint=None,
+            dilation=(dilation,)
         ))
 
         if norm and norm_params is None:
@@ -135,7 +121,7 @@ class Conv1DLayer(LudwigModule):
     @property
     def input_shape(self):
         """ Returns the size of the input tensor without the batch dimension. """
-        return (torch.Size([self.sequence_size, self.in_channels]))
+        return torch.Size([self.sequence_size, self.in_channels])
 
     def forward(self, inputs, training=None, mask=None):
         # inputs: [batch_size, seq_size, in_channels]
@@ -145,10 +131,8 @@ class Conv1DLayer(LudwigModule):
         # put in torch compatible form [batch_size, in_channels, seq_size]
         hidden = hidden.transpose(1, 2)
 
-        for i, layer in enumerate(self.layers):
-            # todo: determine how to handle training parameter in this call
-            #       commented out to avoid unexpected parameter error
-            hidden = layer(hidden)  # , training=training)
+        for layer in self.layers:
+            hidden = layer(hidden)
 
         # revert back to normal form [batch_size, seq_size, out_channels]
         hidden = hidden.transpose(1, 2)
@@ -172,11 +156,6 @@ class Conv1DStack(LudwigModule):
             default_use_bias=True,
             default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
-            default_weights_regularizer=None,
-            default_bias_regularizer=None,
-            default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
@@ -231,16 +210,6 @@ class Conv1DStack(LudwigModule):
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
                 layer['bias_initializer'] = default_bias_initializer
-            if 'weights_regularizer' not in layer:
-                layer['weights_regularizer'] = default_weights_regularizer
-            if 'bias_regularizer' not in layer:
-                layer['bias_regularizer'] = default_bias_regularizer
-            if 'activity_regularizer' not in layer:
-                layer['activity_regularizer'] = default_activity_regularizer
-            # if 'weights_constraint' not in layer:
-            #     layer['weights_constraint'] = default_weights_constraint
-            # if 'bias_constraint' not in layer:
-            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
             if 'norm_params' not in layer:
@@ -276,11 +245,6 @@ class Conv1DStack(LudwigModule):
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
-                    weights_regularizer=layer['weights_regularizer'],
-                    bias_regularizer=layer['bias_regularizer'],
-                    activity_regularizer=layer['activity_regularizer'],
-                    # weights_constraint=layer['weights_constraint'],
-                    # bias_constraint=layer['bias_constraint'],
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
@@ -309,12 +273,12 @@ class Conv1DStack(LudwigModule):
         """ Returns the size of the input tensor without the batch dimension. """
         return (torch.Size([self.max_sequence_length, self.in_channels]))
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         hidden = inputs
 
         # todo: enumerate for debugging, remove after testing
         for i, layer in enumerate(self.stack):
-            hidden = layer(hidden, training=training)
+            hidden = layer(hidden)
 
         if hidden.shape[1] == 0:
             raise ValueError(
@@ -345,11 +309,6 @@ class ParallelConv1D(LudwigModule):
             default_use_bias=True,
             default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
-            default_weights_regularizer=None,
-            default_bias_regularizer=None,
-            default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
@@ -392,16 +351,6 @@ class ParallelConv1D(LudwigModule):
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
                 layer['bias_initializer'] = default_bias_initializer
-            if 'weights_regularizer' not in layer:
-                layer['weights_regularizer'] = default_weights_regularizer
-            if 'bias_regularizer' not in layer:
-                layer['bias_regularizer'] = default_bias_regularizer
-            if 'activity_regularizer' not in layer:
-                layer['activity_regularizer'] = default_activity_regularizer
-            # if 'weights_constraint' not in layer:
-            #     layer['weights_constraint'] = default_weights_constraint
-            # if 'bias_constraint' not in layer:
-            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
             if 'norm_params' not in layer:
@@ -435,11 +384,6 @@ class ParallelConv1D(LudwigModule):
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
-                    weights_regularizer=layer['weights_regularizer'],
-                    bias_regularizer=layer['bias_regularizer'],
-                    activity_regularizer=layer['activity_regularizer'],
-                    # weights_constraint=layer['weights_constraint'],
-                    # bias_constraint=layer['bias_constraint'],
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
@@ -460,14 +404,14 @@ class ParallelConv1D(LudwigModule):
         """ Returns the size of the input tensor without the batch dimension. """
         return torch.Size([self.max_sequence_length, self.in_channels])
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         # inputs: [batch_size, seq_size, in_channels)
 
         hidden = inputs
         hiddens = []
 
         for layer in self.parallel_layers:
-            hiddens.append(layer(hidden, training=training))
+            hiddens.append(layer(hidden))
         hidden = torch.cat(hiddens, 2)
 
         if hidden.shape[1] == 0:
@@ -500,11 +444,6 @@ class ParallelConv1DStack(LudwigModule):
             default_use_bias=True,
             default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
-            default_weights_regularizer=None,
-            default_bias_regularizer=None,
-            default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
@@ -564,17 +503,6 @@ class ParallelConv1DStack(LudwigModule):
                     layer['weights_initializer'] = default_weights_initializer
                 if 'bias_initializer' not in layer:
                     layer['bias_initializer'] = default_bias_initializer
-                if 'weights_regularizer' not in layer:
-                    layer['weights_regularizer'] = default_weights_regularizer
-                if 'bias_regularizer' not in layer:
-                    layer['bias_regularizer'] = default_bias_regularizer
-                if 'activity_regularizer' not in layer:
-                    layer[
-                        'activity_regularizer'] = default_activity_regularizer
-                # if 'weights_constraint' not in layer:
-                #     layer['weights_constraint'] = default_weights_constraint
-                # if 'bias_constraint' not in layer:
-                #     layer['bias_constraint'] = default_bias_constraint
                 if 'norm' not in layer:
                     layer['norm'] = default_norm
                 if 'norm_params' not in layer:
@@ -619,11 +547,11 @@ class ParallelConv1DStack(LudwigModule):
         """ Returns the size of the input tensor without the batch dimension. """
         return torch.Size([self.max_sequence_length, self.in_channels])
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         hidden = inputs
 
         for layer in self.stack:
-            hidden = layer(hidden, training=training)
+            hidden = layer(hidden)
 
         if hidden.shape[2] == 0:
             raise ValueError(

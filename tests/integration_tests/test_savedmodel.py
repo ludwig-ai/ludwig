@@ -32,6 +32,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
+@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
 @pytest.mark.distributed
 @pytest.mark.parametrize('should_load_model', [True, False])
 def test_savedmodel(csv_filename, should_load_model):

@@ -105,7 +105,6 @@ class SequenceEmbedEncoder(SequenceEncoder):
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
             weights_initializer=None,
-            weights_regularizer=None,
             dropout=0,
             reduce_output='sum',
             **kwargs
@@ -170,11 +169,6 @@ class SequenceEmbedEncoder(SequenceEncoder):
                     To know the parameters of each initializer, please refer to
                     TensorFlow's documentation.
             :type weights_initializer: str
-            :param regularize: if `True` the embedding weights are added to
-                   the set of weights that get regularized by a regularization
-                   loss (if the `regularization_lambda` in `training`
-                   is greater than 0).
-            :type regularize: Boolean
             :param reduce_output: defines how to reduce the output tensor along
                    the `s` sequence length dimension if the rank of the tensor
                    is greater than 2. Available values are: `sum`,
@@ -183,9 +177,6 @@ class SequenceEmbedEncoder(SequenceEncoder):
                    first dimension) and `None` or `null` (which does not reduce
                    and returns the full tensor).
             :type reduce_output: str
-            :param weights_regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type weights_regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
 
@@ -210,7 +201,6 @@ class SequenceEmbedEncoder(SequenceEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
         reduction_kwargs = {}
@@ -275,9 +265,6 @@ class ParallelCNN(SequenceEncoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -333,7 +320,7 @@ class ParallelCNN(SequenceEncoder):
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
                    for each layer are: `filter_size`, `num_filters`, `pool`,
-                   `norm`, `activation` and `regularize`. If any of those values
+                   `norm`, and `activation`. If any of those values
                    is missing from the dictionary, the default one specified
                    as a parameter of the encoder will be used instead. If both
                    `conv_layers` and `num_conv_layers` are `None`, a default
@@ -366,8 +353,8 @@ class ParallelCNN(SequenceEncoder):
                    of the list determines the number of stacked fully connected
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
-                   for each layer are: `fc_size`, `norm`, `activation` and
-                   `regularize`. If any of those values is missing from
+                   for each layer are: `fc_size`, `norm` and `activation`.
+                   If any of those values is missing from
                    the dictionary, the default one specified as a parameter of
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
@@ -406,12 +393,6 @@ class ParallelCNN(SequenceEncoder):
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
                    dimension if the rank of the tensor is greater than 2.
@@ -482,7 +463,6 @@ class ParallelCNN(SequenceEncoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  ParallelConv1D')
@@ -496,9 +476,6 @@ class ParallelCNN(SequenceEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -518,9 +495,6 @@ class ParallelCNN(SequenceEncoder):
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
@@ -607,11 +581,6 @@ class StackedCNN(SequenceEncoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -668,7 +637,7 @@ class StackedCNN(SequenceEncoder):
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
                    for each layer are: `filter_size`, `num_filters`, `pool`,
-                   `norm`, `activation` and `regularize`. If any of those values
+                   `norm` and `activation`. If any of those values
                    is missing from the dictionary, the default one specified
                    as a parameter of the encoder will be used instead. If both
                    `conv_layers` and `num_conv_layers` are `None`, a default
@@ -701,8 +670,8 @@ class StackedCNN(SequenceEncoder):
                    of the list determines the number of stacked fully connected
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
-                   for each layer are: `fc_size`, `norm`, `activation` and
-                   `regularize`. If any of those values is missing from
+                   for each layer are: `fc_size`, `norm` and `activation`.
+                   If any of those values is missing from
                    the dictionary, the default one specified as a parameter of
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
@@ -741,12 +710,6 @@ class StackedCNN(SequenceEncoder):
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
                    dimension if the rank of the tensor is greater than 2.
@@ -773,32 +736,26 @@ class StackedCNN(SequenceEncoder):
                 {
                     'filter_size': 7,
                     'pool_size': 3,
-                    'regularize': False
                 },
                 {
                     'filter_size': 7,
                     'pool_size': 3,
-                    'regularize': False
                 },
                 {
                     'filter_size': 3,
                     'pool_size': None,
-                    'regularize': False
                 },
                 {
                     'filter_size': 3,
                     'pool_size': None,
-                    'regularize': False
                 },
                 {
                     'filter_size': 3,
                     'pool_size': None,
-                    'regularize': True
                 },
                 {
                     'filter_size': 3,
                     'pool_size': 3,
-                    'regularize': True
                 }
             ]
             self.num_conv_layers = 6
@@ -843,7 +800,6 @@ class StackedCNN(SequenceEncoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  Conv1DStack')
@@ -860,11 +816,6 @@ class StackedCNN(SequenceEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -885,11 +836,6 @@ class StackedCNN(SequenceEncoder):
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
@@ -912,11 +858,6 @@ class StackedCNN(SequenceEncoder):
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout: Tensor (torch.float) of the probability of dropout
-            :type dropout: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -975,11 +916,6 @@ class StackedParallelCNN(SequenceEncoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -1038,8 +974,8 @@ class StackedParallelCNN(SequenceEncoder):
                    the number of parallel conv layers and the content
                    of each dictionary determines the parameters for
                    a specific layer. The available parameters for each layer are:
-                   `filter_size`, `num_filters`, `pool_size`, `norm`,
-                   `activation` and `regularize`. If any of those values
+                   `filter_size`, `num_filters`, `pool_size`, `norm` and
+                   `activation`. If any of those values
                    is missing from the dictionary, the default one specified
                    as a parameter of the encoder will be used instead. If both
                    `stacked_layers` and `num_stacked_layers` are `None`,
@@ -1076,8 +1012,8 @@ class StackedParallelCNN(SequenceEncoder):
                    of the list determines the number of stacked fully connected
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
-                   for each layer are: `fc_size`, `norm`, `activation` and
-                   `regularize`. If any of those values is missing from
+                   for each layer are: `fc_size`, `norm` and `activation`.
+                   If any of those values is missing from
                    the dictionary, the default one specified as a parameter of
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
@@ -1116,12 +1052,6 @@ class StackedParallelCNN(SequenceEncoder):
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
                    dimension if the rank of the tensor is greater than 2.
@@ -1207,7 +1137,6 @@ class StackedParallelCNN(SequenceEncoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
@@ -1221,11 +1150,6 @@ class StackedParallelCNN(SequenceEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -1244,11 +1168,6 @@ class StackedParallelCNN(SequenceEncoder):
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
@@ -1261,7 +1180,7 @@ class StackedParallelCNN(SequenceEncoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        if self.fc_stack:
+        if self.reduce_output is not None:
             return self.fc_stack.output_shape
         return self.parallel_conv1d_stack.output_shape
 
@@ -1271,9 +1190,6 @@ class StackedParallelCNN(SequenceEncoder):
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
             :type inputs: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
         """
@@ -1330,7 +1246,6 @@ class StackedRNN(SequenceEncoder):
             recurrent_activation='sigmoid',
             unit_forget_bias=True,
             recurrent_initializer='orthogonal',
-            recurrent_regularizer=None,
             # recurrent_constraint=None,
             dropout=0.0,
             recurrent_dropout=0.0,
@@ -1340,11 +1255,6 @@ class StackedRNN(SequenceEncoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -1461,12 +1371,6 @@ class StackedRNN(SequenceEncoder):
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
                    dimension if the rank of the tensor is greater than 2.
@@ -1503,7 +1407,6 @@ class StackedRNN(SequenceEncoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  RecurrentStack')
@@ -1522,13 +1425,6 @@ class StackedRNN(SequenceEncoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            recurrent_regularizer=recurrent_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            # kernel_constraint=kernel_constraint,
-            # recurrent_constraint=recurrent_constraint,
-            # bias_constraint=bias_constraint,
             dropout=dropout,
             recurrent_dropout=recurrent_dropout,
         )
@@ -1543,11 +1439,6 @@ class StackedRNN(SequenceEncoder):
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
@@ -1572,9 +1463,6 @@ class StackedRNN(SequenceEncoder):
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
         """
@@ -1639,7 +1527,6 @@ class StackedCNNRNN(SequenceEncoder):
             recurrent_activation='sigmoid',
             unit_forget_bias=True,
             recurrent_initializer='orthogonal',
-            recurrent_regularizer=None,
             dropout=0.0,
             recurrent_dropout=0.0,
             fc_layers=None,
@@ -1648,9 +1535,6 @@ class StackedCNNRNN(SequenceEncoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -1733,12 +1617,6 @@ class StackedCNNRNN(SequenceEncoder):
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
                    dimension if the rank of the tensor is greater than 2.
@@ -1790,7 +1668,6 @@ class StackedCNNRNN(SequenceEncoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  Conv1DStack')
@@ -1807,11 +1684,6 @@ class StackedCNNRNN(SequenceEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=conv_activation,
@@ -1837,13 +1709,6 @@ class StackedCNNRNN(SequenceEncoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            recurrent_regularizer=recurrent_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            # kernel_constraint=kernel_constraint,
-            # recurrent_constraint=recurrent_constraint,
-            # bias_constraint=bias_constraint,
             dropout=dropout,
             recurrent_dropout=recurrent_dropout,
         )
@@ -1858,11 +1723,6 @@ class StackedCNNRNN(SequenceEncoder):
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
@@ -1884,9 +1744,6 @@ class StackedCNNRNN(SequenceEncoder):
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
             :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
         """
@@ -1956,9 +1813,6 @@ class StackedTransformer(SequenceEncoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -2075,12 +1929,6 @@ class StackedTransformer(SequenceEncoder):
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
                    dimension if the rank of the tensor is greater than 2.
@@ -2116,7 +1964,6 @@ class StackedTransformer(SequenceEncoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
             if embedding_size != hidden_size:
@@ -2150,11 +1997,6 @@ class StackedTransformer(SequenceEncoder):
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
@@ -2177,14 +2019,6 @@ class StackedTransformer(SequenceEncoder):
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout: Tensor (torch.float) of the probability of dropout
-            :type dropout: Tensor
-            :param is_training: Tensor (torch.bool) specifying if training
-                   (important for dropout)
-            :type is_training: Tensor
         """
 
         # ================ Embeddings ================

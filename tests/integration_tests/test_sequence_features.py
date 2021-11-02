@@ -100,7 +100,7 @@ def setup_model_scaffolding(
         yield model, batcher
 
 
-# todo: refactor test once torch sequence generator work is complete
+# TODO(#1333): refactor test once torch sequence generator work is complete
 #
 # tests output feature sequence with `Generator` decoder
 # pytest parameters
@@ -186,7 +186,8 @@ def test_sequence_decoders(
             assert logits is None
         else:
             assert isinstance(logits, torch.Tensor)
-            assert logits.shape.as_list() == [batch_size, seq_size, num_classes]
+            assert logits.shape.as_list() == [
+                batch_size, seq_size, num_classes]
 
         assert isinstance(lengths, torch.Tensor)
         assert lengths.shape.as_list() == [batch_size]

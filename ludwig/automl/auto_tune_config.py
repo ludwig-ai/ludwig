@@ -86,7 +86,6 @@ def get_machine_memory():
 def compute_memory_usage(config, training_set_metadata) -> int:
     update_config_with_metadata(config, training_set_metadata)
     lm = LudwigModel.create_model(config)
-    lm.get_connected_model()
     model_tensors = lm.collect_weights()
     total_size = 0
     batch_size = config[TRAINING][BATCH_SIZE]

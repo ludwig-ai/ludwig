@@ -1,4 +1,5 @@
 import pytest
+
 import torch
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
@@ -14,21 +15,16 @@ def test_feed_forward_attention_reducer(
         input_hidden_size
 ):
     # Generate synthetic data
-    current_inputs = torch.randn(
-        [input_batch_size, input_seq_size, input_hidden_size],
+    current_inputs = torch.normal(
+        0, 1,
+        size=[input_batch_size, input_seq_size, input_hidden_size],
         dtype=torch.float32
     )
 
     # instantiate feed forward attention reducer
-    feed_forward_attention_reducer = FeedForwardAttentionReducer(
-        input_size=input_hidden_size)
+    feed_forward_attention_reducer = FeedForwardAttentionReducer(input_hidden_size)
 
     result = feed_forward_attention_reducer(current_inputs)
 
     # ensure returned tensor is the correct shape
-    assert result.shape == (input_batch_size, input_hidden_size)
-
-    assert_model_parameters_updated(
-        feed_forward_attention_reducer,
-        result
-    )
+    assert list(result.shape) == [input_batch_size, input_hidden_size]

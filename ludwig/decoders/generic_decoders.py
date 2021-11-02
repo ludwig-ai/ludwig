@@ -37,9 +37,6 @@ class Regressor(Decoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             activation=None,
             **kwargs
     ):
@@ -54,9 +51,6 @@ class Regressor(Decoder):
             use_bias=use_bias,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
         )
 
     def forward(self, inputs, **kwargs):
@@ -76,9 +70,6 @@ class Projector(Decoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             activation=None,
             clip=None,
             **kwargs
@@ -93,9 +84,6 @@ class Projector(Decoder):
             use_bias=use_bias,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
         )
 
         self.activation = get_activation(activation)
@@ -138,9 +126,6 @@ class Classifier(Decoder):
             use_bias=True,
             weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             **kwargs
     ):
         super().__init__()
@@ -154,9 +139,6 @@ class Classifier(Decoder):
             use_bias=use_bias,
             weights_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
         )
 
         self.sampled_loss = False

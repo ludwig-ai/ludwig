@@ -93,11 +93,9 @@ class ConcatCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
@@ -125,15 +123,14 @@ class ConcatCombiner(CombinerClass):
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if config.fc_layers is None and \
-                config.num_fc_layers is not None:
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
             fc_layers = []
             for i in range(config.num_fc_layers):
                 fc_layers.append({'fc_size': config.fc_size})
 
-        self.fc_layers = config.fc_layers
-
-        if config.fc_layers is not None:
+        self.fc_layers = fc_layers
+        if self.fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 first_layer_input_size=self.concatenated_shape[-1],
@@ -143,11 +140,6 @@ class ConcatCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,
@@ -155,7 +147,7 @@ class ConcatCombiner(CombinerClass):
                 residual=config.residual,
             )
 
-        if input_features and len(input_features) == 1 and config.fc_layers is None:
+        if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
 
     @property
@@ -226,7 +218,8 @@ class SequenceConcatCombiner(CombinerClass):
 
         self.input_features = input_features
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
         self.main_sequence_feature = config.main_sequence_feature
@@ -244,6 +237,9 @@ class SequenceConcatCombiner(CombinerClass):
             if len(self.input_features[k].output_shape) == 2:
                 seq_size = self.input_features[k].output_shape[0]
                 break
+        if not seq_size:
+            raise ValueError(
+                'At least one of the input features for SequenceConcatCombiner should be a sequence.')
 
         # collect the size of the last dimension for all input feature
         # encoder outputs
@@ -339,7 +335,7 @@ class SequenceConcatCombiner(CombinerClass):
                         'The representation of {} has rank {} and cannot be'
                         ' concatenated by a sequence concat combiner. '
                         'Only rank 2 and rank 3 tensors are supported.'.format(
-                            if_outputs['name'],
+                            if_name,
                             len(if_representation.shape)
                         )
                     )
@@ -379,7 +375,8 @@ class SequenceConcatCombiner(CombinerClass):
 class SequenceCombinerConfig:
     main_sequence_feature: Optional[str] = None
     reduce_output: Optional[str] = schema.ReductionOptions()
-    encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
+    encoder: Optional[str] = schema.StringOptions(
+        list(sequence_encoder_registry.keys()))
 
     class Meta:
         unknown = INCLUDE
@@ -470,13 +467,15 @@ class SequenceCombiner(CombinerClass):
 class TabNetCombinerConfig:
     size: int = schema.PositiveInteger(default=32)  # N_a in the paper
     output_size: int = schema.PositiveInteger(default=32)  # N_d in the paper
-    num_steps: int = schema.NonNegativeInteger(default=1)  # N_steps in the paper
+    num_steps: int = schema.NonNegativeInteger(
+        default=1)  # N_steps in the paper
     num_total_blocks: int = schema.NonNegativeInteger(default=4)
     num_shared_blocks: int = schema.NonNegativeInteger(default=2)
     relaxation_factor: float = 1.5  # gamma in the paper
     bn_epsilon: float = 1e-3
     bn_momentum: float = 0.7  # m_B in the paper
-    bn_virtual_bs: Optional[int] = schema.PositiveInteger()  # B_v from the paper
+    # B_v from the paper
+    bn_virtual_bs: Optional[int] = schema.PositiveInteger()
     sparsity: float = 1e-5  # lambda_sparse in the paper
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
 
@@ -584,11 +583,9 @@ class TransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -613,7 +610,8 @@ class TransformerCombiner(CombinerClass):
 
         self.input_features = input_features
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -652,11 +650,6 @@ class TransformerCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.fc_activation,
@@ -729,11 +722,9 @@ class TabTransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -760,7 +751,8 @@ class TabTransformerCombiner(CombinerClass):
             raise ValueError("TabTransformer requires the `reduce_output` "
                              "parameter")
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output)
         self.supports_masking = True
 
         self.embed_input_feature_name = config.embed_input_feature_name
@@ -855,11 +847,6 @@ class TabTransformerCombiner(CombinerClass):
             default_use_bias=config.use_bias,
             default_weights_initializer=config.weights_initializer,
             default_bias_initializer=config.bias_initializer,
-            default_weights_regularizer=config.weights_regularizer,
-            default_bias_regularizer=config.bias_regularizer,
-            default_activity_regularizer=config.activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=config.norm,
             default_norm_params=config.norm_params,
             default_activation=config.fc_activation,
@@ -976,11 +963,9 @@ class ComparatorCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='xavier_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
@@ -1026,11 +1011,6 @@ class ComparatorCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,
@@ -1044,11 +1024,6 @@ class ComparatorCombiner(CombinerClass):
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,

@@ -56,7 +56,7 @@ FEATURES_TO_TEST = [
             category_feature(vocab_size=4, reduce_input='sum')
         ]
     ),
-    # todo: re-enable this test case after output sequence feature ported
+    # TODO(#1333): re-enable this test case after output sequence feature ported
     # FeaturesToUse(
     #     # input feature
     #     [
@@ -287,7 +287,6 @@ def test_kfold_cv_api_in_memory():
             assert key in kfold_split_indices
 
 
-
 DATA_FORMATS_FOR_KFOLDS = [
     'csv', 'df', 'dict', 'excel', 'feather', 'fwf', 'html',
     'json', 'jsonl', 'parquet', 'pickle', 'stata', 'tsv'
@@ -346,4 +345,3 @@ def test_kfold_cv_dataset_formats(data_format):
 
         for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in kfold_split_indices
-

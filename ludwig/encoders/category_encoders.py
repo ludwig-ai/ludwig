@@ -51,7 +51,6 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
             embeddings_on_cpu: bool = False,
             dropout: float = 0.0,
             embedding_initializer: Optional[Union[str, Dict]] = None,
-            embedding_regularizer: str = None,
             **kwargs
     ):
         super().__init__()
@@ -67,7 +66,6 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=embedding_initializer,
-            embedding_regularizer=embedding_regularizer
         )
         self.embedding_size = self.embed.embedding_size
 
@@ -101,7 +99,6 @@ class CategoricalSparseEncoder(CategoricalEncoder):
             embeddings_on_cpu: bool = False,
             dropout: float = 0.0,
             embedding_initializer: Optional[Union[str, Dict]] = None,
-            embedding_regularizer: str = None,
             **kwargs
     ):
         super().__init__()
@@ -117,7 +114,6 @@ class CategoricalSparseEncoder(CategoricalEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=embedding_initializer,
-            embedding_regularizer=embedding_regularizer
         )
         self.embedding_size = self.embed.embedding_size
 
