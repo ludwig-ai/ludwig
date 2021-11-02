@@ -710,7 +710,7 @@ def assert_model_parameters_updated(
     # setup
     loss_function = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-    target_tensor = torch.ones(model_output.shape, dtype=model_output.dtype)
+    target_tensor = torch.randn(model_output.shape, dtype=model_output.dtype)
 
     # capture model parameters before doing parameter update pass
     before = [(x[0], x[1].clone()) for x in model.named_parameters()]
