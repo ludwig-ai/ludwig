@@ -121,7 +121,7 @@ class Conv1DLayer(LudwigModule):
     @property
     def input_shape(self):
         """ Returns the size of the input tensor without the batch dimension. """
-        return (torch.Size([self.sequence_size, self.in_channels]))
+        return torch.Size([self.sequence_size, self.in_channels])
 
     def forward(self, inputs, training=None, mask=None):
         # inputs: [batch_size, seq_size, in_channels]
@@ -131,10 +131,8 @@ class Conv1DLayer(LudwigModule):
         # put in torch compatible form [batch_size, in_channels, seq_size]
         hidden = hidden.transpose(1, 2)
 
-        for i, layer in enumerate(self.layers):
-            # todo: determine how to handle training parameter in this call
-            #       commented out to avoid unexpected parameter error
-            hidden = layer(hidden)  # , training=training)
+        for layer in self.layers:
+            hidden = layer(hidden)
 
         # revert back to normal form [batch_size, seq_size, out_channels]
         hidden = hidden.transpose(1, 2)
@@ -275,12 +273,12 @@ class Conv1DStack(LudwigModule):
         """ Returns the size of the input tensor without the batch dimension. """
         return (torch.Size([self.max_sequence_length, self.in_channels]))
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         hidden = inputs
 
         # todo: enumerate for debugging, remove after testing
         for i, layer in enumerate(self.stack):
-            hidden = layer(hidden, training=training)
+            hidden = layer(hidden)
 
         if hidden.shape[1] == 0:
             raise ValueError(
@@ -406,14 +404,14 @@ class ParallelConv1D(LudwigModule):
         """ Returns the size of the input tensor without the batch dimension. """
         return torch.Size([self.max_sequence_length, self.in_channels])
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         # inputs: [batch_size, seq_size, in_channels)
 
         hidden = inputs
         hiddens = []
 
         for layer in self.parallel_layers:
-            hiddens.append(layer(hidden, training=training))
+            hiddens.append(layer(hidden))
         hidden = torch.cat(hiddens, 2)
 
         if hidden.shape[1] == 0:
@@ -549,11 +547,11 @@ class ParallelConv1DStack(LudwigModule):
         """ Returns the size of the input tensor without the batch dimension. """
         return torch.Size([self.max_sequence_length, self.in_channels])
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         hidden = inputs
 
         for layer in self.stack:
-            hidden = layer(hidden, training=training)
+            hidden = layer(hidden)
 
         if hidden.shape[2] == 0:
             raise ValueError(

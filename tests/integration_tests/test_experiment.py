@@ -677,35 +677,30 @@ def test_sequence_tagger_text(
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize('sequence_combiner_encoder', ENCODERS[:-2])
-def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
-    # Sequence combiner
-    input_features = [
-        sequence_feature(
-            name='seq1',
-            min_len=5,
-            max_len=5,
-            encoder='rnn',
-            cell_type='lstm',
-            reduce_output=None
-        ),
-        sequence_feature(
-            name='seq2',
-            min_len=5,
-            max_len=5,
-            encoder='rnn',
-            cell_type='lstm',
-            reduce_output=None
-        ),
-        category_feature(vocab_size=5)
-    ]
-    output_features = [
-        category_feature(reduce_input='sum', vocab_size=5)
-    ]
-
+def test_experiment_sequence_combiner_with_embed_encoder_fails(csv_filename):
     config = {
-        'input_features': input_features,
-        'output_features': output_features,
+        'input_features': [
+            sequence_feature(
+                name='seq1',
+                min_len=5,
+                max_len=5,
+                encoder='embed',
+                cell_type='lstm',
+                reduce_output=None,
+            ),
+            sequence_feature(
+                name='seq2',
+                min_len=5,
+                max_len=5,
+                encoder='embed',
+                cell_type='lstm',
+                reduce_output=None
+            ),
+            category_feature(vocab_size=5)
+        ],
+        'output_features': [
+            category_feature(reduce_input='sum', vocab_size=5)
+        ],
         'training': {
             'epochs': 2
         },
@@ -718,16 +713,57 @@ def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
     }
 
     # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(
+        config['input_features'], config['output_features'], csv_filename)
 
-    logger.error('sequence combiner. encoders: {0}, {1}'.format(
-        sequence_combiner_encoder,
-        sequence_combiner_encoder
-    ))
-    input_features[0]['encoder'] = sequence_combiner_encoder
-    input_features[1]['encoder'] = sequence_combiner_encoder
+    # Encoding sequence features with 'embed' should fail with SequenceConcatCombiner, since at least one sequence feature should be rank 3.
+    with pytest.raises(ValueError):
+        exp_dir_name = experiment_cli(
+            config,
+            skip_save_processed_input=False,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True,
+            dataset=rel_path
+        )
+        shutil.rmtree(exp_dir_name, ignore_errors=True)
 
-    config['input_features'] = input_features
+
+@ pytest.mark.parametrize('sequence_encoder', ENCODERS[1:])
+def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
+    config = {
+        'input_features': [
+            sequence_feature(
+                name='seq1',
+                min_len=5,
+                max_len=5,
+                encoder=sequence_encoder,
+                cell_type='lstm',
+                reduce_output=None
+            ),
+            sequence_feature(
+                name='seq2',
+                min_len=5,
+                max_len=5,
+                encoder=sequence_encoder,
+                cell_type='lstm',
+                reduce_output=None
+            ),
+            category_feature(vocab_size=5)
+        ],
+        'output_features': [category_feature(reduce_input='sum', vocab_size=5)],
+        'training': {
+            'epochs': 2
+        },
+        'combiner': {
+            'type': 'sequence',
+            'encoder': 'rnn',
+            'main_sequence_feature': 'seq1',
+            'reduce_output': None,
+        }
+    }
+
+    # Generate test data
+    rel_path = generate_data(config['input_features'], config['output_features'], csv_filename)
 
     exp_dir_name = experiment_cli(
         config,
@@ -790,7 +826,7 @@ def test_experiment_timeseries(csv_filename):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+@ pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 def test_visual_question_answering(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features = [
@@ -863,7 +899,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     df = concatenate_df(df1, df2, None, LOCAL_BACKEND)
     df.to_csv(rel_path, index=False)
 
-    # Here the user sepcifiies number of channels. Exception shouldn't be thrown
+    # Here the user specifies number of channels. Exception shouldn't be thrown
     run_experiment(input_features, output_features, dataset=rel_path)
 
     del input_features[0]['preprocessing']['num_channels']
@@ -875,7 +911,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     shutil.rmtree(image_dest_folder)
 
 
-@pytest.mark.parametrize('encoder', ['wave', 'embed'])
+@ pytest.mark.parametrize('encoder', ['wave', 'embed'])
 def test_experiment_date(encoder, csv_filename):
     input_features = [date_feature()]
     output_features = [category_feature(vocab_size=2)]
@@ -887,7 +923,7 @@ def test_experiment_date(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
+@ pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
 def test_experiment_h3(encoder, csv_filename):
     input_features = [h3_feature()]
     output_features = [binary_feature()]
@@ -917,7 +953,7 @@ def test_experiment_vector_feature_2(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+@ pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 def test_experiment_sampled_softmax(csv_filename):
     # Multiple inputs, Single category output
     input_features = [text_feature(vocab_size=10, min_len=1)]
