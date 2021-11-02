@@ -177,42 +177,42 @@ def test_train_cli_horovod(csv_filename):
         )
 
 
-# TODO(https://github.com/ludwig-ai/ludwig/projects/3#card-71743513): Re-enable.
-# @pytest.mark.distributed
-# def test_export_savedmodel_cli(csv_filename):
-#     """Test exporting Ludwig model to Tensorflows savedmodel format."""
-#     with tempfile.TemporaryDirectory() as tmpdir:
-#         config_filename = os.path.join(tmpdir,
-#                                        'config.yaml')
-#         dataset_filename = _prepare_data(csv_filename,
-#                                          config_filename)
-#         _run_ludwig('train',
-#                     dataset=dataset_filename,
-#                     config_file=config_filename,
-#                     output_directory=tmpdir)
-#         _run_ludwig('export_savedmodel',
-#                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-#                     output_path=os.path.join(tmpdir, 'savedmodel')
-#                     )
+@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
+@pytest.mark.distributed
+def test_export_savedmodel_cli(csv_filename):
+    """Test exporting Ludwig model to Tensorflows savedmodel format."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config_filename = os.path.join(tmpdir,
+                                       'config.yaml')
+        dataset_filename = _prepare_data(csv_filename,
+                                         config_filename)
+        _run_ludwig('train',
+                    dataset=dataset_filename,
+                    config_file=config_filename,
+                    output_directory=tmpdir)
+        _run_ludwig('export_savedmodel',
+                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+                    output_path=os.path.join(tmpdir, 'savedmodel')
+                    )
 
 
-# TODO: Enable or remove.
-# @pytest.mark.distributed
-# def test_export_neuropod_cli(csv_filename):
-#     """Test exporting Ludwig model to neuropod format."""
-#     with tempfile.TemporaryDirectory() as tmpdir:
-#         config_filename = os.path.join(tmpdir,
-#                                        'config.yaml')
-#         dataset_filename = _prepare_data(csv_filename,
-#                                          config_filename)
-#         _run_ludwig('train',
-#                     dataset=dataset_filename,
-#                     config_file=config_filename,
-#                     output_directory=tmpdir)
-#         _run_ludwig('export_neuropod',
-#                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-#                     output_path=os.path.join(tmpdir, 'neuropod')
-#                     )
+@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
+@pytest.mark.distributed
+def test_export_neuropod_cli(csv_filename):
+    """Test exporting Ludwig model to neuropod format."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config_filename = os.path.join(tmpdir,
+                                       'config.yaml')
+        dataset_filename = _prepare_data(csv_filename,
+                                         config_filename)
+        _run_ludwig('train',
+                    dataset=dataset_filename,
+                    config_file=config_filename,
+                    output_directory=tmpdir)
+        _run_ludwig('export_neuropod',
+                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+                    output_path=os.path.join(tmpdir, 'neuropod')
+                    )
 
 
 @pytest.mark.distributed
