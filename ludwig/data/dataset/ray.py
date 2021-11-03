@@ -45,7 +45,6 @@ class RayDataset(Dataset):
     """ Wrapper around ray.data.Dataset. """
 
     def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
-        # TODO(travis): move read_parquet to cache layer after removing petastorm
         self.ds = from_dask(df) if not isinstance(df, str) else read_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
@@ -70,7 +69,6 @@ class RayDataset(Dataset):
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
-                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):
@@ -135,7 +133,6 @@ class RayDatasetShard(Dataset):
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
-                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):
