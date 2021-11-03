@@ -14,6 +14,8 @@ FROM python:3.7.12-slim
 RUN apt-get -y update && apt-get -y install \
     git \
     libsndfile1 \
+    build-essential \
+    g++ \
     cmake
 
 WORKDIR /ludwig
