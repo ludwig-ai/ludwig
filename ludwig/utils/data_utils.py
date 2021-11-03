@@ -24,12 +24,14 @@ import pickle
 import random
 import re
 from itertools import islice
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 import yaml
 
 from ludwig.utils.fs_utils import open_file, download_h5, upload_h5
+from ludwig.utils.misc_utils import get_from_registry
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
@@ -117,15 +119,21 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=',', header=0, nrows=None, ski
             # Could not conclude the delimiter, defaulting to user provided
             pass
 
+    kwargs = dict(
+        sep=separator,
+        header=header,
+        skiprows=skiprows
+    )
+
+    if nrows is not None:
+        kwargs['nrows'] = nrows
+
     try:
-        df = df_lib.read_csv(data_fp, sep=separator, header=header,
-                             nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, **kwargs)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = df_lib.read_csv(data_fp, sep=separator, header=header,
-                             escapechar='\\',
-                             nrows=nrows, skiprows=skiprows)
+        df = df_lib.read_csv(data_fp, escapechar='\\', **kwargs)
 
     return df
 
@@ -369,21 +377,16 @@ def save_array(data_fp, array):
             output_file.write(str(x) + '\n')
 
 
-def load_pretrained_embeddings(embeddings_path, vocab):
-    embeddings = load_glove(embeddings_path)
-
-    # find out the size of the embeddings
-    embeddings_size = len(next(iter(embeddings.values())))
+# TODO(shreya): Confirm types of args
+def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]
+) -> np.ndarray:
+    """ Create an embedding matrix of all words in vocab. """
+    embeddings, embeddings_size = load_glove(
+        embeddings_path, return_embedding_size=True)
 
     # calculate an average embedding, to use for initializing missing words
-    avg_embedding = np.zeros(embeddings_size)
-    count = 0
-    for word in vocab:
-        if word in embeddings:
-            avg_embedding += embeddings[word]
-            count += 1
-    if count > 0:
-        avg_embedding /= count
+    avg_embedding = [embeddings[w] for w in vocab if w in embeddings]
+    avg_embedding = sum(avg_embedding) / len(avg_embedding)
 
     # create the embedding matrix
     embeddings_vectors = []
@@ -403,7 +406,16 @@ def load_pretrained_embeddings(embeddings_path, vocab):
 
 
 @functools.lru_cache(1)
-def load_glove(file_path):
+def load_glove(
+        file_path: str,
+        return_embedding_size: bool = False
+) -> Dict[str, np.ndarray]:
+    """Loads Glove embeddings for each word.
+
+    Returns:
+        Mapping between word and numpy array of size embedding_size as set by
+        first line of file.
+    """
     logger.info('  Loading Glove format file {}'.format(file_path))
     embeddings = {}
     embedding_size = 0
@@ -424,7 +436,10 @@ def load_glove(file_path):
                 try:
                     split = line.split()
                     if len(split) != embedding_size + 1:
-                        raise ValueError
+                        raise ValueError(
+                            f'Line {line_number} is of length {len(split)}, '
+                            f'while expected length is {embedding_size + 1}.'
+                        )
                     word = split[0]
                     embedding = np.array(
                         [float(val) for val in split[-embedding_size:]]
@@ -438,6 +453,9 @@ def load_glove(file_path):
                         )
                     )
     logger.info('  {0} embeddings loaded'.format(len(embeddings)))
+
+    if return_embedding_size:
+        return embeddings, embedding_size
     return embeddings
 
 
@@ -476,16 +494,22 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
 
 
 def split_dataset_ttv(dataset, split):
-    training_set = split_dataset(dataset, split, 0)
-    validation_set = split_dataset(dataset, split, 1)
-    test_set = split_dataset(dataset, split, 2)
+    # Obtain distinct splits from the split column. If
+    # a split is not present in this set, then we can skip generating
+    # the dataframe for that split.
+    distinct_values = dataset[split].drop_duplicates()
+    if hasattr(distinct_values, "compute"):
+        distinct_values = distinct_values.compute()
+    distinct_values = set(distinct_values.values.tolist())
+
+    training_set = split_dataset(dataset, split, 0) if 0 in distinct_values else None
+    validation_set = split_dataset(dataset, split, 1) if 1 in distinct_values else None
+    test_set = split_dataset(dataset, split, 2) if 2 in distinct_values else None
     return training_set, test_set, validation_set
 
 
 def split_dataset(dataset, split, value_to_split=0):
     split_df = dataset[dataset[split] == value_to_split]
-    if len(split_df) == 0:
-        return None
     return split_df.reset_index()
 
 
@@ -804,3 +828,20 @@ external_data_reader_registry = {
     **{fmt: read_spss for fmt in SPSS_FORMATS},
     **{fmt: read_stata for fmt in STATA_FORMATS}
 }
+
+
+def load_dataset(dataset, data_format=None, df_lib=PANDAS_DF):
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(dataset)
+
+    # use appropriate reader to create dataframe
+    if data_format in DATAFRAME_FORMATS:
+        return dataset
+    elif data_format in DICT_FORMATS:
+        return pd.DataFrame(dataset)
+    elif data_format in CACHEABLE_FORMATS:
+        data_reader = get_from_registry(data_format,
+                                        external_data_reader_registry)
+        return data_reader(dataset, df_lib)
+    else:
+        ValueError(f"{data_format} format is not supported")

@@ -53,64 +53,67 @@ FEATURES_TO_TEST = [
         ],
         # output feature
         [
-            category_feature(vocab_size=2, reduce_input='sum')
+            category_feature(vocab_size=4, reduce_input='sum')
         ]
     ),
-    FeaturesToUse(
-        # input feature
-        [
-            sequence_feature(
-                min_len=5,
-                max_len=10,
-                encoder='rnn',
-                cell_type='lstm',
-                reduce_output=None
-            )
-        ],
-        # output feature
-        [
-            sequence_feature(
-                min_len=5,
-                max_len=10,
-                decoder='generator',
-                cell_type='lstm',
-                attention='bahdanau',
-                reduce_input=None
-            )
-        ]
-    ),
-    FeaturesToUse(
-        # input feature
-        [
-            sequence_feature(
-                min_len=5,
-                max_len=10,
-                encoder='rnn',
-                cell_type='lstm',
-                reduce_output=None
-            )
-
-        ],
-        # output feature
-        [
-            sequence_feature(
-                max_len=10,
-                decoder='tagger',
-                reduce_input=None
-            )
-        ]
-    ),
-    FeaturesToUse(
-        # input feature
-        [
-            numerical_feature(normalization='zscore'),
-            numerical_feature(normalization='zscore')
-        ],
-        # output feature
-        [
-            text_feature()
-        ]
-    ),
+    # TODO(#1333): re-enable this test case after output sequence feature ported
+    # FeaturesToUse(
+    #     # input feature
+    #     [
+    #         sequence_feature(
+    #             min_len=5,
+    #             max_len=10,
+    #             encoder='rnn',
+    #             cell_type='lstm',
+    #             reduce_output=None
+    #         )
+    #     ],
+    #     # output feature
+    #     [
+    #         sequence_feature(
+    #             min_len=5,
+    #             max_len=10,
+    #             decoder='generator',
+    #             cell_type='lstm',
+    #             attention='bahdanau',
+    #             reduce_input=None
+    #         )
+    #     ]
+    # ),
+    # todo: re-enable this test case after output sequence feature ported
+    # FeaturesToUse(
+    #     # input feature
+    #     [
+    #         sequence_feature(
+    #             min_len=5,
+    #             max_len=10,
+    #             encoder='rnn',
+    #             cell_type='lstm',
+    #             reduce_output=None
+    #         )
+    #
+    #     ],
+    #     # output feature
+    #     [
+    #         sequence_feature(
+    #             max_len=10,
+    #             decoder='tagger',
+    #             reduce_input=None
+    #         )
+    #     ]
+    # ),
+    # todo: re-enable this test case after output text feature ported
+    # FeaturesToUse(
+    #     # input feature
+    #     [
+    #         numerical_feature(normalization='zscore'),
+    #         numerical_feature(normalization='zscore')
+    #     ],
+    #     # output feature
+    #     [
+    #         text_feature()
+    #     ]
+    # ),
 ]
 
 
@@ -195,7 +198,7 @@ def test_kfold_cv_api_from_file():
         ]
 
         output_features = [
-            category_feature(vocab_size=2, reduce_input='sum')
+            category_feature(vocab_size=3, reduce_input='sum')
         ]
 
         generate_data(input_features, output_features, training_data_fp)
@@ -284,7 +287,6 @@ def test_kfold_cv_api_in_memory():
             assert key in kfold_split_indices
 
 
-
 DATA_FORMATS_FOR_KFOLDS = [
     'csv', 'df', 'dict', 'excel', 'feather', 'fwf', 'html',
     'json', 'jsonl', 'parquet', 'pickle', 'stata', 'tsv'
@@ -343,4 +345,3 @@ def test_kfold_cv_dataset_formats(data_format):
 
         for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in kfold_split_indices
-

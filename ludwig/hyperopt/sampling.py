@@ -33,9 +33,32 @@ from ludwig.utils.strings_utils import str2bool
 
 try:
     from ray import tune
+    from ray.tune.schedulers.resource_changing_scheduler import (
+        ResourceChangingScheduler, evenly_distribute_cpus_gpus, PlacementGroupFactory)
     _HAS_RAY_TUNE = True
 except ImportError:
+    evenly_distribute_cpus_gpus = None
     _HAS_RAY_TUNE = False
+
+
+def ray_resource_allocation_function(trial_runner: "trial_runner.TrialRunner", trial: "Trial",
+                                     result: Dict[str, Any], scheduler: "ResourceChangingScheduler"
+                                     ):
+    """Determine resources to allocate to running trials"""
+    pgf = evenly_distribute_cpus_gpus(
+        trial_runner, trial, result, scheduler)
+    # restore original base trial resources
+
+    # create bundles
+    if scheduler.base_trial_resources.required_resources.get("GPU", 0):
+        bundles = [{"CPU": 1, "GPU": 1}] * \
+            int(pgf.required_resources["GPU"])
+    else:
+        bundles = [{"CPU": 1}] * (int(pgf.required_resources["CPU"] - 0.001))
+    # we can't set Trial actor's CPUs to 0 so we just go very low
+    bundles = [{"CPU": 0.001}] + bundles
+    pgf = PlacementGroupFactory(bundles)
+    return pgf
 
 
 logger = logging.getLogger(__name__)
@@ -152,7 +175,7 @@ class RandomSampler(HyperoptSampler):
                         value_str = str(value)
                         value_type = str2bool
                     elif value_type == str or value_type == int or \
-                        value_type == float:
+                            value_type == float:
                         value_str = str(value)
                     else:
                         value_str = json.dumps(value)
@@ -274,7 +297,7 @@ class PySOTSampler(HyperoptSampler):
                         value_str = str(value)
                         value_type = str2bool
                     elif value_type == str or value_type == int or \
-                        value_type == float:
+                            value_type == float:
                         value_str = str(value)
                     else:
                         value_str = json.dumps(value)
@@ -338,7 +361,7 @@ class RayTuneSampler(HyperoptSampler):
         self._check_ray_tune()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.search_alg_dict = search_alg
-        self.scheduler = self._create_scheduler(scheduler)
+        self.scheduler = self._create_scheduler(scheduler, parameters)
         self.num_samples = num_samples
         self.goal = goal
 
@@ -348,14 +371,26 @@ class RayTuneSampler(HyperoptSampler):
                 "Requested Ray sampler but Ray Tune is not installed. Run `pip install ray[tune]`"
             )
 
-    def _create_scheduler(self, scheduler_config):
+    def _create_scheduler(self, scheduler_config, parameters):
         if not scheduler_config:
             return None
 
-        return tune.create_scheduler(
+        dynamic_resource_allocation = scheduler_config.pop(
+            "dynamic_resource_allocation", False)
+
+        if scheduler_config.get("type") == "pbt":
+            scheduler_config.update(
+                {"hyperparam_mutations": self.search_space})
+
+        scheduler = tune.create_scheduler(
             scheduler_config.get("type"),
             **scheduler_config
         )
+
+        if dynamic_resource_allocation:
+            scheduler = ResourceChangingScheduler(
+                scheduler, ray_resource_allocation_function)
+        return scheduler
 
     def _get_search_space(self, parameters):
         config = {}
@@ -407,7 +442,7 @@ class RayTuneSampler(HyperoptSampler):
         """
         values = values.copy()
         for key in ["values", "categories"]:
-            if key in values:
+            if key in values and not isinstance(values[key][0], (int, float)):
                 values[key] = [json.dumps(v) for v in values[key]]
                 ctx[param] = json.loads
         return values

@@ -14,14 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
-
 import os
 
 import numpy as np
 import pandas as pd
 import pytest
-import tensorflow as tf
 from unittest import mock
+
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
@@ -71,7 +71,7 @@ def test_binary_predictions(tmpdir, distinct_values):
     # Produce an even mix of True and False predictions, as the model may be biased towards
     # one direction without training
     def random_logits(*args, **kwargs):
-        return tf.convert_to_tensor(
+        return torch.tensor(
             np.random.uniform(low=-1.0, high=1.0, size=(len(data_df),))
         )
 

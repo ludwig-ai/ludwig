@@ -15,30 +15,28 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.metrics import \
-    MeanAbsoluteError as MeanAbsoluteErrorMetric
-from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
+import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
+from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss
-from ludwig.modules.metric_modules import ErrorScore, MAEMetric, MSEMetric
-from ludwig.modules.metric_modules import R2Score
+from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss
+from ludwig.modules.metric_modules import (
+    MAEMetric,
+    MSEMetric,
+    RMSEMetric,
+    RMSPEMetric,
+    R2Score,
+)
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
-
-
 
 
 class ZScoreTransformer:
@@ -53,14 +51,11 @@ class ZScoreTransformer:
         return x * self.sigma + self.mu
 
     @staticmethod
-    def fit_transform_params(
-            column: np.ndarray,
-            backend: 'Backend'
-    ) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
         compute = backend.df_engine.compute
         return {
-            'mean': compute(column.astype(np.float32).mean()),
-            'std': compute(column.astype(np.float32).std())
+            "mean": compute(column.astype(np.float32).mean()),
+            "std": compute(column.astype(np.float32).std()),
         }
 
 
@@ -76,20 +71,17 @@ class MinMaxTransformer:
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         if self.range is None:
             raise ValueError(
-                'Numeric transformer needs to be instantiated with '
-                'min and max values.'
+                "Numeric transformer needs to be instantiated with "
+                "min and max values."
             )
         return x * self.range + self.min_value
 
     @staticmethod
-    def fit_transform_params(
-            column: np.ndarray,
-            backend: 'Backend'
-    ) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
         compute = backend.df_engine.compute
         return {
-            'min': compute(column.astype(np.float32).min()),
-            'max': compute(column.astype(np.float32).max())
+            "min": compute(column.astype(np.float32).min()),
+            "max": compute(column.astype(np.float32).max()),
         }
 
 
@@ -100,8 +92,8 @@ class Log1pTransformer:
     def transform(self, x: np.ndarray) -> np.ndarray:
         if np.any(x <= 0):
             raise ValueError(
-                'One or more values are non-positive.  '
-                'log1p normalization is defined only for positive values.'
+                "One or more values are non-positive.  "
+                "log1p normalization is defined only for positive values."
             )
         return np.log1p(x)
 
@@ -109,10 +101,7 @@ class Log1pTransformer:
         return np.expm1(x)
 
     @staticmethod
-    def fit_transform_params(
-            column: np.ndarray,
-            backend: 'Backend'
-    ) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
         return {}
 
 
@@ -127,47 +116,50 @@ class IdentityTransformer:
         return x
 
     @staticmethod
-    def fit_transform_params(
-            column: np.ndarray,
-            backend: 'Backend'
-    ) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
         return {}
 
 
 numeric_transformation_registry = {
-    'minmax': MinMaxTransformer,
-    'zscore': ZScoreTransformer,
-    'log1p': Log1pTransformer,
-    None: IdentityTransformer
+    "minmax": MinMaxTransformer,
+    "zscore": ZScoreTransformer,
+    "log1p": Log1pTransformer,
+    None: IdentityTransformer,
 }
 
 
 class NumericalFeatureMixin:
     type = NUMERICAL
     preprocessing_defaults = {
-        'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': 0,
-        'normalization': None
+        "missing_value_strategy": FILL_WITH_CONST,
+        "fill_value": 0,
+        "normalization": None,
     }
 
     preprocessing_schema = {
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
-        'fill_value': {'type': 'number'},
-        'computed_fill_value': {'type': 'number'},
-        'normalization': {'type': ['string', 'null'], 'enum': list(numeric_transformation_registry.keys())},
+        "missing_value_strategy": {
+            "type": "string",
+            "enum": MISSING_VALUE_STRATEGY_OPTIONS,
+        },
+        "fill_value": {"type": "number"},
+        "computed_fill_value": {"type": "number"},
+        "normalization": {
+            "type": ["string", "null"],
+            "enum": list(numeric_transformation_registry.keys()),
+        },
     }
 
     @staticmethod
     def cast_column(column, backend):
         return backend.df_engine.df_lib.to_numeric(
-            column, errors='coerce'
+            column, errors="coerce"
         ).astype(np.float32)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         numeric_transformer = get_from_registry(
-            preprocessing_parameters.get('normalization', None),
-            numeric_transformation_registry
+            preprocessing_parameters.get("normalization", None),
+            numeric_transformation_registry,
         )
 
         return numeric_transformer.fit_transform_params(column, backend)
@@ -180,59 +172,60 @@ class NumericalFeatureMixin:
             metadata,
             preprocessing_parameters,
             backend,
-            skip_save_processed_input
+            skip_save_processed_input,
     ):
-        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(
-            np.float32).values
+        proc_df[feature[PROC_COLUMN]] = (
+            input_df[feature[COLUMN]].astype(np.float32).values
+        )
 
         # normalize data as required
         numeric_transformer = get_from_registry(
-            preprocessing_parameters.get('normalization', None),
-            numeric_transformation_registry
+            preprocessing_parameters.get("normalization", None),
+            numeric_transformation_registry,
         )(**metadata[feature[NAME]])
 
-        proc_df[feature[PROC_COLUMN]] = \
-            numeric_transformer.transform(proc_df[feature[PROC_COLUMN]])
+        proc_df[feature[PROC_COLUMN]] = numeric_transformer.transform(
+            proc_df[feature[PROC_COLUMN]]
+        )
 
         return proc_df
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
-    encoder = 'passthrough'
+    encoder = "passthrough"
 
     def __init__(self, feature, encoder_obj=None):
+        # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        feature['input_size'] = self.input_shape[-1]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
-        assert len(inputs.shape) == 1
+    def forward(self, inputs):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
+        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
-        inputs_exp = inputs[:, tf.newaxis]
-        inputs_encoded = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
+        if len(inputs.shape) == 1:
+            inputs = inputs[:, None]
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.float32
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
-    def get_input_shape(self):
-        return ()
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self.encoder_obj.output_shape)
 
     @staticmethod
     def update_config_with_metadata(
-            input_feature,
-            feature_metadata,
-            *args,
-            **kwargs
+            input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
@@ -241,121 +234,118 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     encoder_registry = {
-        'dense': DenseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
+        "dense": DenseEncoder,
+        "passthrough": PassthroughEncoder,
+        "null": PassthroughEncoder,
+        "none": PassthroughEncoder,
+        "None": PassthroughEncoder,
+        None: PassthroughEncoder,
     }
 
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
-    decoder = 'regressor'
+    decoder = "regressor"
     loss = {TYPE: MEAN_SQUARED_ERROR}
-    metric_functions = {LOSS: None, MEAN_SQUARED_ERROR: None,
-                        MEAN_ABSOLUTE_ERROR: None, R2: None}
+    metric_functions = {
+        LOSS: None,
+        MEAN_SQUARED_ERROR: None,
+        MEAN_ABSOLUTE_ERROR: None,
+        ROOT_MEAN_SQUARED_ERROR: None,
+        ROOT_MEAN_SQUARED_PERCENTAGE_ERROR: None,
+        R2: None,
+    }
     default_validation_metric = MEAN_SQUARED_ERROR
     clip = None
 
     def __init__(self, feature):
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        feature['input_size'] = self.input_shape[-1]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
-    def logits(
-            self,
-            inputs,  # hidden
-            **kwargs
-    ):
+    def logits(self, inputs, **kwargs):  # hidden
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(
-            self,
-            inputs,  # logits
-            **kwargs
-    ):
+    def predictions(self, inputs, **kwargs):  # logits
         logits = inputs[LOGITS]
         predictions = logits
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
+                '''
                 predictions = tf.clip_by_value(
+                    predictions, self.clip[0], self.clip[1]
+                )
+                '''
+                predictions = torch.clamp(
                     predictions,
                     self.clip[0],
                     self.clip[1]
                 )
+
                 logger.debug(
                     '  clipped_predictions: {0}'.format(predictions)
                 )
             else:
                 raise ValueError(
-                    'The clip parameter of {} is {}. '
-                    'It must be a list or a tuple of length 2.'.format(
-                        self.feature_name,
-                        self.clip
+                    "The clip parameter of {} is {}. "
+                    "It must be a list or a tuple of length 2.".format(
+                        self.feature_name, self.clip
                     )
                 )
 
         return {PREDICTIONS: predictions, LOGITS: logits}
 
     def _setup_loss(self):
-        if self.loss[TYPE] == 'mean_squared_error':
+        if self.loss[TYPE] == "mean_squared_error":
             self.train_loss_function = MSELoss()
-        elif self.loss[TYPE] == 'mean_absolute_error':
+        elif self.loss[TYPE] == "mean_absolute_error":
             self.train_loss_function = MAELoss()
+        elif self.loss[TYPE] == "root_mean_squared_error":
+            self.train_loss_function = RMSELoss()
+        elif self.loss[TYPE] == "root_mean_squared_percentage_error":
+            self.train_loss_function = RMSPELoss()
         else:
             raise ValueError(
-                'Unsupported loss type {}'.format(self.loss[TYPE])
+                "Unsupported loss type {}".format(self.loss[TYPE])
             )
 
         self.eval_loss_function = self.train_loss_function
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
-        if self.loss[TYPE] == 'mean_squared_error':
-            self.metric_functions[LOSS] = MSEMetric(name='eval_loss')
-        else:
-            self.metric_functions[LOSS] = MAEMetric(name='eval_loss')
-        self.metric_functions[ERROR] = ErrorScore(name='metric_error')
-        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
-            name='metric_mse'
-        )
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
-            name='metric_mae'
-        )
-        self.metric_functions[R2] = R2Score(name='metric_r2')
+        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
+        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RMSEMetric()
+        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric()
+        self.metric_functions[R2] = R2Score()
 
     def get_prediction_set(self):
-        return {
-            PREDICTIONS, LOGITS
-        }
+        return {PREDICTIONS, LOGITS}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.float32
+        return torch.float32
 
-    def get_output_shape(self):
-        return ()
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([1])
 
     @staticmethod
     def update_config_with_metadata(
-            output_feature,
-            feature_metadata,
-            *args,
-            **kwargs
+            output_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
     @staticmethod
-    def calculate_overall_stats(
-            predictions,
-            targets,
-            metadata
-    ):
+    def calculate_overall_stats(predictions, targets, metadata):
         # no overall stats, just return empty dictionary
         return {}
 
@@ -366,16 +356,16 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             output_directory,
             backend,
     ):
-        predictions_col = f'{self.feature_name}_{PREDICTIONS}'
+        predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
             # as needed convert predictions make to original value space
             numeric_transformer = get_from_registry(
-                metadata['preprocessing'].get('normalization', None),
-                numeric_transformation_registry
+                metadata["preprocessing"].get("normalization", None),
+                numeric_transformation_registry,
             )(**metadata)
             predictions[predictions_col] = backend.df_engine.map_objects(
                 predictions[predictions_col],
-                lambda pred: numeric_transformer.inverse_transform(pred)
+                lambda pred: numeric_transformer.inverse_transform(pred),
             )
 
         return predictions
@@ -383,27 +373,25 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         set_default_value(
-            output_feature,
-            LOSS,
-            {TYPE: 'mean_squared_error', 'weight': 1}
+            output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1}
         )
-        set_default_value(output_feature[LOSS], TYPE, 'mean_squared_error')
-        set_default_value(output_feature[LOSS], 'weight', 1)
+        set_default_value(output_feature[LOSS], TYPE, "mean_squared_error")
+        set_default_value(output_feature[LOSS], "weight", 1)
 
         set_default_values(
             output_feature,
             {
-                'clip': None,
-                'dependencies': [],
-                'reduce_input': SUM,
-                'reduce_dependencies': SUM
-            }
+                "clip": None,
+                "dependencies": [],
+                "reduce_input": SUM,
+                "reduce_dependencies": SUM,
+            },
         )
 
     decoder_registry = {
-        'regressor': Regressor,
-        'null': Regressor,
-        'none': Regressor,
-        'None': Regressor,
-        None: Regressor
+        "regressor": Regressor,
+        "null": Regressor,
+        "none": Regressor,
+        "None": Regressor,
+        None: Regressor,
     }

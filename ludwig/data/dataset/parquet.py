@@ -17,17 +17,16 @@
 import contextlib
 import math
 
-import tensorflow as tf
-from ludwig.data.dataset.pandas import PandasDataset
-from ludwig.data.dataset.partitioned import PartitionedDataset
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
-
+import torch
 from petastorm import make_batch_reader
 from petastorm.tf_utils import make_petastorm_dataset
 
 from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.data.batcher.iterable import IterableBatcher
 from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.pandas import PandasDataset
+from ludwig.data.dataset.ray import RayDataset
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.fs_utils import to_url
 from ludwig.utils.misc_utils import get_combined_features, get_proc_features
 
@@ -53,7 +52,7 @@ class ParquetDataset(Dataset):
         if reshape_dim is not None:
             # When we read a 1D array from disk, we need to reshape it back to its
             # full dimensions.
-            t = tf.reshape(t, reshape_dim)
+            t = torch.reshape(t, reshape_dim)
         return t
 
     def __len__(self):
@@ -109,10 +108,10 @@ class ParquetDatasetManager(object):
 
     def create_inference_dataset(self, dataset, tag, config, training_set_metadata):
         if self.backend.df_engine.partitioned:
-            return PartitionedDataset(
-                dataset,
-                get_proc_features(config),
-                training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+            return RayDataset(
+                df=dataset,
+                features=get_proc_features(config),
+                data_hdf5_fp=training_set_metadata.get(DATA_TRAIN_HDF5_FP)
             )
         else:
             return PandasDataset(

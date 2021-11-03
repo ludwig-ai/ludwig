@@ -14,13 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import tempfile
 import uuid
 
 import pytest
 
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import replace_file_extension
-from ludwig.utils.tf_utils import initialize_tensorflow
 from tests.integration_tests.utils import category_feature, \
     generate_data, text_feature
 
@@ -39,9 +39,9 @@ def init_tensorflow_cpu(request):
     and order of magnitude for small tests. Tests that execute in subprocesses, and tests
     in `test_graph_execution.py` still run in graph mode.
     """
-    import tensorflow as tf
-    tf.config.experimental_run_functions_eagerly(True)
-    initialize_tensorflow(gpus=-1)
+    # tf.config.experimental_run_functions_eagerly(True)
+    # initialize_tensorflow(gpus=-1)
+    pass
 
 
 @pytest.fixture()
@@ -51,10 +51,9 @@ def csv_filename():
     temporary data. After the data is used, all the temporary data is deleted.
     :return: None
     """
-    csv_filename = uuid.uuid4().hex[:10].upper() + '.csv'
-    yield csv_filename
-
-    delete_temporary_data(csv_filename)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_filename = os.path.join(tmpdir, uuid.uuid4().hex[:10].upper() + '.csv')
+        yield csv_filename
 
 
 @pytest.fixture()
@@ -64,11 +63,9 @@ def yaml_filename():
     a config file. After the test runs, this file will be deleted
     :return: None
     """
-    yaml_filename = 'model_def_' + uuid.uuid4().hex[:10].upper() + '.yaml'
-    yield yaml_filename
-
-    if os.path.exists(yaml_filename):
-        os.remove(yaml_filename)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yaml_filename = os.path.join(tmpdir, 'model_def_' + uuid.uuid4().hex[:10].upper() + '.yaml')
+        yield yaml_filename
 
 
 def delete_temporary_data(csv_path):

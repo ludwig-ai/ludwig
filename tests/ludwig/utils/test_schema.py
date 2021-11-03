@@ -14,11 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 
 import pytest
 from jsonschema.exceptions import ValidationError
+
+from ludwig.features.audio_feature import AudioFeatureMixin
+from ludwig.features.bag_feature import BagFeatureMixin
+from ludwig.features.binary_feature import BinaryFeatureMixin
+from ludwig.features.category_feature import CategoryFeatureMixin
+from ludwig.features.date_feature import DateFeatureMixin
+from ludwig.features.h3_feature import H3FeatureMixin
+from ludwig.features.image_feature import ImageFeatureMixin
+from ludwig.features.numerical_feature import NumericalFeatureMixin
+from ludwig.features.sequence_feature import SequenceFeatureMixin
+from ludwig.features.set_feature import SetFeatureMixin
+from ludwig.features.text_feature import TextFeatureMixin
+from ludwig.features.timeseries_feature import TimeseriesFeatureMixin
+from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.utils.defaults import merge_with_defaults
 
+from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.schema import validate_config, OUTPUT_FEATURE_TYPES
 
 from tests.integration_tests.utils import ENCODERS, numerical_feature, \
@@ -81,7 +97,6 @@ def test_config_features():
         with pytest.raises(ValidationError, match=rf"^'{dtype}' is not one of .*"):
             validate_config(config)
 
-
 def test_config_encoders():
     for encoder in ENCODERS:
         config = {
@@ -128,6 +143,7 @@ def test_config_tabnet():
             'decay_rate': 0.9,
             'staircase': True,
             'regularization_lambda': 1,
+            'regularization_type': 'l2',
             'validation_field': 'label',
         }
     }
@@ -178,7 +194,6 @@ def test_config_bad_preprocessing_param():
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
         validate_config(config)
 
-
 def test_config_bad_combiner():
     config = {
         'input_features': [
@@ -187,22 +202,106 @@ def test_config_bad_combiner():
         ],
         'output_features': [binary_feature(weight_regularization=None)],
         'combiner': {
-            'type': 'tabnet'
+            'type': 'tabnet',
         }
     }
 
     # config is valid at this point
     validate_config(config)
 
-    # bad combiner
+    # combiner without type
+    del config['combiner']['type']
+    with pytest.raises(ValidationError, match=r"^'type' is a required .*"):
+        validate_config(config)
+
+    # bad combiner type
     config['combiner']['type'] = 'fake'
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
         validate_config(config)
 
     # bad combiner format (list instead of dict)
     config['combiner'] = [{'type': 'tabnet'}]
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match=r"^\[\{'type': 'tabnet'\}\] is not of .*"):
         validate_config(config)
+    
+    # bad combiner parameter types
+    config['combiner'] = {
+        'type': 'tabtransformer',
+        'num_layers': 10,
+        'dropout': False,
+    }
+    with pytest.raises(ValidationError, match=r"^False is not of type.*"):
+        validate_config(config)
+
+    # bad combiner parameter range
+    config['combiner'] = {
+        'type': 'transformer',
+        'dropout': -1,
+    }
+    with pytest.raises(ValidationError, match=r"less than the minimum.*"):
+        validate_config(config)
+
+def test_config_bad_combiner_types_enums():
+    config = {
+        'input_features': [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            numerical_feature(),
+        ],
+        'output_features': [binary_feature(weight_regularization=None)],
+        'combiner': {
+            'type': 'concat',
+            'weights_initializer': 'zeros'
+        },
+    }
+
+    # config is valid at this point
+    validate_config(config)
+
+    # Test weights initializer:
+    config['combiner']['weights_initializer'] = {'test': 'fail'}
+    with pytest.raises(ValidationError, match=r"{'test': 'fail'} is not of*"):
+        validate_config(config)
+    config['combiner']['weights_initializer'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not of*"):
+        validate_config(config)
+    
+    # Test bias initializer:
+    del config['combiner']['weights_initializer']
+    config['combiner']['bias_initializer'] = 'kaiming_uniform'
+    validate_config(config)
+    config['combiner']['bias_initializer'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not of*"):
+        validate_config(config)
+
+    # Test norm:
+    del config['combiner']['bias_initializer']
+    config['combiner']['norm'] = 'batch'
+    validate_config(config)
+    config['combiner']['norm'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)
+    
+    # Test activation:
+    del config['combiner']['norm']
+    config['combiner']['activation'] = 'relu'
+    validate_config(config)
+    config['combiner']['activation'] = 123
+    with pytest.raises(ValidationError, match=r"123 is not of type*"):
+        validate_config(config)
+    
+    # Test reduce_output:
+    del config['combiner']['activation']
+    config2 = {**config}
+    config2['combiner']['type'] = 'tabtransformer'
+    config2['combiner']['reduce_output'] = 'sum'
+    validate_config(config)
+    config2['combiner']['reduce_output'] = 'fail'
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config2)
+
+    # Test reduce_output = None:
+    config2['combiner']['reduce_output'] = None
+    validate_config(config2)
 
 
 def test_config_fill_values():
@@ -249,3 +348,36 @@ def test_config_fill_values():
         }
         with pytest.raises(ValidationError):
             validate_config(config)
+
+
+def test_validate_with_preprocessing_defaults():
+    config = {
+        "input_features": [
+            audio_feature('/tmp/destination_folder',
+                          preprocessing=AudioFeatureMixin.preprocessing_defaults),
+            bag_feature(preprocessing=BagFeatureMixin.preprocessing_defaults),
+            binary_feature(preprocessing=BinaryFeatureMixin.preprocessing_defaults),
+            category_feature(preprocessing=CategoryFeatureMixin.preprocessing_defaults),
+            date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults),
+            h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults),
+            image_feature('/tmp/destination_folder',
+                          preprocessing=ImageFeatureMixin.preprocessing_defaults),
+            numerical_feature(preprocessing=NumericalFeatureMixin.preprocessing_defaults),
+            sequence_feature(preprocessing=SequenceFeatureMixin.preprocessing_defaults),
+            set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults),
+            text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults),
+            timeseries_feature(preprocessing=TimeseriesFeatureMixin.preprocessing_defaults),
+            vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults),
+        ],
+        "output_features": [{"name": "target", "type": "category"}],
+        "training": {
+            "decay": True,
+            "learning_rate": 0.001,
+            "validation_field": "target",
+            "validation_metric": "accuracy"
+        },
+    }
+
+    validate_config(config)
+    config = merge_with_defaults(config)
+    validate_config(config)

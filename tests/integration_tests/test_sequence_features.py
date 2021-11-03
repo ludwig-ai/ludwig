@@ -4,7 +4,7 @@ from io import StringIO
 
 import pandas as pd
 import pytest
-import tensorflow as tf
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_training
@@ -13,7 +13,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import run_experiment
-from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import sequence_feature, numerical_feature
 
 #
 # this test is focused on testing input sequence features with all encoders
@@ -21,15 +21,23 @@ from tests.integration_tests.utils import sequence_feature
 # configuration parameters all other parameters assume default values.
 #
 
-TEST_HIDDEN_SIZE = 8
+TEST_VOCAB_SIZE = 132
+TEST_HIDDEN_SIZE = 32
+TEST_STATE_SIZE = 16
+TEST_EMBEDDING_SIZE = 64
+TEST_NUM_FILTERS = 24
 
 
 # generates dataset that can be used for rest of test
-# Note: sequence_feature function specifies hidden size to be 8
 @pytest.fixture(scope='module')
 def generate_sequence_training_data():
     input_features = [
         sequence_feature(
+            vocab_size=TEST_VOCAB_SIZE,
+            embedding_size=TEST_EMBEDDING_SIZE,
+            state_size=TEST_STATE_SIZE,
+            hidden_size=TEST_HIDDEN_SIZE,
+            num_filters=TEST_NUM_FILTERS,
             min_len=5,
             max_len=10,
             encoder='rnn',
@@ -92,120 +100,7 @@ def setup_model_scaffolding(
         yield model, batcher
 
 
-# test sequence input features
-# pytest parameters:
-#   enc_cell_type: encoder cell types
-#   enc_encoder: sequence input feature encoder
-@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
-@pytest.mark.parametrize('enc_encoder', ENCODERS)
-def test_sequence_encoders(
-        enc_encoder,
-        enc_cell_type,
-        generate_sequence_training_data
-):
-    # retrieve pre-computed dataset and features
-    raw_df = generate_sequence_training_data[0]
-    input_features = generate_sequence_training_data[1]
-    output_features = generate_sequence_training_data[2]
-    input_feature_name = input_features[0]['name']
-    input_features[0]['encoder'] = enc_encoder
-    input_features[0]['cell_type'] = enc_cell_type
-
-    with setup_model_scaffolding(
-        raw_df,
-        input_features,
-        output_features
-    ) as (model, batcher):
-
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-            inputs = {
-                i_feat.feature_name: batch[i_feat.proc_column]
-                for i_feat in model.model.input_features.values()
-            }
-
-            # retrieve encoder to test
-            encoder = model.model.input_features[input_feature_name].encoder_obj
-            encoder_out = encoder(
-                tf.cast(inputs[input_feature_name], dtype=tf.int32))
-
-            # check encoder output for proper content, type and shape
-            proc_column = model.model.input_features[
-                input_feature_name].proc_column
-            batch_size = batch[proc_column].shape[0]
-            seq_size = input_features[0]['max_len']
-
-            assert 'encoder_output' in encoder_out
-            assert isinstance(encoder_out['encoder_output'], tf.Tensor)
-
-            if enc_encoder == 'parallel_cnn':
-                number_parallel_cnn_layers = \
-                    len(model.model.input_features[
-                            input_feature_name].encoder_obj.conv_layers)
-                hidden_size = input_features[0][
-                                  'state_size'] * number_parallel_cnn_layers
-                assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, seq_size, hidden_size]
-
-            elif enc_encoder == 'stacked_parallel_cnn':
-                number_parallel_cnn_layers = \
-                    len(model.model.input_features[input_feature_name] \
-                        .encoder_obj.parallel_conv1d_stack \
-                        .stacked_parallel_layers[0])
-                hidden_size = input_features[0][
-                                  'state_size'] * number_parallel_cnn_layers
-                assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, seq_size, hidden_size]
-
-            elif enc_encoder == 'rnn':
-                assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, seq_size, TEST_HIDDEN_SIZE]
-
-                assert 'encoder_output_state' in encoder_out
-                if enc_cell_type == 'lstm':
-                    assert isinstance(encoder_out['encoder_output_state'], list)
-                    assert encoder_out['encoder_output_state'][
-                               0].shape.as_list() == \
-                           [batch_size, TEST_HIDDEN_SIZE]
-                    assert encoder_out['encoder_output_state'][
-                               1].shape.as_list() == \
-                           [batch_size, TEST_HIDDEN_SIZE]
-                else:
-                    assert isinstance(encoder_out['encoder_output_state'],
-                                      tf.Tensor)
-                    assert encoder_out['encoder_output_state'].shape.as_list() == \
-                           [batch_size, TEST_HIDDEN_SIZE]
-
-            elif enc_encoder == 'cnnrnn':
-                assert encoder_out['encoder_output'].shape.as_list() == \
-                       [batch_size, 1, TEST_HIDDEN_SIZE]
-                assert 'encoder_output_state' in encoder_out
-
-                if enc_cell_type == 'lstm':
-                    assert isinstance(encoder_out['encoder_output_state'], list)
-                    assert encoder_out['encoder_output_state'][0].shape.as_list() \
-                           == [batch_size, TEST_HIDDEN_SIZE]
-                    assert encoder_out['encoder_output_state'][1].shape.as_list() \
-                           == [batch_size, TEST_HIDDEN_SIZE]
-                else:
-                    assert isinstance(encoder_out['encoder_output_state'],
-                                      tf.Tensor)
-                    assert encoder_out['encoder_output_state'].shape.as_list() \
-                           == [batch_size, TEST_HIDDEN_SIZE]
-
-            elif enc_encoder == 'stacked_cnn':
-                assert encoder_out['encoder_output'].shape.as_list() \
-                       == [batch_size, 1, TEST_HIDDEN_SIZE]
-
-            elif enc_encoder == 'transformer' or enc_encoder == 'embed':
-                assert encoder_out['encoder_output'].shape.as_list() \
-                       == [batch_size, seq_size, TEST_HIDDEN_SIZE]
-
-            else:
-                raise ValueError('{} is an invalid encoder specification' \
-                                 .format(enc_encoder))
-
-
+# TODO(#1333): refactor test once torch sequence generator work is complete
 #
 # tests output feature sequence with `Generator` decoder
 # pytest parameters
@@ -219,6 +114,7 @@ def test_sequence_encoders(
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
 #
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize('dec_num_layers', [1, 2])
 @pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
@@ -259,18 +155,18 @@ def test_sequence_decoders(
 
         # generate synthetic encoder_output tensors and make it look like
         # it came out of the combiner
-        encoder_output = tf.random.normal(combiner_output_shapes[0])
+        encoder_output = torch.randn(combiner_output_shapes[0])
         combiner_outputs = {'hidden': encoder_output}
 
         if combiner_output_shapes[1] is not None:
             if len(combiner_output_shapes[1]) > 1:
                 encoder_output_state = [
-                    tf.random.normal(combiner_output_shapes[1][0]),
-                    tf.random.normal(combiner_output_shapes[1][1])
+                    torch.randn(combiner_output_shapes[1][0]),
+                    torch.randn(combiner_output_shapes[1][1])
                 ]
             else:
                 encoder_output_state = \
-                    tf.random.normal(combiner_output_shapes[1][0])
+                    torch.randn(combiner_output_shapes[1][0])
 
             combiner_outputs['encoder_output_state'] = encoder_output_state
 
@@ -290,25 +186,28 @@ def test_sequence_decoders(
         if dec_beam_width > 1:
             assert logits is None
         else:
-            assert isinstance(logits, tf.Tensor)
-            assert logits.shape.as_list() == [batch_size, seq_size, num_classes]
+            assert isinstance(logits, torch.Tensor)
+            assert logits.shape.as_list() == [
+                batch_size, seq_size, num_classes]
 
-        assert isinstance(lengths, tf.Tensor)
+        assert isinstance(lengths, torch.Tensor)
         assert lengths.shape.as_list() == [batch_size]
 
-        assert isinstance(preds, tf.Tensor)
+        assert isinstance(preds, torch.Tensor)
         assert preds.shape.as_list() == [batch_size, seq_size]
 
-        assert isinstance(last_preds, tf.Tensor)
+        assert isinstance(last_preds, torch.Tensor)
         assert last_preds.shape.as_list() == [batch_size]
 
-        assert isinstance(probs, tf.Tensor)
+        assert isinstance(probs, torch.Tensor)
         assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
 
 
+# todo: refactor test once torch sequence generator work is complete
 #
 # final sanity test.  Checks a subset of sequence parameters
 #
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize('dec_num_layers', [1, 2])
 @pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])

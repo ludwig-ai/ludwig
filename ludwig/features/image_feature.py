@@ -16,31 +16,34 @@
 # ==============================================================================
 import logging
 import os
-import sys
 from functools import partial
 from multiprocessing import Pool
-from typing import Union
+from typing import Tuple, Union, Optional
 
 import numpy as np
-import tensorflow as tf
+import torch
+import torchvision
 
 from ludwig.constants import *
 from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
-from ludwig.utils.image_utils import greyscale
-from ludwig.utils.image_utils import num_channels_in_image
-from ludwig.utils.image_utils import resize_image
+from ludwig.utils.image_utils import grayscale, num_channels_in_image,\
+    resize_image, get_image_from_path, read_image, get_gray_default_image
 from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 
-
+# TODO(shreya): Confirm if it's ok to do per channel normalization
+# TODO(shreya): Also confirm if this is being used anywhere
+# TODO(shreya): Confirm if ok to use imagenet means and std devs
 image_scaling_registry = {
     'pixel_normalization': lambda x: x * 1.0 / 255,
-    'pixel_standardization': lambda x: tf.map_fn(
-        lambda f: tf.image.per_image_standardization(f), x)
+    'pixel_standardization': partial(
+        torchvision.transforms.functional.normalize,
+        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    )
 }
 
 
@@ -51,7 +54,12 @@ class ImageFeatureMixin:
         'in_memory': True,
         'resize_method': 'interpolate',
         'scaling': 'pixel_normalization',
-        'num_processes': 1
+        'num_processes': 1,
+        'infer_image_num_channels': True,
+        'infer_image_dimensions': True,
+        'infer_image_max_height': 256,
+        'infer_image_max_width': 256,
+        'infer_image_sample_size': 100
     }
 
     preprocessing_schema = {
@@ -63,6 +71,11 @@ class ImageFeatureMixin:
         'height': {'type': 'integer', 'minimum': 0},
         'width': {'type': 'integer', 'minimum': 0},
         'num_channels': {'type': 'integer', 'minimum': 0},
+        'infer_image_num_channels': {'type': 'boolean'},
+        'infer_image_dimensions': {'type': 'boolean'},
+        'infer_image_max_height': {'type': 'integer', 'minimum': 0},
+        'infer_image_max_width': {'type': 'integer', 'minimum': 0},
+        'infer_image_sample_size': {'type': 'integer', 'minimum': 0}
     }
 
     @staticmethod
@@ -77,14 +90,14 @@ class ImageFeatureMixin:
 
     @staticmethod
     def _read_image_and_resize(
-            img_entry: Union[str, 'numpy.array'],
+            img_entry: Union[str, torch.Tensor],
             img_width: int,
             img_height: int,
             should_resize: bool,
             num_channels: int,
             resize_method: str,
-            user_specified_num_channels: int
-    ):
+            user_specified_num_channels: bool
+    ) -> Optional[np.ndarray]:
         """
         :param img_entry Union[str, 'numpy.array']: if str file path to the
                 image else numpy.array of the image itself
@@ -94,9 +107,9 @@ class ImageFeatureMixin:
         :param resize_method: type of resizing method
         :param num_channels: expected number of channels in the first image
         :param user_specified_num_channels: did the user specify num channels?
-        :return: image object
+        :return: image object as a numpy array
 
-        Helper method to read and resize an image according to model defn.
+        Helper method to read and resize an image according to model definition.
         If the user doesn't specify a number of channels, we use the first image
         in the dataset as the source of truth. If any image in the dataset
         doesn't have the same number of channels as the first image,
@@ -105,41 +118,31 @@ class ImageFeatureMixin:
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
-        try:
-            from skimage.io import imread
-        except ImportError:
-            logger.error(
-                ' scikit-image is not installed. '
-                'In order to install all image feature dependencies run '
-                'pip install ludwig[image]'
-            )
-            sys.exit(-1)
 
-        if isinstance(img_entry, str):
-            img = imread(img_entry)
-        else:
-            img = img_entry
+        img = read_image(img_entry, num_channels)
+        if img is None:
+            logger.info(f"{img_entry} cannot be read")
+            return None
         img_num_channels = num_channels_in_image(img)
-        if img_num_channels == 1:
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+        # Convert to grayscale if needed.
+        if num_channels == 1 and img_num_channels != 1:
+            img = grayscale(img)
+            img_num_channels = 1
 
         if should_resize:
             img = resize_image(img, (img_height, img_width), resize_method)
 
-        if user_specified_num_channels is True:
-
-            # convert to greyscale if needed
-            if num_channels == 1 and (
-                    img_num_channels == 3 or img_num_channels == 4):
-                img = greyscale(img)
-                img_num_channels = 1
-
+        if user_specified_num_channels:
             # Number of channels is specified by the user
-            img_padded = np.zeros((img_height, img_width, num_channels),
-                                  dtype=np.uint8)
-            min_num_channels = min(num_channels, img_num_channels)
-            img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
-            img = img_padded
+            # img_padded = np.zeros((img_height, img_width, num_channels),
+            #                       dtype=np.uint8)
+            # min_num_channels = min(num_channels, img_num_channels)
+            # img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
+            # img = img_padded
+            if num_channels > img_num_channels:
+                extra_channels = num_channels - img_num_channels
+                img = torch.nn.functional.pad(
+                    img, [0, 0, 0, 0, 0, extra_channels])
 
             if img_num_channels != num_channels:
                 logger.warning(
@@ -157,7 +160,7 @@ class ImageFeatureMixin:
                     'image preprocessing'.format(img_num_channels,
                                                  num_channels))
 
-        if img.shape[0] != img_height or img.shape[1] != img_width:
+        if img.shape[1] != img_height or img.shape[2] != img_width:
             raise ValueError(
                 "Images are not of the same size. "
                 "Expected size is {0}, "
@@ -167,16 +170,18 @@ class ImageFeatureMixin:
                 "to be provided. "
                 "Additional information: "
                 "https://ludwig-ai.github.io/ludwig-docs/user_guide/#image-features-preprocessing"
-                    .format([img_height, img_width, num_channels], img.shape)
+                .format([img_height, img_width, num_channels], img.shape)
             )
 
-        return img
+        return img.numpy()
 
     @staticmethod
     def _finalize_preprocessing_parameters(
             preprocessing_parameters: dict,
-            first_img_entry: Union[str, 'numpy.array']
-    ):
+            first_img_entry: Union[str, torch.Tensor],
+            src_path: str,
+            input_feature_col: np.array
+    ) -> Tuple:
         """
         Helper method to determine the height, width and number of channels for
         preprocessing the image data. This is achieved by looking at the
@@ -185,28 +190,31 @@ class ImageFeatureMixin:
         that all the images in the data are expected be of the same size with
         the same number of channels
         """
-        # Read the first image in the dataset
-        try:
-            from skimage.io import imread
-        except ImportError:
-            logger.error(
-                ' scikit-image is not installed. '
-                'In order to install all image feature dependencies run '
-                'pip install ludwig[image]'
-            )
-            sys.exit(-1)
 
-        if isinstance(first_img_entry, str):
-            first_image = imread(first_img_entry)
+        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and \
+            preprocessing_parameters[NUM_CHANNELS]
+
+        if explicit_num_channels:
+            first_image = read_image(first_img_entry,
+                                     preprocessing_parameters[NUM_CHANNELS])
         else:
-            first_image = first_img_entry
-        first_img_height = first_image.shape[0]
-        first_img_width = first_image.shape[1]
-        first_img_num_channels = num_channels_in_image(first_image)
+            first_image = read_image(first_img_entry)
+
+        inferred_sample = None
+        if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (
+                explicit_height_width and explicit_num_channels):
+            sample_size = min(len(input_feature_col),
+                              preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
+            sample = [read_image(get_image_from_path(src_path, img)) for img in
+                      input_feature_col.head(sample_size)]
+            inferred_sample = [img for img in sample if img is not None]
+            if len(inferred_sample) == 0:
+                raise ValueError(
+                    "No readable images in sample, image dimensions cannot be inferred")
 
         should_resize = False
-        if (HEIGHT in preprocessing_parameters or
-                WIDTH in preprocessing_parameters):
+        if explicit_height_width:
             should_resize = True
             try:
                 height = int(preprocessing_parameters[HEIGHT])
@@ -222,19 +230,44 @@ class ImageFeatureMixin:
                 )
         else:
             # User hasn't specified height and width.
-            # So we assume that all images have the same width and height.
-            # Thus the width and height of the first one are the same
-            # as all the other ones
-            height = first_img_height
-            width = first_img_width
+            # Default to inferring from sample or first image.
+            if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
+                should_resize = True
 
-        if NUM_CHANNELS in preprocessing_parameters:
+                height_avg = min(
+                    sum(x.shape[0]
+                        for x in inferred_sample) / len(inferred_sample),
+                    preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT])
+                width_avg = min(
+                    sum(x.shape[1]
+                        for x in inferred_sample) / len(inferred_sample),
+                    preprocessing_parameters[INFER_IMAGE_MAX_WIDTH])
+
+                height, width = round(height_avg), round(width_avg)
+                logger.debug(
+                    "Inferring height: {0} and width: {1}".format(height, width))
+            elif first_image is not None:
+                height, width = first_image.shape[0], first_image.shape[1]
+            else:
+                raise ValueError("Explicit image width/height are not set, infer_image_dimensions is false, "
+                                 "and first image cannot be read, so image dimensions are unknown")
+
+        if explicit_num_channels:
             # User specified num_channels in the model/feature config
             user_specified_num_channels = True
             num_channels = preprocessing_parameters[NUM_CHANNELS]
         else:
             user_specified_num_channels = False
-            num_channels = first_img_num_channels
+            if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
+                user_specified_num_channels = True
+                # Use the maximum num_channels found across all sampled images. torchvision has built-in support for upsampling images.
+                num_channels = max(num_channels_in_image(x)
+                                   for x in inferred_sample)
+            elif first_image is not None:
+                num_channels = num_channels_in_image(first_image)
+            else:
+                raise ValueError("Explicit image num channels is not set, infer_image_dimensions is false, "
+                                 "and first image cannot be read, so image num channels is unknown")
 
         assert isinstance(num_channels, int), ValueError(
             'Number of image channels needs to be an integer'
@@ -265,7 +298,7 @@ class ImageFeatureMixin:
 
         num_processes = preprocessing_parameters['num_processes']
         if PREPROCESSING in feature and 'num_processes' in feature[
-            PREPROCESSING]:
+                PREPROCESSING]:
             num_processes = feature[PREPROCESSING]['num_processes']
 
         src_path = None
@@ -282,17 +315,14 @@ class ImageFeatureMixin:
         )
 
         if not isinstance(first_img_entry, str) \
-                and not isinstance(first_img_entry, np.ndarray):
+                and not isinstance(first_img_entry, torch.Tensor):
             raise ValueError(
                 'Invalid image feature data type.  Detected type is {}, '
                 'expect either string for file path or numpy array.'
-                    .format(type(first_img_entry))
+                .format(type(first_img_entry))
             )
 
-        if isinstance(first_img_entry, str):
-            if src_path is None and not os.path.isabs(first_img_entry):
-                raise ValueError('Image file paths must be absolute')
-            first_img_entry = get_abs_path(src_path, first_img_entry)
+        first_img_entry = get_image_from_path(src_path, first_img_entry)
 
         (
             should_resize,
@@ -302,7 +332,7 @@ class ImageFeatureMixin:
             user_specified_num_channels,
             first_image
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_img_entry
+            preprocessing_parameters, first_img_entry, src_path, input_df[feature[COLUMN]]
         )
 
         metadata[feature[NAME]][PREPROCESSING]['height'] = height
@@ -320,6 +350,9 @@ class ImageFeatureMixin:
             user_specified_num_channels=user_specified_num_channels
         )
 
+        # TODO: alternatively use get_average_image() for unreachable images
+        default_image = get_gray_default_image(height, width, num_channels)
+
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
         backend.check_lazy_load_supported(feature)
@@ -328,7 +361,7 @@ class ImageFeatureMixin:
             # Number of processes to run in parallel for preprocessing
             metadata[feature[NAME]][PREPROCESSING][
                 'num_processes'] = num_processes
-            metadata[feature[NAME]]['reshape'] = (height, width, num_channels)
+            metadata[feature[NAME]]['reshape'] = (num_channels, height, width)
 
             # Split the dataset into pools only if we have an explicit request to use
             # multiple processes. In case we have multiple input images use the
@@ -345,9 +378,11 @@ class ImageFeatureMixin:
                             num_processes
                         )
                     )
-                    proc_df[feature[PROC_COLUMN]] = pool.map(
+                    res = pool.map(
                         read_image_and_resize, all_img_entries
                     )
+                    proc_df[feature[PROC_COLUMN]] = [
+                        x if x is not None else default_image for x in res]
             else:
                 # If we're not running multiple processes and we are only processing one
                 # image just use this faster shortcut, bypassing multiprocessing.Pool.map
@@ -358,11 +393,12 @@ class ImageFeatureMixin:
                 # helper function for handling single image
                 def _get_processed_image(img_store):
                     if isinstance(img_store, str):
-                        return read_image_and_resize(
+                        res_single = read_image_and_resize(
                             get_abs_path(src_path, img_store)
                         )
                     else:
-                        return read_image_and_resize(img_store)
+                        res_single = read_image_and_resize(img_store)
+                    return res_single if res_single is not None else default_image
 
                 proc_df[feature[PROC_COLUMN]] = backend.df_engine.map_objects(
                     input_df[feature[COLUMN]],
@@ -381,13 +417,13 @@ class ImageFeatureMixin:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
                     feature[PROC_COLUMN] + '_data',
-                    (num_images, height, width, num_channels),
+                    (num_images, num_channels, height, width),
                     dtype=np.uint8
                 )
                 for i, img_entry in enumerate(all_img_entries):
-                    image_dataset[i, :height, :width, :] = (
-                        read_image_and_resize(img_entry)
-                    )
+                    res = read_image_and_resize(img_entry)
+                    image_dataset[i, :height, :width,
+                                  :] = res if res is not None else default_image
                 h5_file.flush()
 
             proc_df[feature[PROC_COLUMN]] = np.arange(num_images)
@@ -409,25 +445,28 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.uint8, tf.int64]
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.uint8, torch.int64]
 
         # casting and rescaling
-        inputs = tf.cast(inputs, tf.float32) / 255
+        inputs = inputs.type(torch.float32) / 255
 
-        inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.uint8
+    @property
+    def input_dtype(self):
+        return torch.uint8
 
-    def get_input_shape(self):
-        return self.height, self.width, self.num_channels
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.num_channels, self.height, self.width])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(

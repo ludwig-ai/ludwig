@@ -1,0 +1,66 @@
+combiner:
+  type: tabnet
+
+training:
+  # validation_metric: accuracy
+  batch_size: auto #2048
+  learning_rate: auto #0.02
+  decay: true
+  decay_steps: 500
+  decay_rate: 0.95
+  epochs: 3000
+  # early_stop: 300
+  regularization_lambda: 1
+  optimizer:
+    type: adam
+  tune_batch_size:
+    type: bin_search
+    substitute_with_max: True
+
+hyperopt:
+  # goal: maximize
+  parameters:
+    training.learning_rate:
+      space: choice
+      categories: [0.005, 0.01, 0.02, 0.025]
+    training.batch_size:
+      space: choice
+      categories: [256, 512, 1024]
+    training.decay_rate:
+      space: choice
+      categories: [0.4, 0.8, 0.9, 0.95]
+    training.decay_steps:
+      space: choice
+      categories: [500, 2000, 8000, 10000, 20000]
+    combiner.size:
+      space: choice
+      categories: [8, 16, 24, 32, 64, 128]
+    combiner.output_size:
+      space: choice
+      categories: [8, 16, 24, 32, 64, 128]
+    combiner.num_steps:
+      space: choice
+      categories: [3, 4, 5, 6, 7, 8, 9, 10]
+    combiner.relaxation_factor:
+      space: choice
+      categories: [1.0, 1.2, 1.5, 2.0]
+    combiner.sparsity:
+      space: choice
+      categories: [0.0, 0.000001, 0.0001, 0.001, 0.01, 0.1]
+    combiner.bn_virtual_bs:
+      space: choice
+      categories: [256, 512, 1024, 2048, 4096]
+    combiner.bn_momentum:
+      space: choice
+      categories: [0.6, 0.7, 0.8, 0.9, 0.95, 0.98]
+
+  sampler:
+    type: ray
+    scheduler:
+      type: async_hyperband
+      time_attr: time_total_s
+    num_samples: 20
+
+  executor:
+    type: ray
+    time_budget_s: 6000

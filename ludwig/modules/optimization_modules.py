@@ -13,73 +13,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
+from dataclasses import dataclass
+from typing import Optional, Iterable
+
+import torch
 
 from ludwig.utils.misc_utils import get_from_registry
 
+
 optimizers_registry = {
-    'sgd': tf.keras.optimizers.SGD,
-    'stochastic_gradient_descent': tf.keras.optimizers.SGD,
-    'gd': tf.keras.optimizers.SGD,
-    'gradient_descent': tf.keras.optimizers.SGD,
-    'adam': tf.keras.optimizers.Adam,
-    'adadelta': tf.keras.optimizers.Adadelta,
-    'adagrad': tf.keras.optimizers.Adagrad,
-    'adamax': tf.keras.optimizers.Adamax,
-    'ftrl': tf.keras.optimizers.Ftrl,
-    'nadam': tf.keras.optimizers.Nadam,
-    'rmsprop': tf.keras.optimizers.RMSprop,
+    'sgd': torch.optim.SGD,
+    'stochastic_gradient_descent': torch.optim.SGD,
+    'gd': torch.optim.SGD,
+    'gradient_descent': torch.optim.SGD,
+    'adam': torch.optim.Adam,
+    'adadelta': torch.optim.Adadelta,
+    'adagrad': torch.optim.Adagrad,
+    'adamax': torch.optim.Adamax,
+    #'ftrl': tf.keras.optimizers.Ftrl,
+    #'nadam': tf.keras.optimizers.Nadam,
+    'rmsprop': torch.optim.RMSprop,
 }
 
 
-def ClippedOptimizer(type='sgd',
-                     clipglobalnorm=5.0,
-                     clipnorm=None,
-                     clipvalue=None,
-                     horovod=None,
-                     **kwargs):
-    optimizer = get_from_registry(type.lower(), optimizers_registry)(**kwargs)
-    return clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
-                          horovod=horovod)
+@dataclass
+class Clipper:
+    clipglobalnorm: Optional[float] = 0.5
+    clipnorm: Optional[float] = None
+    clipvalue: Optional[float] = None
+
+    def clip_grads(self, variables: Iterable[torch.Tensor]):
+        if self.clipglobalnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
+        if self.clipnorm:
+            torch.nn.utils.clip_grad_norm_(variables, self.clipglobalnorm)
+        if self.clipvalue:
+            torch.nn.utils.clip_grad_value_(variables, self.clipvalue)
 
 
-def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue,
-                   horovod=None):
-    class _ClippedOptimizer(tf.keras.optimizers.Optimizer):
-        def __init__(self, **kwargs):
-            self.clipglobalnorm = clipglobalnorm
-            self.clipnorm = clipnorm
-            self.clipvalue = clipvalue
-            self.horovod = horovod
-            super(self.__class__, self).__init__(**kwargs)
+def create_optimizer_with_clipper(
+    model,
+    type='sgd',
+    clipglobalnorm=5.0,
+    clipnorm=None,
+    clipvalue=None,
+    horovod=None,
+    **kwargs
+):
+    optimizer_cls = get_from_registry(type.lower(), optimizers_registry)
+    optimizer = create_optimizer(optimizer_cls, model, horovod, **kwargs)
+    clipper = Clipper(
+        clipglobalnorm=clipglobalnorm,
+        clipnorm=clipnorm,
+        clipvalue=clipvalue
+    )
+    return optimizer, clipper
 
-        def minimize_with_tape(self, tape, loss, variables):
-            if self.horovod:
-                tape = self.horovod.DistributedGradientTape(tape)
 
-            gradients = tape.gradient(loss, variables)
-            if self.clipglobalnorm:
-                gradients, _ = tf.clip_by_global_norm(gradients,
-                                                      self.clipglobalnorm)
-            if self.clipnorm:
-                gradients = map(
-                    lambda x: tf.clip_by_norm(x, self.clipnorm),
-                    gradients
-                )
-            if self.clipvalue:
-                gradients = map(
-                    lambda x: tf.clip_by_value(
-                        x,
-                        clip_value_min=self.clipvalue[0],
-                        clip_value_max=self.clipvalue[1]
-                    ),
-                    gradients
-                )
-            self.apply_gradients(zip(gradients, variables))
-
-        def set_learning_rate(self, learning_rate):
-            self.lr.assign(learning_rate)
-
-    cls = type(optimizer.__class__.__name__, (optimizer.__class__,),
-               dict(_ClippedOptimizer.__dict__))
-    return cls.from_config(optimizer.get_config())
+def create_optimizer(optimizer_cls, model, horovod=None, **kwargs):
+    optimizer = optimizer_cls(params=model.parameters(), **kwargs)
+    if horovod:
+        optimizer = horovod.DistributedOptimizer(
+            optimizer,
+            named_parameters=model.named_parameters(),
+        )
+    return optimizer

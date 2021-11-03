@@ -18,7 +18,7 @@ import logging
 from collections import Counter
 
 import numpy as np
-import tensorflow as tf
+import torch
 
 from ludwig.constants import *
 from ludwig.encoders.bag_encoders import ENCODER_REGISTRY
@@ -118,20 +118,21 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
+    def forward(self, inputs):
+        assert isinstance(inputs, torch.Tensor)
         # assert inputs.dtype == tf.bool # this fails
 
-        encoder_output = self.encoder_obj(inputs, training=training, mask=mask)
+        encoder_output = self.encoder_obj(inputs)
 
         return {'encoder_output': encoder_output}
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.float32
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([len(self.vocab)])
 
-    def get_input_shape(self):
-        return len(self.vocab),
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(

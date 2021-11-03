@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+import copy
 import logging
 
 from ludwig.constants import *
@@ -48,9 +50,10 @@ default_training_params = {
     'optimizer': {TYPE: 'adam'},
     'epochs': 100,
     'regularization_lambda': 0,
+    'regularization_type': 'l2',
     'learning_rate': 0.001,
     'batch_size': 128,
-    'eval_batch_size': 0,
+    'eval_batch_size': None,
     'early_stop': 5,
     'reduce_learning_rate_on_plateau': 0,
     'reduce_learning_rate_on_plateau_patience': 5,
@@ -71,18 +74,21 @@ default_training_params = {
 }
 
 default_optimizer_params_registry = {
-    'sgd': {},
-    'stochastic_gradient_descent': {},
-    'gd': {},
-    'gradient_descent': {},
+    'sgd': {'lr':0.001},
+    'stochastic_gradient_descent': {'lr':0.001},
+    'gd': {'lr':0.001},
+    'gradient_descent': {'lr':0.001},
     'adam': {
-        'beta_1': 0.9,
-        'beta_2': 0.999,
-        'epsilon': 1e-08
+        'betas': (0.9, 0.999),
+        #'beta_1': 0.9,
+        #'beta_2': 0.999,
+        #'epsilon': 1e-08
+        'eps': 1e-08
     },
     'adadelta': {
         'rho': 0.95,
-        'epsilon': 1e-08
+        'eps': 1e-08
+        #'epsilon': 1e-08
     },
     'adagrad': {
         'initial_accumulator_value': 0.1
@@ -96,9 +102,10 @@ default_optimizer_params_registry = {
     },
     'nadam': {},
     'rmsprop': {
-        'decay': 0.9,
+        'weight_decay': 0.9,
         'momentum': 0.0,
-        'epsilon': 1e-10,
+        #'epsilon': 1e-10,
+        'eps': 1e-10,
         'centered': False
     }
 }
@@ -182,12 +189,15 @@ def _set_proc_column(config: dict) -> None:
 
 
 def _merge_hyperopt_with_training(config: dict) -> None:
-    if 'hyperopt' not in config or TRAINING not in config:
+    if 'hyperopt' not in config:
         return
 
     scheduler = config['hyperopt'].get('sampler', {}).get('scheduler')
     if not scheduler:
         return
+
+    if TRAINING not in config:
+        config[TRAINING] = {}
 
     # Disable early stopping when using a scheduler. We achieve this by setting the parameter
     # to -1, which ensures the condition to apply early stopping is never met.
@@ -216,6 +226,7 @@ def _merge_hyperopt_with_training(config: dict) -> None:
 
 
 def merge_with_defaults(config):
+    config = copy.deepcopy(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)

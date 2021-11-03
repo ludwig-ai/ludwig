@@ -13,25 +13,116 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import numpy as np
 import pytest
 
-from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.image_utils import num_channels_in_image
+import torch
 
-image_2d = np.random.randint(0, 1, (10, 10))
-image_3d = np.random.randint(0, 1, (10, 10, 3))
+from ludwig.utils.image_utils import get_image_from_path, is_image, read_image,\
+    pad, crop, crop_or_pad, resize_image, grayscale, num_channels_in_image
+
+
+@pytest.mark.parametrize(
+    'img,size,padded_img',
+    [(
+        torch.arange(12, dtype=torch.int).reshape(3, 2, 2), 4,
+        torch.Tensor(
+            [0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3, 4, 4, 5, 5, 4, 4,
+             5, 5, 6, 6, 7, 7, 6, 6, 7, 7, 8, 8, 9, 9, 8, 8, 9, 9, 10, 10, 11,
+             11, 10, 10, 11, 11]
+        ).type(torch.int).reshape(3, 4, 4)
+    )]
+)
+def test_pad(img: torch.Tensor, size: int, padded_img: torch.Tensor):
+    output_img = pad(img, size)
+    assert torch.equal(output_img, padded_img)
+
+
+@pytest.mark.parametrize(
+    'img,size,cropped_img',
+    [(
+        torch.arange(27, dtype=torch.int).reshape(3, 3, 3), 2,
+        torch.Tensor(
+            [0, 1, 3, 4, 9, 10, 12, 13, 18, 19, 21, 22]
+        ).type(torch.int).reshape(3, 2, 2)
+    )]
+)
+def test_crop(img: torch.Tensor, size: int, cropped_img: torch.Tensor):
+    output_img = crop(img, size)
+    assert torch.equal(output_img, cropped_img)
+
+
+@pytest.mark.parametrize(
+    'img,new_size,expected_img',
+    [
+        (
+            torch.arange(12, dtype=torch.int).reshape(3, 2, 2), 4,
+            torch.Tensor(
+                [0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3, 4, 4, 5, 5, 4,
+                 4, 5, 5, 6, 6, 7, 7, 6, 6, 7, 7, 8, 8, 9, 9, 8, 8, 9, 9, 10,
+                 10, 11, 11, 10, 10, 11, 11]
+            ).type(torch.int).reshape(3, 4, 4)
+        ),
+        (
+            torch.arange(27, dtype=torch.int).reshape(3, 3, 3), 2,
+            torch.Tensor(
+                [0, 1, 3, 4, 9, 10, 12, 13, 18, 19, 21, 22]
+            ).type(torch.int).reshape(3, 2, 2)
+        )
+    ]
+)
+def test_crop_or_pad(
+    img: torch.Tensor,
+    new_size: int,
+    expected_img: torch.Tensor
+):
+    output_image = crop_or_pad(img, new_size)
+    assert torch.equal(output_image, expected_img)
+
+
+@pytest.mark.parametrize(
+    'img,new_size,resize_method,expected_img',
+    [
+        (
+            torch.arange(27, dtype=torch.int).reshape(3, 3, 3), 2, 'crop_or_pad',
+            torch.Tensor(
+                [0, 1, 3, 4, 9, 10, 12, 13, 18, 19, 21, 22]
+            ).type(torch.int).reshape(3, 2, 2)
+        ),
+        (
+            torch.arange(27, dtype=torch.int).reshape(3, 3, 3), 2, 'interpolate',
+            torch.Tensor([1, 2, 6, 7, 10, 12, 14, 16, 19, 20, 24, 25])
+            .type(torch.int).reshape(3, 2, 2)
+        )
+    ]
+)
+def test_resize_image(
+        img: torch.Tensor,
+        new_size: int,
+        resize_method: str,
+        expected_img: torch.Tensor
+):
+    output_img = resize_image(img, new_size, resize_method)
+    assert torch.equal(output_img, expected_img)
+
+
+@pytest.mark.parametrize(
+    'input_img,grayscale_img',
+    [(
+        torch.arange(12).reshape(3, 2, 2).type(torch.int),
+        torch.Tensor([[[3, 4], [5, 6]]]).type(torch.int)
+    )]
+)
+def test_grayscale(input_img: torch.Tensor, grayscale_img: torch.Tensor):
+    output_img = grayscale(input_img)
+    assert torch.equal(output_img, grayscale_img)
 
 
 def test_num_channels_in_image():
+    image_2d = torch.randint(0, 1, (10, 10))
+    image_3d = torch.randint(0, 1, (3, 10, 10))
     assert num_channels_in_image(image_2d) == 1
     assert num_channels_in_image(image_3d) == 3
 
     with pytest.raises(ValueError):
-        num_channels_in_image(np.arange(5))
+        num_channels_in_image(torch.rand(5))
         num_channels_in_image(None)
-
-
-def test_get_abs_path():
-    assert get_abs_path('a', 'b.jpg') == 'a/b.jpg'
-    assert get_abs_path(None, 'b.jpg') == 'b.jpg'

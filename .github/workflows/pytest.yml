@@ -26,16 +26,16 @@ jobs:
         test-markers: [ "not distributed", "distributed" ]
         include:
           - python-version: 3.7
-            tensorflow-version: 2.3.1
+            pytorch-version: 1.10.0
           - python-version: 3.8
-            tensorflow-version: 2.5.0
+            pytorch-version: 1.10.0
           - python-version: 3.9
-            tensorflow-version: nightly
+            pytorch-version: nightly
     env:
-      TENSORFLOW: ${{ matrix.tensorflow-version }}
+      PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
 
-    name: py${{ matrix.python-version  }}, tf${{ matrix.tensorflow-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
+    name: py${{ matrix.python-version  }}, torch${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
     timeout-minutes: 50
     steps:
@@ -59,27 +59,27 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}-${{ hashFiles('requirements*.txt') }}
+        key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}-
+          ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
 
     - name: Install dependencies
       env:
-        HOROVOD_WITH_TENSORFLOW: 1
+        HOROVOD_WITH_PYTORCH: 1
         HOROVOD_WITHOUT_MPI: 1
-        HOROVOD_WITHOUT_PYTORCH: 1
+        HOROVOD_WITHOUT_TENSORFLOW: 1
         HOROVOD_WITHOUT_MXNET: 1
       run: |
         python --version
         pip --version
         python -m pip install -U pip
-        if [ $TENSORFLOW == "nightly" ]; then
-          cat requirements.txt | sed '/^tensorflow[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_horovod.txt | sed 's/\[tensorflow\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
-          pip install tf-nightly
+        if [ $PYTORCH == "nightly" ]; then
+          cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
+          cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
+          pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
           pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
         else
-          pip install tensorflow==$TENSORFLOW
+          pip install torch==$PYTORCH
         fi
         pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
         pip install '.[test]'
@@ -88,12 +88,12 @@ jobs:
 
     - name: Reinstall Horovod if necessary
       env:
-        HOROVOD_WITH_TENSORFLOW: 1
+        HOROVOD_WITH_PYTORCH: 1
         HOROVOD_WITHOUT_MPI: 1
-        HOROVOD_WITHOUT_PYTORCH: 1
+        HOROVOD_WITHOUT_TENSORFLOW: 1
         HOROVOD_WITHOUT_MXNET: 1
       run: |
-        HOROVOD_BUILT=$(python -c "import horovod.tensorflow; horovod.tensorflow.nccl_built(); print('SUCCESS')" || true)
+        HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
         if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
           pip uninstall -y horovod
           pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
@@ -103,4 +103,22 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -v --timeout 300 --durations 10 -m "$MARKERS" tests
+        pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+
+    - name: Upload Unit Test Results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+        path: pytest.xml
+
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: Event File
+        path: ${{ github.event_path }}

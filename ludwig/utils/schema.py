@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import json
 
+import marshmallow_dataclass
 from jsonschema import validate
+from marshmallow_jsonschema import JSONSchema
 
 from ludwig.combiners.combiners import combiner_registry
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
@@ -23,7 +26,6 @@ from ludwig.features.feature_registries import input_type_registry, output_type_
 INPUT_FEATURE_TYPES = sorted(list(input_type_registry.keys()))
 OUTPUT_FEATURE_TYPES = sorted(list(output_type_registry.keys()))
 COMBINER_TYPES = sorted(list(combiner_registry.keys()))
-
 
 def get_schema():
     schema = {
@@ -62,11 +64,14 @@ def get_schema():
                 'properties': {
                     'type': {'type': 'string', 'enum': COMBINER_TYPES},
                 },
+                'allOf': get_combiner_conds(),
+                'required': ['type'],
             },
             'training': {},
             'preprocessing': {},
             'hyperopt': {},
         },
+        'definitions': get_custom_definitions(),
         'required': ['input_features', 'output_features']
     }
     return schema
@@ -131,6 +136,26 @@ def get_output_preproc_conds():
         conds.append(preproc_cond)
     return conds
 
+
+def get_combiner_conds():
+    conds = []
+    for combiner_type in COMBINER_TYPES:
+        combiner_cls = combiner_registry[combiner_type]
+        schema_cls = combiner_cls.get_schema_cls()
+        schema = marshmallow_dataclass.class_schema(schema_cls)()
+        schema_json = JSONSchema().dump(schema)
+        combiner_json = schema_json['definitions'][schema_cls.__name__]['properties']
+
+        # TODO: add type to schema: https://github.com/lovasoa/marshmallow_dataclass/issues/62
+        combiner_cond = create_cond(
+            {'type': combiner_type},
+            combiner_json
+        )
+        conds.append(combiner_cond)
+    return conds
+
+def get_custom_definitions():
+    return {}
 
 def create_cond(if_pred, then_pred):
     return {

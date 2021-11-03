@@ -1,38 +1,50 @@
-import tensorflow as tf
+from typing import Optional
+import numpy as np
+import torch
 
-from tensorflow.python.keras.layers import BatchNormalization
+from ludwig.utils.torch_utils import LudwigModule
 
 
-class GhostBatchNormalization(tf.keras.Model):
+# implementation adapted from https://github.com/dreamquark-ai/tabnet
+class GhostBatchNormalization(LudwigModule):
     def __init__(
             self,
+            num_features: int,
             momentum: float = 0.9,
             epsilon: float = 1e-3,
-            virtual_batch_size: int = None
+            virtual_batch_size: Optional[int] = None
     ):
         super().__init__()
+        self.num_features = num_features
         self.virtual_batch_size = virtual_batch_size
-        self.bn = BatchNormalization(momentum=momentum, epsilon=epsilon)
+        self.bn = torch.nn.BatchNorm1d(num_features, momentum=momentum,
+                                       eps=epsilon)
 
-    def call(self, x, training: bool = None, **kwargs):
-        if training and self.virtual_batch_size:
-            batch_size = x.shape[0]
+    def forward(self, inputs):
+        if self.training and self.virtual_batch_size:
+            batch_size = inputs.shape[0]
 
-            q, r = divmod(batch_size, self.virtual_batch_size)
-            num_or_size_splits = q
-            if r != 0:
-                num_or_size_splits = [self.virtual_batch_size] * q + [r]
+            splits = inputs.chunk(
+                int(np.ceil(batch_size / self.virtual_batch_size)),
+                0
+            )
+            x = [self.bn(x) for x in splits]
+            return torch.cat(x, 0)
 
-            splits = tf.split(x, num_or_size_splits)
-            x = [self.bn(x, training=True) for x in splits]
-            return tf.concat(x, 0)
-
-        return self.bn(x, training=False)
-
-    @property
-    def moving_mean(self):
-        return self.bn.moving_mean
+        return self.bn(inputs)
 
     @property
-    def moving_variance(self):
-        return self.bn.moving_variance
+    def moving_mean(self) -> torch.Tensor:
+        return self.bn.running_mean
+
+    @property
+    def moving_variance(self) -> torch.Tensor:
+        return self.bn.running_var
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.num_features])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.num_features])

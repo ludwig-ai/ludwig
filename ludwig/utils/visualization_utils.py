@@ -327,8 +327,8 @@ def radar_chart(
         points.append(points[0])
         points = np.array(points)
 
-        codes = [path.Path.MOVETO, ] + \
-                [path.Path.LINETO, ] * (len(values) - 1) + \
+        codes = [path.Path.MOVETO] + \
+                [path.Path.LINETO] * (len(values) - 1) + \
                 [path.Path.CLOSEPOLY]
         _path = path.Path(points, codes)
         _patch = patches.PathPatch(_path, fill=True, color=color, linewidth=0,

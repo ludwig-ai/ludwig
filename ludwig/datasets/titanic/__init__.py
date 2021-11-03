@@ -17,10 +17,10 @@
 import os
 
 import pandas as pd
-
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
+from ludwig.utils.fs_utils import makedirs, rename
 
 
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None,
@@ -56,7 +56,6 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     def process_downloaded_dataset(self):
         """The final method where we create a concatenated CSV file
         with both training ant dest data"""
-        os.makedirs(self.processed_dataset_path, exist_ok=True)
         train_file = self.config["split_filenames"]["train_file"]
         test_file = self.config["split_filenames"]["test_file"]
 
@@ -68,7 +67,7 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
 
         df = pd.concat([train_df, test_df])
 
-        os.makedirs(self.processed_temp_path, exist_ok=True)
+        makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
                   index=False)
-        os.rename(self.processed_temp_path, self.processed_dataset_path)
+        rename(self.processed_temp_path, self.processed_dataset_path)

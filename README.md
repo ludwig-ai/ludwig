@@ -3,14 +3,17 @@
 <div align="center">
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
-[![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
 [![Build Status](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml/badge.svg)](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml)
-[![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fuber%2Fludwig.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fuber%2Fludwig?ref=badge_shield)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4210/badge)](https://bestpractices.coreinfrastructure.org/projects/4210)
+[![Slack](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
+
+[![DockerHub](https://img.shields.io/docker/pulls/ludwigai/ludwig.svg)](https://hub.docker.com/r/ludwigai)
+[![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
+[![Twitter](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
 </div>
+
 
 Translated in [🇰🇷 Korean](README_KR.md)/
 
@@ -59,7 +62,7 @@ brew install python3      # on mac
 You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
 
 ```
-virtualenv -p python3 venv
+virtualenv -p python3 venv && source venv/bin/activate
 ```
 
 In order to install Ludwig just run:
@@ -186,10 +189,14 @@ If you prefer to use an RNN encoder and increase the number of epochs to train f
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) to find out all the options available to you in the config and take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different tasks.
+Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/user_guide_intro/) to find out all the
+options available to you in the config and take a look at
+the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different
+tasks.
 
-After training, Ludwig will create a `results` directory containing the trained model with its hyperparameters and summary statistics of the training process.
-You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
+After training, Ludwig will create a `results` directory containing the trained model with its hyperparameters and
+summary statistics of the training process. You can visualize them using one of the several visualization options
+available in the `visualize` tool, for instance:
 
 ```
 ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
@@ -199,14 +206,16 @@ This command will display a graph like the following, where you can see loss and
 
 ![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
-Several more visualizations are available, please refer to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations) for more details.
+Several more visualizations are available, please refer
+to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/visualizations/) for more details.
 
 
 Distributed Training
 --------------------
 
-You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
-Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training) for full details.
+You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows
+training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs. Refer to
+the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/distributed_execution_backends/) for full details.
 
 
 Prediction and Evaluation
@@ -259,19 +268,25 @@ model = LudwigModel.load(model_path)
 predictions = model.predict(test_data)
 ```
 
-`config` containing the same information of the YAML file provided to the command line interface.
-More details are provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) and in the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
+`config` containing the same information of the YAML file provided to the command line interface. More details are
+provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/user_guide_intro/) and in
+the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
 
 
 Extensibility
 -------------
 
-Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes that contain functions to preprocess the data, encode it, and decode it.
+Ludwig is built from the ground up with extensibility in mind. It is easy to add
+an additional datatype that is not currently supported by adding a
+datatype-specific implementation of abstract classes that contain functions to
+preprocess the data, encode it, and decode it.
 
-Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending on the datatype) as inputs and provides tensors as output.
-This encourages reuse and sharing new models with the community.
-Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/) for further details.
+Furthermore, new models, with their own specific hyperparameters, can be easily
+added by implementing a class that accepts tensors (of a specific rank,
+depending on the datatype) as inputs and provides tensors as output. This
+encourages reuse and sharing new models with the community. Refer to
+the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/developer_guide_intro/)
+for further details.
 
 
 Full documentation
@@ -284,3 +299,12 @@ License
 -------
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fuber%2Fludwig.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fuber%2Fludwig?ref=badge_large)
+
+
+Getting Involved
+----------------
+
+- [Slack](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
+- [Twitter](https://twitter.com/ludwig_ai)
+- [Medium](https://medium.com/ludwig-ai)
+- [GitHub Issues](https://github.com/ludwig-ai/ludwig/issues)

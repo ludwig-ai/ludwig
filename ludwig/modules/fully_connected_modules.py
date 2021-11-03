@@ -15,25 +15,34 @@
 # ==============================================================================
 import logging
 
-from tensorflow.keras.layers import (Activation, BatchNormalization, Dense,
-                                     Dropout, Layer, LayerNormalization)
+import torch
+from torch.nn import (Linear, LayerNorm, Dropout, ModuleList,
+                      BatchNorm1d, BatchNorm2d)
+
+from ludwig.utils.torch_utils import LudwigModule, initializer_registry, \
+    activations
 
 logger = logging.getLogger(__name__)
 
 
-class FCLayer(Layer):
+class FCLayer(LudwigModule):
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.output_size])
 
     def __init__(
             self,
-            fc_size=256,
+            input_size,
+            input_rank=2,
+            output_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -41,59 +50,71 @@ class FCLayer(Layer):
     ):
         super().__init__()
 
-        self.layers = []
+        self.layers = ModuleList()
+        self.input_size = input_size
+        self.output_size = output_size
 
-        self.layers.append(Dense(
-            units=fc_size,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            # weights_constraint=weights_constraint,
-            # bias_constraint=bias_constraint,
-        ))
+        fc = Linear(
+            in_features=input_size,
+            out_features=output_size,
+            bias=use_bias
+        )
+
+        self.layers.append(fc)
+
+        weights_initializer = initializer_registry[weights_initializer]
+        weights_initializer(fc.weight)
+
+        if use_bias:
+            bias_initializer = initializer_registry[bias_initializer]
+            bias_initializer(fc.bias)
 
         if norm and norm_params is None:
             norm_params = {}
         if norm == 'batch':
-            self.layers.append(BatchNormalization(**norm_params))
+            # might need if statement for 1d vs 2d? like images
+            if input_rank == 2:
+                self.layers.append(BatchNorm1d(output_size, **norm_params))
+            elif input_rank == 3:
+                self.layers.append(BatchNorm2d(output_size, **norm_params))
+            else:
+                ValueError(
+                    f'input_rank parameter expected to be either 2 or 3, '
+                    f'however valued found to be {input_rank}.'
+                )
         elif norm == 'layer':
-            self.layers.append(LayerNormalization(**norm_params))
+            self.layers.append(LayerNorm(output_size, **norm_params))
 
-        self.layers.append(Activation(activation))
+        # Dict for activation objects in pytorch?
+        self.layers.append(activations[activation]())
+        self.activation_index = len(self.layers) - 1
 
         if dropout > 0:
             self.layers.append(Dropout(dropout))
 
-        for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
-
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
+        self.training = training
+        batch_size = inputs.shape[0]
         hidden = inputs
 
-        for layer in self.layers:
-            hidden = layer(hidden, training=training)
+        for i, layer in enumerate(self.layers):
+            hidden = layer(hidden)
 
         return hidden
 
 
-class FCStack(Layer):
+class FCStack(LudwigModule):
 
     def __init__(
             self,
+            first_layer_input_size,
             layers=None,
             num_layers=1,
+            default_input_rank=2,
             default_fc_size=256,
             default_use_bias=True,
-            default_weights_initializer='glorot_uniform',
+            default_weights_initializer='xavier_uniform',
             default_bias_initializer='zeros',
-            default_weights_regularizer=None,
-            default_bias_regularizer=None,
-            default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
@@ -102,6 +123,7 @@ class FCStack(Layer):
             **kwargs
     ):
         super().__init__()
+        self.input_size = first_layer_input_size
 
         if layers is None:
             self.layers = []
@@ -110,7 +132,13 @@ class FCStack(Layer):
         else:
             self.layers = layers
 
-        for layer in self.layers:
+        if len(self.layers) > 0:
+            self.layers[0]['input_size'] = first_layer_input_size
+        for i, layer in enumerate(self.layers):
+            if i != 0:
+                layer['input_size'] = self.layers[i - 1]['fc_size']
+            if 'input_rank' not in layer:
+                layer['input_rank'] = default_input_rank
             if 'fc_size' not in layer:
                 layer['fc_size'] = default_fc_size
             if 'use_bias' not in layer:
@@ -119,16 +147,6 @@ class FCStack(Layer):
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
                 layer['bias_initializer'] = default_bias_initializer
-            if 'weights_regularizer' not in layer:
-                layer['weights_regularizer'] = default_weights_regularizer
-            if 'bias_regularizer' not in layer:
-                layer['bias_regularizer'] = default_bias_regularizer
-            if 'activity_regularizer' not in layer:
-                layer['activity_regularizer'] = default_activity_regularizer
-            # if 'weights_constraint' not in layer:
-            #     layer['weights_constraint'] = default_weights_constraint
-            # if 'bias_constraint' not in layer:
-            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
             if 'norm_params' not in layer:
@@ -138,20 +156,17 @@ class FCStack(Layer):
             if 'dropout' not in layer:
                 layer['dropout'] = default_dropout
 
-        self.stack = []
+        self.stack = ModuleList()
 
         for i, layer in enumerate(self.layers):
             self.stack.append(
                 FCLayer(
-                    fc_size=layer['fc_size'],
+                    input_size=layer['input_size'],
+                    input_rank=layer['input_rank'],
+                    output_size=layer['fc_size'],
                     use_bias=layer['use_bias'],
                     weights_initializer=layer['weights_initializer'],
                     bias_initializer=layer['bias_initializer'],
-                    weights_regularizer=layer['weights_regularizer'],
-                    bias_regularizer=layer['bias_regularizer'],
-                    activity_regularizer=layer['activity_regularizer'],
-                    # weights_constraint=layer['weights_constraint'],
-                    # bias_constraint=layer['bias_constraint'],
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
@@ -160,22 +175,24 @@ class FCStack(Layer):
             )
         self.residual = residual
 
-    def build(
-            self,
-            input_shape,
-    ):
-        super().build(input_shape)
-        self.input_size = input_shape[-1]
-
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         hidden = inputs
         prev_fc_layer_size = self.input_size
         for layer in self.stack:
-            out = layer(hidden, training=training)
+            out = layer(hidden)
             if self.residual and layer.fc_size == prev_fc_layer_size:
                 hidden = hidden + out
             else:
                 hidden = out
-            # layers[0] is the dense layer in a FC layer
-            prev_fc_layer_size = layer.layers[0].units
+            prev_fc_layer_size = layer.layers[0].out_features
         return hidden
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if len(self.stack) > 0:
+            return self.stack[-1].output_shape
+        return torch.Size([self.input_size])

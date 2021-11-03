@@ -63,8 +63,8 @@ class MlflowCallback(Callback):
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
         mlflow.log_metrics(
-            progress_tracker.log_metrics,
-            step=progress_tracker.steps
+            progress_tracker.log_metrics(),
+            step=progress_tracker.epoch
         )
         _log_model(save_path)
 
@@ -106,5 +106,5 @@ def _log_artifacts(output_directory):
 
 def _log_model(lpath):
     # Lazy import to avoid requiring this package
-    from ludwig.contribs.mlflow.model import log_model
-    log_model(lpath)
+    from ludwig.contribs.mlflow.model import log_saved_model
+    log_saved_model(lpath)

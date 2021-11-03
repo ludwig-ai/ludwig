@@ -15,26 +15,22 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
+
+from typing import Any, Dict, Optional
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.metrics import \
-    MeanAbsoluteError as MeanAbsoluteErrorMetric
-from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
+import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Projector
-from ludwig.encoders.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
+from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
+from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss,\
     MAELoss
-from ludwig.modules.metric_modules import ErrorScore, \
-    SoftmaxCrossEntropyMetric, MSEMetric, MAEMetric
-from ludwig.modules.metric_modules import R2Score
+from ludwig.modules.metric_modules import MSEMetric, MAEMetric, R2Score,\
+    SoftmaxCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.torch_utils import LudwigModule
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +49,8 @@ class VectorFeatureMixin:
 
     preprocessing_schema = {
         'vector_size': {'type': 'integer', 'minimum': 0},
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'missing_value_strategy': {'type': 'string',
+                                   'enum': MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': fill_value_schema,
         'computed_fill_value': fill_value_schema,
     }
@@ -99,7 +96,8 @@ class VectorFeatureMixin:
             raise
 
         # Determine vector size
-        vector_size = backend.df_engine.compute(proc_df[feature[PROC_COLUMN]].map(len).max())
+        vector_size = backend.df_engine.compute(
+            proc_df[feature[PROC_COLUMN]].map(len).max())
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -119,31 +117,37 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = 'dense'
     vector_size = 0
 
-    def __init__(self, feature, encoder_obj=None):
+    def __init__(
+            self,
+            feature: Dict[str, Any],
+            encoder_obj: Optional[LudwigModule]=None
+    ):
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        feature['input_size'] = feature['vector_size']
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.float32, torch.float64]
         assert len(inputs.shape) == 2
 
         inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
+            inputs
         )
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.float32
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.vector_size])
 
-    def get_input_shape(self):
-        return self.vector_size,
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(
@@ -181,6 +185,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        self._input_shape = feature['input_size']
+        feature['output_size'] = feature['vector_size']
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -203,21 +209,13 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def _setup_loss(self):
         if self.loss[TYPE] == 'mean_squared_error':
             self.train_loss_function = MSELoss()
-            self.eval_loss_function = MSEMetric(name='eval_loss')
+            self.eval_loss_function = MSEMetric()
         elif self.loss[TYPE] == 'mean_absolute_error':
             self.train_loss_function = MAELoss()
-            self.eval_loss_function = MAEMetric(name='eval_loss')
+            self.eval_loss_function = MAEMetric()
         elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
-            self.train_loss_function = SoftmaxCrossEntropyLoss(
-                num_classes=self.vector_size,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
-            self.eval_loss_function = SoftmaxCrossEntropyMetric(
-                num_classes=self.vector_size,
-                feature_loss=self.loss,
-                name='eval_loss'
-            )
+            self.train_loss_function = SoftmaxCrossEntropyLoss()
+            self.eval_loss_function = SoftmaxCrossEntropyMetric(**self.loss)
         else:
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss[TYPE])
@@ -226,14 +224,9 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[ERROR] = ErrorScore(name='metric_error')
-        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
-            name='metric_mse'
-        )
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
-            name='metric_mae'
-        )
-        self.metric_functions[R2] = R2Score(name='metric_r2')
+        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
+        self.metric_functions[R2] = R2Score(num_outputs=self.output_shape[0])
 
     def get_prediction_set(self):
         return {
@@ -242,10 +235,15 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.float32
+        return torch.float32
 
-    def get_output_shape(self):
-        return self.vector_size,
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.vector_size])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self._input_shape])
 
     @staticmethod
     def update_config_with_metadata(

@@ -16,11 +16,12 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
 
-from ludwig.backend import LOCAL_BACKEND
+from ludwig.backend import LOCAL_BACKEND, Backend
 from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
@@ -39,19 +40,19 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, CSV_FORMATS,
                                      PARQUET_FORMATS, PICKLE_FORMATS,
                                      SAS_FORMATS, SPSS_FORMATS, STATA_FORMATS,
                                      TFRECORD_FORMATS, TSV_FORMATS, figure_data_format,
-                                     override_in_memory_flag, read_csv,
-                                     read_excel, read_feather, read_fwf,
+                                     get_split_path, override_in_memory_flag,
+                                     read_csv, read_excel, read_feather, read_fwf,
                                      read_html, read_json, read_jsonl,
                                      read_orc, read_parquet, read_pickle,
                                      read_sas, read_spss, read_stata, read_tsv,
-                                     split_dataset_ttv)
-from ludwig.utils.data_utils import save_array, get_split_path
+                                     save_array, split_dataset_ttv)
 from ludwig.utils.defaults import (default_preprocessing_parameters,
                                    default_random_seed)
-from ludwig.utils.fs_utils import path_exists
+from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      resolve_pointers, set_random_seed,
                                      get_proc_features_from_lists)
+from ludwig.utils.type_utils import Column
 
 logger = logging.getLogger(__name__)
 
@@ -1127,6 +1128,7 @@ def build_dataset(
             proc_features.append(feature)
             feature_hashes.add(feature[PROC_COLUMN])
 
+    logger.debug("cast columns")
     dataset_cols = cast_columns(
         dataset_df,
         proc_features,
@@ -1134,6 +1136,7 @@ def build_dataset(
         backend
     )
 
+    logger.debug("build metadata")
     metadata = build_metadata(
         metadata,
         dataset_cols,
@@ -1142,6 +1145,7 @@ def build_dataset(
         backend
     )
 
+    logger.debug("build data")
     proc_cols = build_data(
         dataset_cols,
         proc_features,
@@ -1150,7 +1154,8 @@ def build_dataset(
         skip_save_processed_input
     )
 
-    proc_cols[SPLIT] = get_split(
+    logger.debug("get split")
+    split = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -1160,10 +1165,23 @@ def build_dataset(
         backend=backend,
         random_seed=random_seed
     )
+    if split is not None:
+        proc_cols[SPLIT] = split
 
-    dataset = backend.df_engine.empty_df_like(dataset_df)
-    for k, v in proc_cols.items():
-        dataset[k] = v
+    # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
+    #  conversion with Tensor columns. Can remove for 1.8.
+    if backend.df_engine.partitioned:
+        for feature in features:
+            name = feature[NAME]
+            proc_column = feature[PROC_COLUMN]
+            reshape = metadata[name].get('reshape')
+            if reshape is not None:
+                proc_cols[proc_column] = backend.df_engine.map_objects(
+                    proc_cols[proc_column],
+                    lambda x: x.reshape(-1)
+                )
+
+    dataset = backend.df_engine.df_like(dataset_df, proc_cols)
 
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
@@ -1193,7 +1211,11 @@ def cast_columns(dataset_df, features, global_preprocessing_parameters,
 
 
 def build_metadata(
-        metadata, dataset_cols, features, global_preprocessing_parameters, backend
+        metadata: Dict[str, Any],
+        dataset_cols: Dict[str, Column],
+        features: List[Dict[str, Any]],
+        global_preprocessing_parameters: Dict[str, Any],
+        backend: Backend
 ):
     for feature in features:
         if feature[NAME] in metadata:
@@ -1230,6 +1252,7 @@ def build_metadata(
             preprocessing_parameters,
             backend
         )
+
         if fill_value is not None:
             preprocessing_parameters = {
                 'computed_fill_value': fill_value,
@@ -1305,8 +1328,8 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     elif missing_value_strategy == FILL_WITH_MEAN:
         if feature[TYPE] != NUMERICAL:
             raise ValueError(
-                'Filling missing values with mean is supported '
-                'only for numerical types',
+                f'Filling missing values with mean is supported '
+                f'only for numerical types, not for type {feature[TYPE]}.',
             )
         return backend.df_engine.compute(dataset_cols[feature[COLUMN]].mean())
     # Otherwise, we cannot precompute the fill value for this dataset
@@ -1348,8 +1371,12 @@ def get_split(
         split = dataset_df[SPLIT]
     else:
         set_random_seed(random_seed)
-
         if stratify is None or stratify not in dataset_df:
+            if backend.df_engine.partitioned:
+                # This approach is very inefficient for partitioned backends, which
+                # can split by partition
+                return None
+
             split = dataset_df.index.to_series().map(
                 lambda x: np.random.choice(3, 1, p=split_probabilities)
             ).astype(np.int8)
@@ -1424,120 +1451,128 @@ def preprocess_for_training(
             dataset, training_set, validation_set, test_set
         )
 
-    # if training_set_metadata is a string, assume it's a path to load the json
-    training_set_metadata = training_set_metadata or {}
-    if training_set_metadata and isinstance(training_set_metadata, str):
-        training_set_metadata = load_metadata(training_set_metadata)
+    try:
+        lock_path = backend.cache.get_cache_directory(dataset)
+    except (TypeError, ValueError):
+        lock_path = None
+    with file_lock(lock_path, lock_file='.lock_preprocessing'):
+        # if training_set_metadata is a string, assume it's a path to load the json
+        training_set_metadata = training_set_metadata or {}
+        if training_set_metadata and isinstance(training_set_metadata, str):
+            training_set_metadata = load_metadata(training_set_metadata)
 
-    # setup
-    features = (config['input_features'] +
-                config['output_features'])
+        # setup
+        features = (config['input_features'] +
+                    config['output_features'])
 
-    # in case data_format is one of the cacheable formats,
-    # check if there's a cached hdf5 file with the same name,
-    # and in case move on with the hdf5 branch.
-    cached = False
-    cache = backend.cache.get_dataset_cache(
-        config, dataset, training_set, test_set, validation_set
-    )
-    if data_format in CACHEABLE_FORMATS:
-        cache_results = cache.get()
-        if cache_results is not None:
-            valid, *cache_values = cache_results
-            if valid:
-                logger.info(
-                    'Found cached dataset and meta.json with the same filename '
-                    'of the dataset, using them instead'
-                )
-                training_set_metadata, training_set, test_set, validation_set = cache_values
-                config['data_hdf5_fp'] = training_set
-                data_format = backend.cache.data_format
-                cached = True
-                dataset = None
-            else:
-                logger.info(
-                    "Found cached dataset and meta.json with the same filename "
-                    "of the dataset, but checksum don't match, "
-                    "if saving of processed input is not skipped "
-                    "they will be overridden"
-                )
-                cache.delete()
-
-    training_set_metadata[CHECKSUM] = cache.checksum
-    data_format_processor = get_from_registry(
-        data_format,
-        data_format_preprocessor_registry
-    )
-
-    if cached or data_format == 'hdf5':
-        # Always interpret hdf5 files as preprocessed, even if missing from the cache
-        processed = data_format_processor.prepare_processed_data(
-            features,
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed
+        # in case data_format is one of the cacheable formats,
+        # check if there's a cached hdf5 file with the same name,
+        # and in case move on with the hdf5 branch.
+        cached = False
+        cache = backend.cache.get_dataset_cache(
+            config, dataset, training_set, test_set, validation_set
         )
-        training_set, test_set, validation_set, training_set_metadata = processed
-    else:
-        processed = data_format_processor.preprocess_for_training(
-            features,
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=backend,
-            random_seed=random_seed
+        if data_format in CACHEABLE_FORMATS:
+            cache_results = cache.get()
+            if cache_results is not None:
+                valid, *cache_values = cache_results
+                if valid:
+                    logger.info(
+                        'Found cached dataset and meta.json with the same filename '
+                        'of the dataset, using them instead'
+                    )
+                    training_set_metadata, training_set, test_set, validation_set = cache_values
+                    config['data_hdf5_fp'] = training_set
+                    data_format = backend.cache.data_format
+                    cached = True
+                    dataset = None
+                else:
+                    logger.info(
+                        "Found cached dataset and meta.json with the same filename "
+                        "of the dataset, but checksum don't match, "
+                        "if saving of processed input is not skipped "
+                        "they will be overridden"
+                    )
+                    cache.delete()
+
+        training_set_metadata[CHECKSUM] = cache.checksum
+        data_format_processor = get_from_registry(
+            data_format,
+            data_format_preprocessor_registry
         )
-        training_set, test_set, validation_set, training_set_metadata = processed
 
-        replace_text_feature_level(
-            features,
-            [training_set, validation_set, test_set]
-        )
-        processed = (training_set, test_set, validation_set, training_set_metadata)
+        if cached or data_format == 'hdf5':
+            # Always interpret hdf5 files as preprocessed, even if missing from the cache
+            processed = data_format_processor.prepare_processed_data(
+                features,
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                skip_save_processed_input=skip_save_processed_input,
+                preprocessing_params=preprocessing_params,
+                backend=backend,
+                random_seed=random_seed
+            )
+            training_set, test_set, validation_set, training_set_metadata = processed
+        else:
+            processed = data_format_processor.preprocess_for_training(
+                features,
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                skip_save_processed_input=skip_save_processed_input,
+                preprocessing_params=preprocessing_params,
+                backend=backend,
+                random_seed=random_seed
+            )
+            training_set, test_set, validation_set, training_set_metadata = processed
+            replace_text_feature_level(
+                features,
+                [training_set, validation_set, test_set]
+            )
+            processed = (training_set, test_set, validation_set, training_set_metadata)
 
-        # cache the dataset
-        if backend.cache.can_cache(skip_save_processed_input):
-            processed = cache.put(*processed)
-        training_set, test_set, validation_set, training_set_metadata = processed
+            # cache the dataset
+            if backend.cache.can_cache(skip_save_processed_input):
+                logger.debug("cache processed data")
+                processed = cache.put(*processed)
+            training_set, test_set, validation_set, training_set_metadata = processed
 
-    training_dataset = backend.dataset_manager.create(
-        training_set,
-        config,
-        training_set_metadata
-    )
-
-    validation_dataset = None
-    if validation_set is not None:
-        validation_dataset = backend.dataset_manager.create(
-            validation_set,
+        logger.debug("create training dataset")
+        training_dataset = backend.dataset_manager.create(
+            training_set,
             config,
             training_set_metadata
         )
 
-    test_dataset = None
-    if test_set is not None:
-        test_dataset = backend.dataset_manager.create(
-            test_set,
-            config,
+        validation_dataset = None
+        if validation_set is not None:
+            logger.debug("create validation dataset")
+            validation_dataset = backend.dataset_manager.create(
+                validation_set,
+                config,
+                training_set_metadata
+            )
+
+        test_dataset = None
+        if test_set is not None:
+            logger.debug("create test dataset")
+            test_dataset = backend.dataset_manager.create(
+                test_set,
+                config,
+                training_set_metadata
+            )
+
+        return (
+            training_dataset,
+            validation_dataset,
+            test_dataset,
             training_set_metadata
         )
-
-    return (
-        training_dataset,
-        validation_dataset,
-        test_dataset,
-        training_set_metadata
-    )
 
 
 def _preprocess_file_for_training(
@@ -1589,16 +1624,11 @@ def _preprocess_file_for_training(
             skip_save_processed_input=skip_save_processed_input
         )
 
-        if backend.is_coordinator() and not skip_save_processed_input:
+        # TODO(travis): implement saving split for Ray
+        if backend.is_coordinator() and not skip_save_processed_input and SPLIT in data.columns:
             # save split values for use by visualization routines
             split_fp = get_split_path(dataset)
             save_array(split_fp, data[SPLIT])
-
-        # TODO dask: https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.random_split
-        training_data, test_data, validation_data = split_dataset_ttv(
-            data,
-            SPLIT
-        )
 
     elif training_set:
         # use data_train (including _validation and _test if they are present)
@@ -1628,13 +1658,18 @@ def _preprocess_file_for_training(
             random_seed=random_seed
         )
 
-        training_data, test_data, validation_data = split_dataset_ttv(
-            data,
-            SPLIT
-        )
-
     else:
         raise ValueError('either data or data_train have to be not None')
+
+    data = backend.df_engine.persist(data)
+    if SPLIT in data.columns:
+        logger.debug("split on split column")
+        training_data, test_data, validation_data = split_dataset_ttv(data, SPLIT)
+    else:
+        logger.debug("split randomly by partition")
+        training_data, test_data, validation_data = data.random_split(
+            preprocessing_params['split_probabilities']
+        )
 
     return training_data, test_data, validation_data, training_set_metadata
 
@@ -1679,10 +1714,15 @@ def _preprocess_df_for_training(
         backend=backend
     )
 
-    training_set, test_set, validation_set = split_dataset_ttv(
-        dataset,
-        SPLIT
-    )
+    dataset = backend.df_engine.persist(dataset)
+    if SPLIT in dataset.columns:
+        logger.debug("split on split column")
+        training_set, test_set, validation_set = split_dataset_ttv(dataset, SPLIT)
+    else:
+        logger.debug("split randomly by partition")
+        training_set, test_set, validation_set = dataset.random_split(
+            preprocessing_params['split_probabilities']
+        )
     return training_set, test_set, validation_set, training_set_metadata
 
 
