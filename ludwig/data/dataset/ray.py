@@ -32,7 +32,7 @@ from ray.data.extensions import TensorDtype
 
 from ludwig.constants import NAME
 from ludwig.data.batcher.base import Batcher
-from ludwig.data.dataset.base import Dataset
+from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame
@@ -45,7 +45,6 @@ class RayDataset(Dataset):
     """ Wrapper around ray.data.Dataset. """
 
     def __init__(self, df: DataFrame, features: Dict[str, Dict], training_set_metadata: Dict[str, Any]):
-        # TODO(travis): move read_parquet to cache layer after removing petastorm
         self.ds = from_dask(df) if not isinstance(df, str) else read_parquet(df)
         self.features = features
         self.training_set_metadata = training_set_metadata
@@ -70,7 +69,6 @@ class RayDataset(Dataset):
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
-                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):
@@ -90,7 +88,7 @@ class RayDataset(Dataset):
         return len(self)
 
 
-class RayDatasetManager(object):
+class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
@@ -100,16 +98,6 @@ class RayDatasetManager(object):
             get_proc_features(config),
             training_set_metadata
         )
-
-    # TODO(travis): consider combining this with `create` when Petastorm is dropped
-    def create_inference_dataset(
-            self,
-            dataset: DataFrame,
-            tag: str,
-            config: Dict[str, Any],
-            training_set_metadata: Dict[str, Any]
-    ):
-        return self.create(dataset, config, training_set_metadata)
 
     def save(
             self,
@@ -145,7 +133,6 @@ class RayDatasetShard(Dataset):
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128,
                            should_shuffle=True,
-                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):

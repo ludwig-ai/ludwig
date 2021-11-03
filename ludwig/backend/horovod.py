@@ -18,6 +18,7 @@
 import time
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
+from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.horovod_utils import initialize_horovod
@@ -26,7 +27,7 @@ from ludwig.utils.torch_utils import initialize_pytorch
 
 class HorovodBackend(LocalPreprocessingMixin, Backend):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
         self._horovod = None
 
     def initialize(self):
