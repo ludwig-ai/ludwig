@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import pytest
 import random
 
 import numpy as np
@@ -21,12 +22,9 @@ import torch
 from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.encoders.image_encoders import ResNetEncoder, Stacked2DCNN, \
     MLPMixerEncoder
-from ludwig.encoders.sequence_encoders import ParallelCNN
-from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
-from ludwig.encoders.sequence_encoders import StackedCNN
-from ludwig.encoders.sequence_encoders import StackedCNNRNN
-from ludwig.encoders.sequence_encoders import StackedParallelCNN
-from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.encoders.sequence_encoders import ParallelCNN, SequenceEncoder,\
+    SequenceEmbedEncoder, StackedCNN, StackedCNNRNN, StackedParallelCNN,\
+    StackedRNN
 
 DROPOUT = 0.5
 
@@ -277,7 +275,17 @@ def test_sequence_encoder_embed():
             assert encoder.embed_sequence.dropout is not None
 
 
-def test_sequence_encoders():
+@pytest.mark.parametrize(
+    'encoder_type',
+    [ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN]
+)
+@pytest.mark.parametrize('trainable', [True, False])
+@pytest.mark.parametrize('reduce_output', ['sum', 'max'])
+def test_sequence_encoders(
+        encoder_type: SequenceEncoder,
+        trainable: bool,
+        reduce_output: str
+):
     num_sentences = 4
     embedding_size = 5
     max_len = 7
@@ -299,40 +307,27 @@ def test_sequence_encoders():
         'state_size': fc_size
     }
 
-    # Different values for reduce_output and the corresponding expected size
     # todo figure out the output size for parallel 1d conv
-    reduce_outputs = ['sum', 'max']
-    output_shapes = [
-        [num_sentences, fc_size],
-        [num_sentences, fc_size],
-        [num_sentences, max_len, fc_size]
-    ]
+    output_shape = [num_sentences, fc_size]
 
-    for reduce_output, output_shape in zip(reduce_outputs, output_shapes):
-        for trainable in [True, False]:
-            for encoder_type in [ParallelCNN,
-                                 StackedCNN,
-                                 StackedParallelCNN,
-                                 StackedRNN,
-                                 StackedCNNRNN]:
-                encoder_kwargs['reduce_output'] = reduce_output
-                encoder_kwargs['embeddings_trainable'] = trainable
-                encoder_kwargs['dropout'] = DROPOUT
-                encoder_kwargs['dropout'] = DROPOUT
-                encoder_kwargs['recurrent_dropout'] = DROPOUT
-                encoder_kwargs['fc_dropout'] = DROPOUT
-                encoder = create_encoder(
-                    encoder_type,
-                    max_sequence_length=max_len,
-                    **encoder_kwargs
-                )
+    encoder_kwargs['embeddings_trainable'] = trainable
+    encoder_kwargs['dropout'] = DROPOUT
+    encoder_kwargs['dropout'] = DROPOUT
+    encoder_kwargs['recurrent_dropout'] = DROPOUT
+    encoder_kwargs['fc_dropout'] = DROPOUT
+    encoder_kwargs['reduce_output'] = reduce_output
+    encoder = create_encoder(
+        encoder_type,
+        max_sequence_length=max_len,
+        **encoder_kwargs
+    )
 
-                encoder_test(
-                    encoder=encoder,
-                    input_data=text,
-                    output_dtype=torch.float32,
-                    output_shape=output_shape,
-                    output_data=None
-                )
+    encoder_test(
+        encoder=encoder,
+        input_data=text,
+        output_dtype=torch.float32,
+        output_shape=output_shape,
+        output_data=None
+    )
 
-                assert isinstance(encoder, encoder_type)
+    assert isinstance(encoder, encoder_type)
