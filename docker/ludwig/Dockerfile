@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM tensorflow/tensorflow:2.4.1
+FROM python:3.7.12-slim
 
 RUN apt-get -y update && apt-get -y install \
     git \
