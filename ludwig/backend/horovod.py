@@ -27,7 +27,7 @@ from ludwig.utils.torch_utils import initialize_pytorch
 
 class HorovodBackend(LocalPreprocessingMixin, Backend):
     def __init__(self, **kwargs):
-        super().__init__(dataset_manager=PandasDatasetManager(), **kwargs)
+        super().__init__(dataset_manager=PandasDatasetManager(selfg), **kwargs)
         self._horovod = None
 
     def initialize(self):
