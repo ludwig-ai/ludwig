@@ -1804,7 +1804,6 @@ def preprocess_for_prediction(
 
     dataset = backend.dataset_manager.create(
         dataset,
-        split,
         config,
         training_set_metadata,
     )
