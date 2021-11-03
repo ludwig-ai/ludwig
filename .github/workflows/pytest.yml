@@ -35,7 +35,7 @@ jobs:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
 
-    name: py${{ matrix.python-version  }}, torch${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
     timeout-minutes: 50
     steps:
