@@ -753,6 +753,7 @@ def assert_model_parameters_updated_loop(
     # setup
     loss_function = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=100)
+    model.train(True)
 
     # generate initial model output tensor
     model_output = model(*model_input_args)
