@@ -19,7 +19,7 @@ from datetime import date
 from datetime import datetime
 
 import numpy as np
-import tensorflow as tf
+import torch
 from dateutil.parser import parse
 
 from ludwig.constants import *
@@ -41,7 +41,8 @@ class DateFeatureMixin:
     }
 
     preprocessing_schema = {
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'missing_value_strategy': {'type': 'string', 'enum':
+            MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'string'},
         'computed_fill_value': {'type': 'string'},
         'datetime_format': {'type': ['string', 'null']},
@@ -134,22 +135,25 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.int16, tf.int64]
+    def forward(self, inputs):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.int16, torch.int64]
 
-        inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.int16
+    @property
+    def input_dtype(self):
+        return torch.int16
 
-    def get_input_shape(self):
-        return DATE_VECTOR_LENGTH,
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([DATE_VECTOR_LENGTH])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(

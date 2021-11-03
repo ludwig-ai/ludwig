@@ -6,8 +6,7 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn<1.0
 tqdm
-tensorflow>=2.3.1,<2.6.0
-tensorflow-addons==0.13.0
+torch>=1.9.0
 PyYAML>=3.12
 absl-py
 kaggle
@@ -19,6 +18,9 @@ jsonschema
 marshmallow
 marshmallow-jsonschema
 marshmallow-dataclass
+tensorboard
+torchmetrics>=0.6.0
+torchinfo
 filelock
 
 # new data format support

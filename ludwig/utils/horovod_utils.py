@@ -14,20 +14,25 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import time
 
 try:
-    import horovod.tensorflow
+    import horovod.torch
 
-    _HVD = horovod.tensorflow
+    _HVD = horovod.torch
 except (ModuleNotFoundError, ImportError):
     _HVD = None
 
 
 def initialize_horovod():
     if not _HVD:
+        '''
         raise ValueError("Horovod backend specified, "
                          "but cannot import `horovod.tensorflow`. "
+                         "Install Horovod following the instructions at: "
+                         "https://github.com/horovod/horovod")
+        '''
+        raise ValueError("Horovod backend specified, "
+                         "but cannot import `horovod.torch`. "
                          "Install Horovod following the instructions at: "
                          "https://github.com/horovod/horovod")
     _HVD.init()

@@ -27,33 +27,34 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from random import random
-from re import M
-import numpy as np
-import tensorflow as tf
 from typing import Dict, Any
 
-from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
+import numpy as np
+import torch
+from tabulate import tabulate
+from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+
+from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAINING_CHECKPOINTS_DIR_PATH,
                             TRAINING_PROGRESS_TRACKER_FILE_NAME,
                             is_progressbar_disabled)
+from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import (get_improved_fun,
                                            get_initial_validation_value)
-from ludwig.modules.optimization_modules import ClippedOptimizer
+from ludwig.modules.optimization_modules import create_optimizer_with_clipper
 from ludwig.utils import time_utils
+from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.math_utils import (exponential_decay, learning_rate_warmup,
                                      learning_rate_warmup_distributed)
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.tf_utils import initialize_tensorflow
-from tabulate import tabulate
-from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +109,11 @@ class Trainer(BaseTrainer):
 
     def __init__(
             self,
+            model,
             optimizer=None,
             epochs=100,
             regularization_lambda=0.0,
+            regularization_type=None,
             learning_rate=0.001,
             decay=False,
             decay_rate=0.96,
@@ -144,6 +147,7 @@ class Trainer(BaseTrainer):
             random_seed=default_random_seed,
             horovod=None,
             debug=False,
+            device=None,
             **kwargs
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable
@@ -159,6 +163,8 @@ class Trainer(BaseTrainer):
         :type save_path: filepath (str)
         :param regularization_lambda: Strength of the $L2$ regularization
         :type regularization_lambda: Integer
+        :param regularization_type: Type of regularization, (l1, l2, l1_l2).
+        :type regularization_type: str
         :param epochs: Number of epochs the algorithm is intended to be run over
         :type epochs: Integer
         :param learning_rate: Learning rate for the algorithm, represents how
@@ -239,9 +245,17 @@ class Trainer(BaseTrainer):
         :type: list
         :param random_seed: Default initialization for the random seeds
         :type: Float
+        :param horovod: Horovod parameters
+        :type horovod: dict
+        :param debug: Enables debugging mode, which prints out a lot of
+                information about the training process.
+        :type debug: Boolean
+        :param device: The device to load the model on from a saved checkpoint.
+        :type device: str
         """
         self.epochs = epochs
         self.regularization_lambda = regularization_lambda
+        self.regularization_type = regularization_type
         self.learning_rate = learning_rate
         self.decay = decay
         self.decay_rate = decay_rate
@@ -276,6 +290,7 @@ class Trainer(BaseTrainer):
         self.debug = debug
         self.received_sigint = False
         self.callbacks = callbacks or []
+        self.device = device
 
         if self.horovod:
             self.learning_rate *= self.horovod.size()
@@ -283,10 +298,54 @@ class Trainer(BaseTrainer):
         # ================ Optimizer ================
         if optimizer is None:
             optimizer = {TYPE: 'Adam'}
-        self.optimizer = ClippedOptimizer(
+        self.optimizer, self.clipper = create_optimizer_with_clipper(
+            model,
             horovod=horovod,
             **optimizer
         )
+
+        if self.device is None:
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            else:
+                self.device = 'cpu'
+
+    def train_step(self, model: ECD, inputs, targets):
+        self.optimizer.zero_grad()
+
+        # Obtain model predictions and loss
+        model_outputs = model((inputs, targets))
+        loss, all_losses = model.train_loss(
+            targets,
+            model_outputs,
+            self.regularization_type,
+            self.regularization_lambda
+        )
+
+        # Begin the backward pass
+        variables = model.parameters()
+        loss.backward()
+
+        if self.horovod:
+            # Wait for gradient aggregation to complete before clipping the gradients
+            self.optimizer.synchronize()
+
+        # Clip gradients
+        self.clipper.clip_grads(variables)
+
+        # Apply gradient updates
+        if self.horovod:
+            # Because we already synchronized above, we can doing so here
+            with self.optimizer.skip_synchronize():
+                self.optimizer.step()
+        else:
+            self.optimizer.step()
+
+        return loss, all_losses
+
+    def set_learning_rate(self, learning_rate):
+        for g in self.optimizer.param_groups:
+            g['lr'] = learning_rate
 
     @classmethod
     def write_epoch_summary(
@@ -298,14 +357,18 @@ class Trainer(BaseTrainer):
         if not summary_writer:
             return
 
-        with summary_writer.as_default():
-            for feature_name, output_feature in metrics.items():
-                for metric in output_feature:
-                    metric_tag = "{}/epoch_{}".format(
-                        feature_name, metric
-                    )
+        for feature_name, output_feature in metrics.items():
+            for metric in output_feature:
+                metric_tag = "{}/epoch_{}".format(
+                    feature_name, metric
+                )
+                try:
                     metric_val = output_feature[metric][-1]
-                    tf.summary.scalar(metric_tag, metric_val, step=step)
+                    summary_writer.add_scalar(
+                        metric_tag, metric_val, global_step=step)
+                except IndexError:
+                    logger.warning(
+                        f'Error computing metrics for {feature_name} {metric}.')
         summary_writer.flush()
 
     @classmethod
@@ -320,19 +383,19 @@ class Trainer(BaseTrainer):
         if not train_summary_writer:
             return
 
-        with train_summary_writer.as_default():
-            # combined loss
-            loss_tag = "{}/step_training_loss".format("combined")
-            tf.summary.scalar(loss_tag, combined_loss, step=step)
+        # combined loss
+        loss_tag = "{}/step_training_loss".format("combined")
+        train_summary_writer.add_scalar(
+            loss_tag, combined_loss, global_step=step)
 
-            # all other losses
-            for feature_name, loss in all_losses.items():
-                loss_tag = "{}/step_training_loss".format(feature_name)
-                tf.summary.scalar(loss_tag, loss, step=step)
+        # all other losses
+        for feature_name, loss in all_losses.items():
+            loss_tag = "{}/step_training_loss".format(feature_name)
+            train_summary_writer.add_scalar(loss_tag, loss, global_step=step)
 
-            if learning_rate:
-                tf.summary.scalar("combined/step_learning_rate",
-                                  learning_rate, step=step)
+        if learning_rate:
+            train_summary_writer.add_scalar("combined/step_learning_rate",
+                                            learning_rate, global_step=step)
 
         train_summary_writer.flush()
 
@@ -363,11 +426,10 @@ class Trainer(BaseTrainer):
                     for o_feat in model.output_features.values()
                 }
 
-                model.train_step(
-                    self.optimizer,
+                self.train_step(
+                    model,
                     inputs,
-                    targets,
-                    self.regularization_lambda
+                    targets
                 )
                 step_count += 1
         return model
@@ -437,11 +499,10 @@ class Trainer(BaseTrainer):
                         for o_feat in model.output_features.values()
                     }
 
-                    loss, _ = model.train_step(
-                        self.optimizer,
+                    loss, _ = self.train_step(
+                        model,
                         inputs,
                         targets,
-                        self.regularization_lambda
                     )
                     # compute smoothed loss
                     avg_loss = beta * avg_loss + (1-beta) * loss
@@ -467,7 +528,7 @@ class Trainer(BaseTrainer):
                         current_learning_rate = linear_scheduler(
                             current_learning_rate, step_count)
 
-                    self.optimizer.set_learning_rate(current_learning_rate)
+                    self.set_learning_rate(current_learning_rate)
                     step_count += 1
 
                 epoch += 1
@@ -503,11 +564,7 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
-        # Turn eager mode on
-        tf.config.run_functions_eagerly(True)
-
         try:
-
             high = None
             count = 0
             halving_count = 0
@@ -534,7 +591,8 @@ class Trainer(BaseTrainer):
                     if batch_size == prev_batch_size:
                         break
 
-                except tf.errors.ResourceExhaustedError as e:
+                except RuntimeError as e:
+                    # PyTorch only generates Runtime errors for CUDA OOM.
                     gc.collect()
                     high = batch_size
                     halving_count += 1
@@ -556,9 +614,6 @@ class Trainer(BaseTrainer):
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
-
-            # Turn eager mode off
-            tf.config.run_functions_eagerly(False)
 
         return batch_size
 
@@ -661,48 +716,34 @@ class Trainer(BaseTrainer):
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
         if self.is_coordinator():
-            checkpoint = tf.train.Checkpoint(
-                optimizer=self.optimizer,
-                model=model
-            )
-            checkpoint_manager = tf.train.CheckpointManager(
-                checkpoint, training_checkpoints_path, max_to_keep=1
-            )
+            checkpoint = Checkpoint(model=model, optimizer=self.optimizer)
+            checkpoint_manager = CheckpointManager(
+                checkpoint, training_checkpoints_path, device=self.device,
+                max_to_keep=1)
 
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
         if self.is_coordinator() and not self.skip_save_log and tensorboard_log_dir:
-            train_summary_writer = tf.summary.create_file_writer(
+            train_summary_writer = SummaryWriter(
                 os.path.join(
                     tensorboard_log_dir, TRAINING
                 )
             )
             if validation_set is not None and validation_set.size > 0:
-                validation_summary_writer = tf.summary.create_file_writer(
+                validation_summary_writer = SummaryWriter(
                     os.path.join(
                         tensorboard_log_dir, VALIDATION
                     )
                 )
             if test_set is not None and test_set.size > 0:
-                test_summary_writer = tf.summary.create_file_writer(
+                test_summary_writer = SummaryWriter(
                     os.path.join(
                         tensorboard_log_dir, TEST
                     )
                 )
 
-        if self.debug and self.is_coordinator():
-            # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
-            # debug_path = os.path.join(
-            #     save_path, 'debug'
-            # )
-            # tf.debugging.experimental.enable_dump_debug_info(
-            #     debug_path,
-            #     tensor_debug_mode='FULL_HEALTH',
-            #     circular_buffer_size=-1,
-            # )
-            tf.config.experimental_run_functions_eagerly(True)
-            # tf.debugging.enable_check_numerics()
+        # TODO(shreya, remove): Removed debugging logic because I couldn't find an equivalent in PyTorch.
 
         # ================ Resume logic ================
         if self.resume:
@@ -711,8 +752,7 @@ class Trainer(BaseTrainer):
             )
             if self.is_coordinator():
                 self.resume_weights_and_optimzier(
-                    training_checkpoints_path, checkpoint
-                )
+                    training_checkpoints_path, checkpoint)
         else:
             (
                 train_metrics,
@@ -749,6 +789,13 @@ class Trainer(BaseTrainer):
                 last_increase_batch_size=0,
             )
 
+        if self.horovod:
+            # Horovod: broadcast initial variable states from rank 0 to all other processes.
+            # This is necessary to ensure consistent initialization of all workers when
+            # training is started with random weights or restored from a checkpoint.
+            self.horovod.broadcast_parameters(model.state_dict(), root_rank=0)
+            self.horovod.broadcast_optimizer_state(self.optimizer, root_rank=0)
+
         set_random_seed(self.random_seed)
         with training_set.initialize_batcher(
             batch_size=self.batch_size,
@@ -759,10 +806,10 @@ class Trainer(BaseTrainer):
         ) as batcher:
 
             # ================ Training Loop ================
-            first_batch = True
             while progress_tracker.epoch < self.epochs:
                 # note that batch size may change over epochs
-                batcher.set_epoch(progress_tracker.epoch, progress_tracker.batch_size)
+                batcher.set_epoch(progress_tracker.epoch,
+                                  progress_tracker.batch_size)
 
                 # epoch init
                 start_time = time.time()
@@ -824,7 +871,7 @@ class Trainer(BaseTrainer):
                             batcher.step,
                             batcher.steps_per_epoch
                         )
-                    self.optimizer.set_learning_rate(current_learning_rate)
+                    self.set_learning_rate(current_learning_rate)
 
                     # obtain batch
                     batch = batcher.next_batch()
@@ -842,11 +889,10 @@ class Trainer(BaseTrainer):
                     # if first_batch and self.is_coordinator() and not skip_save_log:
                     #    tf.summary.trace_on(graph=True, profiler=True)
 
-                    loss, all_losses = model.train_step(
-                        self.optimizer,
+                    loss, all_losses = self.train_step(
+                        model,
                         inputs,
                         targets,
-                        self.regularization_lambda
                     )
 
                     # Reintroduce for tensorboard graph
@@ -866,18 +912,6 @@ class Trainer(BaseTrainer):
                             step=progress_tracker.steps,
                             learning_rate=current_learning_rate,
                         )
-
-                    if self.horovod and first_batch:
-                        # Horovod: broadcast initial variable states from rank 0 to all other processes.
-                        # This is necessary to ensure consistent initialization of all workers when
-                        # training is started with random weights or restored from a checkpoint.
-                        #
-                        # Note: broadcast should be done after the first gradient step to ensure
-                        # optimizer initialization.
-                        self.horovod.broadcast_variables(model.variables,
-                                                         root_rank=0)
-                        self.horovod.broadcast_variables(
-                            self.optimizer.variables(), root_rank=0)
 
                     progress_tracker.steps += 1
                     if self.is_coordinator():
@@ -1012,12 +1046,12 @@ class Trainer(BaseTrainer):
                 else:
                     # there's no validation, so we save the model at each iteration
                     if self.is_coordinator() and not self.skip_save_model:
-                        model.save_weights(model_weights_path)
+                        torch.save(model.state_dict(), model_weights_path)
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
                     if not self.skip_save_progress:
-                        checkpoint_manager.save()
+                        checkpoint_manager.save(progress_tracker.epoch)
                         progress_tracker.save(
                             os.path.join(
                                 save_path,
@@ -1074,11 +1108,10 @@ class Trainer(BaseTrainer):
                     for o_feat in model.output_features.values()
                 }
 
-                model.train_step(
-                    self.optimizer,
+                self.train_step(
+                    model,
                     inputs,
                     targets,
-                    self.regularization_lambda
                 )
 
                 progress_bar.update(1)
@@ -1105,9 +1138,11 @@ class Trainer(BaseTrainer):
                 .metric_functions.keys()
 
             for metric in metric_names:
-                score = results[output_feature][metric]
-                metrics_log[output_feature][metric].append(score)
-                scores.append(score)
+                if metric in results[output_feature]:
+                    # Some metrics may have been excepted and excluded from results.
+                    score = results[output_feature][metric]
+                    metrics_log[output_feature][metric].append(score)
+                    scores.append(score)
 
             tables[output_feature].append(scores)
 
@@ -1173,7 +1208,7 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
             if self.is_coordinator() and not skip_save_model:
-                model.save_weights(model_weights_path)
+                torch.save(model.state_dict(), model_weights_path)
                 logger.info(
                     'Validation {} on {} improved, model saved'.format(
                         validation_metric,
@@ -1346,12 +1381,11 @@ class Trainer(BaseTrainer):
 
     def resume_weights_and_optimzier(
             self,
-            model_weights_progress_path,
-            checkpoint
+            model_weights_progress_path: str,
+            checkpoint: Checkpoint,
     ):
-        checkpoint.restore(
-            tf.train.latest_checkpoint(model_weights_progress_path)
-        )
+        CheckpointManager.load_latest_checkpoint(
+            checkpoint, model_weights_progress_path, self.device)
 
     def reduce_learning_rate(
             self,
@@ -1536,7 +1570,6 @@ class RemoteTrainer(Trainer):
             **kwargs
     ):
         horovod = initialize_horovod()
-        initialize_tensorflow(horovod=horovod)
         super().__init__(horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead

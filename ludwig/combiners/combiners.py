@@ -14,16 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from abc import abstractmethod
 import logging
+from functools import lru_cache
 from typing import List, Dict, Optional, Union, Any
 
 from marshmallow import INCLUDE
 from marshmallow_dataclass import dataclass
 
-import tensorflow as tf
-from tensorflow.keras.layers import LayerNormalization
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import concatenate
+import torch
+from torch.nn import Module, ModuleList, Linear
+from ludwig.utils.torch_utils import LudwigModule, \
+    sequence_mask as torch_sequence_mask
 
 import ludwig.utils.schema_utils as schema
 from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
@@ -38,7 +40,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
@@ -54,17 +56,46 @@ sequence_encoder_registry = {
 }
 
 
+# super class to house common properties
+class CombinerClass(LudwigModule):
+    @property
+    @abstractmethod
+    def concatenated_shape(self) -> torch.Size:
+        """ Returns the size of concatenated encoder output tensors. """
+        raise NotImplementedError('Abstract class.')
+
+    @property
+    def input_shape(self) -> Dict:
+        # input to combiner is a dictionary of the input features encoder
+        # outputs, this property returns dictionary of output shapes for each
+        # input feature's encoder output shapes.
+        return {k: self.input_features[k].output_shape
+                for k in self.input_features}
+
+    @property
+    @lru_cache(maxsize=1)
+    def output_shape(self) -> torch.Size:
+        pseudo_input = {}
+        for k in self.input_features:
+            pseudo_input[k] = {
+                'encoder_output': torch.rand(
+                    2, *self.input_features[k].output_shape,
+                    dtype=self.input_dtype
+                )
+            }
+        output_tensor = self.forward(pseudo_input)
+        return output_tensor['combiner_output'].size()[1:]
+
+
 @dataclass
 class ConcatCombinerConfig:
     fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
@@ -76,40 +107,39 @@ class ConcatCombinerConfig:
         unknown = INCLUDE
 
 
-class ConcatCombiner(tf.keras.Model):
+class ConcatCombiner(CombinerClass):
     def __init__(
             self,
-            input_features: Optional[List] = None,
+            input_features: Dict = None,
             config: ConcatCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
+        self.name = "ConcatCombiner"
+        self.input_features = input_features
         logger.debug(' {}'.format(self.name))
 
         self.flatten_inputs = config.flatten_inputs
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        if config.fc_layers is None and \
-                config.num_fc_layers is not None:
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
             fc_layers = []
             for i in range(config.num_fc_layers):
                 fc_layers.append({'fc_size': config.fc_size})
 
-        if config.fc_layers is not None:
+        self.fc_layers = fc_layers
+        if self.fc_layers is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                first_layer_input_size=self.concatenated_shape[-1],
                 layers=config.fc_layers,
                 num_layers=config.num_fc_layers,
                 default_fc_size=config.fc_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,
@@ -117,38 +147,40 @@ class ConcatCombiner(tf.keras.Model):
                 residual=config.residual,
             )
 
-        if input_features and len(input_features) == 1 and config.fc_layers is None:
+        if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
 
-    def call(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
+    def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
+            inputs: Dict  # encoder outputs
+    ) -> Dict:
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
         # ================ Flatten ================
         if self.flatten_inputs:
-            batch_size = tf.shape(encoder_outputs[0])[0]
+            batch_size = encoder_outputs[0].shape[0]
             encoder_outputs = [
-                tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+                torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
             ]
 
         # ================ Concat ================
         if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, -1)
+            hidden = torch.cat(encoder_outputs, 1)
         else:
             hidden = list(encoder_outputs)[0]
 
         # ================ Fully Connected ================
         if self.fc_stack is not None:
-            hidden = self.fc_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+            hidden = self.fc_stack(hidden)
 
         return_data = {'combiner_output': hidden}
 
@@ -173,28 +205,52 @@ class SequenceConcatCombinerConfig:
         unknown = INCLUDE
 
 
-class SequenceConcatCombiner(tf.keras.Model):
+class SequenceConcatCombiner(CombinerClass):
     def __init__(
             self,
+            input_features: Dict,
             config: SequenceConcatCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
+        self.name = 'SequenceConcatCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
         self.main_sequence_feature = config.main_sequence_feature
 
-    def __call__(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # computes the effective shape of the input tensor after combining
+        # all the encoder outputs
+        # determine sequence size by finding the first sequence tensor
+        # assume all the sequences are of the same size, if not true
+        # this will be caught during processing
+        seq_size = None
+        for k in self.input_features:
+            # dim-2 output_shape implies a sequence [seq_size, hidden]
+            if len(self.input_features[k].output_shape) == 2:
+                seq_size = self.input_features[k].output_shape[0]
+                break
+        if not seq_size:
+            raise ValueError(
+                'At least one of the input features for SequenceConcatCombiner should be a sequence.')
+
+        # collect the size of the last dimension for all input feature
+        # encoder outputs
+        shapes = [self.input_features[k].output_shape[-1] for k in
+                  self.input_features]  # output shape not input shape
+        return torch.Size([seq_size, sum(shapes)])
+
+    def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
+            inputs: Dict  # encoder outputs
+    ) -> Dict:
         if (self.main_sequence_feature is None or
                 self.main_sequence_feature not in inputs):
             for if_name, if_outputs in inputs.items():
@@ -267,9 +323,9 @@ class SequenceConcatCombiner(tf.keras.Model):
                     representations.append(if_representation)
 
                 elif len(if_representation.shape) == 2:
-                    multipliers = tf.constant([1, sequence_max_length, 1])
-                    tiled_representation = tf.tile(
-                        tf.expand_dims(if_representation, 1),
+                    multipliers = (1, sequence_max_length, 1)
+                    tiled_representation = torch.tile(
+                        torch.unsqueeze(if_representation, 1),
                         multipliers
                     )
                     representations.append(tiled_representation)
@@ -279,23 +335,23 @@ class SequenceConcatCombiner(tf.keras.Model):
                         'The representation of {} has rank {} and cannot be'
                         ' concatenated by a sequence concat combiner. '
                         'Only rank 2 and rank 3 tensors are supported.'.format(
-                            if_outputs['name'],
+                            if_name,
                             len(if_representation.shape)
                         )
                     )
 
-        hidden = tf.concat(representations, 2)
+        hidden = torch.cat(representations, 2)
         logger.debug('  concat_hidden: {0}'.format(hidden))
 
         # ================ Mask ================
         # todo future: maybe modify this with TF2 mask mechanics
-        sequence_mask = tf.sequence_mask(
+        sequence_mask = torch_sequence_mask(
             sequence_length,
             sequence_max_length
         )
-        hidden = tf.multiply(
+        hidden = torch.multiply(
             hidden,
-            tf.cast(tf.expand_dims(sequence_mask, -1), dtype=tf.float32)
+            torch.unsqueeze(sequence_mask, -1).type(torch.float32)
         )
 
         # ================ Reduce ================
@@ -319,26 +375,45 @@ class SequenceConcatCombiner(tf.keras.Model):
 class SequenceCombinerConfig:
     main_sequence_feature: Optional[str] = None
     reduce_output: Optional[str] = schema.ReductionOptions()
-    encoder: Optional[str] = schema.StringOptions(list(sequence_encoder_registry.keys()))
+    encoder: Optional[str] = schema.StringOptions(
+        list(sequence_encoder_registry.keys()))
 
     class Meta:
         unknown = INCLUDE
 
 
-class SequenceCombiner(tf.keras.Model):
+class SequenceCombiner(CombinerClass):
     def __init__(
             self,
+            input_features: Dict,
             config: SequenceCombinerConfig = None,
             **kwargs
     ):
         super().__init__()
+        self.name = 'SequenceCombiner'
         logger.debug(' {}'.format(self.name))
-        self.combiner = SequenceConcatCombiner(config)
+
+        self.input_features = input_features
+
+        self.combiner = SequenceConcatCombiner(
+            input_features,
+            config=SequenceConcatCombinerConfig(
+                reduce_output=None,
+                main_sequence_feature=config.main_sequence_feature
+            )
+        )
+
+        logger.debug(
+            f'combiner input shape {self.combiner.concatenated_shape}, '
+            f'output shape {self.combiner.output_shape}'
+        )
 
         self.encoder_obj = get_from_registry(
             config.encoder, sequence_encoder_registry)(
             should_embed=False,
             reduce_output=config.reduce_output,
+            embedding_size=self.combiner.output_shape[1],
+            max_sequence_length=self.combiner.output_shape[0],
             **kwargs
         )
 
@@ -346,26 +421,35 @@ class SequenceCombiner(tf.keras.Model):
                 self.encoder_obj.supports_masking):
             self.supports_masking = True
 
-    def __call__(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # computes the effective shape of the input tensor after combining
+        # all the encoder outputs
+        # determine sequence size by finding the first sequence tensor
+        # assume all the sequences are of the same size, if not true
+        # this will be caught during processing
+        seq_size = None
+        for k in self.input_features:
+            # dim-2 output_shape implies a sequence [seq_size, hidden]
+            if len(self.input_features[k].output_shape) == 2:
+                seq_size = self.input_features[k].output_shape[0]
+                break
+
+        # collect the size of the last dimension for all input feature
+        # encoder outputs
+        shapes = [self.input_features[k].output_shape[-1] for k in
+                  self.input_features]  # output shape not input shape
+        return torch.Size([seq_size, sum(shapes)])
+
+    def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
+            inputs: Dict  # encoder outputs
+    ) -> Dict:
         # ================ Concat ================
-        hidden = self.combiner(
-            inputs,  # encoder outputs
-            training=training,
-            **kwargs
-        )
+        hidden = self.combiner(inputs)
 
         # ================ Sequence encoding ================
-        hidden = self.encoder_obj(
-            hidden['combiner_output'],
-            training=training,
-            **kwargs
-        )
+        hidden = self.encoder_obj(hidden['combiner_output'])
 
         return_data = {'combiner_output': hidden['encoder_output']}
         for key, value in hidden.items():
@@ -373,7 +457,7 @@ class SequenceCombiner(tf.keras.Model):
                 return_data[key] = value
 
         return return_data
-    
+
     @staticmethod
     def get_schema_cls():
         return SequenceCombinerConfig
@@ -381,34 +465,41 @@ class SequenceCombiner(tf.keras.Model):
 
 @dataclass
 class TabNetCombinerConfig:
-    size: int = schema.PositiveInteger(default=32)
-    output_size: int = schema.PositiveInteger(default=32)
-    num_steps: int = schema.NonNegativeInteger(default=1)
+    size: int = schema.PositiveInteger(default=32)  # N_a in the paper
+    output_size: int = schema.PositiveInteger(default=32)  # N_d in the paper
+    num_steps: int = schema.NonNegativeInteger(
+        default=1)  # N_steps in the paper
     num_total_blocks: int = schema.NonNegativeInteger(default=4)
     num_shared_blocks: int = schema.NonNegativeInteger(default=2)
-    relaxation_factor: float = 1.5
+    relaxation_factor: float = 1.5  # gamma in the paper
     bn_epsilon: float = 1e-3
-    bn_momentum: float = 0.7
+    bn_momentum: float = 0.7  # m_B in the paper
+    # B_v from the paper
     bn_virtual_bs: Optional[int] = schema.PositiveInteger()
-    sparsity: float = 1e-5
+    sparsity: float = 1e-5  # lambda_sparse in the paper
     dropout: float = schema.FloatRange(default=0.0, min=0, max=1)
 
     class Meta:
         unknown = INCLUDE
 
 
-class TabNetCombiner(tf.keras.Model):
+class TabNetCombiner(Module):
     def __init__(
             self,
+            input_features: Dict,
             config: TabNetCombinerConfig = None,
             **kwargs
-    ):
+    ) -> None:
         super().__init__()
+        self.name = 'TabNetCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
+
         self.tabnet = TabNet(
-            size=config.size,
-            output_size=config.output_size,
+            self.concatenated_shape[-1],
+            config.size,
+            config.output_size,
             num_steps=config.num_steps,
             num_total_blocks=config.num_total_blocks,
             num_shared_blocks=config.num_shared_blocks,
@@ -420,46 +511,50 @@ class TabNetCombiner(tf.keras.Model):
         )
 
         if config.dropout > 0:
-            self.dropout = tf.keras.layers.Dropout(config.dropout)
+            self.dropout = torch.nn.Dropout(config.dropout)
         else:
             self.dropout = None
 
-    def build(self, input_shape):
-        self.flatten_layers = {
-            k: tf.keras.layers.Flatten()
-            for k in input_shape.keys()
-        }
+    # todo: tf specific remove
+    # def build(self, input_shape):
+    #     self.flatten_layers = {
+    #         k: tf.keras.layers.Flatten()
+    #         for k in input_shape.keys()
+    #     }
 
-    def call(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
+    def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
-        encoder_output_map = {
-            k: inputs[k]['encoder_output'] for k in inputs
-        }
+            inputs: torch.Tensor,  # encoder outputs
+    ) -> Dict:
+        encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
         # ================ Flatten ================
+        batch_size = encoder_outputs[0].shape[0]
         encoder_outputs = [
-            self.flatten_layers[k](eo)
-            for k, eo in encoder_output_map.items()
+            torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
         ]
 
         # ================ Concat ================
         if len(encoder_outputs) > 1:
-            hidden = concatenate(encoder_outputs, 1)
+            hidden = torch.cat(encoder_outputs, 1)
         else:
             hidden = list(encoder_outputs)[0]
 
         # ================ TabNet ================
         hidden, aggregated_mask, masks = self.tabnet(
-            hidden,
-            training=training,
+            hidden
         )
         if self.dropout:
-            hidden = self.dropout(hidden, training=training)
+            hidden = self.dropout(hidden)
 
         return_data = {'combiner_output': hidden,
                        'aggregated_attention_masks': aggregated_mask,
@@ -488,11 +583,9 @@ class TransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -504,7 +597,7 @@ class TransformerCombinerConfig:
         unknown = INCLUDE
 
 
-class TransformerCombiner(tf.keras.Model):
+class TransformerCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Optional[List] = None,
@@ -512,18 +605,34 @@ class TransformerCombiner(tf.keras.Model):
             **kwargs
     ):
         super().__init__()
+        self.name = 'TransformerCombiner'
         logger.debug(' {}'.format(self.name))
 
+        self.input_features = input_features
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
+        # sequence size for Transformer layer is number of input features
+        self.sequence_size = len(self.input_features)
+
         logger.debug('  Projectors')
-        self.projectors = [Dense(config.hidden_size) for _ in input_features]
+        self.projectors = ModuleList(
+            # regardless of rank-2 or rank-3 input, torch.prod() calculates size
+            # after flattening the encoder output tensor
+            [Linear(
+                torch.prod(
+                    torch.Tensor([*input_features[inp].output_shape])
+                ).type(torch.int32), config.hidden_size) for inp in input_features
+             ]
+        )
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
+            input_size=config.hidden_size,
+            sequence_size=self.sequence_size,
             hidden_size=config.hidden_size,
             num_heads=config.num_heads,
             fc_size=config.transformer_fc_size,
@@ -534,17 +643,13 @@ class TransformerCombiner(tf.keras.Model):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.transformer_stack.output_shape[-1],
                 layers=config.fc_layers,
                 num_layers=config.num_fc_layers,
                 default_fc_size=config.fc_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.fc_activation,
@@ -552,19 +657,25 @@ class TransformerCombiner(tf.keras.Model):
                 fc_residual=config.fc_residual,
             )
 
-    def call(
+    @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
+    def forward(
             self,
             inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
+    ) -> Dict:
         encoder_outputs = [inputs[k]['encoder_output'] for k in inputs]
 
         # ================ Flatten ================
-        batch_size = tf.shape(encoder_outputs[0])[0]
+        batch_size = encoder_outputs[0].shape[0]
         encoder_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in encoder_outputs
         ]
 
         # ================ Project & Concat ================
@@ -572,26 +683,18 @@ class TransformerCombiner(tf.keras.Model):
             self.projectors[i](eo)
             for i, eo in enumerate(encoder_outputs)
         ]
-        hidden = tf.stack(projected)  # num_eo, bs, h
-        hidden = tf.transpose(hidden, perm=[1, 0, 2])  # bs, num_eo, h
+        hidden = torch.stack(projected)  # shape [num_eo, bs, h]
+        hidden = torch.permute(hidden, (1, 0, 2))  # shape [bs, num_eo, h]
 
         # ================ Transformer Layers ================
-        hidden = self.transformer_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        hidden = self.transformer_stack(hidden)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
             hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
-            hidden = self.fc_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+            hidden = self.fc_stack(hidden)
 
         return_data = {'combiner_output': hidden}
 
@@ -619,11 +722,9 @@ class TabTransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -635,7 +736,7 @@ class TabTransformerCombinerConfig:
         unknown = INCLUDE
 
 
-class TabTransformerCombiner(tf.keras.Model):
+class TabTransformerCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Optional[List] = None,
@@ -643,20 +744,22 @@ class TabTransformerCombiner(tf.keras.Model):
             **kwargs
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        self.name = "TabTransformerCombiner"
+        logger.debug('Initializing {}'.format(self.name))
 
         if config.reduce_output is None:
-            raise ValueError("TabTransformer requires the `resude_output` "
-                             "parametr")
+            raise ValueError("TabTransformer requires the `reduce_output` "
+                             "parameter")
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output)
         self.supports_masking = True
-        self.layer_norm = LayerNormalization()
 
         self.embed_input_feature_name = config.embed_input_feature_name
         if self.embed_input_feature_name:
             vocab = [i_f for i_f in input_features
-                     if i_f[TYPE] != NUMERICAL or i_f[TYPE] != BINARY]
+                     if input_features[i_f].type != NUMERICAL
+                     or input_features[i_f].type != BINARY]
             if self.embed_input_feature_name == 'add':
                 self.embed_i_f_name_layer = Embed(vocab, config.hidden_size,
                                                   force_embedding_size=True)
@@ -687,14 +790,38 @@ class TabTransformerCombiner(tf.keras.Model):
             projector_size = config.hidden_size
 
         logger.debug('  Projectors')
-        self.projectors = [Dense(projector_size) for i_f in input_features
-                           if i_f[TYPE] != NUMERICAL and i_f[TYPE] != BINARY]
-        self.skip_features = [i_f[NAME] for i_f in input_features
-                              if i_f[TYPE] == NUMERICAL or i_f[TYPE] == BINARY]
+        self.unembeddable_features = []
+        self.embeddable_features = []
+        for i_f in input_features:
+            if input_features[i_f].type in {NUMERICAL, BINARY}:
+                self.unembeddable_features.append(input_features[i_f].name)
+            else:
+                self.embeddable_features.append(input_features[i_f].name)
+
+        self.projectors = ModuleList()
+        for i_f in self.embeddable_features:
+            flatten_size = self.get_flatten_size(
+                input_features[i_f].output_shape
+            )
+            self.projectors.append(Linear(flatten_size[0], projector_size))
+
+        # input to layer_norm are the encoder outputs for unembeddable features,
+        # which are numerical or binary features.  These should be 2-dim
+        # tensors.  Size should be concatenation of these tensors.
+        concatenated_unembeddable_encoders_size = 0
+        for i_f in self.unembeddable_features:
+            concatenated_unembeddable_encoders_size += \
+                input_features[i_f].output_shape[0]
+
+        self.layer_norm = torch.nn.LayerNorm(
+            concatenated_unembeddable_encoders_size)
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
+            input_size=config.hidden_size,
+            sequence_size=len(self.embeddable_features),
             hidden_size=config.hidden_size,
+            # todo: can we just use projector_size? # hidden_size,
             num_heads=config.num_heads,
             fc_size=config.transformer_fc_size,
             num_layers=config.num_layers,
@@ -702,19 +829,24 @@ class TabTransformerCombiner(tf.keras.Model):
         )
 
         logger.debug('  FCStack')
+        transformer_hidden_size = \
+            self.transformer_stack.layers[-1].output_shape[-1]
 
+        # determine input size to fully connected layer based on reducer
+        if config.reduce_output == 'concat':
+            num_embeddable_features = len(self.embeddable_features)
+            fc_input_size = num_embeddable_features * transformer_hidden_size
+        else:
+            fc_input_size = transformer_hidden_size \
+                if len(self.embeddable_features) > 0 else 0
         self.fc_stack = FCStack(
+            fc_input_size + concatenated_unembeddable_encoders_size,
             layers=config.fc_layers,
             num_layers=config.num_fc_layers,
             default_fc_size=config.fc_size,
             default_use_bias=config.use_bias,
             default_weights_initializer=config.weights_initializer,
             default_bias_initializer=config.bias_initializer,
-            default_weights_regularizer=config.weights_regularizer,
-            default_bias_regularizer=config.bias_regularizer,
-            default_activity_regularizer=config.activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=config.norm,
             default_norm_params=config.norm_params,
             default_activation=config.fc_activation,
@@ -722,71 +854,92 @@ class TabTransformerCombiner(tf.keras.Model):
             fc_residual=config.fc_residual,
         )
 
-    def call(
+    @staticmethod
+    def get_flatten_size(output_shape: torch.Size) -> torch.Size:
+        size = torch.prod(torch.Tensor([*output_shape]))
+        return torch.Size([size.type(torch.int32)])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
+
+    def forward(
             self,
-            inputs,  # encoder outputs
-            training=None,
-            mask=None,
-            **kwargs
-    ):
-        skip_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
-                                if k in self.skip_features]
-        other_encoder_outputs = [inputs[k]['encoder_output'] for k in inputs
-                                 if k not in self.skip_features]
+            inputs: Dict,  # encoder outputs
+    ) -> Dict:
+        unembeddable_encoder_outputs = [inputs[k]['encoder_output'] for k in
+                                        inputs
+                                        if k in self.unembeddable_features]
+        embeddable_encoder_outputs = [inputs[k]['encoder_output'] for k in
+                                      inputs
+                                      if k in self.embeddable_features]
 
-        # ================ Flatten ================
-        batch_size = tf.shape(other_encoder_outputs[0])[0]
-        other_encoder_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in other_encoder_outputs
-        ]
-        skip_encoder_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in skip_encoder_outputs
-        ]
+        batch_size = embeddable_encoder_outputs[0].shape[0] \
+            if len(embeddable_encoder_outputs) > 0 else \
+            unembeddable_encoder_outputs[0].shape[0]
 
-        # ================ Project & Concat others ================
-        projected = [
-            self.projectors[i](eo)
-            for i, eo in enumerate(other_encoder_outputs)
-        ]
-        hidden = tf.stack(projected)  # num_eo, bs, h
-        hidden = tf.transpose(hidden, perm=[1, 0, 2])  # bs, num_eo, h
+        # ================ Project & Concat embeddables ================
+        if len(embeddable_encoder_outputs) > 0:
 
-        if self.embed_input_feature_name:
-            i_f_names_idcs = tf.range(0, len(other_encoder_outputs))
-            embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
-            embedded_i_f_names = tf.expand_dims(embedded_i_f_names, axis=0)
-            embedded_i_f_names = tf.tile(embedded_i_f_names, [batch_size, 1, 1])
-            if self.embed_input_feature_name == 'add':
-               hidden = hidden + embedded_i_f_names
-            else:
-                hidden = tf.concat([hidden, embedded_i_f_names], axis=-1)
+            # ============== Flatten =================
+            embeddable_encoder_outputs = [
+                torch.reshape(eo, [batch_size, -1]) for eo in
+                embeddable_encoder_outputs
+            ]
 
-        # ================ Transformer Layers ================
-        hidden = self.transformer_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+            projected = [
+                self.projectors[i](eo)
+                for i, eo in enumerate(embeddable_encoder_outputs)
+            ]
+            hidden = torch.stack(projected)  # num_eo, bs, h
+            hidden = torch.permute(hidden, (1, 0, 2))  # bs, num_eo, h
 
-        # ================ Sequence Reduction ================
-        hidden = self.reduce_sequence(hidden)
+            if self.embed_input_feature_name:
+                i_f_names_idcs = torch.reshape(
+                    torch.arange(0, len(embeddable_encoder_outputs)),
+                    [-1, 1]
+                )
+                embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
+                embedded_i_f_names = torch.unsqueeze(embedded_i_f_names, dim=0)
+                embedded_i_f_names = torch.tile(embedded_i_f_names,
+                                                [batch_size, 1, 1])
+                if self.embed_input_feature_name == 'add':
+                    hidden = hidden + embedded_i_f_names
+                else:
+                    hidden = torch.cat([hidden, embedded_i_f_names], -1)
+
+            # ================ Transformer Layers ================
+            hidden = self.transformer_stack(hidden)
+
+            # ================ Sequence Reduction ================
+            hidden = self.reduce_sequence(hidden)
+        else:
+            # create emtpy tensor because there are no cateagory features
+            hidden = torch.empty([batch_size, 0])
 
         # ================ Concat Skipped ================
-        if len(skip_encoder_outputs) > 1:
-            skip_hidden = concatenate(skip_encoder_outputs, -1)
+        if len(unembeddable_encoder_outputs) > 0:
+            unembeddable_encoder_outputs = [
+                torch.reshape(eo, [batch_size, -1]) for eo in
+                unembeddable_encoder_outputs
+            ]
+            # ================ Flatten ================
+            if len(unembeddable_encoder_outputs) > 1:
+                unembeddable_hidden = torch.cat(unembeddable_encoder_outputs,
+                                                -1)  # tf.keras.layers.concatenate
+            else:
+                unembeddable_hidden = list(unembeddable_encoder_outputs)[0]
+            unembeddable_hidden = self.layer_norm(unembeddable_hidden)
+
         else:
-            skip_hidden = list(skip_encoder_outputs)[0]
-        skip_hidden = self.layer_norm(skip_hidden)
+            # create empty tensor because there are not numeric/binary features
+            unembeddable_hidden = torch.empty([batch_size, 0])
 
         # ================ Concat Skipped and Others ================
-        hidden = concatenate([hidden, skip_hidden], -1)
+        hidden = torch.cat([hidden, unembeddable_hidden], -1)
 
         # ================ FC Layers ================
-        hidden = self.fc_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        hidden = self.fc_stack(hidden)
 
         return_data = {'combiner_output': hidden}
 
@@ -796,7 +949,7 @@ class TabTransformerCombiner(tf.keras.Model):
                     return_data[key] = value
 
         return return_data
-    
+
     @staticmethod
     def get_schema_cls():
         return TabTransformerCombinerConfig
@@ -806,14 +959,13 @@ class TabTransformerCombiner(tf.keras.Model):
 class ComparatorCombinerConfig:
     entity_1: List[str]
     entity_2: List[str]
+    fc_layers: Optional[List[Dict[str, Any]]] = schema.DictList()
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
+    weights_initializer: str = schema.InitializerOptions(
+        default='xavier_uniform')
     bias_initializer: str = schema.InitializerOptions(default='zeros')
-    weights_regularizer: Optional[str] = schema.RegularizerOptions()
-    bias_regularizer: Optional[str] = schema.RegularizerOptions()
-    activity_regularizer: Optional[str] = schema.RegularizerOptions()
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
@@ -823,76 +975,86 @@ class ComparatorCombinerConfig:
         unknown = INCLUDE
 
 
-class ComparatorCombiner(tf.keras.Model):
+class ComparatorCombiner(CombinerClass):
     def __init__(
             self,
+            input_features: Dict,
             config: ComparatorCombinerConfig = None,
             **kwargs,
     ):
         super().__init__()
-        logger.debug(" {}".format(self.name))
+        self.name = "ComparatorCombiner"
+        logger.debug("Entering {}".format(self.name))
+
+        self.input_features = input_features
+        self.entity_1 = config.entity_1
+        self.entity_2 = config.entity_2
+        self.required_inputs = set(config.entity_1 + config.entity_2)
+        self.fc_size = config.fc_size
 
         self.fc_stack = None
 
         # todo future: this may be redundant, check
-        # if fc_layers is None and num_fc_layers is not None:
-        fc_layers = []
-        for i in range(config.num_fc_layers):
-            fc_layers.append({"fc_size": config.fc_size})
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
+            fc_layers = []
+            for i in range(config.num_fc_layers):
+                fc_layers.append({"fc_size": config.fc_size})
 
         if fc_layers is not None:
-            logger.debug("  FCStack")
+            logger.debug("Setting up FCStack")
             self.e1_fc_stack = FCStack(
+                self.get_entity_shape(config.entity_1)[-1],
                 layers=fc_layers,
                 num_layers=config.num_fc_layers,
                 default_fc_size=config.fc_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,
                 default_dropout=config.dropout,
             )
             self.e2_fc_stack = FCStack(
+                self.get_entity_shape(config.entity_2)[-1],
                 layers=fc_layers,
                 num_layers=config.num_fc_layers,
                 default_fc_size=config.fc_size,
                 default_use_bias=config.use_bias,
                 default_weights_initializer=config.weights_initializer,
                 default_bias_initializer=config.bias_initializer,
-                default_weights_regularizer=config.weights_regularizer,
-                default_bias_regularizer=config.bias_regularizer,
-                default_activity_regularizer=config.activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=config.norm,
                 default_norm_params=config.norm_params,
                 default_activation=config.activation,
                 default_dropout=config.dropout,
             )
 
-        # todo: this should actually be the size of the last fc layer,
-        #  not just fc_size
+        self.last_fc_layer_fc_size = fc_layers[-1]['fc_size']
+
         # todo: set initializer and regularization
-        self.bilinear_weights = tf.random.normal([config.fc_size, config.fc_size],
-                                                 dtype=tf.float32)
+        self.bilinear_weights = torch.randn(
+            [self.last_fc_layer_fc_size, self.last_fc_layer_fc_size],
+            dtype=torch.float32
+        )
 
-        self.entity_1 = config.entity_1
-        self.entity_2 = config.entity_2
-        self.required_inputs = set(config.entity_1 + config.entity_2)
-        self.fc_size = config.fc_size
+    def get_entity_shape(self, entity: list) -> torch.Size:
+        sizes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in entity]
+        return torch.Size([torch.sum(torch.Tensor(sizes)).type(torch.int32)])
 
-    def call(self, inputs, training=None, mask=None,
-             **kwargs):  # encoder outputs
-        assert (
-                inputs.keys() == self.required_inputs
-        ), f"Missing inputs {self.required_inputs - set(inputs.keys())}"
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([2 * self.last_fc_layer_fc_size + 2])
+
+    def forward(
+            self,
+            inputs: Dict,  # encoder outputs
+    ) -> Dict[str, torch.Tensor]:  # encoder outputs
+        if inputs.keys() != self.required_inputs:
+            raise ValueError(
+                f"Missing inputs {self.required_inputs - set(inputs.keys())}")
 
         ############
         # Entity 1 #
@@ -900,19 +1062,19 @@ class ComparatorCombiner(tf.keras.Model):
         e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
 
         # ================ Flatten ================
-        batch_size = tf.shape(e1_enc_outputs[0])[0]
+        batch_size = e1_enc_outputs[0].shape[0]
         e1_enc_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs
         ]
 
         # ================ Concat ================
         if len(e1_enc_outputs) > 1:
-            e1_hidden = concatenate(e1_enc_outputs, 1)
+            e1_hidden = torch.cat(e1_enc_outputs, 1)
         else:
             e1_hidden = list(e1_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e1_hidden = self.e1_fc_stack(e1_hidden, training=training, mask=mask)
+        e1_hidden = self.e1_fc_stack(e1_hidden)  # [bs, fc_size]
 
         ############
         # Entity 2 #
@@ -920,19 +1082,19 @@ class ComparatorCombiner(tf.keras.Model):
         e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
 
         # ================ Flatten ================
-        batch_size = tf.shape(e2_enc_outputs[0])[0]
+        batch_size = e2_enc_outputs[0].shape[0]
         e2_enc_outputs = [
-            tf.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
+            torch.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs
         ]
 
         # ================ Concat ================
         if len(e2_enc_outputs) > 1:
-            e2_hidden = concatenate(e2_enc_outputs, 1)
+            e2_hidden = torch.cat(e2_enc_outputs, 1)
         else:
             e2_hidden = list(e2_enc_outputs)[0]
 
         # ================ Fully Connected ================
-        e2_hidden = self.e2_fc_stack(e2_hidden, training=training, mask=mask)
+        e2_hidden = self.e2_fc_stack(e2_hidden)  # [bs, fc_size]
 
         ###########
         # Compare #
@@ -940,20 +1102,26 @@ class ComparatorCombiner(tf.keras.Model):
         if e1_hidden.shape != e2_hidden.shape:
             raise ValueError(
                 f"Mismatching shapes among dimensions! "
-                f"entity1 shape: {e1_hidden.shape.as_list()} "
-                f"entity2 shape: {e2_hidden.shape.as_list()}"
+                f"entity1 shape: {e1_hidden.shape} "
+                f"entity2 shape: {e2_hidden.shape}"
             )
 
-        dot_product = tf.matmul(e1_hidden, tf.transpose(e2_hidden))
-        element_wise_mul = tf.math.multiply(e1_hidden, e2_hidden)
-        abs_diff = tf.abs(e1_hidden - e2_hidden)
-        bilinear_prod = tf.matmul(
-            e1_hidden,
-            tf.matmul(self.bilinear_weights, tf.transpose(e2_hidden))
+        element_wise_mul = e1_hidden * e2_hidden  # [bs, fc_size]
+        dot_product = torch.sum(element_wise_mul, 1, keepdim=True)  # [bs, 1]
+        abs_diff = torch.abs(e1_hidden - e2_hidden)  # [bs, fc_size]
+        bilinear_prod = torch.bmm(
+            torch.mm(e1_hidden, self.bilinear_weights).unsqueeze(1),
+            e2_hidden.unsqueeze(-1)
+        ).squeeze(-1)  # [bs, 1]
+
+        logger.debug(
+            'preparing combiner output by concatenating these tensors: '
+            f'dot_product: {dot_product.shape}, element_size_mul: {element_wise_mul.shape}'
+            f', abs_diff: {abs_diff.shape}, bilinear_prod {bilinear_prod.shape}'
         )
-        hidden = concatenate(
+        hidden = torch.cat(
             [dot_product, element_wise_mul, abs_diff, bilinear_prod], 1
-        )
+        )  # [bs, 2 * fc_size + 2]
 
         return {"combiner_output": hidden}
 

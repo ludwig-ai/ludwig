@@ -15,18 +15,25 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
+import copy
 from typing import Dict
 
 from ludwig.utils.types import DataFrame
 
-import tensorflow as tf
+import torch
+from torch import Tensor
 
 from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.modules.loss_modules import LOSS_INPUTS_REGISTRY
+from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
+    sequence_mask
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -71,27 +78,14 @@ class BaseFeature:
                     setattr(self, k, feature[k])
 
 
-class InputFeature(BaseFeature, tf.keras.Model, ABC):
+class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_input_shape(),
-                              dtype=self.get_input_dtype(),
-                              name=self.name + '_input')
-
-    @classmethod
-    @abstractmethod
-    def get_input_dtype(cls):
-        """Returns the Tensor data type this input accepts."""
-        pass
-
-    @abstractmethod
-    def get_input_shape(self):
-        """Returns a tuple representing the Tensor shape this input accepts."""
-        pass
+        return torch.rand([2, *self.input_shape]).to(self.input_dtype)
 
     @staticmethod
     @abstractmethod
@@ -119,11 +113,8 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
         )
 
 
-class OutputFeature(BaseFeature, tf.keras.Model, ABC):
+class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
-
-    train_loss_function = None
-    eval_loss_function = None
 
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
@@ -136,34 +127,26 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         self.num_fc_layers = 0
         self.fc_size = 256
         self.use_bias = True
-        self.weights_initializer = 'glorot_uniform'
+        self.weights_initializer = 'xavier_uniform'
         self.bias_initializer = 'zeros'
-        self.weights_regularizer = None
-        self.bias_regularizer = None
-        self.activity_regularizer = None
-        # self.weights_constraint=None
-        # self.bias_constraint=None
         self.norm = None
         self.norm_params = None
         self.activation = 'relu'
         self.dropout = 0
+        self.input_size = None
 
         self.overwrite_defaults(feature)
 
         logger.debug(' output feature fully connected layers')
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
+            first_layer_input_size=self.input_size,
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,
             default_fc_size=self.fc_size,
             default_use_bias=self.use_bias,
             default_weights_initializer=self.weights_initializer,
             default_bias_initializer=self.bias_initializer,
-            default_weights_regularizer=self.weights_regularizer,
-            default_bias_regularizer=self.bias_regularizer,
-            default_activity_regularizer=self.activity_regularizer,
-            # default_weights_constraint=self.weights_constraint,
-            # default_bias_constraint=self.bias_constraint,
             default_norm=self.norm,
             default_norm_params=self.norm_params,
             default_activation=self.activation,
@@ -175,16 +158,16 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             reduce_mode=self.reduce_input
         )
         if self.dependencies:
-            self.dependency_reducers = {}
+            self.dependency_reducers = torch.nn.ModuleDict()
+            # todo: re-evaluate need for separate handling of `attention` reducer
+            #       currently this code does not support `attention`
             for dependency in self.dependencies:
                 self.dependency_reducers[dependency] = SequenceReducer(
                     reduce_mode=self.reduce_dependencies
                 )
 
     def create_input(self):
-        return tf.keras.Input(shape=self.get_output_shape(),
-                              dtype=self.get_output_dtype(),
-                              name=self.name + '_input')
+        return torch.rand(self.output_shape, dtype=self.get_output_dtype())
 
     @abstractmethod
     def get_prediction_set(self):
@@ -195,11 +178,6 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     @abstractmethod
     def get_output_dtype(cls):
         """Returns the Tensor data type feature outputs."""
-        pass
-
-    @abstractmethod
-    def get_output_shape(self):
-        """Returns a tuple representing the Tensor shape this feature outputs."""
         pass
 
     @property
@@ -213,35 +191,49 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         pass
 
     def initialize_decoder(self, decoder_parameters):
+        # Override input_size. Features input_size may be different if the
+        # output feature has a custom FC.
+        decoder_parameters_copy = copy.copy(
+            decoder_parameters)
+        decoder_parameters_copy['input_size'] = self.fc_stack.output_shape[-1]
         return get_from_registry(self.decoder, self.decoder_registry)(
-            **decoder_parameters
+            **decoder_parameters_copy
         )
 
-    def train_loss(self, targets, predictions):
-        return self.train_loss_function(targets, predictions)
+    def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        # TODO(shreya): Add exceptions here.
+        loss_class = type(self.train_loss_function)
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
+        return self.train_loss_function(predictions[prediction_key], targets)
 
-    def eval_loss(self, targets, predictions):
-        return self.eval_loss_function(targets, predictions)
+    def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        loss_class = type(self.train_loss_function)
+        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
+        return self.eval_loss_function(predictions[prediction_key], targets)
 
-    def update_metrics(self, targets, predictions):
-        for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS or metric == HITS_AT_K:
-                metric_fn.update_state(targets, predictions)
-            else:
-                metric_fn.update_state(targets, predictions[PREDICTIONS])
+    def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
+        for _, metric_fn in self.metric_functions.items():
+            metric_class = type(metric_fn)
+            prediction_key = METRICS_INPUTS_REGISTRY[metric_class]
+            metric_fn.update(predictions[prediction_key], targets)
 
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
-            metric_vals[metric_name] = metric_onj.result().numpy()
+            try:
+                metric_vals[metric_name] = metric_onj.compute(
+                ).detach().numpy().item()
+            except Exception as e:
+                logger.error(
+                    f'Caught exception computing metric: {metric_name}. Exception: {e}')
         return metric_vals
 
     def reset_metrics(self):
         for of_name, metric_fn in self.metric_functions.items():
             if metric_fn is not None:
-                metric_fn.reset_states()
+                metric_fn.reset()
 
-    def call(
+    def forward(
             self,
             inputs,
             # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
@@ -262,7 +254,6 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         hidden = self.prepare_decoder_inputs(
             combiner_output,
             other_output_hidden,
-            training=training,
             mask=mask
         )
 
@@ -276,8 +267,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 combiner_outputs['encoder_output_state']
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
-        logits = self.logits(logits_input, target=target,
-                             training=training)
+        logits = self.logits(logits_input, target=target)
 
         # most of the cases the output of self.logits() is a tensor
         # there are three special cases:
@@ -289,7 +279,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         #   with keys: logits, lengths, projection_input
         #
 
-        if isinstance(logits, tf.Tensor):
+        if isinstance(logits, Tensor):
             logits = {'logits': logits}
 
         return {
@@ -356,29 +346,26 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                     if len(dependency_final_hidden.shape) > 2:
                         # matrix matrix -> concat
                         assert hidden.shape[1] == \
-                               dependency_final_hidden.shape[1]
+                            dependency_final_hidden.shape[1]
                         dependencies_hidden.append(dependency_final_hidden)
                     else:
                         # matrix vector -> tile concat
                         sequence_max_length = hidden.shape[1]
-                        multipliers = tf.concat(
-                            [[1], [sequence_max_length], [1]],
-                            0
-                        )
-                        tiled_representation = tf.tile(
-                            tf.expand_dims(dependency_final_hidden, 1),
+                        multipliers = (1, sequence_max_length, 1)
+                        tiled_representation = torch.tile(
+                            torch.unsqueeze(dependency_final_hidden, 1),
                             multipliers
                         )
 
                         # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
-                        mask = tf.sequence_mask(
+                        mask = sequence_mask(
                             sequence_length,
                             sequence_max_length
                         )
-                        tiled_representation = tf.multiply(
+                        tiled_representation = torch.mul(
                             tiled_representation,
-                            tf.cast(mask[:, :, tf.newaxis], dtype=tf.float32)
+                            mask[:, :, np.newaxis].type(torch.float32)
                         )
 
                         dependencies_hidden.append(tiled_representation)
@@ -395,7 +382,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                         dependencies_hidden.append(dependency_final_hidden)
 
             try:
-                hidden = tf.concat([hidden] + dependencies_hidden, -1)
+                hidden = torch.cat([hidden] + dependencies_hidden, dim=-1)
             except:
                 raise ValueError(
                     'Shape mismatch while concatenating dependent features of '
@@ -421,7 +408,6 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     def output_specific_fully_connected(
             self,
             inputs,  # feature_hidden
-            training=None,
             mask=None
     ):
         feature_hidden = inputs
@@ -429,15 +415,20 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
         # flatten inputs
         if len(original_feature_hidden.shape) > 2:
+            '''
             feature_hidden = tf.reshape(
                 feature_hidden,
                 [-1, feature_hidden.shape[-1]]
+            )
+            '''
+            feature_hidden = torch.reshape(
+                feature_hidden,
+                (-1, list(feature_hidden.shape)[-1])
             )
 
         # pass it through fc_stack
         feature_hidden = self.fc_stack(
             feature_hidden,
-            training=training,
             mask=mask
         )
         feature_hidden_size = feature_hidden.shape[-1]
@@ -445,9 +436,15 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         # reshape back to original first and second dimension
         if len(original_feature_hidden.shape) > 2:
             sequence_length = original_feature_hidden.shape[1]
+            '''
             feature_hidden = tf.reshape(
                 feature_hidden,
                 [-1, sequence_length, feature_hidden_size]
+            )
+            '''
+            feature_hidden = torch.reshape(
+                feature_hidden,
+                (-1, sequence_length, feature_hidden_size)
             )
 
         return feature_hidden
@@ -456,7 +453,6 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             self,
             combiner_output,
             other_output_features,
-            training=None,
             mask=None
     ):
         """
@@ -487,7 +483,6 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         # ================ Output-wise Fully Connected ================
         feature_hidden = self.output_specific_fully_connected(
             feature_hidden,
-            training=training,
             mask=mask
         )
 
@@ -500,4 +495,3 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     def unflatten(self, df: DataFrame) -> DataFrame:
         """ Reshapes a flattened 1D array into its original shape. """
         return df
-

@@ -17,7 +17,7 @@
 import logging
 
 import numpy as np
-import tensorflow as tf
+import torch
 
 from ludwig.constants import *
 from ludwig.encoders.h3_encoders import ENCODER_REGISTRY
@@ -41,7 +41,8 @@ class H3FeatureMixin:
     }
 
     preprocessing_schema = {
-        'missing_value_strategy': {'type': 'string', 'enum': MISSING_VALUE_STRATEGY_OPTIONS},
+        'missing_value_strategy': {'type': 'string', 'enum':
+            MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'integer'},
         'computed_fill_value': {'type': 'integer'},
     }
@@ -102,23 +103,26 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.uint8, tf.int64]
+    def forward(self, inputs):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.uint8, torch.int64]
         assert len(inputs.shape) == 2
 
-        inputs_encoded = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.uint8
+    @property
+    def input_dtype(self):
+        return torch.uint8
 
-    def get_input_shape(self):
-        return H3_VECTOR_LENGTH,
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([H3_VECTOR_LENGTH])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(

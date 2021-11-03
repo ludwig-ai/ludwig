@@ -19,7 +19,7 @@ import os
 import sys
 
 import numpy as np
-import tensorflow as tf
+import torch
 
 from ludwig.constants import *
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
@@ -434,23 +434,24 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
                 'max_sequence_length has to be defined - '
                 'check "update_config_with_metadata()"')
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float32
+    def forward(self, inputs, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.float32
         assert len(inputs.shape) == 3, f"expected 3D shape, found: {inputs.shape}"
 
         encoder_output = self.encoder_obj(
-            inputs, training=training, mask=mask
+            inputs, mask=mask
         )
 
         return encoder_output
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.float32
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length, self.embedding_size])
 
-    def get_input_shape(self):
-        return self.max_sequence_length, self.embedding_size
+    @property
+    def input_dtype(self):
+        return torch.float32
 
     @staticmethod
     def update_config_with_metadata(

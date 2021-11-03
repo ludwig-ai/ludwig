@@ -16,6 +16,7 @@
 # ==============================================================================
 
 import numpy as np
+import torch
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
@@ -24,17 +25,17 @@ from ludwig.encoders.sequence_encoders import \
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SequenceSampledSoftmaxCrossEntropyLoss
-from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
-from ludwig.modules.metric_modules import EditDistanceMetric, \
-    SequenceAccuracyMetric
-from ludwig.modules.metric_modules import PerplexityMetric
-from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
-from ludwig.modules.metric_modules import SequenceLossMetric, \
-    SequenceSampledLossMetric
+# from ludwig.modules.loss_modules import SequenceSampledSoftmaxCrossEntropyLoss
+# from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
+# from ludwig.modules.metric_modules import EditDistanceMetric, \
+#     SequenceAccuracyMetric
+# from ludwig.modules.metric_modules import PerplexityMetric
+# from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
+# from ludwig.modules.metric_modules import SequenceLossMetric, \
+#     SequenceSampledLossMetric
 from ludwig.modules.metric_modules import TokenAccuracyMetric
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.metrics_utils import ConfusionMatrix
+from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
@@ -147,33 +148,31 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
+        # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
+        if 'vocab' in feature:
+            feature['vocab_size'] = len(feature['vocab'])
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
-               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+    def forward(self, inputs: torch.Tensor, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16,
+                                torch.int32, torch.int64]
         assert len(inputs.shape) == 2
 
-        inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        inputs_mask = tf.not_equal(inputs, 0)
-        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
-        encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=inputs_mask
-        )
+        inputs_exp = inputs.type(torch.int32)
+        inputs_mask = torch.not_equal(inputs, 0)
+        lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
+        encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
         encoder_output[LENGTHS] = lengths
         return encoder_output
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.int32
-
-    def get_input_shape(self):
-        return None,
+    @property
+    def input_dtype(self):
+        return torch.int32
 
     @staticmethod
     def update_config_with_metadata(
@@ -190,6 +189,14 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
@@ -212,59 +219,63 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self._setup_metrics()
 
     def _setup_loss(self):
-        if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
-        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            if self.decoder == 'generator':
-                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-                    dec_dense_layer=self.decoder_obj.dense_layer,
-                    dec_num_layers=self.decoder_obj.num_layers,
-                    num_classes=self.num_classes,
-                    feature_loss=self.loss,
-                    name='train_loss'
-                )
-            else:
-                self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-                    dec_dense_layer=self.decoder_obj.projection_layer,
-                    dec_num_layers=None,
-                    num_classes=self.num_classes,
-                    feature_loss=self.loss,
-                    name='train_loss'
-                )
-        else:
-            raise ValueError(
-                "Loss type {} is not supported. Valid values are "
-                "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
-            )
-
-        # special handling for evaluation with Generator decoder and beam search
-        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
-            # beam search does not provide logits, need to use probabilities
-            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-                from_logits=False
-            )
-        else:
-            # all other cases
-            self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss()
+        # todo: conver to torch
+        pass
+        # if self.loss[TYPE] == 'softmax_cross_entropy':
+        #     self.train_loss_function = SequenceSoftmaxCrossEntropyLoss()
+        # elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
+        #     if self.decoder == 'generator':
+        #         self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+        #             dec_dense_layer=self.decoder_obj.dense_layer,
+        #             dec_num_layers=self.decoder_obj.num_layers,
+        #             num_classes=self.num_classes,
+        #             feature_loss=self.loss,
+        #             name='train_loss'
+        #         )
+        #     else:
+        #         self.train_loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
+        #             dec_dense_layer=self.decoder_obj.projection_layer,
+        #             dec_num_layers=None,
+        #             num_classes=self.num_classes,
+        #             feature_loss=self.loss,
+        #             name='train_loss'
+        #         )
+        # else:
+        #     raise ValueError(
+        #         "Loss type {} is not supported. Valid values are "
+        #         "'softmax_cross_entropy' or "
+        #         "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
+        #     )
+        #
+        # # special handling for evaluation with Generator decoder and beam search
+        # if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+        #     # beam search does not provide logits, need to use probabilities
+        #     self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+        #         from_logits=False
+        #     )
+        # else:
+        #     # all other cases
+        #     self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss()
 
     def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
-            # Generator Decoder w/ beam search
-            # beam search does not provide logits
-            self.metric_functions[LOSS] = SequenceLossMetric(
-                from_logits=False)
-        else:
-            # Generator Decoder w/ no beam search and Tagger Decoder
-            self.metric_functions[LOSS] = SequenceLossMetric(
-                from_logits=True)
-
-        self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
-        self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
-        self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
-        self.metric_functions[PERPLEXITY] = PerplexityMetric()
-        self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
+        # todo: conver to torch
+        pass
+        # self.metric_functions = {}  # needed to shadow class variable
+        # if self.decoder == 'generator' and self.decoder_obj.beam_width > 1:
+        #     # Generator Decoder w/ beam search
+        #     # beam search does not provide logits
+        #     self.metric_functions[LOSS] = SequenceLossMetric(
+        #         from_logits=False)
+        # else:
+        #     # Generator Decoder w/ no beam search and Tagger Decoder
+        #     self.metric_functions[LOSS] = SequenceLossMetric(
+        #         from_logits=True)
+        #
+        # self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
+        # self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
+        # self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
+        # self.metric_functions[PERPLEXITY] = PerplexityMetric()
+        # self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
 
     # overrides super class OutputFeature.update_metrics() method
     def update_metrics(self, targets, predictions):
@@ -285,25 +296,28 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if training and target is not None:
             return self.decoder_obj._logits_training(
                 inputs,
-                target=tf.cast(target, dtype=tf.int32),
-                training=training
+                target=target.type(torch.int32),
             )
         else:
             return inputs
 
     def predictions(self, inputs, training=None):
         # Generator Decoder
-        return self.decoder_obj._predictions_eval(inputs, training=training)
+        return self.decoder_obj._predictions_eval(inputs)
 
     def get_prediction_set(self):
         return self.decoder_obj.get_prediction_set()
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.int32
+        return torch.int32
 
-    def get_output_shape(self):
-        return self.max_sequence_length,
+    def get_input_shape(self):
+        return ()
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(
@@ -487,7 +501,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 # create mask only tokens for sequence length
                 seq_prob = row[probs_col]
                 length = row[lengths_col]
-                mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
+                mask = np.arange(
+                    seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
                 return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
             # commenting probabilities out because usually it is huge:

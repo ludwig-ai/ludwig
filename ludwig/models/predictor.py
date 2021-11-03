@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
 
-import tensorflow as tf
+import torch
 from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS, LAST_HIDDEN
@@ -16,7 +16,7 @@ from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
-from ludwig.utils.tf_utils import initialize_tensorflow
+from ludwig.utils.torch_utils import initialize_pytorch
 
 EXCLUE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
@@ -150,7 +150,10 @@ class Predictor(BasePredictor):
 
     def _concat_preds(self, predictions):
         for key, pred_value_list in predictions.items():
-            predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
+            # Without cloning and detaching, a runtime error is raised since pred_value_list
+            # is a tensor that requires grad.
+            predictions[key] = torch.cat(
+                pred_value_list, dim=0).clone().detach().numpy()
 
     def batch_evaluation(
             self,
@@ -184,7 +187,8 @@ class Predictor(BasePredictor):
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: batch[o_feat.proc_column]
+                    o_feat.feature_name: torch.from_numpy(
+                        batch[o_feat.proc_column])
                     for o_feat in model.output_features.values()
                 }
 
@@ -207,7 +211,8 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         if collect_predictions:
             for key, pred_value_list in predictions.items():
-                predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
+                predictions[key] = torch.cat(
+                    pred_value_list, dim=0).clone().detach().numpy()
 
         metrics = model.get_metrics()
         metrics = self.merge_workers_metrics(metrics)
@@ -225,24 +230,12 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError('BucketedBatcher is not supported yet')
 
-        # Build static graph for the trained model
-        tf.keras.backend.reset_uids()
-        keras_model_inputs = model.get_model_inputs(training=False)
-        keras_model = model.get_connected_model(inputs=keras_model_inputs,
-                                                training=False)
-
-        # Create a new model that routes activations to outputs
-        tf.keras.backend.reset_uids()
-        output_nodes = {layer_name: keras_model.get_layer(layer_name).output
-                        for layer_name in layer_names}
-        activation_model = tf.keras.Model(inputs=keras_model_inputs,
-                                          outputs=output_nodes)
+        activation_model = model
 
         with dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False
         ) as batcher:
-
             progress_bar = tqdm(
                 desc='Collecting Tensors',
                 total=batcher.steps_per_epoch,
@@ -264,7 +257,7 @@ class Predictor(BasePredictor):
                     if isinstance(output, tuple):
                         output = list(output)
 
-                    if isinstance(output, tf.Tensor):
+                    if isinstance(output, torch.Tensor):
                         output = [('', output)]
                     elif isinstance(output, dict):
                         output = [(f'_{key}', tensor)
@@ -313,10 +306,12 @@ class RemotePredictor(Predictor):
         **kwargs
     ):
         horovod = initialize_horovod()
-        initialize_tensorflow(gpus=gpus,
-                              gpu_memory_limit=gpu_memory_limit,
-                              allow_parallel_threads=allow_parallel_threads,
-                              horovod=horovod)
+        initialize_pytorch(
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            horovod=horovod
+        )
         super().__init__(horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
@@ -336,7 +331,8 @@ def calculate_overall_stats(
         feature_metadata.update(
             training_set_metadata[output_feature.feature_name])
 
-        feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
+        feature_df = predictions.loc[:,
+                                     predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1:])
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(

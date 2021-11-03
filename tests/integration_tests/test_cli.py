@@ -177,6 +177,7 @@ def test_train_cli_horovod(csv_filename):
         )
 
 
+@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
 @pytest.mark.distributed
 def test_export_savedmodel_cli(csv_filename):
     """Test exporting Ludwig model to Tensorflows savedmodel format."""
@@ -195,6 +196,7 @@ def test_export_savedmodel_cli(csv_filename):
                     )
 
 
+@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
 @pytest.mark.distributed
 def test_export_neuropod_cli(csv_filename):
     """Test exporting Ludwig model to neuropod format."""
@@ -319,53 +321,8 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                                         )
         stdout = completed_process.stdout.decode('utf-8')
 
-        # parse output of collect_summary to find tensor names to use
-        # in the collect_wights and collect_activations.
-        # This part of test is sensitive to output format of collect_summary
-        # search for substring with layer names
-        layers = re.search(
-            "Layers(\w|\d|\:|\/|\n)*Weights",
-            stdout
-        )
-        substring = stdout[layers.start(): layers.end()]
-
-        # extract layer names
-        layers_list = []
-        with StringIO(substring) as f:
-            for _, line in enumerate(f):
-                if not (line[:6] == 'Layers' or line[:6] == 'Weight') and len(
-                        line) > 1:
-                    layers_list.append(line[:-1])
-
-        # search for substring with weights names
-        weights = re.search(
-            "Weights(\w|\d|\:|\/|\n)*",
-            stdout
-        )
-        substring = stdout[weights.start(): weights.end()]
-
-        # extract weights names
-        weights_list = []
-        with StringIO(substring) as f:
-            for _, line in enumerate(f):
-                if (not (line[:6] == 'Layers' or line[:6] == 'Weight')
-                        and len(line) > 1):
-                    weights_list.append(line[:-1])
-
-        # collect activations
-        _run_ludwig('collect_activations',
-                    dataset=dataset_filename,
-                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-                    layers=' '.join(layers_list),
-                    output_directory=tmpdir
-                    )
-
-        # collect weights
-        _run_ludwig('collect_weights',
-                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
-                    tensors=' '.join(weights_list),
-                    output_directory=tmpdir
-                    )
+        assert 'Modules' in stdout
+        assert 'Parameters' in stdout
 
 
 @pytest.mark.distributed

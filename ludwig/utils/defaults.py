@@ -50,6 +50,7 @@ default_training_params = {
     'optimizer': {TYPE: 'adam'},
     'epochs': 100,
     'regularization_lambda': 0,
+    'regularization_type': 'l2',
     'learning_rate': 0.001,
     'batch_size': 128,
     'eval_batch_size': None,
@@ -73,18 +74,21 @@ default_training_params = {
 }
 
 default_optimizer_params_registry = {
-    'sgd': {},
-    'stochastic_gradient_descent': {},
-    'gd': {},
-    'gradient_descent': {},
+    'sgd': {'lr':0.001},
+    'stochastic_gradient_descent': {'lr':0.001},
+    'gd': {'lr':0.001},
+    'gradient_descent': {'lr':0.001},
     'adam': {
-        'beta_1': 0.9,
-        'beta_2': 0.999,
-        'epsilon': 1e-08
+        'betas': (0.9, 0.999),
+        #'beta_1': 0.9,
+        #'beta_2': 0.999,
+        #'epsilon': 1e-08
+        'eps': 1e-08
     },
     'adadelta': {
         'rho': 0.95,
-        'epsilon': 1e-08
+        'eps': 1e-08
+        #'epsilon': 1e-08
     },
     'adagrad': {
         'initial_accumulator_value': 0.1
@@ -98,9 +102,10 @@ default_optimizer_params_registry = {
     },
     'nadam': {},
     'rmsprop': {
-        'decay': 0.9,
+        'weight_decay': 0.9,
         'momentum': 0.0,
-        'epsilon': 1e-10,
+        #'epsilon': 1e-10,
+        'eps': 1e-10,
         'centered': False
     }
 }

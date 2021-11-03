@@ -16,98 +16,79 @@
 import inspect
 import logging
 import collections
+from typing import Optional
 
-import tensorflow as tf
-import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRU, LSTM, Bidirectional, Layer, SimpleRNN
-
+import torch
+from torch.nn import RNN, GRU, LSTM
+from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
-    'rnn': SimpleRNN,
+    'rnn': RNN,
     'gru': GRU,
     'lstm': LSTM,
 }
 
 
-class RecurrentStack(Layer):
+class RecurrentStack(LudwigModule):
     def __init__(
             self,
-            state_size=256,
-            cell_type='rnn',
-            num_layers=1,
-            bidirectional=False,
-            activation='tanh',
-            recurrent_activation='sigmoid',
-            use_bias=True,
-            unit_forget_bias=True,
-            weights_initializer='glorot_uniform',
-            recurrent_initializer='orthogonal',
-            bias_initializer='zeros',
-            weights_regularizer=None,
-            recurrent_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # kernel_constraint=kernel_constraint,
-            # recurrent_constraint=recurrent_constraint,
-            # bias_constraint=bias_constraint,
-            dropout=0.0,
-            recurrent_dropout=0.0,
+            input_size: int = None,
+            hidden_size: int = 256,
+            cell_type: str = 'rnn',
+            sequence_size: Optional[int] = None,
+            num_layers: int = 1,
+            bidirectional: bool = False,
+            use_bias: bool = True,
+            dropout: float = 0.0,
             **kwargs
     ):
         super().__init__()
         self.supports_masking = True
+        self.input_size = input_size  # api doc: H_in
+        self.hidden_size = hidden_size  # api doc: H_out
+        self.sequence_size = sequence_size  # api doc: L (sequence length)
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
-        self.layers = []
 
         rnn_params = {
-            'units': state_size,
-            'activation': activation,
-            'recurrent_activation': recurrent_activation,
-            'use_bias': use_bias,
-            'kernel_initializer': weights_initializer,
-            'recurrent_initializer': recurrent_initializer,
-            'bias_initializer': bias_initializer,
-            'unit_forget_bias': unit_forget_bias,
-            'kernel_regularizer': weights_regularizer,
-            'recurrent_regularizer': recurrent_regularizer,
-            'bias_regularizer': bias_regularizer,
-            'activity_regularizer': activity_regularizer,
-            # 'kernel_constraint': weights_constraint,
-            # 'recurrent_constraint': recurrent_constraint,
-            # 'bias_constraint': bias_constraint,
+            'num_layers': num_layers,
+            'bias': use_bias,
             'dropout': dropout,
-            'recurrent_dropout': recurrent_dropout,
-            'return_sequences': True,
-            'return_state': True,
+            'bidirectional': bidirectional
         }
-        signature = inspect.signature(rnn_layer_class.__init__)
-        valid_args = set(signature.parameters.keys())
-        rnn_params = {k: v for k, v in rnn_params.items() if k in valid_args}
 
-        for _ in range(num_layers):
-            layer = rnn_layer_class(**rnn_params)
+        # Delegate recurrent params to PyTorch's RNN/GRU/LSTM implementations.
+        self.layers = rnn_layer_class(
+            input_size, hidden_size,
+            batch_first=True,
+            **rnn_params
+        )
 
-            if bidirectional:
-                layer = Bidirectional(layer)
+    @property
+    def input_shape(self) -> torch.Size:
+        if self.sequence_size:
+            return torch.Size([self.sequence_size, self.input_size])
+        return torch.Size([self.input_size])
 
-            self.layers.append(layer)
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.sequence_size:
+            return torch.Size([self.sequence_size, self.hidden_size])
+        return torch.Size([self.hidden_size])
 
-        for layer in self.layers:
-            logger.debug('   {}'.format(layer.name))
+    def forward(self, inputs: torch.Tensor, mask=None):
+        hidden, final_state = self.layers(inputs)
 
-    def call(self, inputs, training=None, mask=None):
-        hidden = inputs
-        final_state = None
-        for layer in self.layers:
-            outputs = layer(hidden, training=training, mask=mask)
-            hidden = outputs[0]
-            final_state = outputs[1:]
-        if final_state and len(final_state) == 1:
-            final_state = final_state[0]
+        if isinstance(final_state, tuple):
+            # lstm cell type
+            final_state = final_state[0][-1], final_state[1][-1]
+        else:
+            # rnn or gru cell type
+            final_state = final_state[-1]
+
         return hidden, final_state
 
 
@@ -121,7 +102,7 @@ class BasicDecoderOutput(
     pass
 
 
-class BasicDecoder(tfa.seq2seq.BasicDecoder):
+class BasicDecoder:  # (tfa.seq2seq.BasicDecoder):
     def _projection_input_size(self):
         return tf.TensorShape(self.cell.output_size)
 
@@ -144,7 +125,7 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
 
     # Ludwig specific implementation of BasicDecoder.step() method
     def step(self, time, inputs, state, training=None, name=None):
-        cell_outputs, cell_state = self.cell(inputs, state, training=training)
+        cell_outputs, cell_state = self.cell(inputs, state)
         cell_state = tf.nest.pack_sequence_as(state,
                                               tf.nest.flatten(cell_state))
 

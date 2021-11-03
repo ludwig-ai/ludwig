@@ -69,6 +69,8 @@ from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
 
+import torch
+
 logger = logging.getLogger(__name__)
 
 
@@ -197,10 +199,10 @@ class LudwigModel:
             backend or self.config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
-        # setup TensorFlow
-        self.backend.initialize_tensorflow(gpus=gpus,
-                                           gpu_memory_limit=gpu_memory_limit,
-                                           allow_parallel_threads=allow_parallel_threads)
+        # setup PyTorch env (GPU allocation, etc.)
+        self.backend.initialize_pytorch(gpus=gpus,
+                                        gpu_memory_limit=gpu_memory_limit,
+                                        allow_parallel_threads=allow_parallel_threads)
 
         # setup model
         self.model = None
@@ -255,9 +257,9 @@ class LudwigModel:
             source containing test data.
         :param training_set_metadata: (Union[str, dict], default: `None`)
             metadata JSON file or loaded metadata. Intermediate preprocessed
-        structure containing the mappings of the input
-            dataset created the first time an input file is used in the same
-            directory with the same name and a '.meta.json' extension.
+            structure containing the mappings of the input dataset created the
+            first time an input file is used in the same directory with the
+            same name and a '.meta.json' extension.
         :param data_format: (str, default: `None`) format to interpret data
             sources. Will be inferred automatically if not specified.  Valid
             formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
@@ -430,7 +432,7 @@ class LudwigModel:
                         skip_save_processed_input=skip_save_processed_input,
                         output_directory=output_directory,
                         random_seed=random_seed,
-                        devbug=debug,
+                        debug=debug,
                         **kwargs,
                     )
                     (training_set,
@@ -489,6 +491,7 @@ class LudwigModel:
             # init trainer
             with self.backend.create_trainer(
                 **self.config[TRAINING],
+                model=self.model,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -675,6 +678,7 @@ class LudwigModel:
         if not self._online_trainer:
             self._online_trainer = self.backend.create_trainer(
                 **self.config[TRAINING],
+                model=self.model,
                 random_seed=random_seed,
                 debug=debug
             )
@@ -1400,11 +1404,11 @@ class LudwigModel:
         ```
 
         """
-        # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
+        # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         backend_param = backend
         backend = initialize_backend(backend)
-        backend.initialize_tensorflow(
+        backend.initialize_pytorch(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads
@@ -1476,7 +1480,7 @@ class LudwigModel:
                 model_dir,
                 MODEL_WEIGHTS_FILE_NAME
             )
-            self.model.load_weights(weights_save_path)
+            self.model.load_state_dict(torch.load(weights_save_path))
 
         self.backend.sync_model(self.model)
 
@@ -1511,7 +1515,7 @@ class LudwigModel:
 
         # save model weights
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        self.model.save_weights(model_weights_path)
+        torch.save(self.model.state_dict(), model_weights_path)
 
         # save training set metadata
         training_set_metadata_path = os.path.join(
@@ -1906,7 +1910,7 @@ def get_experiment_description(
 
     description['config'] = config
 
-    import tensorflow as tf
-    description['tf_version'] = tf.__version__
+    import torch
+    description['torch_version'] = torch.__version__
 
     return description

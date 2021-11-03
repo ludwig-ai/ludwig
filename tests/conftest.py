@@ -21,7 +21,6 @@ import pytest
 
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import replace_file_extension
-from ludwig.utils.tf_utils import initialize_tensorflow
 from tests.integration_tests.utils import category_feature, \
     generate_data, text_feature
 
@@ -40,9 +39,9 @@ def init_tensorflow_cpu(request):
     and order of magnitude for small tests. Tests that execute in subprocesses, and tests
     in `test_graph_execution.py` still run in graph mode.
     """
-    import tensorflow as tf
-    tf.config.experimental_run_functions_eagerly(True)
-    initialize_tensorflow(gpus=-1)
+    # tf.config.experimental_run_functions_eagerly(True)
+    # initialize_tensorflow(gpus=-1)
+    pass
 
 
 @pytest.fixture()

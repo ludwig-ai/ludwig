@@ -136,15 +136,15 @@ def create_vocabulary(
         pad_token = tokenizer.tokenizer.pad_token
         unk_token = tokenizer.tokenizer.unk_token
 
-        if pad_token is None:
-            vocab = vocab + [padding_symbol]
-        else:
-            padding_symbol = pad_token
-
         if unk_token is None:
-            vocab = vocab + [unknown_symbol]
+            vocab = [unknown_symbol] + vocab
         else:
             unknown_symbol = unk_token
+
+        if pad_token is None:
+            vocab = [padding_symbol] + vocab
+        else:
+            padding_symbol = pad_token
 
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)

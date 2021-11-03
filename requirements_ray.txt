@@ -2,4 +2,5 @@ ray[default,tune]>=1.7.0
 pickle5
 tensorboardX<2.3
 GPUtil
+tblib
 awscli

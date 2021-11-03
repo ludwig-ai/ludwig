@@ -16,45 +16,56 @@
 # ==============================================================================
 import logging
 
-from tensorflow.keras.layers import Layer
+import torch
 
+from ludwig.encoders import Encoder
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-class PassthroughEncoder(Layer):
+class PassthroughEncoder(Encoder):
 
     def __init__(
             self,
+            input_size,
             **kwargs
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.input_size = input_size
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
         """
         return {'encoder_output': inputs}
 
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
 
-class DenseEncoder(Layer):
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
+
+    @classmethod
+    def register(cls, name):
+        pass
+
+
+class DenseEncoder(Encoder):
 
     def __init__(
             self,
+            input_size,
             layers=None,
             num_layers=1,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -63,29 +74,38 @@ class DenseEncoder(Layer):
     ):
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.input_size = input_size
 
         logger.debug('  FCStack')
         self.fc_stack = FCStack(
+            first_layer_input_size=input_size,
             layers=layers,
             num_layers=num_layers,
             default_fc_size=fc_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
             default_dropout=dropout,
         )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
         """
         return {'encoder_output': self.fc_stack(inputs)}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self.input_size)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.fc_stack.layers[-1]['fc_size']])
+
+    @classmethod
+    def register(cls, name):
+        pass
