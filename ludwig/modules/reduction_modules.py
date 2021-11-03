@@ -40,6 +40,10 @@ class SequenceReducer(LudwigModule):
     def forward(self, inputs, mask=None):
         return self._reduce_obj(inputs, mask=mask)
 
+    @property
+    def input_shape(self):
+        return torch.Size([0])
+
 
 class ReduceLast(LudwigModule):
 
@@ -59,6 +63,10 @@ class ReduceSum(LudwigModule):
 
     def forward(self, inputs, mask=None):
         return torch.sum(inputs, dim=1)
+
+    @property
+    def input_shape(self):
+        return torch.Size([1])
 
 
 class ReduceMean(LudwigModule):

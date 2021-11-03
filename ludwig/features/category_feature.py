@@ -216,7 +216,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self.input_size)
+        return torch.Size([self.input_size])
 
     @classmethod
     def get_output_dtype(cls):
