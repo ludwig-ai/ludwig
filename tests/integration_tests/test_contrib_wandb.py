@@ -16,9 +16,7 @@ TEST_SCRIPT = os.path.join(os.path.dirname(__file__), 'scripts',
 @pytest.mark.distributed
 def test_contrib_experiment(csv_filename, tmpdir):
     wandb_dir = os.path.join(tmpdir, 'results')
-    is_exist = os.path.exists(wandb_dir)
-    if not is_exist:
-        os.mkdir(wandb_dir)
+    os.makedirs(wandb_dir, exist_ok=True)
     os.environ["WANDB_DIR"] = wandb_dir
     subprocess.call(['chmod', '-R', '+w', os.environ["WANDB_DIR"]])
     cmdline = [
