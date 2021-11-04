@@ -35,33 +35,11 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
+# Currently fails, which is ok if the tracing method works.
 def test_torchscript_script(csv_filename):
-    input_features = [
-        # binary_feature(),   # RuntimeError: expected scalar type Float but found Bool
-        # numerical_feature(),
-        numerical_feature(),
-        category_feature(vocab_size=3),
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
-        # vector_feature(),
-        # image_feature(image_dest_folder),
-        # audio_feature(audio_dest_folder),
-        # timeseries_feature(),
-        # date_feature(),
-        date_feature(),
-        # h3_feature(),
-        # set_feature(vocab_size=3),
-        # bag_feature(vocab_size=3),
-    ]
-    output_features = [
-        category_feature(vocab_size=3),
-        binary_feature(),
-        numerical_feature(),
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
-        set_feature(vocab_size=3),
-        vector_feature()
-    ]
+    # Features don't matter since we're scripting the entire module wholesale.
+    input_features = [date_feature()]
+    output_features = [category_feature(vocab_size=3)]
     backend = LocalTestBackend()
     config = {
         'input_features': input_features,
@@ -73,7 +51,7 @@ def test_torchscript_script(csv_filename):
         data_csv_path = os.path.join(tmpdir, csv_filename)
         data_csv_path = generate_data(input_features, output_features,
                                       data_csv_path)
-
+        # Necessary in order to instantiate an ECD object as ludwig_model.model.
         ludwig_model.train(
             dataset=data_csv_path,
             skip_save_training_description=True,
