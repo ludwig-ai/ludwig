@@ -51,7 +51,7 @@ def test_torchscript_script(csv_filename):
         data_csv_path = os.path.join(tmpdir, csv_filename)
         data_csv_path = generate_data(input_features, output_features,
                                       data_csv_path)
-        # Necessary in order to instantiate an ECD object as ludwig_model.model.
+        # Necessary in order to instantiate ludwig_model.model as an ECD object.
         ludwig_model.train(
             dataset=data_csv_path,
             skip_save_training_description=True,
