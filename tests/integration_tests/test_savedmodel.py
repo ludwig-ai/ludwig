@@ -211,36 +211,17 @@ def test_torchscript(csv_filename, should_load_model):
         # Here we choose the first output feature (categorical)
         of_name = list(ludwig_model.model.output_features.keys())[0]
 
-        # data_to_predict = {
-        #     # name: torch.from_numpy(dataset.dataset[feature.proc_column])
-        #     name: torch.from_numpy(dataset.dataset[feature.proc_column][:1])
-        #     for name, feature in ludwig_model.model.input_features.items()
-        # }
+        data_to_predict = {
+            name: torch.from_numpy(dataset.dataset[feature.proc_column])
+            for name, feature in ludwig_model.model.input_features.items()
+        }
 
-        # Prepare data as a list of size-1 dictionaries.
-        # get_model_inputs() returns random data with a batch size of 1.
-        # Since that's what we use to trace with, the resulting torchscript model code seems to be dependent on receiving that input shape.
-        data_to_predict = collections.defaultdict(dict)
-        for name, feature in ludwig_model.model.input_features.items():
-            for i, data in enumerate(dataset.dataset[feature.proc_column]):
-                data_to_predict[i][name] = torch.Tensor([data])
-
-        # Instead of predicting a large batch at once, we predict one example at a time.
-        # logits = restored_model(data_to_predict)
-        print(f'data_to_predict.values(): {data_to_predict.values()}')
-        all_restored_logits = []
-        for data in data_to_predict.values():
-            logits = restored_model(data)
-            all_restored_logits.append(logits)
+        logits = restored_model(data_to_predict)
 
         print('Got torchscript predictions')
 
-        # restored_predictions = torch.argmax(
-        #     # Restoring from torchscript drops the names of NamedTuples.
-        #     logits[of_name][1], -1)
-        restored_predictions = [torch.argmax(
-            # Restoring from torchscript drops the names of NamedTuples.
-            logits[of_name][1], -1) for logits in all_restored_logits]
+        # Restoring from torchscript drops the names of NamedTuples.
+        restored_predictions = torch.argmax(logits[of_name][1], -1)
 
         print(
             f'original_predictions_df[predictions_column_name]: {original_predictions_df[predictions_column_name]}')
