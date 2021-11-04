@@ -42,7 +42,8 @@ class SequenceReducer(LudwigModule):
 
     @property
     def input_shape(self):
-        return torch.Size([0])
+        # return torch.Size([0])
+        return self._reduce_obj.input_shape
 
 
 class ReduceLast(LudwigModule):
@@ -66,6 +67,7 @@ class ReduceSum(LudwigModule):
 
     @property
     def input_shape(self):
+        # Dummy implementation.
         return torch.Size([1])
 
 
@@ -95,6 +97,7 @@ class ReduceNone(LudwigModule):
 
     @property
     def input_shape(self):
+        # Dummy implementation.
         return torch.Size([1])
 
     def forward(self, inputs, mask=None):

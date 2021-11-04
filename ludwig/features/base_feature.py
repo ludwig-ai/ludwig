@@ -44,11 +44,6 @@ class OutputFeatureOutput(NamedTuple):
     # projection_input: torch.Tensor = torch.Tensor([0])
 
 
-# class GenericFeatureOutput(NamedTuple):
-#     last_hidden: torch.Tensor
-#     logits: torch.Tensor
-
-
 class BaseFeature:
     """Base class for all features.
 

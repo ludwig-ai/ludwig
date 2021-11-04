@@ -16,8 +16,6 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import NamedTuple
-from collections import namedtuple
 
 import torch
 

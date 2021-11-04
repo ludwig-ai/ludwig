@@ -98,8 +98,6 @@ class ECD(LudwigModule):
         return inputs, targets
 
     def save_torchscript(self, save_path):
-        # traced = torch.jit.trace(
-        #     self, self.get_model_inputs(training=False))
         # We set strict=False to enable dict inputs.
         model_inputs = self.get_model_inputs(training=False)
         print(f'model_inputs: {model_inputs}')
@@ -108,12 +106,14 @@ class ECD(LudwigModule):
         traced.save(save_path)
 
     def save_torchscript_script(self, save_path):
+        # Alternative way to produce torchscript. It appears to be even stricter than tracing.
         torchscript = torch.jit.script(
             ECD(self._input_features_df, self._combiner_def, self._output_features_df))
         torchscript.save(save_path)
 
     @property
     def input_shape(self):
+        # Dummy implementation. Seems to be necessary for tracing, maybe because it's a property?
         return torch.Size([1, 1])
 
     def forward(
