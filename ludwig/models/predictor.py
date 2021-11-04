@@ -134,6 +134,10 @@ class Predictor(BasePredictor):
         return from_numpy_dataset(predictions)
 
     def _predict(self, model, batch):
+        # inputs = [
+        #     (i_feat.feature_name, batch[i_feat.proc_column])
+        #     for i_feat in model.input_features.values()
+        # ]
         inputs = {
             i_feat.feature_name: batch[i_feat.proc_column]
             for i_feat in model.input_features.values()
@@ -195,6 +199,15 @@ class Predictor(BasePredictor):
                         batch[o_feat.proc_column])
                     for o_feat in model.output_features.values()
                 }
+                # inputs = [
+                #     (i_feat.feature_name, batch[i_feat.proc_column])
+                #     for i_feat in model.input_features.values()
+                # ]
+                # targets = [
+                #     (o_feat.feature_name, torch.from_numpy(
+                #         batch[o_feat.proc_column]))
+                #     for o_feat in model.output_features.values()
+                # ]
 
                 preds = model.evaluation_step(inputs, targets)
 

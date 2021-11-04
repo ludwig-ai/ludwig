@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import collections
 import os
 import shutil
 import tempfile
@@ -34,8 +35,62 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
+def test_torchscript_script(csv_filename):
+    input_features = [
+        # binary_feature(),   # RuntimeError: expected scalar type Float but found Bool
+        # numerical_feature(),
+        numerical_feature(),
+        category_feature(vocab_size=3),
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # vector_feature(),
+        # image_feature(image_dest_folder),
+        # audio_feature(audio_dest_folder),
+        # timeseries_feature(),
+        # date_feature(),
+        date_feature(),
+        # h3_feature(),
+        # set_feature(vocab_size=3),
+        # bag_feature(vocab_size=3),
+    ]
+    output_features = [
+        category_feature(vocab_size=3),
+        binary_feature(),
+        numerical_feature(),
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        set_feature(vocab_size=3),
+        vector_feature()
+    ]
+    backend = LocalTestBackend()
+    config = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'training': {'epochs': 2}
+    }
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ludwig_model = LudwigModel(config, backend=backend)
+        data_csv_path = os.path.join(tmpdir, csv_filename)
+        data_csv_path = generate_data(input_features, output_features,
+                                      data_csv_path)
+
+        ludwig_model.train(
+            dataset=data_csv_path,
+            skip_save_training_description=True,
+            skip_save_training_statistics=True,
+            skip_save_model=True,
+            skip_save_progress=True,
+            skip_save_log=True,
+            skip_save_processed_input=True,
+        )
+
+        torchscript_path = os.path.join(tmpdir, 'torchscript')
+        ludwig_model.model.save_torchscript_script(torchscript_path)
+
+
 @pytest.mark.distributed
-@pytest.mark.parametrize('should_load_model', [True, False])
+# @pytest.mark.parametrize('should_load_model', [True, False])
+@pytest.mark.parametrize('should_load_model', [True])
 def test_torchscript(csv_filename, should_load_model):
     #######
     # Setup
@@ -48,29 +103,41 @@ def test_torchscript(csv_filename, should_load_model):
 
         # Single sequence input, single category output
         input_features = [
-            # binary_feature(),   # RuntimeError: expected scalar type Float but found Bool
+            # combiners: Dimension out of range (expected to be in range of [-1, 0], but got 1)
+            # binary_feature(),
+
+            # combiners: Dimension out of range (expected to be in range of [-1, 0], but got 1)
             # numerical_feature(),
-            # category_feature(vocab_size=3),
-            # sequence_feature(vocab_size=3),
+
+            category_feature(vocab_size=3),
+            sequence_feature(vocab_size=3),
+
+            # reduction_modules: IndexError: amax(): Expected reduction dim 1 to have non-zero size.
             # text_feature(vocab_size=3),
-            # vector_feature(),
-            # image_feature(image_dest_folder),
+
+            vector_feature(),
+            image_feature(image_dest_folder),
+
+            # reduction_modules: IndexError: amax(): Expected reduction dim 1 to have non-zero size.
             # audio_feature(audio_dest_folder),
+
+            # reduction_modules: IndexError: amax(): Expected reduction dim 1 to have non-zero size.
             # timeseries_feature(),
             date_feature(),
-            # h3_feature(),
-            # set_feature(vocab_size=3),
-            # bag_feature(vocab_size=3),
+            date_feature(),
+            h3_feature(),
+            set_feature(vocab_size=3),
+            bag_feature(vocab_size=3),
         ]
 
         output_features = [
             category_feature(vocab_size=3),
-            # binary_feature(),
-            # numerical_feature(),
+            binary_feature(),
+            numerical_feature(),
             # sequence_feature(vocab_size=3),
             # text_feature(vocab_size=3),
-            # set_feature(vocab_size=3),
-            # vector_feature()
+            set_feature(vocab_size=3),
+            vector_feature()
         ]
 
         predictions_column_name = '{}_predictions'.format(
@@ -100,6 +167,8 @@ def test_torchscript(csv_filename, should_load_model):
             skip_save_processed_input=True,
         )
 
+        print('Finished modeling')
+
         ###################
         # save Ludwig model
         ###################
@@ -120,6 +189,9 @@ def test_torchscript(csv_filename, should_load_model):
             dataset=data_csv_path)
         original_weights = deepcopy(list(ludwig_model.model.parameters()))
 
+        print('Finished prediction')
+        print('Starting saving')
+
         #################
         # save torchscript
         #################
@@ -127,12 +199,16 @@ def test_torchscript(csv_filename, should_load_model):
         shutil.rmtree(torchscript_path, ignore_errors=True)
         ludwig_model.model.save_torchscript(torchscript_path)
 
+        print('Finished saving')
+
         ###################################################
         # load Ludwig model, obtain predictions and weights
         ###################################################
         ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
         loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
         loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
+
+        print('Loaded predictions')
 
         #################################################
         # restore torchscript, obtain predictions and weights
@@ -151,19 +227,42 @@ def test_torchscript(csv_filename, should_load_model):
 
         restored_model = torch.jit.load(torchscript_path)
 
+        print('Loaded torchscript')
+
         # Check the outputs for one of the features for correctness
         # Here we choose the first output feature (categorical)
         of_name = list(ludwig_model.model.output_features.keys())[0]
 
-        data_to_predict = {
-            name: torch.from_numpy(dataset.dataset[feature.proc_column])
-            for name, feature in ludwig_model.model.input_features.items()
-        }
-        logits = restored_model(data_to_predict)
+        # data_to_predict = {
+        #     # name: torch.from_numpy(dataset.dataset[feature.proc_column])
+        #     name: torch.from_numpy(dataset.dataset[feature.proc_column][:1])
+        #     for name, feature in ludwig_model.model.input_features.items()
+        # }
 
-        restored_predictions = torch.argmax(
+        # Prepare data as a list of size-1 dictionaries.
+        # get_model_inputs() returns random data with a batch size of 1.
+        # Since that's what we use to trace with, the resulting torchscript model code seems to be dependent on receiving that input shape.
+        data_to_predict = collections.defaultdict(dict)
+        for name, feature in ludwig_model.model.input_features.items():
+            for i, data in enumerate(dataset.dataset[feature.proc_column]):
+                data_to_predict[i][name] = torch.Tensor([data])
+
+        # Instead of predicting a large batch at once, we predict one example at a time.
+        # logits = restored_model(data_to_predict)
+        print(f'data_to_predict.values(): {data_to_predict.values()}')
+        all_restored_logits = []
+        for data in data_to_predict.values():
+            logits = restored_model(data)
+            all_restored_logits.append(logits)
+
+        print('Got torchscript predictions')
+
+        # restored_predictions = torch.argmax(
+        #     # Restoring from torchscript drops the names of NamedTuples.
+        #     logits[of_name][1], -1)
+        restored_predictions = [torch.argmax(
             # Restoring from torchscript drops the names of NamedTuples.
-            logits[of_name][1], -1)
+            logits[of_name][1], -1) for logits in all_restored_logits]
 
         print(
             f'original_predictions_df[predictions_column_name]: {original_predictions_df[predictions_column_name]}')

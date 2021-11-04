@@ -21,6 +21,10 @@ from ludwig.utils.torch_utils import LudwigModule, reg_loss
 logger = logging.getLogger(__name__)
 
 
+def get_value_in_tuple_list(tuple_list, key):
+    return next(value for name, value in tuple_list if name == key)
+
+
 class ECD(LudwigModule):
 
     def __init__(
@@ -77,6 +81,11 @@ class ECD(LudwigModule):
             for input_feature_name, input_feature in
             self.input_features.items()
         }
+        # inputs = [
+        #     (input_feature_name, input_feature.create_input())
+        #     for input_feature_name, input_feature in
+        #     self.input_features.items()
+        # ]
 
         if not training:
             return inputs
@@ -91,9 +100,17 @@ class ECD(LudwigModule):
     def save_torchscript(self, save_path):
         # traced = torch.jit.trace(
         #     self, self.get_model_inputs(training=False))
+        # We set strict=False to enable dict inputs.
+        model_inputs = self.get_model_inputs(training=False)
+        print(f'model_inputs: {model_inputs}')
         traced = torch.jit.trace(
             self, self.get_model_inputs(training=False), strict=False)
         traced.save(save_path)
+
+    def save_torchscript_script(self, save_path):
+        torchscript = torch.jit.script(
+            ECD(self._input_features_df, self._combiner_def, self._output_features_df))
+        torchscript.save(save_path)
 
     @property
     def input_shape(self):
@@ -125,24 +142,41 @@ class ECD(LudwigModule):
             inputs, targets = inputs
             # Convert targets to tensors.
             for target_feature_name, target_value in targets.items():
+                # for i, (target_feature_name, target_value) in enumerate(targets):
                 if not isinstance(target_value, torch.Tensor):
                     targets[target_feature_name] = torch.from_numpy(
                         target_value)
+                    # targets[i] = (target_feature_name, torch.from_numpy(
+                    #     target_value))
                 else:
                     targets[target_feature_name] = target_value
+                    # targets[i] = (target_feature_name, target_value)
         else:
             targets = None
+
         assert inputs.keys() == self.input_features.keys()
+        print(f'Received inputs: {inputs}')
+
+        # assert inputs.keys() == self.input_features.keys()
+        # received_input_names = [input_name for input_name, _ in inputs]
+        # print(f'received_input_names: {received_input_names}')
+        # print(f'self.input_features.keys(): {self.input_features.keys()}')
+        # assert received_input_names == list(self.input_features.keys())
 
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
+            # for i, (input_feature_name, input_values) in enumerate(inputs):
             if not isinstance(input_values, torch.Tensor):
                 inputs[input_feature_name] = torch.from_numpy(input_values)
+                # inputs[i] = (input_feature_name, torch.from_numpy(
+                #     input_values))
             else:
                 inputs[input_feature_name] = input_values
+                # inputs[i] = (input_feature_name, input_values)
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
+            # for input_feature_name, input_values in inputs:
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
@@ -159,6 +193,9 @@ class ECD(LudwigModule):
                 # targets are only used during training,
                 # during prediction they are omitted
                 decoder_inputs = (decoder_inputs, targets[output_feature_name])
+                # target_value = get_value_in_tuple_list(
+                #     targets, output_feature_name)
+                # decoder_inputs = (decoder_inputs, target_value)
 
             decoder_outputs = decoder(decoder_inputs, mask=mask)
             output_logits[output_feature_name] = decoder_outputs
@@ -226,6 +263,10 @@ class ECD(LudwigModule):
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
+            # target_value = get_value_in_tuple_list(
+            #     targets, of_name)
+            # of_train_loss = of_obj.train_loss(target_value,
+            #                                   predictions[of_name])
             of_train_loss = of_obj.train_loss(targets[of_name],
                                               predictions[of_name])
             train_loss += of_obj.loss['weight'] * of_train_loss
@@ -249,6 +290,10 @@ class ECD(LudwigModule):
         eval_loss = 0
         of_eval_losses = {}
         for of_name, of_obj in self.output_features.items():
+            # target = get_value_in_tuple_list(targets, of_name)
+            # of_eval_loss = of_obj.eval_loss(
+            #     target, predictions[of_name]
+            # )
             of_eval_loss = of_obj.eval_loss(
                 targets[of_name], predictions[of_name]
             )
@@ -260,6 +305,8 @@ class ECD(LudwigModule):
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
             of_obj.update_metrics(targets[of_name], predictions[of_name])
+            # target = get_value_in_tuple_list(targets, of_name)
+            # of_obj.update_metrics(target, predictions[of_name])
 
         self.eval_loss_metric.update(self.eval_loss(targets, predictions)[0])
 
@@ -343,10 +390,10 @@ def build_single_input(
     return input_feature_obj
 
 
-dynamic_length_encoders = {
-    'rnn',
-    'embed'
-}
+# dynamic_length_encoders = {
+#     'rnn',
+#     'embed'
+# }
 
 
 def build_outputs(

@@ -119,7 +119,6 @@ def generate_data(
         output_features,
         filename='test_csv.csv',
         num_examples=25,
-
 ):
     """
     Helper method to generate synthetic data based on input, output feature
@@ -132,7 +131,7 @@ def generate_data(
     """
     features = input_features + output_features
     df = build_synthetic_dataset(num_examples, features)
-    data = [next(df) for _ in range(num_examples)]
+    data = [next(df) for _ in range(num_examples + 1)]
 
     dataframe = pd.DataFrame(data[1:], columns=data[0])
     dataframe.to_csv(filename, index=False)

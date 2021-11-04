@@ -219,6 +219,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return torch.bool
 
     @property
+    def input_shape(self) -> torch.Size:
+        return self.decoder_obj.input_shape
+
+    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.num_classes])
 

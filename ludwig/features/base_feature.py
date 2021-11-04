@@ -215,8 +215,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
         prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
-        print(f'predictions: {predictions}')
-        print(f'prediction_key: {prediction_key}')
         return self.train_loss_function(getattr(predictions, prediction_key), targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):

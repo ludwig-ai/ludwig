@@ -569,9 +569,10 @@ class Trainer(BaseTrainer):
                 low = batch_size
                 prev_batch_size = batch_size
                 try:
-                    # re-initalize model...
+                    # re-initialize model...
                     model = LudwigModel.create_model(config, random_seed)
-                    self.train_for_tuning(model, training_set, batch_size, total_steps=3)
+                    self.train_for_tuning(
+                        model, training_set, batch_size, total_steps=3)
                     count += 1
                     if count >= max_trials:
                         break
@@ -878,6 +879,14 @@ class Trainer(BaseTrainer):
                         o_feat.feature_name: batch[o_feat.proc_column]
                         for o_feat in model.output_features.values()
                     }
+                    # inputs = [
+                    #     (i_feat.feature_name, batch[i_feat.proc_column])
+                    #     for i_feat in model.input_features.values()
+                    # ]
+                    # targets = [
+                    #     (o_feat.feature_name, batch[o_feat.proc_column])
+                    #     for o_feat in model.output_features.values()
+                    # ]
 
                     # Reintroduce for tensorboard graph
                     # if first_batch and self.is_coordinator() and not skip_save_log:
@@ -936,7 +945,8 @@ class Trainer(BaseTrainer):
                 tables[COMBINED] = [[COMBINED, LOSS]]
 
                 # eval metrics on train
-                self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
+                self.eval_batch_size = max(
+                    self.eval_batch_size, progress_tracker.batch_size)
                 self.evaluation(
                     model,
                     training_set,

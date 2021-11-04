@@ -203,6 +203,8 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
+        print(f'feature: {feature}')
+        print(f'self.encoder_obj: {self.encoder_obj}')
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -215,6 +217,9 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
+
+    def create_input(self):
+        return torch.randint(100, (2, *self.input_shape)).to(torch.float32)
 
     @property
     def input_shape(self) -> torch.Size:
