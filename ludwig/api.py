@@ -24,11 +24,14 @@
 import copy
 import logging
 import os
+import subprocess
+import sys
 import tempfile
+import traceback
+from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.data.dataset.partitioned import PartitionedDataset
 from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 
 import numpy as np
@@ -36,7 +39,8 @@ import pandas as pd
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO
+from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO, \
+    EVAL_BATCH_SIZE
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
@@ -47,7 +51,7 @@ from ludwig.features.feature_registries import \
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME,
-                            set_disable_progressbar)
+                            set_disable_progressbar, LUDWIG_VERSION)
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import (Predictor, calculate_overall_stats,
                                      print_evaluation_stats,
@@ -58,13 +62,14 @@ from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
                                      DICT_FORMATS,
                                      external_data_reader_registry,
                                      figure_data_format, generate_kfold_splits,
-                                     load_json, save_json, load_yaml)
+                                     load_json, save_json, load_yaml, load_dataset)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.misc_utils import (get_experiment_description,
-                                     get_file_names, get_from_registry,
-                                     get_output_directory)
+from ludwig.utils.fs_utils import path_exists
+from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
+
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -190,13 +195,14 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or self.config.get('backend'))
+        self.backend = initialize_backend(
+            backend or self.config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
-        # setup TensorFlow
-        self.backend.initialize_tensorflow(gpus=gpus,
-                                           gpu_memory_limit=gpu_memory_limit,
-                                           allow_parallel_threads=allow_parallel_threads)
+        # setup PyTorch env (GPU allocation, etc.)
+        self.backend.initialize_pytorch(gpus=gpus,
+                                        gpu_memory_limit=gpu_memory_limit,
+                                        allow_parallel_threads=allow_parallel_threads)
 
         # setup model
         self.model = None
@@ -251,9 +257,9 @@ class LudwigModel:
             source containing test data.
         :param training_set_metadata: (Union[str, dict], default: `None`)
             metadata JSON file or loaded metadata. Intermediate preprocessed
-        structure containing the mappings of the input
-            dataset created the first time an input file is used in the same
-            directory with the same name and a '.meta.json' extension.
+            structure containing the mappings of the input dataset created the
+            first time an input file is used in the same directory with the
+            same name and a '.meta.json' extension.
         :param data_format: (str, default: `None`) format to interpret data
             sources. Will be inferred automatically if not specified.  Valid
             formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
@@ -365,7 +371,8 @@ class LudwigModel:
                     def on_epoch_end(self, trainer, progress_tracker, save_path):
                         upload_fn()
 
-                train_callbacks = train_callbacks + [UploadOnEpochEndCallback()]
+                train_callbacks = train_callbacks + \
+                    [UploadOnEpochEndCallback()]
 
             description_fn = training_stats_fn = model_dir = None
             if self.backend.is_coordinator():
@@ -403,31 +410,40 @@ class LudwigModel:
                             key, pformat(value, indent=4)))
                     logger.info('\n')
 
-                preprocessed_data = self.preprocess(
-                    dataset=dataset,
-                    training_set=training_set,
-                    validation_set=validation_set,
-                    test_set=test_set,
-                    training_set_metadata=training_set_metadata,
-                    data_format=data_format,
-                    experiment_name=experiment_name,
-                    model_name=model_name,
-                    model_resume_path=model_resume_path,
-                    skip_save_training_description=skip_save_training_description,
-                    skip_save_training_statistics=skip_save_training_statistics,
-                    skip_save_model=skip_save_model,
-                    skip_save_progress=skip_save_progress,
-                    skip_save_log=skip_save_log,
-                    skip_save_processed_input=skip_save_processed_input,
-                    output_directory=output_directory,
-                    random_seed=random_seed,
-                    devbug=debug,
-                    **kwargs,
-                )
-                (training_set,
-                 validation_set,
-                 test_set,
-                 training_set_metadata) = preprocessed_data
+                for callback in self.callbacks:
+                    callback.on_preprocess_start(self.config)
+
+                try:
+                    preprocessed_data = self.preprocess(
+                        dataset=dataset,
+                        training_set=training_set,
+                        validation_set=validation_set,
+                        test_set=test_set,
+                        training_set_metadata=training_set_metadata,
+                        data_format=data_format,
+                        experiment_name=experiment_name,
+                        model_name=model_name,
+                        model_resume_path=model_resume_path,
+                        skip_save_training_description=skip_save_training_description,
+                        skip_save_training_statistics=skip_save_training_statistics,
+                        skip_save_model=skip_save_model,
+                        skip_save_progress=skip_save_progress,
+                        skip_save_log=skip_save_log,
+                        skip_save_processed_input=skip_save_processed_input,
+                        output_directory=output_directory,
+                        random_seed=random_seed,
+                        debug=debug,
+                        **kwargs,
+                    )
+                    (training_set,
+                     validation_set,
+                     test_set,
+                     training_set_metadata) = preprocessed_data
+                finally:
+                    for callback in self.callbacks:
+                        callback.on_preprocess_end(
+                            training_set, validation_set, test_set, training_set_metadata
+                        )
 
             self.training_set_metadata = training_set_metadata
 
@@ -475,6 +491,7 @@ class LudwigModel:
             # init trainer
             with self.backend.create_trainer(
                 **self.config[TRAINING],
+                model=self.model,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -491,24 +508,35 @@ class LudwigModel:
                     )
 
                 # auto tune batch size
-                if self.config[TRAINING][BATCH_SIZE] == AUTO:
+                if self.config[TRAINING][BATCH_SIZE] == AUTO or \
+                        self.config[TRAINING][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
                     tuned_batch_size = trainer.tune_batch_size(
                         self.config,
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING][BATCH_SIZE] = tuned_batch_size
+
+                    # TODO(travis): pass these in as args to trainer when we call train,
+                    #  to avoid setting state on possibly remote trainer
+                    if self.config[TRAINING][BATCH_SIZE] == AUTO:
+                        self.config[TRAINING][BATCH_SIZE] = tuned_batch_size
+                        trainer.batch_size = tuned_batch_size
+
+                    if self.config[TRAINING][EVAL_BATCH_SIZE] == AUTO:
+                        self.config[TRAINING][EVAL_BATCH_SIZE] = tuned_batch_size
+                        trainer.eval_batch_size = tuned_batch_size
 
                 # auto tune learning rate
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
-                    new_learning_rate = trainer.tune_learning_rate(
+                    tuned_learning_rate = trainer.tune_learning_rate(
                         self.config,
                         LudwigModel.create_model(self.config, random_seed),
                         training_set,
                         random_seed=random_seed
                     )
-                    self.config[TRAINING][LEARNING_RATE] = new_learning_rate
+                    self.config[TRAINING][LEARNING_RATE] = tuned_learning_rate
+                    trainer.learning_rate = tuned_learning_rate
 
                 # train model
                 if self.backend.is_coordinator():
@@ -534,7 +562,7 @@ class LudwigModel:
 
                     # save training statistics
                     if self.backend.is_coordinator():
-                        if not skip_save_training_statistics:
+                        if not skip_save_training_statistics and path_exists(os.path.dirname(training_stats_fn)):
                             save_json(training_stats_fn, train_stats)
 
                     # grab the results of the model with highest validation test performance
@@ -650,6 +678,7 @@ class LudwigModel:
         if not self._online_trainer:
             self._online_trainer = self.backend.create_trainer(
                 **self.config[TRAINING],
+                model=self.model,
                 random_seed=random_seed,
                 debug=debug
             )
@@ -718,7 +747,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug('Preprocessing')
-        dataset, training_set_metadata = preprocess_for_prediction(
+        dataset, _ = preprocess_for_prediction(
             self.config,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -871,9 +900,9 @@ class LudwigModel:
             # calculate the overall metrics
             if collect_overall_stats:
                 # TODO ray: support calculating stats on partitioned datasets
-                if isinstance(dataset, PartitionedDataset):
+                if self.backend.df_engine.partitioned:
                     raise ValueError(
-                        'Cannot calculate overall stats on a partitioned dataset at this time. '
+                        'Cannot calculate overall stats on a partitioned DataFrame at this time. '
                         'Set `calculate_overall_stats=False`.'
                     )
 
@@ -1123,25 +1152,33 @@ class LudwigModel:
                            f"Using validation set instead")
 
         if eval_set is not None:
-            if self.config[TRAINING]['eval_batch_size'] > 0:
+            if self.config[TRAINING]['eval_batch_size']:
                 batch_size = self.config[TRAINING]['eval_batch_size']
             else:
                 batch_size = self.config[TRAINING]['batch_size']
 
             # predict
-            eval_stats, _, _ = self.evaluate(
-                eval_set,
-                data_format=data_format,
-                batch_size=batch_size,
-                output_directory=output_directory,
-                skip_save_unprocessed_output=skip_save_unprocessed_output,
-                skip_save_predictions=skip_save_predictions,
-                skip_save_eval_stats=skip_save_eval_stats,
-                collect_predictions=not skip_collect_predictions,
-                collect_overall_stats=not skip_collect_overall_stats,
-                return_type='dict',
-                debug=debug
-            )
+            try:
+                eval_stats, _, _ = self.evaluate(
+                    eval_set,
+                    data_format=data_format,
+                    batch_size=batch_size,
+                    output_directory=output_directory,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output,
+                    skip_save_predictions=skip_save_predictions,
+                    skip_save_eval_stats=skip_save_eval_stats,
+                    collect_predictions=not skip_collect_predictions,
+                    collect_overall_stats=not skip_collect_overall_stats,
+                    return_type='dict',
+                    debug=debug
+                )
+            except NotImplementedError:
+                logger.warning(
+                    "Skipping evaluation as the necessary methods are not "
+                    "supported. Full exception below:\n"
+                    f"{traceback.format_exc()}"
+                )
+                eval_stats = None
         else:
             logger.warning(f"The evaluation set {eval_set} was not provided. "
                            f"Skipping evaluation")
@@ -1367,11 +1404,11 @@ class LudwigModel:
         ```
 
         """
-        # Initialize Horovod and TensorFlow before calling `broadcast()` to prevent initializing
+        # Initialize Horovod and PyTorch before calling `broadcast()` to prevent initializing
         # TensorFlow with default parameters
         backend_param = backend
         backend = initialize_backend(backend)
-        backend.initialize_tensorflow(
+        backend.initialize_pytorch(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads
@@ -1443,7 +1480,7 @@ class LudwigModel:
                 model_dir,
                 MODEL_WEIGHTS_FILE_NAME
             )
-            self.model.load_weights(weights_save_path)
+            self.model.load_state_dict(torch.load(weights_save_path))
 
         self.backend.sync_model(self.model)
 
@@ -1478,7 +1515,7 @@ class LudwigModel:
 
         # save model weights
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        self.model.save_weights(model_weights_path)
+        torch.save(self.model.state_dict(), model_weights_path)
 
         # save training set metadata
         training_set_metadata_path = os.path.join(
@@ -1717,30 +1754,18 @@ def kfold_cross_validate(
     if not data_format or data_format == 'auto':
         data_format = figure_data_format(dataset)
 
-    # use appropriate reader to create dataframe
-    if data_format in DATAFRAME_FORMATS:
-        data_df = dataset
-        data_dir = os.getcwd()
-    elif data_format in DICT_FORMATS:
-        data_df = pd.DataFrame(dataset)
-        data_dir = os.getcwd()
-    elif data_format in CACHEABLE_FORMATS:
-        data_reader = get_from_registry(data_format,
-                                        external_data_reader_registry)
-        data_df = data_reader(dataset, backend.df_engine.df_lib)
-        data_dir = os.path.dirname(dataset)
-    else:
-        ValueError(
-            "{} format is not supported for k_fold_cross_validate()"
-            .format(data_format)
-        )
+    data_df = load_dataset(
+        dataset,
+        data_format=data_format,
+        df_lib=backend.df_engine.df_lib
+    )
 
     kfold_cv_stats = {}
     kfold_split_indices = {}
 
     for train_indices, test_indices, fold_num in \
             generate_kfold_splits(data_df, num_folds, random_seed):
-        with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
+        with tempfile.TemporaryDirectory() as temp_dir_name:
             curr_train_df = data_df.iloc[train_indices]
             curr_test_df = data_df.iloc[test_indices]
 
@@ -1832,3 +1857,60 @@ def kfold_cross_validate(
     logger.info('completed {:d}-fold cross validation'.format(num_folds))
 
     return kfold_cv_stats, kfold_split_indices
+
+
+def get_experiment_description(
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        random_seed=None
+):
+    description = OrderedDict()
+    description['ludwig_version'] = LUDWIG_VERSION
+    description['command'] = ' '.join(sys.argv)
+
+    try:
+        with open(os.devnull, 'w') as devnull:
+            is_a_git_repo = subprocess.call(['git', 'branch'],
+                                            stderr=subprocess.STDOUT,
+                                            stdout=devnull) == 0
+        if is_a_git_repo:
+            description['commit_hash'] = \
+                subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
+                    'utf-8')[:12]
+    except:
+        pass
+
+    if random_seed is not None:
+        description['random_seed'] = random_seed
+
+    if isinstance(dataset, str):
+        description['dataset'] = dataset
+    if isinstance(training_set, str):
+        description['training_set'] = training_set
+    if isinstance(validation_set, str):
+        description['validation_set'] = validation_set
+    if isinstance(test_set, str):
+        description['test_set'] = test_set
+    if training_set_metadata is not None:
+        description['training_set_metadata'] = training_set_metadata
+
+    # determine data format if not provided or auto
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(
+            dataset, training_set, validation_set, test_set
+        )
+
+    if data_format:
+        description['data_format'] = str(data_format)
+
+    description['config'] = config
+
+    import torch
+    description['torch_version'] = torch.__version__
+
+    return description

@@ -1,6 +1,10 @@
 import os
+
 from contextlib import contextmanager
 from zipfile import ZipFile
+
+
+from ludwig.utils.fs_utils import upload_output_directory
 
 
 def create_kaggle_client():
@@ -33,19 +37,18 @@ class KaggleDownloadMixin:
             # Call authenticate explicitly to pick up new credentials if necessary
             api = create_kaggle_client()
             api.authenticate()
-        os.makedirs(self.raw_temp_path, exist_ok=True)
 
-        if self.is_kaggle_competition:
-            download_func = api.competition_download_files
-        else:
-            download_func = api.dataset_download_files
-        # Download all files for a competition/dataset
-        download_func(self.competition_name, path=self.raw_temp_path)
+        with upload_output_directory(self.raw_dataset_path) as (tmpdir, _):
+            if self.is_kaggle_competition:
+                download_func = api.competition_download_files
+            else:
+                download_func = api.dataset_download_files
+            # Download all files for a competition/dataset
+            download_func(self.competition_name, path=tmpdir)
 
-        archive_zip = os.path.join(self.raw_temp_path, self.archive_filename)
-        with ZipFile(archive_zip, 'r') as z:
-            z.extractall(self.raw_temp_path)
-        os.rename(self.raw_temp_path, self.raw_dataset_path)
+            archive_zip = os.path.join(tmpdir, self.archive_filename)
+            with ZipFile(archive_zip, 'r') as z:
+                z.extractall(tmpdir)
 
     @contextmanager
     def update_env(self, **kwargs):

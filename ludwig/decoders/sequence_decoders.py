@@ -16,15 +16,13 @@
 from abc import ABC
 import logging
 
-import tensorflow as tf
-import tensorflow_addons as tfa
-from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
-    StackedRNNCells
-from tensorflow.keras.layers import Dense, Embedding
-from tensorflow.keras.layers import average
-from tensorflow_addons.seq2seq import AttentionWrapper
-from tensorflow_addons.seq2seq import BahdanauAttention
-from tensorflow_addons.seq2seq import LuongAttention
+# from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell, \
+#     StackedRNNCells
+# from tensorflow.keras.layers import Dense, Embedding
+# from tensorflow.keras.layers import average
+# from tensorflow_addons.seq2seq import AttentionWrapper
+# from tensorflow_addons.seq2seq import BahdanauAttention
+# from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
 from ludwig.decoders.base import Decoder
@@ -33,14 +31,14 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.recurrent_modules import BasicDecoder
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.registry import Registry, register
-from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
+from ludwig.utils.torch_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
-    'rnn': SimpleRNNCell,
-    'gru': GRUCell,
-    'lstm': LSTMCell
+    # 'rnn': SimpleRNNCell,
+    # 'gru': GRUCell,
+    # 'lstm': LSTMCell
 }
 
 PAD_TOKEN = 0
@@ -71,11 +69,8 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             is_timeseries=False,
             max_sequence_length=0,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             reduce_input='sum',
             **kwargs
     ):
@@ -107,58 +102,51 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         self.GO_SYMBOL = self.vocab_size
         self.END_SYMBOL = 0
 
-        logger.debug('  project input Dense')
-        self.project = Dense(
-            state_size,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
-        )
+        # todo: convert following code to torch
+        # logger.debug('  project input Dense')
+        # self.project = Dense(
+        #     state_size,
+        #     use_bias=use_bias,
+        #     kernel_initializer=weights_initializer,
+        #     bias_initializer=bias_initializer
+        # )
+        #
+        # logger.debug('  Embedding')
+        # self.decoder_embedding = Embedding(
+        #     input_dim=self.num_classes + 1,  # account for GO_SYMBOL
+        #     output_dim=embedding_size,
+        #     embeddings_initializer=weights_initializer,
+        # )
+        # logger.debug('  project output Dense')
+        # self.dense_layer = Dense(
+        #     num_classes,
+        #     use_bias=use_bias,
+        #     kernel_initializer=weights_initializer,
+        #     bias_initializer=bias_initializer,
+        # )
+        # rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
+        # rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
+        # self.decoder_rnncell = StackedRNNCells(rnn_cells)
+        # logger.debug('  {}'.format(self.decoder_rnncell))
+        #
+        # # Sampler
+        # self.sampler = tfa.seq2seq.sampler.TrainingSampler()
+        #
+        # logger.debug('setting up attention for', attention)
+        # if attention is not None:
+        #     if attention == 'luong':
+        #         self.attention_mechanism = LuongAttention(units=state_size)
+        #     elif attention == 'bahdanau':
+        #         self.attention_mechanism = BahdanauAttention(units=state_size)
+        #     logger.debug('  {}'.format(self.attention_mechanism))
+        #     self.decoder_rnncell = AttentionWrapper(
+        #         self.decoder_rnncell,
+        #         [self.attention_mechanism] * num_layers,
+        #         attention_layer_size=[state_size] * num_layers
+        #     )
+        #     logger.debug('  {}'.format(self.decoder_rnncell))
 
-        logger.debug('  Embedding')
-        self.decoder_embedding = Embedding(
-            input_dim=self.num_classes + 1,  # account for GO_SYMBOL
-            output_dim=embedding_size,
-            embeddings_initializer=weights_initializer,
-            embeddings_regularizer=weights_regularizer,
-            activity_regularizer=activity_regularizer
-        )
-        logger.debug('  project output Dense')
-        self.dense_layer = Dense(
-            num_classes,
-            use_bias=use_bias,
-            kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
-        )
-        rnn_cell = get_from_registry(cell_type, rnn_layers_registry)
-        rnn_cells = [rnn_cell(state_size) for _ in range(num_layers)]
-        self.decoder_rnncell = StackedRNNCells(rnn_cells)
-        logger.debug('  {}'.format(self.decoder_rnncell))
-
-        # Sampler
-        self.sampler = tfa.seq2seq.sampler.TrainingSampler()
-
-        logger.debug('setting up attention for', attention)
-        if attention is not None:
-            if attention == 'luong':
-                self.attention_mechanism = LuongAttention(units=state_size)
-            elif attention == 'bahdanau':
-                self.attention_mechanism = BahdanauAttention(units=state_size)
-            logger.debug('  {}'.format(self.attention_mechanism))
-            self.decoder_rnncell = AttentionWrapper(
-                self.decoder_rnncell,
-                [self.attention_mechanism] * num_layers,
-                attention_layer_size=[state_size] * num_layers
-            )
-            logger.debug('  {}'.format(self.decoder_rnncell))
-
-    def _logits_training(self, inputs, target, training=None):
+    def _logits_training(self, inputs, target):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
         encoder_end_state = self.prepare_encoder_output_state(inputs)
 
@@ -475,7 +463,6 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             name='last_predictions_{}'.format(self.name)
         )
 
-
         # EXPECTED SIZE OF RETURNED TENSORS
         # lengths: shape[batch_size]
         # predictions: shape [batch_size, seq_size]
@@ -582,7 +569,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         # shape [batch_size, seq_size, state_size]
         encoder_output = inputs['hidden']
         # form dependent on cell_type
@@ -594,13 +581,11 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             decoder_outputs = self.decoder_beam_search(
                 encoder_output,
                 encoder_end_state=encoder_output_state,
-                training=training
             )
         else:
             decoder_outputs = self.decoder_greedy(
                 encoder_output,
                 encoder_end_state=encoder_output_state,
-                training=training
             )
 
         logits, lengths, preds, last_preds, probs = decoder_outputs
@@ -612,7 +597,7 @@ class SequenceGeneratorDecoder(SequenceDecoder):
             inputs,  # encoder_output, encoder_output_state
             training=None
     ):
-        decoder_outputs = self.call(inputs, training=training)
+        decoder_outputs = self.call(inputs)
         logits, lengths, preds, last_preds, probs = decoder_outputs
 
         return {
@@ -730,11 +715,8 @@ class SequenceTaggerDecoder(SequenceDecoder):
             self,
             num_classes,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
             attention=False,
             attention_embedding_size=256,
             attention_num_heads=8,
@@ -760,10 +742,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
             units=num_classes,
             use_bias=use_bias,
             kernel_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            kernel_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer
+            bias_initializer=bias_initializer
         )
 
     def call(
@@ -784,7 +763,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
                     len(hidden.shape)))
 
         if self.attention:
-            hidden = self.self_attention(hidden, training=training, mask=mask)
+            hidden = self.self_attention(hidden, mask=mask)
 
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)
@@ -799,19 +778,18 @@ class SequenceTaggerDecoder(SequenceDecoder):
     def _logits_training(
             self,
             inputs,
-            training=None,
             mask=None,
             *args,
             **kwarg
     ):
-        return self.call(inputs, training=training, mask=mask)
+        return self.call(inputs, mask=mask)
 
     def _predictions_eval(
             self,
             inputs,  # encoder_output, encoder_output_state, lengths
             training=None
     ):
-        outputs = self.call(inputs, training=training)
+        outputs = self.call(inputs)
         logits = outputs[LOGITS]
         input_sequence_lengths = inputs[
             LENGTHS]  # retrieve input sequence length
@@ -837,7 +815,7 @@ class SequenceTaggerDecoder(SequenceDecoder):
                      input_sequence_lengths - 1,
                      # modified to use input sequence length
                      0
-                 )],
+                )],
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)

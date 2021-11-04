@@ -3841,10 +3841,12 @@ def confusion_matrix(
         test_stats_per_model_list
     )
 
+    confusion_matrix_found = False
     for i, test_statistics in enumerate(
             test_stats_per_model_list):
         for output_feature_name in output_feature_names:
             if 'confusion_matrix' in test_statistics[output_feature_name]:
+                confusion_matrix_found = True
                 _confusion_matrix = np.array(
                     test_statistics[output_feature_name]['confusion_matrix']
                 )
@@ -3913,6 +3915,10 @@ def confusion_matrix(
                               'Confusion Matrix row',
                         filename=filename
                     )
+    if not confusion_matrix_found:
+        logger.error("Cannot find confusion_matrix in evaluation data")
+        raise FileNotFoundError("Cannot find confusion_matrix in evaluation "
+                                "data")
 
 
 def frequency_vs_f1(

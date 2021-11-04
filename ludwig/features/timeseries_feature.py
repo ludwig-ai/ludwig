@@ -17,7 +17,7 @@
 import logging
 
 import numpy as np
-import tensorflow as tf
+import torch
 
 from ludwig.constants import *
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
@@ -154,27 +154,30 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
+        # add required sequence encoder parameters for time series
+        feature['embedding_size'] = 1
+        feature['should_embed'] = False
+
+        # initialize encoder for time series
         super().__init__(feature, encoder_obj=encoder_obj)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float16 or inputs.dtype == tf.float32 or \
-               inputs.dtype == tf.float64
+    def forward(self, inputs, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.float16, torch.float32, torch.float64]
         assert len(inputs.shape) == 2
 
-        inputs_exp = tf.cast(inputs, dtype=tf.float32)
-        encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
+        inputs_exp = inputs.type(torch.float32)
+        encoder_output = self.encoder_obj(inputs_exp, mask=mask)
 
         return encoder_output
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.float32
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
 
-    def get_input_shape(self):
-        return self.max_sequence_length,
+    @property
+    def input_dtype(self):
+        return torch.float32
 
     @staticmethod
     def update_config_with_metadata(
@@ -185,8 +188,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     ):
         input_feature['max_sequence_length'] = feature_metadata[
             'max_timeseries_length']
-        input_feature['embedding_size'] = 1
-        input_feature['should_embed'] = False
 
     @staticmethod
     def populate_defaults(input_feature):
@@ -277,7 +278,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             self,
 #             hidden,
 #             hidden_size,
-#             regularizer=None,
 #             dropout=None,
 #             is_training=None,
 #             **kwargs
@@ -306,7 +306,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             self.decoder_obj,
 #             hidden,
 #             hidden_size,
-#             regularizer=regularizer,
 #             is_timeseries=True
 #         )
 #

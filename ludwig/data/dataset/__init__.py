@@ -15,17 +15,23 @@
 # limitations under the License.
 # ==============================================================================
 
-from ludwig.data.dataset.pandas import PandasDatasetManager
-from ludwig.data.dataset.parquet import ParquetDatasetManager
-from ludwig.data.dataset.tfrecord import TFRecordDatasetManager
+
+def get_pandas_dataset_manager(**kwargs):
+    from ludwig.data.dataset.pandas import PandasDatasetManager
+    return PandasDatasetManager(**kwargs)
+
+
+def get_ray_dataset_manager(**kwargs):
+    from ludwig.data.dataset.ray import RayDatasetManager
+    return RayDatasetManager(**kwargs)
+
 
 dataset_registry = {
-    'parquet': ParquetDatasetManager,
-    'hdf5': PandasDatasetManager,
-    'tfrecord': TFRecordDatasetManager,
-    None: PandasDatasetManager,
+    'hdf5': get_pandas_dataset_manager,
+    'ray': get_ray_dataset_manager,
+    None: get_pandas_dataset_manager,
 }
 
 
 def create_dataset_manager(backend, cache_format, **kwargs):
-    return dataset_registry.get(cache_format)(backend)
+    return dataset_registry[cache_format](backend=backend, **kwargs)

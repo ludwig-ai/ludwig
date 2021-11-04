@@ -51,5 +51,6 @@ class IterableBatcher(Batcher):
                 self.ignore_last and
                 self.step + 1 >= self.steps_per_epoch)
 
-    def set_epoch(self, epoch):
+    def set_epoch(self, epoch, batch_size):
+        # TODO ray: implement dynamic batch size
         self.step = 0

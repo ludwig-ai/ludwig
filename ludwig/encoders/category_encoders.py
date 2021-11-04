@@ -16,6 +16,9 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from typing import Dict, List, Optional, Union
+
+import torch
 
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.generic_encoders import PassthroughEncoder
@@ -41,14 +44,13 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
 
     def __init__(
             self,
-            vocab,
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
-            dropout=0.0,
-            embedding_initializer=None,
-            embedding_regularizer=None,
+            vocab: List[str],
+            embedding_size: int = 50,
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            embeddings_on_cpu: bool = False,
+            dropout: float = 0.0,
+            embedding_initializer: Optional[Union[str, Dict]] = None,
             **kwargs
     ):
         super().__init__()
@@ -64,36 +66,39 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=embedding_initializer,
-            embedding_regularizer=embedding_regularizer
         )
         self.embedding_size = self.embed.embedding_size
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
             :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
+                   Shape: [batch x 1], type torch.int32
 
-            :param return: embeddings of shape [batch x embed size], type tf.float32
+            :param return: embeddings of shape [batch x embed size], type torch.float32
         """
-        embedded = self.embed(
-            inputs, training=training, mask=mask
-        )
+        embedded = self.embed(inputs)
         return embedded
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
 @register(name='sparse')
 class CategoricalSparseEncoder(CategoricalEncoder):
 
     def __init__(
             self,
-            vocab,
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
-            dropout=0.0,
-            embedding_initializer=None,
-            embedding_regularizer=None,
+            vocab: List[str],
+            embedding_size: int = 50,
+            embeddings_trainable: bool = True,
+            pretrained_embeddings: Optional[str] = None,
+            embeddings_on_cpu: bool = False,
+            dropout: float = 0.0,
+            embedding_initializer: Optional[Union[str, Dict]] = None,
             **kwargs
     ):
         super().__init__()
@@ -109,18 +114,23 @@ class CategoricalSparseEncoder(CategoricalEncoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=embedding_initializer,
-            embedding_regularizer=embedding_regularizer
         )
         self.embedding_size = self.embed.embedding_size
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
             :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
+                   Shape: [batch x 1], type torch.int32
 
-            :param return: embeddings of shape [batch x embed size], type tf.float32
+            :param return: embeddings of shape [batch x embed size], type torch.float32
         """
-        embedded = self.embed(
-            inputs, training=training, mask=mask
-        )
+        embedded = self.embed(inputs)
         return embedded
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.embedding_size])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])

@@ -21,6 +21,7 @@ import sys
 from typing import List, Union
 
 import numpy as np
+import torchinfo
 
 from ludwig.api import LudwigModel
 from ludwig.backend import ALL_BACKENDS,  Backend
@@ -44,7 +45,7 @@ def collect_activations(
         batch_size: int = 128,
         output_directory: str = 'results',
         gpus: List[str] = None,
-        gpu_memory_limit: int =None,
+        gpu_memory_limit: int = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
         backend: Union[Backend, str] = None,
@@ -179,7 +180,7 @@ def save_tensors(collected_tensors, output_directory):
             output_directory,
             make_safe_filename(tensor_name) + '.npy'
         )
-        np.save(np_filename, tensor_value.numpy())
+        np.save(np_filename, tensor_value.detach().numpy())
         filenames.append(np_filename)
     return filenames
 
@@ -198,18 +199,16 @@ def print_model_summary(
     :return: (`None`)
     """
     model = LudwigModel.load(model_path)
-    collected_tensors = model.collect_weights()
-    names = [name for name, w in collected_tensors]
+    # Model's dict inputs are wrapped in a list, required by torchinfo.
+    torchinfo.summary(
+        model.model, input_data=[model.model.get_model_inputs(training=False)])
 
-    keras_model = model.model.get_connected_model(training=False)
-    keras_model.summary()
+    print('\nModules:\n')
+    for name, _ in model.model.named_children():
+        print(name)
 
-    print('\nLayers:\n')
-    for layer in keras_model.layers:
-        print(layer.name)
-
-    print('\nWeights:\n')
-    for name in names:
+    print('\nParameters:\n')
+    for name, _ in model.model.named_parameters():
         print(name)
 
 
@@ -280,8 +279,6 @@ def cli_collect_activations(sys_argv):
         nargs='+',
         required=True
     )
-
-
 
     # -------------------------
     # Output results parameters

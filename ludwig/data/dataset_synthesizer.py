@@ -266,7 +266,7 @@ def generate_audio(feature):
     sampling_rate = 16000
     num_samples = int(audio_length * sampling_rate)
     audio = np.sin(np.arange(num_samples) / 100 * 2 * np.pi) * 2 * (
-            np.random.random(num_samples) - 0.5)
+        np.random.random(num_samples) - 0.5)
     audio_filename = uuid.uuid4().hex[:10].upper() + '.wav'
 
     try:
@@ -390,7 +390,7 @@ generators_registry = {
     SET: generate_set,
     BAG: generate_bag,
     SEQUENCE: generate_sequence,
-    TEXT: generate_sequence,
+    TEXT: generate_text,
     TIMESERIES: generate_timeseries,
     IMAGE: generate_image,
     AUDIO: generate_audio,
@@ -548,7 +548,6 @@ def cli(sys_argv):
     # )
     # global logger
     # logger = logging.getLogger('ludwig.data.dataset_synthesizer')
-
 
     print_ludwig('Synthesize Dataset', LUDWIG_VERSION)
 

@@ -17,14 +17,13 @@
 
 from abc import ABC, abstractmethod
 
-from tensorflow.keras.layers import Layer
-
 from ludwig.utils.registry import DEFAULT_KEYS
+from ludwig.utils.torch_utils import LudwigModule
 
 
-class Decoder(Layer, ABC):
+class Decoder(LudwigModule, ABC):
     @abstractmethod
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
 
     @classmethod
@@ -36,3 +35,7 @@ class Decoder(Layer, ABC):
     def register_default(cls):
         for key in DEFAULT_KEYS:
             cls.register(name=key)
+
+    @property
+    def name(self):
+        return self.__class__.__name__

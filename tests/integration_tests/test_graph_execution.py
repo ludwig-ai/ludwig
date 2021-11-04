@@ -16,8 +16,6 @@
 import contextlib
 
 import pytest
-import tensorflow as tf
-import tensorflow_addons as tfa
 
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -40,6 +38,7 @@ def graph_mode():
         tf.config.experimental_run_functions_eagerly(prev_mode)
 
 
+@pytest.mark.skip(reason="Issue #1333: Sequence output features.")
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     'output_features',
@@ -88,6 +87,7 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
         run_experiment(input_features, output_features, dataset=rel_path)
 
 
+@pytest.mark.skip(reason="Issue #1333: Sequence output features.")
 @pytest.mark.distributed
 @pytest.mark.parametrize('dec_beam_width', [3])
 @pytest.mark.parametrize('dec_attention', ['bahdanau'])

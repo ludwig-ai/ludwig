@@ -16,9 +16,10 @@
 # ==============================================================================
 import logging
 from abc import ABC
+from functools import lru_cache
 
-import tensorflow as tf
-from tensorflow.keras.layers import Dense
+import torch
+from torch import nn
 
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry, register, register_default
@@ -53,7 +54,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
     ):
         """
             :param reduce_output: defines how to reduce the output tensor along
-                   the `s` sequence length dimention if the rank of the tensor
+                   the `s` sequence length dimension if the rank of the tensor
                    is greater than 2. Available values are: `sum`,
                    `mean` or `avg`, `max`, `concat` (concatenates along
                    the first dimension), `last` (returns the last vector of the
@@ -69,7 +70,7 @@ class SequencePassthroughEncoder(SequenceEncoder):
         if self.reduce_output is None:
             self.supports_masking = True
 
-    def call(
+    def forward(
             self,
             input_sequence,
             training=True,
@@ -77,17 +78,15 @@ class SequencePassthroughEncoder(SequenceEncoder):
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param is_training: Tensor (torch.bool) specifying if training
                    (important for dropout)
             :type is_training: Tensor
         """
-        input_sequence = tf.cast(input_sequence, tf.float32)
+        input_sequence = input_sequence.type(torch.float32)
         while len(input_sequence.shape) < 3:
-            input_sequence = tf.expand_dims(
-                input_sequence, -1
-            )
+            input_sequence = input_sequence.unsqueeze(-1)
         hidden = self.reduce_sequence(input_sequence)
 
         return {'encoder_output': hidden}
@@ -99,17 +98,18 @@ class SequenceEmbedEncoder(SequenceEncoder):
     def __init__(
             self,
             vocab,
+            max_sequence_length,
             representation='dense',
             embedding_size=256,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
             weights_initializer=None,
-            weights_regularizer=None,
             dropout=0,
             reduce_output='sum',
             **kwargs
     ):
+        # todo: fixup docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -117,12 +117,12 @@ class SequenceEmbedEncoder(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -145,7 +145,7 @@ class SequenceEmbedEncoder(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -156,78 +156,88 @@ class SequenceEmbedEncoder(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param weights_initializer: the initializer to use. If `None`, the default
-                   initialized of each variable is used (`glorot_uniform`
+                   initialized of each variable is used (`xavier_uniform`
                    in most cases). Options are: `constant`, `identity`, `zeros`,
                     `ones`, `orthogonal`, `normal`, `uniform`,
-                    `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                    `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                    `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                    `xavier_uniform`, `xavier_normal`,
                     `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                     Alternatively it is possible to specify a dictionary with
-                    a key `type` that identifies the type of initialzier and
+                    a key `type` that identifies the type of initializer and
                     other keys for its parameters, e.g.
                     `{type: normal, mean: 0, stddev: 0}`.
                     To know the parameters of each initializer, please refer to
                     TensorFlow's documentation.
             :type weights_initializer: str
-            :param regularize: if `True` the embedding wieghts are added to
-                   the set of weights that get reularized by a regularization
-                   loss (if the `regularization_lambda` in `training`
-                   is greater than 0).
-            :type regularize: Boolean
             :param reduce_output: defines how to reduce the output tensor along
-                   the `s` sequence length dimention if the rank of the tensor
+                   the `s` sequence length dimension if the rank of the tensor
                    is greater than 2. Available values are: `sum`,
                    `mean` or `avg`, `max`, `concat` (concatenates along
                    the first dimension), `last` (returns the last vector of the
                    first dimension) and `None` or `null` (which does not reduce
                    and returns the full tensor).
             :type reduce_output: str
-            :param weights_regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type weights_regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
 
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
+        self.embedding_size = embedding_size
+        self.max_sequence_length = max_sequence_length
 
         self.reduce_output = reduce_output
         if self.reduce_output is None:
             self.supports_masking = True
 
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-
         logger.debug('  EmbedSequence')
         self.embed_sequence = EmbedSequence(
             vocab,
             embedding_size,
+            max_sequence_length=self.max_sequence_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-            embedding_regularizer=weights_regularizer
         )
 
-    def call(self, inputs, training=None, mask=None):
+        reduction_kwargs = {}
+        if reduce_output == 'attention':
+            reduction_kwargs = {
+                'input_size': self.embed_sequence.output_shape[-1]
+            }
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output, **reduction_kwargs)
+
+    def forward(self, inputs: torch.Tensor, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type inputs: Tensor
             :param training: specifying if in training mode
                    (important for dropout)
             :type training: Boolean
         """
         # ================ Embeddings ================
-        embedded_sequence = self.embed_sequence(
-            inputs, training=training, mask=mask
-        )
-
+        embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
-
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    # TODO(shreya): Add general module for getting output shapes post reduction.
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output in ['none', 'None', None]:
+            self.embed_sequence.output_shape
+        elif self.reduce_output == 'concat':
+            embed_shape = self.embed_sequence.output_shape
+            return torch.Size([embed_shape[-1] * embed_shape[-2]])
+        return torch.Size([self.embed_sequence.output_shape[-1]])
 
 
 @register(name='parallel_cnn')
@@ -239,6 +249,7 @@ class ParallelCNN(SequenceEncoder):
             vocab=None,
             representation='dense',
             embedding_size=256,
+            max_sequence_length=None,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
@@ -252,19 +263,15 @@ class ParallelCNN(SequenceEncoder):
             num_fc_layers=None,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
             dropout=0,
             reduce_output='max',
             **kwargs):
+        # todo: revise docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -272,12 +279,12 @@ class ParallelCNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -300,7 +307,7 @@ class ParallelCNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -313,7 +320,7 @@ class ParallelCNN(SequenceEncoder):
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
                    for each layer are: `filter_size`, `num_filters`, `pool`,
-                   `norm`, `activation` and `regularize`. If any of those values
+                   `norm`, and `activation`. If any of those values
                    is missing from the dictionary, the default one specified
                    as a parameter of the encoder will be used instead. If both
                    `conv_layers` and `num_conv_layers` are `None`, a default
@@ -346,8 +353,8 @@ class ParallelCNN(SequenceEncoder):
                    of the list determines the number of stacked fully connected
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
-                   for each layer are: `fc_size`, `norm`, `activation` and
-                   `regularize`. If any of those values is missing from
+                   for each layer are: `fc_size`, `norm` and `activation`.
+                   If any of those values is missing from
                    the dictionary, the default one specified as a parameter of
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
@@ -374,27 +381,21 @@ class ParallelCNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -403,6 +404,8 @@ class ParallelCNN(SequenceEncoder):
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
+
+        self.max_sequence_length = max_sequence_length
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -453,28 +456,26 @@ class ParallelCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  ParallelConv1D')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.parallel_conv1d = ParallelConv1D(
+            in_channels=in_channels,
+            max_sequence_length=self.max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -487,40 +488,34 @@ class ParallelCNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.parallel_conv1d.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int
+                   Shape: [batch x sequence length], type torch.int
             :type inputs: Tensor
             :param training: bool specifying if in training mode (important for dropout)
             :type training: bool
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -528,7 +523,6 @@ class ParallelCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -539,11 +533,20 @@ class ParallelCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
         return {'encoder_output': hidden}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        return self.parallel_conv1d.output_shape
 
 
 @register(name='stacked_cnn')
@@ -555,6 +558,7 @@ class StackedCNN(SequenceEncoder):
             vocab=None,
             representation='dense',
             embedding_size=256,
+            max_sequence_length=None,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
@@ -563,23 +567,20 @@ class StackedCNN(SequenceEncoder):
             num_filters=256,
             filter_size=5,
             strides=1,
+            # todo: assess how to specify padding for equivalent to 'same'
             padding='same',
             dilation_rate=1,
             pool_function='max',
             pool_size=None,
             pool_strides=None,
+            # todo: determine how to pool_padding equivalent of 'same'
             pool_padding='same',
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -587,6 +588,7 @@ class StackedCNN(SequenceEncoder):
             reduce_output='max',
             **kwargs
     ):
+        # todo: fixup docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -594,12 +596,12 @@ class StackedCNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -622,7 +624,7 @@ class StackedCNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -635,7 +637,7 @@ class StackedCNN(SequenceEncoder):
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
                    for each layer are: `filter_size`, `num_filters`, `pool`,
-                   `norm`, `activation` and `regularize`. If any of those values
+                   `norm` and `activation`. If any of those values
                    is missing from the dictionary, the default one specified
                    as a parameter of the encoder will be used instead. If both
                    `conv_layers` and `num_conv_layers` are `None`, a default
@@ -668,8 +670,8 @@ class StackedCNN(SequenceEncoder):
                    of the list determines the number of stacked fully connected
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
-                   for each layer are: `fc_size`, `norm`, `activation` and
-                   `regularize`. If any of those values is missing from
+                   for each layer are: `fc_size`, `norm` and `activation`.
+                   If any of those values is missing from
                    the dictionary, the default one specified as a parameter of
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
@@ -696,27 +698,21 @@ class StackedCNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -740,32 +736,26 @@ class StackedCNN(SequenceEncoder):
                 {
                     'filter_size': 7,
                     'pool_size': 3,
-                    'regularize': False
                 },
                 {
                     'filter_size': 7,
                     'pool_size': 3,
-                    'regularize': False
                 },
                 {
                     'filter_size': 3,
                     'pool_size': None,
-                    'regularize': False
                 },
                 {
                     'filter_size': 3,
                     'pool_size': None,
-                    'regularize': False
                 },
                 {
                     'filter_size': 3,
                     'pool_size': None,
-                    'regularize': True
                 },
                 {
                     'filter_size': 3,
                     'pool_size': 3,
-                    'regularize': True
                 }
             ]
             self.num_conv_layers = 6
@@ -791,6 +781,8 @@ class StackedCNN(SequenceEncoder):
                 'num_fc_layers only. Not both.'
             )
 
+        self.max_sequence_length = max_sequence_length
+        self.num_filters = num_filters
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
@@ -801,17 +793,20 @@ class StackedCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  Conv1DStack')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.conv1d_stack = Conv1DStack(
+            in_channels=in_channels,
+            max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
@@ -821,11 +816,6 @@ class StackedCNN(SequenceEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -839,46 +829,43 @@ class StackedCNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.conv1d_stack.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is None:
+            return self.conv1d_stack.output_shape
+        return self.fc_stack.output_shape
+
+    def forward(self, inputs, mask=None):
+        # todo: fixup docstring
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
-            :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -886,7 +873,6 @@ class StackedCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -897,10 +883,11 @@ class StackedCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
+        # no reduction: hidden [batch_size, seq_size, num_filters]
+        # with reduction: hidden [batch_size, fc_size]
         return {'encoder_output': hidden}
 
 
@@ -913,6 +900,7 @@ class StackedParallelCNN(SequenceEncoder):
             vocab=None,
             representation='dense',
             embedding_size=256,
+            max_sequence_length=None,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
@@ -926,13 +914,8 @@ class StackedParallelCNN(SequenceEncoder):
             num_fc_layers=None,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             activation='relu',
@@ -940,6 +923,7 @@ class StackedParallelCNN(SequenceEncoder):
             reduce_output='max',
             **kwargs
     ):
+        # todo: review docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -947,12 +931,12 @@ class StackedParallelCNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -975,7 +959,7 @@ class StackedParallelCNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -990,8 +974,8 @@ class StackedParallelCNN(SequenceEncoder):
                    the number of parallel conv layers and the content
                    of each dictionary determines the parameters for
                    a specific layer. The available parameters for each layer are:
-                   `filter_size`, `num_filters`, `pool_size`, `norm`,
-                   `activation` and `regularize`. If any of those values
+                   `filter_size`, `num_filters`, `pool_size`, `norm` and
+                   `activation`. If any of those values
                    is missing from the dictionary, the default one specified
                    as a parameter of the encoder will be used instead. If both
                    `stacked_layers` and `num_stacked_layers` are `None`,
@@ -1028,8 +1012,8 @@ class StackedParallelCNN(SequenceEncoder):
                    of the list determines the number of stacked fully connected
                    layers and the content of each dictionary determines
                    the parameters for a specific layer. The available parameters
-                   for each layer are: `fc_size`, `norm`, `activation` and
-                   `regularize`. If any of those values is missing from
+                   for each layer are: `fc_size`, `norm` and `activation`.
+                   If any of those values is missing from
                    the dictionary, the default one specified as a parameter of
                    the encoder will be used instead. If both `fc_layers` and
                    `num_fc_layers` are `None`, a default list will be assigned
@@ -1056,27 +1040,21 @@ class StackedParallelCNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -1085,6 +1063,9 @@ class StackedParallelCNN(SequenceEncoder):
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
+
+        self.max_sequence_length = max_sequence_length
+        self.embedding_size = embedding_size
 
         if stacked_layers is not None and num_stacked_layers is None:
             # use custom-defined layers
@@ -1149,28 +1130,26 @@ class StackedParallelCNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         logger.debug('  ParallelConv1DStack')
         self.parallel_conv1d_stack = ParallelConv1DStack(
+            in_channels=in_channels,
             stacked_layers=self.stacked_layers,
+            max_sequence_length=max_sequence_length,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
@@ -1182,46 +1161,45 @@ class StackedParallelCNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.parallel_conv1d_stack.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        return self.parallel_conv1d_stack.output_shape
+
+    def forward(self, inputs, mask=None):
+        # todo: fixup docstring
         """
             :param inputs: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type inputs: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -1229,7 +1207,6 @@ class StackedParallelCNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.parallel_conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -1240,10 +1217,11 @@ class StackedParallelCNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
+        # no reduction: hidden [batch_size, seq_size, num_filter]
+        # with reduction: hidden [batch_size, fc_size]
         return {'encoder_output': hidden}
 
 
@@ -1260,6 +1238,7 @@ class StackedRNN(SequenceEncoder):
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
             num_layers=1,
+            max_sequence_length=None,
             state_size=256,
             cell_type='rnn',
             bidirectional=False,
@@ -1267,7 +1246,6 @@ class StackedRNN(SequenceEncoder):
             recurrent_activation='sigmoid',
             unit_forget_bias=True,
             recurrent_initializer='orthogonal',
-            recurrent_regularizer=None,
             # recurrent_constraint=None,
             dropout=0.0,
             recurrent_dropout=0.0,
@@ -1275,13 +1253,8 @@ class StackedRNN(SequenceEncoder):
             num_fc_layers=0,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -1289,6 +1262,7 @@ class StackedRNN(SequenceEncoder):
             reduce_output='last',
             **kwargs
     ):
+        # todo: fix up docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -1296,12 +1270,12 @@ class StackedRNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1324,7 +1298,7 @@ class StackedRNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -1368,10 +1342,10 @@ class StackedRNN(SequenceEncoder):
             :param num_rec_layers: the number of stacked recurrent layers.
             :type num_rec_layers: Integer
             :param cell_type: the type of recurrent cell to use.
-                   Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
+                   Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                    `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                    For reference about the differences between the cells please
-                   refer to TensorFlow's documentstion. We suggest to use the
+                   refer to TensorFlow's documentation. We suggest to use the
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
@@ -1385,27 +1359,21 @@ class StackedRNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -1414,6 +1382,10 @@ class StackedRNN(SequenceEncoder):
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
+
+        self.max_sequence_length = max_sequence_length
+        self.hidden_size = state_size
+        self.embedding_size = embedding_size
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1428,19 +1400,22 @@ class StackedRNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  RecurrentStack')
+        input_size = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.recurrent_stack = RecurrentStack(
-            state_size=state_size,
+            input_size=input_size,
+            hidden_size=state_size,
             cell_type=cell_type,
+            sequence_size=max_sequence_length,
             num_layers=num_layers,
             bidirectional=bidirectional,
             activation=activation,
@@ -1450,13 +1425,6 @@ class StackedRNN(SequenceEncoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            recurrent_regularizer=recurrent_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            # kernel_constraint=kernel_constraint,
-            # recurrent_constraint=recurrent_constraint,
-            # bias_constraint=bias_constraint,
             dropout=dropout,
             recurrent_dropout=recurrent_dropout,
         )
@@ -1464,67 +1432,60 @@ class StackedRNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.recurrent_stack.output_shape[-1],  # state_size,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        return self.recurrent_stack.output_shape
+
+    def input_dtype(self):
+        return torch.int32
+
+    def forward(self, inputs, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training,
-            mask=mask
-        )
+        hidden, final_state = self.recurrent_stack(hidden, mask=mask)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
             hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
-            hidden = self.fc_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+            hidden = self.fc_stack(hidden, mask=mask)
 
         return {
             'encoder_output': hidden,
@@ -1539,13 +1500,14 @@ class StackedCNNRNN(SequenceEncoder):
             self,
             should_embed=True,
             vocab=None,
+            max_sequence_length=None,
             representation='dense',
             embedding_size=256,
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
             conv_layers=None,
-            num_conv_layers=1,
+            num_conv_layers=None,
             num_filters=256,
             filter_size=5,
             strides=1,
@@ -1565,21 +1527,14 @@ class StackedCNNRNN(SequenceEncoder):
             recurrent_activation='sigmoid',
             unit_forget_bias=True,
             recurrent_initializer='orthogonal',
-            recurrent_regularizer=None,
-            # recurrent_constraint=None,
             dropout=0.0,
             recurrent_dropout=0.0,
             fc_layers=None,
             num_fc_layers=0,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -1587,6 +1542,7 @@ class StackedCNNRNN(SequenceEncoder):
             reduce_output='last',
             **kwargs
     ):
+        # todo: fix up docstring
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -1594,12 +1550,12 @@ class StackedCNNRNN(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1622,7 +1578,7 @@ class StackedCNNRNN(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -1632,10 +1588,10 @@ class StackedCNNRNN(SequenceEncoder):
             :param num_layers: the number of stacked recurrent layers.
             :type num_layers: Integer
             :param cell_type: the type of recurrent cell to use.
-                   Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
+                   Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                    `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                    For reference about the differences between the cells please
-                   refer to TensorFlow's documentstion. We suggest to use the
+                   refer to TensorFlow's documentation. We suggest to use the
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
@@ -1649,27 +1605,21 @@ class StackedCNNRNN(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -1700,6 +1650,7 @@ class StackedCNNRNN(SequenceEncoder):
                 'num_conv_layers'
             )
 
+        self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
@@ -1710,17 +1661,20 @@ class StackedCNNRNN(SequenceEncoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
+                max_sequence_length=self.max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  Conv1DStack')
+        in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         self.conv1d_stack = Conv1DStack(
+            in_channels=in_channels,
+            max_sequence_length=max_sequence_length,
             layers=self.conv_layers,
             default_num_filters=num_filters,
             default_filter_size=filter_size,
@@ -1730,11 +1684,6 @@ class StackedCNNRNN(SequenceEncoder):
             default_use_bias=use_bias,
             default_weights_initializer=weights_initializer,
             default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=conv_activation,
@@ -1747,7 +1696,9 @@ class StackedCNNRNN(SequenceEncoder):
 
         logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
-            state_size=state_size,
+            input_size=self.conv1d_stack.output_shape[1],
+            hidden_size=state_size,
+            sequence_size=self.conv1d_stack.output_shape[0],
             cell_type=cell_type,
             num_layers=num_rec_layers,
             bidirectional=bidirectional,
@@ -1758,13 +1709,6 @@ class StackedCNNRNN(SequenceEncoder):
             weights_initializer=weights_initializer,
             recurrent_initializer=recurrent_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            recurrent_regularizer=recurrent_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            # kernel_constraint=kernel_constraint,
-            # recurrent_constraint=recurrent_constraint,
-            # bias_constraint=bias_constraint,
             dropout=dropout,
             recurrent_dropout=recurrent_dropout,
         )
@@ -1772,46 +1716,46 @@ class StackedCNNRNN(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.recurrent_stack.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.recurrent_stack.output_shape[1:]
+        return self.recurrent_stack.output_shape
+
+    def forward(self, inputs, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
+            :param dropout: Tensor (torch.float) of the probability of dropout
             :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
+                inputs, mask=mask
             )
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_sequence
@@ -1819,15 +1763,11 @@ class StackedCNNRNN(SequenceEncoder):
         # ================ Conv Layers ================
         hidden = self.conv1d_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
         # ================ Recurrent Layers ================
-        hidden, final_state = self.recurrent_stack(
-            hidden,
-            training=training
-        )
+        hidden, final_state = self.recurrent_stack(hidden)
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1836,10 +1776,13 @@ class StackedCNNRNN(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 
+        # no reduction: hidden [batch_size, seq_size, state_size]
+        # with reduction: hidden [batch_size, seq_size, fc_size]
+        # final_state: if rnn/gru [batch_size, state_size]
+        #              lstm ([batch_size, state_size], [batch_size, state_size])
         return {
             'encoder_output': hidden,
             'encoder_output_state': final_state
@@ -1868,13 +1811,8 @@ class StackedTransformer(SequenceEncoder):
             num_fc_layers=0,
             fc_size=256,
             use_bias=True,
-            weights_initializer='glorot_uniform',
+            weights_initializer='xavier_uniform',
             bias_initializer='zeros',
-            weights_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            # weights_constraint=None,
-            # bias_constraint=None,
             norm=None,
             norm_params=None,
             fc_activation='relu',
@@ -1882,6 +1820,7 @@ class StackedTransformer(SequenceEncoder):
             reduce_output='last',
             **kwargs
     ):
+        # todo: update docstring as needed
         """
             :param should_embed: If True the input sequence is expected
                    to be made of integers and will be mapped into embeddings
@@ -1889,12 +1828,12 @@ class StackedTransformer(SequenceEncoder):
             :param vocab: Vocabulary of the input feature to encode
             :type vocab: List
             :param representation: the possible values are `dense` and `sparse`.
-                   `dense` means the mebeddings are initialized randomly,
-                   `sparse` meanse they are initialized to be one-hot encodings.
+                   `dense` means the embeddings are initialized randomly,
+                   `sparse` means they are initialized to be one-hot encodings.
             :type representation: Str (one of 'dense' or 'sparse')
             :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
+                   size will be `min(vocabulary_size, embedding_size)`
+                   for `dense` representations and exactly `vocabulary_size`
                    for the `sparse` encoding, where `vocabulary_size` is
                    the number of different strings appearing in the training set
                    in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1917,7 +1856,7 @@ class StackedTransformer(SequenceEncoder):
                    some random noise to make them different from each other.
                    This parameter has effect only if `representation` is `dense`.
             :type pretrained_embeddings: str (filepath)
-            :param embeddings_on_cpu: by default embedings matrices are stored
+            :param embeddings_on_cpu: by default embeddings matrices are stored
                    on GPU memory if a GPU is used, as it allows
                    for faster access, but in some cases the embedding matrix
                    may be really big and this parameter forces the placement
@@ -1961,10 +1900,10 @@ class StackedTransformer(SequenceEncoder):
             :param num_rec_layers: the number of stacked recurrent layers.
             :type num_rec_layers: Integer
             :param cell_type: the type of recurrent cell to use.
-                   Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
+                   Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                    `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                    For reference about the differences between the cells please
-                   refer to TensorFlow's documentstion. We suggest to use the
+                   refer to TensorFlow's documentation. We suggest to use the
                    `block` variants on CPU and the `cudnn` variants on GPU
                    because of their increased speed.
             :type cell_type: str
@@ -1978,27 +1917,21 @@ class StackedTransformer(SequenceEncoder):
                    returning the encoder output.
             :type dropout: Boolean
             :param initializer: the initializer to use. If `None` it uses
-                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `xavier_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
-                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `truncated_normal`, `variance_scaling`, `xavier_normal`,
+                   `xavier_uniform`, `xavier_normal`,
                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
                    Alternatively it is possible to specify a dictionary with
-                   a key `type` that identifies the type of initialzier and
+                   a key `type` that identifies the type of initializer and
                    other keys for its parameters,
                    e.g. `{type: normal, mean: 0, stddev: 0}`.
                    To know the parameters of each initializer, please refer
                    to TensorFlow's documentation.
             :type initializer: str
-            :param regularize: if a `regularize` is not already specified in
-                   `conv_layers` or `fc_layers` this is the default `regularize`
-                   that will be used for each layer. It indicates if
-                   the layer weights should be considered when computing
-                   a regularization loss.
-            :type regularize:
             :param reduce_output: defines how to reduce the output tensor of
                    the convolutional layers along the `s` sequence length
-                   dimention if the rank of the tensor is greater than 2.
+                   dimension if the rank of the tensor is greater than 2.
                    Available values are: `sum`, `mean` or `avg`, `max`, `concat`
                    (concatenates along the first dimension), `last` (returns
                    the last vector of the first dimension) and `None` or `null`
@@ -2007,6 +1940,8 @@ class StackedTransformer(SequenceEncoder):
         """
         super().__init__()
         logger.debug(' {}'.format(self.name))
+
+        self.max_sequence_length = max_sequence_length
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -2020,29 +1955,31 @@ class StackedTransformer(SequenceEncoder):
         if self.should_embed:
             logger.debug('  EmbedSequence')
             self.embed_sequence = TokenAndPositionEmbedding(
-                max_sequence_length,
-                vocab,
-                embedding_size,
+                max_sequence_length=max_sequence_length,
+                vocab=vocab,
+                embedding_size=embedding_size,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-                embedding_regularizer=weights_regularizer
             )
 
             if embedding_size != hidden_size:
-                logger.debug('  project_to_embed_size Dense')
-                self.project_to_hidden_size = Dense(hidden_size)
+                logger.debug('  project_to_embed_size')
+                self.project_to_hidden_size = nn.Linear(self.embed_sequence.output_shape[1],
+                                                        hidden_size)
                 self.should_project = True
         else:
-            logger.debug('  project_to_embed_size Dense')
-            self.project_to_hidden_size = Dense(hidden_size)
+            logger.debug('  project_to_embed_size')
+            self.project_to_hidden_size = nn.Linear(1, hidden_size)
             self.should_project = True
 
         logger.debug('  TransformerStack')
         self.transformer_stack = TransformerStack(
+            input_size=hidden_size,
+            sequence_size=max_sequence_length,
             hidden_size=hidden_size,
             num_heads=num_heads,
             fc_size=transformer_fc_size,
@@ -2053,46 +1990,44 @@ class StackedTransformer(SequenceEncoder):
         if self.reduce_output is not None:
             logger.debug('  FCStack')
             self.fc_stack = FCStack(
+                self.transformer_stack.output_shape[-1],  # hidden_size,
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
                 default_use_bias=use_bias,
                 default_weights_initializer=weights_initializer,
                 default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=weights_constraint,
-                # default_bias_constraint=bias_constraint,
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
             )
 
-    def call(self, inputs, training=None, mask=None):
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.max_sequence_length])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        if self.reduce_output is not None:
+            return self.fc_stack.output_shape
+        return self.transformer_stack.output_shape
+
+    def forward(self, inputs, mask=None):
+        # todo: review docstring for updates
         """
             :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
+                   Shape: [batch x sequence length], type torch.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout: Tensor (tf.float) of the probability of dropout
-            :type dropout: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
         """
+
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_sequence = self.embed_sequence(
-                inputs, training=training, mask=mask
-            )
+            embedded_sequence = self.embed_sequence(inputs, mask=mask)
         else:
             embedded_sequence = inputs
             while len(embedded_sequence.shape) < 3:
-                embedded_sequence = tf.expand_dims(embedded_sequence, -1)
+                embedded_sequence = embedded_sequence.unsqueeze(-1)
 
         # shape=(?, sequence_length, embedding_size)
         if self.should_project:
@@ -2104,7 +2039,6 @@ class StackedTransformer(SequenceEncoder):
         # ================ Transformer Layers ================
         hidden = self.transformer_stack(
             hidden,
-            training=training,
             mask=mask
         )
 
@@ -2115,7 +2049,6 @@ class StackedTransformer(SequenceEncoder):
             # ================ FC Layers ================
             hidden = self.fc_stack(
                 hidden,
-                training=training,
                 mask=mask
             )
 

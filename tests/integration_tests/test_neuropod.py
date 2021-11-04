@@ -20,6 +20,7 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
@@ -33,6 +34,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
+@pytest.mark.skip(reason="Issue #1451: Use torchscript.")
 def test_neuropod(csv_filename):
     #######
     # Setup
@@ -153,9 +155,9 @@ def test_neuropod(csv_filename):
                 neuropod_pred = preds[
                     output_feature_name + "_predictions"].tolist()
                 if output_feature_type == BINARY:
-                    neuropod_pred = [ str2bool(x) for x in neuropod_pred]
+                    neuropod_pred = [str2bool(x) for x in neuropod_pred]
                 if output_feature_type in {SEQUENCE, TEXT, SET}:
-                    neuropod_pred = [ x.split() for x in neuropod_pred]
+                    neuropod_pred = [x.split() for x in neuropod_pred]
 
                 original_pred = original_predictions_df[
                     output_feature_name + "_predictions"].tolist()
@@ -167,7 +169,8 @@ def test_neuropod(csv_filename):
                 neuropod_prob = preds[
                     output_feature_name + "_probability"].tolist()
                 if output_feature_type in {SEQUENCE, TEXT, SET}:
-                    neuropod_prob = [ [float(n) for n in x.split()] for x in neuropod_prob]
+                    neuropod_prob = [[float(n) for n in x.split()]
+                                     for x in neuropod_prob]
                 if any(isinstance(el, list) for el in neuropod_prob):
                     neuropod_prob = np.array(list(
                         itertools.zip_longest(*neuropod_prob, fillvalue=0)

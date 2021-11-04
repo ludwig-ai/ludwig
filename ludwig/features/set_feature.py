@@ -15,10 +15,9 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 
 import numpy as np
-import tensorflow as tf
+import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
@@ -30,7 +29,8 @@ from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import JaccardMetric
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry,\
+    UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -122,22 +122,21 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.bool, tf.int64]
+    def forward(self, inputs):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.bool, torch.int64]
 
-        encoder_output = self.encoder_obj(
-            inputs, training=training, mask=mask
-        )
+        encoder_output = self.encoder_obj(inputs)
 
         return {'encoder_output': encoder_output}
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.bool
+    @property
+    def input_dtype(self):
+        return torch.bool
 
-    def get_input_shape(self):
-        return len(self.vocab),
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([len(self.vocab)])
 
     @staticmethod
     def update_config_with_metadata(
@@ -153,6 +152,10 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     encoder_registry = ENCODER_REGISTRY
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
@@ -188,17 +191,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     ):
         logits = inputs[LOGITS]
 
-        probabilities = tf.nn.sigmoid(
-            logits,
-            name='probabilities_{}'.format(self.feature_name)
-        )
+        probabilities = torch.sigmoid(logits)
 
-        predictions = tf.greater_equal(
-            probabilities,
-            self.threshold,
-            name='predictions_{}'.format(self.feature_name)
-        )
-        predictions = tf.cast(predictions, dtype=tf.int64)
+        predictions = torch.greater_equal(probabilities, self.threshold)
+        predictions = predictions.type(torch.int64)
 
         return {
             PREDICTIONS: predictions,
@@ -207,15 +203,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         }
 
     def _setup_loss(self):
-        self.train_loss_function = SigmoidCrossEntropyLoss(
-            feature_loss=self.loss,
-            name='train_loss'
-        )
-
-        self.eval_loss_function = SigmoidCrossEntropyMetric(
-            feature_loss=self.loss,
-            name='eval_loss'
-        )
+        self.train_loss_function = SigmoidCrossEntropyLoss(**self.loss)
+        self.eval_loss_function = SigmoidCrossEntropyMetric(**self.loss)
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable
@@ -229,10 +218,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @classmethod
     def get_output_dtype(cls):
-        return tf.bool
+        return torch.bool
 
-    def get_output_shape(self):
-        return self.num_classes,
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.num_classes])
 
     @staticmethod
     def update_config_with_metadata(
@@ -334,7 +324,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature, LOSS,
                           {TYPE: SIGMOID_CROSS_ENTROPY, 'weight': 1})
         set_default_value(output_feature[LOSS], 'weight', 1)
-        set_default_value(output_feature[LOSS], 'class_weights', 1)
+        set_default_value(output_feature[LOSS], 'class_weights', None)
 
         set_default_value(output_feature, 'threshold', 0.5)
         set_default_value(output_feature, 'dependencies', [])

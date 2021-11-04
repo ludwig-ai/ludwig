@@ -26,10 +26,29 @@ class Dataset(ABC):
 
     @contextlib.contextmanager
     @abstractmethod
-    def initialize_batcher(self, batch_size=128,
+    def initialize_batcher(self,
+                           batch_size=128,
                            should_shuffle=True,
-                           shuffle_buffer_size=None,
                            seed=0,
                            ignore_last=False,
                            horovod=None):
+        raise NotImplementedError()
+
+
+class DatasetManager(ABC):
+    @abstractmethod
+    def create(self, dataset, config, training_set_metadata):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save(self, cache_path, dataset, config, training_set_metadata, tag):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def can_cache(self, skip_save_processed_input):
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def data_format(self):
         raise NotImplementedError()

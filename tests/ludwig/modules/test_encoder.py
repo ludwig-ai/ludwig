@@ -13,29 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import pytest
 import random
 
 import numpy as np
-import tensorflow as tf
+import torch
 
 from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.encoders.image_encoders import ResNetEncoder, Stacked2DCNN, \
     MLPMixerEncoder
-from ludwig.encoders.sequence_encoders import ParallelCNN
-from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
-from ludwig.encoders.sequence_encoders import StackedCNN
-from ludwig.encoders.sequence_encoders import StackedCNNRNN
-from ludwig.encoders.sequence_encoders import StackedParallelCNN
-from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.encoders.sequence_encoders import ParallelCNN, SequenceEncoder,\
+    SequenceEmbedEncoder, StackedCNN, StackedCNNRNN, StackedParallelCNN,\
+    StackedRNN
 
-L1_REGULARIZER = 'l1'
-L2_REGULARIZER = 'l2'
-NO_REGULARIZER = None
 DROPOUT = 0.5
 
 
-def create_encoder(encoder_type, encoder_args={}):
-    encoder = encoder_type(**encoder_args)
+def create_encoder(encoder_type, **encoder_kwargs):
+    encoder = encoder_type(**encoder_kwargs)
     return encoder
 
 
@@ -83,16 +78,13 @@ def encoder_test(
     :return: returns the encoder object for the caller to run extra checks
     """
     # Run the encoder
-    input_data = tf.convert_to_tensor(input_data)
+    input_data = torch.from_numpy(input_data)
 
-    hidden = encoder(
-        input_data,
-        training=False
-    )['encoder_output']
+    hidden = encoder(input_data)['encoder_output']
 
     # Check output shape and type
     assert hidden.dtype == output_dtype
-    assert hidden.shape.as_list() == output_shape
+    assert list(hidden.shape) == output_shape
 
     if output_data is not None:
         # todo the hidden output is actually a tensor. May need modification
@@ -101,23 +93,25 @@ def encoder_test(
 
 def test_image_encoders_resnet():
     # Test the resnet encoder for images
-    encoder_args = {
+    encoder_kwargs = {
         'resnet_size': 8, 'num_filters': 8, 'fc_size': 28,
-        'weights_regularizer': L1_REGULARIZER,
-        'bias_regularizer': L1_REGULARIZER,
-        'activity_regularizer': L1_REGULARIZER,
         'dropout': DROPOUT
     }
-    image_size = (10, 10, 3)
+    image_size = (3, 10, 10)
 
     output_shape = [1, 28]
     input_image = generate_images(image_size, 1)
 
-    encoder = create_encoder(ResNetEncoder, encoder_args)
+    encoder = create_encoder(
+        ResNetEncoder,
+        height=image_size[1],
+        width=image_size[2],
+        **encoder_kwargs
+    )
     encoder_test(
         encoder=encoder,
         input_data=input_image,
-        output_dtype=np.float,
+        output_dtype=torch.float32,
         output_shape=output_shape,
         output_data=None
     )
@@ -128,18 +122,14 @@ def test_image_encoders_resnet():
     encoder_test(
         encoder=encoder,
         input_data=input_images,
-        output_dtype=np.float,
+        output_dtype=torch.float32,
         output_shape=output_shape,
         output_data=None
     )
 
     assert encoder is not None
     assert encoder.resnet.__class__.__name__ == 'ResNet'
-    assert encoder.resnet.num_filters == 8
-    assert encoder.resnet.resnet_size == 8
-    assert encoder.resnet.filter_size == 3
-    assert encoder.flatten.__class__.__name__ == 'Flatten'
-    assert encoder.fc_stack.__class__.__name__ == 'FCStack'
+    assert list(encoder.resnet.output_shape) == [64, 3, 3]
     assert len(encoder.fc_stack.layers) == 1
     assert encoder.fc_stack.layers[0]['fc_size'] == 28
     assert encoder.fc_stack.layers[0]['activation'] == 'relu'
@@ -147,33 +137,31 @@ def test_image_encoders_resnet():
 
 def test_image_encoders_stacked_2dcnn():
     # Test the resnet encoder for images
-    encoder_args = {
+    encoder_kwargs = {
         'num_conv_layers': 2, 'num_filters': 16, 'fc_size': 28,
-        'conv_activity_regularizer': L1_REGULARIZER,
-        'conv_weights_regularizer': L1_REGULARIZER,
-        'conv_bias_regularizer': L1_REGULARIZER,
-        'fc_activity_regularizer': L1_REGULARIZER,
-        'fc_weights_regularizer': L1_REGULARIZER,
-        'fc_bias_regularizer': L1_REGULARIZER,
         'dropout': DROPOUT
 
     }
-    image_size = (10, 10, 3)
+    image_size = (3, 10, 10)
 
-    encoder = create_encoder(Stacked2DCNN, encoder_args)
+    encoder = create_encoder(
+        Stacked2DCNN,
+        num_channels=image_size[0],
+        height=image_size[1],
+        width=image_size[2],
+        **encoder_kwargs
+    )
 
     assert encoder is not None
     assert encoder.conv_stack_2d is not None
-    assert encoder.conv_stack_2d.layers[0]['filter_size'] == 3
-    assert encoder.fc_stack.layers[0]['fc_size'] == 28
+    assert list(encoder.conv_stack_2d.output_shape) == [32, 1, 1]
     assert len(encoder.fc_stack.layers) == 1
-    assert encoder.conv_stack_2d.layers[0]['num_filters'] == 16
-    assert encoder.conv_stack_2d.layers[0]['pool_size'] == (2, 2)
-    assert encoder.conv_stack_2d.layers[0]['strides'] == (1, 1)
-    assert encoder.conv_stack_2d.layers[0]['pool_strides'] is None
+    assert encoder.conv_stack_2d.layers[0]['pool_kernel_size'] == 2
+    assert encoder.conv_stack_2d.layers[0]['stride'] == 1
+    assert encoder.conv_stack_2d.layers[0]['pool_stride'] == 2
     assert encoder.conv_stack_2d.layers[0]['norm'] is None
-    assert encoder.fc_stack.layers[0]['activation'] == 'relu'
-    assert encoder.conv_stack_2d.layers[-1]['dropout'] == 0
+    assert encoder.conv_stack_2d.layers[0]['activation'] == 'relu'
+    assert encoder.conv_stack_2d.layers[0]['dropout'] == 0
 
     output_shape = [1, 28]
     input_image = generate_images(image_size, 1)
@@ -181,7 +169,7 @@ def test_image_encoders_stacked_2dcnn():
     encoder_test(
         encoder=encoder,
         input_data=input_image,
-        output_dtype=np.float,
+        output_dtype=torch.float32,
         output_shape=output_shape,
         output_data=None
     )
@@ -192,7 +180,7 @@ def test_image_encoders_stacked_2dcnn():
     encoder_test(
         encoder=encoder,
         input_data=input_images,
-        output_dtype=np.float,
+        output_dtype=torch.float32,
         output_shape=output_shape,
         output_data=None
     )
@@ -200,24 +188,27 @@ def test_image_encoders_stacked_2dcnn():
 
 def test_image_encoders_mlpmixer():
     # Test the resnet encoder for images
-    encoder_args = {
+    encoder_kwargs = {
         'patch_size': 5, 'embed_size': 8, 'token_size': 32,
         'channel_dim': 16, 'num_layers': 2,
-        'weights_regularizer': L1_REGULARIZER,
-        'bias_regularizer': L1_REGULARIZER,
-        'activity_regularizer': L1_REGULARIZER,
         'dropout': DROPOUT
     }
-    image_size = (10, 10, 3)
+    image_size = (3, 10, 10)
 
     output_shape = [1, 8]
     input_image = generate_images(image_size, 1)
 
-    encoder = create_encoder(MLPMixerEncoder, encoder_args)
+    encoder = create_encoder(
+        MLPMixerEncoder,
+        num_channels=image_size[0],
+        height=image_size[1],
+        width=image_size[2],
+        **encoder_kwargs
+    )
     encoder_test(
         encoder=encoder,
         input_data=input_image,
-        output_dtype=np.float,
+        output_dtype=torch.float32,
         output_shape=output_shape,
         output_data=None
     )
@@ -228,7 +219,7 @@ def test_image_encoders_mlpmixer():
     encoder_test(
         encoder=encoder,
         input_data=input_images,
-        output_dtype=np.float,
+        output_dtype=torch.float32,
         output_shape=output_shape,
         output_data=None
     )
@@ -236,12 +227,10 @@ def test_image_encoders_mlpmixer():
     assert encoder is not None
     assert encoder.mlp_mixer.__class__.__name__ == 'MLPMixer'
     assert len(encoder.mlp_mixer.mixer_blocks) == 2
-    assert encoder.mlp_mixer.mixer_blocks[0].mlp1.hidden_size == 32
-    assert encoder.mlp_mixer.mixer_blocks[0].mlp2.hidden_size == 16
-    assert encoder.mlp_mixer.patch_conv.__class__.__name__ == 'Conv2D'
+    assert list(encoder.mlp_mixer.mixer_blocks[0].mlp1.output_shape) == [4]
+    assert encoder.mlp_mixer.patch_conv.__class__.__name__ == 'Conv2d'
     assert encoder.mlp_mixer.patch_conv.kernel_size == (5, 5)
-    assert encoder.mlp_mixer.patch_conv.strides == (5, 5)
-    assert encoder.mlp_mixer.patch_conv.filters == 8
+
 
 def test_sequence_encoder_embed():
     num_sentences = 4
@@ -254,7 +243,7 @@ def test_sequence_encoder_embed():
         max_len=max_len,
     )
 
-    encoder_args = {'embedding_size': embedding_size, 'vocab': vocab}
+    encoder_kwargs = {'embedding_size': embedding_size, 'vocab': vocab}
 
     # Different values for reduce_output and the corresponding expected size
     reduce_outputs = ['sum', None, 'concat']
@@ -266,26 +255,37 @@ def test_sequence_encoder_embed():
 
     for reduce_output, output_shape in zip(reduce_outputs, output_shapes):
         for trainable in [True, False]:
-            encoder_args['reduce_output'] = reduce_output
-            encoder_args['embeddings_trainable'] = trainable
-            encoder_args['weights_regularizer'] = L1_REGULARIZER
-            encoder_args['dropout'] = DROPOUT
-            encoder = create_encoder(SequenceEmbedEncoder, encoder_args)
+            encoder_kwargs['reduce_output'] = reduce_output
+            encoder_kwargs['embeddings_trainable'] = trainable
+            encoder_kwargs['dropout'] = DROPOUT
+            encoder = create_encoder(
+                SequenceEmbedEncoder,
+                max_sequence_length=max_len,
+                **encoder_kwargs
+            )
 
             encoder_test(
                 encoder=encoder,
                 input_data=text,
-                output_dtype=np.float,
+                output_dtype=torch.float32,
                 output_shape=output_shape,
                 output_data=None
             )
 
-            embed = encoder.embed_sequence.embeddings
-            assert embed.trainable == trainable
             assert encoder.embed_sequence.dropout is not None
 
 
-def test_sequence_encoders():
+@pytest.mark.parametrize(
+    'encoder_type',
+    [ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN]
+)
+@pytest.mark.parametrize('trainable', [True, False])
+@pytest.mark.parametrize('reduce_output', ['sum', 'max'])
+def test_sequence_encoders(
+        encoder_type: SequenceEncoder,
+        trainable: bool,
+        reduce_output: str
+):
     num_sentences = 4
     embedding_size = 5
     max_len = 7
@@ -297,7 +297,7 @@ def test_sequence_encoders():
         max_len=max_len,
     )
 
-    encoder_args = {
+    encoder_kwargs = {
         'embedding_size': embedding_size,
         'vocab': vocab,
         'fc_size': fc_size,
@@ -307,39 +307,27 @@ def test_sequence_encoders():
         'state_size': fc_size
     }
 
-    # Different values for reduce_output and the corresponding expected size
     # todo figure out the output size for parallel 1d conv
-    reduce_outputs = ['sum', 'max']
-    output_shapes = [
-        [num_sentences, fc_size],
-        [num_sentences, fc_size],
-        [num_sentences, max_len, fc_size]
-    ]
+    output_shape = [num_sentences, fc_size]
 
-    for reduce_output, output_shape in zip(reduce_outputs, output_shapes):
-        for trainable in [True, False]:
-            for encoder_type in [ParallelCNN,
-                                 StackedCNN,
-                                 StackedParallelCNN,
-                                 StackedRNN,
-                                 StackedCNNRNN]:
-                encoder_args['reduce_output'] = reduce_output
-                encoder_args['embeddings_trainable'] = trainable
-                encoder_args['weights_regularizer'] = L1_REGULARIZER
-                encoder_args['bias_regularizer'] = L1_REGULARIZER
-                encoder_args['activity_regularizer'] = L1_REGULARIZER
-                encoder_args['dropout'] = DROPOUT
-                encoder_args['dropout'] = DROPOUT
-                encoder_args['recurrent_dropout'] = DROPOUT
-                encoder_args['fc_dropout'] = DROPOUT
-                encoder = create_encoder(encoder_type, encoder_args)
+    encoder_kwargs['embeddings_trainable'] = trainable
+    encoder_kwargs['dropout'] = DROPOUT
+    encoder_kwargs['dropout'] = DROPOUT
+    encoder_kwargs['recurrent_dropout'] = DROPOUT
+    encoder_kwargs['fc_dropout'] = DROPOUT
+    encoder_kwargs['reduce_output'] = reduce_output
+    encoder = create_encoder(
+        encoder_type,
+        max_sequence_length=max_len,
+        **encoder_kwargs
+    )
 
-                encoder_test(
-                    encoder=encoder,
-                    input_data=text,
-                    output_dtype=np.float,
-                    output_shape=output_shape,
-                    output_data=None
-                )
+    encoder_test(
+        encoder=encoder,
+        input_data=text,
+        output_dtype=torch.float32,
+        output_shape=output_shape,
+        output_data=None
+    )
 
-                assert isinstance(encoder, encoder_type)
+    assert isinstance(encoder, encoder_type)

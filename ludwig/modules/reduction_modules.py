@@ -15,19 +15,18 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
-from tensorflow.keras.layers import Layer
+import torch
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule
 
 logger = logging.getLogger(__name__)
 
 
-class SequenceReducer(Layer):
+class SequenceReducer(LudwigModule):
 
-    def __init__(self, reduce_mode=None):
+    def __init__(self, reduce_mode=None, **kwargs):
         super().__init__()
         # save as private variable for debugging
         self._reduce_mode = reduce_mode
@@ -36,73 +35,57 @@ class SequenceReducer(Layer):
         self._reduce_obj = get_from_registry(
             reduce_mode,
             reduce_mode_registry
-        )()
+        )(**kwargs)
 
-    def call(self, inputs, training=None, mask=None):
-        return self._reduce_obj(inputs, training=training, mask=mask)
+    def forward(self, inputs, mask=None):
+        return self._reduce_obj(inputs, mask=mask)
 
 
-class ReduceLast(Layer):
+class ReduceLast(LudwigModule):
 
-    def call(self, inputs, training=None, mask=None):
-        batch_size = tf.shape(inputs)[0]
-        sequence_length = sequence_length_3D(inputs)
+    def forward(self, inputs, mask=None):
+        # inputs: [batch_size, seq_size, hidden_size]
+        batch_size = inputs.shape[0]
         # gather the correct outputs from the the RNN outputs (the outputs after sequence_length are all 0s)
-        gathered = tf.gather_nd(
-            inputs,
-            tf.stack(
-                [tf.range(batch_size), tf.maximum(sequence_length - 1, 0)],
-                axis=1
-            )
-        )
+        # todo: review for generality
+        sequence_length = sequence_length_3D(inputs) - 1
+        sequence_length[sequence_length < 0] = 0
+        gathered = inputs[
+            torch.arange(batch_size), sequence_length.type(torch.int64)]
         return gathered
 
 
-class ReduceSum(Layer):
+class ReduceSum(LudwigModule):
 
-    def call(self, inputs, training=None, mask=None):
-        return tf.reduce_sum(inputs, axis=1)
-
-
-class ReduceMean(Layer):
-
-    def call(self, inputs, training=None, mask=None):
-        return tf.reduce_mean(inputs, axis=1)
+    def forward(self, inputs, mask=None):
+        return torch.sum(inputs, dim=1)
 
 
-class ReduceMax(Layer):
+class ReduceMean(LudwigModule):
 
-    def call(self, inputs, training=None, mask=None):
-        return tf.reduce_max(inputs, axis=1)
+    def forward(self, inputs, mask=None):
+        return torch.mean(inputs, dim=1)
 
 
-class ReduceConcat(Layer):
+class ReduceMax(LudwigModule):
+
+    def forward(self, inputs, mask=None):
+        return torch.amax(inputs, dim=1)
+
+
+class ReduceConcat(LudwigModule):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.reduce_last = ReduceLast()
 
-    def call(self, inputs, training=None, mask=None):
-        if (inputs.shape.as_list()[-2] is None or
-                inputs.shape.as_list()[-1] is None):
-            # this the case of outputs coming from rnn encoders
-            logger.warning('  WARNING: '
-                           'The sequence length dimension is undefined '
-                           '(probably because of an RNN based encoder), '
-                           'so the sequence cannot be reduced '
-                           'by concatenation. '
-                           'Last will be used instead.')
-            return self.reduce_last(inputs)
-        else:
-            return tf.reshape(
-                inputs,
-                [-1, inputs.shape[-2] * inputs.shape[-1]]
-            )
+    def forward(self, inputs, mask=None):
+        return inputs.reshape(-1, inputs.shape[-1] * inputs.shape[-2])
 
 
-class ReduceNone(Layer):
+class ReduceNone(LudwigModule):
 
-    def call(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         return inputs
 
 
@@ -114,6 +97,7 @@ reduce_mode_registry = {
     'max': ReduceMax,
     'concat': ReduceConcat,
     'attention': FeedForwardAttentionReducer,
+    # TODO: Simplify this.
     'none': ReduceNone,
     'None': ReduceNone,
     None: ReduceNone

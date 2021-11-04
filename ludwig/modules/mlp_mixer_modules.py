@@ -13,88 +13,177 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense, Dropout, LayerNormalization, \
-    Conv2D, GlobalAveragePooling1D
+from typing import Union, Tuple
+
+import torch
+import torch.nn as nn
 
 from ludwig.modules.activation_modules import gelu
+from ludwig.utils.torch_utils import LudwigModule
 
 
-class MLP(Layer):
-    def __init__(self, hidden_size, dropout=0.0):
+class MLP(LudwigModule):
+    def __init__(
+            self,
+            in_features: Union[int, Tuple[int]],
+            hidden_size: int,
+            out_features: Union[int, Tuple[int]] = None,
+            dropout: float = 0.0
+    ):
+        """
+        """
         super().__init__()
-        self.hidden_size = hidden_size
-        self.dropout = dropout
 
-    def build(self, shape):
-        self.dense1 = Dense(self.hidden_size)
-        self.dense2 = Dense(shape[-1])
-        self.dropout1 = Dropout(self.dropout)
-        self.dropout2 = Dropout(self.dropout)
+        out_features = out_features or in_features
 
-    def call(self, inputs, **kwargs):
-        hidden = self.dropout1(gelu(self.dense1(inputs)))
-        return self.dropout2(self.dense2(hidden))
+        self._input_shape = in_features
+        self._output_shape = out_features
+
+        self.linear1 = nn.Linear(
+            in_features=in_features, out_features=hidden_size)
+        self.linear2 = nn.Linear(
+            in_features=hidden_size, out_features=out_features)
+        self.dropout1 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout)
+
+    def forward(self, inputs, **kwargs):
+        hidden = self.dropout1(gelu(self.linear1(inputs)))
+        return self.dropout2(self.linear2(hidden))
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self._input_shape])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self._output_shape])
 
 
-class MixerBlock(Layer):
-    def __init__(self, token_dim, channel_dim, dropout=0.0):
+class MixerBlock(LudwigModule):
+    def __init__(
+            self,
+            embed_size: int,
+            n_patches: int,
+            token_dim: int,
+            channel_dim: int,
+            dropout: float = 0.0
+    ):
         super().__init__()
-        self.mlp1 = MLP(token_dim, dropout)
-        self.mlp2 = MLP(channel_dim, dropout)
-        self.layernorm1 = LayerNormalization()
-        self.layernorm2 = LayerNormalization()
+        self._input_shape = (n_patches, embed_size)
+        self._output_shape = (n_patches, embed_size)
 
-    def call(self, inputs, **kwargs):
+        self.mlp1 = MLP(
+            in_features=n_patches,
+            hidden_size=token_dim,
+            dropout=dropout
+        )
+
+        self.mlp2 = MLP(
+            in_features=embed_size,
+            hidden_size=channel_dim,
+            dropout=dropout
+        )
+
+        self.layernorm1 = nn.LayerNorm(normalized_shape=embed_size)
+        self.layernorm2 = nn.LayerNorm(normalized_shape=embed_size)
+
+    def forward(self, inputs: torch.Tensor, **kwargs):
+        assert inputs.shape[1:] == self.input_shape
+
         hidden = inputs
-        hidden = self.layernorm1(hidden)
-        hidden = tf.transpose(hidden, [0, 2, 1])
-        hidden = self.mlp1(hidden)
-        hidden = tf.transpose(hidden, [0, 2, 1])
+        hidden = self.layernorm1(hidden).transpose(1, 2)
+        hidden = self.mlp1(hidden).transpose(1, 2)
+
         mid = hidden + inputs
+
         hidden = self.layernorm2(mid)
         hidden = self.mlp2(hidden)
-        return hidden + mid
+
+        output = hidden + mid
+        assert output.shape[1:] == self.output_shape
+        return output
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
 
 
-class MLPMixer(Layer):
+class MLPMixer(LudwigModule):
     """MLPMixer
 
     Implements
-    An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale
-    https://arxiv.org/abs/2010.11929
+    MLP-Mixer: An all-MLP Architecture for Vision
+    https://arxiv.org/abs/2105.01601
     """
 
     def __init__(
             self,
-            patch_size=16,
-            embed_size=512,
-            token_size=2048,
-            channel_dim=256,
-            num_layers=8,
-            dropout=0.0,
-            avg_pool=True,
+            img_height: int,
+            img_width: int,
+            in_channels: int,
+            patch_size: int = 16,
+            embed_size: int = 512,
+            token_size: int = 2048,
+            channel_dim: int = 256,
+            num_layers: int = 8,
+            dropout: float = 0.0,
+            avg_pool: bool = True,
     ):
         super().__init__()
-        self.patch_conv = Conv2D(embed_size, patch_size, patch_size)
+        assert (img_height % patch_size == 0) and (img_width % patch_size == 0)
+
+        self._input_shape = (in_channels, img_height, img_width)
+        n_patches = int(img_height * img_width / (patch_size ** 2))
+
+        self.patch_conv = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=embed_size,
+            kernel_size=patch_size,
+            stride=patch_size
+        )
+
         self.mixer_blocks = [
-            MixerBlock(token_size, channel_dim, dropout)
+            MixerBlock(
+                embed_size=embed_size,
+                n_patches=n_patches,
+                token_dim=token_size,
+                channel_dim=channel_dim,
+                dropout=dropout)
             for _ in range(num_layers)
         ]
-        self.layer_norm = LayerNormalization()
 
-        self.gap = None
-        if avg_pool:
-            self.avg_pool = GlobalAveragePooling1D()
+        self.layer_norm = nn.LayerNorm(normalized_shape=embed_size)
 
-    def call(self, inputs, **kwargs):
-        batch_size = tf.shape(inputs)[0]
-        hidden = inputs
-        hidden = self.patch_conv(hidden)
-        hidden = tf.reshape(hidden, [batch_size, -1, hidden.shape[-1]])
+        self.avg_pool = avg_pool
+        if self.avg_pool:
+            self._output_shape = torch.Size((embed_size,))
+        else:
+            self._output_shape = torch.Size((n_patches, embed_size))
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        assert inputs.shape[1:] == self.input_shape
+        hidden = self.patch_conv(inputs)
+        hidden = hidden.flatten(2).transpose(1, 2)
+
         for mixer_block in self.mixer_blocks:
             hidden = mixer_block(hidden)
         hidden = self.layer_norm(hidden)
+
         if self.avg_pool:
-            hidden = self.avg_pool(hidden)
+            hidden = torch.mean(hidden, dim=1)
+
+        assert hidden.shape[1:] == self.output_shape
+
         return hidden
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self._output_shape

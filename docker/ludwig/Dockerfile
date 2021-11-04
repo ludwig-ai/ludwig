@@ -9,19 +9,21 @@
 #   model serving
 #
 
-FROM tensorflow/tensorflow:2.4.1
+FROM python:3.7.12-slim
 
 RUN apt-get -y update && apt-get -y install \
     git \
     libsndfile1 \
+    build-essential \
+    g++ \
     cmake
 
 WORKDIR /ludwig
 
 COPY . .
-RUN HOROVOD_WITH_TENSORFLOW=1 \
+RUN HOROVOD_WITH_PYTORCH=1 \
     HOROVOD_WITHOUT_MPI=1 \
-    HOROVOD_WITHOUT_PYTORCH=1 \
+    HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
     pip install --no-cache-dir '.[full]'
 

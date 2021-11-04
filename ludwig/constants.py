@@ -121,6 +121,7 @@ EXECUTOR = "executor"
 MINIMIZE = "minimize"
 MAXIMIZE = "maximize"
 SAMPLER = "sampler"
+PARAMETERS = "parameters"
 
 NAME = "name"
 COLUMN = "column"
@@ -134,11 +135,11 @@ CHECKSUM = "checksum"
 
 HDF5 = "hdf5"
 PARQUET = "parquet"
-TFRECORD = "tfrecord"
 
 SRC = 'dataset_src'
 
 BATCH_SIZE = 'batch_size'
+EVAL_BATCH_SIZE = 'eval_batch_size'
 LEARNING_RATE = 'learning_rate'
 AUTO = 'auto'
 CONFIG = 'config'

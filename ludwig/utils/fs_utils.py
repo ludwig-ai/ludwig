@@ -24,6 +24,7 @@ import fsspec
 import h5py
 from fsspec.core import split_protocol
 
+from filelock import FileLock
 
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
@@ -31,9 +32,21 @@ def get_fs_and_path(url):
     return fs, path
 
 
+def has_remote_protocol(url):
+    protocol, _ = split_protocol(url)
+    return protocol and protocol != "file"
+
+
 def is_http(urlpath):
     protocol, _ = split_protocol(urlpath)
     return protocol == "http" or protocol == "https"
+
+
+def upgrade_http(urlpath):
+    protocol, url = split_protocol(urlpath)
+    if protocol == "http":
+        return "https://" + url
+    return None
 
 
 def find_non_existing_dir_by_adding_suffix(directory_name):
@@ -51,9 +64,21 @@ def path_exists(url):
     return fs.exists(path)
 
 
+def rename(src, tgt):
+    protocol, _ = split_protocol(tgt)
+    if protocol is not None:
+        fs = fsspec.filesystem(protocol)
+        fs.mv(src, tgt, recursive=True)
+    else:
+        os.rename(src, tgt)
+
+
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
-    return fs.makedirs(path, exist_ok=exist_ok)
+    fs.makedirs(path, exist_ok=exist_ok)
+    if not path_exists(path):
+        with fsspec.open(url, mode="wb") as f:
+            pass
 
 
 def delete(url, recursive=False):
@@ -97,6 +122,7 @@ def upload_output_directory(url):
             # Upload to remote when finished
             put_fn()
     else:
+        makedirs(url, exist_ok=True)
         # Just use the output directory directly if using a local filesystem
         yield url, None
 
@@ -138,3 +164,29 @@ def upload_output_file(url):
             fs.put(local_fname, url, recursive=True)
     else:
         yield url
+
+
+class file_lock(contextlib.AbstractContextManager):
+    """File lock based on filelock package."""
+    def __init__(
+        self,
+        path: str,
+        ignore_remote_protocol: bool = True,
+        lock_file: str = '.lock'
+    ) -> None:
+        if not isinstance(path, (str, os.PathLike, pathlib.Path)):
+            self.lock = None
+        else:
+            path = os.path.join(path, lock_file) if os.path.isdir(path) else f'{path}./{lock_file}'
+            if ignore_remote_protocol and has_remote_protocol(path):
+                self.lock = None
+            else:
+                self.lock = FileLock(path, timeout=-1)
+
+    def __enter__(self, *args, **kwargs):
+        if self.lock:
+            return self.lock.__enter__(*args, **kwargs)
+
+    def __exit__(self, *args, **kwargs):
+        if self.lock:
+            return self.lock.__exit__(*args, **kwargs)

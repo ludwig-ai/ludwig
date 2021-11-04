@@ -14,8 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import random
 import tempfile
 
+import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
@@ -25,6 +27,8 @@ from tests.integration_tests.utils import generate_data
 
 
 def test_missing_value_prediction(csv_filename):
+    random.seed(1)
+    np.random.seed(1)
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = [category_feature(vocab_size=2, reduce_input='sum',
                                            preprocessing=dict(

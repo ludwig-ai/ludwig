@@ -15,25 +15,19 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
+import torch
+
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
+from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss
-from ludwig.modules.metric_modules import BWCEWLMetric, ROCAUCMetric
-from ludwig.utils.metrics_utils import ConfusionMatrix
-from ludwig.utils.metrics_utils import average_precision_score
-from ludwig.utils.metrics_utils import precision_recall_curve
-from ludwig.utils.metrics_utils import roc_auc_score
-from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.misc_utils import set_default_values
+from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric
+from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
+    precision_recall_curve, roc_auc_score, roc_curve
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
@@ -127,29 +121,32 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-    def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype in [tf.bool, tf.int64]
-        assert len(inputs.shape) == 1
+    def forward(self, inputs):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
+        assert len(inputs.shape) == 1 or (
+            len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
-        inputs = tf.cast(inputs, dtype=tf.float32)
-        inputs_exp = inputs[:, tf.newaxis]
-        encoder_outputs = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
-        )
+        if len(inputs.shape) == 1:
+            inputs = inputs[:, None]
+        encoder_outputs = self.encoder_obj(inputs)
+        return {'encoder_output': encoder_outputs}
 
-        return encoder_outputs
+    @property
+    def input_dtype(self):
+        return torch.bool
 
-    @classmethod
-    def get_input_dtype(cls):
-        return tf.bool
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
-    def get_input_shape(self):
-        return ()
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.encoder_obj.output_shape
 
     @staticmethod
     def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
+            input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
@@ -180,16 +177,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def predictions(self, inputs, **kwargs):  # hidden
         logits = inputs[LOGITS]
-
-        probabilities = tf.nn.sigmoid(
-            logits, name="probabilities_{}".format(self.name)
-        )
-        predictions = tf.greater_equal(
-            probabilities,
-            self.threshold,
-            name="predictions_{}".format(self.name),
-        )
-
+        probabilities = torch.sigmoid(logits)
+        predictions = probabilities >= self.threshold
         return {
             PROBABILITIES: probabilities,
             PREDICTIONS: predictions,
@@ -210,29 +199,24 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             positive_class_weight=self.loss["positive_class_weight"],
             robust_lambda=self.loss["robust_lambda"],
             confidence_penalty=self.loss["confidence_penalty"],
-            name="eval_loss",
         )
-        self.metric_functions[ACCURACY] = BinaryAccuracy(
-            name="metric_accuracy"
-        )
-        self.metric_functions[ROC_AUC] = ROCAUCMetric(name="metric_auc")
+        self.metric_functions[ACCURACY] = Accuracy()
+        self.metric_functions[ROC_AUC] = ROCAUCMetric()
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
 
-    # def update_metrics(self, targets, predictions):
-    #     for metric, metric_fn in self.metric_functions.items():
-    #         if metric == LOSS:
-    #             metric_fn.update_state(targets, predictions[LOGITS])
-    #         else:
-    #             metric_fn.update_state(targets, predictions[PREDICTIONS])
-
     @classmethod
     def get_output_dtype(cls):
-        return tf.bool
+        return torch.bool
 
-    def get_output_shape(self):
-        return ()
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
     @staticmethod
     def update_config_with_metadata(
@@ -326,14 +310,14 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             {
                 "robust_lambda": 0,
                 "confidence_penalty": 0,
-                "positive_class_weight": 1,
+                "positive_class_weight": None,
                 "weight": 1,
             },
         )
 
         set_default_value(output_feature[LOSS], "robust_lambda", 0)
         set_default_value(output_feature[LOSS], "confidence_penalty", 0)
-        set_default_value(output_feature[LOSS], "positive_class_weight", 1)
+        set_default_value(output_feature[LOSS], "positive_class_weight", None)
         set_default_value(output_feature[LOSS], "weight", 1)
 
         set_default_values(

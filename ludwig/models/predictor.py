@@ -1,23 +1,22 @@
 import logging
 import os
-import re
 import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
 from pprint import pformat
 
-import tensorflow as tf
+import torch
 from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS, LAST_HIDDEN
+from ludwig.data.dataset.base import Dataset
 from ludwig.globals import is_progressbar_disabled
-from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json, \
-    save_csv
+from ludwig.models.ecd import ECD
+from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
-from ludwig.utils.tf_utils import initialize_tensorflow
-from ludwig import backend as bck
+from ludwig.utils.torch_utils import initialize_pytorch
 
 EXCLUE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
@@ -33,6 +32,10 @@ class BasePredictor(ABC):
             dataset,
             dataset_name=None
     ):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def predict_single(self, model, batch):
         raise NotImplementedError()
 
     @abstractmethod
@@ -85,9 +88,9 @@ class Predictor(BasePredictor):
 
     def batch_predict(
             self,
-            model,
-            dataset,
-            dataset_name=None
+            model: ECD,
+            dataset: Dataset,
+            dataset_name: str = None,
     ):
         with dataset.initialize_batcher(
             self._batch_size,
@@ -108,20 +111,8 @@ class Predictor(BasePredictor):
             predictions = defaultdict(list)
             while not batcher.last_batch():
                 batch = batcher.next_batch()
-
-                inputs = {
-                    i_feat.feature_name: batch[i_feat.proc_column]
-                    for i_feat in model.input_features.values()
-                }
-
-                preds = model.predict_step(inputs)
-
-                # accumulate predictions from batch for each output feature
-                for of_name, of_preds in preds.items():
-                    for pred_name, pred_values in of_preds.items():
-                        if pred_name not in EXCLUE_PRED_SET:
-                            key = f'{of_name}_{pred_name}'
-                            predictions[key].append(pred_values)
+                preds = self._predict(model, batch)
+                self._accumulate_preds(preds, predictions)
 
                 if self.is_coordinator():
                     progress_bar.update(1)
@@ -130,10 +121,39 @@ class Predictor(BasePredictor):
                 progress_bar.close()
 
         # consolidate predictions from each batch to a single tensor
-        for key, pred_value_list in predictions.items():
-            predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
+        self._concat_preds(predictions)
 
         return from_numpy_dataset(predictions)
+
+    def predict_single(self, model, batch):
+        predictions = defaultdict(list)
+        preds = self._predict(model, batch)
+        self._accumulate_preds(preds, predictions)
+        self._concat_preds(predictions)
+        return from_numpy_dataset(predictions)
+
+    def _predict(self, model, batch):
+        inputs = {
+            i_feat.feature_name: batch[i_feat.proc_column]
+            for i_feat in model.input_features.values()
+        }
+
+        return model.predict_step(inputs)
+
+    def _accumulate_preds(self, preds, predictions):
+        # accumulate predictions from batch for each output feature
+        for of_name, of_preds in preds.items():
+            for pred_name, pred_values in of_preds.items():
+                if pred_name not in EXCLUE_PRED_SET:
+                    key = f'{of_name}_{pred_name}'
+                    predictions[key].append(pred_values)
+
+    def _concat_preds(self, predictions):
+        for key, pred_value_list in predictions.items():
+            # Without cloning and detaching, a runtime error is raised since pred_value_list
+            # is a tensor that requires grad.
+            predictions[key] = torch.cat(
+                pred_value_list, dim=0).clone().detach().numpy()
 
     def batch_evaluation(
             self,
@@ -167,7 +187,8 @@ class Predictor(BasePredictor):
                     for i_feat in model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: batch[o_feat.proc_column]
+                    o_feat.feature_name: torch.from_numpy(
+                        batch[o_feat.proc_column])
                     for o_feat in model.output_features.values()
                 }
 
@@ -190,7 +211,8 @@ class Predictor(BasePredictor):
         # consolidate predictions from each batch to a single tensor
         if collect_predictions:
             for key, pred_value_list in predictions.items():
-                predictions[key] = tf.concat(pred_value_list, axis=0).numpy()
+                predictions[key] = torch.cat(
+                    pred_value_list, dim=0).clone().detach().numpy()
 
         metrics = model.get_metrics()
         metrics = self.merge_workers_metrics(metrics)
@@ -208,24 +230,12 @@ class Predictor(BasePredictor):
         if bucketing_field:
             raise ValueError('BucketedBatcher is not supported yet')
 
-        # Build static graph for the trained model
-        tf.keras.backend.reset_uids()
-        keras_model_inputs = model.get_model_inputs(training=False)
-        keras_model = model.get_connected_model(inputs=keras_model_inputs,
-                                                training=False)
-
-        # Create a new model that routes activations to outputs
-        tf.keras.backend.reset_uids()
-        output_nodes = {layer_name: keras_model.get_layer(layer_name).output
-                        for layer_name in layer_names}
-        activation_model = tf.keras.Model(inputs=keras_model_inputs,
-                                          outputs=output_nodes)
+        activation_model = model
 
         with dataset.initialize_batcher(
             self._batch_size,
             should_shuffle=False
         ) as batcher:
-
             progress_bar = tqdm(
                 desc='Collecting Tensors',
                 total=batcher.steps_per_epoch,
@@ -247,7 +257,7 @@ class Predictor(BasePredictor):
                     if isinstance(output, tuple):
                         output = list(output)
 
-                    if isinstance(output, tf.Tensor):
+                    if isinstance(output, torch.Tensor):
                         output = [('', output)]
                     elif isinstance(output, dict):
                         output = [(f'_{key}', tensor)
@@ -296,10 +306,12 @@ class RemotePredictor(Predictor):
         **kwargs
     ):
         horovod = initialize_horovod()
-        initialize_tensorflow(gpus=gpus,
-                              gpu_memory_limit=gpu_memory_limit,
-                              allow_parallel_threads=allow_parallel_threads,
-                              horovod=horovod)
+        initialize_pytorch(
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            horovod=horovod
+        )
         super().__init__(horovod=horovod, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
@@ -319,7 +331,8 @@ def calculate_overall_stats(
         feature_metadata.update(
             training_set_metadata[output_feature.feature_name])
 
-        feature_df = predictions.loc[:, predictions.columns.str.startswith(of_name)]
+        feature_df = predictions.loc[:,
+                                     predictions.columns.str.startswith(of_name)]
         feature_df = feature_df.rename(columns=lambda c: c[len(of_name) + 1:])
 
         overall_stats[of_name] = output_feature.calculate_overall_stats(
@@ -335,70 +348,16 @@ def save_prediction_outputs(
         output_directory,
         backend,
 ):
-    backend.export_predictions(postprocessed_output, output_directory)
-    # todo: clean up commented code when done with PR
-    # if isinstance(backend, bck.LocalBackend):
-    #     # LocalBackend save predictions in csv format
-    #     # for each column in the postprocessed_output dataframe save as a csv
-    #
-    #     # setup to parse column names to form csv files
-    #     # column names are one of the following forms
-    #     #   <feature_name>_predictions
-    #     #   <feature_name>_probabilities
-    #     #   <feature_name>_probability
-    #     #   <feature_name>_probabilities_<token_text>
-    #     pattern = re.compile(
-    #         r"""^(?P<feature_name>.*?)       # output feature name
-    #         (?P<pred_type>\(_probabilities_|_predictions|_probabilities|_probability\)?)  #prediction type
-    #         (?P<token_text>\($|.*$\)?)""",
-    #         # if present, text value seq or category
-    #         re.VERBOSE
-    #     )
-    #     for c in postprocessed_output.columns:
-    #         # parse column name
-    #         match = pattern.match(c)
-    #         try:
-    #             if len(match.group('token_text')) == 0:
-    #                 # create file name w/o token text suffix
-    #                 csv_filename = os.path.join(
-    #                     output_directory,
-    #                     '{}_{}.csv'.format(
-    #                         match.group('feature_name'),
-    #                         match.group('pred_type').strip('_')
-    #                     )
-    #                 )
-    #             else:
-    #                 # create file name w/ token text suffix
-    #                 csv_filename = os.path.join(
-    #                     output_directory,
-    #                     '{}_{}_{}.csv'.format(
-    #                         match.group('feature_name'),
-    #                         match.group('pred_type').strip('_'),
-    #                         match.group('token_text').strip('_')
-    #                     )
-    #                 )
-    #
-    #             # save csv file with prediction values
-    #             save_csv(csv_filename, postprocessed_output[c].to_numpy())
-    #         except AttributeError:
-    #             logger.error(
-    #                 f'Unable to parse column name "{c}" to generate csv '
-    #                 'prediction file.'
-    #             )
-    #             raise
-    #
-    # else:
-    #     # Non-LocalBackend save predictions in parquet format
-    #     postprocessed_output, column_shapes = flatten_df(
-    #         postprocessed_output, backend
-    #     )
-    #     postprocessed_output.to_parquet(
-    #         os.path.join(output_directory, 'predictions.parquet')
-    #     )
-    #     save_json(
-    #         os.path.join(output_directory, 'predictions.shapes.json'),
-    #         column_shapes
-    #     )
+    postprocessed_output, column_shapes = flatten_df(
+        postprocessed_output, backend
+    )
+    postprocessed_output.to_parquet(
+        os.path.join(output_directory, 'predictions.parquet')
+    )
+    save_json(
+        os.path.join(output_directory, 'predictions.shapes.json'),
+        column_shapes
+    )
 
 
 def save_evaluation_stats(test_stats, output_directory):
