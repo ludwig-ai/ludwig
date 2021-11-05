@@ -297,14 +297,13 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             return self.decoder_obj._logits_training(
                 inputs,
                 target=target.type(torch.int32),
-                training=training
             )
         else:
             return inputs
 
     def predictions(self, inputs, training=None):
         # Generator Decoder
-        return self.decoder_obj._predictions_eval(inputs, training=training)
+        return self.decoder_obj._predictions_eval(inputs)
 
     def get_prediction_set(self):
         return self.decoder_obj.get_prediction_set()

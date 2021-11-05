@@ -114,6 +114,7 @@ def setup_model_scaffolding(
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
 #
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize('dec_num_layers', [1, 2])
 @pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
@@ -206,6 +207,7 @@ def test_sequence_decoders(
 #
 # final sanity test.  Checks a subset of sequence parameters
 #
+@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize('dec_num_layers', [1, 2])
 @pytest.mark.parametrize('dec_beam_width', [1, 2])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])

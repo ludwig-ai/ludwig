@@ -8,9 +8,9 @@ import torch
 
 from ludwig.utils.data_utils import read_csv
 from ludwig.data.preprocessing import preprocess_for_training
-from tests.integration_tests.utils import binary_feature, category_feature,\
-    date_feature, generate_data, image_feature, numerical_feature,\
-    sequence_feature, set_feature
+from tests.integration_tests.utils import binary_feature, category_feature, \
+    date_feature, generate_data, image_feature, numerical_feature, \
+    sequence_feature, set_feature, LocalTestBackend
 from ludwig.api import LudwigModel
 
 BATCH_SIZE = 32
@@ -89,7 +89,7 @@ def test_regularizers(
             }
         }
 
-        model = LudwigModel(config)
+        model = LudwigModel(config, backend=LocalTestBackend())
         processed_data_df, _, _, _ = preprocess_for_training(config, data_df)
         with processed_data_df.initialize_batcher(batch_size=BATCH_SIZE) as batcher:
             batch = batcher.next_batch()

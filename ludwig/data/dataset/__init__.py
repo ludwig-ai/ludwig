@@ -21,25 +21,13 @@ def get_pandas_dataset_manager(**kwargs):
     return PandasDatasetManager(**kwargs)
 
 
-def get_parquet_dataset_manager(**kwargs):
-    from ludwig.data.dataset.parquet import ParquetDatasetManager
-    return ParquetDatasetManager(**kwargs)
-
-
-def get_tfrecord_dataset_manager(**kwargs):
-    from ludwig.data.dataset.tfrecord import TFRecordDatasetManager
-    return TFRecordDatasetManager(**kwargs)
-
-
 def get_ray_dataset_manager(**kwargs):
     from ludwig.data.dataset.ray import RayDatasetManager
     return RayDatasetManager(**kwargs)
 
 
 dataset_registry = {
-    'parquet': get_parquet_dataset_manager,
     'hdf5': get_pandas_dataset_manager,
-    'tfrecord': get_tfrecord_dataset_manager,
     'ray': get_ray_dataset_manager,
     None: get_pandas_dataset_manager,
 }
