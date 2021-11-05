@@ -18,7 +18,6 @@ import logging
 import numpy as np
 import torch
 
-
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
@@ -73,8 +72,10 @@ class BinaryFeatureMixin:
                 f"Binary feature column {column.name} expects 2 distinct values, "
                 f"found: {distinct_values.values.tolist()}"
             )
+        fallback_true_value = sorted(distinct_values)[0]
 
-        str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
+        str2bool = {v: strings_utils.str2bool(
+            v, fallback_true_value) for v in distinct_values}
         bool2str = [
             k for k, v in sorted(str2bool.items(), key=lambda item: item[1])
         ]
@@ -82,6 +83,7 @@ class BinaryFeatureMixin:
         return {
             "str2bool": str2bool,
             "bool2str": bool2str,
+            "fallback_true_value": fallback_true_value
         }
 
     @staticmethod
