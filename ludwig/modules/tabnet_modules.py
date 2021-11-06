@@ -1,4 +1,5 @@
 from typing import List, Tuple
+import logging
 
 import torch
 
@@ -6,6 +7,9 @@ from ludwig.utils.torch_utils import Sparsemax
 from ludwig.modules.activation_modules import glu
 from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.torch_utils import LudwigModule
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # todo: debugging
 
 
 class TabNet(LudwigModule):
@@ -271,8 +275,12 @@ class AttentiveTransformer(LudwigModule):
         # from the z_cumsum. Substacting the mean will cause z_cumsum to be close
         # to zero.
         # hidden = hidden - tf.math.reduce_mean(hidden, axis=1)[:, tf.newaxis]
-
-        return self.sparsemax(hidden)  # [b_s, s]
+        sparsemax_tensor = self.sparsemax(hidden)
+        logger.debug(
+            f'attentive_transformer returning:\n{sparsemax_tensor.clone().detach()}\n'
+            f'reduction of sparsemax tensor: {torch.sum(sparsemax_tensor.clone().detach(), 1)}'
+        )
+        return sparsemax_tensor  # [b_s, s]
 
     @property
     def input_shape(self) -> torch.Size:

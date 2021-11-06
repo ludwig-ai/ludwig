@@ -3,6 +3,8 @@ import warnings
 from abc import abstractmethod
 from functools import lru_cache
 
+import logging
+
 from typing import Optional, List, Tuple, Union
 
 import math
@@ -11,8 +13,10 @@ from torch import nn
 from torch.nn import Module, ModuleDict
 from torch.autograd import Function
 
-
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # todo: debugging
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
@@ -245,6 +249,9 @@ class SparsemaxFunction(Function):
         v_hat = grad_input.sum(dim=dim) / supp_size.to(output.dtype).squeeze()
         v_hat = v_hat.unsqueeze(dim)
         grad_input = torch.where(output != 0, grad_input - v_hat, grad_input)
+        logger.debug(
+            f'sparsemax backward() return:\n\t{grad_input.clone().detach()}'
+        )
         return grad_input, None
 
     @staticmethod

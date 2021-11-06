@@ -1,5 +1,6 @@
 from typing import Optional, List
 import pytest
+import logging
 
 import torch
 
@@ -9,9 +10,14 @@ from ludwig.modules.tabnet_modules import FeatureTransformer, FeatureBlock
 from ludwig.modules.tabnet_modules import AttentiveTransformer
 from tests.integration_tests.utils import assert_model_parameters_updated
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # todo: debugging
+
 RANDOM_SEED = 67
-BATCH_SIZE = 16
-INPUT_SIZE = [6, 12]
+BATCH_SIZE = 2  # 16  2 is for testing  # todo: set back to 16
+INPUT_SIZE = [6,
+              12]  # todo: confirm values to be tested and how it relates to num_blocks
+
 
 @pytest.mark.parametrize(
     'input_tensor',
