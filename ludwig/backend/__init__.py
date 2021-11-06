@@ -52,11 +52,6 @@ def get_local_backend(**kwargs):
     return LocalBackend(**kwargs)
 
 
-def create_dask_backend(**kwargs):
-    from ludwig.backend.dask import DaskBackend
-    return DaskBackend(**kwargs)
-
-
 def create_horovod_backend(**kwargs):
     from ludwig.backend.horovod import HorovodBackend
     return HorovodBackend(**kwargs)
@@ -69,7 +64,6 @@ def create_ray_backend(**kwargs):
 
 backend_registry = {
     LOCAL: get_local_backend,
-    DASK: create_dask_backend,
     HOROVOD: create_horovod_backend,
     RAY: create_ray_backend,
     None: get_local_backend,
