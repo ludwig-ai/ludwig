@@ -708,7 +708,7 @@ def assert_model_parameters_updated(
     """
     # setup
     loss_function = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
     model.train(True)
 
     # generate initial model output tensor
@@ -735,6 +735,7 @@ def assert_model_parameters_updated(
         before = [(x[0], x[1].clone()) for x in model.named_parameters()]
 
         # do update of model parameters
+        optimizer.zero_grad()
         if isinstance(model_output, torch.Tensor):
             loss = loss_function(model_output, target_tensor)
         else:
