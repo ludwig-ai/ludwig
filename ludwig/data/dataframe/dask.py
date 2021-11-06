@@ -21,6 +21,7 @@ import dask
 import dask.array as da
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
+from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
 
@@ -39,6 +40,7 @@ class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, **kwargs):
         self._parallelism = parallelism
         self._persist = persist
+        set_scheduler(ray_dask_get)
 
     def set_parallelism(self, parallelism):
         self._parallelism = parallelism

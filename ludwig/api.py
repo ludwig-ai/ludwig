@@ -32,44 +32,38 @@ from collections import OrderedDict
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple, Union
 
-from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
-
 import numpy as np
 import pandas as pd
+import ray
+import torch
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import FULL, PREPROCESSING, TEST, TRAINING, VALIDATION, LEARNING_RATE, BATCH_SIZE, AUTO, \
-    EVAL_BATCH_SIZE
+from ludwig.constants import (FULL, PREPROCESSING, TEST, TRAINING, VALIDATION,
+                              LEARNING_RATE, BATCH_SIZE, AUTO, EVAL_BATCH_SIZE)
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import (load_metadata,
                                        preprocess_for_prediction,
                                        preprocess_for_training)
-from ludwig.features.feature_registries import \
-    update_config_with_metadata
+from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
                             MODEL_WEIGHTS_FILE_NAME,
                             TRAIN_SET_METADATA_FILE_NAME,
                             set_disable_progressbar, LUDWIG_VERSION)
 from ludwig.models.ecd import ECD
-from ludwig.models.predictor import (Predictor, calculate_overall_stats,
+from ludwig.models.predictor import (calculate_overall_stats,
                                      print_evaluation_stats,
                                      save_evaluation_stats,
                                      save_prediction_outputs)
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import (CACHEABLE_FORMATS, DATAFRAME_FORMATS,
-                                     DICT_FORMATS,
-                                     external_data_reader_registry,
-                                     figure_data_format, generate_kfold_splits,
+from ludwig.utils.data_utils import (figure_data_format, generate_kfold_splits,
                                      load_json, save_json, load_yaml, load_dataset)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import path_exists
+from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
-
-import torch
 
 logger = logging.getLogger(__name__)
 
@@ -397,6 +391,7 @@ class LudwigModel:
                         data_format=data_format,
                         random_seed=random_seed
                     )
+
                     if not skip_save_training_description:
                         save_json(description_fn, description)
                     # print description
@@ -1910,7 +1905,16 @@ def get_experiment_description(
 
     description['config'] = config
 
-    import torch
     description['torch_version'] = torch.__version__
+
+    compute_description = {'num_nodes': 1}
+    if ray.is_initialized():
+        compute_description = {'num_nodes': len(ray.nodes())}
+    if torch.cuda.is_available():
+        # Assumption: All nodes are of the same instance type.
+        compute_description['gpu_type'] = torch.cuda.get_device_name(0)
+        compute_description['gpus_per_node'] = torch.cuda.device_count()
+
+    description['compute'] = compute_description
 
     return description
