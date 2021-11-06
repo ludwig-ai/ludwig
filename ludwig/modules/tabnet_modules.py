@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 import torch
 
@@ -90,7 +90,8 @@ class TabNet(LudwigModule):
             )
         self.final_projection = torch.nn.Linear(
             output_size,
-            output_size)
+            output_size
+        )
 
     def forward(
             self,
@@ -250,7 +251,6 @@ class AttentiveTransformer(LudwigModule):
             apply_glu=False,
         )
         self.sparsemax = Sparsemax()
-        # self.sparsemax = CustomSparsemax()  # todo: tf implementation
 
     def forward(self, inputs, prior_scales):
         # shape notation
