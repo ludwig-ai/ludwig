@@ -7,10 +7,11 @@ from ludwig.utils.torch_utils import Sparsemax
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.modules.tabnet_modules import FeatureTransformer, FeatureBlock
 from ludwig.modules.tabnet_modules import AttentiveTransformer
+from tests.integration_tests.utils import assert_model_parameters_updated
 
 RANDOM_SEED = 67
 BATCH_SIZE = 16
-
+INPUT_SIZE = [6, 12]
 
 @pytest.mark.parametrize(
     'input_tensor',
@@ -43,7 +44,7 @@ def test_sparsemax(
 )
 @pytest.mark.parametrize('apply_glu', [True, False])
 @pytest.mark.parametrize('size', [4, 12])
-@pytest.mark.parametrize('input_size', [2, 6])
+@pytest.mark.parametrize('input_size', INPUT_SIZE)
 def test_feature_block(
         input_size,
         size: int,
@@ -82,6 +83,8 @@ def test_feature_block(
     assert feature_block.output_shape[-1] == size
     assert feature_block.input_dtype == torch.float32
 
+    # check for model parameter updates
+    assert_model_parameters_updated(feature_block, (input_tensor,))
 
 @pytest.mark.parametrize(
     'num_total_blocks, num_shared_blocks',
@@ -89,7 +92,7 @@ def test_feature_block(
 )
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
 @pytest.mark.parametrize('size', [4, 12])
-@pytest.mark.parametrize('input_size', [2, 6])
+@pytest.mark.parametrize('input_size', INPUT_SIZE)
 def test_feature_transformer(
         input_size: int,
         size: int,
@@ -119,11 +122,14 @@ def test_feature_transformer(
     assert feature_transformer.output_shape[-1] == size
     assert feature_transformer.input_dtype == torch.float32
 
+    # check for model parameter updates
+    assert_model_parameters_updated(feature_transformer, (input_tensor,))
+
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
 @pytest.mark.parametrize('output_size', [10, 12])
 @pytest.mark.parametrize('size', [4, 8])
-@pytest.mark.parametrize('input_size', [2, 6])
+@pytest.mark.parametrize('input_size', INPUT_SIZE)
 def test_attentive_transformer(
         input_size: int,
         size: int,
@@ -159,11 +165,14 @@ def test_attentive_transformer(
     assert attentive_transformer.output_shape[-1] == input_size
     assert attentive_transformer.input_dtype == torch.float32
 
+    # check for model parameter updates
+    assert_model_parameters_updated(attentive_transformer,
+                                    (x[:, output_size:], prior_scales))
 
 @pytest.mark.parametrize('virtual_batch_size', [None, 7])
 @pytest.mark.parametrize('size', [2, 4, 8])
 @pytest.mark.parametrize('output_size', [2, 4, 12])
-@pytest.mark.parametrize('input_size', [2])
+@pytest.mark.parametrize('input_size', INPUT_SIZE)
 def test_tabnet(
         input_size: int,
         output_size: int,
@@ -192,3 +201,6 @@ def test_tabnet(
     assert tabnet.input_shape[-1] == input_size
     assert tabnet.output_shape[-1] == output_size
     assert tabnet.input_dtype == torch.float32
+
+    # check for model parameter updates
+    assert_model_parameters_updated(tabnet, (input_tensor,))
