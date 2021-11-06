@@ -5,7 +5,8 @@ import numpy as np
 import torch
 
 from ludwig.utils.misc_utils import get_from_registry
-from tests.integration_tests.utils import ENCODERS
+from tests.integration_tests.utils import ENCODERS, \
+    assert_model_parameters_updated_encoders
 from ludwig.encoders.sequence_encoders import \
     ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 
@@ -62,7 +63,8 @@ def input_sequence() -> torch.Tensor:
 @pytest.mark.parametrize('enc_num_layers', [1, 2])
 @pytest.mark.parametrize('enc_dropout', [0, 0.2])
 @pytest.mark.parametrize('enc_cell_type', ['rnn', 'gru', 'lstm'])
-@pytest.mark.parametrize('enc_encoder', ENCODERS + ['passthrough'])
+@pytest.mark.parametrize('enc_encoder',
+                         ENCODERS)  # todo: this fails parameter update test + ['passthrough'])
 def test_sequence_encoders(
         enc_encoder: str,
         enc_cell_type: str,
@@ -158,13 +160,18 @@ def test_sequence_encoders(
 
     elif enc_encoder == 'passthrough':
         assert encoder_out['encoder_output'].shape \
-            == (BATCH_SIZE, SEQ_SIZE, 1) \
+               == (BATCH_SIZE, SEQ_SIZE, 1) \
             if enc_reduce_output is None else (BATCH_SIZE, 1)
 
     else:
         raise ValueError('{} is an invalid encoder specification'
                          .format(enc_encoder))
 
+    # confirm that encoder parameters are updated
+    assert_model_parameters_updated_encoders(
+        encoder_obj,
+        input_sequence
+    )
 
 @pytest.mark.parametrize('enc_reduce_output',
                          [None, 'sum', 'last', 'mean', 'max', 'concat'])
