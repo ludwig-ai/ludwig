@@ -20,6 +20,7 @@ TEST_NUM_FILTERS = 24
 BATCH_SIZE = 2
 SEQ_SIZE = 10
 PARALLEL_CNN_LAYERS = 4
+RANDOM_SEED = 1919
 
 # encoder parameters combinations tested
 encoder_parameters = {
@@ -49,6 +50,7 @@ def input_sequence() -> torch.Tensor:
     #   [10, 11, 12, 13, 14, 0],   # max length sequence
     #   [32, 0, 0, 0, 0, 0]        # minimum length sequence
     # ]
+    torch.manual_seed(RANDOM_SEED)
     input_tensor = torch.zeros([BATCH_SIZE, SEQ_SIZE], dtype=torch.int32)
     sequence_lengths = np.random.randint(1, SEQ_SIZE, size=BATCH_SIZE)
     for i in range(input_tensor.shape[0]):
