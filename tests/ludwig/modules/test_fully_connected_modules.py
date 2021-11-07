@@ -3,8 +3,7 @@ import pytest
 from typing import Optional
 
 from ludwig.modules.fully_connected_modules import FCLayer, FCStack
-from tests.integration_tests.utils import assert_model_parameters_updated, \
-    assert_model_parameters_updated_loop
+from tests.integration_tests.utils import assert_model_parameters_updated
 
 BATCH_SIZE = 2
 INPUT_SIZE = 8
@@ -37,7 +36,7 @@ def test_fc_layer(
     assert output_tensor.shape == (BATCH_SIZE, OUTPUT_SIZE)
 
     # check to confirm parameter updates
-    assert_model_parameters_updated_loop(model, batch)
+    assert_model_parameters_updated(model, (batch,))
 
 
 @pytest.mark.parametrize('residual', [True, False])
@@ -69,4 +68,4 @@ def test_fc_stack(
 
     # check to confirm parameter updates
     # assert_model_parameters_updated(model, output_tensor)
-    assert_model_parameters_updated_loop(model, batch)
+    assert_model_parameters_updated(model, (batch,))
