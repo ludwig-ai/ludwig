@@ -22,9 +22,11 @@ from typing import List, Union
 import pandas as pd
 
 from ludwig.automl.data_source import DataSource, DataframeSource
-from ludwig.automl.utils import (FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
+from ludwig.automl.utils import (
+    FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
 from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
 from ludwig.utils.data_utils import load_yaml, load_dataset
+from ludwig.utils import strings_utils
 
 try:
     import dask.dataframe as dd
@@ -159,6 +161,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     for field in source.columns:
         dtype = source.get_dtype(field)
         distinct_values = source.get_distinct_values(field)
+        num_distinct_values = source.get_num_distinct_values(field)
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         avg_words = None
@@ -169,6 +172,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 name=field,
                 dtype=dtype,
                 distinct_values=distinct_values,
+                num_distinct_values=num_distinct_values,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
                 avg_words=avg_words
@@ -252,7 +256,8 @@ def get_field_metadata(
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(idx, field, dtype, row_count, target_name),
+                excluded=should_exclude(
+                    idx, field, dtype, row_count, target_name),
                 mode=infer_mode(field, target_name),
                 missing_values=missing_value_percent,
             )
@@ -293,14 +298,17 @@ def infer_type(
     # Return
     :return: (str) feature type
     """
-    distinct_values = field.distinct_values
-    if distinct_values == 2 and missing_value_percent == 0:
-        return BINARY
+    num_distinct_values = field.num_distinct_values
+    if num_distinct_values == 2 and missing_value_percent == 0:
+        # Check that all distinct values are conventional bools.
+        if strings_utils.are_conventional_bools(field.distinct_values):
+            return BINARY
+        return CATEGORY
 
     if field.image_values >= 3:
         return IMAGE
 
-    if distinct_values < 20:
+    if num_distinct_values < 20:
         # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
         # NOTE (ASN): edge case -- there are less than 20 samples in dataset
         return CATEGORY
@@ -321,7 +329,7 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     if field.name == target_name:
         return False
 
-    distinct_value_percent = float(field.distinct_values) / row_count
+    distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
         if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID"):

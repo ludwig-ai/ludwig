@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from typing import List
+from typing import List, Set
 
 from ludwig.automl.utils import avg_num_tokens
 from ludwig.utils.image_utils import is_image_score
@@ -17,7 +17,11 @@ class DataSource(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_distinct_values(self, column) -> int:
+    def get_num_distinct_values(self, column) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_distinct_values(self, column) -> Set:
         raise NotImplementedError()
 
     @abstractmethod
@@ -48,8 +52,11 @@ class DataframeSource(DataSource):
     def get_dtype(self, column) -> str:
         return self.df[column].dtype.name
 
-    def get_distinct_values(self, column) -> int:
+    def get_num_distinct_values(self, column) -> int:
         return len(self.df[column].unique())
+
+    def get_distinct_values(self, column) -> int:
+        return self.df[column].unique()
 
     def get_nonnull_values(self, column) -> int:
         return len(self.df[column].notnull())

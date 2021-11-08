@@ -86,6 +86,15 @@ def str2bool(v, fallback_true_label=None):
     return v == fallback_true_label
 
 
+def are_conventional_bools(values):
+    """Returns whether all values are conventional booleans."""
+    for value in values:
+        lower_value = str(value).lower()
+        if lower_value not in BOOL_TRUE_STRS and lower_value not in BOOL_FALSE_STRS:
+            return False
+    return True
+
+
 def match_replace(string_to_match, list_regex):
     """Matches strings against regular expressions.
 
