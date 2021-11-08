@@ -13,12 +13,12 @@ def test_str_to_bool():
     with pytest.raises(Exception):
         strings_utils.str2bool('bot')
 
-    # Fallback value is used.
-    assert strings_utils.str2bool('bot', fallback_true_value='bot') == True
-    assert strings_utils.str2bool('human', fallback_true_value='bot') == False
-    assert strings_utils.str2bool('human', fallback_true_value='human') == True
+    # Fallback label is used.
+    assert strings_utils.str2bool('bot', fallback_true_label='bot') == True
+    assert strings_utils.str2bool('human', fallback_true_label='bot') == False
+    assert strings_utils.str2bool('human', fallback_true_label='human') == True
     assert strings_utils.str2bool(
-        'human', fallback_true_value='Human') == False
+        'human', fallback_true_label='Human') == False
 
-    # Fallback value is used, strictly as a fallback.
-    assert strings_utils.str2bool('True', fallback_true_value='False') == True
+    # Fallback label is used, strictly as a fallback.
+    assert strings_utils.str2bool('True', fallback_true_label='False') == True

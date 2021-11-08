@@ -65,25 +65,25 @@ def strip_accents(s):
                    if unicodedata.category(c) != 'Mn')
 
 
-def str2bool(v, fallback_true_value=None):
+def str2bool(v, fallback_true_label=None):
     """Returns bool representation of the given value v.
 
-    Check the value against global bool value lists.
-    Fallback to the fallback_true_value if the value isn't defined in the global lists.
+    Check the value against global bool string lists.
+    Fallback to using fallback_true_label as True if the value isn't in the global bool string lists.
 
     args:
         v: Value to get the bool representation for.
-        fallback_true_value: (str) fallback value to use as 'True'.
+        fallback_true_label: (str) label to use as 'True'.
     """
     v_str = str(v).lower()
     if v_str in BOOL_TRUE_STRS:
         return True
     if v_str in BOOL_FALSE_STRS:
         return False
-    if fallback_true_value is None:
+    if fallback_true_label is None:
         raise ValueError(
-            f'Cannot automatically map value {v} to a boolean and no `fallback_true_value` specified.')
-    return v == fallback_true_value
+            f'Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified.')
+    return v == fallback_true_label
 
 
 def match_replace(string_to_match, list_regex):
