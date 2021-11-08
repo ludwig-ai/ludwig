@@ -128,7 +128,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
             inputs = inputs.unsqueeze(dim=1)
 
         if inputs.dtype == torch.int8 or inputs.dtype == torch.int16:
-            inputs = inputs.type(torch.IntTensor)
+            inputs = inputs.type(torch.int)
         encoder_output = self.encoder_obj(inputs)
 
         return {'encoder_output': encoder_output}

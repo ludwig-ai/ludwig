@@ -168,7 +168,7 @@ class H3Embed(Encoder):
                    Shape: [batch x H3_INPUT_SIZE], type torch.int8
             :type inputs: Tensor
          """
-        input_vector = inputs.type(torch.IntTensor)
+        input_vector = inputs.type(torch.int)
 
         # ================ Embeddings ================
         embedded_mode = self.embed_mode(input_vector[:, 0:1]).unsqueeze(1)
