@@ -102,14 +102,20 @@ class ECD(LudwigModule):
         Returns:
             A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
+
+        if torch.cuda.is_available():
+            device = "cuda"
+        else:
+            device = "cpu"
+
         if isinstance(inputs, tuple):
             inputs, targets = inputs
             # Convert targets to tensors.
             for target_feature_name, target_value in targets.items():
                 if not isinstance(target_value, torch.Tensor):
-                    targets[target_feature_name] = torch.from_numpy(target_value)
+                    targets[target_feature_name] = torch.from_numpy(target_value).to(device)
                 else:
-                    targets[target_feature_name] = target_value
+                    targets[target_feature_name] = target_value.to(device)
         else:
             targets = None
 
@@ -118,9 +124,9 @@ class ECD(LudwigModule):
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
             if not isinstance(input_values, torch.Tensor):
-                inputs[input_feature_name] = torch.from_numpy(input_values)
+                inputs[input_feature_name] = torch.from_numpy(input_values).to(device)
             else:
-                inputs[input_feature_name] = input_values
+                inputs[input_feature_name] = input_values.to(device)
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
