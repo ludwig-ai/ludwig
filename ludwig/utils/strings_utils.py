@@ -65,8 +65,23 @@ def strip_accents(s):
                    if unicodedata.category(c) != 'Mn')
 
 
-def str2bool(v):
-    return str(v).lower() in BOOL_TRUE_STRS
+def str2bool(v, fallback_true_label=None):
+    """Returns bool representation of the given value v.
+    Check the value against global bool string lists.
+    Fallback to using fallback_true_label as True if the value isn't in the global bool string lists.
+    args:
+        v: Value to get the bool representation for.
+        fallback_true_label: (str) label to use as 'True'.
+    """
+    v_str = str(v).lower()
+    if v_str in BOOL_TRUE_STRS:
+        return True
+    if v_str in BOOL_FALSE_STRS:
+        return False
+    if fallback_true_label is None:
+        raise ValueError(
+            f'Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified.')
+    return v == fallback_true_label
 
 
 def match_replace(string_to_match, list_regex):
@@ -149,7 +164,8 @@ def create_vocabulary(
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    processed_lines = data.map(lambda line: tokenizer(line.lower() if lowercase else line))
+    processed_lines = data.map(lambda line: tokenizer(
+        line.lower() if lowercase else line))
     processed_counts = processed_lines.explode().value_counts(sort=False)
     processed_counts = processor.compute(processed_counts)
     unit_counts = Counter(dict(processed_counts))
