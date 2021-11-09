@@ -201,12 +201,11 @@ class ECD(LudwigModule):
             decoder_outputs = decoder(decoder_inputs, mask=mask)
 
             forward_utils.set_output_feature_tensor(
-                output_logits, output_feature_name, LOGITS, decoder_outputs.logits)
-            forward_utils.set_output_feature_tensor(
-                output_logits, output_feature_name, LAST_HIDDEN, decoder_outputs.last_hidden)
-            output_last_hidden[output_feature_name] = decoder_outputs.last_hidden
-
-        print(f'output_logits.keys(): {output_logits.keys()}')
+                    output_logits, output_feature_name, LAST_HIDDEN, decoder_outputs['last_hidden'])
+            if 'logits' in decoder_outputs:
+                forward_utils.set_output_feature_tensor(
+                    output_logits, output_feature_name, LOGITS, decoder_outputs['logits'])
+            output_last_hidden[output_feature_name] = decoder_outputs['last_hidden']
         return output_logits
 
     def predictions(self, inputs, output_features=None):

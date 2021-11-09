@@ -39,12 +39,6 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-class OutputFeatureOutput(NamedTuple):
-    last_hidden: torch.Tensor
-    logits: torch.Tensor
-    # projection_input: torch.Tensor = torch.Tensor([0])
-
-
 class BaseFeature:
     """Base class for all features.
 
@@ -290,7 +284,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             logits = {'logits': logits}
 
         # For multi-class features, we must choose a consistent tuple subset.
-        return OutputFeatureOutput(last_hidden=hidden, logits=logits[LOGITS])
+        return {
+            # last_hidden used for dependencies processing
+            'last_hidden': hidden,
+            **logits
+        }
 
     def overall_statistics_metadata(self):
         """Additional metadata used to extend `training_set_metadata`.
