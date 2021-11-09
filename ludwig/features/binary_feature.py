@@ -102,7 +102,7 @@ class BinaryFeatureMixin:
             "fallback_true_label": fallback_true_label
         }
 
-    @ staticmethod
+    @staticmethod
     def add_feature_data(
         feature,
         input_df,
@@ -152,20 +152,20 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         return encoder_outputs
 
-    @ classmethod
+    @classmethod
     def get_input_dtype(cls):
         return tf.bool
 
     def get_input_shape(self):
         return ()
 
-    @ staticmethod
+    @staticmethod
     def update_config_with_metadata(
         input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
-    @ staticmethod
+    @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
@@ -239,20 +239,20 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     #         else:
     #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
-    @ classmethod
+    @classmethod
     def get_output_dtype(cls):
         return tf.bool
 
     def get_output_shape(self):
         return ()
 
-    @ staticmethod
+    @staticmethod
     def update_config_with_metadata(
         input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
-    @ staticmethod
+    @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
         overall_stats = {}
         confusion_matrix = ConfusionMatrix(
@@ -329,7 +329,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         return result
 
-    @ staticmethod
+    @staticmethod
     def populate_defaults(output_feature):
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
