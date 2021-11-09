@@ -76,6 +76,11 @@ class BinaryFeatureMixin:
         if 'fallback_true_label' in preprocessing_parameters:
             fallback_true_label = preprocessing_parameters['fallback_true_label']
         else:
+            logger.warning(
+                f"In case binary feature {column.name} doesn't have conventional boolean values, "
+                f"we will interpret {fallback_true_label} as 1 and the other values as 0. "
+                f"If this is incorrect, please use the category feature type or "
+                f"manually specify the true value with `preprocessing.fallback_true_label`.")
             fallback_true_label = sorted(distinct_values)[0]
 
         str2bool = {v: strings_utils.str2bool(
