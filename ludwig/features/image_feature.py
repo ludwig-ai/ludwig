@@ -206,8 +206,10 @@ class ImageFeatureMixin:
                 explicit_height_width and explicit_num_channels):
             sample_size = min(len(input_feature_col),
                               preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-            sample = [read_image(get_image_from_path(src_path, img)) for img in
-                      input_feature_col.head(sample_size)]
+            sample = [
+                read_image(get_image_from_path(src_path, img, ret_bytes=True))
+                for img in
+                input_feature_col.head(sample_size)]
             inferred_sample = [img for img in sample if img is not None]
             if len(inferred_sample) == 0:
                 raise ValueError(
@@ -234,12 +236,13 @@ class ImageFeatureMixin:
             if preprocessing_parameters[INFER_IMAGE_DIMENSIONS]:
                 should_resize = True
 
+                # assumed image format is channels first [channels, height, width]
                 height_avg = min(
-                    sum(x.shape[0]
+                    sum(x.shape[1]
                         for x in inferred_sample) / len(inferred_sample),
                     preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT])
                 width_avg = min(
-                    sum(x.shape[1]
+                    sum(x.shape[2]
                         for x in inferred_sample) / len(inferred_sample),
                     preprocessing_parameters[INFER_IMAGE_MAX_WIDTH])
 
@@ -322,7 +325,8 @@ class ImageFeatureMixin:
                 .format(type(first_img_entry))
             )
 
-        first_img_entry = get_image_from_path(src_path, first_img_entry)
+        first_img_entry = get_image_from_path(src_path, first_img_entry,
+                                              ret_bytes=True)
 
         (
             should_resize,
