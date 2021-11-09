@@ -173,7 +173,7 @@ class RandomSampler(HyperoptSampler):
                     value_type = type(value)
                     if value_type == bool:
                         value_str = str(value)
-                        value_type = str2bool(value_str)
+                        value_type = str2bool
                     elif value_type == str or value_type == int or \
                             value_type == float:
                         value_str = str(value)
@@ -295,7 +295,7 @@ class PySOTSampler(HyperoptSampler):
                     value_type = type(value)
                     if value_type == bool:
                         value_str = str(value)
-                        value_type = str2bool(value_str)
+                        value_type = str2bool
                     elif value_type == str or value_type == int or \
                             value_type == float:
                         value_str = str(value)
