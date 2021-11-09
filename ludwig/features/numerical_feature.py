@@ -17,6 +17,7 @@
 import logging
 
 import numpy as np
+from typing import Dict
 import torch
 
 from ludwig.constants import *
@@ -32,6 +33,7 @@ from ludwig.modules.metric_modules import (
     RMSPEMetric,
     R2Score,
 )
+from ludwig.utils import forward_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
@@ -275,18 +277,15 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs, **kwargs):  # logits
-        predictions = inputs.logits
+    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
+        logits = forward_utils.get_output_feature_tensor(
+            inputs, feature_name, LOGITS)
+        predictions = logits
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
-                '''
-                predictions = tf.clip_by_value(
-                    predictions, self.clip[0], self.clip[1]
-                )
-                '''
                 predictions = torch.clamp(
-                    predictions,
+                    logits,
                     self.clip[0],
                     self.clip[1]
                 )
@@ -302,7 +301,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                     )
                 )
 
-        return {PREDICTIONS: predictions, LOGITS: inputs.logits}
+        return {PREDICTIONS: predictions, LOGITS: logits}
 
     def _setup_loss(self):
         if self.loss[TYPE] == "mean_squared_error":
@@ -332,25 +331,25 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
 
-    @property
+    @ property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @classmethod
+    @ classmethod
     def get_output_dtype(cls):
         return torch.float32
 
-    @property
+    @ property
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @staticmethod
+    @ staticmethod
     def update_config_with_metadata(
             output_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
-    @staticmethod
+    @ staticmethod
     def calculate_overall_stats(predictions, targets, metadata):
         # no overall stats, just return empty dictionary
         return {}
@@ -376,7 +375,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         return predictions
 
-    @staticmethod
+    @ staticmethod
     def populate_defaults(output_feature):
         set_default_value(
             output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1}

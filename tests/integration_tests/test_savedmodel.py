@@ -24,8 +24,10 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.constants import *
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
+from ludwig.utils import forward_utils
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, vector_feature, image_feature, \
     audio_feature, timeseries_feature, date_feature, h3_feature, set_feature, \
@@ -221,7 +223,9 @@ def test_torchscript(csv_filename, should_load_model):
         print('Got torchscript predictions')
 
         # Restoring from torchscript drops the names of NamedTuples.
-        restored_predictions = torch.argmax(logits[of_name][1], -1)
+        # restored_predictions = torch.argmax(logits[of_name][1], -1)
+        restored_predictions = torch.argmax(
+            forward_utils.get_output_feature_tensor(logits, of_name, 'logits'), -1)
 
         print(
             f'original_predictions_df[predictions_column_name]: {original_predictions_df[predictions_column_name]}')

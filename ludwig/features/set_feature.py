@@ -28,6 +28,7 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import JaccardMetric
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
+from ludwig.utils import forward_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry,\
     UNKNOWN_SYMBOL
@@ -186,10 +187,13 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     def predictions(
             self,
-            inputs,  # logits
+            inputs,
+            feature_name,
             **kwargs
     ):
-        probabilities = torch.sigmoid(inputs.logits)
+        logits = forward_utils.get_output_feature_tensor(
+            inputs, feature_name, LOGITS)
+        probabilities = torch.sigmoid(logits)
 
         predictions = torch.greater_equal(probabilities, self.threshold)
         predictions = predictions.type(torch.int64)
@@ -197,7 +201,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return {
             PREDICTIONS: predictions,
             PROBABILITIES: probabilities,
-            LOGITS: inputs.logits
+            LOGITS: logits
         }
 
     def _setup_loss(self):

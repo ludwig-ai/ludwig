@@ -17,6 +17,7 @@ from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import LudwigModule, reg_loss
+from ludwig.utils import forward_utils
 
 logger = logging.getLogger(__name__)
 
@@ -198,9 +199,14 @@ class ECD(LudwigModule):
                 # decoder_inputs = (decoder_inputs, target_value)
 
             decoder_outputs = decoder(decoder_inputs, mask=mask)
-            output_logits[output_feature_name] = decoder_outputs
+
+            forward_utils.set_output_feature_tensor(
+                output_logits, output_feature_name, LOGITS, decoder_outputs.logits)
+            forward_utils.set_output_feature_tensor(
+                output_logits, output_feature_name, LAST_HIDDEN, decoder_outputs.last_hidden)
             output_last_hidden[output_feature_name] = decoder_outputs.last_hidden
 
+        print(f'output_logits.keys(): {output_logits.keys()}')
         return output_logits
 
     def predictions(self, inputs, output_features=None):
@@ -240,8 +246,7 @@ class ECD(LudwigModule):
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                outputs[of_name]
-            )
+                outputs, of_name)
 
         return predictions
 
@@ -267,8 +272,9 @@ class ECD(LudwigModule):
             #     targets, of_name)
             # of_train_loss = of_obj.train_loss(target_value,
             #                                   predictions[of_name])
-            of_train_loss = of_obj.train_loss(targets[of_name],
-                                              predictions[of_name])
+            print(f'In train loss, predictions are: {predictions}')
+            of_train_loss = of_obj.train_loss(
+                targets[of_name], predictions, of_name)
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
