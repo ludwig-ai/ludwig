@@ -332,7 +332,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
 
-    @ property
+    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
@@ -340,17 +340,17 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.float32
 
-    @ property
+    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @ staticmethod
+    @staticmethod
     def update_config_with_metadata(
             output_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
-    @ staticmethod
+    @staticmethod
     def calculate_overall_stats(predictions, targets, metadata):
         # no overall stats, just return empty dictionary
         return {}
@@ -376,7 +376,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         return predictions
 
-    @ staticmethod
+    @staticmethod
     def populate_defaults(output_feature):
         set_default_value(
             output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1}

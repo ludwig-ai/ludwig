@@ -16,7 +16,7 @@
 import logging
 from abc import ABC, abstractmethod
 import copy
-from typing import Dict, NamedTuple
+from typing import Dict
 
 from ludwig.utils.types import DataFrame
 
@@ -86,6 +86,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         super().__init__(*args, **kwargs)
 
     def create_input(self):
+        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([2, *self.input_shape]).to(self.input_dtype)
 
     @staticmethod
