@@ -90,6 +90,12 @@ def Embed():
 _embed_options = ['add']
 
 
+def InitializerOrDict(default='xavier_uniform'):
+    return field(metadata={
+        'marshmallow_field': InitializerOptionsOrCustomDictField(allow_none=False)
+    }, default=default)
+
+
 class EmbedInputFeatureNameField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
@@ -116,6 +122,43 @@ class EmbedInputFeatureNameField(fields.Field):
             ]
         }
 
+class InitializerOptionsOrCustomDictField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        # if value is None:
+        #     return value
+
+        if isinstance(value, str):
+            initializers = list(initializer_registry.keys())
+            if value not in initializers:
+                raise ValidationError(
+                    f"Expected one of: {initializers}, found: {value}"
+                )
+            return value
+
+        if isinstance(value, dict):
+            if "type" not in value:
+                raise ValidationError(
+                    f"Dict must contain 'type'"
+                )
+            return value
+
+        raise ValidationError('Field should be str or dict')
+
+    def _jsonschema_type_mapping(self):
+        return {
+            'oneOf': [
+                {'type': 'string', 'enum': list(initializer_registry.keys())},
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "type": "string" },
+                    },
+                    "required": ["type"],
+                    "additionalProperties": True,
+                },
+                # {'type': 'null'}
+            ]
+        }
 
 def load_config(cls, **kwargs):
     schema = marshmallow_dataclass.class_schema(cls)()
