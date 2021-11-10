@@ -336,7 +336,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 
-    @ classmethod
+    @classmethod
     def get_output_dtype(cls):
         return torch.float32
 
