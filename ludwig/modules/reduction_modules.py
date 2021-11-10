@@ -42,7 +42,6 @@ class SequenceReducer(LudwigModule):
 
     @property
     def input_shape(self):
-        # return torch.Size([0])
         return self._reduce_obj.input_shape
 
 
@@ -81,6 +80,11 @@ class ReduceMax(LudwigModule):
 
     def forward(self, inputs, mask=None):
         return torch.amax(inputs, dim=1)
+
+    @property
+    def input_shape(self):
+        # Dummy implementation.
+        return torch.Size([1])
 
 
 class ReduceConcat(LudwigModule):

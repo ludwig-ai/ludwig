@@ -270,15 +270,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
         logits = self.logits(logits_input, target=target)
 
-        # most of the cases the output of self.logits() is a tensor
-        # there are three special cases:
-        # categorical feature: logits is a dictionary
-        #   with keys: logits, projection_input
-        # sequence feature with Generator Decoder: 'logits' is a dictionary
-        #   with keys: logits, projection_input
-        # sequence feature with Tagger Decoder: 'logits' is a dictionary
-        #   with keys: logits, lengths, projection_input
-        #
+        # For binary and numerical features, self.logits() is a tensor.
+        # There are three special cases where self.logits() is a dict:
+        #   categorical
+        #       keys: logits, projection_input
+        #   sequence feature with Generator Decoder
+        #       keys: logits, projection_input
+        #   sequence feature with Tagger Decoder
+        #       keys: logits, lengths, projection_input
 
         if isinstance(logits, Tensor):
             logits = {'logits': logits}

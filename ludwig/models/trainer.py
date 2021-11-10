@@ -879,14 +879,6 @@ class Trainer(BaseTrainer):
                         o_feat.feature_name: batch[o_feat.proc_column]
                         for o_feat in model.output_features.values()
                     }
-                    # inputs = [
-                    #     (i_feat.feature_name, batch[i_feat.proc_column])
-                    #     for i_feat in model.input_features.values()
-                    # ]
-                    # targets = [
-                    #     (o_feat.feature_name, batch[o_feat.proc_column])
-                    #     for o_feat in model.output_features.values()
-                    # ]
 
                     # Reintroduce for tensorboard graph
                     # if first_batch and self.is_coordinator() and not skip_save_log:

@@ -74,7 +74,7 @@ class BucketedBatcher(Batcher):
 
         selected_bucket = self.buckets_idcs[i]
         selected_idcs = selected_bucket[
-                        self.indices[i]:self.indices[i] + self.batch_size]
+            self.indices[i]:self.indices[i] + self.batch_size]
 
         sub_batch = {}
         for key in self.dataset.get_dataset():
@@ -97,10 +97,10 @@ class BucketedBatcher(Batcher):
 
     def last_batch(self):
         return not np.any(self.indices < self.bucket_sizes) \
-               or (self.ignore_last and
-                   not np.any(
-                       self.indices + self.batch_size < self.bucket_sizes
-                   ))
+            or (self.ignore_last and
+                not np.any(
+                    self.indices + self.batch_size < self.bucket_sizes
+                ))
 
     def set_epoch(self, epoch, batch_size):
         self.indices = np.array([0] * len(self.buckets_idcs))
@@ -114,7 +114,11 @@ class BucketedBatcher(Batcher):
             np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size)))
         )
 
-
+# dynamic_length_encoders = {
+#     'rnn',
+#     'embed'
+# }
+#
 # todo future: reintroduce the bucketed batcher
 # def initialize_batcher(dataset, batch_size=128, bucketing_field=None,
 #                        input_features=None, preprocessing=None,

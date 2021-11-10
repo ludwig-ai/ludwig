@@ -38,6 +38,7 @@ from tests.integration_tests.utils import sequence_feature
 
 
 # Currently fails, which is ok if the tracing method works.
+@pytest.mark.skip(reason="Generate torchscript using tracing.")
 def test_torchscript_script(csv_filename):
     # Features don't matter since we're scripting the entire module wholesale.
     input_features = [date_feature()]
@@ -69,8 +70,7 @@ def test_torchscript_script(csv_filename):
 
 
 @pytest.mark.distributed
-# @pytest.mark.parametrize('should_load_model', [True, False])
-@pytest.mark.parametrize('should_load_model', [True])
+@pytest.mark.parametrize('should_load_model', [True, False])
 def test_torchscript(csv_filename, should_load_model):
     #######
     # Setup
@@ -83,26 +83,15 @@ def test_torchscript(csv_filename, should_load_model):
 
         # Single sequence input, single category output
         input_features = [
-            # combiners: Dimension out of range (expected to be in range of [-1, 0], but got 1)
-            # binary_feature(),
-
-            # combiners: Dimension out of range (expected to be in range of [-1, 0], but got 1)
-            # numerical_feature(),
-
+            binary_feature(),
+            numerical_feature(),
             category_feature(vocab_size=3),
             sequence_feature(vocab_size=3),
-
-            # reduction_modules: IndexError: amax(): Expected reduction dim 1 to have non-zero size.
-            # text_feature(vocab_size=3),
-
+            text_feature(vocab_size=3),
             vector_feature(),
             image_feature(image_dest_folder),
-
-            # reduction_modules: IndexError: amax(): Expected reduction dim 1 to have non-zero size.
-            # audio_feature(audio_dest_folder),
-
-            # reduction_modules: IndexError: amax(): Expected reduction dim 1 to have non-zero size.
-            # timeseries_feature(),
+            audio_feature(audio_dest_folder),
+            timeseries_feature(),
             date_feature(),
             date_feature(),
             h3_feature(),
@@ -114,10 +103,12 @@ def test_torchscript(csv_filename, should_load_model):
             category_feature(vocab_size=3),
             binary_feature(),
             numerical_feature(),
-            # sequence_feature(vocab_size=3),
-            # text_feature(vocab_size=3),
             set_feature(vocab_size=3),
             vector_feature()
+
+            # TODO(#1333): Re-enable.
+            # sequence_feature(vocab_size=3),
+            # text_feature(vocab_size=3),
         ]
 
         predictions_column_name = '{}_predictions'.format(
@@ -147,8 +138,6 @@ def test_torchscript(csv_filename, should_load_model):
             skip_save_processed_input=True,
         )
 
-        print('Finished modeling')
-
         ###################
         # save Ludwig model
         ###################
@@ -169,9 +158,6 @@ def test_torchscript(csv_filename, should_load_model):
             dataset=data_csv_path)
         original_weights = deepcopy(list(ludwig_model.model.parameters()))
 
-        print('Finished prediction')
-        print('Starting saving')
-
         #################
         # save torchscript
         #################
@@ -179,16 +165,12 @@ def test_torchscript(csv_filename, should_load_model):
         shutil.rmtree(torchscript_path, ignore_errors=True)
         ludwig_model.model.save_torchscript(torchscript_path)
 
-        print('Finished saving')
-
         ###################################################
         # load Ludwig model, obtain predictions and weights
         ###################################################
         ludwig_model = LudwigModel.load(ludwigmodel_path, backend=backend)
         loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
         loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
-
-        print('Loaded predictions')
 
         #################################################
         # restore torchscript, obtain predictions and weights
@@ -207,8 +189,6 @@ def test_torchscript(csv_filename, should_load_model):
 
         restored_model = torch.jit.load(torchscript_path)
 
-        print('Loaded torchscript')
-
         # Check the outputs for one of the features for correctness
         # Here we choose the first output feature (categorical)
         of_name = list(ludwig_model.model.output_features.keys())[0]
@@ -220,18 +200,11 @@ def test_torchscript(csv_filename, should_load_model):
 
         logits = restored_model(data_to_predict)
 
-        print('Got torchscript predictions')
-
         # Restoring from torchscript drops the names of NamedTuples.
         # restored_predictions = torch.argmax(logits[of_name][1], -1)
         restored_predictions = torch.argmax(
             forward_utils.get_output_feature_tensor(logits, of_name, 'logits'), -1)
 
-        print(
-            f'original_predictions_df[predictions_column_name]: {original_predictions_df[predictions_column_name]}')
-        print(
-            f"training_set_metadata[of_name]: {training_set_metadata[of_name]}")
-        print(f'restored_predictions: {restored_predictions}')
         restored_predictions = [training_set_metadata[of_name]
                                 ['idx2str'][idx] for idx in restored_predictions]
 
