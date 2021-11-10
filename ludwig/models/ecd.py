@@ -127,7 +127,7 @@ class ECD(LudwigModule):
             mask: A mask for the inputs.
 
         Returns:
-            A dictionary of output names to output tensors.
+            A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
         if isinstance(inputs, tuple):
             inputs, targets = inputs
@@ -171,12 +171,10 @@ class ECD(LudwigModule):
 
             decoder_outputs = decoder(decoder_inputs, mask=mask)
 
-            output_feature_utils.set_output_feature_tensor(
-                output_logits, output_feature_name, LAST_HIDDEN, decoder_outputs['last_hidden'])
-            if 'logits' in decoder_outputs:
+            # Add decoder outputs to overall output dictionary.
+            for decoder_output_name, tensor in decoder_outputs.items():
                 output_feature_utils.set_output_feature_tensor(
-                    output_logits, output_feature_name, LOGITS, decoder_outputs['logits'])
-            output_last_hidden[output_feature_name] = decoder_outputs['last_hidden']
+                    output_logits, output_feature_name, decoder_output_name, tensor)
         return output_logits
 
     def predictions(self, inputs, output_features=None):
