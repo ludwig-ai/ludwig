@@ -22,10 +22,10 @@ with open('./config.yaml', 'r') as f:
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(config,
-                    logging_level=logging.INFO)
+                    logging_level=logging.DEBUG)
 
 # load and split MNIST dataset
-training_set, test_set, _ = mnist.load(split=True)
+training_set, test_set, _ = mnist.load(cache_dir='./image_dir', split=True)
 
 # initiate model training
 (
