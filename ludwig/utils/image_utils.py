@@ -117,8 +117,11 @@ def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None
     if isinstance(img, str):
         return read_image_from_str(img, num_channels)
     elif isinstance(img, bytes):
-        buffer = BytesIO(img).read()
-        return decode_image(torch.frombuffer(buffer, dtype=torch.uint8))
+        with BytesIO(img) as buffer:
+            buffer_view = buffer.getbuffer()
+            image_tensor = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
+            del(buffer_view)
+            return image_tensor
     return img
 
 
