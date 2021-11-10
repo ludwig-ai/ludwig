@@ -2,6 +2,7 @@ from dataclasses import field
 
 import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
+from torch.nn import init
 
 from ludwig.utils.torch_utils import initializer_registry
 from ludwig.modules.reduction_modules import reduce_mode_registry
@@ -124,11 +125,8 @@ class EmbedInputFeatureNameField(fields.Field):
 
 class InitializerOptionsOrCustomDictField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
-        # if value is None:
-        #     return value
-
+        initializers = list(initializer_registry.keys())
         if isinstance(value, str):
-            initializers = list(initializer_registry.keys())
             if value not in initializers:
                 raise ValidationError(
                     f"Expected one of: {initializers}, found: {value}"
@@ -136,27 +134,31 @@ class InitializerOptionsOrCustomDictField(fields.Field):
             return value
 
         if isinstance(value, dict):
-            if "type" not in value:
+            if 'type' not in value:
                 raise ValidationError(
                     f"Dict must contain 'type'"
+                )
+            if value['type'] not in initializers:
+                raise ValidationError(
+                    f"Dict expected key 'type' to be one of: {initializers}, found: {value}"
                 )
             return value
 
         raise ValidationError('Field should be str or dict')
 
     def _jsonschema_type_mapping(self):
+        initializers = list(initializer_registry.keys())
         return {
             'oneOf': [
-                {'type': 'string', 'enum': list(initializer_registry.keys())},
+                {'type': 'string', 'enum': initializers},
                 {
                     "type": "object",
                     "properties": {
-                        "type": { "type": "string" },
+                        "type": { "type": "string", 'enum': initializers },
                     },
                     "required": ["type"],
                     "additionalProperties": True,
                 },
-                # {'type': 'null'}
             ]
         }
 
