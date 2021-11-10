@@ -1,5 +1,7 @@
 import copy
 import logging
+import os
+import psutil
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -115,6 +117,11 @@ class ECD(LudwigModule):
         Returns:
             A dictionary of output names to output tensors.
         """
+        logger.debug(
+            f'>>>>>model.forward(): entering the method '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
+
         if isinstance(inputs, tuple):
             inputs, targets = inputs
             # Convert targets to tensors.
@@ -135,13 +142,27 @@ class ECD(LudwigModule):
             else:
                 inputs[input_feature_name] = input_values
 
+        logger.debug(
+            f'>>>>>model.forward(): after converting inputs to tensors'
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
+
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
 
+        logger.debug(
+            f'>>>>>model.forward(): after generating encoder output '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
+
         combiner_outputs = self.combiner(encoder_outputs)
+        logger.debug(
+            f'>>>>>model.forward(): after combiner '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
 
         output_logits = {}
         output_last_hidden = {}
@@ -158,6 +179,11 @@ class ECD(LudwigModule):
             output_logits[output_feature_name] = decoder_outputs
             output_last_hidden[output_feature_name] = decoder_outputs[
                 'last_hidden']
+
+        logger.debug(
+            f'>>>>>model.forward(): after output feature logits '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
 
         return output_logits
 
@@ -193,18 +219,38 @@ class ECD(LudwigModule):
                 "of output features"
             )
 
+        logger.debug(
+            f'>>>>>predictions: before model.forward() '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
         outputs = self(inputs)
+        logger.debug(
+            f'>>>>predictions: after model.forward() '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
 
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
                 outputs[of_name]
             )
+        logger.debug(
+            f'>>>>predictions: about to return predictions '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
 
         return predictions
 
     def evaluation_step(self, inputs, targets):
+        logger.debug(
+            f'evaluation_step: before predictions '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
         predictions = self.predictions(inputs, output_features=None)
+        logger.debug(
+            f'evaluation_step: after predictions '
+            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+        )
         self.update_metrics(targets, predictions)
         return predictions
 
