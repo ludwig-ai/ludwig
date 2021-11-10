@@ -29,7 +29,7 @@ from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss,\
     MAELoss
 from ludwig.modules.metric_modules import MSEMetric, MAEMetric, R2Score,\
     SoftmaxCrossEntropyMetric
-from ludwig.utils import forward_utils
+from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
 
@@ -206,7 +206,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             feature_name,
             **kwargs
     ):
-        logits = forward_utils.get_output_feature_tensor(
+        logits = output_feature_utils.get_output_feature_tensor(
             inputs, feature_name, LOGITS)
         return {PREDICTIONS: logits, LOGITS: logits}
 

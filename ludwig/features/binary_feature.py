@@ -29,7 +29,7 @@ from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
     precision_recall_curve, roc_auc_score, roc_curve
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils import strings_utils
-from ludwig.utils import forward_utils
+from ludwig.utils import output_feature_utils
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +140,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         assert len(inputs.shape) == 1 or (
             len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
-        print(f'In binary_feature, inputs are: {inputs}')
-
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
         encoder_outputs = self.encoder_obj(inputs)
@@ -194,7 +192,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = forward_utils.get_output_feature_tensor(
+        logits = output_feature_utils.get_output_feature_tensor(
             inputs, feature_name, LOGITS)
         probabilities = torch.sigmoid(logits)
         predictions = probabilities >= self.threshold
@@ -225,25 +223,25 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
 
-    @ classmethod
+    @classmethod
     def get_output_dtype(cls):
         return torch.bool
 
-    @ property
+    @property
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @ property
+    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    @ staticmethod
+    @staticmethod
     def update_config_with_metadata(
         input_feature, feature_metadata, *args, **kwargs
     ):
         pass
 
-    @ staticmethod
+    @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
         overall_stats = {}
         confusion_matrix = ConfusionMatrix(
@@ -320,7 +318,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         return result
 
-    @ staticmethod
+    @staticmethod
     def populate_defaults(output_feature):
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})

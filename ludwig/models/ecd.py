@@ -17,7 +17,7 @@ from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import LudwigModule, reg_loss
-from ludwig.utils import forward_utils
+from ludwig.utils import output_feature_utils
 
 logger = logging.getLogger(__name__)
 
@@ -171,10 +171,10 @@ class ECD(LudwigModule):
 
             decoder_outputs = decoder(decoder_inputs, mask=mask)
 
-            forward_utils.set_output_feature_tensor(
+            output_feature_utils.set_output_feature_tensor(
                 output_logits, output_feature_name, LAST_HIDDEN, decoder_outputs['last_hidden'])
             if 'logits' in decoder_outputs:
-                forward_utils.set_output_feature_tensor(
+                output_feature_utils.set_output_feature_tensor(
                     output_logits, output_feature_name, LOGITS, decoder_outputs['logits'])
             output_last_hidden[output_feature_name] = decoder_outputs['last_hidden']
         return output_logits

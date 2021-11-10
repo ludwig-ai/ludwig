@@ -27,7 +27,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import *
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.utils import forward_utils
+from ludwig.utils import output_feature_utils
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, vector_feature, image_feature, \
     audio_feature, timeseries_feature, date_feature, h3_feature, set_feature, \
@@ -37,8 +37,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-# Currently fails, which is ok if the tracing method works.
-@pytest.mark.skip(reason="Generate torchscript using tracing.")
+@pytest.mark.skip(reason="Currently fails, which is ok if the tracing method works.")
 def test_torchscript_script(csv_filename):
     # Features don't matter since we're scripting the entire module wholesale.
     input_features = [date_feature()]
@@ -203,7 +202,7 @@ def test_torchscript(csv_filename, should_load_model):
         # Restoring from torchscript drops the names of NamedTuples.
         # restored_predictions = torch.argmax(logits[of_name][1], -1)
         restored_predictions = torch.argmax(
-            forward_utils.get_output_feature_tensor(logits, of_name, 'logits'), -1)
+            output_feature_utils.get_output_feature_tensor(logits, of_name, 'logits'), -1)
 
         restored_predictions = [training_set_metadata[of_name]
                                 ['idx2str'][idx] for idx in restored_predictions]

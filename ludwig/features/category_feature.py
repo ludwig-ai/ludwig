@@ -30,7 +30,7 @@ from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
 # from ludwig.modules.metric_modules import SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.eval_utils import ConfusionMatrix
-from ludwig.utils import forward_utils
+from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
@@ -198,7 +198,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             feature_name: str,
             **kwargs
     ):
-        logits = forward_utils.get_output_feature_tensor(
+        logits = output_feature_utils.get_output_feature_tensor(
             inputs, feature_name, LOGITS)
         probabilities = torch.softmax(logits, -1)
         predictions = torch.argmax(logits, -1)

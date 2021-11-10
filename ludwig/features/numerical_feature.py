@@ -33,7 +33,7 @@ from ludwig.modules.metric_modules import (
     RMSPEMetric,
     R2Score,
 )
-from ludwig.utils import forward_utils
+from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
@@ -279,7 +279,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = forward_utils.get_output_feature_tensor(
+        logits = output_feature_utils.get_output_feature_tensor(
             inputs, feature_name, LOGITS)
         predictions = logits
 

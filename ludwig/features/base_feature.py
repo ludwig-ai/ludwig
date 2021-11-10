@@ -30,7 +30,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.loss_modules import LOSS_INPUTS_REGISTRY
 from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
-from ludwig.utils import forward_utils
+from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
     sequence_mask
 
@@ -204,7 +204,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
-        prediction_key = forward_utils.get_feature_concat_name(
+        prediction_key = output_feature_utils.get_feature_concat_name(
             feature_name, LOSS_INPUTS_REGISTRY[loss_class])
         return self.train_loss_function(predictions[prediction_key], targets)
 
