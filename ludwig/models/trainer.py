@@ -28,7 +28,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Union
 
 import numpy as np
 import torch
@@ -64,7 +64,6 @@ class BaseTrainer(ABC):
     @abstractmethod
     def train(
             self,
-            model,
             training_set,
             validation_set=None,
             test_set=None,
@@ -76,7 +75,6 @@ class BaseTrainer(ABC):
     @abstractmethod
     def train_online(
             self,
-            model,
             dataset,
     ):
         raise NotImplementedError()
@@ -110,7 +108,7 @@ class Trainer(BaseTrainer):
 
     def __init__(
             self,
-            model,
+            model: ECD,
             optimizer=None,
             epochs=100,
             regularization_lambda=0.0,
@@ -288,9 +286,14 @@ class Trainer(BaseTrainer):
         self.received_sigint = False
         self.callbacks = callbacks or []
         self.device = device
+        if self.device is None:
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         if self.horovod:
             self.learning_rate *= self.horovod.size()
+
+        self.model = model
+        self.model = self.model.to(self.device)
 
         # ================ Optimizer ================
         if optimizer is None:
@@ -301,18 +304,26 @@ class Trainer(BaseTrainer):
             **optimizer
         )
 
-        if self.device is None:
-            if torch.cuda.is_available():
-                self.device = 'cuda'
-            else:
-                self.device = 'cpu'
+    def train_step(
+            self,
+            inputs: Dict[str, torch.Tensor],
+            targets: Dict[str, torch.Tensor]
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        """
+        Performs a single training step.
 
-    def train_step(self, model: ECD, inputs, targets):
+        Params:
+            inputs: A dictionary of input data, from feature name to tensor.
+            targets: A dictionary of target data, from feature name to tensor.
+
+        Returns:
+            A tuple of the loss and a dictionary of metrics.
+        """
         self.optimizer.zero_grad()
 
         # Obtain model predictions and loss
-        model_outputs = model((inputs, targets))
-        loss, all_losses = model.train_loss(
+        model_outputs = self.model((inputs, targets))
+        loss, all_losses = self.model.train_loss(
             targets,
             model_outputs,
             self.regularization_type,
@@ -320,7 +331,7 @@ class Trainer(BaseTrainer):
         )
 
         # Begin the backward pass
-        variables = model.parameters()
+        variables = self.model.parameters()
         loss.backward()
 
         if self.horovod:
@@ -398,7 +409,6 @@ class Trainer(BaseTrainer):
 
     def train_for_tuning(
         self,
-        model,
         dataset,
         batch_size: int,
         total_steps: int = 3,
@@ -414,26 +424,21 @@ class Trainer(BaseTrainer):
             while not batcher.last_batch() and step_count < total_steps:
                 batch = batcher.next_batch()
                 inputs = {
-                    i_feat.feature_name: batch[i_feat.proc_column]
-                    for i_feat in model.input_features.values()
+                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                    for i_feat in self.model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: batch[o_feat.proc_column]
-                    for o_feat in model.output_features.values()
+                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                    for o_feat in self.model.output_features.values()
                 }
 
-                self.train_step(
-                    model,
-                    inputs,
-                    targets
-                )
+                self.train_step(inputs, targets)
                 step_count += 1
-        return model
+        return self.model
 
     def tune_learning_rate(
         self,
         config,
-        model,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         min_lr: float = 1e-8,
@@ -482,23 +487,19 @@ class Trainer(BaseTrainer):
             step_count = 0
             while epoch < self.epochs and step_count < total_training_steps and not diverging:
                 batcher.set_epoch(epoch, self.batch_size)
-                model.reset_metrics()
+                self.model.reset_metrics()
                 while not batcher.last_batch() and step_count < total_training_steps:
                     batch = batcher.next_batch()
                     inputs = {
-                        i_feat.feature_name: batch[i_feat.proc_column]
-                        for i_feat in model.input_features.values()
+                        i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                        for i_feat in self.model.input_features.values()
                     }
                     targets = {
-                        o_feat.feature_name: batch[o_feat.proc_column]
-                        for o_feat in model.output_features.values()
+                        o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                        for o_feat in self.model.output_features.values()
                     }
 
-                    loss, _ = self.train_step(
-                        model,
-                        inputs,
-                        targets,
-                    )
+                    loss, _ = self.train_step(inputs, targets,)
                     # compute smoothed loss
                     avg_loss = beta * avg_loss + (1-beta) * loss
                     smoothed_loss = avg_loss / (1 - beta**(step_count + 1))
@@ -569,10 +570,10 @@ class Trainer(BaseTrainer):
                 low = batch_size
                 prev_batch_size = batch_size
                 try:
-                    # re-initialize model...
-                    model = LudwigModel.create_model(config, random_seed)
-                    self.train_for_tuning(
-                        model, training_set, batch_size, total_steps=3)
+                    # re-initalize model...
+                    # TODO(Shreya): Confirm why we re-initialize the model here.
+                    # model = LudwigModel.create_model(config, random_seed)
+                    self.train_for_tuning(training_set, batch_size, total_steps=3)
                     count += 1
                     if count >= max_trials:
                         break
@@ -615,7 +616,6 @@ class Trainer(BaseTrainer):
 
     def train(
             self,
-            model,
             training_set,
             validation_set=None,
             test_set=None,
@@ -628,7 +628,7 @@ class Trainer(BaseTrainer):
         :param test_set: The test dataset
         """
         # ====== General setup =======
-        output_features = model.output_features
+        output_features = self.model.output_features
         digits_per_epochs = len(str(self.epochs))
         # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/ludwig-ai/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
@@ -712,7 +712,7 @@ class Trainer(BaseTrainer):
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
         if self.is_coordinator():
-            checkpoint = Checkpoint(model=model, optimizer=self.optimizer)
+            checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(
                 checkpoint, training_checkpoints_path, device=self.device,
                 max_to_keep=1)
@@ -738,8 +738,6 @@ class Trainer(BaseTrainer):
                         tensorboard_log_dir, TEST
                     )
                 )
-
-        # TODO(shreya, remove): Removed debugging logic because I couldn't find an equivalent in PyTorch.
 
         # ================ Resume logic ================
         if self.resume:
@@ -789,7 +787,7 @@ class Trainer(BaseTrainer):
             # Horovod: broadcast initial variable states from rank 0 to all other processes.
             # This is necessary to ensure consistent initialization of all workers when
             # training is started with random weights or restored from a checkpoint.
-            self.horovod.broadcast_parameters(model.state_dict(), root_rank=0)
+            self.horovod.broadcast_parameters(self.model.state_dict(), root_rank=0)
             self.horovod.broadcast_optimizer_state(self.optimizer, root_rank=0)
 
         set_random_seed(self.random_seed)
@@ -817,7 +815,7 @@ class Trainer(BaseTrainer):
                     )
 
                 # Reset the metrics at the start of the next epoch
-                model.reset_metrics()
+                self.model.reset_metrics()
 
                 # ================ Train ================
                 progress_bar = None
@@ -871,24 +869,21 @@ class Trainer(BaseTrainer):
                     # obtain batch
                     batch = batcher.next_batch()
 
+                    # Move tensors to cuda here.
                     inputs = {
-                        i_feat.feature_name: batch[i_feat.proc_column]
-                        for i_feat in model.input_features.values()
+                        i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                        for i_feat in self.model.input_features.values()
                     }
                     targets = {
-                        o_feat.feature_name: batch[o_feat.proc_column]
-                        for o_feat in model.output_features.values()
+                        o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                        for o_feat in self.model.output_features.values()
                     }
 
                     # Reintroduce for tensorboard graph
                     # if first_batch and self.is_coordinator() and not skip_save_log:
                     #    tf.summary.trace_on(graph=True, profiler=True)
 
-                    loss, all_losses = self.train_step(
-                        model,
-                        inputs,
-                        targets,
-                    )
+                    loss, all_losses = self.train_step(inputs, targets,)
 
                     # Reintroduce for tensorboard graph
                     # if first_batch and self.is_coordinator() and not skip_save_log:
@@ -940,7 +935,6 @@ class Trainer(BaseTrainer):
                 self.eval_batch_size = max(
                     self.eval_batch_size, progress_tracker.batch_size)
                 self.evaluation(
-                    model,
                     training_set,
                     'train',
                     progress_tracker.train_metrics,
@@ -960,7 +954,6 @@ class Trainer(BaseTrainer):
 
                     # eval metrics on validation set
                     self.evaluation(
-                        model,
                         validation_set,
                         'vali',
                         progress_tracker.vali_metrics,
@@ -983,7 +976,6 @@ class Trainer(BaseTrainer):
 
                     # eval metrics on test set
                     self.evaluation(
-                        model,
                         test_set,
                         TEST,
                         progress_tracker.test_metrics,
@@ -1021,7 +1013,6 @@ class Trainer(BaseTrainer):
                 # ================ Validation Logic ================
                 if should_validate:
                     should_break = self.check_progress_on_validation(
-                        model,
                         progress_tracker,
                         self.validation_field,
                         self.validation_metric,
@@ -1046,7 +1037,7 @@ class Trainer(BaseTrainer):
                 else:
                     # there's no validation, so we save the model at each iteration
                     if self.is_coordinator() and not self.skip_save_model:
-                        torch.save(model.state_dict(), model_weights_path)
+                        torch.save(self.model.state_dict(), model_weights_path)
 
                 # ========== Save training progress ==========
                 if self.is_coordinator():
@@ -1071,17 +1062,13 @@ class Trainer(BaseTrainer):
             test_summary_writer.close()
 
         return (
-            model,
+            self.model,
             progress_tracker.train_metrics,
             progress_tracker.vali_metrics,
             progress_tracker.test_metrics
         )
 
-    def train_online(
-            self,
-            model,
-            dataset,
-    ):
+    def train_online(self, dataset,):
         with dataset.initialize_batcher(
             batch_size=self.batch_size,
             should_shuffle=self.should_shuffle,
@@ -1099,24 +1086,20 @@ class Trainer(BaseTrainer):
             while not batcher.last_batch():
                 batch = batcher.next_batch()
                 inputs = {
-                    i_feat.feature_name: batch[i_feat.proc_column]
-                    for i_feat in model.input_features.values()
+                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                    for i_feat in self.model.input_features.values()
                 }
                 targets = {
-                    o_feat.feature_name: batch[o_feat.proc_column]
-                    for o_feat in model.output_features.values()
+                    o_feat.feature_name: torch.from_numpy(batch[o_feat.proc_column]).to(self.device)
+                    for o_feat in self.model.output_features.values()
                 }
 
-                self.train_step(
-                    model,
-                    inputs,
-                    targets,
-                )
+                self.train_step(inputs, targets,)
 
                 progress_bar.update(1)
 
             progress_bar.close()
-        return model
+        return self.model
 
     @property
     def validation_field(self):
@@ -1126,14 +1109,13 @@ class Trainer(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
-    def append_metrics(self, model, dataset_name, results, metrics_log,
-                       tables):
-        for output_feature in model.output_features:
+    def append_metrics(self, dataset_name, results, metrics_log, tables):
+        for output_feature in self.model.output_features:
             scores = [dataset_name]
 
             # collect metric names based on output features metrics to
             # ensure consistent order of reporting metrics
-            metric_names = model.output_features[output_feature] \
+            metric_names = self.model.output_features[output_feature] \
                 .metric_functions.keys()
 
             for metric in metric_names:
@@ -1152,7 +1134,6 @@ class Trainer(BaseTrainer):
 
     def evaluation(
             self,
-            model,
             dataset,
             dataset_name,
             metrics_log,
@@ -1163,19 +1144,18 @@ class Trainer(BaseTrainer):
             batch_size=batch_size, horovod=self.horovod, debug=self.debug
         )
         metrics, predictions = predictor.batch_evaluation(
-            model,
+            self.model,
             dataset,
             collect_predictions=False,
             dataset_name=dataset_name
         )
 
-        self.append_metrics(model, dataset_name, metrics, metrics_log, tables)
+        self.append_metrics(dataset_name, metrics, metrics_log, tables)
 
         return metrics_log, tables
 
     def check_progress_on_validation(
             self,
-            model,
             progress_tracker,
             validation_output_feature_name,
             validation_metric,
@@ -1207,7 +1187,7 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = progress_tracker.vali_metrics[
                 validation_output_feature_name][validation_metric][-1]
             if self.is_coordinator() and not skip_save_model:
-                torch.save(model.state_dict(), model_weights_path)
+                torch.save(self.model.state_dict(), model_weights_path)
                 logger.info(
                     'Validation {} on {} improved, model saved'.format(
                         validation_metric,

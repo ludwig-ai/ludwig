@@ -115,7 +115,7 @@ class ECD(LudwigModule):
                 if not isinstance(target_value, torch.Tensor):
                     targets[target_feature_name] = torch.from_numpy(target_value).to(device)
                 else:
-                    targets[target_feature_name] = target_value.to(device)
+                    targets[target_feature_name] = target_value
         else:
             targets = None
 
@@ -124,9 +124,9 @@ class ECD(LudwigModule):
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
             if not isinstance(input_values, torch.Tensor):
-                inputs[input_feature_name] = torch.from_numpy(input_values).to(device)
+                inputs[input_feature_name] = torch.from_numpy(input_values)
             else:
-                inputs[input_feature_name] = input_values.to(device)
+                inputs[input_feature_name] = input_values
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
@@ -203,7 +203,20 @@ class ECD(LudwigModule):
         predictions,
         regularization_type: Optional[str] = None,
         regularization_lambda: Optional[float] = None,
-    ):
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        """
+        Computes the training loss for the model.
+
+        Args:
+            targets: A dictionary of target names to target tensors.
+            predictions: A dictionary of output names to output tensors.
+            regularization_type: One of 'l1', 'l2', 'l1_l2'.
+            regularization_lambda: The regularization lambda.
+
+        Returns:
+            A tuple of the loss tensor and a dictionary of loss for every
+            output feature.
+        """
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
@@ -240,7 +253,7 @@ class ECD(LudwigModule):
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
-        all_of_metrics[COMBINED] = {LOSS: self.eval_loss_metric.compute().detach().numpy().item()}
+        all_of_metrics[COMBINED] = {LOSS: self.eval_loss_metric.compute().detach().cpu().numpy().item()}
         return all_of_metrics
 
     def reset_metrics(self):

@@ -275,7 +275,7 @@ class CategoryAccuracy(_Accuracy, LudwigMetric):
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # make sure y_true is tf.int64
-        super().update(preds, target.type(torch.LongTensor))
+        super().update(preds, target.type(torch.long))
 
     @classmethod
     def get_objective(cls):
