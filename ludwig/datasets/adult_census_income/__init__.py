@@ -80,6 +80,8 @@ class AdultCensusIncome(UncompressedFileDownloadMixin, CSVLoadMixin,
         ]
         train_df.columns = columns
         test_df.columns = columns
+        # Remove the trailing period on the income field in adult.test (not in adult.data)
+        test_df['income'] = test_df['income'].str.rstrip('.')
 
         train_df['split'] = 0
         test_df['split'] = 2
