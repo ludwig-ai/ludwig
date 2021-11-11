@@ -159,7 +159,7 @@ class Predictor(BasePredictor):
 
     def batch_evaluation(
             self,
-            model,
+            model: ECD,
             dataset,
             collect_predictions=False,
             dataset_name=None
@@ -180,6 +180,8 @@ class Predictor(BasePredictor):
                     disable=is_progressbar_disabled()
                 )
 
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
             predictions = defaultdict(list)
             while not batcher.last_batch():
                 batch = batcher.next_batch()
@@ -187,13 +189,15 @@ class Predictor(BasePredictor):
                     f'evaluation for {dataset_name}: obtained next batch '
                     f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
                 )
+
+                # TODO(shreya): BIG RED FLAG!!!
                 inputs = {
-                    i_feat.feature_name: batch[i_feat.proc_column]
+                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(device)
                     for i_feat in model.input_features.values()
                 }
                 targets = {
                     o_feat.feature_name: torch.from_numpy(
-                        batch[o_feat.proc_column])
+                        batch[o_feat.proc_column]).to(device)
                     for o_feat in model.output_features.values()
                 }
 
