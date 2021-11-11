@@ -126,17 +126,6 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
-class RayRemoteTrainer(RemoteTrainer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def train(self, *args, **kwargs):
-        return super().train(*args, **kwargs)
-
-    def train_online(self, *args, **kwargs):
-        return super().train_online(*args, **kwargs)
-
-
 def train_fn(
         executable_kwargs: Dict[str, Any] = None,
         model: "LudwigModel" = None,
@@ -173,7 +162,7 @@ def train_fn(
             training_set_metadata,
         )
 
-    trainer = RayRemoteTrainer(model=model, **executable_kwargs)
+    trainer = RemoteTrainer(model=model, **executable_kwargs)
     results = trainer.train(
         train_shard,
         val_shard,
@@ -257,7 +246,7 @@ class RayTrainerV2(BaseTrainer):
 
 
 def legacy_train_fn(
-        trainer: RayRemoteTrainer = None,
+        trainer: RemoteTrainer = None,
         remote_model: "LudwigModel" = None,
         training_set_metadata: Dict[str, Any] = None,
         features: Dict[str, Dict] = None,
@@ -310,7 +299,7 @@ class RayLegacyTrainer(BaseTrainer):
 
         self.executor = RayExecutor(
             setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=RayRemoteTrainer,
+        self.executor.start(executable_cls=RemoteTrainer,
                             executable_kwargs=executable_kwargs)
 
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
