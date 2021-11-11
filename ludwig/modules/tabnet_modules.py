@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 import torch
 
@@ -90,6 +90,11 @@ class TabNet(LudwigModule):
             output_size,
             output_size)
 
+        # Assign tensors to be used in forward pass
+        self.register_buffer('out_accumulator', torch.zeros(output_size))
+        self.register_buffer('aggregated_mask', torch.zeros(input_size))
+        self.register_buffer('prior_scales', torch.ones(input_size))
+
     def forward(
             self,
             features: torch.Tensor
@@ -106,11 +111,10 @@ class TabNet(LudwigModule):
         # o_s: output_size
         # b_s: batch_size
         batch_size = features.shape[0]  # b_s
-        num_features = features.shape[-1]  # i_s
-        out_accumulator = torch.zeros(
-            (batch_size, self.output_size))  # [b_s, o_s]
-        aggregated_mask = torch.zeros([batch_size, num_features])  # [b_s, i_s]
-        prior_scales = torch.ones((batch_size, num_features))  # [b_s, i_s]
+        # Tile out_accumulator, aggregated_mask, and prior_scales to add batch dimension.
+        out_accumulator = torch.tile(self.out_accumulator, (batch_size, 1))
+        aggregated_mask = torch.tile(self.aggregated_mask, (batch_size, 1))
+        prior_scales = torch.tile(self.prior_scales, (batch_size, 1))
         masks = []
         total_entropy = 0.0
 
@@ -147,13 +151,10 @@ class TabNet(LudwigModule):
             #######################
             masked_features = torch.multiply(mask_values, features)
 
-            x = self.feature_transforms[step_i](
-                masked_features
-            )  # [b_s, s + o_s]
+            x = self.feature_transforms[step_i](masked_features)  # [b_s, s + o_s]
 
             # x in following is shape [b_s, o_s]
-            out = torch.nn.functional.relu(
-                x[:, :self.output_size])  # [b_s, o_s]
+            out = torch.nn.functional.relu(x[:, :self.output_size])  # [b_s, o_s]
             out_accumulator += out
 
             # Aggregated masks are used for visualization of the
@@ -340,7 +341,7 @@ class FeatureTransformer(LudwigModule):
         hidden = self.blocks[0](inputs)  # [b_s, s]
         for n in range(1, self.num_total_blocks):
             hidden = (self.blocks[n](hidden) +
-                      hidden) * torch.sqrt(torch.tensor(0.5))  # [b_s, s]
+                      hidden) * (0.5 ** 0.5)  # [b_s, s]
         return hidden  # [b_s, s]
 
     @property
