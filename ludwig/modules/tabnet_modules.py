@@ -51,10 +51,8 @@ class TabNet(LudwigModule):
         self.bn_epsilon = bn_epsilon
         self.bn_virtual_bs = bn_virtual_bs
 
-        self.batch_norm = torch.nn.BatchNorm1d(input_size,
-                                               momentum=bn_momentum,
-                                               eps=bn_epsilon
-                                               )
+        self.batch_norm = torch.nn.BatchNorm1d(
+            input_size, momentum=bn_momentum, eps=bn_epsilon)
 
         kargs = {
             "num_total_blocks": num_total_blocks,
