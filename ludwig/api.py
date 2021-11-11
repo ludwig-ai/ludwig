@@ -485,8 +485,8 @@ class LudwigModel:
 
             # init trainer
             with self.backend.create_trainer(
-                **self.config[TRAINING],
                 model=self.model,
+                **self.config[TRAINING],
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -526,7 +526,6 @@ class LudwigModel:
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
                     tuned_learning_rate = trainer.tune_learning_rate(
                         self.config,
-                        LudwigModel.create_model(self.config, random_seed),
                         training_set,
                         random_seed=random_seed
                     )
@@ -541,7 +540,6 @@ class LudwigModel:
 
                 try:
                     train_stats = trainer.train(
-                        self.model,
                         training_set,
                         validation_set=validation_set,
                         test_set=test_set,
