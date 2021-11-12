@@ -211,7 +211,7 @@ class ImageFeatureMixin:
                 for img in
                 input_feature_col.head(sample_size)]
             inferred_sample = [img for img in sample if img is not None]
-            if len(inferred_sample) == 0:
+            if not inferred_sample:
                 raise ValueError(
                     "No readable images in sample, image dimensions cannot be inferred")
 
