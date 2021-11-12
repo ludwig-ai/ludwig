@@ -359,6 +359,10 @@ def test_experiment_infer_image_metadata(csv_filename: str):
     ]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # remove image preprocessing section to force inferring image meta data
+    input_features[0].pop('preprocessing')
+
     run_experiment(
         input_features,
         output_features,
