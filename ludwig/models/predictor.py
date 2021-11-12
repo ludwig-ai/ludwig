@@ -195,15 +195,8 @@ class Predictor(BasePredictor):
                         batch[o_feat.proc_column])
                     for o_feat in model.output_features.values()
                 }
-                logger.debug(
-                    f'evaluation for {dataset_name}: before evaluation_step '
-                    f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
-                )
+
                 preds = model.evaluation_step(inputs, targets)
-                logger.debug(
-                    f'evaluation for {dataset_name}: after evaluation_step '
-                    f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
-                )
 
                 # accumulate predictions from batch for each output feature
                 if collect_predictions:
