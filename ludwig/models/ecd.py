@@ -96,15 +96,9 @@ class ECD(LudwigModule):
             self, self.get_model_inputs(training=False), strict=False)
         traced.save(save_path)
 
-    def save_torchscript_script(self, save_path):
-        # Alternative way to produce torchscript. It's strict and does not work.
-        torchscript = torch.jit.script(
-            ECD(self._input_features_df, self._combiner_def, self._output_features_df))
-        torchscript.save(save_path)
-
     @property
     def input_shape(self):
-        # Dummy implementation.
+        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape non-properties.
         return torch.Size([1, 1])
 
     def forward(

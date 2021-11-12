@@ -131,7 +131,6 @@ class LudwigModule(Module):
             elif isinstance(child, Module):
                 pass
             else:
-                print(type(child))
                 raise ValueError
 
         return collected_losses
@@ -147,12 +146,12 @@ class LudwigModule(Module):
     @property
     @abstractmethod
     def input_shape(self) -> torch.Size:
-        """ Returns size of the input tensor without the batch dimension."""
+        """Returns size of the input tensor without the batch dimension."""
         raise NotImplementedError('Abstract class.')
 
     @property
     def output_shape(self) -> torch.Size:
-        """ Returns size of the output tensor without the batch dimension."""
+        """Returns size of the output tensor without the batch dimension."""
         return self._compute_output_shape()
 
     @lru_cache(maxsize=1)
@@ -341,7 +340,8 @@ def initialize_pytorch(
             if len(gpus) == 1:
                 torch.cuda.set_device(gpus[0])
             elif len(gpus) > 1:
-                os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in gpus)
+                os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(
+                    str(i) for i in gpus)
 
         # Limit the amount of memory that can be consumed per GPU
         if gpu_memory_limit is not None:

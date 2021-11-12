@@ -24,7 +24,7 @@ from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule
 logger = logging.getLogger(__name__)
 
 
-class SequenceReducer(LudwigModule):
+class SequenceReducer(torch.nn.Module):
 
     def __init__(self, reduce_mode=None, **kwargs):
         super().__init__()
@@ -40,12 +40,12 @@ class SequenceReducer(LudwigModule):
     def forward(self, inputs, mask=None):
         return self._reduce_obj(inputs, mask=mask)
 
-    @property
-    def input_shape(self):
-        return self._reduce_obj.input_shape
+    # @property
+    # def input_shape(self):
+    #     return self._reduce_obj.input_shape
 
 
-class ReduceLast(LudwigModule):
+class ReduceLast(torch.nn.Module):
 
     def forward(self, inputs, mask=None):
         # inputs: [batch_size, seq_size, hidden_size]
@@ -59,35 +59,35 @@ class ReduceLast(LudwigModule):
         return gathered
 
 
-class ReduceSum(LudwigModule):
+class ReduceSum(torch.nn.Module):
 
     def forward(self, inputs, mask=None):
         return torch.sum(inputs, dim=1)
 
-    @property
-    def input_shape(self):
-        # Dummy implementation.
-        return torch.Size([1])
+    # @property
+    # def input_shape(self):
+    #     # Dummy implementation.
+    #     return torch.Size([1])
 
 
-class ReduceMean(LudwigModule):
+class ReduceMean(torch.nn.Module):
 
     def forward(self, inputs, mask=None):
         return torch.mean(inputs, dim=1)
 
 
-class ReduceMax(LudwigModule):
+class ReduceMax(torch.nn.Module):
 
     def forward(self, inputs, mask=None):
         return torch.amax(inputs, dim=1)
 
-    @property
-    def input_shape(self):
-        # Dummy implementation.
-        return torch.Size([1])
+    # @property
+    # def input_shape(self):
+    #     # Dummy implementation.
+    #     return torch.Size([1])
 
 
-class ReduceConcat(LudwigModule):
+class ReduceConcat(torch.nn.Module):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -97,12 +97,12 @@ class ReduceConcat(LudwigModule):
         return inputs.reshape(-1, inputs.shape[-1] * inputs.shape[-2])
 
 
-class ReduceNone(LudwigModule):
+class ReduceNone(torch.nn.Module):
 
-    @property
-    def input_shape(self):
-        # Dummy implementation.
-        return torch.Size([1])
+    # @property
+    # def input_shape(self):
+    #     # Dummy implementation.
+    #     return torch.Size([1])
 
     def forward(self, inputs, mask=None):
         return inputs

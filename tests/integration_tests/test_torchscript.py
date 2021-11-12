@@ -37,37 +37,6 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-@pytest.mark.skip(reason="Currently fails, which is ok if the tracing method works.")
-def test_torchscript_script(csv_filename):
-    # Features don't matter since we're scripting the entire module wholesale.
-    input_features = [date_feature()]
-    output_features = [category_feature(vocab_size=3)]
-    backend = LocalTestBackend()
-    config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'training': {'epochs': 2}
-    }
-    with tempfile.TemporaryDirectory() as tmpdir:
-        ludwig_model = LudwigModel(config, backend=backend)
-        data_csv_path = os.path.join(tmpdir, csv_filename)
-        data_csv_path = generate_data(input_features, output_features,
-                                      data_csv_path)
-        # Necessary in order to instantiate ludwig_model.model as an ECD object.
-        ludwig_model.train(
-            dataset=data_csv_path,
-            skip_save_training_description=True,
-            skip_save_training_statistics=True,
-            skip_save_model=True,
-            skip_save_progress=True,
-            skip_save_log=True,
-            skip_save_processed_input=True,
-        )
-
-        torchscript_path = os.path.join(tmpdir, 'torchscript')
-        ludwig_model.model.save_torchscript_script(torchscript_path)
-
-
 @pytest.mark.distributed
 @pytest.mark.parametrize('should_load_model', [True, False])
 def test_torchscript(csv_filename, should_load_model):

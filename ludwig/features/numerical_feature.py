@@ -17,6 +17,7 @@
 import logging
 
 import numpy as np
+import random
 from typing import Dict
 import torch
 
@@ -249,7 +250,8 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     }
 
     def create_input(self):
-        return torch.Tensor([20, 23])
+        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
+        return torch.Tensor([random.randint(1, 100), random.randint(1, 100)])
 
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
