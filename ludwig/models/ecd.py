@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torchmetrics
-from torch.nn import Module
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import *

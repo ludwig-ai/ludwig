@@ -338,6 +338,41 @@ def test_basic_image_feature(num_channels, image_source, in_memory,
     shutil.rmtree(image_dest_folder, ignore_errors=True)
 
 
+def test_experiment_infer_image_metadata(csv_filename: str):
+    # Image Inputs
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+
+    # Resnet encoder
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder='stacked_cnn',
+            fc_size=16,
+            num_filters=8
+        ),
+        text_feature(encoder='embed', min_len=1),
+        numerical_feature(normalization='zscore')
+    ]
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+        numerical_feature()
+    ]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # remove image preprocessing section to force inferring image meta data
+    input_features[0].pop('preprocessing')
+
+    run_experiment(
+        input_features,
+        output_features,
+        dataset=rel_path
+    )
+
+    # Delete the temporary data created
+    shutil.rmtree(image_dest_folder)
+
+
 ImageParams = namedtuple(
     'ImageTestParams',
     'image_encoder in_memory_flag skip_save_processed_input'

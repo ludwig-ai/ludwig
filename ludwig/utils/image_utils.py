@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import functools
 import logging
 import os
@@ -26,6 +27,7 @@ from urllib.error import HTTPError
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
+from torchvision.io import decode_image
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
@@ -114,6 +116,12 @@ def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None
     """
     if isinstance(img, str):
         return read_image_from_str(img, num_channels)
+    elif isinstance(img, bytes):
+        with BytesIO(img) as buffer:
+            buffer_view = buffer.getbuffer()
+            image_tensor = decode_image(torch.frombuffer(buffer_view, dtype=torch.uint8))
+            del(buffer_view)
+            return image_tensor
     return img
 
 

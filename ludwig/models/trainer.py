@@ -21,6 +21,7 @@ import gc
 import logging
 import os
 import os.path
+import psutil
 import signal
 import sys
 import threading
@@ -909,6 +910,10 @@ class Trainer(BaseTrainer):
                     progress_tracker.steps += 1
                     if self.is_coordinator():
                         progress_bar.update(1)
+                        logger.debug(
+                            f'training: completed batch {progress_bar.n} '
+                            f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+                        )
                     first_batch = False
 
                     self.callback(lambda c: c.on_batch_end(
