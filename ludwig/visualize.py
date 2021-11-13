@@ -3786,7 +3786,7 @@ def confusion_matrix(
         file_format: str = 'pdf',
         **kwargs
 ) -> None:
-    """Show confision matrix in the models predictions for each
+    """Show confusion matrix in the models predictions for each
     `output_feature_name`.
 
     For each model (in the aligned lists of test_statistics and model_names)
