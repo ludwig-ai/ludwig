@@ -2,6 +2,7 @@ from dataclasses import field
 
 import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
+from torch.nn import init
 
 from ludwig.utils.torch_utils import initializer_registry
 from ludwig.modules.reduction_modules import reduce_mode_registry
@@ -90,6 +91,12 @@ def Embed():
 _embed_options = ['add']
 
 
+def InitializerOrDict(default='xavier_uniform'):
+    return field(metadata={
+        'marshmallow_field': InitializerOptionsOrCustomDictField(allow_none=False)
+    }, default=default)
+
+
 class EmbedInputFeatureNameField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
@@ -116,6 +123,44 @@ class EmbedInputFeatureNameField(fields.Field):
             ]
         }
 
+class InitializerOptionsOrCustomDictField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        initializers = list(initializer_registry.keys())
+        if isinstance(value, str):
+            if value not in initializers:
+                raise ValidationError(
+                    f"Expected one of: {initializers}, found: {value}"
+                )
+            return value
+
+        if isinstance(value, dict):
+            if 'type' not in value:
+                raise ValidationError(
+                    f"Dict must contain 'type'"
+                )
+            if value['type'] not in initializers:
+                raise ValidationError(
+                    f"Dict expected key 'type' to be one of: {initializers}, found: {value}"
+                )
+            return value
+
+        raise ValidationError('Field should be str or dict')
+
+    def _jsonschema_type_mapping(self):
+        initializers = list(initializer_registry.keys())
+        return {
+            'oneOf': [
+                {'type': 'string', 'enum': initializers},
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "type": "string", 'enum': initializers },
+                    },
+                    "required": ["type"],
+                    "additionalProperties": True,
+                },
+            ]
+        }
 
 def load_config(cls, **kwargs):
     schema = marshmallow_dataclass.class_schema(cls)()
