@@ -483,7 +483,7 @@ class TabNetCombinerConfig:
         unknown = INCLUDE
 
 
-class TabNetCombiner(Module):
+class TabNetCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict,
