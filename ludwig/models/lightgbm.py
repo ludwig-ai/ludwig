@@ -1,4 +1,4 @@
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, COMBINED, LOSS
 from ludwig.models.trainer import Trainer
 
 import lightgbm as lgb
@@ -14,6 +14,8 @@ class LightGBMTrainer(Trainer):
             save_path='model',
             **kwargs
     ):
+        # TODO: construct new datasets by running encoders (for text, image)
+
         params = {
             'boosting_type': 'gbdt',
             'objective': 'binary',
@@ -58,6 +60,22 @@ class LightGBMTrainer(Trainer):
             if feature.type == CATEGORY
         ]
 
+        # TODO: update training metrics
+        (
+            train_metrics,
+            vali_metrics,
+            test_metrics
+        ) = self.initialize_training_metrics(model.output_features)
+
+        for output_feature_name, output_feature in model.output_features.items():
+            for metric in output_feature.metric_functions:
+                train_metrics[output_feature_name][metric].append(0.0)
+                vali_metrics[output_feature_name][metric].append(0.0)
+                test_metrics[output_feature_name][metric].append(0.0)
+
+        for metrics in [train_metrics, vali_metrics, test_metrics]:
+            metrics[COMBINED][LOSS].append(0.0)
+
         gbm = lgb.train(params,
                         lgb_train,
                         num_boost_round=10,
@@ -65,5 +83,8 @@ class LightGBMTrainer(Trainer):
                         feature_name=features_names,
                         categorical_feature=categorical_features)
 
-        # use https://github.com/microsoft/hummingbird to convert to pytorch for inference, fine tuning
-        # https://towardsdatascience.com/transform-your-ml-model-to-pytorch-with-hummingbird-da49665497e7
+        # TODO:
+        #  use https://github.com/microsoft/hummingbird to convert to pytorch for inference, fine tuning
+        #  https://towardsdatascience.com/transform-your-ml-model-to-pytorch-with-hummingbird-da49665497e7
+
+        return model, train_metrics, vali_metrics, test_metrics

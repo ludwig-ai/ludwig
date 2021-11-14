@@ -38,7 +38,8 @@ def test_lightgbm(tmpdir):
             training_set=data_csv,
             validation_set=val_csv,
             test_set=test_csv,
-            output_directory=outdir
+            output_directory=outdir,
+            skip_save_model=True,
         )
         # model.predict(dataset=test_csv,
         #               output_directory=output_directory)
