@@ -105,7 +105,7 @@ class LightGBMTrainer(Trainer):
 
         gbm = lgb.train(params,
                         lgb_train,
-                        num_boost_round=10,
+                        num_boost_round=100,
                         valid_sets=eval_sets,
                         feature_name=features_names,
                         categorical_feature=categorical_features)
