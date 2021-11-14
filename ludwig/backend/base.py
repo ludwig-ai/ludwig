@@ -107,9 +107,9 @@ class LocalTrainingMixin:
         initialize_pytorch(*args, **kwargs)
 
     def create_trainer(self, **kwargs):
-        from ludwig.models.trainer import Trainer
+        from ludwig.models.lightgbm import LightGBMTrainer
 
-        return Trainer(**kwargs)
+        return LightGBMTrainer(**kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
         from ludwig.models.predictor import Predictor
