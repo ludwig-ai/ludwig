@@ -662,6 +662,7 @@ class LudwigModel:
             preprocessing_params=self.config[PREPROCESSING],
             backend=self.backend,
             random_seed=random_seed,
+            callbacks=self.callbacks
         )
 
         if not self.training_set_metadata:
@@ -755,6 +756,7 @@ class LudwigModel:
             split=split,
             include_outputs=False,
             backend=self.backend,
+            callbacks=self.callbacks
         )
 
         logger.debug('Predicting')
@@ -884,6 +886,7 @@ class LudwigModel:
             split=split,
             include_outputs=True,
             backend=self.backend,
+            callbacks=self.callbacks
         )
 
         logger.debug('Predicting')
@@ -1348,7 +1351,8 @@ class LudwigModel:
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=self.config[PREPROCESSING],
             backend=self.backend,
-            random_seed=random_seed
+            random_seed=random_seed,
+            callbacks=self.callbacks
         )
 
         (proc_training_set,
