@@ -27,6 +27,7 @@ INPUT_FEATURE_TYPES = sorted(list(input_type_registry.keys()))
 OUTPUT_FEATURE_TYPES = sorted(list(output_type_registry.keys()))
 COMBINER_TYPES = sorted(list(combiner_registry.keys()))
 
+
 def get_schema():
     schema = {
         'type': 'object',
@@ -154,8 +155,10 @@ def get_combiner_conds():
         conds.append(combiner_cond)
     return conds
 
+
 def get_custom_definitions():
     return {}
+
 
 def create_cond(if_pred, then_pred):
     return {

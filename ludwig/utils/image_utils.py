@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import functools
 import logging
 import os
@@ -26,6 +27,7 @@ from urllib.error import HTTPError
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
+from torchvision.io import decode_image
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
@@ -47,7 +49,7 @@ def get_average_image(image_lst: List[np.ndarray]) -> np.array:
 
 
 @functools.lru_cache(maxsize=32)
-def get_image_from_http_bytes(img_entry):
+def get_image_from_http_bytes(img_entry) -> BytesIO:
     import requests
     data = requests.get(img_entry, stream=True)
     if data.status_code == 404:
@@ -67,11 +69,12 @@ def get_image_from_path(
     src_path: Union[str, torch.Tensor],
     img_entry: Union[str, bytes],
     ret_bytes: bool = False
-) -> Union[BinaryIO, TextIO, bytes]:
+) -> Union[BytesIO, BinaryIO, TextIO, bytes, str]:
     if not isinstance(img_entry, str):
         return img_entry
     if is_http(img_entry):
         if ret_bytes:
+            # Returns BytesIO.
             return get_image_from_http_bytes(img_entry)
         return img_entry
     if src_path or os.path.isabs(img_entry):
@@ -107,14 +110,35 @@ def is_image_score(src_path, img_entry):
 
 
 @functools.lru_cache(maxsize=32)
-def read_image(img: Union[str, torch.Tensor], num_channels: Optional[int] = None) -> torch.Tensor:
-    """ Returns a tensor with CHW format.
+def read_image(img: Union[str, bytes, BytesIO, torch.Tensor], num_channels: Optional[int] = None) -> torch.Tensor:
+    """Returns a tensor with CHW format.
 
-    If num_channels is not provided, he image is read in unchanged format.
+    If num_channels is not provided, the image is read in unchanged format.
+    Returns None if the image could not be read.
     """
+    if isinstance(img, torch.Tensor):
+        return img
     if isinstance(img, str):
         return read_image_from_str(img, num_channels)
-    return img
+    if isinstance(img, bytes):
+        with BytesIO(img) as buffer:
+            buffer_view = buffer.getbuffer()
+            image_tensor = decode_image(
+                torch.frombuffer(buffer_view, dtype=torch.uint8))
+            del(buffer_view)
+            return image_tensor
+    if isinstance(img, BytesIO):
+        buffer_view = img.getbuffer()
+        try:
+            image_tensor = decode_image(
+                torch.frombuffer(buffer_view, dtype=torch.uint8))
+            del(buffer_view)
+            return image_tensor
+        except RuntimeError as e:
+            logger.warning(
+                f'Encountered torchvision error while reading {img}: {e}')
+    logger.warning(
+        f'Could not read image {img}, unsupported type {type(img)}')
 
 
 @functools.lru_cache(maxsize=32)

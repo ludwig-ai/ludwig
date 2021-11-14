@@ -1,5 +1,6 @@
 import logging
 import os
+import psutil
 import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, OrderedDict
@@ -181,7 +182,10 @@ class Predictor(BasePredictor):
             predictions = defaultdict(list)
             while not batcher.last_batch():
                 batch = batcher.next_batch()
-
+                logger.debug(
+                    f'evaluation for {dataset_name}: obtained next batch '
+                    f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+                )
                 inputs = {
                     i_feat.feature_name: batch[i_feat.proc_column]
                     for i_feat in model.input_features.values()
@@ -204,6 +208,10 @@ class Predictor(BasePredictor):
 
                 if self.is_coordinator():
                     progress_bar.update(1)
+                    logger.debug(
+                        f'evaluation for {dataset_name}: completed batch {progress_bar.n} '
+                        f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
+                    )
 
             if self.is_coordinator():
                 progress_bar.close()

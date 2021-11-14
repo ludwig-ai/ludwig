@@ -209,13 +209,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
         prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
-        return self.eval_loss_function(predictions[prediction_key], targets)
+        return self.eval_loss_function(predictions[prediction_key].detach(),
+                                       targets)
 
     def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = METRICS_INPUTS_REGISTRY[metric_class]
-            metric_fn.update(predictions[prediction_key], targets)
+            metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
         metric_vals = {}

@@ -93,9 +93,8 @@ class ConcatCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='xavier_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
@@ -483,7 +482,7 @@ class TabNetCombinerConfig:
         unknown = INCLUDE
 
 
-class TabNetCombiner(Module):
+class TabNetCombiner(CombinerClass):
     def __init__(
             self,
             input_features: Dict,
@@ -583,9 +582,8 @@ class TransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='xavier_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -722,9 +720,8 @@ class TabTransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='xavier_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     fc_activation: str = 'relu'
@@ -963,9 +960,8 @@ class ComparatorCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(
-        default='xavier_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='xavier_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     norm: Optional[str] = schema.StringOptions(['batch', 'layer'])
     norm_params: Optional[dict] = schema.Dict()
     activation: str = 'relu'
