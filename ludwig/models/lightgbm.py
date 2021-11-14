@@ -1,7 +1,13 @@
-from ludwig.constants import CATEGORY, COMBINED, LOSS, BINARY, NUMERICAL
-from ludwig.models.trainer import Trainer
+import os
 
 import lightgbm as lgb
+import torch
+from hummingbird.ml import convert
+
+from ludwig.constants import CATEGORY, COMBINED, LOSS, BINARY, NUMERICAL
+from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH, MODEL_WEIGHTS_FILE_NAME
+from ludwig.models.trainer import Trainer
+from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 
 
 class LightGBMTrainer(Trainer):
@@ -110,8 +116,22 @@ class LightGBMTrainer(Trainer):
                         feature_name=features_names,
                         categorical_feature=categorical_features)
 
-        # TODO:
-        #  use https://github.com/microsoft/hummingbird to convert to pytorch for inference, fine tuning
-        #  https://towardsdatascience.com/transform-your-ml-model-to-pytorch-with-hummingbird-da49665497e7
+        # convert to pytorch for inference, fine tuning
+        hb_model = convert(gbm, 'torch')
+        model = hb_model.model
+
+        os.makedirs(save_path, exist_ok=True)
+        training_checkpoints_path = os.path.join(
+            save_path, TRAINING_CHECKPOINTS_DIR_PATH
+        )
+        checkpoint = Checkpoint(model=model)
+        checkpoint_manager = CheckpointManager(
+            checkpoint, training_checkpoints_path, device=self.device,
+            max_to_keep=1)
+        checkpoint_manager.save(1)
+
+        model_weights_path = os.path.join(save_path,
+                                          MODEL_WEIGHTS_FILE_NAME)
+        torch.save(model.state_dict(), model_weights_path)
 
         return model, train_metrics, vali_metrics, test_metrics
