@@ -1,0 +1,37 @@
+input_features:
+    - name: age
+      type: numerical
+    - name: workclass
+      type: category
+    - name: fnlwgt
+      type: numerical
+    - name: education
+      type: category
+    - name: education-num
+      type: numerical
+    - name: marital-status
+      type: category
+    - name: occupation
+      type: category
+    - name: relationship
+      type: category
+    - name: race
+      type: category
+    - name: sex
+      type: category
+    - name: capital-gain
+      type: numerical
+    - name: capital-loss
+      type: numerical
+    - name: hours-per-week
+      type: numerical
+    - name: native-country
+      type: category
+output_features:
+    - name: income
+      type: category
+combiner:
+    type: concat
+    num_fc_layers: 4
+training:
+    learning_rate: 0.001

@@ -1,4 +1,4 @@
-from ludwig.constants import CATEGORY, COMBINED, LOSS
+from ludwig.constants import CATEGORY, COMBINED, LOSS, BINARY, NUMERICAL
 from ludwig.models.trainer import Trainer
 
 import lightgbm as lgb
@@ -16,16 +16,43 @@ class LightGBMTrainer(Trainer):
     ):
         # TODO: construct new datasets by running encoders (for text, image)
 
+        # TODO: only single task currently
+        if len(model.output_features) > 1:
+            raise ValueError("Only single task currently supported")
+
+        output_params = {}
+        for feature in model.output_features.values():
+            if feature.type == CATEGORY:
+                output_params = {
+                    'objective': 'multiclass',
+                    'metric': 'multi_logloss',
+                    'num_class': feature.num_classes,
+                }
+            elif feature.type == BINARY:
+                output_params = {
+                    'objective': 'binary',
+                    'metric': 'binary_logloss',
+                }
+            elif feature.type == NUMERICAL:
+                # TODO: regression
+                output_params = {
+
+                }
+            else:
+                raise ValueError(
+                    f"Output feature must be numerical, categorical, or binary, found: {feature.type}"
+                )
+
+        # from: https://github.com/microsoft/LightGBM/blob/master/examples/python-guide/advanced_example.py
         params = {
             'boosting_type': 'gbdt',
-            'objective': 'binary',
-            'metric': 'binary_logloss',
             'num_leaves': 31,
             'learning_rate': 0.05,
             'feature_fraction': 0.9,
             'bagging_fraction': 0.8,
             'bagging_freq': 5,
-            'verbose': 0
+            'verbose': 0,
+            **output_params
         }
 
         X_train = training_set.to_df(model.input_features.values())
@@ -57,7 +84,7 @@ class LightGBMTrainer(Trainer):
 
         categorical_features = [
             i for i, feature in enumerate(model.input_features.values())
-            if feature.type == CATEGORY
+            if feature.type == CATEGORY or feature.type == BINARY
         ]
 
         # TODO: update training metrics
