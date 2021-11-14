@@ -8,18 +8,20 @@ ROW_COUNT = 100
 TARGET_NAME = 'target'
 
 
-@pytest.mark.parametrize("distinct_values,avg_words,img_values,missing_vals,expected", [
-    (ROW_COUNT, 0, 0, 0.0, NUMERICAL),
-    (10, 0, 0, 0.0, CATEGORY),
-    (2, 0, 0, 0.0, BINARY),
-    (2, 0, 0, 0.1, CATEGORY),
-    (ROW_COUNT, 3, 0, 0.0, TEXT),
-    (ROW_COUNT, 1, ROW_COUNT, 0.0, IMAGE),
+@pytest.mark.parametrize("num_distinct_values,distinct_values,avg_words,img_values,missing_vals,expected", [
+    (ROW_COUNT, {}, 0, 0, 0.0, NUMERICAL),
+    (10, {}, 0, 0, 0.0, CATEGORY),
+    (2, {'0', '1'}, 0, 0, 0.0, BINARY),
+    (2, {'human', 'bot'}, 0, 0, 0.0, CATEGORY),
+    (2, {}, 0, 0, 0.1, CATEGORY),
+    (ROW_COUNT, {}, 3, 0, 0.0, TEXT),
+    (ROW_COUNT, {}, 1, ROW_COUNT, 0.0, IMAGE),
 ])
-def test_infer_type(distinct_values, avg_words, img_values, missing_vals, expected):
+def test_infer_type(num_distinct_values, distinct_values, avg_words, img_values, missing_vals, expected):
     field = FieldInfo(
         name='foo',
         dtype='object',
+        num_distinct_values=num_distinct_values,
         distinct_values=distinct_values,
         avg_words=avg_words,
         image_values=img_values,
@@ -27,7 +29,7 @@ def test_infer_type(distinct_values, avg_words, img_values, missing_vals, expect
     assert infer_type(field, missing_vals) == expected
 
 
-@pytest.mark.parametrize("idx,distinct_values,dtype,name,expected", [
+@pytest.mark.parametrize("idx,num_distinct_values,dtype,name,expected", [
     (3, ROW_COUNT, NUMERICAL, 'id', True),
     (0, ROW_COUNT, NUMERICAL, 'foo', True),
     (3, ROW_COUNT, TEXT, 'uuid', True),
@@ -35,10 +37,11 @@ def test_infer_type(distinct_values, avg_words, img_values, missing_vals, expect
     (0, ROW_COUNT, NUMERICAL, TARGET_NAME, False),
     (0, ROW_COUNT - 1, NUMERICAL, 'id', False),
 ])
-def test_should_exclude(idx, distinct_values, dtype, name, expected):
+def test_should_exclude(idx, num_distinct_values, dtype, name, expected):
     field = FieldInfo(
         name=name,
         dtype=dtype,
-        distinct_values=distinct_values
+        num_distinct_values=num_distinct_values
     )
-    assert should_exclude(idx, field, dtype, ROW_COUNT, TARGET_NAME) == expected
+    assert should_exclude(idx, field, dtype, ROW_COUNT,
+                          TARGET_NAME) == expected

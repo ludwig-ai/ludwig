@@ -84,6 +84,52 @@ def str2bool(v, fallback_true_label=None):
     return v == fallback_true_label
 
 
+def are_conventional_bools(values):
+    """Returns whether all values are conventional booleans."""
+    for value in values:
+        lower_value = str(value).lower()
+        if lower_value not in BOOL_TRUE_STRS and lower_value not in BOOL_FALSE_STRS:
+            return False
+    return True
+
+
+def is_numerical(s):
+    """Returns whether specified value is numerical."""
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def are_all_numericals(values):
+    """Returns whether all values are numericals."""
+    for value in values:
+        if not is_numerical(value):
+            return False
+    return True
+
+
+def is_integer(s):
+    """Returns whether specified value is an integer."""
+    try:
+        float(s)
+    except ValueError:
+        return False
+    else:
+        return float(s).is_integer() and not np.isnan(float(s))
+
+
+def are_sequential_integers(values):
+    """Returns whether distinct values form sequential integer list."""
+    int_list = []
+    for value in values:
+        if not is_integer(value):
+            return False
+        int_list.append(int(value))
+    return (max(int_list) - min(int_list) + 1) == len(int_list)
+
+
 def match_replace(string_to_match, list_regex):
     """Matches strings against regular expressions.
 
