@@ -17,8 +17,8 @@
 
 Translated in [🇰🇷 Korean](README_KR.md)/
 
-Ludwig is a toolbox that allows users to train and test deep learning models without the need to write code.
-It is built on top of TensorFlow.
+Ludwig is a data-centric deep learning framework that allows users to train and test deep learning models by specifying a decalratice configuration tht matches the schema of the data.
+It is built on top of PyTorch.
 
 To train a model you need to provide is a file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
 Simple commands can be used to train models both locally and in a distributed way, and to use them to predict new data.
@@ -97,11 +97,6 @@ virtualenv -p python3 venv
 source venv/bin/activate
 pip install -e '.[test]'
 ```
-
-**Note:** that if you are running without GPUs, you may wish to use the CPU-only version of TensorFlow, 
-which takes up much less space on disk.
-To use a CPU-only TensorFlow version, uninstall `tensorflow` and  replace it with `tensorflow-cpu` after having installed `ludwig`.
-Be sure to install a version within the compatible range as shown in `requirements.txt`.
 
 
 Basic Principles
