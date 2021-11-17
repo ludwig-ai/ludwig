@@ -17,7 +17,7 @@ class DataSource(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_distinct_values(self, column) -> int:
+    def get_distinct_values(self, column, max_values_to_return) -> (int, List[str]):
         raise NotImplementedError()
 
     @abstractmethod
@@ -48,8 +48,10 @@ class DataframeSource(DataSource):
     def get_dtype(self, column) -> str:
         return self.df[column].dtype.name
 
-    def get_distinct_values(self, column) -> int:
-        return len(self.df[column].unique())
+    def get_distinct_values(self, column, max_values_to_return) -> (int, List[str]):
+        unique_values = self.df[column].unique()
+        num_unique_values = len(unique_values)
+        return (num_unique_values, unique_values[:max_values_to_return])
 
     def get_nonnull_values(self, column) -> int:
         return len(self.df[column].notnull())
