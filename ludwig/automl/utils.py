@@ -27,7 +27,7 @@ class FieldInfo:
     name: str
     dtype: str
     key: str = None
-    distinct_values: List = field(default_factory=lambda: [])
+    distinct_values: List = None
     num_distinct_values: int = 0
     nonnull_values: int = 0
     image_values: int = 0

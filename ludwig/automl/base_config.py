@@ -47,6 +47,11 @@ model_defaults = {
     'transformer': os.path.join(CONFIG_DIR, 'transformer_config.yaml')
 }
 
+SMALL_DISTINCT_COUNT = 20
+
+# Set >= SMALL_DISTINCT_COUNT & >= MAX_DISTINCT_BOOL_PERMUTATIONS
+MAX_DISTINCT_VALUES_TO_RETURN = 100
+
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
@@ -160,8 +165,8 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     fields = []
     for field in source.columns:
         dtype = source.get_dtype(field)
-        distinct_values = source.get_distinct_values(field)
-        num_distinct_values = source.get_num_distinct_values(field)
+        num_distinct_values, distinct_values = source.get_distinct_values(
+            field, MAX_DISTINCT_VALUES_TO_RETURN)
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         avg_words = None
@@ -310,11 +315,11 @@ def infer_type(
 
     # If small number of distinct values, use CATEGORY if either not all are numerical or
     # they form a sequential list of integers suggesting the values represent categories
-    if (num_distinct_values < 20 and
+    if (num_distinct_values < SMALL_DISTINCT_COUNT and
         ((not strings_utils.are_all_numericals(distinct_values)) or
          strings_utils.are_sequential_integers(distinct_values))):
         # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
-        # NOTE (ASN): edge case -- there are less than 20 samples in dataset
+        # NOTE (ASN): edge case -- there are less than SMALL_DISTINCT_COUNT samples in dataset
         return CATEGORY
 
     # add criteria for number of spaces
