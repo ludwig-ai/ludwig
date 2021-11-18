@@ -18,7 +18,6 @@ model = LudwigModel(config='./config.yaml',
     output_directory # location of training results stored on disk
  ) = model.train(
     dataset='/Users/tgaddair/data/uci-income/train.csv',
-    skip_save_model=True,
 )
 
 print("contents of output directory:", output_directory)

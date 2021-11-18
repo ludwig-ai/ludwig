@@ -2,10 +2,10 @@ import os
 
 import lightgbm as lgb
 import torch
-from hummingbird.ml import convert
 
 from ludwig.constants import CATEGORY, COMBINED, LOSS, BINARY, NUMERICAL
 from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH, MODEL_WEIGHTS_FILE_NAME
+from ludwig.models.hummingbird import convert_to_pytorch
 from ludwig.models.trainer import Trainer
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 
@@ -117,8 +117,7 @@ class LightGBMTrainer(Trainer):
                         categorical_feature=categorical_features)
 
         # convert to pytorch for inference, fine tuning
-        hb_model = convert(gbm, 'torch')
-        model = hb_model.model
+        model = convert_to_pytorch(gbm, model)
 
         os.makedirs(save_path, exist_ok=True)
         training_checkpoints_path = os.path.join(
