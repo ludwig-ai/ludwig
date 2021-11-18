@@ -9,13 +9,13 @@ TARGET_NAME = 'target'
 
 
 @pytest.mark.parametrize("num_distinct_values,distinct_values,avg_words,img_values,missing_vals,expected", [
-    (ROW_COUNT, {}, 0, 0, 0.0, NUMERICAL),
-    (10, {}, 0, 0, 0.0, CATEGORY),
-    (2, {'0', '1'}, 0, 0, 0.0, BINARY),
-    (2, {'human', 'bot'}, 0, 0, 0.0, CATEGORY),
-    (2, {}, 0, 0, 0.1, CATEGORY),
-    (ROW_COUNT, {}, 3, 0, 0.0, TEXT),
-    (ROW_COUNT, {}, 1, ROW_COUNT, 0.0, IMAGE),
+    (ROW_COUNT, ['1.1','2.2'], 0, 0, 0.0, NUMERICAL),
+    (10, ['0','1','2','3','4','5','6','7','8','9'], 0, 0, 0.0, CATEGORY),
+    (2, ['0', '1'], 0, 0, 0.0, BINARY),
+    (2, ['human', 'bot'], 0, 0, 0.0, CATEGORY),
+    (2, ['1.5', '3.7'], 0, 0, 0.1, NUMERICAL),
+    (ROW_COUNT, [], 3, 0, 0.0, TEXT),
+    (ROW_COUNT, [], 1, ROW_COUNT, 0.0, IMAGE),
 ])
 def test_infer_type(num_distinct_values, distinct_values, avg_words, img_values, missing_vals, expected):
     field = FieldInfo(
