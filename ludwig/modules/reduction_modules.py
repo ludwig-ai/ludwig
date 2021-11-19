@@ -40,10 +40,6 @@ class SequenceReducer(torch.nn.Module):
     def forward(self, inputs, mask=None):
         return self._reduce_obj(inputs, mask=mask)
 
-    # @property
-    # def input_shape(self):
-    #     return self._reduce_obj.input_shape
-
 
 class ReduceLast(torch.nn.Module):
 
@@ -64,11 +60,6 @@ class ReduceSum(torch.nn.Module):
     def forward(self, inputs, mask=None):
         return torch.sum(inputs, dim=1)
 
-    # @property
-    # def input_shape(self):
-    #     # Dummy implementation.
-    #     return torch.Size([1])
-
 
 class ReduceMean(torch.nn.Module):
 
@@ -80,11 +71,6 @@ class ReduceMax(torch.nn.Module):
 
     def forward(self, inputs, mask=None):
         return torch.amax(inputs, dim=1)
-
-    # @property
-    # def input_shape(self):
-    #     # Dummy implementation.
-    #     return torch.Size([1])
 
 
 class ReduceConcat(torch.nn.Module):
@@ -98,11 +84,6 @@ class ReduceConcat(torch.nn.Module):
 
 
 class ReduceNone(torch.nn.Module):
-
-    # @property
-    # def input_shape(self):
-    #     # Dummy implementation.
-    #     return torch.Size([1])
 
     def forward(self, inputs, mask=None):
         return inputs

@@ -15,10 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict
+import random
 
 import numpy as np
-import random
-from typing import Dict
 import torch
 
 from ludwig.constants import *
@@ -219,8 +219,9 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def create_input(self):
-        return torch.randint(100, (2, *self.input_shape)).to(torch.float32)
+    def create_sample_input(self):
+        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
+        return torch.Tensor([random.randint(1, 100), random.randint(1, 100)])
 
     @property
     def input_shape(self) -> torch.Size:
@@ -248,10 +249,6 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         "None": PassthroughEncoder,
         None: PassthroughEncoder,
     }
-
-    def create_input(self):
-        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
-        return torch.Tensor([random.randint(1, 100), random.randint(1, 100)])
 
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):

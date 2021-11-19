@@ -1,4 +1,4 @@
-'''Utilities used for managing output feature dicts.'''
+"""Utilities used for managing output feature dicts."""
 
 import torch
 from typing import Dict
@@ -19,7 +19,7 @@ def get_feature_name_from_concat_name(concat_name: str) -> str:
 def get_single_output_feature_tensors(
         output_feature_dict: Dict[str, torch.Tensor],
         feature_name: str) -> Dict[str, torch.Tensor]:
-    '''Returns a map of tensors related to the given feature_name.'''
+    """Returns a map of tensors related to the given feature_name."""
     single_output_feature_tensors = {}
     for concat_name, tensor in output_feature_dict.items():
         if get_feature_name_from_concat_name(concat_name) == feature_name:
@@ -32,7 +32,7 @@ def get_output_feature_tensor(
         output_dict: Dict[str, torch.Tensor],
         feature_name: str,
         tensor_name: str) -> torch.Tensor:
-    '''Returns a tensor related for the given feature_name and tensor_name.'''
+    """Returns a tensor related for the given feature_name and tensor_name."""
     concat_name = get_feature_concat_name(feature_name, tensor_name)
     if concat_name not in output_dict:
         raise ValueError(
@@ -45,5 +45,5 @@ def set_output_feature_tensor(
         feature_name: str,
         tensor_name: str,
         tensor: torch.Tensor):
-    '''Adds tensor for the given feature_name and tensor_name to the tensor dict.'''
+    """Adds tensor for the given feature_name and tensor_name to the tensor dict."""
     output_dict[get_feature_concat_name(feature_name, tensor_name)] = tensor

@@ -72,33 +72,23 @@ class ECD(LudwigModule):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    def get_model_inputs(self, training=True):
+    def get_model_inputs(self):
         inputs = {
-            input_feature_name: input_feature.create_input()
+            input_feature_name: input_feature.create_sample_input()
             for input_feature_name, input_feature in
             self.input_features.items()
         }
-
-        if not training:
-            return inputs
-
-        targets = {
-            output_feature_name: output_feature.create_input()
-            for output_feature_name, output_feature in
-            self.output_features.items()
-        }
-        return inputs, targets
+        return inputs
 
     def save_torchscript(self, save_path):
+        model_inputs = self.get_model_inputs()
         # We set strict=False to enable dict inputs and outputs.
-        model_inputs = self.get_model_inputs(training=False)
-        traced = torch.jit.trace(
-            self, self.get_model_inputs(training=False), strict=False)
+        traced = torch.jit.trace(self, model_inputs, strict=False)
         traced.save(save_path)
 
     @property
     def input_shape(self):
-        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape non-properties.
+        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
         return torch.Size([1, 1])
 
     def forward(

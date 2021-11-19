@@ -162,7 +162,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     ):
         pass
 
-    def create_input(self):
+    def create_sample_input(self):
         return torch.Tensor(
             [[2013, 2, 26, 1, 57, 0, 0, 0, 0],
              [2015, 2, 26, 1, 57, 0, 0, 0, 0]]).type(torch.int32)

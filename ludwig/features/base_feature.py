@@ -85,7 +85,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create_input(self):
+    def create_sample_input(self):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([2, *self.input_shape]).to(self.input_dtype)
 
@@ -168,7 +168,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     reduce_mode=self.reduce_dependencies
                 )
 
-    def create_input(self):
+    def create_sample_output(self):
         return torch.rand(self.output_shape, dtype=self.get_output_dtype())
 
     @abstractmethod

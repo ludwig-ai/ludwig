@@ -167,7 +167,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    def create_input(self):
+    def create_sample_input(self):
         return torch.Tensor([True, False])
 
     encoder_registry = ENCODER_REGISTRY

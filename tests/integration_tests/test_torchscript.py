@@ -140,9 +140,9 @@ def test_torchscript(csv_filename, should_load_model):
         loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
         loaded_weights = deepcopy(list(ludwig_model.model.parameters()))
 
-        #################################################
+        #####################################################
         # restore torchscript, obtain predictions and weights
-        #################################################
+        #####################################################
         training_set_metadata_json_fp = os.path.join(
             ludwigmodel_path,
             TRAIN_SET_METADATA_FILE_NAME
@@ -166,10 +166,8 @@ def test_torchscript(csv_filename, should_load_model):
             for name, feature in ludwig_model.model.input_features.items()
         }
 
+        # Get predictions from restored torchscript.
         logits = restored_model(data_to_predict)
-
-        # Restoring from torchscript drops the names of NamedTuples.
-        # restored_predictions = torch.argmax(logits[of_name][1], -1)
         restored_predictions = torch.argmax(
             output_feature_utils.get_output_feature_tensor(logits, of_name, 'logits'), -1)
 

@@ -201,7 +201,7 @@ def print_model_summary(
     model = LudwigModel.load(model_path)
     # Model's dict inputs are wrapped in a list, required by torchinfo.
     torchinfo.summary(
-        model.model, input_data=[model.model.get_model_inputs(training=False)])
+        model.model, input_data=[model.model.get_model_inputs()])
 
     print('\nModules:\n')
     for name, _ in model.model.named_children():
