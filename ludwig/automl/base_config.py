@@ -22,9 +22,11 @@ from typing import List, Union
 import pandas as pd
 
 from ludwig.automl.data_source import DataSource, DataframeSource
-from ludwig.automl.utils import (FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
+from ludwig.automl.utils import (
+    FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
 from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
 from ludwig.utils.data_utils import load_yaml, load_dataset
+from ludwig.utils import strings_utils
 
 try:
     import dask.dataframe as dd
@@ -44,6 +46,11 @@ model_defaults = {
     'tabnet': os.path.join(CONFIG_DIR, 'tabnet_config.yaml'),
     'transformer': os.path.join(CONFIG_DIR, 'transformer_config.yaml')
 }
+
+SMALL_DISTINCT_COUNT = 20
+
+# Set >= SMALL_DISTINCT_COUNT & >= MAX_DISTINCT_BOOL_PERMUTATIONS
+MAX_DISTINCT_VALUES_TO_RETURN = 100
 
 
 @dataclass_json(letter_case=LetterCase.CAMEL)
@@ -158,7 +165,8 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
     fields = []
     for field in source.columns:
         dtype = source.get_dtype(field)
-        distinct_values = source.get_distinct_values(field)
+        num_distinct_values, distinct_values = source.get_distinct_values(
+            field, MAX_DISTINCT_VALUES_TO_RETURN)
         nonnull_values = source.get_nonnull_values(field)
         image_values = source.get_image_values(field)
         avg_words = None
@@ -169,6 +177,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
                 name=field,
                 dtype=dtype,
                 distinct_values=distinct_values,
+                num_distinct_values=num_distinct_values,
                 nonnull_values=nonnull_values,
                 image_values=image_values,
                 avg_words=avg_words
@@ -252,7 +261,8 @@ def get_field_metadata(
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(idx, field, dtype, row_count, target_name),
+                excluded=should_exclude(
+                    idx, field, dtype, row_count, target_name),
                 mode=infer_mode(field, target_name),
                 missing_values=missing_value_percent,
             )
@@ -293,16 +303,23 @@ def infer_type(
     # Return
     :return: (str) feature type
     """
+    num_distinct_values = field.num_distinct_values
     distinct_values = field.distinct_values
-    if distinct_values == 2 and missing_value_percent == 0:
-        return BINARY
+    if num_distinct_values <= 2 and missing_value_percent == 0:
+        # Check that all distinct values are conventional bools.
+        if strings_utils.are_conventional_bools(distinct_values):
+            return BINARY
 
     if field.image_values >= 3:
         return IMAGE
 
-    if distinct_values < 20:
+    # If small number of distinct values, use CATEGORY if either not all are numerical or
+    # they form a sequential list of integers suggesting the values represent categories
+    if (num_distinct_values < SMALL_DISTINCT_COUNT and
+        ((not strings_utils.are_all_numericals(distinct_values)) or
+         strings_utils.are_sequential_integers(distinct_values))):
         # TODO (tgaddair): come up with something better than this, maybe attempt to fit to Gaussian
-        # NOTE (ASN): edge case -- there are less than 20 samples in dataset
+        # NOTE (ASN): edge case -- there are less than SMALL_DISTINCT_COUNT samples in dataset
         return CATEGORY
 
     # add criteria for number of spaces
@@ -310,6 +327,13 @@ def infer_type(
         return TEXT
 
     # TODO (ASN): add other modalities (image, etc. )
+
+    # If either of 2 examples is not numerical, use CATEGORY type.  We examine 2 since missing
+    # values can be coded as NaN, which is numerical, even for fields that are otherwise strings.
+    if (num_distinct_values > 1 and
+        ((not strings_utils.is_numerical(distinct_values[0])) or
+         (not strings_utils.is_numerical(distinct_values[1])))):
+        return CATEGORY
 
     return NUMERICAL
 
@@ -321,10 +345,10 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     if field.name == target_name:
         return False
 
-    distinct_value_percent = float(field.distinct_values) / row_count
+    distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID"):
+        if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID") or upper_name.startswith("ID"):
             return True
 
     return False

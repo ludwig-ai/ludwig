@@ -1,6 +1,7 @@
 import logging
 
-from dataclasses import dataclass
+from typing import List
+from dataclasses import dataclass, field
 from dataclasses_json import LetterCase, dataclass_json
 from pandas import Series
 
@@ -26,7 +27,8 @@ class FieldInfo:
     name: str
     dtype: str
     key: str = None
-    distinct_values: int = 0
+    distinct_values: List = None
+    num_distinct_values: int = 0
     nonnull_values: int = 0
     image_values: int = 0
     avg_words: int = None

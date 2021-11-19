@@ -22,3 +22,14 @@ def test_str_to_bool():
 
     # Fallback label is used, strictly as a fallback.
     assert strings_utils.str2bool('True', fallback_true_label='False') == True
+
+
+def test_are_conventional_bools():
+    assert strings_utils.are_conventional_bools(['True', 'False']) == True
+    assert strings_utils.are_conventional_bools(['T', 'F']) == True
+    assert strings_utils.are_conventional_bools(['t', 'f']) == True
+    assert strings_utils.are_conventional_bools(['True', 'Fales']) == False
+    assert strings_utils.are_conventional_bools(['0', '1']) == True
+    assert strings_utils.are_conventional_bools(['0', '2']) == False
+    assert strings_utils.are_conventional_bools(['high', 'low']) == False
+    assert strings_utils.are_conventional_bools(['human', 'bot']) == False
