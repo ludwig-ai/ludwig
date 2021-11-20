@@ -17,6 +17,7 @@
 import logging
 
 import numpy as np
+from typing import Dict
 import torch
 
 from ludwig.constants import *
@@ -29,6 +30,7 @@ from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
 # from ludwig.modules.metric_modules import SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.eval_utils import ConfusionMatrix
+from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
@@ -192,11 +194,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     def predictions(
             self,
-            inputs,  # logits
+            inputs: Dict[str, torch.Tensor],
+            feature_name: str,
             **kwargs
     ):
-        logits = inputs[LOGITS]
-
+        logits = output_feature_utils.get_output_feature_tensor(
+            inputs, feature_name, LOGITS)
         probabilities = torch.softmax(logits, -1)
         predictions = torch.argmax(logits, -1)
         predictions = predictions.long()
@@ -218,7 +221,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self.input_size)
+        return torch.Size([self.input_size])
 
     @classmethod
     def get_output_dtype(cls):

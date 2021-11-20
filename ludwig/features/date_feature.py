@@ -42,7 +42,7 @@ class DateFeatureMixin:
 
     preprocessing_schema = {
         'missing_value_strategy': {'type': 'string', 'enum':
-            MISSING_VALUE_STRATEGY_OPTIONS},
+                                   MISSING_VALUE_STRATEGY_OPTIONS},
         'fill_value': {'type': 'string'},
         'computed_fill_value': {'type': 'string'},
         'datetime_format': {'type': ['string', 'null']},
@@ -74,7 +74,7 @@ class DateFeatureMixin:
                 'The preprocessing fill in value will be used.'
                 'For more details: '
                 'https://ludwig.ai/user_guide/#date-features-preprocessing'
-                    .format(date_str)
+                .format(date_str)
             )
             fill_value = preprocessing_parameters['fill_value']
             if fill_value != '':
@@ -83,8 +83,8 @@ class DateFeatureMixin:
                 datetime_obj = datetime.now()
 
         yearday = (
-                datetime_obj.toordinal() -
-                date(datetime_obj.year, 1, 1).toordinal() + 1
+            datetime_obj.toordinal() -
+            date(datetime_obj.year, 1, 1).toordinal() + 1
         )
 
         midnight = datetime_obj.replace(
@@ -137,10 +137,8 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.int16, torch.int64]
-
+        assert inputs.dtype in [torch.int16, torch.int32, torch.int64]
         inputs_encoded = self.encoder_obj(inputs)
-
         return inputs_encoded
 
     @property
@@ -163,6 +161,11 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
             **kwargs
     ):
         pass
+
+    def create_sample_input(self):
+        return torch.Tensor(
+            [[2013, 2, 26, 1, 57, 0, 0, 0, 0],
+             [2015, 2, 26, 1, 57, 0, 0, 0, 0]]).type(torch.int32)
 
     @staticmethod
     def populate_defaults(input_feature):

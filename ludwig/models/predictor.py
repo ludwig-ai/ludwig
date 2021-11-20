@@ -16,10 +16,11 @@ from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
 from ludwig.utils.misc_utils import sum_dicts
+from ludwig.utils import output_feature_utils
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.torch_utils import initialize_pytorch
 
-EXCLUE_PRED_SET = {LOGITS, LAST_HIDDEN}
+EXCLUDE_PRED_SET = {LOGITS, LAST_HIDDEN}
 SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
 
 logger = logging.getLogger(__name__)
@@ -145,7 +146,7 @@ class Predictor(BasePredictor):
         # accumulate predictions from batch for each output feature
         for of_name, of_preds in preds.items():
             for pred_name, pred_values in of_preds.items():
-                if pred_name not in EXCLUE_PRED_SET:
+                if pred_name not in EXCLUDE_PRED_SET:
                     key = f'{of_name}_{pred_name}'
                     predictions[key].append(pred_values)
 
@@ -202,7 +203,7 @@ class Predictor(BasePredictor):
                 if collect_predictions:
                     for of_name, of_preds in preds.items():
                         for pred_name, pred_values in of_preds.items():
-                            if pred_name not in EXCLUE_PRED_SET:
+                            if pred_name not in EXCLUDE_PRED_SET:
                                 key = f'{of_name}_{pred_name}'
                                 predictions[key].append(pred_values)
 
@@ -260,23 +261,8 @@ class Predictor(BasePredictor):
                     for i_feat in model.input_features.values()
                 }
                 outputs = activation_model(inputs)
-
-                for layer_name, output in outputs.items():
-                    if isinstance(output, tuple):
-                        output = list(output)
-
-                    if isinstance(output, torch.Tensor):
-                        output = [('', output)]
-                    elif isinstance(output, dict):
-                        output = [(f'_{key}', tensor)
-                                  for key, tensor in output.items()]
-                    elif isinstance(output, list):
-                        output = [(f'_{idx}', tensor)
-                                  for idx, tensor in enumerate(output)]
-
-                    for suffix, tensor in output:
-                        full_name = f'{layer_name}{suffix}'
-                        collected_tensors.append((full_name, tensor))
+                collected_tensors = [
+                    (concat_name, tensor) for concat_name, tensor in outputs.items()]
 
                 progress_bar.update(1)
 
@@ -395,6 +381,6 @@ def get_output_columns(output_features):
     output_columns = []
     for of_name, feature in output_features.items():
         for pred in feature.get_prediction_set():
-            if pred not in EXCLUE_PRED_SET:
+            if pred not in EXCLUDE_PRED_SET:
                 output_columns.append(f'{of_name}_{pred}')
     return output_columns

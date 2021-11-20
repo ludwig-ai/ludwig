@@ -569,9 +569,10 @@ class Trainer(BaseTrainer):
                 low = batch_size
                 prev_batch_size = batch_size
                 try:
-                    # re-initalize model...
+                    # re-initialize model...
                     model = LudwigModel.create_model(config, random_seed)
-                    self.train_for_tuning(model, training_set, batch_size, total_steps=3)
+                    self.train_for_tuning(
+                        model, training_set, batch_size, total_steps=3)
                     count += 1
                     if count >= max_trials:
                         break
@@ -936,7 +937,8 @@ class Trainer(BaseTrainer):
                 tables[COMBINED] = [[COMBINED, LOSS]]
 
                 # eval metrics on train
-                self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
+                self.eval_batch_size = max(
+                    self.eval_batch_size, progress_tracker.batch_size)
                 self.evaluation(
                     model,
                     training_set,

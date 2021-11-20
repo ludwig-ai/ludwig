@@ -15,6 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict
+import random
 
 import numpy as np
 import torch
@@ -32,6 +34,7 @@ from ludwig.modules.metric_modules import (
     RMSPEMetric,
     R2Score,
 )
+from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
@@ -207,13 +210,18 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
-        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        assert len(inputs.shape) == 1 or (
+            len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
         inputs_encoded = self.encoder_obj(inputs)
 
         return inputs_encoded
+
+    def create_sample_input(self):
+        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
+        return torch.Tensor([random.randint(1, 100), random.randint(1, 100)])
 
     @property
     def input_shape(self) -> torch.Size:
@@ -269,19 +277,15 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs, **kwargs):  # logits
-        logits = inputs[LOGITS]
+    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
+        logits = output_feature_utils.get_output_feature_tensor(
+            inputs, feature_name, LOGITS)
         predictions = logits
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
-                '''
-                predictions = tf.clip_by_value(
-                    predictions, self.clip[0], self.clip[1]
-                )
-                '''
                 predictions = torch.clamp(
-                    predictions,
+                    logits,
                     self.clip[0],
                     self.clip[1]
                 )
@@ -320,7 +324,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
         self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
         self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RMSEMetric()
-        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric()
+        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric(
+        )
         self.metric_functions[R2] = R2Score()
 
     def get_prediction_set(self):

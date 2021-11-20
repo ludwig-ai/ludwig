@@ -30,6 +30,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.loss_modules import LOSS_INPUTS_REGISTRY
 from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
+from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
     sequence_mask
 
@@ -84,7 +85,8 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create_input(self):
+    def create_sample_input(self):
+        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([2, *self.input_shape]).to(self.input_dtype)
 
     @staticmethod
@@ -166,7 +168,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     reduce_mode=self.reduce_dependencies
                 )
 
-    def create_input(self):
+    def create_sample_output(self):
         return torch.rand(self.output_shape, dtype=self.get_output_dtype())
 
     @abstractmethod
@@ -200,10 +202,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             **decoder_parameters_copy
         )
 
-    def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
+    def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
-        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
+        prediction_key = output_feature_utils.get_feature_concat_name(
+            feature_name, LOSS_INPUTS_REGISTRY[loss_class])
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
@@ -237,8 +240,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def forward(
             self,
             inputs,
-            # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
-            training=None,
             mask=None
     ):
         # account for output feature target
@@ -270,19 +271,19 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
         logits = self.logits(logits_input, target=target)
 
-        # most of the cases the output of self.logits() is a tensor
-        # there are three special cases:
-        # categorical feature: logits is a dictionary
-        #   with keys: logits, projection_input
-        # sequence feature with Generator Decoder: 'logits' is a dictionary
-        #   with keys: logits, projection_input
-        # sequence feature with Tagger Decoder: 'logits' is a dictionary
-        #   with keys: logits, lengths, projection_input
-        #
+        # For binary and numerical features, self.logits() is a tensor.
+        # There are three special cases where self.logits() is a dict:
+        #   categorical
+        #       keys: logits, projection_input
+        #   sequence feature with Generator Decoder
+        #       keys: logits, projection_input
+        #   sequence feature with Tagger Decoder
+        #       keys: logits, lengths, projection_input
 
         if isinstance(logits, Tensor):
             logits = {'logits': logits}
 
+        # For multi-class features, we must choose a consistent tuple subset.
         return {
             # last_hidden used for dependencies processing
             'last_hidden': hidden,

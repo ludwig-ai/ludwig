@@ -73,7 +73,6 @@ class SequencePassthroughEncoder(SequenceEncoder):
     def forward(
             self,
             input_sequence,
-            training=True,
             mask=None
     ):
         """

@@ -53,6 +53,10 @@ class Regressor(Decoder):
             bias_initializer=bias_initializer,
         )
 
+    @property
+    def input_shape(self):
+        return self.dense.input_shape
+
     def forward(self, inputs, **kwargs):
         return self.dense(inputs)
 
@@ -106,6 +110,10 @@ class Projector(Decoder):
         else:
             self.clip = None
 
+    @property
+    def input_shape(self):
+        return self.dense.input_shape
+
     def forward(self, inputs, **kwargs):
         values = self.activation(self.dense(inputs))
         if self.clip:
@@ -150,17 +158,12 @@ class Classifier(Decoder):
         # otherwise the weights of the Dense layer would not be initialized
         self.first_call = True
 
-    def forward(self, inputs, training=True, **kwargs):
-        if training and self.sampled_loss and not self.first_call:
-            # this is needed because at training time is the loss is sampled
-            # we should not compute the last dense projection,
-            # otherwise we defeat the purpose of the samples loss
-            # which is not to compute the full final projection
-            # returning empty tensor to pass graph execution validation test
-            return torch.zeros(0)
-        else:
-            self.first_call = False
-            return self.dense(inputs)
+    @property
+    def input_shape(self):
+        return self.dense.input_shape
+
+    def forward(self, inputs, **kwargs):
+        return self.dense(inputs)
 
     @classmethod
     def register(cls, name):

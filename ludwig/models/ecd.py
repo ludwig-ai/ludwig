@@ -1,7 +1,7 @@
 import copy
 import logging
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, NamedTuple
 
 import numpy as np
 import torch
@@ -17,6 +17,7 @@ from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import LudwigModule, reg_loss
+from ludwig.utils import output_feature_utils
 
 logger = logging.getLogger(__name__)
 
@@ -71,26 +72,24 @@ class ECD(LudwigModule):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    def get_model_inputs(self, training=True):
+    def get_model_inputs(self):
         inputs = {
-            input_feature_name: input_feature.create_input()
+            input_feature_name: input_feature.create_sample_input()
             for input_feature_name, input_feature in
             self.input_features.items()
         }
+        return inputs
 
-        if not training:
-            return inputs
+    def save_torchscript(self, save_path):
+        model_inputs = self.get_model_inputs()
+        # We set strict=False to enable dict inputs and outputs.
+        traced = torch.jit.trace(self, model_inputs, strict=False)
+        traced.save(save_path)
 
-        targets = {
-            output_feature_name: output_feature.create_input()
-            for output_feature_name, output_feature in
-            self.output_features.items()
-        }
-        return inputs, targets
-
-    def save_savedmodel(self, save_path):
-        keras_model = self.get_connected_model(training=False)
-        keras_model.save(save_path)
+    @property
+    def input_shape(self):
+        # TODO(justin): Remove dummy implementation. Make input_shape and output_shape functions.
+        return torch.Size([1, 1])
 
     def forward(
             self,
@@ -112,7 +111,7 @@ class ECD(LudwigModule):
             mask: A mask for the inputs.
 
         Returns:
-            A dictionary of output names to output tensors.
+            A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
         if isinstance(inputs, tuple):
             inputs, targets = inputs
@@ -125,6 +124,7 @@ class ECD(LudwigModule):
                     targets[target_feature_name] = target_value
         else:
             targets = None
+
         assert inputs.keys() == self.input_features.keys()
 
         # Convert inputs to tensors.
@@ -154,10 +154,11 @@ class ECD(LudwigModule):
                 decoder_inputs = (decoder_inputs, targets[output_feature_name])
 
             decoder_outputs = decoder(decoder_inputs, mask=mask)
-            output_logits[output_feature_name] = decoder_outputs
-            output_last_hidden[output_feature_name] = decoder_outputs[
-                'last_hidden']
 
+            # Add decoder outputs to overall output dictionary.
+            for decoder_output_name, tensor in decoder_outputs.items():
+                output_feature_utils.set_output_feature_tensor(
+                    output_logits, output_feature_name, decoder_output_name, tensor)
         return output_logits
 
     def predictions(self, inputs, output_features=None):
@@ -197,8 +198,7 @@ class ECD(LudwigModule):
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                outputs[of_name]
-            )
+                outputs, of_name)
 
         return predictions
 
@@ -220,8 +220,8 @@ class ECD(LudwigModule):
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
-            of_train_loss = of_obj.train_loss(targets[of_name],
-                                              predictions[of_name])
+            of_train_loss = of_obj.train_loss(
+                targets[of_name], predictions, of_name)
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
@@ -335,12 +335,6 @@ def build_single_input(
     input_feature_obj = input_feature_class(input_feature_def, encoder_obj)
 
     return input_feature_obj
-
-
-dynamic_length_encoders = {
-    'rnn',
-    'embed'
-}
 
 
 def build_outputs(

@@ -264,10 +264,10 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             self.pad_idx = None
         self._input_shape = [feature['max_sequence_length']]
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.int8 or inputs.dtype == torch.int16 or \
-               inputs.dtype == torch.int32 or inputs.dtype == torch.int64
+            inputs.dtype == torch.int32 or inputs.dtype == torch.int64
         assert len(inputs.shape) == 2
 
         if self.pad_idx is not None:
@@ -285,6 +285,10 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     @property
     def input_dtype(self):
         return torch.int32
+
+    @property
+    def input_shape(self):
+        return torch.Size(self._input_shape)
 
     @staticmethod
     def update_config_with_metadata(
@@ -335,6 +339,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     encoder_registry = ENCODER_REGISTRY
 
+
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None,
@@ -374,7 +379,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         if isinstance(output_feature[LOSS]['class_weights'], (list, tuple)):
             # [0, 0] for UNK and PAD
             output_feature[LOSS]['class_weights'] = (
-                    [0, 0] + output_feature[LOSS]['class_weights']
+                [0, 0] + output_feature[LOSS]['class_weights']
             )
             if (len(output_feature[LOSS]['class_weights']) !=
                     output_feature['num_classes']):
@@ -484,7 +489,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     return np.prod(probs)
                 else:
                     return np.prod(probs, axis=-1)
-
 
             result[prob_col] = backend.df_engine.map_objects(
                 result[probs_col],

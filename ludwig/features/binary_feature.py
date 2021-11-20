@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 import numpy as np
+from typing import Dict
 import torch
 
 from ludwig.constants import *
@@ -28,6 +29,7 @@ from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
     precision_recall_curve, roc_auc_score, roc_curve
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils import strings_utils
+from ludwig.utils import output_feature_utils
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +167,9 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    def create_sample_input(self):
+        return torch.Tensor([True, False])
+
     encoder_registry = ENCODER_REGISTRY
 
 
@@ -182,12 +187,13 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-    def logits(self, inputs, **kwargs):  # hidden
+    def logits(self, inputs, **kwargs):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)
 
-    def predictions(self, inputs, **kwargs):  # hidden
-        logits = inputs[LOGITS]
+    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
+        logits = output_feature_utils.get_output_feature_tensor(
+            inputs, feature_name, LOGITS)
         probabilities = torch.sigmoid(logits)
         predictions = probabilities >= self.threshold
         return {

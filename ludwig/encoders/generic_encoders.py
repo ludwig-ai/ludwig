@@ -35,7 +35,7 @@ class PassthroughEncoder(Encoder):
         logger.debug(' {}'.format(self.name))
         self.input_size = input_size
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
@@ -100,7 +100,7 @@ class DenseEncoder(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self.input_size)
+        return torch.Size([self.input_size])
 
     @property
     def output_shape(self) -> torch.Size:
