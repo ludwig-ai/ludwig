@@ -105,7 +105,7 @@ jobs:
 
     - name: Tests
       run: |
-        pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+        TOKENIZERS_PARALLELISM=false pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
 
     - name: Upload Unit Test Results
       if: always()
