@@ -17,7 +17,7 @@ Builds base configuration file:
 import os
 from dataclasses import dataclass
 from dataclasses_json import LetterCase, dataclass_json
-from typing import List, Union
+from typing import List, Union, Set
 
 import pandas as pd
 
@@ -92,7 +92,7 @@ def allocate_experiment_resources(resources: dict) -> dict:
 
 def _create_default_config(
     dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
-    target_name: str = None,
+    target_name: Union[str, List[str]] = None,
     time_limit_s: Union[int, float] = None
 ) -> dict:
     """
@@ -108,7 +108,7 @@ def _create_default_config(
 
     # Inputs
     :param dataset: (str) filepath to dataset.
-    :param target_name: (str) name of target feature
+    :param target_name: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                                     as the stopping parameter
 
@@ -190,32 +190,39 @@ def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
     resources: dict,
-    target_name: str = None,
+    target_name: Union[str, List[str]] = None,
 ) -> dict:
     """
     Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
 
     # Inputs
-    :param dataset: (List[FieldInfo]) FieldInfo objects for all fields in dataset
+    :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
     :param row_count: (int) total number of entries in original dataset
-    :param target_name (str) name of target feature
+    :param target_name (str, List[str]) name of target feature
 
     # Return
     :return: (dict) section of auto_train config for input_features and output_features 
     """
-    metadata = get_field_metadata(fields, row_count, resources, target_name)
-    return get_config_from_metadata(metadata, target_name)
+    targets = target_name
+    if isinstance(targets, str):
+        targets = [targets]
+    if targets is None:
+        targets = []
+    targets = set(targets)
+
+    metadata = get_field_metadata(fields, row_count, resources, targets)
+    return get_config_from_metadata(metadata, targets)
 
 
-def get_config_from_metadata(metadata: List[FieldMetadata], target_name: str = None) -> dict:
+def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = None) -> dict:
     """
     Builds input/output feature sections of auto-train config using field
     metadata
 
     # Inputs
     :param metadata: (List[FieldMetadata]) field descriptions
-    :param target_name (str) name of target feature
+    :param targets (Set[str]) names of target features
 
     # Return
     :return: (dict) section of auto_train config for input_features and output_features
@@ -226,7 +233,7 @@ def get_config_from_metadata(metadata: List[FieldMetadata], target_name: str = N
     }
 
     for field_meta in metadata:
-        if field_meta.name == target_name:
+        if field_meta.name in targets:
             config["output_features"].append(field_meta.config.to_dict())
         elif not field_meta.excluded and field_meta.mode == "input":
             config["input_features"].append(field_meta.config.to_dict())
@@ -235,7 +242,7 @@ def get_config_from_metadata(metadata: List[FieldMetadata], target_name: str = N
 
 
 def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, resources: dict, target_name: str = None
+    fields: List[FieldInfo], row_count: int, resources: dict, targets: Set[str] = None
 ) -> List[FieldMetadata]:
     """
     Computes metadata for each field in dataset
@@ -243,7 +250,7 @@ def get_field_metadata(
     # Inputs
     :param fields: (List[FieldInfo]) FieldInfo objects for all fields in dataset
     :param row_count: (int) total number of entries in original dataset
-    :param target_name (str) name of target feature
+    :param targets (Set[str]) names of target features
 
     # Return
     :return: (List[FieldMetadata]) list of objects containing metadata for each field
@@ -262,8 +269,8 @@ def get_field_metadata(
                     type=dtype,
                 ),
                 excluded=should_exclude(
-                    idx, field, dtype, row_count, target_name),
-                mode=infer_mode(field, target_name),
+                    idx, field, dtype, row_count, targets),
+                mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
             )
         )
@@ -338,11 +345,11 @@ def infer_type(
     return NUMERICAL
 
 
-def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, target_name: str) -> bool:
+def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targets: Set[str]) -> bool:
     if field.key == "PRI":
         return True
 
-    if field.name == target_name:
+    if field.name in targets:
         return False
 
     distinct_value_percent = float(field.num_distinct_values) / row_count
@@ -354,8 +361,8 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     return False
 
 
-def infer_mode(field: FieldInfo, target_name: str = None) -> str:
-    if field.name == target_name:
+def infer_mode(field: FieldInfo, targets: Set[str] = None) -> str:
+    if field.name in targets:
         return "output"
     if field.name.lower() == "split":
         return "split"

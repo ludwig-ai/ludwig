@@ -11,7 +11,7 @@ Driver script which:
 import argparse
 import os
 import warnings
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 import numpy as np
 import pandas as pd
@@ -101,7 +101,7 @@ def auto_train(
 
 def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
-    target: str,
+    target: Union[str, List[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool,
 ) -> dict:
@@ -112,9 +112,11 @@ def create_auto_config(
 
     # Inputs
     :param dataset: (str) filepath to dataset.
-    :param target: (str) name of target feature
+    :param target: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
-                                    as the stopping parameter
+                         as the stopping parameter
+    :param tune_for_memroy: (bool) refine hyperopt search space for available
+                            host / GPU memory
 
     # Return
     :return: (dict) selected model configuration
@@ -204,7 +206,7 @@ def _train(
 
 def init_config(
     dataset: str,
-    target: str,
+    target: Union[str, List[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool,
     hyperopt: bool = False,
@@ -245,8 +247,7 @@ def cli_init_config(sys_argv):
         '--target',
         type=str,
         help='target(s) to predict as output features of the model',
-        nargs='+',
-        default=[],
+        action='append',
         required=False,
     )
     parser.add_argument(
