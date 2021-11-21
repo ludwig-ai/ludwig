@@ -116,16 +116,16 @@ class Callback(ABC):
     def on_test_end(self, trainer, progress_tracker, save_path):
         pass
 
-    def on_build_metadata_start(self, df):
+    def on_build_metadata_start(self, df, dataset_name):
         pass
 
-    def on_build_metadata_end(self, df):
+    def on_build_metadata_end(self, df, dataset_name):
         pass
 
-    def on_build_data_start(self, df):
+    def on_build_data_start(self, df, dataset_name):
         pass
 
-    def on_build_data_end(self, df):
+    def on_build_data_end(self, df, dataset_name):
         pass
 
     def on_visualize_figure(self, fig):
