@@ -21,7 +21,7 @@ from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config, DatasetInfo
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.utils import _ray_init, get_model_name
-from ludwig.constants import COMBINER, TYPE
+from ludwig.constants import COMBINER, TYPE, HYPEROPT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
@@ -207,6 +207,7 @@ def init_config(
     target: str,
     time_limit_s: Union[int, float],
     tune_for_memory: bool,
+    hyperopt: bool = False,
     output: str = None,
     **kwargs
 ):
@@ -216,6 +217,10 @@ def init_config(
         time_limit_s=time_limit_s,
         tune_for_memory=tune_for_memory,
     )
+
+    if HYPEROPT in config and not hyperopt:
+        del config[HYPEROPT]
+
     if output is None:
         print(yaml.safe_dump(config, None, sort_keys=False))
     else:
@@ -254,6 +259,13 @@ def cli_init_config(sys_argv):
         '--tune_for_memory',
         type=bool,
         help='refine hyperopt search space based on available host / GPU memory',
+        default=False,
+        required=False,
+    )
+    parser.add_argument(
+        '--hyperopt',
+        type=bool,
+        help='include automl hyperopt config',
         default=False,
         required=False,
     )
