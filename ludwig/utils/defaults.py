@@ -14,17 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import argparse
 import copy
 import logging
+import sys
+
+import yaml
 
 from ludwig.constants import *
+from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry,
                                                 output_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.data_utils import load_config_from_str
 from ludwig.utils.misc_utils import (get_from_registry, merge_dict,
                                      set_default_value)
+from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
 
@@ -290,3 +297,47 @@ def merge_with_defaults(config):
             output_feature)
 
     return config
+
+
+def cli_render_config(config=None, output=None, **kwargs):
+    output_config = merge_with_defaults(config)
+    if output is None:
+        print(yaml.safe_dump(output_config, None, sort_keys=False))
+    else:
+        with open(output, 'w') as f:
+            yaml.safe_dump(output_config, f, sort_keys=False)
+
+
+def cli(sys_argv):
+    parser = argparse.ArgumentParser(
+        description='This script renders the full config from a user config.',
+        prog='ludwig render_config',
+        usage='%(prog)s [options]'
+    )
+    parser.add_argument(
+        '-c',
+        '--config',
+        type=load_config_from_str,
+        help='input user YAML config path',
+    )
+    parser.add_argument(
+        '-o',
+        '--output',
+        type=str,
+        help='output rendered YAML config path',
+        required=False,
+    )
+
+    add_contrib_callback_args(parser)
+    args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('render_config', *sys_argv)
+
+    print_ludwig('Render Config', LUDWIG_VERSION)
+    cli_render_config(**vars(args))
+
+
+if __name__ == '__main__':
+    cli(sys.argv[1:])
