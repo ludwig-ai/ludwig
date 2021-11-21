@@ -299,7 +299,7 @@ def merge_with_defaults(config):
     return config
 
 
-def cli_render_config(config=None, output=None, **kwargs):
+def render_config(config=None, output=None, **kwargs):
     output_config = merge_with_defaults(config)
     if output is None:
         print(yaml.safe_dump(output_config, None, sort_keys=False))
@@ -308,7 +308,7 @@ def cli_render_config(config=None, output=None, **kwargs):
             yaml.safe_dump(output_config, f, sort_keys=False)
 
 
-def cli(sys_argv):
+def cli_render_config(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script renders the full config from a user config.',
         prog='ludwig render_config',
@@ -336,7 +336,7 @@ def cli(sys_argv):
         callback.on_cmdline('render_config', *sys_argv)
 
     print_ludwig('Render Config', LUDWIG_VERSION)
-    cli_render_config(**vars(args))
+    render_config(**vars(args))
 
 
 if __name__ == '__main__':

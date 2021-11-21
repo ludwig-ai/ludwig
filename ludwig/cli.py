@@ -58,6 +58,7 @@ Available sub-commands:
    export_mlflow         Exports Ludwig models to MLflow
    preprocess            Preprocess data and saves it into HDF5 and JSON format
    synthesize_dataset    Creates synthetic data for tesing purposes
+   init_config           Initialize a user config from a dataset and targets
    render_config         Renders the fully populated config with all defaults set
 ''')
         parser.add_argument('command', help='Subcommand to run')
@@ -131,9 +132,13 @@ Available sub-commands:
         from ludwig.data import dataset_synthesizer
         dataset_synthesizer.cli(sys.argv[2:])
 
+    def init_config(self):
+        from ludwig import automl
+        automl.cli_init_config(sys.argv[2:])
+
     def render_config(self):
         from ludwig.utils import defaults
-        defaults.cli(sys.argv[2:])
+        defaults.cli_render_config(sys.argv[2:])
 
 
 def main():
