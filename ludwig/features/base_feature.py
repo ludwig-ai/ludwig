@@ -73,10 +73,9 @@ class BaseFeature:
 
         for k in feature.keys():
             if k in attributes:
-                if (isinstance(feature[k], dict) and hasattr(self, k)
-                        and isinstance(getattr(self, k), dict)):
-                    setattr(self, k, merge_dict(getattr(self, k),
-                                                feature[k]))
+                if (isinstance(feature[k], dict) and hasattr(self, k) and
+                        isinstance(getattr(self, k), dict)):
+                    setattr(self, k, merge_dict(getattr(self, k), feature[k]))
                 else:
                     setattr(self, k, feature[k])
 
@@ -93,12 +92,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(
-            input_feature,
-            feature_metadata,
-            *args,
-            **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -107,9 +101,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_encoder(self, encoder_parameters):
-        return get_encoder_cls(self.type, self.encoder)(
-            **encoder_parameters
-        )
+        return get_encoder_cls(self.type, self.encoder)(**encoder_parameters)
 
 
 class OutputFeature(BaseFeature, LudwigModule, ABC):
@@ -153,17 +145,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         )
 
         # set up two sequence reducers, one for inputs and other for dependencies
-        self.reduce_sequence_input = SequenceReducer(
-            reduce_mode=self.reduce_input
-        )
+        self.reduce_sequence_input = SequenceReducer(reduce_mode=self.reduce_input)
         if self.dependencies:
             self.dependency_reducers = torch.nn.ModuleDict()
             # todo: re-evaluate need for separate handling of `attention` reducer
             #       currently this code does not support `attention`
             for dependency in self.dependencies:
                 self.dependency_reducers[dependency] = SequenceReducer(
-                    reduce_mode=self.reduce_dependencies
-                )
+                    reduce_mode=self.reduce_dependencies)
 
     def create_sample_output(self):
         return torch.rand(self.output_shape, dtype=self.get_output_dtype())
@@ -187,25 +176,21 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def initialize_decoder(self, decoder_parameters):
         # Override input_size. Features input_size may be different if the
         # output feature has a custom FC.
-        decoder_parameters_copy = copy.copy(
-            decoder_parameters)
+        decoder_parameters_copy = copy.copy(decoder_parameters)
         decoder_parameters_copy['input_size'] = self.fc_stack.output_shape[-1]
-        return get_decoder_cls(self.type, self.decoder)(
-            **decoder_parameters_copy
-        )
+        return get_decoder_cls(self.type, self.decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
-        prediction_key = output_feature_utils.get_feature_concat_name(
-            feature_name, loss_class.get_loss_inputs())
+        prediction_key = output_feature_utils.get_feature_concat_name(feature_name,
+                                                                      loss_class.get_loss_inputs())
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
         prediction_key = loss_class.get_loss_inputs()
-        return self.eval_loss_function(predictions[prediction_key].detach(),
-                                       targets)
+        return self.eval_loss_function(predictions[prediction_key].detach(), targets)
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
@@ -217,9 +202,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.metric_functions = {
             LOSS: self.eval_loss_function,
             **{
-                name: cls(**self.loss_kwargs(), **self.metric_kwargs())
-                for name, cls in get_metric_classes(self.type).items()
-                if cls.can_report(self)
+                name: cls(**self.loss_kwargs(), **self.metric_kwargs()) for name, cls in get_metric_classes(self.type).items(
+                ) if cls.can_report(self)
             }
         }
 
@@ -233,17 +217,17 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
+            # TODO(shreya): BIG RED FLAG!!!
+            metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
             try:
-                metric_vals[metric_name] = metric_onj.compute(
-                ).detach().numpy().item()
+                metric_vals[metric_name] = metric_onj.compute().detach().cpu().numpy().item()
             except Exception as e:
-                logger.error(
-                    f'Caught exception computing metric: {metric_name}. Exception: {e}')
+                logger.error(f'Caught exception computing metric: {metric_name}. Exception: {e}')
         return metric_vals
 
     def reset_metrics(self):
@@ -251,11 +235,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             if metric_fn is not None:
                 metric_fn.reset()
 
-    def forward(
-            self,
-            inputs,
-            mask=None
-    ):
+    def forward(self, inputs, mask=None):
         # account for output feature target
         if isinstance(inputs[0], tuple):
             local_inputs, target = inputs
@@ -267,16 +247,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         # extract the combined hidden layer
         combiner_output = combiner_outputs['combiner_output']
-        hidden = self.prepare_decoder_inputs(
-            combiner_output,
-            other_output_hidden,
-            mask=mask
-        )
+        hidden = self.prepare_decoder_inputs(combiner_output, other_output_hidden, mask=mask)
 
         # ================ Predictions ================
-        logits_input = {
-            HIDDEN: hidden
-        }
+        logits_input = {HIDDEN: hidden}
         # pass supplemental data from encoders to decoder
         if 'encoder_output_state' in combiner_outputs:
             logits_input['encoder_output_state'] = \
@@ -318,31 +292,22 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @abstractmethod
     def postprocess_predictions(
-            self,
-            result,
-            metadata,
-            output_directory,
-            backend,
+        self,
+        result,
+        metadata,
+        output_directory,
+        backend,
     ):
         pass
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(
-            output_feature,
-            feature_metadata,
-            *args,
-            **kwargs
-    ):
+    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
     @abstractmethod
-    def calculate_overall_stats(
-            predictions,
-            targets,
-            train_set_metadata
-    ):
+    def calculate_overall_stats(predictions, targets, train_set_metadata):
         pass
 
     @staticmethod
@@ -369,20 +334,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                         sequence_max_length = hidden.shape[1]
                         multipliers = (1, sequence_max_length, 1)
                         tiled_representation = torch.tile(
-                            torch.unsqueeze(dependency_final_hidden, 1),
-                            multipliers
-                        )
+                            torch.unsqueeze(dependency_final_hidden, 1), multipliers)
 
                         # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
-                        mask = sequence_mask(
-                            sequence_length,
-                            sequence_max_length
-                        )
-                        tiled_representation = torch.mul(
-                            tiled_representation,
-                            mask[:, :, np.newaxis].type(torch.float32)
-                        )
+                        mask = sequence_mask(sequence_length, sequence_max_length)
+                        tiled_representation = torch.mul(tiled_representation,
+                                                         mask[:, :, np.newaxis].type(torch.float32))
 
                         dependencies_hidden.append(tiled_representation)
 
@@ -390,9 +348,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     if len(dependency_final_hidden.shape) > 2:
                         # vector matrix -> reduce concat
                         reducer = self.dependency_reducers[dependency]
-                        dependencies_hidden.append(
-                            reducer(dependency_final_hidden)
-                        )
+                        dependencies_hidden.append(reducer(dependency_final_hidden))
                     else:
                         # vector vector -> concat
                         dependencies_hidden.append(dependency_final_hidden)
@@ -400,32 +356,25 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             try:
                 hidden = torch.cat([hidden] + dependencies_hidden, dim=-1)
             except:
-                raise ValueError(
-                    'Shape mismatch while concatenating dependent features of '
-                    '{}: {}. Concatenating the feature activations tensor {} '
-                    'with activation tensors of dependencies: {}. The error is '
-                    'likely due to a mismatch of the second dimension (sequence'
-                    ' length) or a difference in ranks. Likely solutions are '
-                    'setting the maximum_sequence_length of all sequential '
-                    'features to be the same,  or reduce the output of some '
-                    'features, or disabling the bucketing setting '
-                    'bucketing_field to None / null, as activating it will '
-                    'reduce the length of the field the bucketing is performed '
-                    'on.'.format(
-                        self.column,
-                        self.dependencies,
-                        hidden,
-                        dependencies_hidden
-                    )
-                )
+                raise ValueError('Shape mismatch while concatenating dependent features of '
+                                 '{}: {}. Concatenating the feature activations tensor {} '
+                                 'with activation tensors of dependencies: {}. The error is '
+                                 'likely due to a mismatch of the second dimension (sequence'
+                                 ' length) or a difference in ranks. Likely solutions are '
+                                 'setting the maximum_sequence_length of all sequential '
+                                 'features to be the same,  or reduce the output of some '
+                                 'features, or disabling the bucketing setting '
+                                 'bucketing_field to None / null, as activating it will '
+                                 'reduce the length of the field the bucketing is performed '
+                                 'on.'.format(self.column, self.dependencies, hidden,
+                                              dependencies_hidden))
 
         return hidden
 
     def output_specific_fully_connected(
             self,
             inputs,  # feature_hidden
-            mask=None
-    ):
+            mask=None):
         feature_hidden = inputs
         original_feature_hidden = inputs
 
@@ -437,16 +386,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 [-1, feature_hidden.shape[-1]]
             )
             '''
-            feature_hidden = torch.reshape(
-                feature_hidden,
-                (-1, list(feature_hidden.shape)[-1])
-            )
+            feature_hidden = torch.reshape(feature_hidden, (-1, list(feature_hidden.shape)[-1]))
 
         # pass it through fc_stack
-        feature_hidden = self.fc_stack(
-            feature_hidden,
-            mask=mask
-        )
+        feature_hidden = self.fc_stack(feature_hidden, mask=mask)
         feature_hidden_size = feature_hidden.shape[-1]
 
         # reshape back to original first and second dimension
@@ -458,19 +401,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 [-1, sequence_length, feature_hidden_size]
             )
             '''
-            feature_hidden = torch.reshape(
-                feature_hidden,
-                (-1, sequence_length, feature_hidden_size)
-            )
+            feature_hidden = torch.reshape(feature_hidden,
+                                           (-1, sequence_length, feature_hidden_size))
 
         return feature_hidden
 
-    def prepare_decoder_inputs(
-            self,
-            combiner_output,
-            other_output_features,
-            mask=None
-    ):
+    def prepare_decoder_inputs(self, combiner_output, other_output_features, mask=None):
         """
         Takes the combiner output and the outputs of other outputs features
         computed so far and performs:
@@ -486,21 +422,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         # ================ Reduce Inputs ================
         if self.reduce_input is not None and len(feature_hidden.shape) > 2:
-            feature_hidden = self.reduce_sequence_input(
-                feature_hidden
-            )
+            feature_hidden = self.reduce_sequence_input(feature_hidden)
 
         # ================ Concat Dependencies ================
-        feature_hidden = self.concat_dependencies(
-            feature_hidden,
-            other_output_features
-        )
+        feature_hidden = self.concat_dependencies(feature_hidden, other_output_features)
 
         # ================ Output-wise Fully Connected ================
-        feature_hidden = self.output_specific_fully_connected(
-            feature_hidden,
-            mask=mask
-        )
+        feature_hidden = self.output_specific_fully_connected(feature_hidden, mask=mask)
 
         return feature_hidden
 

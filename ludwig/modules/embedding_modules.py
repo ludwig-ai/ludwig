@@ -416,6 +416,9 @@ class EmbedSequence(LudwigModule):
                 f'Received {inputs.dtype} instead.'
             )
 
+        # Print device of inputs and embeddings
+        print(f'Inputs device: {inputs.device}')
+        print(f'Embeddings device: {self.embeddings.weight.device}')
         embedded = self.embeddings(inputs)
         if self.dropout:
             embedded = self.dropout(embedded)

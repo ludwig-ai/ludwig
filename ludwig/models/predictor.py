@@ -88,6 +88,8 @@ class Predictor(BasePredictor):
         self._horovod = horovod
         self._debug = debug
 
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     def batch_predict(
             self,
             model: ECD,
@@ -136,7 +138,7 @@ class Predictor(BasePredictor):
 
     def _predict(self, model, batch):
         inputs = {
-            i_feat.feature_name: batch[i_feat.proc_column]
+            i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
             for i_feat in model.input_features.values()
         }
 
@@ -155,7 +157,7 @@ class Predictor(BasePredictor):
             # Without cloning and detaching, a runtime error is raised since pred_value_list
             # is a tensor that requires grad.
             predictions[key] = torch.cat(
-                pred_value_list, dim=0).clone().detach().numpy()
+                pred_value_list, dim=0).clone().detach().cpu().numpy()
 
     def batch_evaluation(
             self,
@@ -180,8 +182,6 @@ class Predictor(BasePredictor):
                     disable=is_progressbar_disabled()
                 )
 
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
             predictions = defaultdict(list)
             while not batcher.last_batch():
                 batch = batcher.next_batch()
@@ -192,12 +192,13 @@ class Predictor(BasePredictor):
 
                 # TODO(shreya): BIG RED FLAG!!!
                 inputs = {
-                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(device)
+                    i_feat.feature_name: torch.from_numpy(
+                        batch[i_feat.proc_column]).to(self.device)
                     for i_feat in model.input_features.values()
                 }
                 targets = {
                     o_feat.feature_name: torch.from_numpy(
-                        batch[o_feat.proc_column]).to(device)
+                        batch[o_feat.proc_column]).to(self.device)
                     for o_feat in model.output_features.values()
                 }
 
@@ -225,7 +226,7 @@ class Predictor(BasePredictor):
         if collect_predictions:
             for key, pred_value_list in predictions.items():
                 predictions[key] = torch.cat(
-                    pred_value_list, dim=0).clone().detach().numpy()
+                    pred_value_list, dim=0).clone().detach().cpu().numpy()
 
         metrics = model.get_metrics()
         metrics = self.merge_workers_metrics(metrics)
