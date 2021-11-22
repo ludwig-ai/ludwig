@@ -1180,6 +1180,9 @@ def build_dataset(
     for callback in callbacks or []:
         callback.on_build_metadata_end(dataset_df)
 
+    for callback in callbacks or []:
+        callback.on_build_data_start(dataset_df, context)
+
     logger.debug("build data")
     proc_cols = build_data(
         dataset_cols,
@@ -1188,6 +1191,9 @@ def build_dataset(
         backend,
         skip_save_processed_input
     )
+
+    for callback in callbacks or []:
+        callback.on_build_data_end(dataset_df, context)
 
     logger.debug("get split")
     split = get_split(
