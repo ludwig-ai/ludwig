@@ -28,7 +28,7 @@ from ludwig.encoders.sequence_encoders import ParallelCNN,\
     StackedRNN
 
 DROPOUT = 0.5
-
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def create_encoder(encoder_type, **encoder_kwargs):
     encoder = encoder_type(**encoder_kwargs)
@@ -79,7 +79,7 @@ def encoder_test(
     :return: returns the encoder object for the caller to run extra checks
     """
     # Run the encoder
-    input_data = torch.from_numpy(input_data)
+    input_data = torch.from_numpy(input_data).to(DEVICE)
 
     hidden = encoder(input_data)['encoder_output']
 

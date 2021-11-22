@@ -191,6 +191,12 @@ class LudwigModel:
         # setup Backend
         self.backend = initialize_backend(
             backend or self.config.get('backend'))
+
+        print('\n\n\n\n\n\n')
+        print(backend or self.config.get('backend'))
+        print(f'BACKEND IS: {self.backend}')
+
+
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
