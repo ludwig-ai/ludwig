@@ -210,13 +210,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
+            # TODO(shreya): BIG RED FLAG!!!
+            metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
         metric_vals = {}
         for metric_name, metric_onj in self.metric_functions.items():
             try:
-                metric_vals[metric_name] = metric_onj.compute().detach().numpy().item()
+                metric_vals[metric_name] = metric_onj.compute().detach().cpu().numpy().item()
             except Exception as e:
                 logger.error(f"Caught exception computing metric: {metric_name}. Exception: {e}")
         return metric_vals

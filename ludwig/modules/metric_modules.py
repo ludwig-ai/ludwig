@@ -314,7 +314,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
         super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        super().update(preds.detach(), target)
+        super().update(preds, target)
 
     @classmethod
     def get_objective(cls):
@@ -331,7 +331,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
         super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        super().update(preds.detach(), target)
+        super().update(preds, target)
 
     @classmethod
     def get_objective(cls):
