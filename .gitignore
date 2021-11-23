@@ -72,8 +72,6 @@ coverage.xml
 # Data
 *.csv
 *.hdf5
-*.json
-
 
 # Translations
 *.mo
@@ -126,7 +124,6 @@ ENV/
 .idea
 
 # Exceptions
-
 !/docs/js/Ludwig_webgl1.json
 !/docs/js/Ludwig_webgl2.json
 !/docs/search/search_index.json
