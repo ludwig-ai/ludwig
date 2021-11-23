@@ -1,4 +1,4 @@
-name: docker
+name: pytest-gpu
 
 on:
   push:
@@ -156,7 +156,7 @@ jobs:
     if: always() && needs.start-runner.result != 'skipped'
     needs:
       - start-runner # required to get output from the start-runner job
-      - docker # required to wait when the main job is done
+      - pytest # required to wait when the main job is done
     runs-on: ubuntu-latest
 
     steps:
