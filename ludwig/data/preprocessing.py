@@ -72,7 +72,7 @@ class DataFormatPreprocessor(ABC):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         pass
 
@@ -118,7 +118,7 @@ class DictPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         num_overrides = override_in_memory_flag(features, True)
         if num_overrides > 0:
@@ -166,7 +166,7 @@ class DictPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -184,7 +184,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         num_overrides = override_in_memory_flag(features, True)
         if num_overrides > 0:
@@ -222,7 +222,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -240,7 +240,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -275,7 +275,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -293,7 +293,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -328,7 +328,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -346,7 +346,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -381,7 +381,7 @@ class JSONPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -399,7 +399,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -434,7 +434,7 @@ class JSONLPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -452,7 +452,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -487,7 +487,7 @@ class ExcelPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -505,7 +505,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -540,7 +540,7 @@ class ParquetPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -575,7 +575,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -610,7 +610,7 @@ class PicklePreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -628,7 +628,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -663,7 +663,7 @@ class FatherPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -681,7 +681,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -716,7 +716,7 @@ class FWFPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -734,7 +734,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -769,7 +769,7 @@ class HTMLPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -787,7 +787,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -822,7 +822,7 @@ class ORCPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -840,7 +840,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -875,7 +875,7 @@ class SASPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -893,7 +893,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -928,7 +928,7 @@ class SPSSPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -946,7 +946,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return _preprocess_file_for_training(
             features,
@@ -981,7 +981,7 @@ class StataPreprocessor(DataFormatPreprocessor):
             metadata=training_set_metadata,
             backend=backend,
             callbacks=callbacks,
-            context="prediction"
+            mode="prediction"
         )
         return dataset, training_set_metadata, None
 
@@ -999,7 +999,7 @@ class HDF5Preprocessor(DataFormatPreprocessor):
             preprocessing_params=default_preprocessing_parameters,
             backend=LOCAL_BACKEND,
             random_seed=default_random_seed,
-            callbacks=[]
+            callbacks=None
     ):
         return HDF5Preprocessor.prepare_processed_data(
             features,
@@ -1132,8 +1132,8 @@ def build_dataset(
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
         skip_save_processed_input=False,
-        callbacks=[],
-        context=None
+        callbacks=None,
+        mode=None
 ):
     df_engine = backend.df_engine
     dataset_df = df_engine.parallelize(dataset_df)
@@ -1166,7 +1166,7 @@ def build_dataset(
     )
 
     for callback in callbacks or []:
-        callback.on_build_metadata_start(dataset_df, context)
+        callback.on_build_metadata_start(dataset_df, mode)
 
     logger.debug("build metadata")
     metadata = build_metadata(
@@ -1178,10 +1178,10 @@ def build_dataset(
     )
 
     for callback in callbacks or []:
-        callback.on_build_metadata_end(dataset_df)
+        callback.on_build_metadata_end(dataset_df, mode)
 
     for callback in callbacks or []:
-        callback.on_build_data_start(dataset_df, context)
+        callback.on_build_data_start(dataset_df, mode)
 
     logger.debug("build data")
     proc_cols = build_data(
@@ -1193,7 +1193,7 @@ def build_dataset(
     )
 
     for callback in callbacks or []:
-        callback.on_build_data_end(dataset_df, context)
+        callback.on_build_data_end(dataset_df, mode)
 
     logger.debug("get split")
     split = get_split(
@@ -1481,7 +1481,7 @@ def preprocess_for_training(
         preprocessing_params=default_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
-        callbacks=[]
+        callbacks=None
 ):
     # sanity check to make sure some data source is provided
     if dataset is None and training_set is None:
@@ -1630,7 +1630,7 @@ def _preprocess_file_for_training(
         preprocessing_params=default_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
-        callbacks=[]
+        callbacks=None
 ):
     """
     Method to pre-process csv data
@@ -1667,7 +1667,7 @@ def _preprocess_file_for_training(
             random_seed=random_seed,
             skip_save_processed_input=skip_save_processed_input,
             callbacks=callbacks,
-            context="training"
+            mode="training"
         )
 
         # TODO(travis): implement saving split for Ray
@@ -1703,7 +1703,7 @@ def _preprocess_file_for_training(
             backend=backend,
             random_seed=random_seed,
             callbacks=callbacks,
-            context="training"
+            mode="training"
         )
 
     else:
@@ -1732,7 +1732,7 @@ def _preprocess_df_for_training(
         preprocessing_params=default_preprocessing_parameters,
         backend=LOCAL_BACKEND,
         random_seed=default_random_seed,
-        callbacks=[]
+        callbacks=None
 ):
     """ Method to pre-process dataframes. This doesn't have the option to save the
     processed data as hdf5 as we don't expect users to do this as the data can
@@ -1762,7 +1762,7 @@ def _preprocess_df_for_training(
         random_seed=random_seed,
         backend=backend,
         callbacks=callbacks,
-        context="training"
+        mode="training"
     )
 
     dataset = backend.df_engine.persist(dataset)
@@ -1785,7 +1785,7 @@ def preprocess_for_prediction(
         split=FULL,
         include_outputs=True,
         backend=LOCAL_BACKEND,
-        callbacks=[]
+        callbacks=None
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core

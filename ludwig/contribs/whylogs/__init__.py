@@ -6,5 +6,5 @@ class WhyLogsCallback(Callback):
     def __init__(self, path_to_config=None):
         self.session = get_or_create_session(path_to_config)
 
-    def on_build_metadata_start(self, df, dataset_name=None):
-        self.session.log_dataframe(df, dataset_name, tags={"stage": "build_metadata_start"})
+    def on_build_metadata_start(self, df, mode=None):
+        self.session.log_dataframe(df, mode, tags={"stage": "build_metadata_start", "mode": mode if not mode else ""})
