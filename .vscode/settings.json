@@ -1,0 +1,12 @@
+{
+    "editor.rulers": [
+        100
+    ],
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "yapf",
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--config=setup.cfg"
+    ]
+}
