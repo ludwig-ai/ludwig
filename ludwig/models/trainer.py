@@ -293,9 +293,7 @@ class Trainer(BaseTrainer):
             self.learning_rate *= self.horovod.size()
 
         self.model = model
-        print('\nCALLED HERE!!\n')
         self.model = self.model.to(self.device)
-        print(model)
 
         # ================ Optimizer ================
         if optimizer is None:

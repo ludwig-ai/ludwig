@@ -210,7 +210,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
-            # TODO(shreya): BIG RED FLAG!!!
+            # TODO(shreya): Metrics should ideally just move to the correct device
+            #  and not require the user to do this. This is a temporary fix. See
+            #  if this can be removed before merging the PR.
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
