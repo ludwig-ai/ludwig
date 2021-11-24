@@ -8,21 +8,25 @@ Driver script which:
 (2) Tunes config based on resource constraints
 (3) Runs hyperparameter optimization experiment
 """
-
+import argparse
 import os
 import warnings
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 import numpy as np
 import pandas as pd
+import yaml
 import copy
 
 from ludwig.api import LudwigModel
 from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info, infer_type
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.utils import _ray_init, get_model_name
-from ludwig.constants import COMBINER, NUMERICAL, TYPE
+from ludwig.constants import COMBINER, TYPE, HYPEROPT, NUMERICAL
+from ludwig.contrib import add_contrib_callback_args
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
+from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.misc_utils import merge_dict
 
 try:
@@ -100,7 +104,7 @@ def auto_train(
 
 def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
-    target: str,
+    target: Union[str, List[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool,
     user_specified_config: Dict = None,
@@ -112,9 +116,11 @@ def create_auto_config(
 
     # Inputs
     :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
-    :param target: (str) name of target feature
+    :param target: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
-                                    as the stopping parameter
+                         as the stopping parameter
+    :param tune_for_memroy: (bool) refine hyperopt search space for available
+                            host / GPU memory
 
     # Return
     :return: (dict) selected model configuration
@@ -265,3 +271,88 @@ def _train(
         **kwargs
     )
     return hyperopt_results
+
+
+def init_config(
+    dataset: str,
+    target: Union[str, List[str]],
+    time_limit_s: Union[int, float],
+    tune_for_memory: bool,
+    hyperopt: bool = False,
+    output: str = None,
+    **kwargs
+):
+    config = create_auto_config(
+        dataset=dataset,
+        target=target,
+        time_limit_s=time_limit_s,
+        tune_for_memory=tune_for_memory,
+    )
+
+    if HYPEROPT in config and not hyperopt:
+        del config[HYPEROPT]
+
+    if output is None:
+        print(yaml.safe_dump(config, None, sort_keys=False))
+    else:
+        with open(output, 'w') as f:
+            yaml.safe_dump(config, f, sort_keys=False)
+
+
+def cli_init_config(sys_argv):
+    parser = argparse.ArgumentParser(
+        description='This script initializes a valid config from a dataset.',
+        prog='ludwig init_config',
+        usage='%(prog)s [options]'
+    )
+    parser.add_argument(
+        '-d',
+        '--dataset',
+        type=str,
+        help='input data file path',
+    )
+    parser.add_argument(
+        '-t',
+        '--target',
+        type=str,
+        help='target(s) to predict as output features of the model',
+        action='append',
+        required=False,
+    )
+    parser.add_argument(
+        '--time_limit_s',
+        type=int,
+        help='time limit to train the model in seconds when using hyperopt',
+        required=False,
+    )
+    parser.add_argument(
+        '--tune_for_memory',
+        type=bool,
+        help='refine hyperopt search space based on available host / GPU memory',
+        default=False,
+        required=False,
+    )
+    parser.add_argument(
+        '--hyperopt',
+        type=bool,
+        help='include automl hyperopt config',
+        default=False,
+        required=False,
+    )
+    parser.add_argument(
+        '-o',
+        '--output',
+        type=str,
+        help='output initialized YAML config path',
+        required=False,
+    )
+
+    add_contrib_callback_args(parser)
+    args = parser.parse_args(sys_argv)
+
+    args.callbacks = args.callbacks or []
+    for callback in args.callbacks:
+        callback.on_cmdline('init_config', *sys_argv)
+
+    print_ludwig('Init Config', LUDWIG_VERSION)
+    init_config(**vars(args))
