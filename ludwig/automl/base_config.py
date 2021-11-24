@@ -250,8 +250,8 @@ def get_features_config(
         targets = []
     targets = set(targets)
 
-    metadata = get_field_metadata(fields, row_count, resources, target_name)
-    return get_config_from_metadata(metadata, target_name)
+    metadata = get_field_metadata(fields, row_count, resources, targets)
+    return get_config_from_metadata(metadata, targets)
 
 
 def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = None) -> dict:
