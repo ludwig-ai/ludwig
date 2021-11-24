@@ -416,9 +416,6 @@ class EmbedSequence(LudwigModule):
                 f'Received {inputs.dtype} instead.'
             )
 
-        # Print device of inputs and embeddings
-        print(f'Inputs device: {inputs.device}')
-        print(f'Embeddings device: {self.embeddings.weight.device}')
         embedded = self.embeddings(inputs)
         if self.dropout:
             embedded = self.dropout(embedded)
@@ -466,6 +463,8 @@ class TokenAndPositionEmbedding(LudwigModule):
             embedding_dim=self.token_embed.embedding_size
         )
 
+        self.register_buffer('positions', torch.arange(max_sequence_length))
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -475,8 +474,6 @@ class TokenAndPositionEmbedding(LudwigModule):
         return self.token_embed.output_shape
 
     def forward(self, inputs, mask: Optional[torch.Tensor] = None):
-        max_length = inputs.shape[-1]
-        positions = torch.arange(start=0, end=max_length, step=1)
-        positions_hidden = self.position_embed(positions)
+        positions_hidden = self.position_embed(self.positions)
         token_hidden = self.token_embed(inputs)
         return token_hidden + positions_hidden

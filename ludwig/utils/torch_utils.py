@@ -116,6 +116,11 @@ class LudwigModule(Module):
     def __init__(self):
         super().__init__()
         self._callable_losses = []
+        self.register_buffer('device_tensor', torch.zeros(0))
+
+    @property
+    def device(self):
+        return self.device_tensor.device
 
     def losses(self):
         collected_losses = []
@@ -156,8 +161,10 @@ class LudwigModule(Module):
 
     @lru_cache(maxsize=1)
     def _compute_output_shape(self) -> torch.Size:
-        output_tensor = self.forward(
-            torch.rand(2, *self.input_shape).type(self.input_dtype))
+
+        dummy_input = torch.rand(2, *self.input_shape, device=self.device)
+
+        output_tensor = self.forward(dummy_input.type(self.input_dtype))
         if isinstance(output_tensor, torch.Tensor):
             return output_tensor.size()[1:]
         elif isinstance(output_tensor, dict) and 'encoder_output' in output_tensor:
