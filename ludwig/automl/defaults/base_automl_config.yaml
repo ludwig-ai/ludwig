@@ -9,6 +9,8 @@ hyperopt:
     scheduler:
       type: async_hyperband
       time_attr: time_total_s
+      # (time_budget_s / num_samples) * 2
+      max_t: 600
     num_samples: 20
 
   executor:

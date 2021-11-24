@@ -8,7 +8,6 @@ training:
   decay: true
   decay_steps: 500
   decay_rate: 0.95
-  epochs: 3000
   # early_stop: 300
   regularization_lambda: 1
   optimizer:

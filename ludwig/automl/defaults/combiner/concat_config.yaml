@@ -1,9 +1,6 @@
 combiner:
   type: concat
 
-training:
-  epochs: 3000
-
 hyperopt:
   # goal: maximize
   parameters:
