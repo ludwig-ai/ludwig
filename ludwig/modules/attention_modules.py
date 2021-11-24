@@ -135,6 +135,10 @@ class TransformerBlock(LudwigModule):
         fc_output = self.dropout2(fc_output)  # [b, s, h]
         return self.layernorm2(ln1_output + fc_output)  # [b, s, h]
 
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.sequence_size, self.input_size])
+
 
 class TransformerStack(LudwigModule):
     def __init__(
@@ -180,6 +184,11 @@ class TransformerStack(LudwigModule):
         for layer in self.layers:
             hidden = layer(hidden, mask=mask)
         return hidden
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([self.sequence_size, self.input_size])
+
 
 # todo future: maybe reintroduce these attention function
 # def feed_forward_attention(current_inputs, feature_hidden_size,
