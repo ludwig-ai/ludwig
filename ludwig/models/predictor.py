@@ -189,8 +189,6 @@ class Predictor(BasePredictor):
                     f'evaluation for {dataset_name}: obtained next batch '
                     f'memory used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB'
                 )
-
-                # TODO(shreya): BIG RED FLAG!!!
                 inputs = {
                     i_feat.feature_name: torch.from_numpy(
                         batch[i_feat.proc_column]).to(self.device)
