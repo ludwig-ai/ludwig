@@ -31,5 +31,6 @@ def test_are_conventional_bools():
     assert strings_utils.are_conventional_bools(['True', 'Fales']) == False
     assert strings_utils.are_conventional_bools(['0', '1']) == True
     assert strings_utils.are_conventional_bools(['0', '2']) == False
+    assert strings_utils.are_conventional_bools(['1.0', '0.0']) == True
     assert strings_utils.are_conventional_bools(['high', 'low']) == False
     assert strings_utils.are_conventional_bools(['human', 'bot']) == False
