@@ -37,8 +37,8 @@ SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
 
-BOOL_TRUE_STRS = {'yes', 'y', 'true', 't', '1'}
-BOOL_FALSE_STRS = {'no', 'n', 'false', 'f', '0'}
+BOOL_TRUE_STRS = {'yes', 'y', 'true', 't', '1', '1.0'}
+BOOL_FALSE_STRS = {'no', 'n', 'false', 'f', '0', '0.0'}
 # Update the following if BOOL_TRUE_STRS or BOOL_FALSE_STRS changes
 MAX_DISTINCT_BOOL_PERMUTATIONS = 70
 

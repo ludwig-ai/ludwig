@@ -262,15 +262,15 @@ class ConfusionMatrix:
 
 def roc_curve(conditions, prediction_scores, pos_label=None,
               sample_weight=None):
-    return metrics.roc_curve(conditions, prediction_scores, pos_label,
-                             sample_weight)
+    return metrics.roc_curve(conditions, prediction_scores, pos_label=pos_label,
+                             sample_weight=sample_weight)
 
 
 def roc_auc_score(conditions, prediction_scores, average='micro',
                   sample_weight=None):
     try:
-        return metrics.roc_auc_score(conditions, prediction_scores, average,
-                                     sample_weight)
+        return metrics.roc_auc_score(conditions, prediction_scores, average=average,
+                                     sample_weight=sample_weight)
     except ValueError as ve:
         logger.info(ve)
 
@@ -278,7 +278,7 @@ def roc_auc_score(conditions, prediction_scores, average='micro',
 def precision_recall_curve(conditions, prediction_scores, pos_label=None,
                            sample_weight=None):
     return metrics.precision_recall_curve(conditions, prediction_scores,
-                                          pos_label, sample_weight)
+                                          pos_label=pos_label, sample_weight=sample_weight)
 
 
 def average_precision_score(conditions, prediction_scores, average='micro',
@@ -287,29 +287,3 @@ def average_precision_score(conditions, prediction_scores, average='micro',
     return metrics.average_precision_score(conditions, prediction_scores,
                                            average=average,
                                            sample_weight=sample_weight)
-
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser(
-#         description='This script trains and tests a model.')
-#     parser.add_argument('gold_standard', help='file containing gold standars')
-#     parser.add_argument(PREDICTIONS, help='file containing predictions')
-#     parser.add_argument('output_fp', help='output file')
-#     args = parser.parse_args()
-#
-#     hdf5_data = h5py.File(args.gold_standard, 'r')
-#     split = hdf5_data[SPLIT].value
-#     column = hdf5_data['macros'].value
-#     hdf5_data.close()
-#     conditions = column[split == 2]  # ground truth
-#
-#     predictions = np.load(args.predictions)
-#
-#     confusion_matrix = ConfusionMatrix(predictions, conditions)
-#
-#     results = load_json(args.output_fp)
-#     results['confusion_matrix_stats'] = {
-#         'confusion_matrix': confusion_matrix.cm.tolist(),
-#         'overall_stats': confusion_matrix.stats(),
-#         'per_class_stats': confusion_matrix.per_class_stats()
-#     }
-#     save_json(args.output_fp, results)
