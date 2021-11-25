@@ -1,16 +1,29 @@
+import contextlib
 import os
 import shutil
 
-import mlflow
-import pandas as pd
-import yaml
+import ray
 
 from ludwig.api import LudwigModel
+from ludwig.backend.ray import get_trainer_kwargs, RayBackend
 from ludwig.contribs import WhyLogsCallback
-from tests.integration_tests.utils import sequence_feature, category_feature, generate_data
+from tests.integration_tests.utils import sequence_feature, category_feature, generate_data, text_feature
 
 
-def test_whylogs_callback(tmpdir):
+@contextlib.contextmanager
+def ray_start(num_cpus=2):
+    res = ray.init(
+        num_cpus=num_cpus,
+        include_dashboard=False,
+        object_store_memory=150 * 1024 * 1024,
+    )
+    try:
+        yield res
+    finally:
+        ray.shutdown()
+
+
+def test_whylogs_callback_local(tmpdir):
     epochs = 2
     batch_size = 8
     num_examples = 32
@@ -32,7 +45,7 @@ def test_whylogs_callback(tmpdir):
                               os.path.join(tmpdir, 'validation.csv'))
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'test.csv'))
 
-    exp_name = 'whylogs_test'
+    exp_name = 'whylogs_test_local'
     callback = WhyLogsCallback()
 
     model = LudwigModel(config, callbacks=[callback])
@@ -40,11 +53,66 @@ def test_whylogs_callback(tmpdir):
                 validation_set=val_csv,
                 test_set=test_csv,
                 experiment_name=exp_name)
-    expected_df, _ = model.predict(test_csv)
+    _, _ = model.predict(test_csv)
 
     # Check whylogs initialization
     assert callback.session is not None
     assert callback.session.is_active() is True
+
+    local_training_output_dir = 'output/training'
+    local_prediction_output_dir = 'output/prediction'
+
+    assert os.path.isdir(local_training_output_dir) is True
+    assert os.path.isdir(local_prediction_output_dir) is True
+
+
+def test_whylogs_callback_dask(tmpdir):
+    epochs = 2
+    batch_size = 8
+    num_examples = 32
+    num_cpus = 2
+
+    input_features = [sequence_feature(reduce_output='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+
+    config = {
+        'backend': {
+            'type': 'ray',
+            'processor': {
+                'parallelism': 2,
+            },
+            'trainer': {
+                'num_workers': 2,
+                'resources_per_worker': {
+                    'CPU': 0.1,
+                }
+            }
+        },
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {'type': 'concat', 'fc_size': 14},
+        'training': {'epochs': epochs, 'batch_size': batch_size},
+    }
+
+    with ray_start(num_cpus=num_cpus):
+        data_csv = generate_data(input_features, output_features,
+                                 os.path.join(tmpdir, 'train.csv'),
+                                 num_examples=num_examples)
+        val_csv = shutil.copyfile(data_csv,
+                                  os.path.join(tmpdir, 'validation.csv'))
+        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'test.csv'))
+        exp_name = 'whylogs_test_ray'
+        callback = WhyLogsCallback()
+        backend = RayBackend(config)
+        model = LudwigModel(config, backend=backend, callbacks=[callback])
+        model.train(training_set=data_csv,
+                    validation_set=val_csv,
+                    test_set=test_csv,
+                    experiment_name=exp_name)
+        _, _ = model.predict(test_csv)
+        # Check whylogs initialization
+        assert callback.session is not None
+        assert callback.session.is_active() is True
 
     local_training_output_dir = 'output/training'
     local_prediction_output_dir = 'output/prediction'

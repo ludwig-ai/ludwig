@@ -7,4 +7,15 @@ class WhyLogsCallback(Callback):
         self.session = get_or_create_session(path_to_config)
 
     def on_build_metadata_start(self, df, mode=None):
-        self.session.log_dataframe(df, mode, tags={"stage": "build_metadata_start", "mode": mode if not mode else ""})
+        def log_dataframe(df_aux):
+            session = get_or_create_session()
+            session.log_dataframe(
+                df_aux,
+                mode,
+                tags={"stage": "build_metadata_start", "mode": mode if not mode else ""}
+            )
+
+        if hasattr(df, "compute"):
+            df.map_partitions(log_dataframe).compute()
+        else:
+            log_dataframe(df)
