@@ -71,7 +71,7 @@ def auto_train(
     time_limit_s: Union[int, float],
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
-    user_specified_config: Dict = None,
+    user_config: Dict = None,
     **kwargs
 ) -> AutoTrainResults:
     """
@@ -93,7 +93,7 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_specified_config, **kwargs)
+        dataset, target, time_limit_s, tune_for_memory, user_config, **kwargs)
     return train_with_config(
         dataset,
         config,
@@ -107,7 +107,7 @@ def create_auto_config(
     target: Union[str, List[str]],
     time_limit_s: Union[int, float],
     tune_for_memory: bool,
-    user_specified_config: Dict = None,
+    user_config: Dict = None,
 ) -> dict:
     """
     Returns an auto-generated Ludwig config with the intent of training
@@ -127,7 +127,7 @@ def create_auto_config(
     """
     default_configs = _create_default_config(dataset, target, time_limit_s)
     model_config = _model_select(
-        dataset, default_configs, user_specified_config
+        dataset, default_configs, user_config
     )
     if tune_for_memory:
         if ray.is_initialized():
@@ -186,7 +186,7 @@ def train_with_config(
 def _model_select(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     default_configs,
-    user_specified_config,
+    user_config,
 ):
     """
     Performs model selection based on dataset or user specified model.
@@ -221,9 +221,9 @@ def _model_select(
                 base_config, default_configs["combiner"]["tabnet"])
 
         # override combiner heuristic if explicitly provided by user
-        if user_specified_config is not None:
-            if "combiner" in user_specified_config.keys():
-                model_type = user_specified_config["combiner"]["type"]
+        if user_config is not None:
+            if "combiner" in user_config.keys():
+                model_type = user_config["combiner"]["type"]
                 base_config = merge_dict(
                     base_config, default_configs["combiner"][model_type])
     else:
@@ -239,8 +239,8 @@ def _model_select(
             # TODO (ASN): add image heuristics
 
     # override and constrain automl config based on user specified values
-    if user_specified_config is not None:
-        base_config = merge_dict(base_config, user_specified_config)
+    if user_config is not None:
+        base_config = merge_dict(base_config, user_config)
 
         # remove all parameters from hyperparameter search that user has
         # provided explicit values for
@@ -248,8 +248,8 @@ def _model_select(
         for hyperopt_params in hyperopt_params.keys():
             config_section, param = hyperopt_params.split(
                 ".")[0], hyperopt_params.split(".")[1]
-            if config_section in user_specified_config.keys():
-                if param in user_specified_config[config_section]:
+            if config_section in user_config.keys():
+                if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
 
     return base_config
