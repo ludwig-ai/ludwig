@@ -141,3 +141,7 @@ tags
 # examples
 examples/*/data/
 examples/*/visualizations/
+/titanic/
+/bank/
+/insurance/
+!/.gitignore
