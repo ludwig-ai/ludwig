@@ -26,7 +26,7 @@ from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss
+from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss, get_loss_cls
 from ludwig.modules.metric_modules import (
     MAEMetric,
     MSEMetric,
@@ -304,19 +304,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return {PREDICTIONS: predictions, LOGITS: logits}
 
     def _setup_loss(self):
-        if self.loss[TYPE] == "mean_squared_error":
-            self.train_loss_function = MSELoss()
-        elif self.loss[TYPE] == "mean_absolute_error":
-            self.train_loss_function = MAELoss()
-        elif self.loss[TYPE] == "root_mean_squared_error":
-            self.train_loss_function = RMSELoss()
-        elif self.loss[TYPE] == "root_mean_squared_percentage_error":
-            self.train_loss_function = RMSPELoss()
-        else:
-            raise ValueError(
-                "Unsupported loss type {}".format(self.loss[TYPE])
-            )
-
+        loss_cls = get_loss_cls(NUMERICAL, self.loss[TYPE])
+        self.train_loss_function = loss_cls(**self.loss)
         self.eval_loss_function = self.train_loss_function
 
     def _setup_metrics(self):

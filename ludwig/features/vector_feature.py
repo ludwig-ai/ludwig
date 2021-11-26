@@ -25,8 +25,8 @@ from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Projector
 from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss,\
-    MAELoss
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
+    MAELoss, get_loss_cls
 from ludwig.modules.metric_modules import MSEMetric, MAEMetric, R2Score,\
     SoftmaxCrossEntropyMetric
 from ludwig.utils import output_feature_utils
@@ -211,19 +211,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return {PREDICTIONS: logits, LOGITS: logits}
 
     def _setup_loss(self):
-        if self.loss[TYPE] == 'mean_squared_error':
-            self.train_loss_function = MSELoss()
-            self.eval_loss_function = MSEMetric()
-        elif self.loss[TYPE] == 'mean_absolute_error':
-            self.train_loss_function = MAELoss()
-            self.eval_loss_function = MAEMetric()
-        elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
-            self.train_loss_function = SoftmaxCrossEntropyLoss()
-            self.eval_loss_function = SoftmaxCrossEntropyMetric(**self.loss)
-        else:
-            raise ValueError(
-                'Unsupported loss type {}'.format(self.loss[TYPE])
-            )
+        self.train_loss_function = get_loss_cls(VECTOR, self.loss[TYPE])(**self.loss)
+        self.eval_loss_function = get_metric_cls(VECTOR, self.loss[TYPE])(**self.loss)
 
     def _setup_metrics(self):
         self.metric_functions = {}  # needed to shadow class variable

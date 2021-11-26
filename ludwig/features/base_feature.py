@@ -27,7 +27,6 @@ from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.modules.loss_modules import LOSS_INPUTS_REGISTRY
 from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils import output_feature_utils
@@ -206,12 +205,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(
-            feature_name, LOSS_INPUTS_REGISTRY[loss_class])
+            feature_name, loss_class.get_loss_inputs())
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
-        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
+        prediction_key = loss_class.get_loss_inputs()
         return self.eval_loss_function(predictions[prediction_key].detach(),
                                        targets)
 

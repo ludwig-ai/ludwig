@@ -25,7 +25,7 @@ from ludwig.decoders.generic_decoders import Classifier
 from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, get_loss_cls
 # from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
 # from ludwig.modules.metric_modules import SampledSoftmaxCrossEntropyMetric
@@ -232,17 +232,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return torch.Size([1])
 
     def _setup_loss(self):
-        if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SoftmaxCrossEntropyLoss()
-        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss()
-        else:
-            raise ValueError(
-                "Loss type {} is not supported. Valid values are "
-                "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
-            )
-
+        loss_cls = get_loss_cls(CATEGORY, self.loss[TYPE])
+        self.train_loss_function = loss_cls(**self.loss)
         self.eval_loss_function = SoftmaxCrossEntropyLoss()
 
     def _setup_metrics(self):
