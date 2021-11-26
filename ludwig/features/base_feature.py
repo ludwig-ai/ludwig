@@ -219,7 +219,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.metric_functions = {
             LOSS: self.eval_loss_function,
             **{
-                name: cls(**self.loss, **self.metric_kwargs)
+                name: cls(**self.loss, **self.metric_kwargs())
                 for name, cls in get_metric_classes(self.type).items()
                 if cls.can_report(self)
             }
