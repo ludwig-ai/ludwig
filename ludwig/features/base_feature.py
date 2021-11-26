@@ -27,7 +27,6 @@ from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
@@ -217,7 +216,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
-            prediction_key = METRICS_INPUTS_REGISTRY[metric_class]
+            prediction_key = metric_class.get_inputs()
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
