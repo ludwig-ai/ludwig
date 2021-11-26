@@ -8,7 +8,6 @@ training:
   decay: true
   decay_steps: 500
   decay_rate: 0.95
-  epochs: 3000
   # early_stop: 300
   regularization_lambda: 1
   optimizer:
@@ -25,16 +24,16 @@ hyperopt:
       categories: [0.005, 0.01, 0.02, 0.025]
     training.batch_size:
       space: choice
-      categories: [256, 512, 1024]
+      categories: [256, 512, 1024, 2048, 4096, 8192]
     training.decay_rate:
       space: choice
-      categories: [0.4, 0.8, 0.9, 0.95]
+      categories: [0.8, 0.9, 0.95]
     training.decay_steps:
       space: choice
       categories: [500, 2000, 8000, 10000, 20000]
     combiner.size:
       space: choice
-      categories: [8, 16, 24, 32, 64, 128]
+      categories: [8, 16, 24, 32, 64]
     combiner.output_size:
       space: choice
       categories: [8, 16, 24, 32, 64, 128]
@@ -53,14 +52,3 @@ hyperopt:
     combiner.bn_momentum:
       space: choice
       categories: [0.6, 0.7, 0.8, 0.9, 0.95, 0.98]
-
-  sampler:
-    type: ray
-    scheduler:
-      type: async_hyperband
-      time_attr: time_total_s
-    num_samples: 20
-
-  executor:
-    type: ray
-    time_budget_s: 6000

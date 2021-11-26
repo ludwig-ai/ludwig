@@ -671,8 +671,8 @@ class RayTuneExecutor(HyperoptExecutor):
             "gpu": self._gpu_resources_per_trial_non_none,
         }
 
-        def run_experiment_trial(config, checkpoint_dir=None):
-            return self._run_experiment(config, checkpoint_dir, hyperopt_dict, self.decode_ctx, _is_ray_backend(backend))
+        def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
+            return self._run_experiment(config, checkpoint_dir, local_hyperopt_dict, self.decode_ctx, _is_ray_backend(backend))
 
         tune_config = {}
         tune_callbacks = []
@@ -705,9 +705,10 @@ class RayTuneExecutor(HyperoptExecutor):
                     self.kubernetes_namespace)
             )
 
+        run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         register_trainable(
             f"trainable_func_f{hash_dict(config).decode('ascii')}",
-            run_experiment_trial
+            run_experiment_trial_params
         )
 
         analysis = tune.run(
