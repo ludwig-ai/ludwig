@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 import logging
 from functools import lru_cache
 from typing import List, Dict, Optional, Union, Any
@@ -24,6 +24,8 @@ from marshmallow_dataclass import dataclass
 
 import torch
 from torch.nn import Module, ModuleList, Linear
+
+from ludwig.utils.registry import Registry, register
 from ludwig.utils.torch_utils import LudwigModule, \
     sequence_mask as torch_sequence_mask
 
@@ -56,14 +58,11 @@ sequence_encoder_registry = {
 }
 
 
-# super class to house common properties
-class CombinerClass(LudwigModule):
-    @property
-    @abstractmethod
-    def concatenated_shape(self) -> torch.Size:
-        """ Returns the size of concatenated encoder output tensors. """
-        raise NotImplementedError('Abstract class.')
+combiner_registry = Registry()
 
+
+# super class to house common properties
+class CombinerClass(LudwigModule, ABC):
     @property
     def input_shape(self) -> Dict:
         # input to combiner is a dictionary of the input features encoder
@@ -86,6 +85,16 @@ class CombinerClass(LudwigModule):
         output_tensor = self.forward(pseudo_input)
         return output_tensor['combiner_output'].size()[1:]
 
+    @classmethod
+    def register(cls, name):
+        combiner_registry[name] = cls
+
+    @property
+    @abstractmethod
+    def concatenated_shape(self) -> torch.Size:
+        """ Returns the size of concatenated encoder output tensors. """
+        raise NotImplementedError()
+
 
 @dataclass
 class ConcatCombinerConfig:
@@ -106,6 +115,7 @@ class ConcatCombinerConfig:
         unknown = INCLUDE
 
 
+@register(name='concat')
 class ConcatCombiner(CombinerClass):
     def __init__(
             self,
@@ -204,6 +214,7 @@ class SequenceConcatCombinerConfig:
         unknown = INCLUDE
 
 
+@register(name='sequence_concat')
 class SequenceConcatCombiner(CombinerClass):
     def __init__(
             self,
@@ -381,6 +392,7 @@ class SequenceCombinerConfig:
         unknown = INCLUDE
 
 
+@register(name='sequence')
 class SequenceCombiner(CombinerClass):
     def __init__(
             self,
@@ -482,6 +494,7 @@ class TabNetCombinerConfig:
         unknown = INCLUDE
 
 
+@register(name='tabnet')
 class TabNetCombiner(CombinerClass):
     def __init__(
             self,
@@ -595,6 +608,7 @@ class TransformerCombinerConfig:
         unknown = INCLUDE
 
 
+@register(name='transformer')
 class TransformerCombiner(CombinerClass):
     def __init__(
             self,
@@ -733,6 +747,7 @@ class TabTransformerCombinerConfig:
         unknown = INCLUDE
 
 
+@register(name='tabtransformer')
 class TabTransformerCombiner(CombinerClass):
     def __init__(
             self,
@@ -971,6 +986,7 @@ class ComparatorCombinerConfig:
         unknown = INCLUDE
 
 
+@register(name='comparator')
 class ComparatorCombiner(CombinerClass):
     def __init__(
             self,
@@ -1131,14 +1147,3 @@ def get_combiner_class(combiner_type):
         combiner_type,
         combiner_registry
     )
-
-
-combiner_registry = {
-    'concat': ConcatCombiner,
-    'sequence_concat': SequenceConcatCombiner,
-    'sequence': SequenceCombiner,
-    'tabnet': TabNetCombiner,
-    'comparator': ComparatorCombiner,
-    "transformer": TransformerCombiner,
-    "tabtransformer": TabTransformerCombiner,
-}
