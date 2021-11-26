@@ -26,7 +26,7 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss, get_loss_cls
-from ludwig.modules.metric_modules import JaccardMetric
+from ludwig.modules.metric_modules import JaccardMetric, get_metric_classes
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
@@ -208,11 +208,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         loss_cls = get_loss_cls(SET, self.loss[TYPE])
         self.train_loss_function = loss_cls(**self.loss)
         self.eval_loss_function = SigmoidCrossEntropyMetric(**self.loss)
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[JACCARD] = JaccardMetric()
 
     def get_prediction_set(self):
         return {

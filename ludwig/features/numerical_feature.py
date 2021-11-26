@@ -32,7 +32,7 @@ from ludwig.modules.metric_modules import (
     MSEMetric,
     RMSEMetric,
     RMSPEMetric,
-    R2Score,
+    R2Score, get_metric_classes,
 )
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
@@ -307,15 +307,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         loss_cls = get_loss_cls(NUMERICAL, self.loss[TYPE])
         self.train_loss_function = loss_cls(**self.loss)
         self.eval_loss_function = self.train_loss_function
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
-        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RMSEMetric()
-        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric(
-        )
-        self.metric_functions[R2] = R2Score()
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}

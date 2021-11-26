@@ -48,11 +48,18 @@ def register_metric(name: str, features: Union[str, List[str]]):
     return wrap
 
 
+def get_metric_classes(feature: str):
+    return metric_registry[feature]
+
+
 def get_metric_cls(feature: str, name: str):
     return metric_registry[feature][name]
 
 
 class LudwigMetric(ABC):
+    def can_report(self, feature: "OutputFeature") -> bool:
+        return True
+
     @classmethod
     @abstractmethod
     def get_objective(cls):
@@ -142,8 +149,8 @@ class RMSPEMetric(MeanMetric):
 @register_metric(R2, [NUMERICAL, VECTOR])
 class R2Score(_R2Score, LudwigMetric):
     """ R-squared metric. """
-    def __init__(self, **kwargs):
-        super().__init__()
+    def __init__(self, num_outputs: int = 1, **kwargs):
+        super().__init__(num_outputs=num_outputs)
 
     @classmethod
     def get_objective(cls):
@@ -184,6 +191,9 @@ class BWCEWLMetric(MeanMetric):
     def get_inputs(cls):
         return LOGITS
 
+    def can_report(self, feature: "OutputFeature") -> bool:
+        return False
+
 
 @register_metric('softmax_cross_entropy', [CATEGORY])
 class SoftmaxCrossEntropyMetric(MeanMetric):
@@ -201,6 +211,9 @@ class SoftmaxCrossEntropyMetric(MeanMetric):
     @classmethod
     def get_inputs(cls):
         return LOGITS
+
+    def can_report(self, feature: "OutputFeature") -> bool:
+        return False
 
 
 # @register_metric('sampled_softmax_cross_entropy', [CATEGORY])
@@ -249,6 +262,9 @@ class SigmoidCrossEntropyMetric(MeanMetric):
     @classmethod
     def get_inputs(cls):
         return LOGITS
+
+    def can_report(self, feature: "OutputFeature") -> bool:
+        return False
 
 
 # TODO(shreya): After Sequence Losses
@@ -429,6 +445,9 @@ class HitsAtKMetric(Accuracy, LudwigMetric):
     @classmethod
     def get_inputs(cls):
         return LOGITS
+
+    def can_report(self, feature: "OutputFeature") -> bool:
+        return feature.decoder_obj.num_classes > feature.top_k
 
 
 @register_metric(MEAN_ABSOLUTE_ERROR, [NUMERICAL, VECTOR])
