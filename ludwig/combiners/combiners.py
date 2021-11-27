@@ -64,6 +64,15 @@ combiner_registry = Registry()
 # super class to house common properties
 class CombinerClass(LudwigModule, ABC):
     @property
+    def concatenated_shape(self) -> torch.Size:
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
+
+    @property
     def input_shape(self) -> Dict:
         # input to combiner is a dictionary of the input features encoder
         # outputs, this property returns dictionary of output shapes for each
@@ -88,12 +97,6 @@ class CombinerClass(LudwigModule, ABC):
     @classmethod
     def register(cls, name):
         combiner_registry[name] = cls
-
-    @property
-    @abstractmethod
-    def concatenated_shape(self) -> torch.Size:
-        """ Returns the size of concatenated encoder output tensors. """
-        raise NotImplementedError()
 
 
 @dataclass
@@ -158,15 +161,6 @@ class ConcatCombiner(CombinerClass):
 
         if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
-
-    @property
-    def concatenated_shape(self) -> torch.Size:
-        # compute the size of the last dimension for the incoming encoder outputs
-        # this is required to setup the fully connected layer
-        shapes = [
-            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
-            for k in self.input_features]
-        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
             self,
@@ -534,15 +528,6 @@ class TabNetCombiner(CombinerClass):
     #         for k in input_shape.keys()
     #     }
 
-    @property
-    def concatenated_shape(self) -> torch.Size:
-        # compute the size of the last dimension for the incoming encoder outputs
-        # this is required to setup
-        shapes = [
-            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
-            for k in self.input_features]
-        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
-
     def forward(
             self,
             inputs: torch.Tensor,  # encoder outputs
@@ -668,15 +653,6 @@ class TransformerCombiner(CombinerClass):
                 default_dropout=config.fc_dropout,
                 fc_residual=config.fc_residual,
             )
-
-    @property
-    def concatenated_shape(self) -> torch.Size:
-        # compute the size of the last dimension for the incoming encoder outputs
-        # this is required to setup the fully connected layer
-        shapes = [
-            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
-            for k in self.input_features]
-        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
             self,
