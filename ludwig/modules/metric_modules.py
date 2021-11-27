@@ -19,8 +19,9 @@ from typing import Callable, Optional, Union, List
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
-from torchmetrics import Accuracy, AUROC, IoU, MeanAbsoluteError,\
-    MeanSquaredError, Metric, R2Score as _R2Score, MeanMetric as _MeanMetric
+from torchmetrics import AUROC, IoU, MeanAbsoluteError,\
+    MeanSquaredError, Metric, Accuracy as _Accuracy,\
+    R2Score as _R2Score, MeanMetric as _MeanMetric
 
 from ludwig.constants import *
 from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss,\
@@ -400,8 +401,23 @@ class TokenAccuracyMetric(MeanMetric):
 #         super().update_state(masked_sequence_corrected_preds)
 
 
+@register_metric(ACCURACY, [BINARY])
+class Accuracy(_Accuracy, LudwigMetric):
+    """ R-squared metric. """
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PREDICTIONS
+
+
 @register_metric(ACCURACY, [CATEGORY])
-class CategoryAccuracy(Accuracy, LudwigMetric):
+class CategoryAccuracy(_Accuracy, LudwigMetric):
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -420,7 +436,7 @@ class CategoryAccuracy(Accuracy, LudwigMetric):
 
 
 @register_metric(HITS_AT_K, [CATEGORY])
-class HitsAtKMetric(Accuracy, LudwigMetric):
+class HitsAtKMetric(_Accuracy, LudwigMetric):
     def __init__(self, top_k: int = 3, **kwargs):
         super().__init__(top_k=top_k)
 
@@ -443,7 +459,7 @@ class HitsAtKMetric(Accuracy, LudwigMetric):
 @register_metric(MEAN_ABSOLUTE_ERROR, [NUMERICAL, VECTOR])
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
@@ -460,7 +476,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
 @register_metric(MEAN_SQUARED_ERROR, [NUMERICAL, VECTOR])
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
-        super(MSEMetric, self).__init__(**kwargs)
+        super(MSEMetric, self).__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
@@ -478,7 +494,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
 class JaccardMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
-        self.jaccard_metric = IoU(num_classes=2, reduction='sum', **kwargs)
+        self.jaccard_metric = IoU(num_classes=2, reduction='sum')
         self.add_state(name='loss', default=[], dist_reduce_fx='mean')
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:

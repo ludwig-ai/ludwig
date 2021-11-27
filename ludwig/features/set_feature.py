@@ -231,9 +231,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             *args,
             **kwargs
     ):
-        output_feature[LOSS][TYPE] = None
         output_feature['num_classes'] = feature_metadata['vocab_size']
-
         if isinstance(output_feature[LOSS]['class_weights'], (list, tuple)):
             if (len(output_feature[LOSS]['class_weights']) !=
                     output_feature['num_classes']):
