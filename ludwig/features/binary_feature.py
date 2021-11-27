@@ -175,7 +175,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = "regressor"
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None}
     default_validation_metric = ACCURACY
     threshold = 0.5

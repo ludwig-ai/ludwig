@@ -21,7 +21,8 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
-from ludwig.constants import LOGITS, PREDICTIONS, NUMERICAL, VECTOR, TIMESERIES, BINARY, CATEGORY, SEQUENCE, TEXT, SET
+from ludwig.constants import LOGITS, PREDICTIONS, NUMERICAL, VECTOR, TIMESERIES, BINARY, CATEGORY, SEQUENCE, TEXT, SET, \
+    BINARY_WEIGHTED_CROSS_ENTROPY
 import ludwig.utils.loss_utils as utils
 from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import sequence_length_2D
@@ -93,7 +94,7 @@ class RMSPELoss(nn.Module, LogitsInputsMixin):
         return loss
 
 
-@register_loss('binary_weighted_cross_entropy', [BINARY])
+@register_loss(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
 class BWCEWLoss(nn.Module, LogitsInputsMixin):
     """ Binary weighted cross entropy loss. """
 
