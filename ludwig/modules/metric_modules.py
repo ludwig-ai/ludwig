@@ -457,7 +457,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
         return PREDICTIONS
 
 
-@register_metric(MEAN_ABSOLUTE_ERROR, [NUMERICAL, VECTOR])
+@register_metric(MEAN_SQUARED_ERROR, [NUMERICAL, VECTOR])
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
         super(MSEMetric, self).__init__(**kwargs)
