@@ -35,29 +35,32 @@ from ludwig.utils.torch_utils import sequence_length_2D
 # from ludwig.utils.tf_utils import to_sparse
 
 
+metric_feature_registry = Registry()
 metric_registry = Registry()
 
 
 def register_metric(name: str, features: Union[str, List[str]]):
     def wrap(cls):
         for feature in list(features):
-            feature_registry = metric_registry.get(feature, {})
+            feature_registry = metric_feature_registry.get(feature, {})
             feature_registry[name] = cls
-            metric_registry[feature] = feature_registry
+            metric_feature_registry[feature] = feature_registry
+        metric_registry[name] = cls
         return cls
     return wrap
 
 
 def get_metric_classes(feature: str):
-    return metric_registry[feature]
+    return metric_feature_registry[feature]
 
 
 def get_metric_cls(feature: str, name: str):
-    return metric_registry[feature][name]
+    return metric_feature_registry[feature][name]
 
 
 class LudwigMetric(ABC):
-    def can_report(self, feature: "OutputFeature") -> bool:
+    @classmethod
+    def can_report(cls, feature: "OutputFeature") -> bool:
         return True
 
     @classmethod
@@ -161,8 +164,27 @@ class R2Score(_R2Score, LudwigMetric):
         return PREDICTIONS
 
 
+@register_metric(LOSS, [])
+class LossMetric(MeanMetric, ABC):
+    @abstractmethod
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        raise NotImplementedError()
+
+    @classmethod
+    def get_objective(cls):
+        return MINIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return LOGITS
+
+    @classmethod
+    def can_report(cls, feature: "OutputFeature") -> bool:
+        return False
+
+
 @register_metric('binary_weighted_cross_entropy', [BINARY])
-class BWCEWLMetric(MeanMetric):
+class BWCEWLMetric(LossMetric):
     """ Binary Weighted Cross Entropy Weighted Logits Score Metric. """
 
     def __init__(
@@ -183,37 +205,15 @@ class BWCEWLMetric(MeanMetric):
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.loss_function(preds, target)
 
-    @classmethod
-    def get_objective(cls):
-        return MINIMIZE
-
-    @classmethod
-    def get_inputs(cls):
-        return LOGITS
-
-    def can_report(self, feature: "OutputFeature") -> bool:
-        return False
-
 
 @register_metric('softmax_cross_entropy', [CATEGORY])
-class SoftmaxCrossEntropyMetric(MeanMetric):
+class SoftmaxCrossEntropyMetric(LossMetric):
     def __init__(self, **kwargs):
         super().__init__()
         self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(**kwargs)
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.softmax_cross_entropy_function(preds, target)
-
-    @classmethod
-    def get_objective(cls):
-        return MINIMIZE
-
-    @classmethod
-    def get_inputs(cls):
-        return LOGITS
-
-    def can_report(self, feature: "OutputFeature") -> bool:
-        return False
 
 
 # @register_metric('sampled_softmax_cross_entropy', [CATEGORY])
@@ -247,24 +247,13 @@ class SoftmaxCrossEntropyMetric(MeanMetric):
 
 
 @register_metric('sigmoid_cross_entropy', [SET])
-class SigmoidCrossEntropyMetric(MeanMetric):
+class SigmoidCrossEntropyMetric(LossMetric):
     def __init__(self, **kwargs):
         super().__init__()
         self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.sigmoid_cross_entropy_function(preds, target)
-
-    @classmethod
-    def get_objective(cls):
-        return MINIMIZE
-
-    @classmethod
-    def get_inputs(cls):
-        return LOGITS
-
-    def can_report(self, feature: "OutputFeature") -> bool:
-        return False
 
 
 # TODO(shreya): After Sequence Losses
@@ -446,7 +435,8 @@ class HitsAtKMetric(Accuracy, LudwigMetric):
     def get_inputs(cls):
         return LOGITS
 
-    def can_report(self, feature: "OutputFeature") -> bool:
+    @classmethod
+    def can_report(cls, feature: "OutputFeature") -> bool:
         return feature.decoder_obj.num_classes > feature.top_k
 
 
