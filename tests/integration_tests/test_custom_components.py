@@ -7,7 +7,7 @@ import torch
 from marshmallow import INCLUDE
 
 from ludwig.api import LudwigModel
-from ludwig.combiners.combiners import CombinerClass, combiner_registry
+from ludwig.combiners.combiners import CombinerClass
 from ludwig.utils.registry import register
 from tests.integration_tests.utils import sequence_feature, numerical_feature, category_feature, generate_data, \
     LocalTestBackend
@@ -57,6 +57,14 @@ def test_custom_combiner():
         'type': 'custom_test',
         'foo': True
     })
+
+
+def test_custom_encoder_decoder():
+    pass
+
+
+def test_custom_loss_metric():
+    pass
 
 
 def _run_test(input_features=None, output_features=None, combiner=None):
