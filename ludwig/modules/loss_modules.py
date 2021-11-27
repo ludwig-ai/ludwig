@@ -57,12 +57,16 @@ class LogitsInputsMixin:
 @register_loss('mean_squared_error', [NUMERICAL, TIMESERIES, VECTOR])
 class MSELoss(_MSELoss, LogitsInputsMixin):
     """ Mean squared error. """
+    def __init__(self, **kwargs):
+        super().__init__()
 
 
 @register_loss('mean_absolute_error', [NUMERICAL, TIMESERIES, VECTOR])
 class MAELoss(L1Loss, LogitsInputsMixin):
     """ Mean absolute error. """
-    pass
+
+    def __init__(self, **kwargs):
+        super().__init__()
 
 
 @register_loss('root_mean_squared_error', [NUMERICAL])

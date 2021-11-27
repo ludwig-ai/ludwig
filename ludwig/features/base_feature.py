@@ -207,7 +207,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(
             feature_name, loss_class.get_loss_inputs())
-        print(self.type, self.train_loss_function, self.loss)
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
@@ -217,19 +216,23 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                                        targets)
 
     def _setup_loss(self):
-        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**self.loss)
-        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**self.loss)
+        loss_kwargs = self.loss_kwargs()
+        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**loss_kwargs)
+        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
         self.metric_functions = {
             LOSS: self.eval_loss_function,
             **{
-                name: cls(**self.loss, **self.metric_kwargs())
+                name: cls(**self.loss_kwargs(), **self.metric_kwargs())
                 for name, cls in get_metric_classes(self.type).items()
                 if cls.can_report(self)
             }
         }
+
+    def loss_kwargs(self):
+        return {}
 
     def metric_kwargs(self):
         return {}

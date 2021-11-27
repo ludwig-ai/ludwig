@@ -202,6 +202,13 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             LOGITS: logits,
         }
 
+    def loss_kwargs(self):
+        return dict(
+            positive_class_weight=self.loss["positive_class_weight"],
+            robust_lambda=self.loss["robust_lambda"],
+            confidence_penalty=self.loss["confidence_penalty"],
+        )
+
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
 

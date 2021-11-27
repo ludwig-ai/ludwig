@@ -204,6 +204,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             LOGITS: logits
         }
 
+    def loss_kwargs(self):
+        return self.loss
+
     def get_prediction_set(self):
         return {
             PREDICTIONS, PROBABILITIES, LOGITS
