@@ -1,4 +1,5 @@
 import os
+import tempfile
 from dataclasses import dataclass
 from typing import Dict
 
@@ -51,32 +52,40 @@ class CustomTestCombiner(CombinerClass):
         return CustomTestCombinerConfig
 
 
-def test_custom_combiner(tmpdir):
-    input_features = [
-        sequence_feature(reduce_output='sum'),
-        numerical_feature(),
-    ]
-    output_features = [
-        category_feature(vocab_size=2, reduce_input='sum')
-    ]
+def test_custom_combiner():
+    _run_test(combiner={
+        'type': 'custom_test',
+        'foo': True
+    })
 
-    csv_filename = os.path.join(tmpdir, 'training.csv')
-    data_csv = generate_data(input_features, output_features, csv_filename)
 
-    config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {
-            'type': 'custom_test',
-            'foo': True
-        },
-        'training': {'epochs': 2},
-    }
+def _run_test(input_features=None, output_features=None, combiner=None):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_features = input_features or [
+            sequence_feature(reduce_output='sum'),
+            numerical_feature(),
+        ]
+        output_features = output_features or [
+            category_feature(vocab_size=2, reduce_input='sum')
+        ]
+        combiner = combiner or {
+            'type': 'concat'
+        }
 
-    model = LudwigModel(config, backend=LocalTestBackend())
-    _, _, output_directory = model.train(
-        dataset=data_csv,
-        output_directory=tmpdir,
-    )
-    model.predict(dataset=data_csv,
-                  output_directory=output_directory)
+        csv_filename = os.path.join(tmpdir, 'training.csv')
+        data_csv = generate_data(input_features, output_features, csv_filename)
+
+        config = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'combiner': combiner,
+            'training': {'epochs': 2},
+        }
+
+        model = LudwigModel(config, backend=LocalTestBackend())
+        _, _, output_directory = model.train(
+            dataset=data_csv,
+            output_directory=tmpdir,
+        )
+        model.predict(dataset=data_csv,
+                      output_directory=output_directory)
