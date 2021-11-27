@@ -18,7 +18,8 @@ from abc import ABC, abstractmethod
 import copy
 from typing import Dict
 
-from ludwig.modules.metric_modules import get_metric_classes
+from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
 from ludwig.utils.types import DataFrame
 
 import torch
@@ -206,6 +207,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(
             feature_name, loss_class.get_loss_inputs())
+        print(self.type, self.train_loss_function)
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
@@ -213,6 +215,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         prediction_key = loss_class.get_loss_inputs()
         return self.eval_loss_function(predictions[prediction_key].detach(),
                                        targets)
+
+    def _setup_loss(self):
+        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**self.loss)
+        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**self.loss)
 
     def _setup_metrics(self):
         # needed to shadow class variable

@@ -210,10 +210,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             inputs, feature_name, LOGITS)
         return {PREDICTIONS: logits, LOGITS: logits}
 
-    def _setup_loss(self):
-        self.train_loss_function = get_loss_cls(VECTOR, self.loss[TYPE])(**self.loss)
-        self.eval_loss_function = get_metric_cls(VECTOR, self.loss[TYPE])(**self.loss)
-
     def metric_kwargs(self):
         return dict(num_outputs=self.output_shape[0])
 

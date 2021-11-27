@@ -24,7 +24,7 @@ from ludwig.decoders.generic_decoders import Regressor
 from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss, get_loss_cls
-from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric, get_metric_classes
+from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric, get_metric_classes, get_metric_cls
 from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
     precision_recall_curve, roc_auc_score, roc_curve
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -201,11 +201,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             PREDICTIONS: predictions,
             LOGITS: logits,
         }
-
-    def _setup_loss(self):
-        loss_cls = get_loss_cls(BINARY, self.loss[TYPE])
-        self.train_loss_function = loss_cls(**self.loss)
-        self.eval_loss_function = self.train_loss_function
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

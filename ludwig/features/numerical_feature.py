@@ -303,11 +303,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         return {PREDICTIONS: predictions, LOGITS: logits}
 
-    def _setup_loss(self):
-        loss_cls = get_loss_cls(NUMERICAL, self.loss[TYPE])
-        self.train_loss_function = loss_cls(**self.loss)
-        self.eval_loss_function = self.train_loss_function
-
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
 

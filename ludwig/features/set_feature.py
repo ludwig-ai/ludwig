@@ -204,11 +204,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             LOGITS: logits
         }
 
-    def _setup_loss(self):
-        loss_cls = get_loss_cls(SET, self.loss[TYPE])
-        self.train_loss_function = loss_cls(**self.loss)
-        self.eval_loss_function = SigmoidCrossEntropyMetric(**self.loss)
-
     def get_prediction_set(self):
         return {
             PREDICTIONS, PROBABILITIES, LOGITS

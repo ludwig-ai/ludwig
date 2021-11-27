@@ -231,11 +231,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    def _setup_loss(self):
-        loss_cls = get_loss_cls(CATEGORY, self.loss[TYPE])
-        self.train_loss_function = loss_cls(**self.loss)
-        self.eval_loss_function = SoftmaxCrossEntropyLoss()
-
     def metric_kwargs(self):
         return dict(top_k=self.top_k)
 
