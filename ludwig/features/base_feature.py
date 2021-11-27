@@ -207,7 +207,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(
             feature_name, loss_class.get_loss_inputs())
-        print(self.type, self.train_loss_function)
+        print(self.type, self.train_loss_function, self.loss)
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
