@@ -20,9 +20,10 @@ import numpy as np
 import torch
 
 from ludwig.data.dataset_synthesizer import build_vocab
+from ludwig.encoders import Encoder
 from ludwig.encoders.image_encoders import ResNetEncoder, Stacked2DCNN, \
     MLPMixerEncoder
-from ludwig.encoders.sequence_encoders import ParallelCNN, SequenceEncoder,\
+from ludwig.encoders.sequence_encoders import ParallelCNN,\
     SequenceEmbedEncoder, StackedCNN, StackedCNNRNN, StackedParallelCNN,\
     StackedRNN
 
@@ -282,7 +283,7 @@ def test_sequence_encoder_embed():
 @pytest.mark.parametrize('trainable', [True, False])
 @pytest.mark.parametrize('reduce_output', ['sum', 'max'])
 def test_sequence_encoders(
-        encoder_type: SequenceEncoder,
+        encoder_type: Encoder,
         trainable: bool,
         reduce_output: str
 ):
