@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import abstractmethod, ABC
+from abc import ABC
 import logging
 from functools import lru_cache
 from typing import List, Dict, Optional, Union, Any
@@ -61,6 +61,13 @@ sequence_encoder_registry = {
 combiner_registry = Registry()
 
 
+def register_combiner(name: str):
+    def wrap(cls):
+        combiner_registry[name] = cls
+        return cls
+    return wrap
+
+
 # super class to house common properties
 class CombinerClass(LudwigModule, ABC):
     @property
@@ -94,10 +101,6 @@ class CombinerClass(LudwigModule, ABC):
         output_tensor = self.forward(pseudo_input)
         return output_tensor['combiner_output'].size()[1:]
 
-    @classmethod
-    def register(cls, name):
-        combiner_registry[name] = cls
-
 
 @dataclass
 class ConcatCombinerConfig:
@@ -118,7 +121,7 @@ class ConcatCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='concat')
+@register_combiner(name='concat')
 class ConcatCombiner(CombinerClass):
     def __init__(
             self,
@@ -208,7 +211,7 @@ class SequenceConcatCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='sequence_concat')
+@register_combiner(name='sequence_concat')
 class SequenceConcatCombiner(CombinerClass):
     def __init__(
             self,
@@ -386,7 +389,7 @@ class SequenceCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='sequence')
+@register_combiner(name='sequence')
 class SequenceCombiner(CombinerClass):
     def __init__(
             self,
@@ -488,7 +491,7 @@ class TabNetCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='tabnet')
+@register_combiner(name='tabnet')
 class TabNetCombiner(CombinerClass):
     def __init__(
             self,
@@ -593,7 +596,7 @@ class TransformerCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='transformer')
+@register_combiner(name='transformer')
 class TransformerCombiner(CombinerClass):
     def __init__(
             self,
@@ -723,7 +726,7 @@ class TabTransformerCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='tabtransformer')
+@register_combiner(name='tabtransformer')
 class TabTransformerCombiner(CombinerClass):
     def __init__(
             self,
@@ -962,7 +965,7 @@ class ComparatorCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='comparator')
+@register_combiner(name='comparator')
 class ComparatorCombiner(CombinerClass):
     def __init__(
             self,

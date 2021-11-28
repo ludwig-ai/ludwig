@@ -7,8 +7,7 @@ import torch
 from marshmallow import INCLUDE
 
 from ludwig.api import LudwigModel
-from ludwig.combiners.combiners import CombinerClass
-from ludwig.utils.registry import register
+from ludwig.combiners.combiners import CombinerClass, register_combiner
 from tests.integration_tests.utils import sequence_feature, numerical_feature, category_feature, generate_data, \
     LocalTestBackend
 
@@ -21,7 +20,7 @@ class CustomTestCombinerConfig:
         unknown = INCLUDE
 
 
-@register(name='custom_test')
+@register_combiner(name='custom_test')
 class CustomTestCombiner(CombinerClass):
     def __init__(
             self,

@@ -38,6 +38,7 @@ from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry, DEFAULT_KEYS
 
 logger = logging.getLogger(__name__)
 
@@ -241,14 +242,10 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        "dense": DenseEncoder,
-        "passthrough": PassthroughEncoder,
-        "null": PassthroughEncoder,
-        "none": PassthroughEncoder,
-        "None": PassthroughEncoder,
-        None: PassthroughEncoder,
-    }
+    encoder_registry = Registry({
+        'dense': DenseEncoder,
+        **{key: PassthroughEncoder for key in DEFAULT_KEYS + ['passthrough']}
+    })
 
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
