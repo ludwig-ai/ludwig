@@ -29,8 +29,10 @@ from skimage.io import imread
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
+from ludwig.constants import H3
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
+from ludwig.encoders.registry import get_encoder_classes
 from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
@@ -958,7 +960,7 @@ def test_experiment_date(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
+@pytest.mark.parametrize('encoder', get_encoder_classes(H3).keys())
 def test_experiment_h3(encoder, csv_filename):
     input_features = [h3_feature()]
     output_features = [binary_feature()]

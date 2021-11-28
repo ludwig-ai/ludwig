@@ -19,6 +19,7 @@ from jsonschema import validate
 from marshmallow_jsonschema import JSONSchema
 
 from ludwig.combiners.combiners import combiner_registry
+from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 
 
@@ -83,8 +84,7 @@ def get_schema():
 def get_input_encoder_conds(input_feature_types):
     conds = []
     for feature_type in input_feature_types:
-        feature_cls = input_type_registry[feature_type]
-        encoder_names = list(feature_cls.encoder_registry.keys())
+        encoder_names = list(get_encoder_classes(feature_type).keys())
         encoder_cond = create_cond(
             {'type': feature_type},
             {'encoder': {'enum': encoder_names}},

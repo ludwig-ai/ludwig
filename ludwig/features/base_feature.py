@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 import copy
 from typing import Dict
 
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
 from ludwig.utils.types import DataFrame
@@ -105,7 +106,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_encoder(self, encoder_parameters):
-        return get_from_registry(self.encoder, self.encoder_registry)(
+        return get_encoder_cls(self.type, self.encoder)(
             **encoder_parameters
         )
 

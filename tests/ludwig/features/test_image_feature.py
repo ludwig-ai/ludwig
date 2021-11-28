@@ -5,7 +5,7 @@ from copy import deepcopy
 import torch
 
 from ludwig.models.ecd import build_single_input
-from ludwig.features.image_feature import ImageInputFeature, ENCODER_REGISTRY
+from ludwig.features.image_feature import ImageInputFeature
 
 BATCH_SIZE = 2
 

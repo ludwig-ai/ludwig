@@ -26,6 +26,7 @@ from ludwig.constants import *
 from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_files, concatenate_df
 from ludwig.data.dataset.base import Dataset
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import (base_type_registry,
                                                 input_type_registry)
 from ludwig.features.feature_utils import compute_feature_hash
@@ -1177,11 +1178,7 @@ def build_metadata(
 
         # deal with encoders that have fixed preprocessing
         if 'encoder' in feature:
-            encoders_registry = get_from_registry(
-                feature[TYPE],
-                input_type_registry
-            ).encoder_registry
-            encoder_class = encoders_registry[feature['encoder']]
+            encoder_class = get_encoder_cls(feature[TYPE], feature['encoder'])
             if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
 

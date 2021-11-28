@@ -21,6 +21,7 @@ import torch
 
 
 from ludwig.constants import *
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.utils.eval_utils import ConfusionMatrix
@@ -320,9 +321,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             }
         )
 
-        encoder_class = get_from_registry(
-            input_feature['encoder'],
-            TextInputFeature.encoder_registry
+        encoder_class = get_encoder_cls(
+            input_feature['type'],
+            input_feature['encoder']
         )
 
         if hasattr(encoder_class, 'default_params'):

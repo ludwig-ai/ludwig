@@ -4,10 +4,10 @@ from typing import Union
 import numpy as np
 import torch
 
+from ludwig.constants import SEQUENCE
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.utils.misc_utils import get_from_registry
 from tests.integration_tests.utils import ENCODERS
-from ludwig.encoders.sequence_encoders import \
-    ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ def test_sequence_encoders(
     encoder_parameters['reduce_output'] = enc_reduce_output
 
     # retrieve encoder to test
-    encoder_obj = get_from_registry(enc_encoder, SEQUENCE_ENCODER_REGISTRY)(
+    encoder_obj = get_encoder_cls(SEQUENCE, enc_encoder)(
         **encoder_parameters
     )
 
@@ -177,7 +177,7 @@ def test_passthrough_encoder(
     }
 
     # retrieve encoder to test
-    encoder_obj = get_from_registry("passthrough", SEQUENCE_ENCODER_REGISTRY)(
+    encoder_obj = get_encoder_cls(SEQUENCE, "passthrough")(
         **encoder_parameters
     )
 
@@ -200,7 +200,7 @@ def test_sequence_embed_encoder(
     encoder_parameters['embedding_size'] = enc_embedding_size
 
     # retrieve encoder to test
-    encoder_obj = get_from_registry("embed", SEQUENCE_ENCODER_REGISTRY)(
+    encoder_obj = get_encoder_cls(SEQUENCE, "embed")(
         **encoder_parameters
     )
 

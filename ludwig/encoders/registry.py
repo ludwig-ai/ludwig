@@ -1,5 +1,6 @@
-from typing import Union, List
+from typing import Union, List, Dict, Type
 
+from ludwig.encoders import Encoder
 from ludwig.utils.registry import Registry, DEFAULT_KEYS
 
 encoder_registry = Registry()
@@ -22,5 +23,9 @@ def register_encoder(name: str, features: Union[str, List[str]], default=False):
     return wrap
 
 
-def get_encoder_cls(feature: str, name: str):
+def get_encoder_cls(feature: str, name: str) -> Type[Encoder]:
     return encoder_registry[feature][name]
+
+
+def get_encoder_classes(feature: str) -> Dict[str, Type[Encoder]]:
+    return encoder_registry[feature]
