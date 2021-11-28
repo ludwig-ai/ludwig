@@ -53,10 +53,6 @@ class PassthroughEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.input_shape
 
-    @classmethod
-    def register(cls, name):
-        pass
-
 
 @register_encoder("dense", [BINARY, NUMERICAL, VECTOR])
 class DenseEncoder(Encoder):
@@ -108,7 +104,3 @@ class DenseEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.fc_stack.layers[-1]['fc_size']])
-
-    @classmethod
-    def register(cls, name):
-        pass

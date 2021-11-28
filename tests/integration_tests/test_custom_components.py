@@ -76,10 +76,6 @@ class CustomNumericalEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.input_shape
 
-    @classmethod
-    def register(cls, name):
-        pass
-
 
 @register_decoder('custom_numerical_decoder', NUMERICAL)
 class CustomNumericalDecoder(Decoder):
@@ -93,10 +89,6 @@ class CustomNumericalDecoder(Decoder):
 
     def forward(self, inputs, **kwargs):
         return torch.mean(inputs, 1)
-
-    @classmethod
-    def register(cls, name):
-        pass
 
 
 @register_loss('custom_loss', [NUMERICAL])

@@ -60,10 +60,6 @@ class Regressor(Decoder):
     def forward(self, inputs, **kwargs):
         return self.dense(inputs)
 
-    @classmethod
-    def register(cls, name):
-        pass
-
 
 @register_decoder('projector', [VECTOR], default=True)
 class Projector(Decoder):
@@ -120,10 +116,6 @@ class Projector(Decoder):
             values = self.clip(values)
         return values
 
-    @classmethod
-    def register(cls, name):
-        pass
-
 
 @register_decoder('classifier', [CATEGORY, SET], default=True)
 class Classifier(Decoder):
@@ -164,7 +156,3 @@ class Classifier(Decoder):
 
     def forward(self, inputs, **kwargs):
         return self.dense(inputs)
-
-    @classmethod
-    def register(cls, name):
-        pass
