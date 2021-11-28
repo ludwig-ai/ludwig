@@ -11,7 +11,7 @@ from ludwig.combiners.combiners import CombinerClass, register_combiner
 from ludwig.constants import NUMERICAL
 from ludwig.decoders.base import Decoder
 from ludwig.encoders import Encoder
-from ludwig.features.feature_registries import register_encoder
+from ludwig.features.feature_registries import register_encoder, register_decoder
 from tests.integration_tests.utils import sequence_feature, numerical_feature, category_feature, generate_data, \
     LocalTestBackend
 
@@ -77,7 +77,7 @@ class CustomNumericalEncoder(Encoder):
         pass
 
 
-@register_encoder('custom_numerical_decoder', NUMERICAL)
+@register_decoder('custom_numerical_decoder', NUMERICAL)
 class CustomNumericalDecoder(Decoder):
     def __init__(self, input_size, **kwargs):
         super().__init__()
@@ -88,7 +88,7 @@ class CustomNumericalDecoder(Decoder):
         return torch.Size([self.input_size])
 
     def forward(self, inputs, **kwargs):
-        return torch.mean(inputs)
+        return torch.mean(inputs, 1)
 
     @classmethod
     def register(cls, name):
@@ -108,7 +108,7 @@ def test_custom_encoder_decoder():
         numerical_feature(encoder='custom_numerical_encoder'),
     ]
     output_features = [
-        numerical_feature(encoder='custom_numerical_decoder'),
+        numerical_feature(decoder='custom_numerical_decoder'),
     ]
     _run_test(input_features=input_features, output_features=output_features)
 
