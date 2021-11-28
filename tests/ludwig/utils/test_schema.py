@@ -24,6 +24,7 @@ from ludwig.features.bag_feature import BagFeatureMixin
 from ludwig.features.binary_feature import BinaryFeatureMixin
 from ludwig.features.category_feature import CategoryFeatureMixin
 from ludwig.features.date_feature import DateFeatureMixin
+from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.h3_feature import H3FeatureMixin
 from ludwig.features.image_feature import ImageFeatureMixin
 from ludwig.features.numerical_feature import NumericalFeatureMixin
@@ -32,10 +33,9 @@ from ludwig.features.set_feature import SetFeatureMixin
 from ludwig.features.text_feature import TextFeatureMixin
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin
 from ludwig.features.vector_feature import VectorFeatureMixin
-from ludwig.utils.defaults import merge_with_defaults
 
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.schema import validate_config, OUTPUT_FEATURE_TYPES
+from ludwig.utils.schema import validate_config
 
 from tests.integration_tests.utils import ENCODERS, numerical_feature, \
     binary_feature, audio_feature, bag_feature, date_feature, h3_feature, \
@@ -85,7 +85,7 @@ def test_config_features():
     # test various invalid output features
     input_only_features = [
         feature for feature in all_input_features
-        if feature['type'] not in OUTPUT_FEATURE_TYPES
+        if feature['type'] not in output_type_registry.keys()
     ]
     for input_feature in input_only_features:
         config = {
