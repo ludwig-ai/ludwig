@@ -8,7 +8,7 @@ from torch import nn, Tensor
 from marshmallow import INCLUDE
 
 from ludwig.api import LudwigModel
-from ludwig.combiners.combiners import CombinerClass, register_combiner
+from ludwig.combiners.combiners import Combiner, register_combiner
 from ludwig.constants import NUMERICAL
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
@@ -29,7 +29,7 @@ class CustomTestCombinerConfig:
 
 
 @register_combiner(name='custom_test')
-class CustomTestCombiner(CombinerClass):
+class CustomTestCombiner(Combiner):
     def __init__(
             self,
             input_features: Dict = None,
