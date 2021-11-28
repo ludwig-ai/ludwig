@@ -41,8 +41,11 @@ metric_registry = Registry()
 
 
 def register_metric(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
     def wrap(cls):
-        for feature in list(features):
+        for feature in features:
             feature_registry = metric_feature_registry.get(feature, {})
             feature_registry[name] = cls
             metric_feature_registry[feature] = feature_registry

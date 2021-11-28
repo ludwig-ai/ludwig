@@ -8,6 +8,10 @@ from marshmallow import INCLUDE
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import CombinerClass, register_combiner
+from ludwig.constants import NUMERICAL
+from ludwig.decoders.base import Decoder
+from ludwig.encoders import Encoder
+from ludwig.features.feature_registries import register_encoder
 from tests.integration_tests.utils import sequence_feature, numerical_feature, category_feature, generate_data, \
     LocalTestBackend
 
@@ -51,6 +55,46 @@ class CustomTestCombiner(CombinerClass):
         return CustomTestCombinerConfig
 
 
+@register_encoder('custom_numerical_encoder', NUMERICAL)
+class CustomNumericalEncoder(Encoder):
+    def __init__(self, input_size, **kwargs):
+        super().__init__()
+        self.input_size = input_size
+
+    def forward(self, inputs, **kwargs):
+        return {'encoder_output': inputs}
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
+
+    @classmethod
+    def register(cls, name):
+        pass
+
+
+@register_encoder('custom_numerical_decoder', NUMERICAL)
+class CustomNumericalDecoder(Decoder):
+    def __init__(self, input_size, **kwargs):
+        super().__init__()
+        self.input_size = input_size
+
+    @property
+    def input_shape(self):
+        return torch.Size([self.input_size])
+
+    def forward(self, inputs, **kwargs):
+        return torch.mean(inputs)
+
+    @classmethod
+    def register(cls, name):
+        pass
+
+
 def test_custom_combiner():
     _run_test(combiner={
         'type': 'custom_test',
@@ -59,7 +103,14 @@ def test_custom_combiner():
 
 
 def test_custom_encoder_decoder():
-    pass
+    input_features = [
+        sequence_feature(reduce_output='sum'),
+        numerical_feature(encoder='custom_numerical_encoder'),
+    ]
+    output_features = [
+        numerical_feature(encoder='custom_numerical_decoder'),
+    ]
+    _run_test(input_features=input_features, output_features=output_features)
 
 
 def test_custom_loss_metric():

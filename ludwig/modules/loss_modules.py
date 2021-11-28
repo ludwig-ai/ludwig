@@ -35,8 +35,11 @@ loss_registry = Registry()
 
 
 def register_loss(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
     def wrap(cls):
-        for feature in list(features):
+        for feature in features:
             feature_registry = loss_registry.get(feature, {})
             feature_registry[name] = cls
             loss_registry[feature] = feature_registry

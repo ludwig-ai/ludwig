@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from types import Union
-
-from typing import List
+from typing import List, Union
 
 from ludwig.constants import BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMERICAL, \
     SEQUENCE, SET, TEXT, TIMESERIES, VECTOR, AUDIO, TYPE, NAME
@@ -124,9 +122,11 @@ def update_config_with_metadata(config,
 
 def register_encoder(name: str, features: Union[str, List[str]]):
     features = features or input_type_registry.keys()
+    if isinstance(features, str):
+        features = [features]
 
     def wrap(cls):
-        for feature_name in list(features):
+        for feature_name in features:
             feature = input_type_registry[feature_name]
             feature.encoder_registry[name] = cls
         return cls
@@ -136,9 +136,11 @@ def register_encoder(name: str, features: Union[str, List[str]]):
 
 def register_decoder(name: str, features: Union[str, List[str]]):
     features = features or output_type_registry.keys()
+    if isinstance(features, str):
+        features = [features]
 
     def wrap(cls):
-        for feature_name in list(features):
+        for feature_name in features:
             feature = output_type_registry[feature_name]
             feature.decoder_registry[name] = cls
         return cls
