@@ -21,7 +21,6 @@ import torch
 
 
 from ludwig.constants import *
-from ludwig.encoders.text_encoders import ENCODER_REGISTRY
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.utils.eval_utils import ConfusionMatrix
@@ -336,8 +335,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
-
-    encoder_registry = ENCODER_REGISTRY
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):

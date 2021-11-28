@@ -26,16 +26,6 @@ class Encoder(LudwigModule, ABC):
     def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
 
-    @classmethod
-    @abstractmethod
-    def register(cls, name):
-        raise NotImplementedError
-
-    @classmethod
-    def register_default(cls):
-        for key in DEFAULT_KEYS:
-            cls.register(name=key)
-
     @property
     def name(self):
         return self.__class__.__name__

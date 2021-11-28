@@ -15,14 +15,13 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
-from functools import lru_cache
 
 import torch
 from torch import nn
 
+from ludwig.constants import SEQUENCE, TEXT, AUDIO, TIMESERIES
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register, register_default
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D
@@ -35,18 +34,8 @@ from ludwig.modules.reduction_modules import SequenceReducer
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry()
-
-
-class SequenceEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register_default(name='passthrough')
-class SequencePassthroughEncoder(SequenceEncoder):
-
+@register_encoder('passthrough', [AUDIO, SEQUENCE, TEXT, TIMESERIES], default=True)
+class SequencePassthroughEncoder(Encoder):
     def __init__(
             self,
             reduce_output=None,
@@ -91,9 +80,8 @@ class SequencePassthroughEncoder(SequenceEncoder):
         return {'encoder_output': hidden}
 
 
-@register(name='embed')
-class SequenceEmbedEncoder(SequenceEncoder):
-
+@register_encoder('embed', [SEQUENCE, TEXT])
+class SequenceEmbedEncoder(Encoder):
     def __init__(
             self,
             vocab,
@@ -239,9 +227,8 @@ class SequenceEmbedEncoder(SequenceEncoder):
         return torch.Size([self.embed_sequence.output_shape[-1]])
 
 
-@register(name='parallel_cnn')
-class ParallelCNN(SequenceEncoder):
-
+@register_encoder('parallel_cnn', [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+class ParallelCNN(Encoder):
     def __init__(
             self,
             should_embed=True,
@@ -548,9 +535,8 @@ class ParallelCNN(SequenceEncoder):
         return self.parallel_conv1d.output_shape
 
 
-@register(name='stacked_cnn')
-class StackedCNN(SequenceEncoder):
-
+@register_encoder('stacked_cnn', [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+class StackedCNN(Encoder):
     def __init__(
             self,
             should_embed=True,
@@ -890,9 +876,8 @@ class StackedCNN(SequenceEncoder):
         return {'encoder_output': hidden}
 
 
-@register(name='stacked_parallel_cnn')
-class StackedParallelCNN(SequenceEncoder):
-
+@register_encoder('stacked_parallel_cnn', [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+class StackedParallelCNN(Encoder):
     def __init__(
             self,
             should_embed=True,
@@ -1224,9 +1209,8 @@ class StackedParallelCNN(SequenceEncoder):
         return {'encoder_output': hidden}
 
 
-@register(name='rnn')
-class StackedRNN(SequenceEncoder):
-
+@register_encoder('rnn', [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+class StackedRNN(Encoder):
     def __init__(
             self,
             should_embed=True,
@@ -1492,9 +1476,8 @@ class StackedRNN(SequenceEncoder):
         }
 
 
-@register(name='cnnrnn')
-class StackedCNNRNN(SequenceEncoder):
-
+@register_encoder('cnnrnn', [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+class StackedCNNRNN(Encoder):
     def __init__(
             self,
             should_embed=True,
@@ -1788,9 +1771,8 @@ class StackedCNNRNN(SequenceEncoder):
         }
 
 
-@register(name='transformer')
-class StackedTransformer(SequenceEncoder):
-
+@register_encoder('transformer', [SEQUENCE, TEXT, TIMESERIES])
+class StackedTransformer(Encoder):
     def __init__(
             self,
             max_sequence_length,

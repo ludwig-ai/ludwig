@@ -15,32 +15,18 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 
 import torch
 
+from ludwig.constants import BINARY
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
-from ludwig.encoders.generic_encoders import DenseEncoder
-
+from ludwig.encoders.registry import register_encoder
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry({
-    'dense': DenseEncoder
-})
-
-
-class BinaryEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register_default(name='passthrough')
-class BinaryPassthroughEncoder(BinaryEncoder):
-
+@register_encoder('passthrough', BINARY, default=True)
+class BinaryPassthroughEncoder(Encoder):
     def __init__(
             self,
             **kwargs

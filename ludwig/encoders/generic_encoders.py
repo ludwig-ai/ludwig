@@ -18,12 +18,15 @@ import logging
 
 import torch
 
+from ludwig.constants import BINARY, CATEGORY, VECTOR, NUMERICAL
 from ludwig.encoders import Encoder
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
+@register_encoder("passthrough", [CATEGORY, NUMERICAL, VECTOR], default=True)
 class PassthroughEncoder(Encoder):
 
     def __init__(
@@ -55,8 +58,8 @@ class PassthroughEncoder(Encoder):
         pass
 
 
+@register_encoder("dense", [BINARY, NUMERICAL, VECTOR])
 class DenseEncoder(Encoder):
-
     def __init__(
             self,
             input_size,

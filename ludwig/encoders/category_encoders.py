@@ -15,33 +15,20 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 from typing import Dict, List, Optional, Union
 
 import torch
 
+from ludwig.constants import CATEGORY
 from ludwig.encoders.base import Encoder
-from ludwig.encoders.generic_encoders import PassthroughEncoder
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
-from ludwig.utils.registry import Registry, register, DEFAULT_KEYS
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry({
-    key: PassthroughEncoder for key in DEFAULT_KEYS + ['passthrough']
-})
-
-
-class CategoricalEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register(name='dense')
-class CategoricalEmbedEncoder(CategoricalEncoder):
-
+@register_encoder('dense', CATEGORY)
+class CategoricalEmbedEncoder(Encoder):
     def __init__(
             self,
             vocab: List[str],
@@ -87,9 +74,9 @@ class CategoricalEmbedEncoder(CategoricalEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
 
-@register(name='sparse')
-class CategoricalSparseEncoder(CategoricalEncoder):
 
+@register_encoder('sparse', CATEGORY)
+class CategoricalSparseEncoder(Encoder):
     def __init__(
             self,
             vocab: List[str],

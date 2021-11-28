@@ -20,7 +20,6 @@ import numpy as np
 import torch
 
 from ludwig.constants import *
-from ludwig.encoders.h3_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value
@@ -136,5 +135,3 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-
-    encoder_registry = ENCODER_REGISTRY

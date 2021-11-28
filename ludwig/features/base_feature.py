@@ -104,11 +104,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def populate_defaults(input_feature):
         pass
 
-    @property
-    @abstractmethod
-    def encoder_registry(self):
-        pass
-
     def initialize_encoder(self, encoder_parameters):
         return get_from_registry(self.encoder, self.encoder_registry)(
             **encoder_parameters
@@ -185,11 +180,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @property
     @abstractmethod
     def metric_functions(self) -> Dict:
-        pass
-
-    @property
-    @abstractmethod
-    def decoder_registry(self):
         pass
 
     def initialize_decoder(self, decoder_parameters):

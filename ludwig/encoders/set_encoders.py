@@ -15,30 +15,21 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 from typing import Any, Dict, List, Optional
 
 import torch
 
+from ludwig.constants import SET
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedSet
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry()
-
-
-class SetEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register_default(name='embed')
-class SetSparseEncoder(SetEncoder):
+@register_encoder('embed', SET, default=True)
+class SetSparseEncoder(Encoder):
     def __init__(
             self,
             vocab: List[str],

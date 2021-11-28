@@ -20,9 +20,6 @@ import numpy as np
 import torch
 
 from ludwig.constants import *
-from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
-    StackedParallelCNN, StackedRNN, StackedCNNRNN, SequencePassthroughEncoder, \
-    StackedTransformer
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
@@ -199,19 +196,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
             }
         )
 
-    encoder_registry = {
-        'stacked_cnn': StackedCNN,
-        'parallel_cnn': ParallelCNN,
-        'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': StackedRNN,
-        'cnnrnn': StackedCNNRNN,
-        'transformer': StackedTransformer,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
-    }
 
 # this is still WIP
 # class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):

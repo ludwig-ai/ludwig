@@ -23,7 +23,6 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Projector
-from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
     MAELoss, get_loss_cls
@@ -164,15 +163,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'preprocessing', {})
-
-    encoder_registry = {
-        'dense': DenseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
 
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):

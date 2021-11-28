@@ -21,7 +21,6 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.set_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
@@ -151,8 +150,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-
-    encoder_registry = ENCODER_REGISTRY
 
     @property
     def output_shape(self) -> torch.Size:

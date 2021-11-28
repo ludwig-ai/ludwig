@@ -16,30 +16,20 @@
 # ==============================================================================
 import logging
 import sys
-from abc import ABC
 from typing import Callable, Dict, Optional, Union, List
 
 import torch
 
-from ludwig.encoders import sequence_encoders
+from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.utils.registry import Registry, register
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry(sequence_encoders.ENCODER_REGISTRY)
-
-
-class TextEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register(name='albert')
-class ALBERTEncoder(TextEncoder):
+@register_encoder('albert', TEXT)
+class ALBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -165,8 +155,8 @@ class ALBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='mt5')
-class MT5Encoder(TextEncoder):
+@register_encoder('mt5', TEXT)
+class MT5Encoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -289,8 +279,8 @@ class MT5Encoder(TextEncoder):
         return torch.int32
 
 
-@register(name='xlmroberta')
-class XLMRoBERTaEncoder(TextEncoder):
+@register_encoder('xlmroberta', TEXT)
+class XLMRoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -385,8 +375,8 @@ class XLMRoBERTaEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='bert')
-class BERTEncoder(TextEncoder):
+@register_encoder('bert', TEXT)
+class BERTEncoder(Encoder):
     # TODO(justin): Use official class properties.
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
@@ -506,8 +496,8 @@ class BERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='xlm')
-class XLMEncoder(TextEncoder):
+@register_encoder('xlm', TEXT)
+class XLMEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -646,8 +636,8 @@ class XLMEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='gpt')
-class GPTEncoder(TextEncoder):
+@register_encoder('gpt', TEXT)
+class GPTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -748,8 +738,8 @@ class GPTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='gpt2')
-class GPT2Encoder(TextEncoder):
+@register_encoder('gpt2', TEXT)
+class GPT2Encoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -858,8 +848,8 @@ class GPT2Encoder(TextEncoder):
         return torch.int32
 
 
-@register(name='roberta')
-class RoBERTaEncoder(TextEncoder):
+@register_encoder('roberta', TEXT)
+class RoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -946,8 +936,8 @@ class RoBERTaEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='transformer_xl')
-class TransformerXLEncoder(TextEncoder):
+@register_encoder('transformer_xl', TEXT)
+class TransformerXLEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1068,8 +1058,8 @@ class TransformerXLEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='xlnet')
-class XLNetEncoder(TextEncoder):
+@register_encoder('xlnet', TEXT)
+class XLNetEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1200,8 +1190,8 @@ class XLNetEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='distilbert')
-class DistilBERTEncoder(TextEncoder):
+@register_encoder('distilbert', TEXT)
+class DistilBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1304,8 +1294,8 @@ class DistilBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='ctrl')
-class CTRLEncoder(TextEncoder):
+@register_encoder('ctrl', TEXT)
+class CTRLEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1407,8 +1397,8 @@ class CTRLEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='camembert')
-class CamemBERTEncoder(TextEncoder):
+@register_encoder('camembert', TEXT)
+class CamemBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1526,8 +1516,8 @@ class CamemBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='t5')
-class T5Encoder(TextEncoder):
+@register_encoder('t5', TEXT)
+class T5Encoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1632,8 +1622,8 @@ class T5Encoder(TextEncoder):
         return torch.int32
 
 
-@register(name='flaubert')
-class FlauBERTEncoder(TextEncoder):
+@register_encoder('flaubert', TEXT)
+class FlauBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1766,8 +1756,8 @@ class FlauBERTEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='electra')
-class ELECTRAEncoder(TextEncoder):
+@register_encoder('electra', TEXT)
+class ELECTRAEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1878,8 +1868,8 @@ class ELECTRAEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='longformer')
-class LongformerEncoder(TextEncoder):
+@register_encoder('longformer', TEXT)
+class LongformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -1965,8 +1955,8 @@ class LongformerEncoder(TextEncoder):
         return torch.int32
 
 
-@register(name='auto_transformer')
-class AutoTransformerEncoder(TextEncoder):
+@register_encoder('auto_transformer', TEXT)
+class AutoTransformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
         'word_tokenizer': 'hf_tokenizer',
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',

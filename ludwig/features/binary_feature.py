@@ -21,7 +21,6 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss, get_loss_cls
 from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric, get_metric_classes, get_metric_cls
@@ -169,8 +168,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     def create_sample_input(self):
         return torch.Tensor([True, False])
-
-    encoder_registry = ENCODER_REGISTRY
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):

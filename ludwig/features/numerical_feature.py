@@ -23,7 +23,6 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss, get_loss_cls
@@ -241,11 +240,6 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-
-    encoder_registry = Registry({
-        'dense': DenseEncoder,
-        **{key: PassthroughEncoder for key in DEFAULT_KEYS + ['passthrough']}
-    })
 
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
