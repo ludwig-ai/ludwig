@@ -21,9 +21,6 @@ from ludwig.utils.torch_utils import LudwigModule
 
 
 class Decoder(LudwigModule, ABC):
-    def __init__(self, input_shape):
-        self._input_shape = input_shape
-
     @abstractmethod
     def forward(self, inputs, training=None, mask=None):
         raise NotImplementedError
