@@ -461,11 +461,3 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 'reduce_dependencies': SUM
             }
         )
-
-    decoder_registry = {
-        'classifier': Classifier,
-        'null': Classifier,
-        'none': Classifier,
-        'None': Classifier,
-        None: Classifier
-    }

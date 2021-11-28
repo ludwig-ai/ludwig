@@ -265,11 +265,3 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_dependencies', None)
         set_default_value(output_feature, 'decoder', 'projector')
         set_default_value(output_feature, 'dependencies', [])
-
-    decoder_registry = {
-        'projector': Projector,
-        'null': Projector,
-        'none': Projector,
-        'None': Projector,
-        None: Projector
-    }

@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 import copy
 from typing import Dict
 
+from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
@@ -189,7 +190,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         decoder_parameters_copy = copy.copy(
             decoder_parameters)
         decoder_parameters_copy['input_size'] = self.fc_stack.output_shape[-1]
-        return get_from_registry(self.decoder, self.decoder_registry)(
+        return get_decoder_cls(self.type, self.decoder)(
             **decoder_parameters_copy
         )
 

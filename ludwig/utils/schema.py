@@ -19,6 +19,7 @@ from jsonschema import validate
 from marshmallow_jsonschema import JSONSchema
 
 from ludwig.combiners.combiners import combiner_registry
+from ludwig.decoders.registry import get_decoder_classes
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 
@@ -113,8 +114,7 @@ def get_input_preproc_conds(input_feature_types):
 def get_output_decoder_conds(output_feature_types):
     conds = []
     for feature_type in output_feature_types:
-        feature_cls = output_type_registry[feature_type]
-        decoder_names = list(feature_cls.decoder_registry.keys())
+        decoder_names = list(get_decoder_classes(feature_type).keys())
         decoder_cond = create_cond(
             {'type': feature_type},
             {'decoder': {'enum': decoder_names}},

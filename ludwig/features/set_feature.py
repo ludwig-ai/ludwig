@@ -325,11 +325,3 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'dependencies', [])
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
-
-    decoder_registry = {
-        'classifier': Classifier,
-        'null': Classifier,
-        'none': Classifier,
-        'None': Classifier,
-        None: Classifier
-    }

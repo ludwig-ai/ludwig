@@ -17,7 +17,6 @@
 
 from abc import ABC, abstractmethod
 
-from ludwig.utils.registry import DEFAULT_KEYS
 from ludwig.utils.torch_utils import LudwigModule
 
 

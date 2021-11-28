@@ -332,11 +332,3 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
-
-    decoder_registry = {
-        "regressor": Regressor,
-        "null": Regressor,
-        "none": Regressor,
-        "None": Regressor,
-        None: Regressor,
-    }
