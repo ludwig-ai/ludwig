@@ -11,8 +11,9 @@ from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import CombinerClass, register_combiner
 from ludwig.constants import NUMERICAL
 from ludwig.decoders.base import Decoder
+from ludwig.decoders.registry import register_decoder
 from ludwig.encoders import Encoder
-from ludwig.features.feature_registries import register_encoder, register_decoder
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import register_loss, LogitsInputsMixin
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from tests.integration_tests.utils import sequence_feature, numerical_feature, category_feature, generate_data, \

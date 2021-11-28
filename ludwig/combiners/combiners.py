@@ -23,14 +23,14 @@ from marshmallow import INCLUDE
 from marshmallow_dataclass import dataclass
 
 import torch
-from torch.nn import Module, ModuleList, Linear
+from torch.nn import ModuleList, Linear
 
-from ludwig.utils.registry import Registry, register
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, \
     sequence_mask as torch_sequence_mask
 
 import ludwig.utils.schema_utils as schema
-from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
+from ludwig.constants import NUMERICAL, BINARY
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
