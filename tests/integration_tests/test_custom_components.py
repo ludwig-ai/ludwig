@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict
 
 import torch
+from torch import nn, Tensor
 from marshmallow import INCLUDE
 
 from ludwig.api import LudwigModel
@@ -12,6 +13,8 @@ from ludwig.constants import NUMERICAL
 from ludwig.decoders.base import Decoder
 from ludwig.encoders import Encoder
 from ludwig.features.feature_registries import register_encoder, register_decoder
+from ludwig.modules.loss_modules import register_loss, LogitsInputsMixin
+from ludwig.modules.metric_modules import LossMetric, register_metric
 from tests.integration_tests.utils import sequence_feature, numerical_feature, category_feature, generate_data, \
     LocalTestBackend
 
@@ -95,6 +98,25 @@ class CustomNumericalDecoder(Decoder):
         pass
 
 
+@register_loss('custom_loss', [NUMERICAL])
+class CustomLoss(nn.Module, LogitsInputsMixin):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def forward(self, preds: Tensor, target: Tensor) -> Tensor:
+        return torch.mean(torch.square(preds - target))
+
+
+@register_metric('custom_loss', [NUMERICAL])
+class CustomLossMetric(LossMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = CustomLoss()
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        return self.loss_fn(preds, target)
+
+
 def test_custom_combiner():
     _run_test(combiner={
         'type': 'custom_test',
@@ -114,7 +136,12 @@ def test_custom_encoder_decoder():
 
 
 def test_custom_loss_metric():
-    pass
+    output_features = [
+        numerical_feature(loss={
+            'type': 'custom_loss'
+        }),
+    ]
+    _run_test(output_features=output_features)
 
 
 def _run_test(input_features=None, output_features=None, combiner=None):
