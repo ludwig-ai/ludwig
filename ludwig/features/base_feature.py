@@ -20,8 +20,8 @@ from typing import Dict
 
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.modules.loss_modules import get_loss_cls, get_loss_metric
-from ludwig.modules.metric_modules import get_metric_classes
+from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
 from ludwig.utils.types import DataFrame
 
 import torch
@@ -31,7 +31,7 @@ from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
     sequence_mask
@@ -209,9 +209,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        loss_cls = get_loss_cls(self.type, self.loss[TYPE])
-        self.train_loss_function = loss_cls(**loss_kwargs)
-        self.eval_loss_function = get_loss_metric(loss_cls)(**loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**loss_kwargs)
+        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
