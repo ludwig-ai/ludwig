@@ -21,8 +21,8 @@ import pandas as pd
 from dataclasses_json import LetterCase, dataclass_json
 
 from ludwig.automl.data_source import DataframeSource, DataSource
-from ludwig.automl.utils import (FieldConfig, FieldInfo, FieldMetadata, _ray_init,
-                                 get_available_resources)  # isort:skip
+from ludwig.automl.utils import (get_available_resources, FieldConfig, FieldInfo, FieldMetadata,
+                                 _ray_init)
 from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMERICAL, TEXT
 from ludwig.utils import strings_utils
 from ludwig.utils.data_utils import load_dataset, load_yaml
