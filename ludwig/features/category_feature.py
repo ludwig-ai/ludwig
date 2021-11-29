@@ -21,8 +21,13 @@ from typing import Dict
 import torch
 
 from ludwig.constants import *
+from ludwig.decoders.generic_decoders import Classifier
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, get_loss_cls
+# from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric, get_metric_classes
+# from ludwig.modules.metric_modules import SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import int_type

@@ -24,6 +24,9 @@ from torchmetrics import AUROC, IoU, MeanAbsoluteError,\
     R2Score as _R2Score, MeanMetric as _MeanMetric
 
 from ludwig.constants import *
+from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss,\
+    SoftmaxCrossEntropyLoss # SequenceSoftmaxCrossEntropyLoss,\
+    # SequenceSampledSoftmaxCrossEntropyLoss, SampledSoftmaxCrossEntropyLoss
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.registry import Registry
@@ -184,6 +187,39 @@ class LossMetric(MeanMetric, ABC):
         return False
 
 
+@register_metric('binary_weighted_cross_entropy', [BINARY])
+class BWCEWLMetric(LossMetric):
+    """ Binary Weighted Cross Entropy Weighted Logits Score Metric. """
+
+    def __init__(
+            self,
+            positive_class_weight: Optional[Tensor] = None,
+            robust_lambda: int = 0,
+            confidence_penalty: int = 0,
+            **kwargs
+    ):
+        super().__init__()
+
+        self.loss_function = BWCEWLoss(
+            positive_class_weight=positive_class_weight,
+            robust_lambda=robust_lambda,
+            confidence_penalty=confidence_penalty,
+        )
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.loss_function(preds, target)
+
+
+@register_metric('softmax_cross_entropy', [CATEGORY])
+class SoftmaxCrossEntropyMetric(LossMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(**kwargs)
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        return self.softmax_cross_entropy_function(preds, target)
+
+
 # @register_metric('sampled_softmax_cross_entropy', [CATEGORY])
 # class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
 #     def __init__(
@@ -212,6 +248,16 @@ class LossMetric(MeanMetric, ABC):
 #     @classmethod
 #     def get_inputs(cls):
 #         return LOGITS
+
+
+@register_metric('sigmoid_cross_entropy', [SET])
+class SigmoidCrossEntropyMetric(LossMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss(**kwargs)
+
+    def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+        return self.sigmoid_cross_entropy_function(preds, target)
 
 
 # TODO(shreya): After Sequence Losses

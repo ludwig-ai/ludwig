@@ -26,6 +26,7 @@ from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import PADDING_SYMBOL
