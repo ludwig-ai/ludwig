@@ -1,7 +1,5 @@
 """
-config.py
-
-Builds base configuration file:
+Uses heuristics to build ludwig configuration file:
 
 (1) infer types based on dataset
 (2) populate with
@@ -16,27 +14,18 @@ Builds base configuration file:
 
 import os
 from dataclasses import dataclass
-from dataclasses_json import LetterCase, dataclass_json
-from typing import List, Union, Set
+from typing import List, Set, Union
 
+import dask.dataframe as dd
 import pandas as pd
+from dataclasses_json import LetterCase, dataclass_json
 
-from ludwig.automl.data_source import DataSource, DataframeSource
-from ludwig.automl.utils import (
-    FieldInfo, get_available_resources, _ray_init, FieldMetadata, FieldConfig)
-from ludwig.constants import BINARY, CATEGORY, CONFIG, IMAGE, NUMERICAL, TEXT, TYPE
-from ludwig.utils.data_utils import load_yaml, load_dataset
+from ludwig.automl.data_source import DataframeSource, DataSource
+from ludwig.automl.utils import (FieldConfig, FieldInfo, FieldMetadata, _ray_init,
+                                 get_available_resources)  # isort:skip
+from ludwig.constants import BINARY, CATEGORY, IMAGE, NUMERICAL, TEXT
 from ludwig.utils import strings_utils
-
-try:
-    import dask.dataframe as dd
-    import ray
-except ImportError:
-    raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
-    )
+from ludwig.utils.data_utils import load_dataset, load_yaml
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, 'defaults')
@@ -49,11 +38,7 @@ combiner_defaults = {
     "transformer": os.path.join(CONFIG_DIR, "combiner/transformer_config.yaml"),
 }
 
-encoder_defaults = {
-    "text": {
-        "bert": os.path.join(CONFIG_DIR, "text/bert_config.yaml"),
-    }
-}
+encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.yaml")}}
 
 SMALL_DISTINCT_COUNT = 20
 
@@ -83,14 +68,10 @@ def allocate_experiment_resources(resources: dict) -> dict:
     # (1) expand logic to support multiple GPUs per trial (multi-gpu training)
     # (2) add support for kubernetes namespace (if applicable)
     # (3) add support for smarter allocation based on size of GPU memory
-    experiment_resources = {
-        'cpu_resources_per_trial': 1
-    }
+    experiment_resources = {'cpu_resources_per_trial': 1}
     gpu_count, cpu_count = resources['gpu'], resources['cpu']
     if gpu_count > 0:
-        experiment_resources.update({
-            'gpu_resources_per_trial': 1
-        })
+        experiment_resources.update({'gpu_resources_per_trial': 1})
         if cpu_count > 1:
             cpus_per_trial = max(int(cpu_count / gpu_count), 1)
             experiment_resources['cpu_resources_per_trial'] = cpus_per_trial
@@ -98,18 +79,16 @@ def allocate_experiment_resources(resources: dict) -> dict:
     return experiment_resources
 
 
-def _create_default_config(
-    dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
-    target_name: Union[str, List[str]] = None,
-    time_limit_s: Union[int, float] = None
-) -> dict:
+def _create_default_config(dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
+                           target_name: Union[str, List[str]] = None,
+                           time_limit_s: Union[int, float] = None) -> dict:
     """
     Returns auto_train configs for three available combiner models.
     Coordinates the following tasks:
 
     - extracts fields and generates list of FieldInfo objects
     - gets field metadata (i.e avg. words, total non-null entries)
-    - builds input_features and output_feautures section of config
+    - builds input_features and output_features section of config
     - for each combiner, adds default training, hyperopt
     - infers resource constraints and adds gpu and cpu resource allocation per
       trial
@@ -133,29 +112,22 @@ def _create_default_config(
     if not isinstance(dataset, DatasetInfo):
         dataset_info = get_dataset_info(dataset)
 
-    input_and_output_feature_config = get_features_config(
-        dataset_info.fields,
-        dataset_info.row_count,
-        resources,
-        target_name
-    )
+    input_and_output_feature_config = get_features_config(dataset_info.fields,
+                                                          dataset_info.row_count, resources,
+                                                          target_name)
 
     model_configs = {}
 
     # read in base config and update with experiment resources
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
-    base_automl_config["hyperopt"]["executor"].update(
-        experiment_resources
-    )
-    base_automl_config["hyperopt"]["executor"][
-        "time_budget_s"
-    ] = time_limit_s
+    base_automl_config["hyperopt"]["executor"].update(experiment_resources)
+    base_automl_config["hyperopt"]["executor"]["time_budget_s"] = time_limit_s
     if time_limit_s is not None:
         num_samples = base_automl_config["hyperopt"]["sampler"]["num_samples"]
         if num_samples is not None:
             # allow trials to get 2x even division, since some trials perform better than avg
-            base_automl_config["hyperopt"]["sampler"]["scheduler"][
-                "max_t"] = (time_limit_s / num_samples) * 2.0
+            base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = (time_limit_s /
+                                                                               num_samples) * 2.0
         else:
             base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
     base_automl_config.update(input_and_output_feature_config)
@@ -168,8 +140,7 @@ def _create_default_config(
             model_configs[feat_type] = {}
         else:
             for encoder_name, encoder_config_path in default_configs.items():
-                model_configs[feat_type][encoder_name] = load_yaml(
-                    encoder_config_path)
+                model_configs[feat_type][encoder_name] = load_yaml(encoder_config_path)
 
     # read in all combiner configs
     model_configs["combiner"] = {}
@@ -180,9 +151,7 @@ def _create_default_config(
     return model_configs
 
 
-def get_dataset_info(
-    dataset: Union[str, pd.DataFrame, dd.core.DataFrame]
-) -> DatasetInfo:
+def get_dataset_info(dataset: Union[str, pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
     """
     Constructs FieldInfo objects for each feature in dataset. These objects
     are used for downstream type inference
@@ -212,16 +181,13 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
         if source.is_string_type(dtype):
             avg_words = source.get_avg_num_tokens(field)
         fields.append(
-            FieldInfo(
-                name=field,
-                dtype=dtype,
-                distinct_values=distinct_values,
-                num_distinct_values=num_distinct_values,
-                nonnull_values=nonnull_values,
-                image_values=image_values,
-                avg_words=avg_words
-            )
-        )
+            FieldInfo(name=field,
+                      dtype=dtype,
+                      distinct_values=distinct_values,
+                      num_distinct_values=num_distinct_values,
+                      nonnull_values=nonnull_values,
+                      image_values=image_values,
+                      avg_words=avg_words))
     return DatasetInfo(fields=fields, row_count=row_count)
 
 
@@ -280,9 +246,10 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
     return config
 
 
-def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, resources: dict, targets: Set[str] = None
-) -> List[FieldMetadata]:
+def get_field_metadata(fields: List[FieldInfo],
+                       row_count: int,
+                       resources: dict,
+                       targets: Set[str] = None) -> List[FieldMetadata]:
     """
     Computes metadata for each field in dataset
 
@@ -307,23 +274,14 @@ def get_field_metadata(
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(
-                    idx, field, dtype, row_count, targets),
+                excluded=should_exclude(idx, field, dtype, row_count, targets),
                 mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
-            )
-        )
+            ))
 
     # Count of number of initial non-text input features in the config, -1 for output
-    input_count = (
-        sum(
-            not meta.excluded
-            and meta.mode == "input"
-            and meta.config.type != TEXT
-            for meta in metadata
-        )
-        - 1
-    )
+    input_count = (sum(not meta.excluded and meta.mode == "input" and meta.config.type != TEXT
+                       for meta in metadata) - 1)
 
     # Exclude text fields if no GPUs are available
     if resources['gpu'] == 0:
@@ -376,15 +334,15 @@ def infer_type(
 
     # If either of 2 examples is not numerical, use CATEGORY type.  We examine 2 since missing
     # values can be coded as NaN, which is numerical, even for fields that are otherwise strings.
-    if (num_distinct_values > 1 and
-        ((not strings_utils.is_numerical(distinct_values[0])) or
-         (not strings_utils.is_numerical(distinct_values[1])))):
+    if (num_distinct_values > 1 and ((not strings_utils.is_numerical(distinct_values[0])) or
+                                     (not strings_utils.is_numerical(distinct_values[1])))):
         return CATEGORY
 
     return NUMERICAL
 
 
-def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targets: Set[str]) -> bool:
+def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int,
+                   targets: Set[str]) -> bool:
     if field.key == "PRI":
         return True
 
@@ -394,7 +352,8 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if (idx == 0 and dtype == NUMERICAL) or upper_name.endswith("ID") or upper_name.startswith("ID"):
+        if (idx == 0 and
+                dtype == NUMERICAL) or upper_name.endswith("ID") or upper_name.startswith("ID"):
             return True
 
     return False
