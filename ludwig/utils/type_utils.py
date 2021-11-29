@@ -1,13 +1,8 @@
 from typing import Union
+import pandas as pd
 
 try:
     import dask.dataframe as dd
-except ImportError:
-    pass
-import pandas as pd
-
-
-if dd is not None:
     Column = Union[str, pd.Series, dd.Series]
-else:
+except ImportError:
     Column = Union[str, pd.Series]
