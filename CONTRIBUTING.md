@@ -95,7 +95,6 @@ your to the project maintainers for review.
 
 This contributing guideline is adapted from `huggingface`, available at <https://github.com/huggingface/datasets/blob/master/CONTRIBUTING.md>.
 
-
 ## Code of Conduct
 
 Please be mindful of and adhere to the Linux Foundation's
