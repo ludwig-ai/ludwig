@@ -266,7 +266,7 @@ class CSVPreprocessor(DataFormatPreprocessor):
             backend,
             callbacks
     ):
-        dataset_df = read_csv(dataset)
+        dataset_df = read_csv(dataset, df_lib=backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,
@@ -319,7 +319,7 @@ class TSVPreprocessor(DataFormatPreprocessor):
             backend,
             callbacks
     ):
-        dataset_df = read_tsv(dataset)
+        dataset_df = read_tsv(dataset, df_lib=backend.df_engine.df_lib)
         training_set_metadata[SRC] = dataset
         dataset, training_set_metadata = build_dataset(
             dataset_df,

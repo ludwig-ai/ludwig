@@ -93,30 +93,28 @@ def test_whylogs_callback_dask(tmpdir):
 def run_dask(input_features, output_features, data_csv, val_csv, test_csv):
     epochs = 2
     batch_size = 8
-    num_cpus = 2
-    config = {
-        'backend': {
-            'type': 'ray',
-            'processor': {
-                'parallelism': 2,
-            },
-            'trainer': {
-                'num_workers': 2,
-                'resources_per_worker': {
-                    'CPU': 0.1,
-                }
-            }
+    backend = {
+        'type': 'ray',
+        'processor': {
+            'parallelism': 2,
         },
+        'trainer': {
+            'num_workers': 2,
+            'resources_per_worker': {
+                'CPU': 0.1,
+            }
+        }
+    }
+    config = {
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': epochs, 'batch_size': batch_size},
     }
 
-    with ray_start(num_cpus=num_cpus):
+    with ray_start(num_cpus=4):
         exp_name = 'whylogs_test_ray'
         callback = WhyLogsCallback()
-        backend = RayBackend(config)
         model = LudwigModel(config, backend=backend, callbacks=[callback])
         model.train(training_set=data_csv,
                     validation_set=val_csv,
