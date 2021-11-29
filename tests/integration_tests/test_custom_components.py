@@ -99,6 +99,16 @@ class CustomLoss(nn.Module, LogitsInputsMixin):
         return torch.mean(torch.square(preds - target))
 
 
+@register_metric('custom_loss', [NUMERICAL])
+class CustomLossMetric(LossMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.loss_fn = CustomLoss()
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        return self.loss_fn(preds, target)
+
+
 def test_custom_combiner():
     _run_test(combiner={
         'type': 'custom_test',
