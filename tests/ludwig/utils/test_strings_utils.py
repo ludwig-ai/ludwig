@@ -3,6 +3,15 @@ import pytest
 from ludwig.utils import strings_utils
 
 
+def test_is_numerical():
+    assert strings_utils.is_numerical("1.1")
+    assert strings_utils.is_numerical("1.000001")
+    assert strings_utils.is_numerical("1000001")
+    assert strings_utils.is_numerical("Nan")
+    assert strings_utils.is_numerical("NaN")
+    assert not strings_utils.is_numerical("NaNaaa")
+
+
 def test_str_to_bool():
     # Global bool mappings are used.
     assert strings_utils.str2bool("True")
