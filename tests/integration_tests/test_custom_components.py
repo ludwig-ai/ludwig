@@ -36,8 +36,7 @@ class CustomTestCombiner(Combiner):
             config: CustomTestCombinerConfig = None,
             **kwargs
     ):
-        super().__init__()
-        self.input_features = input_features
+        super().__init__(input_features)
         self.foo = config.foo
 
     def forward(
