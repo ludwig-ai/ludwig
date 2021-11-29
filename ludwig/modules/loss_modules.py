@@ -36,18 +36,6 @@ EPSILON = 1.0e-10
 loss_registry = Registry()
 
 
-def _register_loss_metric(cls: Type, name: str, features: List[str]):
-    @register_metric(name, features)
-    class _LossMetric(LossMetric):
-        def __init__(self, **kwargs):
-            super().__init__()
-            self.loss_fn = cls(**kwargs)
-
-        def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
-            return self.loss_fn(preds, target)
-    return _LossMetric
-
-
 def register_loss(name: str, features: Union[str, List[str]]):
     if isinstance(features, str):
         features = [features]
@@ -57,13 +45,23 @@ def register_loss(name: str, features: Union[str, List[str]]):
             feature_registry = loss_registry.get(feature, {})
             feature_registry[name] = cls
             loss_registry[feature] = feature_registry
-        _register_loss_metric(cls, name, features)
         return cls
     return wrap
 
 
 def get_loss_cls(feature: str, name: str):
     return loss_registry[feature][name]
+
+
+def get_loss_metric(cls: Type):
+    class _LossMetric(LossMetric):
+        def __init__(self, **kwargs):
+            super().__init__()
+            self.loss_fn = cls(**kwargs)
+
+        def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+            return self.loss_fn(preds, target)
+    return _LossMetric
 
 
 class LogitsInputsMixin:
