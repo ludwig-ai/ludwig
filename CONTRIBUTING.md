@@ -1,38 +1,19 @@
 # Contributing
 
-Ludwig is an open source project, so all contributions and suggestions are welcome.
+Everyone is welcome to contribute, and we value everybody’s contribution. Code is thus not the only
+way to help the community. Answering questions, helping others, reaching out and improving the
+documentation are immensely valuable contributions as well.
 
-You can contribute in many different ways: giving ideas, answering questions, reporting bugs,
-proposing enhancements, improving the documentation, fixing bugs, etc...
+It also helps us if you spread the word: reference the library from blog posts on the awesome
+projects it made possible, shout out on Twitter every time it has helped you, or simply star the
+repo to say “thank you”.
 
-Many thanks in advance to every contributor.
+Check out the official [ludwig docs](https://ludwig-ai.github.io/ludwig-docs/) to get oriented
+around the codebase, and join the community!
 
-## Etiquette
+## Open Issues
 
-Please be considerate towards maintainers when raising issues or presenting pull requests. Let's
-show the world that developers are civilized and selfless people.
-
-Examples of behavior that contributes to a positive environment for our community include:
-
-- Demonstrating empathy and kindness toward other people
-- Being respectful of differing opinions, viewpoints, and experiences
-- Giving and gracefully accepting constructive feedback
-- Accepting responsibility and apologizing to those affected by our mistakes, and learning from the
-experience
-- Focusing on what is best not just for us as individuals, but for the overall community
-
-Examples of unacceptable behavior include:
-
-- The use of sexualized language or imagery, and sexual attention or advances of any kind
-- Trolling, insulting or derogatory comments, and personal or political attacks
-- Public or private harassment
-- Publishing others' private information, such as a physical or email address, without their
-explicit permission
-- Other conduct which could reasonably be considered inappropriate in a professional setting
-
-## How to work on an open Issue?
-
-You have the list of open Issues at: <https://github.com/ludwig-ai/ludwig/issues>
+There is a list of open Issues at: <https://github.com/ludwig-ai/ludwig/issues>
 
 If you would like to work on any of the open Issues:
 
@@ -44,7 +25,7 @@ You can self-assign it by commenting on the Issue page with one of the keywords:
 
 Work on your self-assigned issue and eventually create a Pull Request.
 
-## How to create a Pull Request?
+## Creating Pull Requests
 
 1. Fork the [repository](https://github.com/ludwig-ai/ludwig) by clicking on the 'Fork' button on
 the repository's page. This creates a copy of the code under your GitHub user account.
@@ -73,7 +54,7 @@ the repository's page. This creates a copy of the code under your GitHub user ac
     pre-commit install
     ```
 
-5. Develop the features on your branch.
+5. Develop features on your branch.
 
 6. Format your code by running pre-commits so that your newly added files look nice:
 
@@ -109,7 +90,7 @@ your to the project maintainers for review.
 
 ## Other tips
 
-- **Add tests!** - Your patch is less compelling if it doesn't have tests.
+- **Add tests!** - Patches are a lot less compelling without tests.
 
 - **Document any change in behavior** - Make sure the `README.md` and any other relevant
 documentation are kept up-to-date.
@@ -124,4 +105,4 @@ consider [squashing them](https://www.git-scm.com/book/en/v2/Git-Tools-Rewriting
 
 ## Attribution
 
-This contributing guideline is adapted from the `huggingface`, available at <https://github.com/huggingface/datasets/blob/master/CONTRIBUTING.md>.
+This contributing guideline is adapted from `huggingface`, available at <https://github.com/huggingface/datasets/blob/master/CONTRIBUTING.md>.
