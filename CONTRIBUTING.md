@@ -6,19 +6,16 @@ documentation are immensely valuable contributions as well.
 
 It also helps us if you spread the word: reference the library from blog posts on the awesome
 projects it made possible, shout out on Twitter every time it has helped you, or simply star the
-repo to say “thank you”.
+repo to say "thank you".
 
 Check out the official [ludwig docs](https://ludwig-ai.github.io/ludwig-docs/) to get oriented
 around the codebase, and join the community!
 
 ## Open Issues
 
-There is a list of open Issues at: <https://github.com/ludwig-ai/ludwig/issues>
+Issues are listed at: <https://github.com/ludwig-ai/ludwig/issues>
 
-If you would like to work on any of the open Issues:
-
-Make sure it is not already assigned to someone else. You have the assignee (if any) on the top of
-the right column of the Issue page.
+If you would like to work on any of them, make sure it is not already assigned to someone else.
 
 You can self-assign it by commenting on the Issue page with one of the keywords: `#take` or
 `#self-assign`.
@@ -90,19 +87,16 @@ your to the project maintainers for review.
 
 ## Other tips
 
-- **Add tests!** - Patches are a lot less compelling without tests.
-
-- **Document any change in behavior** - Make sure the `README.md` and any other relevant
-documentation are kept up-to-date.
-
-- **One pull request per feature** - If you want to do more than one thing, send multiple pull
-requests.
-
-- **Send coherent history** - If you had to make multiple intermediate commits while developing,
-consider [squashing them](https://www.git-scm.com/book/en/v2/Git-Tools-Rewriting-History#Changing-Multiple-Commit-Messages) before submitting.
-
-**Happy coding**!
+- Use [google/yapf](https://github.com/google/yapf) to format Python code.
+- Add unit tests for any new code you write.
+- Make sure tests pass. See the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/style_guidelines_and_tests/) for more details.
 
 ## Attribution
 
 This contributing guideline is adapted from `huggingface`, available at <https://github.com/huggingface/datasets/blob/master/CONTRIBUTING.md>.
+
+
+## Code of Conduct
+
+Please be mindful of and adhere to the Linux Foundation's
+[Code of Conduct](https://lfprojects.org/policies/code-of-conduct) when contributing to Horovod.
