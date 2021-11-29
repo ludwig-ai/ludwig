@@ -20,17 +20,17 @@ from functools import partial
 import torch
 
 from ludwig.decoders.base import Decoder
+from ludwig.decoders.registry import register_decoder
 
 from ludwig.utils.torch_utils import Dense, get_activation
 
-from ludwig.constants import LOSS, TYPE
-
+from ludwig.constants import LOSS, TYPE, BINARY, CATEGORY, NUMERICAL, SET, VECTOR
 
 logger = logging.getLogger(__name__)
 
 
+@register_decoder('regressor', [BINARY, NUMERICAL], default=True)
 class Regressor(Decoder):
-
     def __init__(
             self,
             input_size,
@@ -60,13 +60,9 @@ class Regressor(Decoder):
     def forward(self, inputs, **kwargs):
         return self.dense(inputs)
 
-    @classmethod
-    def register(cls, name):
-        pass
 
-
+@register_decoder('projector', [VECTOR], default=True)
 class Projector(Decoder):
-
     def __init__(
             self,
             input_size,
@@ -120,13 +116,9 @@ class Projector(Decoder):
             values = self.clip(values)
         return values
 
-    @classmethod
-    def register(cls, name):
-        pass
 
-
+@register_decoder('classifier', [CATEGORY, SET], default=True)
 class Classifier(Decoder):
-
     def __init__(
             self,
             input_size,
@@ -164,7 +156,3 @@ class Classifier(Decoder):
 
     def forward(self, inputs, **kwargs):
         return self.dense(inputs)
-
-    @classmethod
-    def register(cls, name):
-        pass

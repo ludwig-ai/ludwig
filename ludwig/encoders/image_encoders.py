@@ -15,33 +15,23 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 
+from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.utils.registry import Registry, register, register_default
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry()
-
-
-class ImageEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
 # TODO(shreya): Add type hints for missing args
-@register_default(name='stacked_cnn')
-class Stacked2DCNN(ImageEncoder):
-
+@register_encoder('stacked_cnn', IMAGE, default=True)
+class Stacked2DCNN(Encoder):
     def __init__(
             self,
             height: int,
@@ -158,9 +148,8 @@ class Stacked2DCNN(ImageEncoder):
         return torch.Size(self._input_shape)
 
 
-@register(name='resnet')
-class ResNetEncoder(ImageEncoder):
-
+@register_encoder('resnet', IMAGE)
+class ResNetEncoder(Encoder):
     def __init__(
             self,
             height: int,
@@ -243,9 +232,8 @@ class ResNetEncoder(ImageEncoder):
         return torch.Size(self._input_shape)
 
 
-@register(name='mlp_mixer')
-class MLPMixerEncoder(ImageEncoder):
-
+@register_encoder('mlp_mixer', IMAGE)
+class MLPMixerEncoder(Encoder):
     def __init__(
             self,
             height: int,
@@ -301,8 +289,8 @@ class MLPMixerEncoder(ImageEncoder):
         return self._output_shape
 
 
-@register(name='vit')
-class ViTEncoder(ImageEncoder):
+@register_encoder('vit', IMAGE)
+class ViTEncoder(Encoder):
     def __init__(
             self,
             height: int,

@@ -23,12 +23,11 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Projector
-from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss,\
-    MAELoss
-from ludwig.modules.metric_modules import MSEMetric, MAEMetric, R2Score,\
-    SoftmaxCrossEntropyMetric
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
+    MAELoss, get_loss_cls
+from ludwig.modules.metric_modules import MSEMetric, MAEMetric, R2Score, \
+    SoftmaxCrossEntropyMetric, get_metric_cls, get_metric_classes
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule
@@ -165,15 +164,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'preprocessing', {})
 
-    encoder_registry = {
-        'dense': DenseEncoder,
-        'passthrough': PassthroughEncoder,
-        'null': PassthroughEncoder,
-        'none': PassthroughEncoder,
-        'None': PassthroughEncoder,
-        None: PassthroughEncoder
-    }
-
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = 'projector'
@@ -210,27 +200,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             inputs, feature_name, LOGITS)
         return {PREDICTIONS: logits, LOGITS: logits}
 
-    def _setup_loss(self):
-        if self.loss[TYPE] == 'mean_squared_error':
-            self.train_loss_function = MSELoss()
-            self.eval_loss_function = MSEMetric()
-        elif self.loss[TYPE] == 'mean_absolute_error':
-            self.train_loss_function = MAELoss()
-            self.eval_loss_function = MAEMetric()
-        elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
-            self.train_loss_function = SoftmaxCrossEntropyLoss()
-            self.eval_loss_function = SoftmaxCrossEntropyMetric(**self.loss)
-        else:
-            raise ValueError(
-                'Unsupported loss type {}'.format(self.loss[TYPE])
-            )
+    def loss_kwargs(self):
+        return self.loss
 
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
-        self.metric_functions[R2] = R2Score(num_outputs=self.output_shape[0])
+    def metric_kwargs(self):
+        return dict(num_outputs=self.output_shape[0])
 
     def get_prediction_set(self):
         return {
@@ -291,11 +265,3 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'reduce_dependencies', None)
         set_default_value(output_feature, 'decoder', 'projector')
         set_default_value(output_feature, 'dependencies', [])
-
-    decoder_registry = {
-        'projector': Projector,
-        'null': Projector,
-        'none': Projector,
-        'None': Projector,
-        None: Projector
-    }

@@ -25,7 +25,6 @@ import torch
 import torchvision
 
 from ludwig.constants import *
-from ludwig.encoders.image_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import upload_h5
@@ -486,5 +485,3 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, PREPROCESSING, {})
-
-    encoder_registry = ENCODER_REGISTRY

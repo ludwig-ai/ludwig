@@ -18,6 +18,10 @@ from abc import ABC, abstractmethod
 import copy
 from typing import Dict
 
+from ludwig.decoders.registry import get_decoder_cls
+from ludwig.encoders.registry import get_encoder_cls
+from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
 from ludwig.utils.types import DataFrame
 
 import torch
@@ -27,8 +31,6 @@ from ludwig.constants import *
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.modules.loss_modules import LOSS_INPUTS_REGISTRY
-from ludwig.modules.metric_modules import METRICS_INPUTS_REGISTRY
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
@@ -104,13 +106,8 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def populate_defaults(input_feature):
         pass
 
-    @property
-    @abstractmethod
-    def encoder_registry(self):
-        pass
-
     def initialize_encoder(self, encoder_parameters):
-        return get_from_registry(self.encoder, self.encoder_registry)(
+        return get_encoder_cls(self.type, self.encoder)(
             **encoder_parameters
         )
 
@@ -187,18 +184,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def metric_functions(self) -> Dict:
         pass
 
-    @property
-    @abstractmethod
-    def decoder_registry(self):
-        pass
-
     def initialize_decoder(self, decoder_parameters):
         # Override input_size. Features input_size may be different if the
         # output feature has a custom FC.
         decoder_parameters_copy = copy.copy(
             decoder_parameters)
         decoder_parameters_copy['input_size'] = self.fc_stack.output_shape[-1]
-        return get_from_registry(self.decoder, self.decoder_registry)(
+        return get_decoder_cls(self.type, self.decoder)(
             **decoder_parameters_copy
         )
 
@@ -206,19 +198,41 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(
-            feature_name, LOSS_INPUTS_REGISTRY[loss_class])
+            feature_name, loss_class.get_loss_inputs())
         return self.train_loss_function(predictions[prediction_key], targets)
 
     def eval_loss(self, targets: Tensor, predictions: Dict[str, Tensor]):
         loss_class = type(self.train_loss_function)
-        prediction_key = LOSS_INPUTS_REGISTRY[loss_class]
+        prediction_key = loss_class.get_loss_inputs()
         return self.eval_loss_function(predictions[prediction_key].detach(),
                                        targets)
+
+    def _setup_loss(self):
+        loss_kwargs = self.loss_kwargs()
+        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**loss_kwargs)
+        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**loss_kwargs)
+
+    def _setup_metrics(self):
+        # needed to shadow class variable
+        self.metric_functions = {
+            LOSS: self.eval_loss_function,
+            **{
+                name: cls(**self.loss_kwargs(), **self.metric_kwargs())
+                for name, cls in get_metric_classes(self.type).items()
+                if cls.can_report(self)
+            }
+        }
+
+    def loss_kwargs(self):
+        return {}
+
+    def metric_kwargs(self):
+        return {}
 
     def update_metrics(self, targets: Tensor, predictions: Dict[str, Tensor]):
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
-            prediction_key = METRICS_INPUTS_REGISTRY[metric_class]
+            prediction_key = metric_class.get_inputs()
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):

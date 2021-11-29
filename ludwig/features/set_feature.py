@@ -21,12 +21,11 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.set_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
-from ludwig.modules.metric_modules import JaccardMetric
+from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss, get_loss_cls
+from ludwig.modules.metric_modules import JaccardMetric, get_metric_classes
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
@@ -152,8 +151,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = ENCODER_REGISTRY
-
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
@@ -204,14 +201,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             LOGITS: logits
         }
 
-    def _setup_loss(self):
-        self.train_loss_function = SigmoidCrossEntropyLoss(**self.loss)
-        self.eval_loss_function = SigmoidCrossEntropyMetric(**self.loss)
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[JACCARD] = JaccardMetric()
+    def loss_kwargs(self):
+        return self.loss
 
     def get_prediction_set(self):
         return {
@@ -237,9 +228,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             *args,
             **kwargs
     ):
-        output_feature[LOSS][TYPE] = None
         output_feature['num_classes'] = feature_metadata['vocab_size']
-
         if isinstance(output_feature[LOSS]['class_weights'], (list, tuple)):
             if (len(output_feature[LOSS]['class_weights']) !=
                     output_feature['num_classes']):
@@ -336,11 +325,3 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         set_default_value(output_feature, 'dependencies', [])
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
-
-    decoder_registry = {
-        'classifier': Classifier,
-        'null': Classifier,
-        'none': Classifier,
-        'None': Classifier,
-        None: Classifier
-    }

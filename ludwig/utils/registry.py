@@ -68,18 +68,3 @@ class Registry(UserDict):
             **self.parent,
             **self.data
         }
-
-
-def register(name):
-    def wrap(cls):
-        cls.register(name)
-        return cls
-    return wrap
-
-
-def register_default(name):
-    def wrap(cls):
-        cls.register(name)
-        cls.register_default()
-        return cls
-    return wrap

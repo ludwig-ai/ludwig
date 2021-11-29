@@ -22,12 +22,11 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Classifier
-from ludwig.encoders.category_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, get_loss_cls
 # from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric, CategoryAccuracy, HitsAtKMetric, get_metric_classes
 # from ludwig.modules.metric_modules import SampledSoftmaxCrossEntropyMetric
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils import output_feature_utils
@@ -159,8 +158,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = ENCODER_REGISTRY
-
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = 'classifier'
@@ -231,28 +228,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def output_shape(self) -> torch.Size:
         return torch.Size([1])
 
-    def _setup_loss(self):
-        if self.loss[TYPE] == 'softmax_cross_entropy':
-            self.train_loss_function = SoftmaxCrossEntropyLoss()
-        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
-            self.train_loss_function = SampledSoftmaxCrossEntropyLoss()
-        else:
-            raise ValueError(
-                "Loss type {} is not supported. Valid values are "
-                "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
-            )
-
-        self.eval_loss_function = SoftmaxCrossEntropyLoss()
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        # softmax_cross_entropy loss metric
-        self.metric_functions[LOSS] = SoftmaxCrossEntropyMetric()
-        self.metric_functions[ACCURACY] = CategoryAccuracy()
-        if self.decoder_obj.num_classes > self.top_k:
-            # Required by torchmetrics.
-            self.metric_functions[HITS_AT_K] = HitsAtKMetric(top_k=self.top_k)
+    def metric_kwargs(self):
+        return dict(top_k=self.top_k)
 
     @staticmethod
     def update_config_with_metadata(
@@ -484,11 +461,3 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 'reduce_dependencies': SUM
             }
         )
-
-    decoder_registry = {
-        'classifier': Classifier,
-        'null': Classifier,
-        'none': Classifier,
-        'None': Classifier,
-        None: Classifier
-    }

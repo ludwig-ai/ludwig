@@ -21,10 +21,9 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.binary_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.modules.loss_modules import BWCEWLoss
-from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric
+from ludwig.modules.loss_modules import BWCEWLoss, get_loss_cls
+from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric, get_metric_classes, get_metric_cls
 from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
     precision_recall_curve, roc_auc_score, roc_curve
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -170,12 +169,10 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def create_sample_input(self):
         return torch.Tensor([True, False])
 
-    encoder_registry = ENCODER_REGISTRY
-
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = "regressor"
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None}
     default_validation_metric = ACCURACY
     threshold = 0.5
@@ -202,23 +199,12 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             LOGITS: logits,
         }
 
-    def _setup_loss(self):
-        self.train_loss_function = BWCEWLoss(
+    def loss_kwargs(self):
+        return dict(
             positive_class_weight=self.loss["positive_class_weight"],
             robust_lambda=self.loss["robust_lambda"],
             confidence_penalty=self.loss["confidence_penalty"],
         )
-        self.eval_loss_function = self.train_loss_function
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[LOSS] = BWCEWLMetric(
-            positive_class_weight=self.loss["positive_class_weight"],
-            robust_lambda=self.loss["robust_lambda"],
-            confidence_penalty=self.loss["confidence_penalty"],
-        )
-        self.metric_functions[ACCURACY] = Accuracy()
-        self.metric_functions[ROC_AUC] = ROCAUCMetric()
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -346,11 +332,3 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
-
-    decoder_registry = {
-        "regressor": Regressor,
-        "null": Regressor,
-        "none": Regressor,
-        "None": Regressor,
-        None: Regressor,
-    }

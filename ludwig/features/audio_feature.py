@@ -22,8 +22,6 @@ import numpy as np
 import torch
 
 from ludwig.constants import *
-from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
-    StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import calculate_mean, calculate_var
 from ludwig.utils.audio_utils import get_fbank
@@ -473,16 +471,3 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
                 'preprocessing': {}
             }
         )
-
-    encoder_registry = {
-        'stacked_cnn': StackedCNN,
-        'parallel_cnn': ParallelCNN,
-        'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': StackedRNN,
-        'cnnrnn': StackedCNNRNN,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
-    }

@@ -23,21 +23,21 @@ import torch
 
 from ludwig.constants import *
 from ludwig.decoders.generic_decoders import Regressor
-from ludwig.encoders.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss
+from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss, get_loss_cls
 from ludwig.modules.metric_modules import (
     MAEMetric,
     MSEMetric,
     RMSEMetric,
     RMSPEMetric,
-    R2Score,
+    R2Score, get_metric_classes,
 )
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.registry import Registry, DEFAULT_KEYS
 
 logger = logging.getLogger(__name__)
 
@@ -241,15 +241,6 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-    encoder_registry = {
-        "dense": DenseEncoder,
-        "passthrough": PassthroughEncoder,
-        "null": PassthroughEncoder,
-        "none": PassthroughEncoder,
-        "None": PassthroughEncoder,
-        None: PassthroughEncoder,
-    }
-
 
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     decoder = "regressor"
@@ -302,31 +293,6 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                 )
 
         return {PREDICTIONS: predictions, LOGITS: logits}
-
-    def _setup_loss(self):
-        if self.loss[TYPE] == "mean_squared_error":
-            self.train_loss_function = MSELoss()
-        elif self.loss[TYPE] == "mean_absolute_error":
-            self.train_loss_function = MAELoss()
-        elif self.loss[TYPE] == "root_mean_squared_error":
-            self.train_loss_function = RMSELoss()
-        elif self.loss[TYPE] == "root_mean_squared_percentage_error":
-            self.train_loss_function = RMSPELoss()
-        else:
-            raise ValueError(
-                "Unsupported loss type {}".format(self.loss[TYPE])
-            )
-
-        self.eval_loss_function = self.train_loss_function
-
-    def _setup_metrics(self):
-        self.metric_functions = {}  # needed to shadow class variable
-        self.metric_functions[MEAN_SQUARED_ERROR] = MSEMetric()
-        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MAEMetric()
-        self.metric_functions[ROOT_MEAN_SQUARED_ERROR] = RMSEMetric()
-        self.metric_functions[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR] = RMSPEMetric(
-        )
-        self.metric_functions[R2] = R2Score()
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
@@ -392,11 +358,3 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
                 "reduce_dependencies": SUM,
             },
         )
-
-    decoder_registry = {
-        "regressor": Regressor,
-        "null": Regressor,
-        "none": Regressor,
-        "None": Regressor,
-        None: Regressor,
-    }

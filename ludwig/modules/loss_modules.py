@@ -21,24 +21,60 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
-from ludwig.constants import LOGITS, PREDICTIONS
+from ludwig.constants import LOGITS, PREDICTIONS, NUMERICAL, VECTOR, TIMESERIES, BINARY, CATEGORY, SEQUENCE, TEXT, SET, \
+    BINARY_WEIGHTED_CROSS_ENTROPY
 import ludwig.utils.loss_utils as utils
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import sequence_length_2D
 
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
 
 
-class MSELoss(_MSELoss):
+loss_registry = Registry()
+
+
+def register_loss(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
+    def wrap(cls):
+        for feature in features:
+            feature_registry = loss_registry.get(feature, {})
+            feature_registry[name] = cls
+            loss_registry[feature] = feature_registry
+        return cls
+    return wrap
+
+
+def get_loss_cls(feature: str, name: str):
+    return loss_registry[feature][name]
+
+
+class LogitsInputsMixin:
+    @classmethod
+    def get_loss_inputs(cls):
+        """Maps loss to the desired predicted input type."""
+        return LOGITS
+
+
+@register_loss('mean_squared_error', [NUMERICAL, TIMESERIES, VECTOR])
+class MSELoss(_MSELoss, LogitsInputsMixin):
     """ Mean squared error. """
+    def __init__(self, **kwargs):
+        super().__init__()
 
 
-class MAELoss(L1Loss):
+@register_loss('mean_absolute_error', [NUMERICAL, TIMESERIES, VECTOR])
+class MAELoss(L1Loss, LogitsInputsMixin):
     """ Mean absolute error. """
-    pass
+
+    def __init__(self, **kwargs):
+        super().__init__()
 
 
-class RMSELoss(nn.Module):
+@register_loss('root_mean_squared_error', [NUMERICAL])
+class RMSELoss(nn.Module, LogitsInputsMixin):
     """ Root mean square error. """
 
     def __init__(self, **kwargs):
@@ -49,7 +85,8 @@ class RMSELoss(nn.Module):
         return torch.sqrt(self.mse(preds, target))
 
 
-class RMSPELoss(nn.Module):
+@register_loss('root_mean_squared_percentage_error', [NUMERICAL])
+class RMSPELoss(nn.Module, LogitsInputsMixin):
     """ Root mean square percentage error. """
 
     def __init__(self, **kwargs):
@@ -60,7 +97,8 @@ class RMSPELoss(nn.Module):
         return loss
 
 
-class BWCEWLoss(nn.Module):
+@register_loss(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
+class BWCEWLoss(nn.Module, LogitsInputsMixin):
     """ Binary weighted cross entropy loss. """
 
     def __init__(
@@ -93,7 +131,8 @@ class BWCEWLoss(nn.Module):
         return train_mean_loss
 
 
-class SoftmaxCrossEntropyLoss(nn.Module):
+@register_loss('softmax_cross_entropy', [CATEGORY, SEQUENCE, TEXT, VECTOR])
+class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
         Params:
@@ -118,6 +157,7 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 
 
 # # For Categorical Output Features
+# @register_loss('sampled_softmax_cross_entropy', [CATEGORY])
 # class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 #     def __init__(
 #         self, decoder_obj=None, num_classes=0, feature_loss=None, name=None
@@ -145,6 +185,7 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 #
 #
 # # For Sequence Output Feature
+# @register_loss('sequence_sampled_softmax_cross_entropy', [SEQUENCE, TEXT])
 # class SequenceSampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 #     def __init__(
 #         self,
@@ -174,7 +215,8 @@ class SoftmaxCrossEntropyLoss(nn.Module):
 #         return loss
 
 
-class SigmoidCrossEntropyLoss(nn.Module):
+@register_loss('sigmoid_cross_entropy', [SET])
+class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
         Params:
@@ -207,6 +249,7 @@ class SigmoidCrossEntropyLoss(nn.Module):
 # TODO(shreya): To migrate from below here
 ################################################################################
 
+# @register_loss('sequence_softmax_cross_entropy', [SEQUENCE, TEXT])
 # class SequenceSoftmaxCrossEntropyLoss(nn.Module):
 #     def __init__(self, name=None, from_logits=True, **kwargs):
 #         super().__init__(name=name)
@@ -254,15 +297,3 @@ class SigmoidCrossEntropyLoss(nn.Module):
 #         loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
 #         return loss
 #
-
-
-# Registry to map loss name to the desired predicted input type.
-LOSS_INPUTS_REGISTRY = {
-    MSELoss: LOGITS,
-    MAELoss: LOGITS,
-    RMSELoss: LOGITS,
-    RMSPELoss: LOGITS,
-    BWCEWLoss: LOGITS,
-    SoftmaxCrossEntropyLoss: LOGITS,
-    SigmoidCrossEntropyLoss: LOGITS,
-}

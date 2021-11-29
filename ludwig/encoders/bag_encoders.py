@@ -15,30 +15,21 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 
 import torch
 from typing import List, Optional, Dict, Any
 
+from ludwig.constants import BAG
 from ludwig.encoders.base import Encoder
-from ludwig.utils.registry import Registry, register_default
+from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
 
-ENCODER_REGISTRY = Registry()
-
-
-class BagEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register_default(name='embed')
-class BagEmbedWeightedEncoder(BagEncoder):
+@register_encoder('embed', BAG, default=True)
+class BagEmbedWeightedEncoder(Encoder):
     def __init__(
             self,
             vocab: List[str],

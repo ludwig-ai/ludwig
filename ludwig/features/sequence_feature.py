@@ -16,12 +16,8 @@
 # ==============================================================================
 
 import numpy as np
-import torch
 
 from ludwig.constants import *
-from ludwig.decoders.sequence_decoders import DECODER_REGISTRY
-from ludwig.encoders.sequence_encoders import \
-    ENCODER_REGISTRY as SEQUENCE_ENCODER_REGISTRY
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
@@ -197,8 +193,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
-
-    encoder_registry = SEQUENCE_ENCODER_REGISTRY
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
@@ -578,5 +572,3 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             meta=(probs_col, 'object')
         )
         return df
-
-    decoder_registry = DECODER_REGISTRY

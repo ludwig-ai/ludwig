@@ -21,7 +21,6 @@ import numpy as np
 import torch
 
 from ludwig.constants import *
-from ludwig.encoders.bag_encoders import ENCODER_REGISTRY
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.utils.misc_utils import set_default_value
@@ -146,5 +145,3 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-
-    encoder_registry = ENCODER_REGISTRY

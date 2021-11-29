@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import abstractmethod
+from abc import ABC
 import logging
 from functools import lru_cache
 from typing import List, Dict, Optional, Union, Any
@@ -23,12 +23,14 @@ from marshmallow import INCLUDE
 from marshmallow_dataclass import dataclass
 
 import torch
-from torch.nn import Module, ModuleList, Linear
+from torch.nn import ModuleList, Linear
+
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import LudwigModule, \
     sequence_mask as torch_sequence_mask
 
 import ludwig.utils.schema_utils as schema
-from ludwig.constants import NUMERICAL, BINARY, TYPE, NAME
+from ludwig.constants import NUMERICAL, BINARY
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
@@ -56,13 +58,30 @@ sequence_encoder_registry = {
 }
 
 
+combiner_registry = Registry()
+
+
+def register_combiner(name: str):
+    def wrap(cls):
+        combiner_registry[name] = cls
+        return cls
+    return wrap
+
+
 # super class to house common properties
-class CombinerClass(LudwigModule):
+class Combiner(LudwigModule, ABC):
+    def __init__(self, input_features: Dict[str, "InputFeature"]):
+        super().__init__()
+        self.input_features = input_features
+
     @property
-    @abstractmethod
     def concatenated_shape(self) -> torch.Size:
-        """ Returns the size of concatenated encoder output tensors. """
-        raise NotImplementedError('Abstract class.')
+        # compute the size of the last dimension for the incoming encoder outputs
+        # this is required to setup the fully connected layer
+        shapes = [
+            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
+            for k in self.input_features]
+        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     @property
     def input_shape(self) -> Dict:
@@ -106,16 +125,16 @@ class ConcatCombinerConfig:
         unknown = INCLUDE
 
 
-class ConcatCombiner(CombinerClass):
+@register_combiner(name='concat')
+class ConcatCombiner(Combiner):
     def __init__(
             self,
-            input_features: Dict = None,
+            input_features: Dict[str, "InputFeature"] = None,
             config: ConcatCombinerConfig = None,
             **kwargs
     ):
-        super().__init__()
+        super().__init__(input_features)
         self.name = "ConcatCombiner"
-        self.input_features = input_features
         logger.debug(' {}'.format(self.name))
 
         self.flatten_inputs = config.flatten_inputs
@@ -148,15 +167,6 @@ class ConcatCombiner(CombinerClass):
 
         if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
-
-    @property
-    def concatenated_shape(self) -> torch.Size:
-        # compute the size of the last dimension for the incoming encoder outputs
-        # this is required to setup the fully connected layer
-        shapes = [
-            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
-            for k in self.input_features]
-        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
             self,
@@ -204,18 +214,18 @@ class SequenceConcatCombinerConfig:
         unknown = INCLUDE
 
 
-class SequenceConcatCombiner(CombinerClass):
+@register_combiner(name='sequence_concat')
+class SequenceConcatCombiner(Combiner):
     def __init__(
             self,
-            input_features: Dict,
+            input_features: Dict[str, "InputFeature"],
             config: SequenceConcatCombinerConfig = None,
             **kwargs
     ):
-        super().__init__()
+        super().__init__(input_features)
         self.name = 'SequenceConcatCombiner'
         logger.debug(' {}'.format(self.name))
 
-        self.input_features = input_features
         self.reduce_output = config.reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=config.reduce_output)
@@ -381,18 +391,17 @@ class SequenceCombinerConfig:
         unknown = INCLUDE
 
 
-class SequenceCombiner(CombinerClass):
+@register_combiner(name='sequence')
+class SequenceCombiner(Combiner):
     def __init__(
             self,
-            input_features: Dict,
+            input_features: Dict[str, "InputFeature"],
             config: SequenceCombinerConfig = None,
             **kwargs
     ):
-        super().__init__()
+        super().__init__(input_features)
         self.name = 'SequenceCombiner'
         logger.debug(' {}'.format(self.name))
-
-        self.input_features = input_features
 
         self.combiner = SequenceConcatCombiner(
             input_features,
@@ -482,18 +491,17 @@ class TabNetCombinerConfig:
         unknown = INCLUDE
 
 
-class TabNetCombiner(CombinerClass):
+@register_combiner(name='tabnet')
+class TabNetCombiner(Combiner):
     def __init__(
             self,
-            input_features: Dict,
+            input_features: Dict[str, "InputFeature"],
             config: TabNetCombinerConfig = None,
             **kwargs
     ) -> None:
-        super().__init__()
+        super().__init__(input_features)
         self.name = 'TabNetCombiner'
         logger.debug(' {}'.format(self.name))
-
-        self.input_features = input_features
 
         self.tabnet = TabNet(
             self.concatenated_shape[-1],
@@ -520,15 +528,6 @@ class TabNetCombiner(CombinerClass):
     #         k: tf.keras.layers.Flatten()
     #         for k in input_shape.keys()
     #     }
-
-    @property
-    def concatenated_shape(self) -> torch.Size:
-        # compute the size of the last dimension for the incoming encoder outputs
-        # this is required to setup
-        shapes = [
-            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
-            for k in self.input_features]
-        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
             self,
@@ -595,18 +594,18 @@ class TransformerCombinerConfig:
         unknown = INCLUDE
 
 
-class TransformerCombiner(CombinerClass):
+@register_combiner(name='transformer')
+class TransformerCombiner(Combiner):
     def __init__(
             self,
-            input_features: Optional[List] = None,
+            input_features: Dict[str, "InputFeature"] = None,
             config: TransformerCombinerConfig = None,
             **kwargs
     ):
-        super().__init__()
+        super().__init__(input_features)
         self.name = 'TransformerCombiner'
         logger.debug(' {}'.format(self.name))
 
-        self.input_features = input_features
         self.reduce_output = config.reduce_output
         self.reduce_sequence = SequenceReducer(
             reduce_mode=config.reduce_output)
@@ -654,15 +653,6 @@ class TransformerCombiner(CombinerClass):
                 default_dropout=config.fc_dropout,
                 fc_residual=config.fc_residual,
             )
-
-    @property
-    def concatenated_shape(self) -> torch.Size:
-        # compute the size of the last dimension for the incoming encoder outputs
-        # this is required to setup the fully connected layer
-        shapes = [
-            torch.prod(torch.Tensor([*self.input_features[k].output_shape]))
-            for k in self.input_features]
-        return torch.Size([torch.sum(torch.Tensor(shapes)).type(torch.int32)])
 
     def forward(
             self,
@@ -733,14 +723,15 @@ class TabTransformerCombinerConfig:
         unknown = INCLUDE
 
 
-class TabTransformerCombiner(CombinerClass):
+@register_combiner(name='tabtransformer')
+class TabTransformerCombiner(Combiner):
     def __init__(
             self,
-            input_features: Optional[List] = None,
+            input_features: Dict[str, "InputFeature"] = None,
             config: TabTransformerCombinerConfig = None,
             **kwargs
     ):
-        super().__init__()
+        super().__init__(input_features)
         self.name = "TabTransformerCombiner"
         logger.debug('Initializing {}'.format(self.name))
 
@@ -971,18 +962,18 @@ class ComparatorCombinerConfig:
         unknown = INCLUDE
 
 
-class ComparatorCombiner(CombinerClass):
+@register_combiner(name='comparator')
+class ComparatorCombiner(Combiner):
     def __init__(
             self,
-            input_features: Dict,
+            input_features: Dict[str, "InputFeature"],
             config: ComparatorCombinerConfig = None,
             **kwargs,
     ):
-        super().__init__()
+        super().__init__(input_features)
         self.name = "ComparatorCombiner"
         logger.debug("Entering {}".format(self.name))
 
-        self.input_features = input_features
         self.entity_1 = config.entity_1
         self.entity_2 = config.entity_2
         self.required_inputs = set(config.entity_1 + config.entity_2)
@@ -1131,14 +1122,3 @@ def get_combiner_class(combiner_type):
         combiner_type,
         combiner_registry
     )
-
-
-combiner_registry = {
-    'concat': ConcatCombiner,
-    'sequence_concat': SequenceConcatCombiner,
-    'sequence': SequenceCombiner,
-    'tabnet': TabNetCombiner,
-    'comparator': ComparatorCombiner,
-    "transformer": TransformerCombiner,
-    "tabtransformer": TabTransformerCombiner,
-}

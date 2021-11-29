@@ -15,35 +15,26 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from abc import ABC
 from typing import Dict, List, Optional
 
 import torch
 
+from ludwig.constants import DATE
 from ludwig.encoders.base import Encoder
+from ludwig.encoders.registry import register_encoder
 from ludwig.utils import torch_utils
-from ludwig.utils.registry import Registry, register
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
-
-ENCODER_REGISTRY = Registry()
 
 # Year, month, day, weekday, yearday, hour, minute, seconds, second_of_day.
 # TODO: Share this constant with date_feature.DATE_VECTOR_SIZE.
 DATE_INPUT_SIZE = 9
 
 
-class DateEncoder(Encoder, ABC):
-    @classmethod
-    def register(cls, name):
-        ENCODER_REGISTRY[name] = cls
-
-
-@register(name='embed')
-class DateEmbed(DateEncoder):
-
+@register_encoder('embed', DATE)
+class DateEmbed(Encoder):
     def __init__(
             self,
             embedding_size: int = 10,
@@ -273,9 +264,8 @@ class DateEmbed(DateEncoder):
         return self.fc_stack.output_shape
 
 
-@register(name='wave')
-class DateWave(DateEncoder):
-
+@register_encoder('wave', DATE)
+class DateWave(Encoder):
     def __init__(
             self,
             fc_layers: Optional[List[FCStack]] = None,

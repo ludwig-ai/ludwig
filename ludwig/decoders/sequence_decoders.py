@@ -26,11 +26,10 @@ import logging
 
 from ludwig.constants import *
 from ludwig.decoders.base import Decoder
+from ludwig.decoders.registry import register_decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.recurrent_modules import BasicDecoder
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.registry import Registry, register
 from ludwig.utils.torch_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
@@ -44,18 +43,8 @@ rnn_layers_registry = {
 PAD_TOKEN = 0
 
 
-DECODER_REGISTRY = Registry()
-
-
-class SequenceDecoder(Decoder, ABC):
-    @classmethod
-    def register(cls, name):
-        DECODER_REGISTRY[name] = cls
-
-
-@register(name='generator')
-class SequenceGeneratorDecoder(SequenceDecoder):
-
+@register_decoder('generator', [SEQUENCE, TEXT])
+class SequenceGeneratorDecoder(Decoder):
     def __init__(
             self,
             num_classes,
@@ -708,9 +697,8 @@ def extract_sequence_probabilities(decoder_output, beam_width, sequence_id=0):
     return probabilities
 
 
-@register(name='tagger')
-class SequenceTaggerDecoder(SequenceDecoder):
-
+@register_decoder('tagger', [SEQUENCE, TEXT])
+class SequenceTaggerDecoder(Decoder):
     def __init__(
             self,
             num_classes,
