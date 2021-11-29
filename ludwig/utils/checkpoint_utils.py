@@ -30,7 +30,7 @@ def get_files(d, pattern, sort=True):
   files = glob(osp.join(d, pattern))
   files = [f for f in files if osp.isfile(f)]
   if sort:
-    files.sort(key=lambda x: int(x.split("/")[-1].split(".")[0]))
+    files.sort(key=lambda x: int(os.path.basename(x).split(".")[0]))
   return files
 
 
@@ -87,17 +87,17 @@ class Checkpoint:
     except ValueError:
       # signal throws a ValueError if we're not in the main thread
       orig_handler = None
-    
+
     # atomic save
     save_dir = osp.dirname(save_path)
-    tmp_path = osp.join(save_dir, "tmp-{}.ckpt".format(np.random.randint(1e10)))
+    tmp_path = osp.join(save_dir, "tmp-{}.ckpt".format(np.random.randint(1e9)))
     torch.save(state, tmp_path)
     # rename is an atomic operation in python
     # it is POSIX compliant according to docs
     # https://docs.python.org/3/library/os.html#os.rename
     os.rename(tmp_path, save_path)
     logging.info('Saved checkpoint at {}.'.format(save_path))
-    
+
     # restore SIGINT handler
     if orig_handler is not None:
       signal.signal(signal.SIGINT, orig_handler)
@@ -152,7 +152,7 @@ class CheckpointManager:
       global_step (int): The iteration number which will be used
         to name the checkpoint.
     """
-    save_path = osp.join(self.directory, "{:016d}.ckpt".format(global_step))
+    save_path = osp.join(self.directory, "{:09d}.ckpt".format(global_step))
     self.checkpoint.save(save_path)
     self.latest_checkpoint = save_path
     self._trim_checkpoints()
