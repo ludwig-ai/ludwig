@@ -20,13 +20,9 @@ import numpy as np
 import torch
 
 from ludwig.constants import *
-from ludwig.decoders.generic_decoders import Classifier
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss, get_loss_cls
-from ludwig.modules.metric_modules import JaccardMetric, get_metric_classes
-from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry,\

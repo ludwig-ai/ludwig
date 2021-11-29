@@ -20,10 +20,7 @@ from typing import Dict
 import torch
 
 from ludwig.constants import *
-from ludwig.decoders.generic_decoders import Regressor
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.modules.loss_modules import BWCEWLoss, get_loss_cls
-from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric, get_metric_classes, get_metric_cls
 from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
     precision_recall_curve, roc_auc_score, roc_curve
 from ludwig.utils.misc_utils import set_default_value, set_default_values

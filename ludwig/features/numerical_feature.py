@@ -22,22 +22,12 @@ import numpy as np
 import torch
 
 from ludwig.constants import *
-from ludwig.decoders.generic_decoders import Regressor
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss, get_loss_cls
-from ludwig.modules.metric_modules import (
-    MAEMetric,
-    MSEMetric,
-    RMSEMetric,
-    RMSPEMetric,
-    R2Score, get_metric_classes,
-)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.registry import Registry, DEFAULT_KEYS
 
 logger = logging.getLogger(__name__)
 

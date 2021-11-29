@@ -22,12 +22,7 @@ import numpy as np
 import torch
 
 from ludwig.constants import *
-from ludwig.decoders.generic_decoders import Projector
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss, MSELoss, \
-    MAELoss, get_loss_cls
-from ludwig.modules.metric_modules import MSEMetric, MAEMetric, R2Score, \
-    SoftmaxCrossEntropyMetric, get_metric_cls, get_metric_classes
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.torch_utils import LudwigModule

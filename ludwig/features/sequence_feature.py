@@ -21,15 +21,6 @@ from ludwig.constants import *
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-# from ludwig.modules.loss_modules import SequenceSampledSoftmaxCrossEntropyLoss
-# from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
-# from ludwig.modules.metric_modules import EditDistanceMetric, \
-#     SequenceAccuracyMetric
-# from ludwig.modules.metric_modules import PerplexityMetric
-# from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
-# from ludwig.modules.metric_modules import SequenceLossMetric, \
-#     SequenceSampledLossMetric
-from ludwig.modules.metric_modules import TokenAccuracyMetric
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value

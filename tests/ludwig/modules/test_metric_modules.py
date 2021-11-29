@@ -2,6 +2,8 @@ import pytest
 
 import torch
 
+from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, SOFTMAX_CROSS_ENTROPY, CATEGORY, \
+    SIGMOID_CROSS_ENTROPY, SET
 from ludwig.modules import metric_modules
 
 
@@ -73,7 +75,7 @@ def test_bwcewl_metric(
         target: torch.Tensor,
         output: torch.Tensor
 ):
-    metric = metric_modules.BWCEWLMetric()
+    metric = metric_modules.get_metric_cls(BINARY, BINARY_WEIGHTED_CROSS_ENTROPY)()
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -89,7 +91,7 @@ def test_softmax_cross_entropy_metric(
         target: torch.Tensor,
         output: torch.Tensor
 ):
-    metric = metric_modules.SoftmaxCrossEntropyMetric()
+    metric = metric_modules.get_metric_cls(CATEGORY, SOFTMAX_CROSS_ENTROPY)()
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 
@@ -102,7 +104,7 @@ def test_sigmoid_cross_entropy_metric(
         target: torch.Tensor,
         output: torch.Tensor
 ):
-    metric = metric_modules.SigmoidCrossEntropyMetric()
+    metric = metric_modules.get_metric_cls(SET, SIGMOID_CROSS_ENTROPY)()
     metric.update(preds, target)
     assert torch.isclose(output, metric.compute(), rtol=0.0001)
 

@@ -15,23 +15,37 @@
 # ==============================================================================
 
 
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Type
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 from torch.nn import (MSELoss as _MSELoss, L1Loss)
 
 from ludwig.constants import LOGITS, PREDICTIONS, NUMERICAL, VECTOR, TIMESERIES, BINARY, CATEGORY, SEQUENCE, TEXT, SET, \
-    BINARY_WEIGHTED_CROSS_ENTROPY
+    BINARY_WEIGHTED_CROSS_ENTROPY, SIGMOID_CROSS_ENTROPY, SOFTMAX_CROSS_ENTROPY, ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, \
+    ROOT_MEAN_SQUARED_ERROR, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR
 import ludwig.utils.loss_utils as utils
+from ludwig.modules.metric_modules import register_metric, LossMetric
 from ludwig.utils.registry import Registry
-from ludwig.utils.torch_utils import sequence_length_2D
+
 
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
 
 
 loss_registry = Registry()
+
+
+def _register_loss_metric(cls: Type, name: str, features: List[str]):
+    @register_metric(name, features)
+    class _LossMetric(LossMetric):
+        def __init__(self, **kwargs):
+            super().__init__()
+            self.loss_fn = cls(**kwargs)
+
+        def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
+            return self.loss_fn(preds, target)
+    return _LossMetric
 
 
 def register_loss(name: str, features: Union[str, List[str]]):
@@ -43,6 +57,7 @@ def register_loss(name: str, features: Union[str, List[str]]):
             feature_registry = loss_registry.get(feature, {})
             feature_registry[name] = cls
             loss_registry[feature] = feature_registry
+        _register_loss_metric(cls, name, features)
         return cls
     return wrap
 
@@ -58,14 +73,14 @@ class LogitsInputsMixin:
         return LOGITS
 
 
-@register_loss('mean_squared_error', [NUMERICAL, TIMESERIES, VECTOR])
+@register_loss(MEAN_SQUARED_ERROR, [NUMERICAL, TIMESERIES, VECTOR])
 class MSELoss(_MSELoss, LogitsInputsMixin):
     """ Mean squared error. """
     def __init__(self, **kwargs):
         super().__init__()
 
 
-@register_loss('mean_absolute_error', [NUMERICAL, TIMESERIES, VECTOR])
+@register_loss(MEAN_ABSOLUTE_ERROR, [NUMERICAL, TIMESERIES, VECTOR])
 class MAELoss(L1Loss, LogitsInputsMixin):
     """ Mean absolute error. """
 
@@ -73,7 +88,7 @@ class MAELoss(L1Loss, LogitsInputsMixin):
         super().__init__()
 
 
-@register_loss('root_mean_squared_error', [NUMERICAL])
+@register_loss(ROOT_MEAN_SQUARED_ERROR, [NUMERICAL])
 class RMSELoss(nn.Module, LogitsInputsMixin):
     """ Root mean square error. """
 
@@ -85,7 +100,7 @@ class RMSELoss(nn.Module, LogitsInputsMixin):
         return torch.sqrt(self.mse(preds, target))
 
 
-@register_loss('root_mean_squared_percentage_error', [NUMERICAL])
+@register_loss(ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, [NUMERICAL])
 class RMSPELoss(nn.Module, LogitsInputsMixin):
     """ Root mean square percentage error. """
 
@@ -131,7 +146,7 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
         return train_mean_loss
 
 
-@register_loss('softmax_cross_entropy', [CATEGORY, SEQUENCE, TEXT, VECTOR])
+@register_loss(SOFTMAX_CROSS_ENTROPY, [CATEGORY, SEQUENCE, TEXT, VECTOR])
 class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
@@ -215,7 +230,7 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
 #         return loss
 
 
-@register_loss('sigmoid_cross_entropy', [SET])
+@register_loss(SIGMOID_CROSS_ENTROPY, [SET])
 class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
