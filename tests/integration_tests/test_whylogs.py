@@ -56,10 +56,6 @@ def test_whylogs_callback_local(tmpdir):
                 experiment_name=exp_name)
     _, _ = model.predict(test_csv)
 
-    # Check whylogs initialization
-    assert callback.session is not None
-    assert callback.session.is_active() is True
-
     local_training_output_dir = 'output/training'
     local_prediction_output_dir = 'output/prediction'
 
@@ -121,6 +117,3 @@ def run_dask(input_features, output_features, data_csv, val_csv, test_csv):
                     test_set=test_csv,
                     experiment_name=exp_name)
         _, _ = model.predict(test_csv)
-        # Check whylogs initialization
-        assert callback.session is not None
-        assert callback.session.is_active() is True
