@@ -1,5 +1,4 @@
 # !/usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,28 +38,24 @@ import torch
 
 from ludwig.backend import Backend, initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import (FULL, PREPROCESSING, TEST, TRAINING, VALIDATION,
-                              LEARNING_RATE, BATCH_SIZE, AUTO, EVAL_BATCH_SIZE)
+from ludwig.constants import (AUTO, BATCH_SIZE, EVAL_BATCH_SIZE, FULL, LEARNING_RATE, PREPROCESSING,
+                              TEST, TRAINING, VALIDATION)
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
-from ludwig.data.preprocessing import (load_metadata,
-                                       preprocess_for_prediction,
+from ludwig.data.preprocessing import (load_metadata, preprocess_for_prediction,
                                        preprocess_for_training)
 from ludwig.features.feature_registries import update_config_with_metadata
-from ludwig.globals import (MODEL_HYPERPARAMETERS_FILE_NAME,
-                            MODEL_WEIGHTS_FILE_NAME,
-                            TRAIN_SET_METADATA_FILE_NAME,
-                            set_disable_progressbar, LUDWIG_VERSION)
+from ludwig.globals import (LUDWIG_VERSION, MODEL_HYPERPARAMETERS_FILE_NAME,
+                            MODEL_WEIGHTS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME,
+                            set_disable_progressbar)
 from ludwig.models.ecd import ECD
-from ludwig.models.predictor import (calculate_overall_stats,
-                                     print_evaluation_stats,
-                                     save_evaluation_stats,
-                                     save_prediction_outputs)
+from ludwig.models.predictor import (calculate_overall_stats, print_evaluation_stats,
+                                     save_evaluation_stats, save_prediction_outputs)
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import (figure_data_format, generate_kfold_splits,
-                                     load_json, save_json, load_yaml, load_dataset)
+from ludwig.utils.data_utils import (figure_data_format, generate_kfold_splits, load_dataset,
+                                     load_json, load_yaml, save_json)
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import upload_output_directory, path_exists, makedirs
+from ludwig.utils.fs_utils import (makedirs, path_exists, upload_output_directory)
 from ludwig.utils.misc_utils import get_file_names, get_output_directory
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.schema import validate_config
@@ -138,14 +133,14 @@ class LudwigModel:
     """
 
     def __init__(
-            self,
-            config: Union[str, dict],
-            logging_level: int = logging.ERROR,
-            backend: Union[Backend, str] = None,
-            gpus: Union[str, int, List[int]] = None,
-            gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True,
-            callbacks: List[Callback] = None,
+        self,
+        config: Union[str, dict],
+        logging_level: int = logging.ERROR,
+        backend: Union[Backend, str] = None,
+        gpus: Union[str, int, List[int]] = None,
+        gpu_memory_limit: int = None,
+        allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
     ) -> None:
         """
         Constructor for the Ludwig Model class.
@@ -189,8 +184,7 @@ class LudwigModel:
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(
-            backend or self.config.get('backend'))
+        self.backend = initialize_backend(backend or self.config.get('backend'))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
@@ -205,28 +199,26 @@ class LudwigModel:
         # online training state
         self._online_trainer = None
 
-    def train(
-            self,
-            dataset: Union[str, dict, pd.DataFrame] = None,
-            training_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-            validation_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-            test_set: Union[str, dict, pd.DataFrame, Dataset] = None,
-            training_set_metadata: Union[str, dict] = None,
-            data_format: str = None,
-            experiment_name: str = 'api_experiment',
-            model_name: str = 'run',
-            model_resume_path: str = None,
-            skip_save_training_description: bool = False,
-            skip_save_training_statistics: bool = False,
-            skip_save_model: bool = False,
-            skip_save_progress: bool = False,
-            skip_save_log: bool = False,
-            skip_save_processed_input: bool = False,
-            output_directory: str = 'results',
-            random_seed: int = default_random_seed,
-            debug: bool = False,
-            **kwargs
-    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+    def train(self,
+              dataset: Union[str, dict, pd.DataFrame] = None,
+              training_set: Union[str, dict, pd.DataFrame, Dataset] = None,
+              validation_set: Union[str, dict, pd.DataFrame, Dataset] = None,
+              test_set: Union[str, dict, pd.DataFrame, Dataset] = None,
+              training_set_metadata: Union[str, dict] = None,
+              data_format: str = None,
+              experiment_name: str = 'api_experiment',
+              model_name: str = 'run',
+              model_resume_path: str = None,
+              skip_save_training_description: bool = False,
+              skip_save_training_statistics: bool = False,
+              skip_save_model: bool = False,
+              skip_save_progress: bool = False,
+              skip_save_log: bool = False,
+              skip_save_processed_input: bool = False,
+              output_directory: str = 'results',
+              random_seed: int = default_random_seed,
+              debug: bool = False,
+              **kwargs) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
         """This function is used to perform a full training of the model on the
            specified dataset.
 
@@ -328,32 +320,23 @@ class LudwigModel:
                 output_directory = model_resume_path
             else:
                 if self.backend.is_coordinator():
-                    logger.info(
-                        'Model resume path does not exists, '
-                        'starting training from scratch'
-                    )
+                    logger.info('Model resume path does not exists, '
+                                'starting training from scratch')
                 model_resume_path = None
 
         if model_resume_path is None:
             if self.backend.is_coordinator():
-                output_directory = get_output_directory(
-                    output_directory,
-                    experiment_name,
-                    model_name
-                )
+                output_directory = get_output_directory(output_directory, experiment_name,
+                                                        model_name)
             else:
                 output_directory = None
 
         # if we are skipping all saving,
         # there is no need to create a directory that will remain empty
-        should_create_output_directory = not (
-            skip_save_training_description and
-            skip_save_training_statistics and
-            skip_save_model and
-            skip_save_progress and
-            skip_save_log and
-            skip_save_processed_input
-        )
+        should_create_output_directory = not (skip_save_training_description and
+                                              skip_save_training_statistics and skip_save_model and
+                                              skip_save_progress and skip_save_log and
+                                              skip_save_processed_input)
 
         output_url = output_directory
         with upload_output_directory(output_directory) as (output_directory, upload_fn):
@@ -362,6 +345,7 @@ class LudwigModel:
                 # Upload output files (checkpoints, etc.) to remote storage at the end of
                 # each epoch, in case of failure in the middle of training.
                 class UploadOnEpochEndCallback(Callback):
+
                     def on_epoch_end(self, trainer, progress_tracker, save_path):
                         upload_fn()
 
@@ -372,12 +356,10 @@ class LudwigModel:
             if self.backend.is_coordinator():
                 if should_create_output_directory:
                     makedirs(output_directory, exist_ok=True)
-                description_fn, training_stats_fn, model_dir = get_file_names(
-                    output_directory)
+                description_fn, training_stats_fn, model_dir = get_file_names(output_directory)
 
             if isinstance(training_set, Dataset) and training_set_metadata is not None:
-                preprocessed_data = (
-                    training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = (training_set, validation_set, test_set, training_set_metadata)
             else:
                 # save description
                 if self.backend.is_coordinator():
@@ -389,20 +371,17 @@ class LudwigModel:
                         test_set=test_set,
                         training_set_metadata=training_set_metadata,
                         data_format=data_format,
-                        random_seed=random_seed
-                    )
+                        random_seed=random_seed)
 
                     if not skip_save_training_description:
                         save_json(description_fn, description)
                     # print description
-                    logger.info('Experiment name: {}'.format(experiment_name))
-                    logger.info('Model name: {}'.format(model_name))
-                    logger.info(
-                        'Output directory: {}'.format(output_directory))
+                    logger.info(f'Experiment name: {experiment_name}')
+                    logger.info(f'Model name: {model_name}')
+                    logger.info(f'Output directory: {output_directory}')
                     logger.info('\n')
                     for key, value in description.items():
-                        logger.info('{}: {}'.format(
-                            key, pformat(value, indent=4)))
+                        logger.info(f'{key}: {pformat(value, indent=4)}')
                     logger.info('\n')
 
                 for callback in self.callbacks:
@@ -430,45 +409,34 @@ class LudwigModel:
                         debug=debug,
                         **kwargs,
                     )
-                    (training_set,
-                     validation_set,
-                     test_set,
+                    (training_set, validation_set, test_set,
                      training_set_metadata) = preprocessed_data
                 finally:
                     for callback in self.callbacks:
-                        callback.on_preprocess_end(
-                            training_set, validation_set, test_set, training_set_metadata
-                        )
+                        callback.on_preprocess_end(training_set, validation_set, test_set,
+                                                   training_set_metadata)
 
             self.training_set_metadata = training_set_metadata
 
             if self.backend.is_coordinator():
-                logger.info('Training set: {0}'.format(len(training_set)))
+                logger.info(f'Training set: {len(training_set)}')
                 if validation_set is not None:
-                    logger.info('Validation set: {0}'.format(
-                        len(validation_set)))
+                    logger.info(f'Validation set: {len(validation_set)}')
                 if test_set is not None:
-                    logger.info('Test set: {0}'.format(len(test_set)))
+                    logger.info(f'Test set: {len(test_set)}')
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
-                    save_json(
-                        os.path.join(
-                            model_dir,
-                            TRAIN_SET_METADATA_FILE_NAME
-                        ),
-                        training_set_metadata
-                    )
+                    save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME),
+                              training_set_metadata)
 
             for callback in self.callbacks:
-                callback.on_train_init(
-                    base_config=self.base_config,
-                    experiment_directory=output_directory,
-                    experiment_name=experiment_name,
-                    model_name=model_name,
-                    output_directory=output_directory,
-                    resume=model_resume_path is not None
-                )
+                callback.on_train_init(base_config=self.base_config,
+                                       experiment_directory=output_directory,
+                                       experiment_name=experiment_name,
+                                       model_name=model_name,
+                                       output_directory=output_directory,
+                                       resume=model_resume_path is not None)
 
             # Build model if not provided
             # if it was provided it means it was already loaded
@@ -476,25 +444,19 @@ class LudwigModel:
                 if self.backend.is_coordinator():
                     print_boxed('MODEL', print_fun=logger.debug)
                 # update config with metadata properties
-                update_config_with_metadata(
-                    self.config,
-                    training_set_metadata
-                )
-                self.model = LudwigModel.create_model(self.config,
-                                                      random_seed=random_seed)
+                update_config_with_metadata(self.config, training_set_metadata)
+                self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
             # init trainer
-            with self.backend.create_trainer(
-                model=self.model,
-                **self.config[TRAINING],
-                resume=model_resume_path is not None,
-                skip_save_model=skip_save_model,
-                skip_save_progress=skip_save_progress,
-                skip_save_log=skip_save_log,
-                callbacks=train_callbacks,
-                random_seed=random_seed,
-                debug=debug
-            ) as trainer:
+            with self.backend.create_trainer(model=self.model,
+                                             **self.config[TRAINING],
+                                             resume=model_resume_path is not None,
+                                             skip_save_model=skip_save_model,
+                                             skip_save_progress=skip_save_progress,
+                                             skip_save_log=skip_save_log,
+                                             callbacks=train_callbacks,
+                                             random_seed=random_seed,
+                                             debug=debug) as trainer:
                 for callback in self.callbacks:
                     callback.on_train_start(
                         model=self.model,
@@ -506,11 +468,9 @@ class LudwigModel:
                 if self.config[TRAINING][BATCH_SIZE] == AUTO or \
                         self.config[TRAINING][EVAL_BATCH_SIZE] == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
-                    tuned_batch_size = trainer.tune_batch_size(
-                        self.config,
-                        training_set,
-                        random_seed=random_seed
-                    )
+                    tuned_batch_size = trainer.tune_batch_size(self.config,
+                                                               training_set,
+                                                               random_seed=random_seed)
 
                     # TODO(travis): pass these in as args to trainer when we call train,
                     #  to avoid setting state on possibly remote trainer
@@ -524,11 +484,9 @@ class LudwigModel:
 
                 # auto tune learning rate
                 if self.config[TRAINING][LEARNING_RATE] == AUTO:
-                    tuned_learning_rate = trainer.tune_learning_rate(
-                        self.config,
-                        training_set,
-                        random_seed=random_seed
-                    )
+                    tuned_learning_rate = trainer.tune_learning_rate(self.config,
+                                                                     training_set,
+                                                                     random_seed=random_seed)
                     self.config[TRAINING][LEARNING_RATE] = tuned_learning_rate
                     trainer.learning_rate = tuned_learning_rate
 
@@ -546,7 +504,8 @@ class LudwigModel:
                         save_path=model_dir,
                     )
 
-                    self.model, train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+                    (self.model, train_trainset_stats, train_valiset_stats,
+                     train_testset_stats) = train_stats
                     train_stats = {
                         TRAINING: train_trainset_stats,
                         VALIDATION: train_valiset_stats,
@@ -555,7 +514,8 @@ class LudwigModel:
 
                     # save training statistics
                     if self.backend.is_coordinator():
-                        if not skip_save_training_statistics and path_exists(os.path.dirname(training_stats_fn)):
+                        if not skip_save_training_statistics and path_exists(
+                                os.path.dirname(training_stats_fn)):
                             save_json(training_stats_fn, train_stats)
 
                     # grab the results of the model with highest validation test performance
@@ -567,33 +527,20 @@ class LudwigModel:
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         epoch_best_vali_metric, best_vali_metric = best_function(
-                            enumerate(
-                                validation_field_result[validation_metric]),
-                            key=lambda pair: pair[1]
-                        )
-                        logger.info(
-                            'Best validation model epoch: {0}'.format(
-                                epoch_best_vali_metric + 1)
-                        )
-                        logger.info(
-                            'Best validation model {0} on validation set {1}: {2}'.format(
-                                validation_metric, validation_field, best_vali_metric
-                            ))
+                            enumerate(validation_field_result[validation_metric]),
+                            key=lambda pair: pair[1])
+                        logger.info(f'Best validation model epoch: {epoch_best_vali_metric + 1}')
+                        logger.info('Best validation model {} on validation set {}: {}'.format(
+                            validation_metric, validation_field, best_vali_metric))
                         if test_set is not None:
                             best_vali_metric_epoch_test_metric = train_testset_stats[
-                                validation_field][validation_metric][
-                                epoch_best_vali_metric]
+                                validation_field][validation_metric][epoch_best_vali_metric]
 
-                            logger.info(
-                                'Best validation model {0} on test set {1}: {2}'.format(
-                                    validation_metric,
-                                    validation_field,
-                                    best_vali_metric_epoch_test_metric
-                                )
-                            )
-                        logger.info(
-                            '\nFinished: {0}_{1}'.format(experiment_name, model_name))
-                        logger.info('Saved to: {0}'.format(output_directory))
+                            logger.info('Best validation model {} on test set {}: {}'.format(
+                                validation_metric, validation_field,
+                                best_vali_metric_epoch_test_metric))
+                        logger.info(f'\nFinished: {experiment_name}_{model_name}')
+                        logger.info(f'Saved to: {output_directory}')
                 finally:
                     for callback in self.callbacks:
                         callback.on_train_end(output_directory)
@@ -606,14 +553,12 @@ class LudwigModel:
 
                 return train_stats, preprocessed_data, output_url
 
-    def train_online(
-            self,
-            dataset: Union[str, dict, pd.DataFrame],
-            training_set_metadata: Union[str, dict] = None,
-            data_format: str = 'auto',
-            random_seed: int = default_random_seed,
-            debug: bool = False
-    ) -> None:
+    def train_online(self,
+                     dataset: Union[str, dict, pd.DataFrame],
+                     training_set_metadata: Union[str, dict] = None,
+                     data_format: str = 'auto',
+                     random_seed: int = default_random_seed,
+                     debug: bool = False) -> None:
         """Performs one epoch of training of the model on `dataset`.
 
         # Inputs
@@ -655,46 +600,34 @@ class LudwigModel:
             preprocessing_params=self.config[PREPROCESSING],
             backend=self.backend,
             random_seed=random_seed,
-            callbacks=self.callbacks
-        )
+            callbacks=self.callbacks)
 
         if not self.training_set_metadata:
             self.training_set_metadata = training_set_metadata
 
         if not self.model:
-            update_config_with_metadata(
-                self.config,
-                training_set_metadata
-            )
-            self.model = LudwigModel.create_model(self.config,
-                                                  random_seed=random_seed)
+            update_config_with_metadata(self.config, training_set_metadata)
+            self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
 
         if not self._online_trainer:
-            self._online_trainer = self.backend.create_trainer(
-                **self.config[TRAINING],
-                model=self.model,
-                random_seed=random_seed,
-                debug=debug
-            )
+            self._online_trainer = self.backend.create_trainer(**self.config[TRAINING],
+                                                               model=self.model,
+                                                               random_seed=random_seed,
+                                                               debug=debug)
 
-        self.model = self._online_trainer.train_online(
-            self.model,
-            training_dataset,
-        )
+        self.model = self._online_trainer.train_online(training_dataset)
 
-    def predict(
-            self,
-            dataset: Union[str, dict, pd.DataFrame] = None,
-            data_format: str = None,
-            split: str = FULL,
-            batch_size: int = 128,
-            skip_save_unprocessed_output: bool = True,
-            skip_save_predictions: bool = True,
-            output_directory: str = 'results',
-            return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
-            debug=False,
-            **kwargs
-    ) -> Tuple[Union[dict, pd.DataFrame], str]:
+    def predict(self,
+                dataset: Union[str, dict, pd.DataFrame] = None,
+                data_format: str = None,
+                split: str = FULL,
+                batch_size: int = 128,
+                skip_save_unprocessed_output: bool = True,
+                skip_save_predictions: bool = True,
+                output_directory: str = 'results',
+                return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+                debug=False,
+                **kwargs) -> Tuple[Union[dict, pd.DataFrame], str]:
         """
         Using a trained model, make predictions from the provided dataset.
 
@@ -741,22 +674,17 @@ class LudwigModel:
 
         # preprocessing
         logger.debug('Preprocessing')
-        dataset, _ = preprocess_for_prediction(
-            self.config,
-            dataset=dataset,
-            training_set_metadata=self.training_set_metadata,
-            data_format=data_format,
-            split=split,
-            include_outputs=False,
-            backend=self.backend,
-            callbacks=self.callbacks
-        )
+        dataset, _ = preprocess_for_prediction(self.config,
+                                               dataset=dataset,
+                                               training_set_metadata=self.training_set_metadata,
+                                               data_format=data_format,
+                                               split=split,
+                                               include_outputs=False,
+                                               backend=self.backend,
+                                               callbacks=self.callbacks)
 
         logger.debug('Predicting')
-        with self.backend.create_predictor(
-            batch_size=batch_size,
-            debug=debug
-        ) as predictor:
+        with self.backend.create_predictor(batch_size=batch_size, debug=debug) as predictor:
             predictions = predictor.batch_predict(
                 self.model,
                 dataset,
@@ -765,9 +693,7 @@ class LudwigModel:
             if self.backend.is_coordinator():
                 # if we are skipping all saving,
                 # there is no need to create a directory that will remain empty
-                should_create_exp_dir = not (
-                    skip_save_unprocessed_output and skip_save_predictions
-                )
+                should_create_exp_dir = not (skip_save_unprocessed_output and skip_save_predictions)
                 if should_create_exp_dir:
                     makedirs(output_directory, exist_ok=True)
 
@@ -778,44 +704,36 @@ class LudwigModel:
                 self.training_set_metadata,
                 output_directory=output_directory,
                 backend=self.backend,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                or not self.backend.is_coordinator(),
+                skip_save_unprocessed_output=skip_save_unprocessed_output or
+                not self.backend.is_coordinator(),
             )
-            converted_postproc_predictions = convert_predictions(
-                postproc_predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                return_type=return_type
-            )
+            converted_postproc_predictions = convert_predictions(postproc_predictions,
+                                                                 self.model.output_features,
+                                                                 self.training_set_metadata,
+                                                                 return_type=return_type)
 
             if self.backend.is_coordinator():
                 if not skip_save_predictions:
-                    save_prediction_outputs(
-                        postproc_predictions,
-                        output_directory,
-                        self.backend
-                    )
+                    save_prediction_outputs(postproc_predictions, output_directory, self.backend)
 
-                    logger.info('Saved to: {0}'.format(output_directory))
+                    logger.info(f'Saved to: {output_directory}')
 
             return converted_postproc_predictions, output_directory
 
-    def evaluate(
-            self,
-            dataset: Union[str, dict, pd.DataFrame] = None,
-            data_format: str = None,
-            split: str = FULL,
-            batch_size: int = 128,
-            skip_save_unprocessed_output: bool = True,
-            skip_save_predictions: bool = True,
-            skip_save_eval_stats: bool = True,
-            collect_predictions: bool = False,
-            collect_overall_stats: bool = False,
-            output_directory: str = 'results',
-            return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
-            debug: bool = False,
-            **kwargs
-    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+    def evaluate(self,
+                 dataset: Union[str, dict, pd.DataFrame] = None,
+                 data_format: str = None,
+                 split: str = FULL,
+                 batch_size: int = 128,
+                 skip_save_unprocessed_output: bool = True,
+                 skip_save_predictions: bool = True,
+                 skip_save_eval_stats: bool = True,
+                 collect_predictions: bool = False,
+                 collect_overall_stats: bool = False,
+                 output_directory: str = 'results',
+                 return_type: Union[str, dict, pd.DataFrame] = pd.DataFrame,
+                 debug: bool = False,
+                 **kwargs) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
         """This function is used to predict the output variables given the
         input variables using the trained model and compute test statistics
         like performance measures, confusion matrices and the like.
@@ -853,7 +771,7 @@ class LudwigModel:
         :param output_directory: (str, default: `'results'`) the directory that
             will contain the training statistics, TensorBoard logs, the saved
             model and the training progress files.
-        :param return_type: (Union[str, dict, pandas.DataFrame], default: pandas.DataFrame) indicates
+        :param return_type: (Union[str, dict, pd.DataFrame], default: pandas.DataFrame) indicates
             the format to of the returned predictions.
         :param debug: (bool, default: `False`) If `True` turns on `tfdbg`
                 with `inf_or_nan` checks.
@@ -879,14 +797,10 @@ class LudwigModel:
             split=split,
             include_outputs=True,
             backend=self.backend,
-            callbacks=self.callbacks
-        )
+            callbacks=self.callbacks)
 
         logger.debug('Predicting')
-        with self.backend.create_predictor(
-            batch_size=batch_size,
-            debug=debug
-        ) as predictor:
+        with self.backend.create_predictor(batch_size=batch_size, debug=debug) as predictor:
             eval_stats, predictions = predictor.batch_evaluation(
                 self.model,
                 dataset,
@@ -899,30 +813,26 @@ class LudwigModel:
                 if self.backend.df_engine.partitioned:
                     raise ValueError(
                         'Cannot calculate overall stats on a partitioned DataFrame at this time. '
-                        'Set `calculate_overall_stats=False`.'
-                    )
+                        'Set `calculate_overall_stats=False`.')
 
-                overall_stats = calculate_overall_stats(
-                    self.model.output_features,
-                    predictions,
-                    dataset,
-                    training_set_metadata
-                )
+                overall_stats = calculate_overall_stats(self.model.output_features, predictions,
+                                                        dataset, training_set_metadata)
                 eval_stats = {
-                    of_name: {**eval_stats[of_name], **overall_stats[of_name]}
+                    of_name: {
+                        **eval_stats[of_name],
+                        **overall_stats[of_name]
+                    }
                     # account for presence of 'combined' key
-                    if of_name in overall_stats
-                    else {**eval_stats[of_name]} for of_name in eval_stats
+                    if of_name in overall_stats else {
+                        **eval_stats[of_name]
+                    } for of_name in eval_stats
                 }
 
             if self.backend.is_coordinator():
                 # if we are skipping all saving,
                 # there is no need to create a directory that will remain empty
-                should_create_exp_dir = not (
-                    skip_save_unprocessed_output and
-                    skip_save_predictions and
-                    skip_save_eval_stats
-                )
+                should_create_exp_dir = not (skip_save_unprocessed_output and
+                                             skip_save_predictions and skip_save_eval_stats)
                 if should_create_exp_dir:
                     makedirs(output_directory, exist_ok=True)
 
@@ -934,70 +844,61 @@ class LudwigModel:
                     self.training_set_metadata,
                     output_directory=output_directory,
                     backend=self.backend,
-                    skip_save_unprocessed_output=skip_save_unprocessed_output
-                    or not self.backend.is_coordinator(),
+                    skip_save_unprocessed_output=skip_save_unprocessed_output or
+                    not self.backend.is_coordinator(),
                 )
             else:
                 postproc_predictions = predictions  # = {}
 
             if self.backend.is_coordinator():
-                should_save_predictions = (
-                    collect_predictions
-                    and postproc_predictions is not None
-                    and not skip_save_predictions
-                )
+                should_save_predictions = (collect_predictions and
+                                           postproc_predictions is not None and
+                                           not skip_save_predictions)
                 if should_save_predictions:
-                    save_prediction_outputs(
-                        postproc_predictions,
-                        output_directory,
-                        self.backend
-                    )
+                    save_prediction_outputs(postproc_predictions, output_directory, self.backend)
 
                 print_evaluation_stats(eval_stats)
                 if not skip_save_eval_stats:
                     save_evaluation_stats(eval_stats, output_directory)
 
                 if should_save_predictions or not skip_save_eval_stats:
-                    logger.info('Saved to: {0}'.format(output_directory))
+                    logger.info(f'Saved to: {output_directory}')
 
             if collect_predictions:
-                postproc_predictions = convert_predictions(
-                    postproc_predictions,
-                    self.model.output_features,
-                    self.training_set_metadata,
-                    return_type=return_type)
+                postproc_predictions = convert_predictions(postproc_predictions,
+                                                           self.model.output_features,
+                                                           self.training_set_metadata,
+                                                           return_type=return_type)
 
             return eval_stats, postproc_predictions, output_directory
 
-    def experiment(
-            self,
-            dataset: Union[str, dict, pd.DataFrame] = None,
-            training_set: Union[str, dict, pd.DataFrame] = None,
-            validation_set: Union[str, dict, pd.DataFrame] = None,
-            test_set: Union[str, dict, pd.DataFrame] = None,
-            training_set_metadata: Union[str, dict] = None,
-            data_format: str = None,
-            experiment_name: str = 'experiment',
-            model_name: str = 'run',
-            model_load_path: str = None,
-            model_resume_path: str = None,
-            eval_split: str = TEST,
-            skip_save_training_description: bool = False,
-            skip_save_training_statistics: bool = False,
-            skip_save_model: bool = False,
-            skip_save_progress: bool = False,
-            skip_save_log: bool = False,
-            skip_save_processed_input: bool = False,
-            skip_save_unprocessed_output: bool = False,
-            skip_save_predictions: bool = False,
-            skip_save_eval_stats: bool = False,
-            skip_collect_predictions: bool = False,
-            skip_collect_overall_stats: bool = False,
-            output_directory: str = 'results',
-            random_seed: int = default_random_seed,
-            debug: bool = False,
-            **kwargs
-    ) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
+    def experiment(self,
+                   dataset: Union[str, dict, pd.DataFrame] = None,
+                   training_set: Union[str, dict, pd.DataFrame] = None,
+                   validation_set: Union[str, dict, pd.DataFrame] = None,
+                   test_set: Union[str, dict, pd.DataFrame] = None,
+                   training_set_metadata: Union[str, dict] = None,
+                   data_format: str = None,
+                   experiment_name: str = 'experiment',
+                   model_name: str = 'run',
+                   model_load_path: str = None,
+                   model_resume_path: str = None,
+                   eval_split: str = TEST,
+                   skip_save_training_description: bool = False,
+                   skip_save_training_statistics: bool = False,
+                   skip_save_model: bool = False,
+                   skip_save_progress: bool = False,
+                   skip_save_log: bool = False,
+                   skip_save_processed_input: bool = False,
+                   skip_save_unprocessed_output: bool = False,
+                   skip_save_predictions: bool = False,
+                   skip_save_eval_stats: bool = False,
+                   skip_collect_predictions: bool = False,
+                   skip_collect_overall_stats: bool = False,
+                   output_directory: str = 'results',
+                   random_seed: int = default_random_seed,
+                   debug: bool = False,
+                   **kwargs) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
         """
         Trains a model on a dataset's training and validation splits and
         uses it to predict on the test split.
@@ -1093,7 +994,8 @@ class LudwigModel:
             `inf_or_nan` checks.
 
         # Return
-        :return: (Tuple[dict, dict, tuple, str)) `(evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
+        :return: (Tuple[dict, dict, tuple, str))
+            `(evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
             `evaluation_statistics` dictionary with evaluation performance
                 statistics on the test_set,
             `training_statistics` is a dictionary of training statistics for
@@ -1104,11 +1006,7 @@ class LudwigModel:
             filepath string to where results are stored.
 
         """
-        (
-            train_stats,
-            preprocessed_data,
-            output_directory
-        ) = self.train(
+        (train_stats, preprocessed_data, output_directory) = self.train(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -1131,10 +1029,7 @@ class LudwigModel:
             debug=debug,
         )
 
-        (training_set,
-         validation_set,
-         test_set,
-         training_set_metadata) = preprocessed_data
+        (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
 
         eval_set = validation_set
         if eval_split == TRAINING:
@@ -1166,14 +1061,11 @@ class LudwigModel:
                     collect_predictions=not skip_collect_predictions,
                     collect_overall_stats=not skip_collect_overall_stats,
                     return_type='dict',
-                    debug=debug
-                )
+                    debug=debug)
             except NotImplementedError:
-                logger.warning(
-                    "Skipping evaluation as the necessary methods are not "
-                    "supported. Full exception below:\n"
-                    f"{traceback.format_exc()}"
-                )
+                logger.warning("Skipping evaluation as the necessary methods are not "
+                               "supported. Full exception below:\n"
+                               f"{traceback.format_exc()}")
                 eval_stats = None
         else:
             logger.warning(f"The evaluation set {eval_set} was not provided. "
@@ -1182,11 +1074,7 @@ class LudwigModel:
 
         return eval_stats, train_stats, preprocessed_data, output_directory
 
-    def collect_weights(
-            self,
-            tensor_names: List[str] = None,
-            **kwargs
-    ) -> list:
+    def collect_weights(self, tensor_names: List[str] = None, **kwargs) -> list:
         """Load a pre-trained model and collect the tensors with a specific name
 
         # Inputs
@@ -1201,16 +1089,14 @@ class LudwigModel:
         collected_tensors = self.model.collect_weights(tensor_names)
         return collected_tensors
 
-    def collect_activations(
-            self,
-            layer_names: List[str],
-            dataset: Union[str, Dict[str, list], pd.DataFrame],
-            data_format: str = None,
-            split: str = FULL,
-            batch_size: int = 128,
-            debug: bool = False,
-            **kwargs
-    ) -> list:
+    def collect_activations(self,
+                            layer_names: List[str],
+                            dataset: Union[str, Dict[str, list], pd.DataFrame],
+                            data_format: str = None,
+                            split: str = FULL,
+                            batch_size: int = 128,
+                            debug: bool = False,
+                            **kwargs) -> list:
         """Loads a pre-trained model model and input data to collect the values
         of the activations contained in the tensors.
 
@@ -1249,14 +1135,10 @@ class LudwigModel:
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
             split=split,
-            include_outputs=False
-        )
+            include_outputs=False)
 
         logger.debug('Predicting')
-        with self.backend.create_predictor(
-            batch_size=batch_size,
-            debug=debug
-        ) as predictor:
+        with self.backend.create_predictor(batch_size=batch_size, debug=debug) as predictor:
             activations = predictor.batch_collect_activations(
                 self.model,
                 layer_names,
@@ -1265,19 +1147,17 @@ class LudwigModel:
 
             return activations
 
-    def preprocess(
-            self,
-            dataset: Union[str, dict, pd.DataFrame] = None,
-            training_set: Union[str, dict, pd.DataFrame] = None,
-            validation_set: Union[str, dict, pd.DataFrame] = None,
-            test_set: Union[str, dict, pd.DataFrame] = None,
-            training_set_metadata: Union[str, dict] = None,
-            data_format: str = None,
-            skip_save_processed_input: bool = True,
-            random_seed: int = default_random_seed,
-            debug: bool = False,
-            **kwargs
-    ) -> Tuple[Dataset, Dataset, Dataset, dict]:
+    def preprocess(self,
+                   dataset: Union[str, dict, pd.DataFrame] = None,
+                   training_set: Union[str, dict, pd.DataFrame] = None,
+                   validation_set: Union[str, dict, pd.DataFrame] = None,
+                   test_set: Union[str, dict, pd.DataFrame] = None,
+                   training_set_metadata: Union[str, dict] = None,
+                   data_format: str = None,
+                   skip_save_processed_input: bool = True,
+                   random_seed: int = default_random_seed,
+                   debug: bool = False,
+                   **kwargs) -> Tuple[Dataset, Dataset, Dataset, dict]:
         """This function is used to preprocess data.
 
         # Inputs
@@ -1345,12 +1225,9 @@ class LudwigModel:
             preprocessing_params=self.config[PREPROCESSING],
             backend=self.backend,
             random_seed=random_seed,
-            callbacks=self.callbacks
-        )
+            callbacks=self.callbacks)
 
-        (proc_training_set,
-         proc_validation_set,
-         proc_test_set,
+        (proc_training_set, proc_validation_set, proc_test_set,
          training_set_metadata) = preprocessed_data
 
         return proc_training_set, proc_validation_set, proc_test_set, \
@@ -1358,13 +1235,13 @@ class LudwigModel:
 
     @staticmethod
     def load(
-            model_dir: str,
-            logging_level: int = logging.ERROR,
-            backend: Union[Backend, str] = None,
-            gpus: Union[str, int, List[int]] = None,
-            gpu_memory_limit: int = None,
-            allow_parallel_threads: bool = True,
-            callbacks: List[Callback] = None,
+        model_dir: str,
+        logging_level: int = logging.ERROR,
+        backend: Union[Backend, str] = None,
+        gpus: Union[str, int, List[int]] = None,
+        gpu_memory_limit: int = None,
+        allow_parallel_threads: bool = True,
+        callbacks: List[Callback] = None,
     ) -> 'LudwigModel':  # return is an instance of ludwig.api.LudwigModel class
         """This function allows for loading pretrained models
 
@@ -1405,18 +1282,12 @@ class LudwigModel:
         # TensorFlow with default parameters
         backend_param = backend
         backend = initialize_backend(backend)
-        backend.initialize_pytorch(
-            gpus=gpus,
-            gpu_memory_limit=gpu_memory_limit,
-            allow_parallel_threads=allow_parallel_threads
-        )
+        backend.initialize_pytorch(gpus=gpus,
+                                   gpu_memory_limit=gpu_memory_limit,
+                                   allow_parallel_threads=allow_parallel_threads)
 
         config = backend.broadcast_return(
-            lambda: load_json(os.path.join(
-                model_dir,
-                MODEL_HYPERPARAMETERS_FILE_NAME
-            )
-            ))
+            lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
         if backend_param is None and 'backend' in config:
             # Reset backend from config
@@ -1441,19 +1312,13 @@ class LudwigModel:
 
         # load train set metadata
         ludwig_model.training_set_metadata = backend.broadcast_return(
-            lambda: load_metadata(
-                os.path.join(
-                    model_dir,
-                    TRAIN_SET_METADATA_FILE_NAME
-                )
-            )
-        )
+            lambda: load_metadata(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME)))
 
         return ludwig_model
 
     def load_weights(
-            self,
-            model_dir: str,
+        self,
+        model_dir: str,
     ) -> None:
         """
         Loads weights from a pre-trained model
@@ -1473,18 +1338,12 @@ class LudwigModel:
 
         """
         if self.backend.is_coordinator():
-            weights_save_path = os.path.join(
-                model_dir,
-                MODEL_WEIGHTS_FILE_NAME
-            )
+            weights_save_path = os.path.join(model_dir, MODEL_WEIGHTS_FILE_NAME)
             self.model.load_state_dict(torch.load(weights_save_path))
 
         self.backend.sync_model(self.model)
 
-    def save(
-            self,
-            save_path: str
-    ) -> None:
+    def save(self, save_path: str) -> None:
         """This function allows to save models on disk
 
         # Inputs
@@ -1515,16 +1374,10 @@ class LudwigModel:
         torch.save(self.model.state_dict(), model_weights_path)
 
         # save training set metadata
-        training_set_metadata_path = os.path.join(
-            save_path,
-            TRAIN_SET_METADATA_FILE_NAME
-        )
+        training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
         save_json(training_set_metadata_path, self.training_set_metadata)
 
-    def save_config(
-            self,
-            save_path: str
-    ) -> None:
+    def save_config(self, save_path: str) -> None:
         """
         Save config to specoficed location.
 
@@ -1538,10 +1391,7 @@ class LudwigModel:
 
         """
         os.makedirs(save_path, exist_ok=True)
-        model_hyperparameters_path = os.path.join(
-            save_path,
-            MODEL_HYPERPARAMETERS_FILE_NAME
-        )
+        model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         save_json(model_hyperparameters_path, self.config)
 
     def save_savedmodel(self, save_path: str) -> None:
@@ -1573,10 +1423,7 @@ class LudwigModel:
             raise ValueError('Model has not been trained or loaded')
 
     @staticmethod
-    def create_model(
-            config: dict,
-            random_seed: int = default_random_seed
-    ) -> ECD:
+    def create_model(config: dict, random_seed: int = default_random_seed) -> ECD:
         """Instantiates Encoder-Combiner-Decoder (ECD) object
 
         # Inputs
@@ -1618,31 +1465,29 @@ class LudwigModel:
             set_disable_progressbar(False)
 
 
-def kfold_cross_validate(
-        num_folds: int,
-        config: Union[dict, str],
-        dataset: str = None,
-        data_format: str = None,
-        skip_save_training_description: bool = False,
-        skip_save_training_statistics: bool = False,
-        skip_save_model: bool = False,
-        skip_save_progress: bool = False,
-        skip_save_log: bool = False,
-        skip_save_processed_input: bool = False,
-        skip_save_predictions: bool = False,
-        skip_save_eval_stats: bool = False,
-        skip_collect_predictions: bool = False,
-        skip_collect_overall_stats: bool = False,
-        output_directory: str = 'results',
-        random_seed: int = default_random_seed,
-        gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
-        allow_parallel_threads: bool = True,
-        backend: Union[Backend, str] = None,
-        logging_level: int = logging.INFO,
-        debug: bool = False,
-        **kwargs
-) -> Tuple[dict, dict]:
+def kfold_cross_validate(num_folds: int,
+                         config: Union[dict, str],
+                         dataset: str = None,
+                         data_format: str = None,
+                         skip_save_training_description: bool = False,
+                         skip_save_training_statistics: bool = False,
+                         skip_save_model: bool = False,
+                         skip_save_progress: bool = False,
+                         skip_save_log: bool = False,
+                         skip_save_processed_input: bool = False,
+                         skip_save_predictions: bool = False,
+                         skip_save_eval_stats: bool = False,
+                         skip_collect_predictions: bool = False,
+                         skip_collect_overall_stats: bool = False,
+                         output_directory: str = 'results',
+                         random_seed: int = default_random_seed,
+                         gpus: Union[str, int, List[int]] = None,
+                         gpu_memory_limit: int = None,
+                         allow_parallel_threads: bool = True,
+                         backend: Union[Backend, str] = None,
+                         logging_level: int = logging.INFO,
+                         debug: bool = False,
+                         **kwargs) -> Tuple[dict, dict]:
     """Performs k-fold cross validation and returns result data structures.
 
     # Inputs
@@ -1733,11 +1578,9 @@ def kfold_cross_validate(
 
     # check for k_fold
     if num_folds is None:
-        raise ValueError(
-            'k_fold parameter must be specified'
-        )
+        raise ValueError('k_fold parameter must be specified')
 
-    logger.info('starting {:d}-fold cross validation'.format(num_folds))
+    logger.info(f'starting {num_folds:d}-fold cross validation')
 
     # create output_directory if not available
     if not os.path.isdir(output_directory):
@@ -1751,11 +1594,7 @@ def kfold_cross_validate(
     if not data_format or data_format == 'auto':
         data_format = figure_data_format(dataset)
 
-    data_df = load_dataset(
-        dataset,
-        data_format=data_format,
-        df_lib=backend.df_engine.df_lib
-    )
+    data_df = load_dataset(dataset, data_format=data_format, df_lib=backend.df_engine.df_lib)
 
     kfold_cv_stats = {}
     kfold_split_indices = {}
@@ -1772,7 +1611,7 @@ def kfold_cross_validate(
             }
 
             # train and validate model on this fold
-            logger.info("training on fold {:d}".format(fold_num))
+            logger.info(f"training on fold {fold_num:d}")
 
             model = LudwigModel(
                 config=config,
@@ -1782,12 +1621,7 @@ def kfold_cross_validate(
                 gpu_memory_limit=gpu_memory_limit,
                 allow_parallel_threads=allow_parallel_threads,
             )
-            (
-                eval_stats,
-                train_stats,
-                preprocessed_data,
-                output_directory
-            ) = model.experiment(
+            (eval_stats, train_stats, preprocessed_data, output_directory) = model.experiment(
                 training_set=curr_train_df,
                 test_set=curr_test_df,
                 experiment_name='cross_validation',
@@ -1825,19 +1659,12 @@ def kfold_cross_validate(
 
             for metric in fold_eval_stats_of:
                 if metric not in {
-                    'predictions',
-                    'probabilities',
-                    'confusion_matrix',
-                    'overall_stats',
-                    'per_class_stats',
-                    'roc_curve',
-                    'precision_recall_curve'
+                        'predictions', 'probabilities', 'confusion_matrix', 'overall_stats',
+                        'per_class_stats', 'roc_curve', 'precision_recall_curve'
                 }:
                     if metric not in raw_kfold_stats[of_name]:
                         raw_kfold_stats[of_name][metric] = []
-                    raw_kfold_stats[of_name][metric].append(
-                        fold_eval_stats_of[metric]
-                    )
+                    raw_kfold_stats[of_name][metric].append(fold_eval_stats_of[metric])
 
     # calculate overall kfold statistics
     overall_kfold_stats = {}
@@ -1851,21 +1678,19 @@ def kfold_cross_validate(
 
     kfold_cv_stats['overall'] = overall_kfold_stats
 
-    logger.info('completed {:d}-fold cross validation'.format(num_folds))
+    logger.info(f'completed {num_folds:d}-fold cross validation')
 
     return kfold_cv_stats, kfold_split_indices
 
 
-def get_experiment_description(
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        random_seed=None
-):
+def get_experiment_description(config,
+                               dataset=None,
+                               training_set=None,
+                               validation_set=None,
+                               test_set=None,
+                               training_set_metadata=None,
+                               data_format=None,
+                               random_seed=None):
     description = OrderedDict()
     description['ludwig_version'] = LUDWIG_VERSION
     description['command'] = ' '.join(sys.argv)
@@ -1879,7 +1704,7 @@ def get_experiment_description(
             description['commit_hash'] = \
                 subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
                     'utf-8')[:12]
-    except:
+    except:  # noqa: E722
         pass
 
     if random_seed is not None:
@@ -1898,9 +1723,7 @@ def get_experiment_description(
 
     # determine data format if not provided or auto
     if not data_format or data_format == 'auto':
-        data_format = figure_data_format(
-            dataset, training_set, validation_set, test_set
-        )
+        data_format = figure_data_format(dataset, training_set, validation_set, test_set)
 
     if data_format:
         description['data_format'] = str(data_format)
