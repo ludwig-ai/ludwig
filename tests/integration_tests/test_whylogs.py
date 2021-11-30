@@ -101,7 +101,7 @@ def run_dask(input_features, output_features, data_csv, val_csv, test_csv):
         'trainer': {
             'num_workers': 2,
             'resources_per_worker': {
-                'CPU': 0.1,
+                'CPU': 1,
             }
         }
     }
