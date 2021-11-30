@@ -66,7 +66,8 @@ class DaskEngine(DataFrameEngine):
         return data.compute()
 
     def from_pandas(self, df):
-        return dd.from_pandas(df, npartitions=self.parallelism)
+        parallelism = self._parallelism or 1
+        return dd.from_pandas(df, npartitions=parallelism).reset_index()
 
     def map_objects(self, series, map_fn, meta=None):
         meta = meta or ('data', 'object')

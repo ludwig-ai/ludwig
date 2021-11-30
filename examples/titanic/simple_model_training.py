@@ -20,8 +20,24 @@ shutil.rmtree('./results', ignore_errors=True)
 # Download and prepare the dataset
 training_set, _, _ = titanic.load(split=True)
 
+mode = 'ray'
+backend = {
+    'type': 'ray',
+    'processor': {
+        # 'type': 'dask',
+        # 'parallelism': None,
+        # 'persist': True,
+    },
+    'trainer': {
+        'num_workers': 1,
+    },
+    'cache_format': mode,
+    # 'cache_dir': 's3://ludwig-cache.us-west-2.predibase.com',
+}
+
 # Define Ludwig model object that drive model training
 model = LudwigModel(config='./model1_config.yaml',
+                    backend=backend,
                     logging_level=logging.INFO)
 
 # initiate model training

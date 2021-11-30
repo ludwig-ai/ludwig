@@ -185,6 +185,9 @@ class DataFramePreprocessor(DataFormatPreprocessor):
                 'with {} data format.'.format('dataframe')
             )
 
+        if isinstance(dataset, pd.DataFrame):
+            dataset = backend.df_engine.from_pandas(dataset)
+
         return _preprocess_df_for_training(
             features,
             dataset,
