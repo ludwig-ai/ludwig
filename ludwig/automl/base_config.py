@@ -151,13 +151,7 @@ def _create_default_config(
         "time_budget_s"
     ] = time_limit_s
     if time_limit_s is not None:
-        num_samples = base_automl_config["hyperopt"]["sampler"]["num_samples"]
-        if num_samples is not None:
-            # allow trials to get 2x even division, since some trials perform better than avg
-            base_automl_config["hyperopt"]["sampler"]["scheduler"][
-                "max_t"] = (time_limit_s / num_samples) * 2.0
-        else:
-            base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
+        base_automl_config["hyperopt"]["sampler"]["scheduler"]["max_t"] = time_limit_s
     base_automl_config.update(input_and_output_feature_config)
 
     model_configs["base_config"] = base_automl_config
