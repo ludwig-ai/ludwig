@@ -20,7 +20,6 @@ import hashlib
 import json
 import os
 import random
-import subprocess as sp
 from collections import OrderedDict
 from collections.abc import Mapping
 from typing import Union
@@ -48,8 +47,7 @@ def merge_dict(dct, merge_dct):
     """
     dct = copy.deepcopy(dct)
     for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], Mapping)):
+        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping)):
             dct[k] = merge_dict(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -63,8 +61,7 @@ def sum_dicts(dicts, dict_type=dict):
             if key in summed_dict:
                 prev_value = summed_dict[key]
                 if isinstance(value, (dict, OrderedDict)):
-                    summed_dict[key] = sum_dicts([prev_value, value],
-                                                 dict_type=type(value))
+                    summed_dict[key] = sum_dicts([prev_value, value], dict_type=type(value))
                 elif isinstance(value, numpy.ndarray):
                     summed_dict[key] = numpy.concatenate((prev_value, value))
                 else:
@@ -92,11 +89,7 @@ def get_from_registry(key, registry):
     if key in registry:
         return registry[key]
     else:
-        raise ValueError(
-            'Key {} not supported, available options: {}'.format(
-                key, registry.keys()
-            )
-        )
+        raise ValueError('Key {} not supported, available options: {}'.format(key, registry.keys()))
 
 
 def set_default_value(dictionary, key, value):
@@ -111,28 +104,18 @@ def set_default_values(dictionary, default_value_dictionary):
 
 
 def get_class_attributes(c):
-    return set(
-        i for i in dir(c)
-        if not callable(getattr(c, i)) and not i.startswith("_")
-    )
+    return set(i for i in dir(c) if not callable(getattr(c, i)) and not i.startswith("_"))
 
 
-def get_output_directory(
-        output_directory,
-        experiment_name,
-        model_name='run'
-):
-    base_dir_name = os.path.join(
-        output_directory,
-        experiment_name + ('_' if model_name else '') + model_name
-    )
+def get_output_directory(output_directory, experiment_name, model_name='run'):
+    base_dir_name = os.path.join(output_directory,
+                                 experiment_name + ('_' if model_name else '') + model_name)
     return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
 
 
 def get_file_names(output_directory):
     description_fn = os.path.join(output_directory, 'description.json')
-    training_stats_fn = os.path.join(
-        output_directory, 'training_statistics.json')
+    training_stats_fn = os.path.join(output_directory, 'training_statistics.json')
 
     model_dir = os.path.join(output_directory, 'model')
 
