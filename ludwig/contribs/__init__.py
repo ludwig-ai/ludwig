@@ -39,10 +39,12 @@ method with `pass`, or just don't implement the method.
 from .comet import CometCallback
 from .mlflow import MlflowCallback
 from .wandb import WandbCallback
+from .whylogs import WhyLogsCallback
 
 contrib_registry = {
     # Contributors, add your class here:
     'comet': CometCallback,
     'wandb': WandbCallback,
     'mlflow': MlflowCallback,
+    'whylogs': WhyLogsCallback,
 }

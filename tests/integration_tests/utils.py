@@ -663,8 +663,9 @@ def train_with_backend(
         test_set=None,
         predict=True,
         evaluate=True,
+        callbacks=None,
 ):
-    model = LudwigModel(config, backend=backend)
+    model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None
 
     try:

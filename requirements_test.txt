@@ -4,6 +4,7 @@ six>=1.13.0
 wandb
 comet_ml
 mlflow
+whylogs
 
 # For testing BOHB with Ray Tune
 hpbandster
