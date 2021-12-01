@@ -249,10 +249,12 @@ class RayDatasetBatcher(Batcher):
 
     def _to_tensors_fn(self):
         columns = self.columns
+        reshape_map = self.reshape_map
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
-                df[c] = df[c].astype(TensorDtype())
+                if reshape_map.get(c) is not None:
+                    df[c] = df[c].astype(TensorDtype())
             return df
         return to_tensors
 
