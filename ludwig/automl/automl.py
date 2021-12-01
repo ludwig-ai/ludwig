@@ -190,35 +190,19 @@ def _model_select(
 ):
     """
     Performs model selection based on dataset or user specified model.
-    Note: Current implementation returns tabnet by default. If the
-    percentage of numerical features is >90%, the concat model is used.
+    Note: Current implementation returns tabnet by default.
     """
 
     dataset_info = get_dataset_info(dataset) if not isinstance(
         dataset, DatasetInfo) else dataset
     fields = dataset_info.fields
-    row_count = dataset_info.row_count
-
-    total_numerical_feats = 0
-
-    for idx, field in enumerate(fields):
-        missing_value_percent = 1 - float(field.nonnull_values) / row_count
-        dtype = infer_type(field, missing_value_percent)
-        if dtype == NUMERICAL:
-            total_numerical_feats += 1
-
-    percent_numerical_feats = total_numerical_feats / len(fields)
 
     base_config = default_configs["base_config"]
 
     # tabular dataset heuristics
     if len(fields) > 3:
-        if percent_numerical_feats > 0.9:
-            base_config = merge_dict(
-                base_config, default_configs["combiner"]["concat"])
-        else:
-            base_config = merge_dict(
-                base_config, default_configs["combiner"]["tabnet"])
+        base_config = merge_dict(
+            base_config, default_configs["combiner"]["tabnet"])
 
         # override combiner heuristic if explicitly provided by user
         if user_config is not None:
