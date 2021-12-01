@@ -4,33 +4,65 @@
 #   pre-commit run
 # Update this file:
 #   pre-commit autoupdate
+
+ci:
+  autofix_prs: true
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit suggestions"
+  autoupdate_schedule: weekly
+
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
-    -   id: check-ast
-    -   id: check-byte-order-marker
-    -   id: check-case-conflict
-    -   id: check-docstring-first
-    -   id: check-executables-have-shebangs
-    -   id: check-json
-    -   id: check-yaml
-    -   id: debug-statements
-    -   id: detect-aws-credentials
-    -   id: detect-private-key
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
-    -   id: mixed-line-ending
--   repo: https://github.com/asottile/pyupgrade
+      - id: check-ast
+      - id: check-byte-order-marker
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+  - repo: https://github.com/asottile/pyupgrade
     rev: v2.29.1
     hooks:
-    -   id: pyupgrade
+      - id: pyupgrade
         args: [--py36-plus]
--   repo: https://github.com/pre-commit/mirrors-yapf
-    rev: 'v0.31.0'
+  - repo: https://github.com/myint/docformatter
+    rev: v1.4
     hooks:
-    -   id: yapf
--   repo: https://github.com/pycqa/flake8
-    rev: '4.0.1'
+      - id: docformatter
+        args: [--in-place, --wrap-summaries=115, --wrap-descriptions=120]
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.9.3
     hooks:
-    -   id: flake8
+      - id: isort
+        name: Format imports
+  - repo: https://github.com/pycqa/flake8
+    rev: "4.0.1"
+    hooks:
+      - id: flake8
+  - repo: https://github.com/psf/black
+    rev: 21.9b0
+    hooks:
+      - id: black
+        name: Format code
+
+  - repo: https://github.com/asottile/blacken-docs
+    rev: v1.11.0
+    hooks:
+      - id: blacken-docs
+        args: [--line-length=120]
+        additional_dependencies: [black==21.7b0]
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.10
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat_frontmatter
+        exclude: CHANGELOG.md

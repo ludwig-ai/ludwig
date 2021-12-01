@@ -1,9 +1,9 @@
 {
     "editor.rulers": [
-        100
+        120
     ],
     "editor.formatOnSave": true,
-    "python.formatting.provider": "yapf",
+    "python.formatting.provider": "black",
     "python.linting.enabled": true,
     "python.linting.flake8Enabled": true,
     "python.linting.flake8Args": [
