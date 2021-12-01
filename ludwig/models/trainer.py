@@ -533,9 +533,6 @@ class Trainer(BaseTrainer):
                 low = batch_size
                 prev_batch_size = batch_size
                 try:
-                    # re-initalize model...
-                    # TODO(Shreya): Confirm why we re-initialize the model here.
-                    # model = LudwigModel.create_model(config, random_seed)
                     self.train_for_tuning(training_set, batch_size, total_steps=3)
                     count += 1
                     if count >= max_trials:

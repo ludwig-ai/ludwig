@@ -3,6 +3,7 @@ from typing import Optional
 import torch
 import torch.nn.functional as F
 from torch import Tensor
+from torchmetrics.metric import Metric
 
 
 def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool):
@@ -44,3 +45,15 @@ def masked_correct_predictions(targets: Tensor, preds: Tensor, targets_sequence_
     _, masked_correct_preds = dynamic_partition(data=correct_preds, partitions=mask, num_partitions=2)
 
     return masked_correct_preds.type(torch.float32)
+
+
+def get_scalar_from_ludwig_metric(metric: Metric) -> float:
+    """Returns the scalar value of a Ludwig metric.
+
+    Params:
+        metric: Metric object
+
+    Returns:
+        float: scalar value of the metric
+    """
+    return metric.compute().detach().cpu().numpy().item()

@@ -18,11 +18,16 @@ from typing import Callable, Optional
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
-from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import AUROC, IoU, MeanAbsoluteError
-from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric
-from torchmetrics import R2Score as _R2Score
+from torchmetrics import (
+    Accuracy as _Accuracy,
+    AUROC,
+    IoU,
+    MeanAbsoluteError,
+    MeanMetric as _MeanMetric,
+    MeanSquaredError,
+    Metric,
+    _R2Score,
+)
 
 from ludwig.constants import (
     ACCURACY,
@@ -59,7 +64,7 @@ from ludwig.utils.torch_utils import sequence_length_2D
 
 class LudwigMetric(ABC):
     @classmethod
-    def can_report(cls, feature: "OutputFeature") -> bool:
+    def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
         return True
 
     @classmethod
@@ -184,7 +189,7 @@ class LossMetric(MeanMetric, ABC):
         return LOGITS
 
     @classmethod
-    def can_report(cls, feature: "OutputFeature") -> bool:
+    def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
         return False
 
 
@@ -304,7 +309,7 @@ class HitsAtKMetric(_Accuracy, LudwigMetric):
         return LOGITS
 
     @classmethod
-    def can_report(cls, feature: "OutputFeature") -> bool:
+    def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
         return feature.decoder_obj.num_classes > feature.top_k
 
 
@@ -314,7 +319,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
         super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        super().update(preds, target)
+        super().update(preds.detach(), target)
 
     @classmethod
     def get_objective(cls):
