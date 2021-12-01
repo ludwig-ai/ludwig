@@ -22,6 +22,7 @@ tensorboard
 torchmetrics>=0.6.0
 torchinfo
 filelock
+whylogs
 
 # new data format support
 xlwt            # excel
