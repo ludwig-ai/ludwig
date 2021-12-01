@@ -26,7 +26,7 @@ from tests.integration_tests.utils import category_feature, \
 
 
 @pytest.fixture(scope="session", autouse=True)
-def init_tensorflow_cpu(request): 
+def init_tensorflow_cpu(request):
     """Initialize tensorflow at the start of testing to only use CPUs.
 
     This fixture runs once before any tests, and ensures that the main process
