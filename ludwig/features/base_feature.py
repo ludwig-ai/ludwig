@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,25 +17,24 @@ from abc import ABC, abstractmethod
 import copy
 from typing import Dict
 
-from ludwig.decoders.registry import get_decoder_cls
-from ludwig.encoders.registry import get_encoder_cls
-from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
-from ludwig.utils.types import DataFrame
-
+import numpy as np
 import torch
 from torch import Tensor
 
-from ludwig.constants import *
+import ludwig.constants as constants
+from ludwig.decoders.registry import get_decoder_cls
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils import output_feature_utils
+from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, \
     sequence_mask
-
-import numpy as np
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -53,17 +51,17 @@ class BaseFeature:
     def __init__(self, feature, *args, **kwargs):
         super().__init__()
 
-        if NAME not in feature:
+        if constants.NAME not in feature:
             raise ValueError('Missing feature name')
-        self.feature_name = feature[NAME]
+        self.feature_name = feature[constants.NAME]
 
-        if COLUMN not in feature:
-            feature[COLUMN] = self.feature_name
-        self.column = feature[COLUMN]
+        if constants.COLUMN not in feature:
+            feature[constants.COLUMN] = self.feature_name
+        self.column = feature[constants.COLUMN]
 
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
-        self.proc_column = feature[PROC_COLUMN]
+        if constants.PROC_COLUMN not in feature:
+            feature[constants.PROC_COLUMN] = compute_feature_hash(feature)
+        self.proc_column = feature[constants.PROC_COLUMN]
 
         self.type = None
 
@@ -194,18 +192,18 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type, self.loss[TYPE])(**loss_kwargs)
-        self.eval_loss_function = get_metric_cls(self.type, self.loss[TYPE])(**loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type, self.loss[constants.TYPE])(**loss_kwargs)
+        self.eval_loss_function = get_metric_cls(self.type,
+                                                 self.loss[constants.TYPE])(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
-        self.metric_functions = {
-            LOSS: self.eval_loss_function,
-            **{
-                name: cls(**self.loss_kwargs(), **self.metric_kwargs()) for name, cls in get_metric_classes(self.type).items(
-                ) if cls.can_report(self)
-            }
-        }
+        kwargs = {**self.loss_kwargs(), **self.metric_kwargs()}
+
+        self.metric_functions = {constants.LOSS: self.eval_loss_function}
+        for name, cls in get_metric_classes(self.type).items():
+            if cls.can_report(self):
+                self.metric_functions[name] = cls(**kwargs)
 
     def loss_kwargs(self):
         return {}
@@ -225,15 +223,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def get_metrics(self):
         metric_vals = {}
-        for metric_name, metric_onj in self.metric_functions.items():
+        for metric_name, metric_fn in self.metric_functions.items():
             try:
-                metric_vals[metric_name] = metric_onj.compute().detach().cpu().numpy().item()
+                metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
             except Exception as e:
                 logger.error(f'Caught exception computing metric: {metric_name}. Exception: {e}')
         return metric_vals
 
     def reset_metrics(self):
-        for of_name, metric_fn in self.metric_functions.items():
+        for _, metric_fn in self.metric_functions.items():
             if metric_fn is not None:
                 metric_fn.reset()
 
@@ -252,13 +250,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         hidden = self.prepare_decoder_inputs(combiner_output, other_output_hidden, mask=mask)
 
         # ================ Predictions ================
-        logits_input = {HIDDEN: hidden}
+        logits_input = {constants.HIDDEN: hidden}
         # pass supplemental data from encoders to decoder
         if 'encoder_output_state' in combiner_outputs:
             logits_input['encoder_output_state'] = \
                 combiner_outputs['encoder_output_state']
-        if LENGTHS in combiner_outputs:
-            logits_input[LENGTHS] = combiner_outputs[LENGTHS]
+        if constants.LENGTHS in combiner_outputs:
+            logits_input[constants.LENGTHS] = combiner_outputs[constants.LENGTHS]
         logits = self.logits(logits_input, target=target)
 
         # For binary and numerical features, self.logits() is a tensor.
@@ -357,7 +355,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
             try:
                 hidden = torch.cat([hidden] + dependencies_hidden, dim=-1)
-            except:
+            except:  # noqa: E722
                 raise ValueError('Shape mismatch while concatenating dependent features of '
                                  '{}: {}. Concatenating the feature activations tensor {} '
                                  'with activation tensors of dependencies: {}. The error is '
