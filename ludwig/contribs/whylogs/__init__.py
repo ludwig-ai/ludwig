@@ -1,5 +1,7 @@
 from ludwig.callbacks import Callback
-from whylogs import get_or_create_session
+from ludwig.utils.package_utils import LazyLoader
+
+whylogs = LazyLoader('whylogs', globals(), 'whylogs')
 
 
 class WhyLogsCallback(Callback):
@@ -8,7 +10,7 @@ class WhyLogsCallback(Callback):
 
     def on_build_metadata_start(self, df, mode=None):
         def log_dataframe(df_aux):
-            session = get_or_create_session(self.path_to_config)
+            session = whylogs.get_or_create_session(self.path_to_config)
             session.log_dataframe(
                 df_aux,
                 mode,
