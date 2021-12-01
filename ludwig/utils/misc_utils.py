@@ -126,7 +126,7 @@ def get_output_directory(
         output_directory,
         experiment_name + ('_' if model_name else '') + model_name
     )
-    return find_non_existing_dir_by_adding_suffix(base_dir_name)
+    return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
 
 
 def get_file_names(output_directory):
