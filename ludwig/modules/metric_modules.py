@@ -62,7 +62,7 @@ def get_metric_cls(feature: str, name: str):
     return metric_feature_registry[feature][name]
 
 
-class LudwigMetric(ABC):
+class LudwigMetric(ABC): 
     @classmethod
     def can_report(cls, feature: "OutputFeature") -> bool:
         return True
