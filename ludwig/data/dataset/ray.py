@@ -30,7 +30,7 @@ from ray.data import from_dask, read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
-from ludwig.constants import NAME
+from ludwig.constants import NAME, TYPE, BINARY
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
@@ -181,6 +181,7 @@ class RayDatasetBatcher(Batcher):
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
 
+        self.features = features
         self.columns = list(features.keys())
         self.reshape_map = {
             proc_column: training_set_metadata[feature[NAME]].get('reshape')
@@ -249,11 +250,12 @@ class RayDatasetBatcher(Batcher):
 
     def _to_tensors_fn(self):
         columns = self.columns
-        reshape_map = self.reshape_map
+        features = self.features
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
-                if reshape_map.get(c) is not None:
+                # do not convert binary columns: https://github.com/ray-project/ray/issues/20825
+                if features[c][TYPE] != BINARY:
                     df[c] = df[c].astype(TensorDtype())
             return df
         return to_tensors
