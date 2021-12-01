@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,29 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import logging
 from abc import ABC, abstractmethod
-import copy
 from typing import Dict
 
-from ludwig.decoders.registry import get_decoder_cls
-from ludwig.encoders.registry import get_encoder_cls
-from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
-from ludwig.utils.types import DataFrame
-
+import numpy as np
 import torch
 from torch import Tensor
 
-from ludwig.constants import *
+from ludwig.constants import COLUMN, HIDDEN, LENGTHS, LOSS, NAME, PROC_COLUMN, TYPE
+from ludwig.decoders.registry import get_decoder_cls
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils import output_feature_utils
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, sequence_mask
-
-import numpy as np
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +40,9 @@ logger = logging.getLogger(__name__)
 class BaseFeature:
     """Base class for all features.
 
-    Note that this class is not-cooperative (does not forward kwargs), so when constructing
-    feature class hierarchies, there should be only one parent class that derives from base
-    feature.  Other functionality should be put into mixin classes to avoid the diamond
-    pattern.
+    Note that this class is not-cooperative (does not forward kwargs), so when constructing feature class hierarchies,
+    there should be only one parent class that derives from base feature.  Other functionality should be put into mixin
+    classes to avoid the diamond pattern.
     """
 
     def __init__(self, feature, *args, **kwargs):
@@ -206,9 +202,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @abstractmethod
     def logits(self, combiner_outputs: Dict[str, torch.Tensor], **kwargs) -> Dict[str, torch.Tensor]:
-        """
-        Unpacks and feeds combiner_outputs to the decoder. Invoked as part of the output feature's
-        forward pass.
+        """Unpacks and feeds combiner_outputs to the decoder. Invoked as part of the output feature's forward pass.
 
         Args:
             combiner_outputs: Dictionary of tensors from the combiner's forward pass.
@@ -222,8 +216,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def predictions(
         self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str, **kwargs
     ) -> Dict[str, torch.Tensor]:
-        """
-        Computes actual predictions from the outputs of feature decoders.
+        """Computes actual predictions from the outputs of feature decoders.
 
         TODO(Justin): Consider refactoring this to accept feature-specific decoder outputs.
 
@@ -379,10 +372,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
             try:
                 hidden = torch.cat([hidden] + dependencies_hidden, dim=-1)
-            except:
+            except Exception as e:
                 raise ValueError(
                     "Shape mismatch while concatenating dependent features of "
-                    "{}: {}. Concatenating the feature activations tensor {} "
+                    "{}: {}, with error {} Concatenating the feature activations tensor {} "
                     "with activation tensors of dependencies: {}. The error is "
                     "likely due to a mismatch of the second dimension (sequence"
                     " length) or a difference in ranks. Likely solutions are "
@@ -391,7 +384,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                     "features, or disabling the bucketing setting "
                     "bucketing_field to None / null, as activating it will "
                     "reduce the length of the field the bucketing is performed "
-                    "on.".format(self.column, self.dependencies, hidden, dependencies_hidden)
+                    "on.".format(self.column, self.dependencies, e, hidden, dependencies_hidden)
                 )
 
         return hidden
@@ -428,9 +421,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return feature_hidden
 
     def prepare_decoder_inputs(self, combiner_output, other_output_features, mask=None):
-        """
-        Takes the combiner output and the outputs of other outputs features
-        computed so far and performs:
+        """Takes the combiner output and the outputs of other outputs features computed so far and performs:
+
         - reduction of combiner outputs (if needed)
         - concatenating the outputs of dependent features (if needed)
         - output_specific fully connected layers (if needed)
