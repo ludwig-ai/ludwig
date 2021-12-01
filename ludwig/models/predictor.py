@@ -87,6 +87,7 @@ class Predictor(BasePredictor):
                                     file=sys.stdout,
                                     disable=is_progressbar_disabled())
 
+            model.to(self.device)
             predictions = defaultdict(list)
             while not batcher.last_batch():
                 batch = batcher.next_batch()
@@ -104,7 +105,8 @@ class Predictor(BasePredictor):
 
         return from_numpy_dataset(predictions)
 
-    def predict_single(self, model, batch):
+    def predict_single(self, model: ECD, batch):
+        model.to(self.device)
         predictions = defaultdict(list)
         preds = self._predict(model, batch)
         self._accumulate_preds(preds, predictions)
@@ -156,6 +158,7 @@ class Predictor(BasePredictor):
                                     file=sys.stdout,
                                     disable=is_progressbar_disabled())
 
+            model.to(self.device)
             predictions = defaultdict(list)
             while not batcher.last_batch():
                 batch = batcher.next_batch()
@@ -213,6 +216,7 @@ class Predictor(BasePredictor):
                                 file=sys.stdout,
                                 disable=is_progressbar_disabled())
 
+            model.to(self.device)
             collected_tensors = []
             while not batcher.last_batch():
                 batch = batcher.next_batch()
