@@ -6,7 +6,8 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn<1.0
 tqdm
-torch>=1.9.0
+torch==1.9.1 ; platform_system == "Windows"  # https://github.com/pytorch/pytorch/issues/65473
+torch>=1.9.0 ; platform_system != "Windows"
 PyYAML>=3.12
 absl-py
 kaggle

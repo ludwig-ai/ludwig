@@ -1,3 +1,4 @@
 scikit-image>=0.14.2,<=0.18.1
-torchvision>=0.10.0
+torchvision==0.10.1 ; platform_system == "Windows"  # https://github.com/pytorch/pytorch/issues/65473
+torchvision>=0.10.1 ; platform_system != "Windows"
 transformers>=4.10.1
