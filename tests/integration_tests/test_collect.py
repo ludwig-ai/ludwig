@@ -90,7 +90,8 @@ def test_collect_weights(csv_filename):
 
             for weight, filename in zip(weights, filenames):
                 saved_weight = np.load(filename)
-                assert torch.allclose(weight, torch.from_numpy(saved_weight),
+                assert torch.allclose(weight,
+                                      torch.from_numpy(saved_weight).to('cuda' if torch.cuda.is_available() else 'cpu'),
                                       rtol=1.e-4), filename
     finally:
         if output_dir:
