@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Linuf Foundation
+# Copyright (c) 2021 Linux Foundation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -22,14 +22,13 @@ from ludwig.utils.torch_utils import LudwigModule
 
 
 class MLP(LudwigModule):
-
-    def __init__(self,
-                 in_features: Union[int, Tuple[int]],
-                 hidden_size: int,
-                 out_features: Union[int, Tuple[int]] = None,
-                 dropout: float = 0.0):
-        """
-        """
+    def __init__(
+        self,
+        in_features: Union[int, Tuple[int]],
+        hidden_size: int,
+        out_features: Union[int, Tuple[int]] = None,
+        dropout: float = 0.0,
+    ):
         super().__init__()
 
         out_features = out_features or in_features
@@ -56,13 +55,7 @@ class MLP(LudwigModule):
 
 
 class MixerBlock(LudwigModule):
-
-    def __init__(self,
-                 embed_size: int,
-                 n_patches: int,
-                 token_dim: int,
-                 channel_dim: int,
-                 dropout: float = 0.0):
+    def __init__(self, embed_size: int, n_patches: int, token_dim: int, channel_dim: int, dropout: float = 0.0):
         super().__init__()
         self._input_shape = (n_patches, embed_size)
         self._output_shape = (n_patches, embed_size)
@@ -100,7 +93,7 @@ class MixerBlock(LudwigModule):
 
 
 class MLPMixer(LudwigModule):
-    """MLPMixer
+    """MLPMixer.
 
     Implements
     MLP-Mixer: An all-MLP Architecture for Vision
@@ -124,20 +117,24 @@ class MLPMixer(LudwigModule):
         assert (img_height % patch_size == 0) and (img_width % patch_size == 0)
 
         self._input_shape = (in_channels, img_height, img_width)
-        n_patches = int(img_height * img_width / (patch_size**2))
+        n_patches = int(img_height * img_width / (patch_size ** 2))
 
-        self.patch_conv = nn.Conv2d(in_channels=in_channels,
-                                    out_channels=embed_size,
-                                    kernel_size=patch_size,
-                                    stride=patch_size)
+        self.patch_conv = nn.Conv2d(
+            in_channels=in_channels, out_channels=embed_size, kernel_size=patch_size, stride=patch_size
+        )
 
-        self.mixer_blocks = nn.ModuleList([
-            MixerBlock(embed_size=embed_size,
-                       n_patches=n_patches,
-                       token_dim=token_size,
-                       channel_dim=channel_dim,
-                       dropout=dropout) for _ in range(num_layers)
-        ])
+        self.mixer_blocks = nn.ModuleList(
+            [
+                MixerBlock(
+                    embed_size=embed_size,
+                    n_patches=n_patches,
+                    token_dim=token_size,
+                    channel_dim=channel_dim,
+                    dropout=dropout,
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
         self.layer_norm = nn.LayerNorm(normalized_shape=embed_size)
 
