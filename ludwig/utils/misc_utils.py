@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,7 +88,7 @@ def get_from_registry(key, registry):
     if key in registry:
         return registry[key]
     else:
-        raise ValueError('Key {} not supported, available options: {}'.format(key, registry.keys()))
+        raise ValueError(f'Key {key} not supported, available options: {registry.keys()}')
 
 
 def set_default_value(dictionary, key, value):
@@ -104,12 +103,12 @@ def set_default_values(dictionary, default_value_dictionary):
 
 
 def get_class_attributes(c):
-    return set(i for i in dir(c) if not callable(getattr(c, i)) and not i.startswith("_"))
+    return {i for i in dir(c) if not callable(getattr(c, i)) and not i.startswith("_")}
 
 
 def get_output_directory(output_directory, experiment_name, model_name='run'):
     base_dir_name = os.path.join(output_directory,
-                                 experiment_name + ('_' if model_name else '') + model_name)
+                                 experiment_name + ('_' if model_name else '') + (model_name or ''))
     return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
 
 
