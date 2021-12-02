@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +14,40 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import numpy as np
 from typing import Dict
+
+import numpy as np
 import torch
 
-from ludwig.constants import *
-from ludwig.decoders.generic_decoders import Regressor
+from ludwig.constants import (
+    ACCURACY,
+    BINARY,
+    BINARY_WEIGHTED_CROSS_ENTROPY,
+    COLUMN,
+    FILL_WITH_CONST,
+    HIDDEN,
+    LOGITS,
+    LOSS,
+    MISSING_VALUE_STRATEGY_OPTIONS,
+    NAME,
+    PREDICTIONS,
+    PROBABILITIES,
+    PROBABILITY,
+    PROC_COLUMN,
+    SUM,
+    TIED,
+    TYPE,
+)
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.modules.loss_modules import BWCEWLoss, get_loss_cls
-from ludwig.modules.metric_modules import Accuracy, BWCEWLMetric, ROCAUCMetric, get_metric_classes, get_metric_cls
-from ludwig.utils.eval_utils import ConfusionMatrix, average_precision_score,\
-    precision_recall_curve, roc_auc_score, roc_curve
+from ludwig.utils import output_feature_utils, strings_utils
+from ludwig.utils.eval_utils import (
+    average_precision_score,
+    ConfusionMatrix,
+    precision_recall_curve,
+    roc_auc_score,
+    roc_curve,
+)
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils import strings_utils
-from ludwig.utils import output_feature_utils
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +73,7 @@ class BinaryFeatureMixin:
         },
         "fill_value": fill_value_schema,
         "computed_fill_value": fill_value_schema,
-        "fallback_true_label": {'type': 'string'},
+        "fallback_true_label": {"type": "string"},
     }
 
     @staticmethod
@@ -74,27 +93,21 @@ class BinaryFeatureMixin:
                 f"Binary feature column {column.name} expects 2 distinct values, "
                 f"found: {distinct_values.values.tolist()}"
             )
-        if 'fallback_true_label' in preprocessing_parameters:
-            fallback_true_label = preprocessing_parameters['fallback_true_label']
+        if "fallback_true_label" in preprocessing_parameters:
+            fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
             fallback_true_label = sorted(distinct_values)[0]
             logger.warning(
                 f"In case binary feature {column.name} doesn't have conventional boolean values, "
                 f"we will interpret {fallback_true_label} as 1 and the other values as 0. "
                 f"If this is incorrect, please use the category feature type or "
-                f"manually specify the true value with `preprocessing.fallback_true_label`.")
+                f"manually specify the true value with `preprocessing.fallback_true_label`."
+            )
 
-        str2bool = {v: strings_utils.str2bool(
-            v, fallback_true_label) for v in distinct_values}
-        bool2str = [
-            k for k, v in sorted(str2bool.items(), key=lambda item: item[1])
-        ]
+        str2bool = {v: strings_utils.str2bool(v, fallback_true_label) for v in distinct_values}
+        bool2str = [k for k, v in sorted(str2bool.items(), key=lambda item: item[1])]
 
-        return {
-            "str2bool": str2bool,
-            "bool2str": bool2str,
-            "fallback_true_label": fallback_true_label
-        }
+        return {"str2bool": str2bool, "bool2str": bool2str, "fallback_true_label": fallback_true_label}
 
     @staticmethod
     def add_feature_data(
@@ -136,13 +149,12 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.bool, torch.int64, torch.float32]
-        assert len(inputs.shape) == 1 or (
-            len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
         encoder_outputs = self.encoder_obj(inputs)
-        return {'encoder_output': encoder_outputs}
+        return {"encoder_output": encoder_outputs}
 
     @property
     def input_dtype(self):
@@ -157,9 +169,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(
-            input_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -189,8 +199,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(
-            inputs, feature_name, LOGITS)
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
         probabilities = torch.sigmoid(logits)
         predictions = probabilities >= self.threshold
         return {
@@ -222,17 +231,13 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return torch.Size([1])
 
     @staticmethod
-    def update_config_with_metadata(
-        input_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
         overall_stats = {}
-        confusion_matrix = ConfusionMatrix(
-            targets, predictions[PREDICTIONS], labels=["False", "True"]
-        )
+        confusion_matrix = ConfusionMatrix(targets, predictions[PREDICTIONS], labels=["False", "True"])
         overall_stats["confusion_matrix"] = confusion_matrix.cm.tolist()
         overall_stats["overall_stats"] = confusion_matrix.stats()
         overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
@@ -241,15 +246,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             "false_positive_rate": fpr.tolist(),
             "true_positive_rate": tpr.tolist(),
         }
-        overall_stats["roc_auc_macro"] = roc_auc_score(
-            targets, predictions[PROBABILITIES], average="macro"
-        )
-        overall_stats["roc_auc_micro"] = roc_auc_score(
-            targets, predictions[PROBABILITIES], average="micro"
-        )
-        ps, rs, thresholds = precision_recall_curve(
-            targets, predictions[PROBABILITIES]
-        )
+        overall_stats["roc_auc_macro"] = roc_auc_score(targets, predictions[PROBABILITIES], average="macro")
+        overall_stats["roc_auc_micro"] = roc_auc_score(targets, predictions[PROBABILITIES], average="micro")
+        ps, rs, thresholds = precision_recall_curve(targets, predictions[PROBABILITIES])
         overall_stats["precision_recall_curve"] = {
             "precisions": ps.tolist(),
             "recalls": rs.tolist(),
@@ -288,9 +287,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
             false_col = f"{probabilities_col}_{class_names[0]}"
-            result[false_col] = backend.df_engine.map_objects(
-                result[probabilities_col], lambda prob: 1 - prob
-            )
+            result[false_col] = backend.df_engine.map_objects(result[probabilities_col], lambda prob: 1 - prob)
 
             true_col = f"{probabilities_col}_{class_names[1]}"
             result[true_col] = result[probabilities_col]

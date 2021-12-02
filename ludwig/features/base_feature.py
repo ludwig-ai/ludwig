@@ -27,7 +27,7 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.modules.metric_modules import get_metric_classes, get_metric_cls
+from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import merge_dict

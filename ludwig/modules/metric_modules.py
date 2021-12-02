@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 from abc import ABC, abstractmethod
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional
 
 import torch
 import torchmetrics.functional as metrics_F
@@ -51,36 +51,10 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss, SoftmaxCrossEntropyLoss
+from ludwig.modules.metric_registry import metric_registry, register_metric
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
-from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import sequence_length_2D
-
-metric_feature_registry = Registry()
-metric_registry = Registry()
-
-
-def register_metric(name: str, features: Union[str, List[str]]):
-    if isinstance(features, str):
-        features = [features]
-
-    def wrap(cls):
-        for feature in features:
-            feature_registry = metric_feature_registry.get(feature, {})
-            feature_registry[name] = cls
-            metric_feature_registry[feature] = feature_registry
-        metric_registry[name] = cls
-        return cls
-
-    return wrap
-
-
-def get_metric_classes(feature: str):
-    return metric_feature_registry[feature]
-
-
-def get_metric_cls(feature: str, name: str):
-    return metric_feature_registry[feature][name]
 
 
 class LudwigMetric(ABC):
@@ -245,36 +219,6 @@ class SoftmaxCrossEntropyMetric(LossMetric):
 
     def get_current_value(self, preds: Tensor, target: Tensor):
         return self.softmax_cross_entropy_function(preds, target)
-
-
-# @register_metric('sampled_softmax_cross_entropy', [CATEGORY])
-# class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
-#     def __init__(
-#             self,
-#             decoder_obj=None,
-#             num_classes=0,
-#             feature_loss=None,
-#             name="sampled_softmax_cross_entropy_metric",
-#             **kwargs
-#     ):
-#         super(SampledSoftmaxCrossEntropyMetric, self).__init__(name=name)
-#
-#         self.metric_function = SampledSoftmaxCrossEntropyLoss(
-#             decoder_obj=decoder_obj,
-#             num_classes=num_classes,
-#             feature_loss=feature_loss,
-#         )
-#
-#     def update_state(self, y, y_hat):
-#         super().update_state(self.metric_function(y, y_hat))
-#
-#     @classmethod
-#     def get_objective(cls):
-#         return MINIMIZE
-#
-#     @classmethod
-#     def get_inputs(cls):
-#         return LOGITS
 
 
 @register_metric("sigmoid_cross_entropy", [SET])
