@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from typing import Dict
 
 import numpy as np
 import torch
@@ -229,18 +230,16 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             else:
                 metric_fn.update_state(targets, predictions[PREDICTIONS])
 
-    def logits(self, inputs, target=None, training=None):
-        if training and target is not None:
-            return self.decoder_obj._logits_training(
-                inputs,
-                target=target.type(torch.int32),
-            )
-        else:
-            return inputs
+    def logits(self, inputs: Dict[str, torch.Tensor], target=None):
+        # if target is not None:
+        return self.decoder_obj(inputs, target=target.type(torch.int32))
+        # else:
+        #     # ?? What does this mean?
+        #     return inputs
 
-    def predictions(self, inputs, training=None):
-        # Generator Decoder
-        return self.decoder_obj._predictions_eval(inputs)
+    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
+        return self.decoder_obj(inputs)
+        # return self.decoder_obj._predictions_eval(inputs)
 
     def get_prediction_set(self):
         return self.decoder_obj.get_prediction_set()
@@ -249,8 +248,9 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def get_output_dtype(cls):
         return torch.int32
 
-    def get_input_shape(self):
-        return ()
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([1])
 
     @property
     def output_shape(self) -> torch.Size:

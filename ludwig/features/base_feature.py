@@ -201,6 +201,36 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             },
         }
 
+    @abstractmethod
+    def logits(self, combiner_outputs: Dict[str, torch.Tensor], target=None, **kwargs) -> Dict[str, torch.Tensor]:
+        """Unpacks and feeds combiner_outputs to the decoder. Invoked as part of the output feature's forward pass.
+
+        If target is not None, then we are in training.
+
+        Args:
+            combiner_outputs: Dictionary of tensors from the combiner's forward pass.
+        Returns:
+            Dictionary of decoder's output tensors (non-normalized), as well as any additional
+            tensors that may be necessary for computing predictions or evaluation metrics.
+        """
+        pass
+
+    @abstractmethod
+    def predictions(
+        self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str, **kwargs
+    ) -> Dict[str, torch.Tensor]:
+        """Computes actual predictions from the outputs of feature decoders.
+
+        TODO(Justin): Consider refactoring this to accept feature-specific decoder outputs.
+
+        Args:
+            all_decoder_outputs: A dictionary of {feature name}::{tensor_name} -> output tensor.
+        Returns:
+            Dictionary of tensors with predictions as well as any additional tensors that may be
+            necessary for computing evaluation metrics.
+        """
+        pass
+
     def loss_kwargs(self):
         return {}
 
@@ -232,10 +262,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 metric_fn.reset()
 
     def forward(self, inputs, mask=None):
-        # account for output feature target
+        # Account for output feature target. inputs is either:
+        # - [evaluation]    (dict[str, tensor], tensor)
+        # - [training]      ((dict[str, tensor], tensor), targets)
         if isinstance(inputs[0], tuple):
+            # Training.
             local_inputs, target = inputs
         else:
+            # Not training.
             local_inputs = inputs
             target = None
 
@@ -262,7 +296,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         #       keys: logits, projection_input
         #   sequence feature with Tagger Decoder
         #       keys: logits, lengths, projection_input
-
         if isinstance(logits, Tensor):
             logits = {"logits": logits}
 
@@ -333,7 +366,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                         sequence_length = sequence_length_3D(hidden)
                         mask = sequence_mask(sequence_length, sequence_max_length)
                         tiled_representation = torch.mul(
-                            tiled_representation, mask[:, :, np.newaxis].type(torch.float32)
+                            tiled_representation,
+                            mask[:, :, np.newaxis].type(torch.float32),
                         )
 
                         dependencies_hidden.append(tiled_representation)
@@ -351,17 +385,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 hidden = torch.cat([hidden] + dependencies_hidden, dim=-1)
             except Exception as e:
                 raise ValueError(
-                    "Shape mismatch while concatenating dependent features of "
-                    "{}: {}, with exception {}. Concatenating the feature activations tensor {} "
-                    "with activation tensors of dependencies: {}. The error is "
-                    "likely due to a mismatch of the second dimension (sequence"
-                    " length) or a difference in ranks. Likely solutions are "
-                    "setting the maximum_sequence_length of all sequential "
-                    "features to be the same,  or reduce the output of some "
-                    "features, or disabling the bucketing setting "
-                    "bucketing_field to None / null, as activating it will "
-                    "reduce the length of the field the bucketing is performed "
-                    "on.".format(self.column, self.dependencies, e, hidden, dependencies_hidden)
+                    f"Shape mismatch {e} while concatenating dependent features of {self.column}: "
+                    f"{self.dependencies}. Concatenating the feature activations tensor {hidden} "
+                    f"with activation tensors of dependencies: {dependencies_hidden}. The error is "
+                    "likely due to a mismatch of the second dimension (sequence length) or a "
+                    "difference in ranks. Likely solutions are setting the maximum_sequence_length "
+                    "of all sequential features to be the same,  or reduce the output of some "
+                    "features, or disabling the bucketing setting bucketing_field to None / null, "
+                    "as activating it will reduce the length of the field the bucketing is "
+                    "performed on."
                 )
 
         return hidden

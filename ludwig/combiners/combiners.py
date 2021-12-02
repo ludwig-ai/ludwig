@@ -39,7 +39,6 @@ from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 
 logger = logging.getLogger(__name__)
 
-
 sequence_encoder_registry = {
     "stacked_cnn": StackedCNN,
     "parallel_cnn": ParallelCNN,
@@ -49,7 +48,6 @@ sequence_encoder_registry = {
     # todo: add transformer
     # 'transformer': StackedTransformer,
 }
-
 
 combiner_registry = Registry()
 
@@ -174,6 +172,10 @@ class ConcatCombiner(Combiner):
         return_data = {"combiner_output": hidden}
 
         if len(inputs) == 1:
+            # Workaround for including additional tensors from output of input encoders for
+            # potential use in decoders, e.g. LSTM state for seq2seq.
+            # TODO(Justin): Think about how to make this communication work for multi-sequence
+            # features. Other combiners.
             for key, value in [d for d in inputs.values()][0].items():
                 if key != "encoder_output":
                     return_data[key] = value

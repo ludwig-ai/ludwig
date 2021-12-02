@@ -135,7 +135,7 @@ class ECD(LudwigModule):
 
         output_logits = {}
         output_last_hidden = {}
-        for output_feature_name, decoder in self.output_features.items():
+        for output_feature_name, output_feature in self.output_features.items():
             # use presence or absence of targets
             # to signal training or prediction
             decoder_inputs = (combiner_outputs, copy.copy(output_last_hidden))
@@ -144,7 +144,7 @@ class ECD(LudwigModule):
                 # during prediction they are omitted
                 decoder_inputs = (decoder_inputs, targets[output_feature_name])
 
-            decoder_outputs = decoder(decoder_inputs, mask=mask)
+            decoder_outputs = output_feature(decoder_inputs, mask=mask)
 
             # Add decoder outputs to overall output dictionary.
             for decoder_output_name, tensor in decoder_outputs.items():

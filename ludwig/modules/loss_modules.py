@@ -39,7 +39,6 @@ from ludwig.utils.registry import Registry
 # used for Laplace smoothing for candidate samplers
 EPSILON = 1.0e-10
 
-
 loss_registry = Registry()
 
 
