@@ -14,6 +14,19 @@
 # ==============================================================================
 import logging
 
+from ludwig.constants import SEQUENCE, TEXT
+from ludwig.decoders.base import Decoder
+from ludwig.decoders.registry import register_decoder
+
 logger = logging.getLogger(__name__)
 
+
 # TODO(Justin): Implement sequence decoders.
+@register_decoder("generator", [SEQUENCE, TEXT])
+class SequenceGeneratorDecoder(Decoder):
+    pass
+
+
+@register_decoder("tagger", [SEQUENCE, TEXT])
+class SequenceTaggerDecoder(Decoder):
+    pass
