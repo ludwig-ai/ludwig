@@ -183,10 +183,10 @@ class H3Embed(Encoder):
         # Mask out cells beyond the resolution of interest.
         resolution = input_vector[:, 2]
         mask = torch.unsqueeze(
-            torch_utils.sequence_mask(resolution, 15), -1).type(
+            torch_utils.sequence_mask(resolution, 15).to('cuda' if torch.cuda.is_available() else 'cpu'), -1).to('cuda' if torch.cuda.is_available() else 'cpu').type(
             torch.FloatTensor)
         # Batch size X 15(max resolution) X embedding size
-        masked_embedded_cells = embedded_cells * mask
+        masked_embedded_cells = embedded_cells.to('cuda' if torch.cuda.is_available() else 'cpu') * mask.to('cuda' if torch.cuda.is_available() else 'cpu')
 
         # ================ Reduce ================
         # Batch size X H3_INPUT_SIZE X embedding size
@@ -297,9 +297,9 @@ class H3WeightedSum(Encoder):
 
         # ================ Weighted Sum ================
         if self.should_softmax:
-            weights = torch.softmax(self.aggregation_weights, dim=None)
+            weights = torch.softmax(self.aggregation_weights, dim=None).to('cuda' if torch.cuda.is_available() else 'cpu')
         else:
-            weights = self.aggregation_weights
+            weights = self.aggregation_weights.to('cuda' if torch.cuda.is_available() else 'cpu')
 
         hidden = self.sum_sequence_reducer(
             embedded_h3['encoder_output'] * weights)

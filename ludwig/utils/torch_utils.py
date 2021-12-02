@@ -13,10 +13,11 @@ from torch.autograd import Function
 
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
-    """ Returns the number of non-zero elements per sequence. """
+    """Returns the number of non-zero elements per sequence."""
     used = (sequence != 0).type(torch.int32)
     length = torch.sum(used, 1)
     return length
@@ -29,9 +30,7 @@ def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
     return length
 
 
-def sequence_mask(
-        lengths: torch.Tensor,
-        maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
+def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
     if maxlen is None:
         maxlen = lengths.max()
     row_vector = torch.arange(0, maxlen, 1)
@@ -61,9 +60,8 @@ initializer_registry = {
     "kaiming_normal": nn.init.kaiming_normal_,
     "orthogonal": nn.init.orthogonal_,
     "sparse": nn.init.sparse_,
-    'identity': nn.init.eye_,
+    "identity": nn.init.eye_,
     None: nn.init.xavier_uniform_,
-
 }
 
 activations = {
@@ -74,7 +72,7 @@ activations = {
     "sigmoid": nn.Sigmoid,
     "tanh": nn.Tanh,
     "softmax": nn.Softmax,
-    None: nn.Identity
+    None: nn.Identity,
 }
 
 
@@ -82,12 +80,7 @@ def get_activation(activation):
     return activations[activation]()
 
 
-def reg_loss(
-        model: nn.Module,
-        regularizer: str,
-        l1: float = 0.01,
-        l2: float = 0.01
-):
+def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0.01):
     """
     Computes the regularization loss for a given model.
 
@@ -147,7 +140,7 @@ class LudwigModule(Module):
     @abstractmethod
     def input_shape(self) -> torch.Size:
         """Returns size of the input tensor without the batch dimension."""
-        raise NotImplementedError('Abstract class.')
+        raise NotImplementedError("Abstract class.")
 
     @property
     def output_shape(self) -> torch.Size:
@@ -156,14 +149,13 @@ class LudwigModule(Module):
 
     @lru_cache(maxsize=1)
     def _compute_output_shape(self) -> torch.Size:
-        output_tensor = self.forward(
-            torch.rand(2, *self.input_shape).type(self.input_dtype))
+        output_tensor = self.forward(torch.rand(2, *self.input_shape).type(self.input_dtype))
         if isinstance(output_tensor, torch.Tensor):
             return output_tensor.size()[1:]
-        elif isinstance(output_tensor, dict) and 'encoder_output' in output_tensor:
-            return output_tensor['encoder_output'].size()[1:]
+        elif isinstance(output_tensor, dict) and "encoder_output" in output_tensor:
+            return output_tensor["encoder_output"].size()[1:]
         else:
-            raise ValueError('Unknown output tensor type.')
+            raise ValueError("Unknown output tensor type.")
 
 
 class Dense(LudwigModule):
@@ -172,15 +164,11 @@ class Dense(LudwigModule):
         input_size,
         output_size,
         use_bias=True,
-        weights_initializer='xavier_uniform',
-        bias_initializer='zeros',
+        weights_initializer="xavier_uniform",
+        bias_initializer="zeros",
     ):
         super().__init__()
-        self.dense = nn.Linear(
-            in_features=input_size,
-            out_features=output_size,
-            bias=use_bias
-        )
+        self.dense = nn.Linear(in_features=input_size, out_features=output_size, bias=use_bias)
         weights_initializer = initializer_registry[weights_initializer]
         weights_initializer(self.dense.weight)
 
@@ -232,8 +220,7 @@ class SparsemaxFunction(Function):
         ctx.dim = dim
         max_val, _ = input.max(dim=dim, keepdim=True)
         input -= max_val  # same numerical stability trick as for softmax
-        tau, supp_size = SparsemaxFunction._threshold_and_support(input,
-                                                                  dim=dim)
+        tau, supp_size = SparsemaxFunction._threshold_and_support(input, dim=dim)
         output = torch.clamp(input - tau, min=0)
         ctx.save_for_backward(supp_size, output)
         return output
@@ -281,7 +268,6 @@ sparsemax = SparsemaxFunction.apply
 
 
 class Sparsemax(torch.nn.Module):
-
     def __init__(self, dim=-1):
         self.dim = dim
         super(Sparsemax, self).__init__()
@@ -291,19 +277,20 @@ class Sparsemax(torch.nn.Module):
 
 
 def initialize_pytorch(
-        gpus: Optional[Union[int, str, List[int]]] = None,
-        gpu_memory_limit: Optional[float] = None,
-        allow_parallel_threads: bool = True,
-        horovod: Optional["horovod.torch"] = None
+    gpus: Optional[Union[int, str, List[int]]] = None,
+    gpu_memory_limit: Optional[float] = None,
+    allow_parallel_threads: bool = True,
+    horovod: Optional["horovod.torch"] = None,
 ):
     use_horovod = horovod is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
     if _TORCH_INIT_PARAMS is not None:
         if _TORCH_INIT_PARAMS != param_tuple:
             warnings.warn(
-                'PyTorch has already been initialized. Changes to `gpus`, '
-                '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
-                'Start a new Python process to modify these values.')
+                "PyTorch has already been initialized. Changes to `gpus`, "
+                "`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. "
+                "Start a new Python process to modify these values."
+            )
         return
 
     # For reproducivility / determinism, set parallel threads to 1.
@@ -316,10 +303,11 @@ def initialize_pytorch(
     if horovod is not None and gpus is None:
         if 0 < gpu_device_count < horovod.local_size():
             warnings.warn(
-                f'Horovod: disabling GPU support! This host is running with '
-                f'{horovod.local_size()} worker processes but only {gpu_device_count} '
-                f'GPUs. To enable GPU training, reduce the number of worker processes '
-                f'on this host to match the number of GPUs.')
+                f"Horovod: disabling GPU support! This host is running with "
+                f"{horovod.local_size()} worker processes but only {gpu_device_count} "
+                f"GPUs. To enable GPU training, reduce the number of worker processes "
+                f"on this host to match the number of GPUs."
+            )
             gpus = [-1]
         else:
             gpus = [horovod.local_rank()]
@@ -340,15 +328,12 @@ def initialize_pytorch(
             if len(gpus) == 1:
                 torch.cuda.set_device(gpus[0])
             elif len(gpus) > 1:
-                os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(
-                    str(i) for i in gpus)
+                os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in gpus)
 
         # Limit the amount of memory that can be consumed per GPU
         if gpu_memory_limit is not None:
             for gpu in gpus or range(gpu_device_count):
-                torch.cuda.memory.set_per_process_memory_fraction(
-                    gpu_memory_limit, gpu
-                )
+                torch.cuda.memory.set_per_process_memory_fraction(gpu_memory_limit, gpu)
 
     _set_torch_init_params(param_tuple)
 
