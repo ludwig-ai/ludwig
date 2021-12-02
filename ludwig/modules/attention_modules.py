@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class FeedForwardAttentionReducer(LudwigModule):
+
     def __init__(self, input_size, hidden_size=256, activation='tanh'):
         super().__init__()
         self.fc_layer1 = nn.Linear(input_size, hidden_size)
@@ -42,15 +42,14 @@ class FeedForwardAttentionReducer(LudwigModule):
 
 
 class MultiHeadSelfAttention(LudwigModule):
+
     def __init__(self, input_size, hidden_size, num_heads=8):
         super().__init__()
         self.embedding_size = hidden_size
         self.num_heads = num_heads
         if hidden_size % num_heads != 0:
-            raise ValueError(
-                f"hidden size = {hidden_size}, "
-                f"should be divisible by number of heads = {num_heads}"
-            )
+            raise ValueError(f"hidden size = {hidden_size}, "
+                             f"should be divisible by number of heads = {num_heads}")
         self.projection_dim = hidden_size // num_heads
         self.query_dense = nn.Linear(input_size, hidden_size)
         self.key_dense = nn.Linear(input_size, hidden_size)
@@ -68,9 +67,7 @@ class MultiHeadSelfAttention(LudwigModule):
         return output, weights
 
     def separate_heads(self, inputs, batch_size):
-        inputs = torch.reshape(
-            inputs, (batch_size, -1, self.num_heads, self.projection_dim)
-        )
+        inputs = torch.reshape(inputs, (batch_size, -1, self.num_heads, self.projection_dim))
         return torch.permute(inputs, (0, 2, 1, 3))
 
     def forward(self, inputs: torch.Tensor, training=None, mask=None):
@@ -79,46 +76,34 @@ class MultiHeadSelfAttention(LudwigModule):
         query = self.query_dense(inputs)  # (batch_size, seq_len, h)
         key = self.key_dense(inputs)  # (batch_size, seq_len, h)
         value = self.value_dense(inputs)  # (batch_size, seq_len, h)
-        query = self.separate_heads(
-            query, batch_size
-        )  # (batch_size, num_heads, seq_len, projection_dim)
-        key = self.separate_heads(
-            key, batch_size
-        )  # (batch_size, num_heads, seq_len, projection_dim)
-        value = self.separate_heads(
-            value, batch_size
-        )  # (batch_size, num_heads, seq_len, projection_dim)
+        query = self.separate_heads(query,
+                                    batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
+        key = self.separate_heads(key,
+                                  batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
+        value = self.separate_heads(value,
+                                    batch_size)  # (batch_size, num_heads, seq_len, projection_dim)
         outputs, weights = self.attention(query, key, value, mask=mask)
-        outputs = torch.permute(
-            outputs, (0, 2, 1, 3)
-        )  # (batch_size, seq_len, num_heads, projection_dim)
+        outputs = torch.permute(outputs,
+                                (0, 2, 1, 3))  # (batch_size, seq_len, num_heads, projection_dim)
         concat_outputs = torch.reshape(
-            outputs, (batch_size, -1, self.embedding_size)
-        )  # (batch_size, seq_len, h)
-        projected_outputs = self.combine_heads(
-            concat_outputs
-        )  # (batch_size, seq_len, h)
+            outputs, (batch_size, -1, self.embedding_size))  # (batch_size, seq_len, h)
+        projected_outputs = self.combine_heads(concat_outputs)  # (batch_size, seq_len, h)
         return projected_outputs
 
 
 class TransformerBlock(LudwigModule):
-    def __init__(self, input_size, sequence_size, hidden_size, num_heads,
-                 fc_size,
-                 dropout=0.1):
+
+    def __init__(self, input_size, sequence_size, hidden_size, num_heads, fc_size, dropout=0.1):
         super().__init__()
         self.input_size = input_size
         self.sequence_size = sequence_size
+        self.hidden_size = hidden_size
 
-        self.self_attention = MultiHeadSelfAttention(
-            input_size, hidden_size, num_heads=num_heads
-        )
+        self.self_attention = MultiHeadSelfAttention(input_size, hidden_size, num_heads=num_heads)
         self.dropout1 = nn.Dropout(dropout)
         self.layernorm1 = nn.LayerNorm(hidden_size, eps=1e-6)
-        self.fully_connected = nn.Sequential(
-            nn.Linear(input_size, fc_size),
-            get_activation('relu'),
-            nn.Linear(fc_size, hidden_size)
-        )
+        self.fully_connected = nn.Sequential(nn.Linear(input_size, fc_size), get_activation('relu'),
+                                             nn.Linear(fc_size, hidden_size))
         self.dropout2 = nn.Dropout(dropout)
         self.layernorm2 = nn.LayerNorm(hidden_size, eps=1e-6)
 
@@ -137,43 +122,41 @@ class TransformerBlock(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.sequence_size, self.input_size])
+        return torch.Size([self.sequence_size, self.hidden_size])
 
 
 class TransformerStack(LudwigModule):
-    def __init__(
-            self,
-            input_size,
-            sequence_size,
-            hidden_size=256,
-            num_heads=8,
-            fc_size=256,
-            num_layers=1,
-            dropout=0.1,
-            **kwargs
-    ):
+
+    def __init__(self,
+                 input_size,
+                 sequence_size,
+                 hidden_size=256,
+                 num_heads=8,
+                 fc_size=256,
+                 num_layers=1,
+                 dropout=0.1,
+                 **kwargs):
         super().__init__()
         self.supports_masking = True
         self.sequence_size = sequence_size
         self.input_size = input_size
+        self.hidden_size = hidden_size
 
         self.layers = nn.ModuleList()
 
         prior_input_size = input_size
         for i in range(num_layers):
-            layer = TransformerBlock(
-                input_size=prior_input_size,
-                sequence_size=sequence_size,
-                hidden_size=hidden_size,
-                num_heads=num_heads,
-                fc_size=fc_size,
-                dropout=dropout
-            )
+            layer = TransformerBlock(input_size=prior_input_size,
+                                     sequence_size=sequence_size,
+                                     hidden_size=hidden_size,
+                                     num_heads=num_heads,
+                                     fc_size=fc_size,
+                                     dropout=dropout)
             self.layers.append(layer)
             prior_input_size = self.layers[i].output_shape[-1]
 
         for layer in self.layers:
-            logger.debug('   {}'.format(layer._get_name()))
+            logger.debug(f'   {layer._get_name()}')
 
     @property
     def input_shape(self) -> torch.Size:
@@ -187,7 +170,7 @@ class TransformerStack(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.sequence_size, self.input_size])
+        return torch.Size([self.sequence_size, self.hidden_size])
 
 
 # todo future: maybe reintroduce these attention function
