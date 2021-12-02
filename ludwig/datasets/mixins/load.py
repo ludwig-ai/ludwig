@@ -28,9 +28,9 @@ def _split(data_df, split):
         data_df[SPLIT] = pd.to_numeric(data_df[SPLIT])
     if split:
         if SPLIT in data_df:
-            training_set = data_df[data_df[SPLIT] == 0]
-            val_set = data_df[data_df[SPLIT] == 1]
-            test_set = data_df[data_df[SPLIT] == 2]
+            training_set = data_df[data_df[SPLIT] == 0].drop(columns=[SPLIT])
+            val_set = data_df[data_df[SPLIT] == 1].drop(columns=[SPLIT])
+            test_set = data_df[data_df[SPLIT] == 2].drop(columns=[SPLIT])
             return training_set, test_set, val_set
         else:
             raise ValueError("The dataset does not have splits, "
