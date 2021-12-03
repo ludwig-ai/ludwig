@@ -21,6 +21,7 @@ from collections import Counter
 from typing import List, Union
 
 import numpy as np
+import pandas as pd
 
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
@@ -30,6 +31,8 @@ from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 UNKNOWN_SYMBOL = "<UNK>"
 PADDING_SYMBOL = "<PAD>"
+START_SYMBOL = "<SOS>"
+STOP_SYMBOL = "<EOS>"
 PADDING_IDX = 0
 
 SPLIT_REGEX = re.compile(r"\s+")
@@ -162,16 +165,28 @@ def load_vocabulary(vocab_file):
         # return [line.strip() for line in f]
 
 
+def add_or_move_symbol(vocab_list, vocab_set, symbol):
+    """Adds or moves the symbol to the beginning of the list."""
+    if symbol in vocab_set:
+        vocab_list.remove(symbol)
+    vocab_list = [symbol] + vocab_list
+    return vocab_list
+
+
 def create_vocabulary(
     data,
     tokenizer_type="space",
     add_unknown=True,
     add_padding=True,
+    add_start=True,
+    add_stop=True,
     lowercase=True,
     num_most_frequent=None,
     vocab_file=None,
     unknown_symbol=UNKNOWN_SYMBOL,
     padding_symbol=PADDING_SYMBOL,
+    start_symbol=START_SYMBOL,
+    stop_symbol=STOP_SYMBOL,
     pretrained_model_name_or_path=None,
     processor=PANDAS,
 ):
@@ -220,13 +235,13 @@ def create_vocabulary(
     vocab_set = set(vocab)
 
     if add_unknown and tokenizer_type != "hf_tokenizer":
-        if unknown_symbol in vocab_set:
-            vocab.remove(unknown_symbol)
-        vocab = [unknown_symbol] + vocab
+        vocab = add_or_move_symbol(vocab, vocab_set, unknown_symbol)
     if add_padding and tokenizer_type != "hf_tokenizer":
-        if padding_symbol in vocab_set:
-            vocab.remove(padding_symbol)
-        vocab = [padding_symbol] + vocab
+        vocab = add_or_move_symbol(vocab, vocab_set, padding_symbol)
+    if add_start and tokenizer_type != "hf_tokenizer":
+        vocab = add_or_move_symbol(vocab, vocab_set, start_symbol)
+    if add_stop and tokenizer_type != "hf_tokenizer":
+        vocab = add_or_move_symbol(vocab, vocab_set, stop_symbol)
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}
@@ -238,16 +253,9 @@ def create_vocabulary(
     return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
 
 
-def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)()
-
-    format_dtype = int_type(len(unit_to_id) - 1)
-    return _get_sequence_vector(sequence, tokenizer, tokenizer_type, format_dtype, unit_to_id, lowercase=lowercase)
-
-
 def _get_sequence_vector(
     sequence, tokenizer, tokenizer_type, format_dtype, unit_to_id, lowercase=True, unknown_symbol=UNKNOWN_SYMBOL
-):
+) -> np.ndarray:
     unit_sequence = tokenizer(sequence.lower() if lowercase else sequence)
 
     unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)
@@ -260,22 +268,26 @@ def _get_sequence_vector(
                 unit_indices_vector[i] = unit_to_id[curr_unit]
             else:
                 unit_indices_vector[i] = unit_to_id[unknown_symbol]
+
+    # Add start and stop symbols.
+    unit_indices_vector = np.append(unit_indices_vector, unit_to_id[STOP_SYMBOL])
+    unit_indices_vector = np.insert(unit_indices_vector, 0, unit_to_id[START_SYMBOL])
     return unit_indices_vector
 
 
 def build_sequence_matrix(
-    sequences,
+    sequences: pd.core.series.Series,
     inverse_vocabulary,
     tokenizer_type,
     length_limit,
-    padding_symbol,
+    padding_symbol=PADDING_SYMBOL,
     padding="right",
     unknown_symbol=UNKNOWN_SYMBOL,
     lowercase=True,
     tokenizer_vocab_file=None,
     pretrained_model_name_or_path=None,
     processor=PANDAS,
-):
+) -> np.ndarray:
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
@@ -313,6 +325,7 @@ def build_sequence_matrix(
     return padded
 
 
+# TODO: Move to separate tokenizers.py file.
 class BaseTokenizer:
     @abstractmethod
     def __init__(self, **kwargs):
@@ -324,6 +337,7 @@ class BaseTokenizer:
 
 
 class CharactersToListTokenizer(BaseTokenizer):
+    # TODO: Create a separate characters tokenizer that tokenizes based on characters.
     def __call__(self, text):
         return text
 

@@ -1,4 +1,5 @@
-import pandas
+import numpy as np
+import pandas as pd
 import pytest
 
 from ludwig.features.text_feature import TextFeatureMixin
@@ -52,7 +53,7 @@ def test_are_conventional_bools():
 
 
 def test_create_vocabulary():
-    data = pandas.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
+    data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
     preprocessing_parameters = TextFeatureMixin.preprocessing_defaults
 
@@ -74,6 +75,8 @@ def test_create_vocabulary():
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
     assert char_idx2str == [
+        "<EOS>",
+        "<SOS>",
         "<PAD>",
         "<UNK>",
         "hello, i'm a single sentence!",
@@ -101,6 +104,8 @@ def test_create_vocabulary():
     )
 
     assert word_idx2str == [
+        "<EOS>",
+        "<SOS>",
         "<PAD>",
         "<UNK>",
         "sentence",
@@ -119,3 +124,23 @@ def test_create_vocabulary():
         "last",
         "one",
     ]
+
+
+def test_build_sequence_matrix():
+    inverse_vocabulary = {
+        "<EOS>": 0,
+        "<SOS>": 1,
+        "<PAD>": 2,
+        "<UNK>": 3,
+        "a": 4,
+        "b": 5,
+        "c": 6,
+    }
+    sequences = pd.core.series.Series(["a b c", "c b a"])
+    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults
+    sequence_matrix = strings_utils.build_sequence_matrix(
+        sequences, inverse_vocabulary, tokenizer_type=preprocessing_parameters["word_tokenizer"], length_limit=10
+    )
+    assert not (
+        sequence_matrix.tolist() - np.array([[1, 4, 5, 6, 0, 2, 2, 2, 2, 2], [1, 6, 5, 4, 0, 2, 2, 2, 2, 2]])
+    ).any()
