@@ -176,7 +176,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return get_decoder_cls(self.type, self.decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
-        # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(feature_name, loss_class.get_loss_inputs())
         return self.train_loss_function(predictions[prediction_key], targets)

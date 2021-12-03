@@ -27,6 +27,7 @@ from ludwig.constants import (
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
+    LOGITS,
     LOSS,
     MISSING_VALUE_STRATEGY_OPTIONS,
     NAME,
@@ -45,6 +46,7 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
+from ludwig.utils import output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
@@ -230,9 +232,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             num_classes=self.num_classes, feature_loss=self.loss, name="eval_loss"
         )
 
-    def _setup_metrics(self):
-        pass
-
     # overrides super class OutputFeature.update_metrics() method
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
@@ -251,7 +250,20 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         #     return inputs
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        return self.decoder_obj(inputs)
+        print(f"Inside predictions(), inputs.keys() is: {inputs.keys()}")
+        print(f"Inside predictions(), feature_name is: {inputs.keys()}")
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
+        print(f"Inside predictions(), logits.size() is: {logits.size()}")
+        probabilities = torch.softmax(logits, -1)
+        predictions = torch.argmax(logits, -1)
+        predictions = predictions.long()
+
+        # EXPECTED SHAPE OF RETURNED TENSORS
+        # predictions: [batch_size, sequence_length]
+        # probabilities: [batch_size, sequence_length, vocab_size]
+        # logits: [batch_size, sequence_length, vocab_size]
+        return {PREDICTIONS: predictions, PROBABILITIES: probabilities, LOGITS: logits}
+        # return self.decoder_obj(inputs)
         # return self.decoder_obj._predictions_eval(inputs)
 
     def get_prediction_set(self):

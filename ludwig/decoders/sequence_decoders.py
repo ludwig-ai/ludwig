@@ -76,15 +76,15 @@ class SequenceGeneratorDecoder(Decoder):
         # Tensor to store decoder outputs.
         logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
 
-        # Use real go symbol.
-        decoder_input = target[:, 0]
+        # TODO: Use real go symbol.
+        # decoder_input = target[:, 0]
+        decoder_input = torch.ones([batch_size])
 
         # Unsqueeze to account for extra dimension for multilayer layer dimension.
         decoder_hidden = encoder_output_state.unsqueeze(0)
 
-        # Decode until max length. Break if a EOS token is encountered.
-        sequence_length = target.size()[1] if target is not None else self.max_sequence_length
-        for di in range(sequence_length):
+        # Decode until max length.
+        for di in range(self.max_sequence_length):
             decoder_output, decoder_hidden = self.decoder_rnn(decoder_input, decoder_hidden)
 
             # Holding logits for each token.
@@ -96,12 +96,11 @@ class SequenceGeneratorDecoder(Decoder):
             if target is None:
                 _, topi = decoder_output.topk(1)
                 decoder_input = topi.squeeze().detach()  # detach from history as input
-                if decoder_input.item() == 0:  # TODO: Use a real stop symbol.
-                    break
             else:
                 # Teacher forcing
                 decoder_input = target[:, di]
 
+        # TODO: Is projection input important?
         return {LOGITS: logits}
 
 
