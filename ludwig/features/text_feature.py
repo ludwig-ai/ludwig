@@ -103,6 +103,7 @@ class TextFeatureMixin:
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters, backend):
+        print(f"Called feature_meta: {column}")
         (
             char_idx2str,
             char_str2idx,
@@ -159,6 +160,7 @@ class TextFeatureMixin:
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
+        print(f"Called get_feature_meta: {column}")
         column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
         (
@@ -200,6 +202,7 @@ class TextFeatureMixin:
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
+        print(f"Called feature_data: {column}")
         char_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata["char_str2idx"],
