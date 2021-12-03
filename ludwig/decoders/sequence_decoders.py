@@ -13,12 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict
 
 import torch
-import torch.functional as F
 import torch.nn as nn
 
-from ludwig.constants import SEQUENCE, TEXT
+from ludwig.constants import HIDDEN, LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 
@@ -26,20 +26,26 @@ logger = logging.getLogger(__name__)
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size):
+    def __init__(self, hidden_size, vocab_size):
         super().__init__()
         self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
 
-        self.embedding = nn.Embedding(output_size, hidden_size)
-        self.gru = nn.GRU(hidden_size, hidden_size)
-        self.out = nn.Linear(hidden_size, output_size)
+        self.embedding = nn.Embedding(vocab_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.gru = nn.GRU(hidden_size, hidden_size, batch_first=True)
+        self.out = nn.Linear(hidden_size, vocab_size)
         self.softmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, input, hidden):
-        output = self.embedding(input).view(1, 1, -1)
-        output = F.relu(output)
+    def forward(self, input: torch.Tensor, hidden: torch.Tensor):
+        # Unsqueeze predicted token.
+        input = input.unsqueeze(1).to(torch.int)
+
+        output = self.relu(self.embedding(input))
+
         output, hidden = self.gru(output, hidden)
-        output = self.softmax(self.out(output[0]))
+
+        output = self.softmax(self.out(output))
         return output, hidden
 
     def initHidden(self):
@@ -52,63 +58,51 @@ class SequenceGeneratorDecoder(Decoder):
         self,
         vocab_size,
         max_sequence_length=100,
-        cell_type="rnn",
-        state_size=256,
-        embedding_size=64,
-        beam_width=1,
+        cell_type="gru",
+        input_size=256,
         num_layers=1,
-        attention=None,
-        tied_embeddings=None,
-        is_timeseries=False,
-        use_bias=True,
-        weights_initializer="xavier_uniform",
-        bias_initializer="zeros",
-        reduce_input="sum",
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.vocab_size = vocab_size
-        self.decoder_rnn = DecoderRNN(state_size, vocab_size)
+        self.decoder_rnn = DecoderRNN(input_size, vocab_size)
+        self.max_sequence_length = max_sequence_length
 
-        self.GO_SYMBOL = self.vocab_size
-        self.END_SYMBOL = 0
-
-    def forward(self, inputs, targets=None, mask=None):
-        batch_size = inputs.shape()[0]
-
-        # Massage encoder_output to whatever shape is necessary to use decoders.
-        # shape [batch_size, seq_size, state_size]
-        encoder_outputs = inputs["hidden"]
-        # form dependent on cell_type
-        # lstm: list([batch_size, state_size], [batch_size, state_size])
-        # rnn, gru: [batch_size, state_size]
-        encoder_output_state = self.prepare_encoder_output_state(inputs)  # encoder_hidden
+    def forward(self, inputs: Dict[str, torch.Tensor], target=None, mask=None):
+        # inputs[HIDDEN]: [batch_size, seq_size, state_size]
+        encoder_output_state = inputs[HIDDEN]
+        batch_size = encoder_output_state.size()[0]
 
         # Tensor to store decoder outputs.
         logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
 
-        decoder_input = torch.tensor([[self.GO_SYMBOL]])
-        decoder_hidden = encoder_output_state
+        # Use real go symbol.
+        decoder_input = target[:, 0]
+
+        # Unsqueeze to account for extra dimension for multilayer layer dimension.
+        decoder_hidden = encoder_output_state.unsqueeze(0)
 
         # Decode until max length. Break if a EOS token is encountered.
-        sequence_length = targets.size()[1] if targets is not None else self.max_sequence_length
+        sequence_length = target.size()[1] if target is not None else self.max_sequence_length
         for di in range(sequence_length):
-            decoder_output, decoder_hidden, decoder_attention = self.attn_decoder_rnn(
-                decoder_input, decoder_hidden, encoder_outputs
-            )
+            decoder_output, decoder_hidden = self.decoder_rnn(decoder_input, decoder_hidden)
 
-            # Place predictions in a tensor holding predictions for each token.
-            logits[di] = decoder_output
+            # Holding logits for each token.
+            # decoder_output: [batch_size, 1, vocab_size]
+            logits[:, di, :] = decoder_output.data.squeeze(1)
 
             # Determine inputs for next time step.
-            if targets is not None:
+            # TODO: Flip a coin for not using teacher forcing during training.
+            if target is None:
                 _, topi = decoder_output.topk(1)
                 decoder_input = topi.squeeze().detach()  # detach from history as input
-                if decoder_input.item() == self.END_SYMBOL:
+                if decoder_input.item() == 0:  # TODO: Use a real stop symbol.
                     break
             else:
-                # loss += criterion(decoder_output, target_tensor[di])
-                decoder_input = targets[di]  # Teacher forcing
+                # Teacher forcing
+                decoder_input = target[:, di]
+
+        return {LOGITS: logits}
 
 
 @register_decoder("tagger", [SEQUENCE, TEXT])

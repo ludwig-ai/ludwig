@@ -172,6 +172,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # output feature has a custom FC.
         decoder_parameters_copy = copy.copy(decoder_parameters)
         decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
+        print(f"decoder_parameters_copy: {decoder_parameters_copy}")
         return get_decoder_cls(self.type, self.decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):

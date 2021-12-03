@@ -44,6 +44,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature
+from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
@@ -215,7 +216,19 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self._setup_metrics()
 
     def _setup_loss(self):
-        pass
+        if self.loss[TYPE] == "softmax_cross_entropy":
+            self.train_loss_function = SequenceSoftmaxCrossEntropyLoss(
+                num_classes=self.num_classes, feature_loss=self.loss, name="train_loss"
+            )
+        else:
+            # TODO: implement sampled_softmax_cross_entropy.
+            raise ValueError(
+                "Loss type {} is not supported. Valid values are " "'softmax_cross_entropy'".format(self.loss[TYPE])
+            )
+
+        self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+            num_classes=self.num_classes, feature_loss=self.loss, name="eval_loss"
+        )
 
     def _setup_metrics(self):
         pass
@@ -232,7 +245,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def logits(self, inputs: Dict[str, torch.Tensor], target=None):
         # if target is not None:
-        return self.decoder_obj(inputs, target=target.type(torch.int32))
+        return self.decoder_obj(inputs, target=target)
         # else:
         #     # ?? What does this mean?
         #     return inputs
