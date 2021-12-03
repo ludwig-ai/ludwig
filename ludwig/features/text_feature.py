@@ -102,7 +102,6 @@ class TextFeatureMixin:
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters, backend):
-        print(f"Called feature_meta: {column}")
         (
             char_idx2str,
             char_str2idx,
@@ -159,7 +158,6 @@ class TextFeatureMixin:
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
-        print(f"Called get_feature_meta: {column}")
         column = column.astype(str)
         tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
         (
@@ -201,7 +199,6 @@ class TextFeatureMixin:
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters, backend):
-        print(f"Called feature_data: {column}")
         char_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata["char_str2idx"],
@@ -312,7 +309,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
     max_sequence_length = 0
-    num_classes = 0
+    vocab_size = 0
     level = "word"
 
     def __init__(self, feature):
@@ -331,7 +328,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["{}_vocab_size".format(output_feature["level"])]
+        output_feature["vocab_size"] = feature_metadata["{}_vocab_size".format(output_feature["level"])]
         output_feature["max_sequence_length"] = feature_metadata[
             "{}_max_sequence_length".format(output_feature["level"])
         ]
