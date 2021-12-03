@@ -286,6 +286,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             logits_input["encoder_output_state"] = combiner_outputs["encoder_output_state"]
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
+
         logits = self.logits(logits_input, target=target)
 
         # For binary and numerical features, self.logits() is a tensor.
