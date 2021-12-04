@@ -146,7 +146,11 @@ def train_fn(
         training_set_metadata,
     )
 
-    val_shard = rt.get_dataset_shard("val")
+    try:
+        val_shard = rt.get_dataset_shard("val")
+    except KeyError:
+        val_shard = None
+
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
@@ -154,7 +158,11 @@ def train_fn(
             training_set_metadata,
         )
 
-    test_shard = rt.get_dataset_shard("test")
+    try:
+        test_shard = rt.get_dataset_shard("test")
+    except KeyError:
+        test_shard = None
+
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
@@ -184,14 +192,16 @@ class RayTrainerV2(BaseTrainer):
             **kwargs,
         }
 
+        dataset = {"train": training_set.pipeline()}
+        if validation_set is not None:
+            dataset["val"] = validation_set.pipeline(shuffle=False)
+        if test_set is not None:
+            dataset["test"] = test_set.pipeline(shuffle=False)
+
         results, self._validation_field, self._validation_metric = self.trainer.run(
             lambda config: train_fn(**config),
             config={"executable_kwargs": executable_kwargs, "model": model, **kwargs},
-            dataset={
-                "train": training_set.pipeline(),
-                "val": validation_set.pipeline(shuffle=False) if validation_set else None,
-                "test": test_set.pipeline(shuffle=False) if test_set else None,
-            },
+            dataset=dataset,
         )[0]
 
         return results
