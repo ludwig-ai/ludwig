@@ -5,7 +5,7 @@ import torch
 
 from ludwig.encoders.set_encoders import SetSparseEncoder
 
-DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 @pytest.mark.parametrize("vocab", [["a", "b", "c", "d", "e", "f", "g", "h"]])
