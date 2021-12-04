@@ -40,21 +40,13 @@ from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer, load_weights_from_buffer
 
-# TODO(travis): remove for ray 1.8
-_ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
 _ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
-if _ray18:
-    import ray.train as rt
-    from ray.train.trainer import Trainer, TrainWorkerGroup
-    if _ray19:
-        from ray.train.horovod import HorovodConfig
-    else:
-        from ray.train.backends.horovod import HorovodConfig
+import ray.train as rt
+from ray.train.trainer import Trainer, TrainWorkerGroup
+if _ray19:
+    from ray.train.horovod import HorovodConfig
 else:
-    import ray.util.sgd.v2 as rt
-    from ray.util.sgd.v2.trainer import Trainer
-    from ray.util.sgd.v2.trainer import SGDWorkerGroup as TrainWorkerGroup
-    from ludwig.backend._ray17_compat import HorovodConfig
+    from ray.train.backends.horovod import HorovodConfig
 
 
 logger = logging.getLogger(__name__)
@@ -165,9 +157,6 @@ def train_fn(
         remote_model: RayRemoteModel = None,
         training_set_metadata: Dict[str, Any] = None,
         features: Dict[str, Dict] = None,
-        train_shards: List[DatasetPipeline] = None,
-        val_shards: List[DatasetPipeline] = None,
-        test_shards: List[DatasetPipeline] = None,
         **kwargs
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -177,12 +166,12 @@ def train_fn(
     model = remote_model.load()
 
     train_shard = RayDatasetShard(
-        train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
+        rt.get_dataset_shard("train"),
         features,
         training_set_metadata,
     )
 
-    val_shard = val_shards[rt.world_rank()] if val_shards else None #rt.get_dataset_shard("val")
+    val_shard = rt.get_dataset_shard("val")
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
@@ -190,7 +179,7 @@ def train_fn(
             training_set_metadata,
         )
 
-    test_shard = test_shards[rt.world_rank()] if test_shards else None #rt.get_dataset_shard("test")
+    test_shard = rt.get_dataset_shard("test")
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
@@ -221,24 +210,7 @@ class RayTrainerV2(BaseTrainer):
         executable_kwargs = self.executable_kwargs
         remote_model = RayRemoteModel(model)
 
-        # TODO(travis) remove this once `dataset` keyword is supported:
-        wg = TrainWorkerGroup(self.trainer._executor.worker_group)
-        workers = [w for w in wg]
-
-        train_shards = training_set.pipeline().split(
-            n=len(workers), locality_hints=workers, equal=True
-        )
-        val_shards = validation_set.pipeline(shuffle=False).split(
-            n=len(workers), locality_hints=workers
-        ) if validation_set else None
-        test_shards = test_set.pipeline(shuffle=False).split(
-            n=len(workers), locality_hints=workers
-        ) if test_set else None
-
         kwargs = {
-            'train_shards': train_shards,
-            'val_shards': val_shards,
-            'test_shards': test_shards,
             'training_set_metadata': training_set.training_set_metadata,
             'features': training_set.features,
             **kwargs
@@ -251,11 +223,11 @@ class RayTrainerV2(BaseTrainer):
                 'remote_model': remote_model,
                 **kwargs
             },
-            # dataset={
-            #     'train': training_set.pipeline(),
-            #     'val': validation_set.pipeline() if validation_set else None,
-            #     'test': test_set.pipeline() if test_set else None,
-            # },
+            dataset={
+                'train': training_set.pipeline(),
+                'val': validation_set.pipeline() if validation_set else None,
+                'test': test_set.pipeline() if test_set else None,
+            },
         )[0]
 
         weights, *stats = results
