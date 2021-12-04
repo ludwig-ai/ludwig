@@ -920,7 +920,7 @@ class Trainer(BaseTrainer):
                     step=progress_tracker.epoch,
                 )
 
-                if validation_set is not None and len(validation_set) > 0:
+                if validation_set is not None:
                     self.callback(lambda c: c.on_validation_start(
                         self, progress_tracker, save_path))
 
@@ -943,7 +943,7 @@ class Trainer(BaseTrainer):
                     self.callback(lambda c: c.on_validation_end(
                         self, progress_tracker, save_path))
 
-                if test_set is not None and len(test_set) > 0:
+                if test_set is not None:
                     self.callback(lambda c: c.on_test_start(
                         self, progress_tracker, save_path))
 
