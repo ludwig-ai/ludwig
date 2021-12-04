@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""
-This module contains the class and auxiliary methods of a model.
-"""
+"""This module contains the class and auxiliary methods of a model."""
 import gc
 import logging
 import os
@@ -95,7 +93,7 @@ class BaseTrainer(ABC):
 
 class Trainer(BaseTrainer):
     """
-    Trainer is a class that train a model
+    Trainer is a class that trains a model.
     """
 
     def __init__(
@@ -383,7 +381,7 @@ class Trainer(BaseTrainer):
         batch_size: int,
         total_steps: int = 3,
     ):
-        """function to be used by tune_batch_size"""
+        """Function to be used by tune_batch_size"""
         with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
 
             step_count = 0
@@ -1029,10 +1027,8 @@ class Trainer(BaseTrainer):
         tables,
         batch_size=128,
     ):
-        predictor = Predictor(batch_size=batch_size, horovod=self.horovod, debug=self.debug)
-        metrics, predictions = predictor.batch_evaluation(
-            self.model, dataset, collect_predictions=False, dataset_name=dataset_name
-        )
+        predictor = Predictor(self.model, batch_size=batch_size, horovod=self.horovod, debug=self.debug)
+        metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         self.append_metrics(dataset_name, metrics, metrics_log, tables)
 

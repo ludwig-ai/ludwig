@@ -23,6 +23,7 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
+import torch
 from horovod.ray import RayExecutor
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -311,21 +312,29 @@ class RayLegacyTrainer(BaseTrainer):
 
 
 class RayPredictor(BasePredictor):
-    def __init__(self, **predictor_kwargs):
+    def __init__(self, model: ECD, **predictor_kwargs):
         self.batch_size = predictor_kwargs.get("batch_size", 128)
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = model.to(self.device)
 
-    def batch_predict(self, model: ECD, dataset: RayDataset, *args, **kwargs):
+    def batch_predict(self, dataset: RayDataset, *args, **kwargs):
         self._check_dataset(dataset)
 
         predictor_kwargs = self.predictor_kwargs
-        output_columns = get_output_columns(model.output_features)
+        output_columns = get_output_columns(self.model.output_features)
         batch_predictor = self.get_batch_infer_model(
-            model, predictor_kwargs, output_columns, dataset.features, dataset.training_set_metadata, *args, **kwargs
+            self.model,
+            predictor_kwargs,
+            output_columns,
+            dataset.features,
+            dataset.training_set_metadata,
+            *args,
+            **kwargs,
         )
 
-        columns = [f.proc_column for f in model.input_features.values()]
+        columns = [f.proc_column for f in self.model.input_features.values()]
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
@@ -341,15 +350,15 @@ class RayPredictor(BasePredictor):
             .to_dask()
         )
 
-        for of_feature in model.output_features.values():
+        for of_feature in self.model.output_features.values():
             dask_dataset = of_feature.unflatten(dask_dataset)
 
         return dask_dataset
 
-    def predict_single(self, model, batch):
+    def predict_single(self, batch):
         raise NotImplementedError("predict_single can only be called on a local predictor")
 
-    def batch_evaluation(self, model, dataset, collect_predictions=False, **kwargs):
+    def batch_evaluation(self, dataset, collect_predictions=False, **kwargs):
         raise NotImplementedError("Ray backend does not support batch evaluation at this time.")
 
     def batch_collect_activations(self, model, *args, **kwargs):
@@ -439,9 +448,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
             # TODO: deprecated 0.5
             return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
 
-    def create_predictor(self, **kwargs):
+    def create_predictor(self, model: ECD, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
-        return RayPredictor(**executable_kwargs)
+        return RayPredictor(model, **executable_kwargs)
 
     def set_distributed_kwargs(self, **kwargs):
         self._horovod_kwargs = kwargs
