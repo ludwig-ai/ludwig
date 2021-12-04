@@ -1,38 +1,39 @@
-import datetime
-import os
-import uuid
 import copy
+import datetime
 import json
+import os
 import shutil
 import threading
 import time
+import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union, Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from ludwig.api import LudwigModel
-from ludwig.backend import RAY, initialize_backend
+from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
-from ludwig.constants import *
-from ludwig.hyperopt.results import TrialResults, HyperoptResults, RayTuneResults
-from ludwig.hyperopt.sampling import HyperoptSampler, RayTuneSampler, logger
+from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINING, TYPE, VALIDATION
+from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
+from ludwig.hyperopt.sampling import HyperoptSampler, logger, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import get_from_registry, hash_dict
 from ludwig.utils.fs_utils import has_remote_protocol
+from ludwig.utils.misc_utils import get_from_registry, hash_dict
 
 try:
     import ray
-    from ray.util.queue import Queue as RayQueue
     from ray import tune
     from ray.tune import register_trainable
     from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
+    from ray.tune.sync_client import CommandBasedClient
     from ray.tune.syncer import get_cloud_sync_client
     from ray.tune.utils import wait_for_gpu
     from ray.tune.utils.placement_groups import PlacementGroupFactory
-    from ray.tune.sync_client import CommandBasedClient
+    from ray.util.queue import Queue as RayQueue
+
     from ludwig.backend.ray import RayBackend
 except ImportError:
     ray = None
@@ -57,8 +58,9 @@ def _get_relative_checkpoints_dir_parts(path: Path):
 
 
 class HyperoptExecutor(ABC):
-    def __init__(self, hyperopt_sampler: Union[dict, HyperoptSampler],
-                 output_feature: str, metric: str, split: str) -> None:
+    def __init__(
+        self, hyperopt_sampler: Union[dict, HyperoptSampler], output_feature: str, metric: str, split: str
+    ) -> None:
         self.hyperopt_sampler = hyperopt_sampler
         self.output_feature = output_feature
         self.metric = metric
@@ -90,7 +92,7 @@ class HyperoptExecutor(ABC):
             return False
         stats = stats[self.output_feature]
 
-        for metric_part in self.metric.split('.'):
+        for metric_part in self.metric.split("."):
             if not isinstance(stats, dict) or metric_part not in stats:
                 return False
             stats = stats[metric_part]
@@ -98,46 +100,44 @@ class HyperoptExecutor(ABC):
 
     def get_metric_score(self, train_stats, eval_stats) -> float:
         if self._has_metric(train_stats, TEST):
-            logger.info(
-                "Returning metric score from training (test) statistics")
+            logger.info("Returning metric score from training (test) statistics")
             return self.get_metric_score_from_train_stats(train_stats, TEST)
         elif self._has_eval_metric(eval_stats):
-            logger.info("Returning metric score from eval statistics. "
-                        "If skip_save_model is True, eval statistics "
-                        "are calculated using the model at the last epoch "
-                        "rather than the model at the epoch with "
-                        "best validation performance")
+            logger.info(
+                "Returning metric score from eval statistics. "
+                "If skip_save_model is True, eval statistics "
+                "are calculated using the model at the last epoch "
+                "rather than the model at the epoch with "
+                "best validation performance"
+            )
             return self.get_metric_score_from_eval_stats(eval_stats)
         elif self._has_metric(train_stats, VALIDATION):
-            logger.info(
-                "Returning metric score from training (validation) statistics")
+            logger.info("Returning metric score from training (validation) statistics")
             return self.get_metric_score_from_train_stats(train_stats, VALIDATION)
         elif self._has_metric(train_stats, TRAINING):
-            logger.info("Returning metric score from training split statistics, "
-                        "as no test / validation / eval sets were given")
+            logger.info(
+                "Returning metric score from training split statistics, "
+                "as no test / validation / eval sets were given"
+            )
             return self.get_metric_score_from_train_stats(train_stats, TRAINING)
         else:
-            raise RuntimeError(
-                "Unable to obtain metric score from missing training / eval statistics")
+            raise RuntimeError("Unable to obtain metric score from missing training / eval statistics")
 
     def get_metric_score_from_eval_stats(self, eval_stats) -> Union[float, list]:
         stats = eval_stats[self.output_feature]
-        for metric_part in self.metric.split('.'):
+        for metric_part in self.metric.split("."):
             if isinstance(stats, dict):
                 if metric_part in stats:
                     stats = stats[metric_part]
                 else:
-                    raise ValueError(
-                        f"Evaluation statistics do not contain "
-                        f"the metric {self.metric}")
+                    raise ValueError(f"Evaluation statistics do not contain " f"the metric {self.metric}")
             else:
-                raise ValueError(f"Evaluation statistics do not contain "
-                                 f"the metric {self.metric}")
+                raise ValueError(f"Evaluation statistics do not contain " f"the metric {self.metric}")
 
         if not isinstance(stats, float):
-            raise ValueError(f"The metric {self.metric} in "
-                             f"evaluation statistics is not "
-                             f"a numerical value: {stats}")
+            raise ValueError(
+                f"The metric {self.metric} in " f"evaluation statistics is not " f"a numerical value: {stats}"
+            )
         return stats
 
     def get_metric_score_from_train_stats(self, train_stats, select_split=None, returned_split=None) -> float:
@@ -155,97 +155,92 @@ class HyperoptExecutor(ABC):
 
         # results of the model with highest validation test performance
         epoch_best_vali_metric, best_vali_metric = best_function(
-            enumerate(validation_field_result[self.metric]),
-            key=lambda pair: pair[1]
+            enumerate(validation_field_result[self.metric]), key=lambda pair: pair[1]
         )
-        best_vali_metric_epoch_eval_metric = train_evalset_stats[
-            self.output_feature][self.metric][
-            epoch_best_vali_metric]
+        best_vali_metric_epoch_eval_metric = train_evalset_stats[self.output_feature][self.metric][
+            epoch_best_vali_metric
+        ]
 
         return best_vali_metric_epoch_eval_metric
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
-            hyperopt_results, key=lambda hp_res: hp_res.metric_score,
-            reverse=self.hyperopt_sampler.goal == MAXIMIZE
+            hyperopt_results, key=lambda hp_res: hp_res.metric_score, reverse=self.hyperopt_sampler.goal == MAXIMIZE
         )
 
     @abstractmethod
     def execute(
-            self,
-            config,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
-            data_format=None,
-            experiment_name="hyperopt",
-            model_name="run",
-            model_load_path=None,
-            model_resume_path=None,
-            skip_save_training_description=False,
-            skip_save_training_statistics=False,
-            skip_save_model=False,
-            skip_save_progress=False,
-            skip_save_log=False,
-            skip_save_processed_input=True,
-            skip_save_unprocessed_output=False,
-            skip_save_predictions=False,
-            skip_save_eval_stats=False,
-            output_directory="results",
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
-            callbacks=None,
-            backend=None,
-            random_seed=default_random_seed,
-            debug=False,
-            **kwargs
+        self,
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        experiment_name="hyperopt",
+        model_name="run",
+        model_load_path=None,
+        model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
+        skip_save_processed_input=True,
+        skip_save_unprocessed_output=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
+        output_directory="results",
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        callbacks=None,
+        backend=None,
+        random_seed=default_random_seed,
+        debug=False,
+        **kwargs,
     ) -> HyperoptResults:
         pass
 
 
 class SerialExecutor(HyperoptExecutor):
     def __init__(
-            self, hyperopt_sampler: HyperoptSampler,
-            output_feature: str,
-            metric: str, split: str, **kwargs
+        self, hyperopt_sampler: HyperoptSampler, output_feature: str, metric: str, split: str, **kwargs
     ) -> None:
-        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
-                                  metric, split)
+        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature, metric, split)
 
     def execute(
-            self,
-            config,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
-            data_format=None,
-            experiment_name="hyperopt",
-            model_name="run",
-            # model_load_path=None,
-            # model_resume_path=None,
-            skip_save_training_description=False,
-            skip_save_training_statistics=False,
-            skip_save_model=False,
-            skip_save_progress=False,
-            skip_save_log=False,
-            skip_save_processed_input=True,
-            skip_save_unprocessed_output=False,
-            skip_save_predictions=False,
-            skip_save_eval_stats=False,
-            output_directory="results",
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
-            callbacks=None,
-            backend=None,
-            random_seed=default_random_seed,
-            debug=False,
-            **kwargs
+        self,
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        experiment_name="hyperopt",
+        model_name="run",
+        # model_load_path=None,
+        # model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
+        skip_save_processed_input=True,
+        skip_save_unprocessed_output=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
+        output_directory="results",
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        callbacks=None,
+        backend=None,
+        random_seed=default_random_seed,
+        debug=False,
+        **kwargs,
     ) -> HyperoptResults:
         trial_results = []
         trials = 0
@@ -254,8 +249,7 @@ class SerialExecutor(HyperoptExecutor):
             metric_scores = []
 
             for i, parameters in enumerate(sampled_parameters):
-                modified_config = substitute_parameters(
-                    copy.deepcopy(config), parameters)
+                modified_config = substitute_parameters(copy.deepcopy(config), parameters)
 
                 trial_id = trials + i
 
@@ -274,7 +268,7 @@ class SerialExecutor(HyperoptExecutor):
                     test_set=test_set,
                     training_set_metadata=training_set_metadata,
                     data_format=data_format,
-                    experiment_name=f'{experiment_name}_{trial_id}',
+                    experiment_name=f"{experiment_name}_{trial_id}",
                     model_name=model_name,
                     # model_load_path=model_load_path,
                     # model_resume_path=model_resume_path,
@@ -297,16 +291,17 @@ class SerialExecutor(HyperoptExecutor):
                 metric_score = self.get_metric_score(train_stats, eval_stats)
                 metric_scores.append(metric_score)
 
-                trial_results.append(TrialResults(
-                    parameters=parameters,
-                    metric_score=metric_score,
-                    training_stats=train_stats,
-                    eval_stats=eval_stats,
-                ))
+                trial_results.append(
+                    TrialResults(
+                        parameters=parameters,
+                        metric_score=metric_score,
+                        training_stats=train_stats,
+                        eval_stats=eval_stats,
+                    )
+                )
             trials += len(sampled_parameters)
 
-            self.hyperopt_sampler.update_batch(
-                zip(sampled_parameters, metric_scores))
+            self.hyperopt_sampler.update_batch(zip(sampled_parameters, metric_scores))
 
         ordered_trials = self.sort_hyperopt_results(trial_results)
         return HyperoptResults(ordered_trials=ordered_trials)
@@ -314,34 +309,31 @@ class SerialExecutor(HyperoptExecutor):
 
 class RayTuneExecutor(HyperoptExecutor):
     def __init__(
-            self,
-            hyperopt_sampler,
-            output_feature: str,
-            metric: str,
-            split: str,
-            cpu_resources_per_trial: int = None,
-            gpu_resources_per_trial: int = None,
-            kubernetes_namespace: str = None,
-            time_budget_s: Union[int, float, datetime.timedelta] = None,
-            max_concurrent_trials: Optional[int] = None,
-            **kwargs
+        self,
+        hyperopt_sampler,
+        output_feature: str,
+        metric: str,
+        split: str,
+        cpu_resources_per_trial: int = None,
+        gpu_resources_per_trial: int = None,
+        kubernetes_namespace: str = None,
+        time_budget_s: Union[int, float, datetime.timedelta] = None,
+        max_concurrent_trials: Optional[int] = None,
+        **kwargs,
     ) -> None:
         if ray is None:
-            raise ImportError('ray module is not installed. To '
-                              'install it,try running pip install ray'
-                              )
+            raise ImportError("ray module is not installed. To " "install it,try running pip install ray")
         if not isinstance(hyperopt_sampler, RayTuneSampler):
-            raise ValueError('Sampler {} is not compatible with RayTuneExecutor, '
-                             'please use the RayTuneSampler'.format(
-                                 hyperopt_sampler)
-                             )
-        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
-                                  metric, split)
+            raise ValueError(
+                "Sampler {} is not compatible with RayTuneExecutor, "
+                "please use the RayTuneSampler".format(hyperopt_sampler)
+            )
+        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature, metric, split)
         if not ray.is_initialized():
             try:
-                ray.init('auto', ignore_reinit_error=True)
+                ray.init("auto", ignore_reinit_error=True)
             except ConnectionError:
-                logger.info('Initializing new Ray cluster...')
+                logger.info("Initializing new Ray cluster...")
                 ray.init(ignore_reinit_error=True)
         self.search_space = hyperopt_sampler.search_space
         self.num_samples = hyperopt_sampler.num_samples
@@ -368,15 +360,14 @@ class RayTuneExecutor(HyperoptExecutor):
     def _gpu_resources_per_trial_non_none(self):
         return self.gpu_resources_per_trial or 0
 
-    def _get_sync_client_and_remote_checkpoint_dir(
-            self, trial_dir: Path
-    ) -> Optional[Tuple["CommandBasedClient", str]]:
+    def _get_sync_client_and_remote_checkpoint_dir(self, trial_dir: Path) -> Optional[Tuple["CommandBasedClient", str]]:
         """Get the Ray sync client and path to remote checkpoint directory."""
         if self.sync_config is None:
             return None
 
         remote_checkpoint_dir = os.path.join(
-            self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir))
+            self.sync_config.upload_dir, *_get_relative_checkpoints_dir_parts(trial_dir)
+        )
         return get_cloud_sync_client(remote_checkpoint_dir), remote_checkpoint_dir
 
     def _run_experiment(self, config, checkpoint_dir, hyperopt_dict, decode_ctx, is_using_ray_backend=False):
@@ -387,16 +378,14 @@ class RayTuneExecutor(HyperoptExecutor):
         config = RayTuneSampler.decode_values(config, decode_ctx)
 
         trial_id = tune.get_trial_id()
-        modified_config = substitute_parameters(
-            copy.deepcopy(hyperopt_dict["config"]), config
-        )
+        modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
         trial_dir = Path(tune.get_trial_dir())
         trial_location = ray.util.get_node_ip_address()
 
-        hyperopt_dict['config'] = modified_config
-        hyperopt_dict['experiment_name '] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
-        hyperopt_dict['output_directory'] = str(trial_dir)
+        hyperopt_dict["config"] = modified_config
+        hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
+        hyperopt_dict["output_directory"] = str(trial_dir)
 
         tune_executor = self
         if is_using_ray_backend:
@@ -406,13 +395,13 @@ class RayTuneExecutor(HyperoptExecutor):
 
         def checkpoint(progress_tracker, save_path):
             with tune.checkpoint_dir(step=progress_tracker.epoch) as checkpoint_dir:
-                checkpoint_model = os.path.join(checkpoint_dir, 'model')
+                checkpoint_model = os.path.join(checkpoint_dir, "model")
                 # shutil.copytree(save_path, checkpoint_model)
                 # Note: A previous implementation used shutil.copytree()
                 # however, this copying method is non atomic
                 if not os.path.isdir(checkpoint_model):
                     copy_id = uuid.uuid4()
-                    tmp_dst = "%s.%s.tmp" % (checkpoint_model, copy_id)
+                    tmp_dst = f"{checkpoint_model}.{copy_id}.tmp"
                     assert os.path.exists(save_path)
                     shutil.copytree(save_path, tmp_dst)
                     try:
@@ -427,23 +416,18 @@ class RayTuneExecutor(HyperoptExecutor):
                 TEST: progress_tracker.test_metrics,
             }
 
-            metric_score = tune_executor.get_metric_score(
-                train_stats, eval_stats=None)
+            metric_score = tune_executor.get_metric_score(train_stats, eval_stats=None)
             tune.report(
                 parameters=json.dumps(config, cls=NumpyEncoder),
                 metric_score=metric_score,
-                training_stats=json.dumps(
-                    train_stats[TRAINING], cls=NumpyEncoder),
-                eval_stats=json.dumps(
-                    train_stats[VALIDATION], cls=NumpyEncoder),
+                training_stats=json.dumps(train_stats[TRAINING], cls=NumpyEncoder),
+                eval_stats=json.dumps(train_stats[VALIDATION], cls=NumpyEncoder),
                 trial_id=tune.get_trial_id(),
-                trial_dir=tune.get_trial_dir()
+                trial_dir=tune.get_trial_dir(),
             )
 
         class RayTuneReportCallback(Callback):
-            def _get_sync_client_and_remote_checkpoint_dir(
-                    self
-            ) -> Optional[Tuple["CommandBasedClient", str]]:
+            def _get_sync_client_and_remote_checkpoint_dir(self) -> Optional[Tuple["CommandBasedClient", str]]:
                 # sync client has to be recreated to avoid issues with serialization
                 return tune_executor._get_sync_client_and_remote_checkpoint_dir(trial_dir)
 
@@ -458,8 +442,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     sync_info = self._get_sync_client_and_remote_checkpoint_dir()
                     if sync_info is not None:
                         sync_client, remote_checkpoint_dir = sync_info
-                        sync_client.sync_down(
-                            remote_checkpoint_dir, str(trial_dir.absolute()))
+                        sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
                         sync_client.wait()
 
             def on_epoch_end(self, trainer, progress_tracker, save_path):
@@ -469,8 +452,7 @@ class RayTuneExecutor(HyperoptExecutor):
                         sync_info = self._get_sync_client_and_remote_checkpoint_dir()
                         if sync_info is not None:
                             sync_client, remote_checkpoint_dir = sync_info
-                            sync_client.sync_up(
-                                str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
+                            sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
                             sync_client.wait()
                     ray_queue.put((progress_tracker, str(save_path)))
                     return
@@ -478,9 +460,8 @@ class RayTuneExecutor(HyperoptExecutor):
                 checkpoint(progress_tracker, save_path)
                 report(progress_tracker)
 
-        callbacks = hyperopt_dict.get('callbacks') or []
-        hyperopt_dict['callbacks'] = callbacks + \
-            [RayTuneReportCallback()]
+        callbacks = hyperopt_dict.get("callbacks") or []
+        hyperopt_dict["callbacks"] = callbacks + [RayTuneReportCallback()]
 
         # set tune resources
         if is_using_ray_backend:
@@ -491,13 +472,12 @@ class RayTuneExecutor(HyperoptExecutor):
             current_resources = resources.required_resources["GPU" if use_gpu else "CPU"]
 
             hvd_kwargs = {
-                'num_workers': int(current_resources),
-                'use_gpu': use_gpu,
+                "num_workers": int(current_resources),
+                "use_gpu": use_gpu,
             }
-            hyperopt_dict['backend'].set_distributed_kwargs(**hvd_kwargs)
+            hyperopt_dict["backend"].set_distributed_kwargs(**hvd_kwargs)
 
-            logger.debug(
-                f"Trial horovod kwargs: {hvd_kwargs}")
+            logger.debug(f"Trial horovod kwargs: {hvd_kwargs}")
 
         stats = []
 
@@ -524,12 +504,10 @@ class RayTuneExecutor(HyperoptExecutor):
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    sync_client.sync_down(
-                        remote_checkpoint_dir, str(trial_dir.absolute()))
+                    sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
                     sync_client.wait()
                     for progress_tracker, save_path in results:
-                        checkpoint(progress_tracker, str(
-                            trial_dir.joinpath(Path(save_path))))
+                        checkpoint(progress_tracker, str(trial_dir.joinpath(Path(save_path))))
                         report(progress_tracker)
 
             while thread.is_alive():
@@ -553,40 +531,40 @@ class RayTuneExecutor(HyperoptExecutor):
             training_stats=json.dumps(train_stats, cls=NumpyEncoder),
             eval_stats=json.dumps(eval_stats, cls=NumpyEncoder),
             trial_id=tune.get_trial_id(),
-            trial_dir=tune.get_trial_dir()
+            trial_dir=tune.get_trial_dir(),
         )
 
     def execute(
-            self,
-            config,
-            dataset=None,
-            training_set=None,
-            validation_set=None,
-            test_set=None,
-            training_set_metadata=None,
-            data_format=None,
-            experiment_name="hyperopt",
-            model_name="run",
-            # model_load_path=None,
-            # model_resume_path=None,
-            skip_save_training_description=False,
-            skip_save_training_statistics=False,
-            skip_save_model=False,
-            skip_save_progress=False,
-            skip_save_log=False,
-            skip_save_processed_input=True,
-            skip_save_unprocessed_output=False,
-            skip_save_predictions=False,
-            skip_save_eval_stats=False,
-            output_directory="results",
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
-            callbacks=None,
-            backend=None,
-            random_seed=default_random_seed,
-            debug=False,
-            **kwargs
+        self,
+        config,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        experiment_name="hyperopt",
+        model_name="run",
+        # model_load_path=None,
+        # model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
+        skip_save_processed_input=True,
+        skip_save_unprocessed_output=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
+        output_directory="results",
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        callbacks=None,
+        backend=None,
+        random_seed=default_random_seed,
+        debug=False,
+        **kwargs,
     ) -> RayTuneResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
@@ -595,9 +573,11 @@ class RayTuneExecutor(HyperoptExecutor):
             backend = initialize_backend(backend)
 
         if gpus is not None:
-            raise ValueError("Parameter `gpus` is not supported when using Ray Tune. "
-                             "Configure GPU resources with Ray and set `gpu_resources_per_trial` in your "
-                             "hyperopt config.")
+            raise ValueError(
+                "Parameter `gpus` is not supported when using Ray Tune. "
+                "Configure GPU resources with Ray and set `gpu_resources_per_trial` in your "
+                "hyperopt config."
+            )
 
         if gpu_memory_limit is None and 0 < self._gpu_resources_per_trial_non_none < 1:
             # Enforce fractional GPU utilization
@@ -639,23 +619,20 @@ class RayTuneExecutor(HyperoptExecutor):
         metric = "metric_score"
         if self.search_alg_dict is not None:
             if TYPE not in self.search_alg_dict:
-                logger.warning(
-                    "WARNING: Kindly set type param for search_alg "
-                    "to utilize Tune's Search Algorithms."
-                )
+                logger.warning("WARNING: Kindly set type param for search_alg " "to utilize Tune's Search Algorithms.")
                 search_alg = None
             else:
                 search_alg_type = self.search_alg_dict.pop(TYPE)
-                search_alg = tune.create_searcher(
-                    search_alg_type, metric=metric, mode=mode, **self.search_alg_dict)
+                search_alg = tune.create_searcher(search_alg_type, metric=metric, mode=mode, **self.search_alg_dict)
         else:
             search_alg = None
 
         if self.max_concurrent_trials:
-            assert self.max_concurrent_trials > 0, f"`max_concurrent_trials` must be greater than 0, got {self.max_concurrent_trials}"
+            assert (
+                self.max_concurrent_trials > 0
+            ), f"`max_concurrent_trials` must be greater than 0, got {self.max_concurrent_trials}"
             if isinstance(search_alg, BasicVariantGenerator) or search_alg is None:
-                search_alg = BasicVariantGenerator(
-                    max_concurrent=self.max_concurrent_trials)
+                search_alg = BasicVariantGenerator(max_concurrent=self.max_concurrent_trials)
             elif isinstance(search_alg, ConcurrencyLimiter):
                 raise ValueError(
                     "You have specified `max_concurrent_trials`, but the search "
@@ -663,8 +640,7 @@ class RayTuneExecutor(HyperoptExecutor):
                     "by setting `max_concurrent_trials=None`."
                 )
             else:
-                search_alg = ConcurrencyLimiter(
-                    search_alg, max_concurrent=self.max_concurrent_trials)
+                search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
         resources_per_trial = {
             "cpu": self._cpu_resources_per_trial_non_none,
@@ -672,7 +648,9 @@ class RayTuneExecutor(HyperoptExecutor):
         }
 
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
-            return self._run_experiment(config, checkpoint_dir, local_hyperopt_dict, self.decode_ctx, _is_ray_backend(backend))
+            return self._run_experiment(
+                config, checkpoint_dir, local_hyperopt_dict, self.decode_ctx, _is_ray_backend(backend)
+            )
 
         tune_config = {}
         tune_callbacks = []
@@ -693,23 +671,15 @@ class RayTuneExecutor(HyperoptExecutor):
 
         if has_remote_protocol(output_directory):
             run_experiment_trial = tune.durable(run_experiment_trial)
-            self.sync_config = tune.SyncConfig(
-                sync_to_driver=False,
-                upload_dir=output_directory
-            )
+            self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
             output_directory = None
         elif self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import NamespacedKubernetesSyncer
-            self.sync_config = tune.SyncConfig(
-                sync_to_driver=NamespacedKubernetesSyncer(
-                    self.kubernetes_namespace)
-            )
+
+            self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
-        register_trainable(
-            f"trainable_func_f{hash_dict(config).decode('ascii')}",
-            run_experiment_trial_params
-        )
+        register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
 
         analysis = tune.run(
             f"trainable_func_f{hash_dict(config).decode('ascii')}",
@@ -723,7 +693,6 @@ class RayTuneExecutor(HyperoptExecutor):
             keep_checkpoints_num=1,
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
-            queue_trials=False,
             sync_config=self.sync_config,
             local_dir=output_directory,
             metric=metric,
@@ -733,40 +702,26 @@ class RayTuneExecutor(HyperoptExecutor):
             callbacks=tune_callbacks,
         )
 
-        ordered_trials = analysis.results_df.sort_values(
-            "metric_score",
-            ascending=self.goal != MAXIMIZE
-        )
+        ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)
 
         # Catch nans in edge case where the trial doesn't complete
         temp_ordered_trials = []
         for kwargs in ordered_trials.to_dict(orient="records"):
-            for key in ['parameters', 'training_stats', 'eval_stats']:
+            for key in ["parameters", "training_stats", "eval_stats"]:
                 if isinstance(kwargs[key], float):
                     kwargs[key] = {}
             temp_ordered_trials.append(kwargs)
 
-        ordered_trials = [
-            TrialResults.from_dict(
-                load_json_values(kwargs)
-            )
-            for kwargs in temp_ordered_trials
-        ]
+        ordered_trials = [TrialResults.from_dict(load_json_values(kwargs)) for kwargs in temp_ordered_trials]
 
-        return RayTuneResults(
-            ordered_trials=ordered_trials,
-            experiment_analysis=analysis
-        )
+        return RayTuneResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
 
 
 def get_build_hyperopt_executor(executor_type):
     return get_from_registry(executor_type, executor_registry)
 
 
-executor_registry = {
-    "serial": SerialExecutor,
-    "ray": RayTuneExecutor
-}
+executor_registry = {"serial": SerialExecutor, "ray": RayTuneExecutor}
 
 
 def set_values(model_dict, name, parameters_dict):
@@ -803,43 +758,42 @@ def substitute_parameters(config, parameters):
         set_values(output_feature, output_feature[COLUMN], parameters_dict)
     set_values(config["combiner"], "combiner", parameters_dict)
     set_values(config["training"], "training", parameters_dict)
-    set_values(config["preprocessing"], "preprocessing",
-               parameters_dict)
+    set_values(config["preprocessing"], "preprocessing", parameters_dict)
     return config
 
 
 def run_experiment(
-        config,
-        parameters=None,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        training_set_metadata=None,
-        data_format=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        # model_load_path=None,
-        model_resume_path=None,
-        eval_split=VALIDATION,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_predictions=False,
-        skip_save_eval_stats=False,
-        output_directory="results",
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        callbacks=None,
-        backend=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
+    config,
+    parameters=None,
+    dataset=None,
+    training_set=None,
+    validation_set=None,
+    test_set=None,
+    training_set_metadata=None,
+    data_format=None,
+    experiment_name="hyperopt",
+    model_name="run",
+    # model_load_path=None,
+    model_resume_path=None,
+    eval_split=VALIDATION,
+    skip_save_training_description=False,
+    skip_save_training_statistics=False,
+    skip_save_model=False,
+    skip_save_progress=False,
+    skip_save_log=False,
+    skip_save_processed_input=False,
+    skip_save_unprocessed_output=False,
+    skip_save_predictions=False,
+    skip_save_eval_stats=False,
+    output_directory="results",
+    gpus=None,
+    gpu_memory_limit=None,
+    allow_parallel_threads=True,
+    callbacks=None,
+    backend=None,
+    random_seed=default_random_seed,
+    debug=False,
+    **kwargs,
 ):
     for callback in callbacks or []:
         callback.on_hyperopt_trial_start(parameters)
