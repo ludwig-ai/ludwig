@@ -30,7 +30,7 @@ from ray.data import from_dask, read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
-from ludwig.constants import NAME, TYPE, BINARY
+from ludwig.constants import NAME, TYPE, BINARY, CATEGORY, NUMERICAL
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP
@@ -39,6 +39,7 @@ from ludwig.utils.types import DataFrame
 
 
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
+_SCALAR_TYPES = {BINARY, CATEGORY, NUMERICAL}
 
 
 class RayDataset(Dataset):
@@ -254,8 +255,8 @@ class RayDatasetBatcher(Batcher):
 
         def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
             for c in columns:
-                # do not convert binary columns: https://github.com/ray-project/ray/issues/20825
-                if features[c][TYPE] != BINARY:
+                # do not convert scalar columns: https://github.com/ray-project/ray/issues/20825
+                if features[c][TYPE] not in _SCALAR_TYPES:
                     df[c] = df[c].astype(TensorDtype())
             return df
         return to_tensors
