@@ -59,7 +59,7 @@ class ZScoreTransformer:
         return x * self.sigma + self.mu
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         compute = backend.df_engine.compute
         return {
             "mean": compute(column.astype(np.float32).mean()),
@@ -82,7 +82,7 @@ class MinMaxTransformer:
         return x * self.range + self.min_value
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         compute = backend.df_engine.compute
         return {
             "min": compute(column.astype(np.float32).min()),
@@ -105,7 +105,7 @@ class Log1pTransformer:
         return np.expm1(x)
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         return {}
 
 
@@ -120,7 +120,7 @@ class IdentityTransformer:
         return x
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend) -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         return {}
 
 
