@@ -33,7 +33,6 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PARQUET, TFRECORD, PREPROCESSING, RAY, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
-from ludwig.data.dataset.pandas import PandasDataset
 from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
@@ -43,10 +42,14 @@ from ludwig.utils.tf_utils import initialize_tensorflow, save_weights_to_buffer,
 
 # TODO(travis): remove for ray 1.8
 _ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
+_ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
 if _ray18:
     import ray.train as rt
     from ray.train.trainer import Trainer, TrainWorkerGroup
-    from ray.train.backends.horovod import HorovodConfig
+    if _ray19:
+        from ray.train.horovod import HorovodConfig
+    else:
+        from ray.train.backends.horovod import HorovodConfig
 else:
     import ray.util.sgd.v2 as rt
     from ray.util.sgd.v2.trainer import Trainer
