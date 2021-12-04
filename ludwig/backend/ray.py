@@ -225,8 +225,8 @@ class RayTrainerV2(BaseTrainer):
             },
             dataset={
                 'train': training_set.pipeline(),
-                'val': validation_set.pipeline() if validation_set else None,
-                'test': test_set.pipeline() if test_set else None,
+                'val': validation_set.pipeline(shuffle=False) if validation_set else None,
+                'test': test_set.pipeline(shuffle=False) if test_set else None,
             },
         )[0]
 
