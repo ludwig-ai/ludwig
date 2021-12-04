@@ -33,25 +33,20 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.constants import NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.dask import DaskEngine
 from ludwig.data.dataframe.pandas import PandasEngine
-from ludwig.data.dataset.ray import RayDataset, RayDatasetShard, RayDatasetManager
+from ludwig.data.dataset.ray import RayDataset, RayDatasetShard
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, Predictor, get_output_columns
 from ludwig.models.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.horovod_utils import initialize_horovod
-
-# TODO(travis): remove for ray 1.8
 from ludwig.utils.torch_utils import initialize_pytorch
 
-_ray18 = LooseVersion(ray.__version__) >= LooseVersion("1.8")
-if _ray18:
-    import ray.train as rt
-    from ray.train.trainer import Trainer, TrainWorkerGroup
-    from ray.train.backends.horovod import HorovodConfig
+_ray19 = LooseVersion(ray.__version__) >= LooseVersion("1.9")
+import ray.train as rt
+from ray.train.trainer import Trainer, TrainWorkerGroup
+if _ray19:
+    from ray.train.horovod import HorovodConfig
 else:
-    import ray.util.sgd.v2 as rt
-    from ray.util.sgd.v2.trainer import Trainer
-    from ray.util.sgd.v2.trainer import SGDWorkerGroup as TrainWorkerGroup
-    from ludwig.backend._ray17_compat import HorovodConfig
+    from ray.train.backends.horovod import HorovodConfig
 
 
 logger = logging.getLogger(__name__)
@@ -141,9 +136,6 @@ def train_fn(
         model: "LudwigModel" = None,
         training_set_metadata: Dict[str, Any] = None,
         features: Dict[str, Dict] = None,
-        train_shards: List[DatasetPipeline] = None,
-        val_shards: List[DatasetPipeline] = None,
-        test_shards: List[DatasetPipeline] = None,
         **kwargs
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -151,12 +143,12 @@ def train_fn(
     initialize_pytorch(horovod=hvd)
 
     train_shard = RayDatasetShard(
-        train_shards[rt.world_rank()], #rt.get_dataset_shard("train"),
+        rt.get_dataset_shard("train"),
         features,
         training_set_metadata,
     )
 
-    val_shard = val_shards[rt.world_rank()] if val_shards else None #rt.get_dataset_shard("val")
+    val_shard = rt.get_dataset_shard("val")
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
@@ -164,7 +156,7 @@ def train_fn(
             training_set_metadata,
         )
 
-    test_shard = test_shards[rt.world_rank()] if test_shards else None #rt.get_dataset_shard("test")
+    test_shard = rt.get_dataset_shard("test")
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
@@ -194,24 +186,7 @@ class RayTrainerV2(BaseTrainer):
     def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
         executable_kwargs = self.executable_kwargs
 
-        # TODO(travis) remove this once `dataset` keyword is supported:
-        wg = TrainWorkerGroup(self.trainer._executor.worker_group)
-        workers = [w for w in wg]
-
-        train_shards = training_set.pipeline().split(
-            n=len(workers), locality_hints=workers, equal=True
-        )
-        val_shards = validation_set.pipeline(shuffle=False).split(
-            n=len(workers), locality_hints=workers
-        ) if validation_set else None
-        test_shards = test_set.pipeline(shuffle=False).split(
-            n=len(workers), locality_hints=workers
-        ) if test_set else None
-
         kwargs = {
-            'train_shards': train_shards,
-            'val_shards': val_shards,
-            'test_shards': test_shards,
             'training_set_metadata': training_set.training_set_metadata,
             'features': training_set.features,
             **kwargs
@@ -224,11 +199,11 @@ class RayTrainerV2(BaseTrainer):
                 'model': model,
                 **kwargs
             },
-            # dataset={
-            #     'train': training_set.pipeline(),
-            #     'val': validation_set.pipeline() if validation_set else None,
-            #     'test': test_set.pipeline() if test_set else None,
-            # },
+            dataset={
+                'train': training_set.pipeline(),
+                'val': validation_set.pipeline(shuffle=False) if validation_set else None,
+                'test': test_set.pipeline(shuffle=False) if test_set else None,
+            },
         )[0]
 
         return results
