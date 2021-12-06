@@ -113,7 +113,7 @@ class SequenceFeatureMixin:
             "str2idx": str2idx,
             "str2freq": str2freq,
             "vocab_size": len(idx2str),
-            "max_sequence_length": max_length,
+            "max_sequence_length": max_length + 2,  # For start and end symbol.
         }
 
     @staticmethod
@@ -248,10 +248,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         #     return inputs
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        print(f"Inside predictions(), inputs.keys() is: {inputs.keys()}")
-        print(f"Inside predictions(), feature_name is: {inputs.keys()}")
         logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
-        print(f"Inside predictions(), logits.size() is: {logits.size()}")
         probabilities = torch.softmax(logits, -1)
         predictions = torch.argmax(logits, -1)
         predictions = predictions.long()

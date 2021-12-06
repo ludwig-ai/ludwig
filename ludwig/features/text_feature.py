@@ -183,7 +183,7 @@ class TextFeatureMixin:
             "char_str2idx": char_str2idx,
             "char_str2freq": char_str2freq,
             "char_vocab_size": len(char_idx2str),
-            "char_max_sequence_length": char_max_len,
+            "char_max_sequence_length": char_max_len + 2,  # For start and stop symbols.
             "char_pad_idx": char_pad_idx,
             "char_pad_symbol": char_pad_symbol,
             "char_unk_symbol": char_unk_symbol,
@@ -191,7 +191,7 @@ class TextFeatureMixin:
             "word_str2idx": word_str2idx,
             "word_str2freq": word_str2freq,
             "word_vocab_size": len(word_idx2str),
-            "word_max_sequence_length": word_max_len,
+            "word_max_sequence_length": word_max_len + 2,  # For start and stop symbols.
             "word_pad_idx": word_pad_idx,
             "word_pad_symbol": word_pad_symbol,
             "word_unk_symbol": word_unk_symbol,

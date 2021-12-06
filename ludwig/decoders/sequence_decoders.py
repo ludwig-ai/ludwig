@@ -34,8 +34,7 @@ class DecoderRNN(nn.Module):
         self.embedding = nn.Embedding(vocab_size, hidden_size)
         self.relu = nn.ReLU()
         self.gru = nn.GRU(hidden_size, hidden_size, batch_first=True)
-        self.out = nn.Linear(hidden_size, vocab_size)
-        # self.softmax = nn.LogSoftmax(dim=1)
+        self.out = nn.Linear(hidden_size, vocab_size, bias=False)
 
     def forward(self, input: torch.Tensor, hidden: torch.Tensor):
         # Unsqueeze predicted token.
@@ -45,7 +44,6 @@ class DecoderRNN(nn.Module):
 
         output, hidden = self.gru(output, hidden)
 
-        # output = self.softmax(self.out(output))
         output = self.out(output)
         return output, hidden
 
@@ -78,10 +76,10 @@ class SequenceGeneratorDecoder(Decoder):
         logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
 
         # TODO: Use real go symbol.
-        # decoder_input = target[:, 0]
+        # decoder_input = target[:, 0]  # Does't work when there aren't any targets.
         decoder_input = torch.ones([batch_size])
 
-        # Unsqueeze to account for extra dimension for multilayer layer dimension.
+        # Unsqueeze to account for extra multilayer dimension.
         decoder_hidden = encoder_output_state.unsqueeze(0)
 
         # Decode until max length.
@@ -90,7 +88,8 @@ class SequenceGeneratorDecoder(Decoder):
 
             # Holding logits for each token.
             # decoder_output: [batch_size, 1, vocab_size]
-            logits[:, di, :] = decoder_output.data.squeeze(1)
+            # Squeeze out the multilayer dimension.
+            logits[:, di, :] = decoder_output.squeeze(1)
 
             # Determine inputs for next time step.
             # TODO: Flip a coin for not using teacher forcing during training.
@@ -101,7 +100,7 @@ class SequenceGeneratorDecoder(Decoder):
                 # Teacher forcing
                 decoder_input = target[:, di]
 
-        # TODO: Is projection input important?
+        # TODO: Is projection input necessary?
         return {LOGITS: logits}
 
 
