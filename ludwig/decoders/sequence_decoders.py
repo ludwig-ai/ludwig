@@ -35,7 +35,7 @@ class DecoderRNN(nn.Module):
         self.relu = nn.ReLU()
         self.gru = nn.GRU(hidden_size, hidden_size, batch_first=True)
         self.out = nn.Linear(hidden_size, vocab_size)
-        self.softmax = nn.LogSoftmax(dim=1)
+        # self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, input: torch.Tensor, hidden: torch.Tensor):
         # Unsqueeze predicted token.
@@ -45,7 +45,8 @@ class DecoderRNN(nn.Module):
 
         output, hidden = self.gru(output, hidden)
 
-        output = self.softmax(self.out(output))
+        # output = self.softmax(self.out(output))
+        output = self.out(output)
         return output, hidden
 
     def initHidden(self):

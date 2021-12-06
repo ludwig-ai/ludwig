@@ -38,14 +38,12 @@ from ludwig.constants import (
     PROC_COLUMN,
     SEQUENCE,
     SEQUENCE_ACCURACY,
-    SOFTMAX_CROSS_ENTROPY,
     SUM,
     TIED,
     TOKEN_ACCURACY,
     TYPE,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.modules.loss_modules import SequenceSoftmaxCrossEntropyLoss
 from ludwig.utils import output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
@@ -197,7 +195,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = "generator"
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {
         LOSS: None,
         TOKEN_ACCURACY: None,
@@ -217,30 +215,30 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-    def _setup_loss(self):
-        if self.loss[TYPE] == "softmax_cross_entropy":
-            self.train_loss_function = SequenceSoftmaxCrossEntropyLoss(
-                num_classes=self.num_classes, feature_loss=self.loss, name="train_loss"
-            )
-        else:
-            # TODO: implement sampled_softmax_cross_entropy.
-            raise ValueError(
-                "Loss type {} is not supported. Valid values are " "'softmax_cross_entropy'".format(self.loss[TYPE])
-            )
+    # def _setup_loss(self):
+    #     if self.loss[TYPE] == "softmax_cross_entropy":
+    #         self.train_loss_function = SequenceSoftmaxCrossEntropyLoss(
+    #             num_classes=self.num_classes, feature_loss=self.loss, name="train_loss"
+    #         )
+    #     else:
+    #         # TODO: implement sampled_softmax_cross_entropy.
+    #         raise ValueError(
+    #             "Loss type {} is not supported. Valid values are " "'softmax_cross_entropy'".format(self.loss[TYPE])
+    #         )
 
-        self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-            num_classes=self.num_classes, feature_loss=self.loss, name="eval_loss"
-        )
+    #     self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
+    #         num_classes=self.num_classes, feature_loss=self.loss, name="eval_loss"
+    #     )
 
     # overrides super class OutputFeature.update_metrics() method
-    def update_metrics(self, targets, predictions):
-        for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS or metric == PERPLEXITY:
-                metric_fn.update_state(targets, predictions)
-            elif metric == LAST_ACCURACY:
-                metric_fn.update_state(targets, predictions[LAST_PREDICTIONS])
-            else:
-                metric_fn.update_state(targets, predictions[PREDICTIONS])
+    # def update_metrics(self, targets, predictions):
+    #     for metric, metric_fn in self.metric_functions.items():
+    #         if metric == LOSS or metric == PERPLEXITY:
+    #             metric_fn.update_state(targets, predictions)
+    #         elif metric == LAST_ACCURACY:
+    #             metric_fn.update_state(targets, predictions[LAST_PREDICTIONS])
+    #         else:
+    #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
     def logits(self, inputs: Dict[str, torch.Tensor], target=None):
         # if target is not None:
@@ -451,7 +449,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             output_feature,
             LOSS,
             {
-                TYPE: "softmax_cross_entropy",
+                TYPE: "sequence_softmax_cross_entropy",
                 "sampler": None,
                 "negative_samples": 0,
                 "distortion": 1,
@@ -463,13 +461,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 "weight": 1,
             },
         )
-        set_default_value(output_feature[LOSS], TYPE, "softmax_cross_entropy")
-        set_default_value(output_feature[LOSS], "labels_smoothing", 0)
-        set_default_value(output_feature[LOSS], "class_weights", 1)
-        set_default_value(output_feature[LOSS], "robust_lambda", 0)
-        set_default_value(output_feature[LOSS], "confidence_penalty", 0)
-        set_default_value(output_feature[LOSS], "class_similarities_temperature", 0)
-        set_default_value(output_feature[LOSS], "weight", 1)
 
         if output_feature[LOSS][TYPE] == "sampled_softmax_cross_entropy":
             set_default_value(output_feature[LOSS], "sampler", "log_uniform")

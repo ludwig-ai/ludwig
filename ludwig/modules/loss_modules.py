@@ -140,7 +140,7 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
         return train_mean_loss
 
 
-@register_loss("softmax_cross_entropy", [CATEGORY, SEQUENCE, TEXT, VECTOR])
+@register_loss("softmax_cross_entropy", [CATEGORY, VECTOR])
 class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
