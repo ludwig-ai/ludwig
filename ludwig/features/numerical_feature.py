@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,29 +14,35 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
 import random
+from typing import Dict
 
 import numpy as np
 import torch
 
-from ludwig.constants import *
-from ludwig.decoders.generic_decoders import Regressor
-from ludwig.features.base_feature import InputFeature
-from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import MSELoss, MAELoss, RMSELoss, RMSPELoss, get_loss_cls
-from ludwig.modules.metric_modules import (
-    MAEMetric,
-    MSEMetric,
-    RMSEMetric,
-    RMSPEMetric,
-    R2Score, get_metric_classes,
+from ludwig.constants import (
+    COLUMN,
+    FILL_WITH_CONST,
+    HIDDEN,
+    LOGITS,
+    LOSS,
+    MEAN_ABSOLUTE_ERROR,
+    MEAN_SQUARED_ERROR,
+    MISSING_VALUE_STRATEGY_OPTIONS,
+    NAME,
+    NUMERICAL,
+    PREDICTIONS,
+    PROC_COLUMN,
+    R2,
+    ROOT_MEAN_SQUARED_ERROR,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
+    SUM,
+    TIED,
+    TYPE,
 )
+from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.misc_utils import set_default_values
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.registry import Registry, DEFAULT_KEYS
+from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +59,7 @@ class ZScoreTransformer:
         return x * self.sigma + self.mu
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         compute = backend.df_engine.compute
         return {
             "mean": compute(column.astype(np.float32).mean()),
@@ -73,14 +78,11 @@ class MinMaxTransformer:
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
         if self.range is None:
-            raise ValueError(
-                "Numeric transformer needs to be instantiated with "
-                "min and max values."
-            )
+            raise ValueError("Numeric transformer needs to be instantiated with " "min and max values.")
         return x * self.range + self.min_value
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         compute = backend.df_engine.compute
         return {
             "min": compute(column.astype(np.float32).min()),
@@ -95,8 +97,7 @@ class Log1pTransformer:
     def transform(self, x: np.ndarray) -> np.ndarray:
         if np.any(x <= 0):
             raise ValueError(
-                "One or more values are non-positive.  "
-                "log1p normalization is defined only for positive values."
+                "One or more values are non-positive.  " "log1p normalization is defined only for positive values."
             )
         return np.log1p(x)
 
@@ -104,7 +105,7 @@ class Log1pTransformer:
         return np.expm1(x)
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         return {}
 
 
@@ -119,7 +120,7 @@ class IdentityTransformer:
         return x
 
     @staticmethod
-    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         return {}
 
 
@@ -154,9 +155,7 @@ class NumericalFeatureMixin:
 
     @staticmethod
     def cast_column(column, backend):
-        return backend.df_engine.df_lib.to_numeric(
-            column, errors="coerce"
-        ).astype(np.float32)
+        return backend.df_engine.df_lib.to_numeric(column, errors="coerce").astype(np.float32)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
@@ -169,17 +168,15 @@ class NumericalFeatureMixin:
 
     @staticmethod
     def add_feature_data(
-            feature,
-            input_df,
-            proc_df,
-            metadata,
-            preprocessing_parameters,
-            backend,
-            skip_save_processed_input,
+        feature,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters,
+        backend,
+        skip_save_processed_input,
     ):
-        proc_df[feature[PROC_COLUMN]] = (
-            input_df[feature[COLUMN]].astype(np.float32).values
-        )
+        proc_df[feature[PROC_COLUMN]] = input_df[feature[COLUMN]].astype(np.float32).values
 
         # normalize data as required
         numeric_transformer = get_from_registry(
@@ -187,9 +184,7 @@ class NumericalFeatureMixin:
             numeric_transformation_registry,
         )(**metadata[feature[NAME]])
 
-        proc_df[feature[PROC_COLUMN]] = numeric_transformer.transform(
-            proc_df[feature[PROC_COLUMN]]
-        )
+        proc_df[feature[PROC_COLUMN]] = numeric_transformer.transform(proc_df[feature[PROC_COLUMN]])
 
         return proc_df
 
@@ -201,7 +196,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         # Required for certain encoders, maybe pass into initialize_encoder
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature['input_size'] = self.input_shape[-1]
+        feature["input_size"] = self.input_shape[-1]
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -210,8 +205,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype == torch.float32 or inputs.dtype == torch.float64
-        assert len(inputs.shape) == 1 or (
-            len(inputs.shape) == 2 and inputs.shape[1] == 1)
+        assert len(inputs.shape) == 1 or (len(inputs.shape) == 2 and inputs.shape[1] == 1)
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
@@ -232,9 +226,7 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
         return torch.Size(self.encoder_obj.output_shape)
 
     @staticmethod
-    def update_config_with_metadata(
-            input_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -259,7 +251,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature['input_size'] = self.input_shape[-1]
+        feature["input_size"] = self.input_shape[-1]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
@@ -269,27 +261,18 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(
-            inputs, feature_name, LOGITS)
+        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
         predictions = logits
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
-                predictions = torch.clamp(
-                    logits,
-                    self.clip[0],
-                    self.clip[1]
-                )
+                predictions = torch.clamp(logits, self.clip[0], self.clip[1])
 
-                logger.debug(
-                    '  clipped_predictions: {0}'.format(predictions)
-                )
+                logger.debug(f"  clipped_predictions: {predictions}")
             else:
                 raise ValueError(
                     "The clip parameter of {} is {}. "
-                    "It must be a list or a tuple of length 2.".format(
-                        self.feature_name, self.clip
-                    )
+                    "It must be a list or a tuple of length 2.".format(self.feature_name, self.clip)
                 )
 
         return {PREDICTIONS: predictions, LOGITS: logits}
@@ -310,9 +293,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return torch.Size([1])
 
     @staticmethod
-    def update_config_with_metadata(
-            output_feature, feature_metadata, *args, **kwargs
-    ):
+    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -321,11 +302,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
         return {}
 
     def postprocess_predictions(
-            self,
-            predictions,
-            metadata,
-            output_directory,
-            backend,
+        self,
+        predictions,
+        metadata,
+        output_directory,
+        backend,
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in predictions:
@@ -343,9 +324,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(
-            output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1}
-        )
+        set_default_value(output_feature, LOSS, {TYPE: "mean_squared_error", "weight": 1})
         set_default_value(output_feature[LOSS], TYPE, "mean_squared_error")
         set_default_value(output_feature[LOSS], "weight", 1)
 

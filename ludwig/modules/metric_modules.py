@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,53 +12,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import abstractmethod, ABC
-from typing import Callable, Optional, Union, List
+from abc import ABC, abstractmethod
+from typing import Callable, Optional
 
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
-from torchmetrics import AUROC, IoU, MeanAbsoluteError,\
-    MeanSquaredError, Metric, Accuracy as _Accuracy,\
-    R2Score as _R2Score, MeanMetric as _MeanMetric
+from torchmetrics import Accuracy as _Accuracy
+from torchmetrics import AUROC, IoU, MeanAbsoluteError
+from torchmetrics import MeanMetric as _MeanMetric
+from torchmetrics import MeanSquaredError, Metric
+from torchmetrics import R2Score as _R2Score
 
-from ludwig.constants import *
-from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss,\
-    SoftmaxCrossEntropyLoss # SequenceSoftmaxCrossEntropyLoss,\
-    # SequenceSampledSoftmaxCrossEntropyLoss, SampledSoftmaxCrossEntropyLoss
+from ludwig.constants import (
+    ACCURACY,
+    BINARY,
+    CATEGORY,
+    HITS_AT_K,
+    JACCARD,
+    LOGITS,
+    LOSS,
+    MAXIMIZE,
+    MEAN_ABSOLUTE_ERROR,
+    MEAN_SQUARED_ERROR,
+    MINIMIZE,
+    NUMERICAL,
+    PREDICTIONS,
+    PROBABILITIES,
+    R2,
+    ROC_AUC,
+    ROOT_MEAN_SQUARED_ERROR,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TOKEN_ACCURACY,
+    VECTOR,
+)
+from ludwig.features.base_feature import OutputFeature
+from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss, SoftmaxCrossEntropyLoss
+from ludwig.modules.metric_registry import metric_registry, register_metric
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
-from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import sequence_length_2D
-# from ludwig.utils.metric_utils import masked_sequence_corrected_predictions,\
-    # edit_distance
-# from ludwig.utils.tf_utils import to_sparse
-
-
-metric_feature_registry = Registry()
-metric_registry = Registry()
-
-
-def register_metric(name: str, features: Union[str, List[str]]):
-    if isinstance(features, str):
-        features = [features]
-
-    def wrap(cls):
-        for feature in features:
-            feature_registry = metric_feature_registry.get(feature, {})
-            feature_registry[name] = cls
-            metric_feature_registry[feature] = feature_registry
-        metric_registry[name] = cls
-        return cls
-    return wrap
-
-
-def get_metric_classes(feature: str):
-    return metric_feature_registry[feature]
-
-
-def get_metric_cls(feature: str, name: str):
-    return metric_feature_registry[feature][name]
 
 
 class LudwigMetric(ABC):
@@ -80,7 +75,8 @@ class LudwigMetric(ABC):
 
 @register_metric(ROOT_MEAN_SQUARED_ERROR, [NUMERICAL])
 class RMSEMetric(MeanSquaredError, LudwigMetric):
-    """ Root mean squared error metric. """
+    """Root mean squared error metric."""
+
     def __init__(self, **kwargs):
         super().__init__(squared=False, **kwargs)
 
@@ -99,13 +95,15 @@ class ROCAUCMetric(AUROC, LudwigMetric):
         super().__init__()
 
     """ Metric for area under ROC curve. """
+
     def update(self, preds: Tensor, target: Tensor) -> None:
         # Currently only supported for binary tasks.
         if preds.ndim > 1 or target.ndim > 1:
             raise RuntimeError(
-                f'Only binary tasks supported, but received input of '
-                f'{max(preds.ndim, target.ndim)} dimensions while expecting'
-                f'1-dimensional input.')
+                f"Only binary tasks supported, but received input of "
+                f"{max(preds.ndim, target.ndim)} dimensions while expecting"
+                f"1-dimensional input."
+            )
         return super().update(preds, target)
 
     @classmethod
@@ -118,7 +116,8 @@ class ROCAUCMetric(AUROC, LudwigMetric):
 
 
 class MeanMetric(Metric, LudwigMetric):
-    """ Abstract class for computing mean of metrics. """
+    """Abstract class for computing mean of metrics."""
+
     def __init__(self, **kwargs):
         super().__init__()
         self.avg = _MeanMetric()
@@ -140,6 +139,7 @@ class RMSPEMetric(MeanMetric):
         super().__init__()
 
     """ Root mean squared percentage error metric. """
+
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return rmspe_loss(target, preds)
 
@@ -155,7 +155,8 @@ class RMSPEMetric(MeanMetric):
 # TODO(shreya): Double check difference in computation.
 @register_metric(R2, [NUMERICAL, VECTOR])
 class R2Score(_R2Score, LudwigMetric):
-    """ R-squared metric. """
+    """R-squared metric."""
+
     def __init__(self, num_outputs: int = 1, **kwargs):
         super().__init__(num_outputs=num_outputs)
 
@@ -187,16 +188,16 @@ class LossMetric(MeanMetric, ABC):
         return False
 
 
-@register_metric('binary_weighted_cross_entropy', [BINARY])
+@register_metric("binary_weighted_cross_entropy", [BINARY])
 class BWCEWLMetric(LossMetric):
-    """ Binary Weighted Cross Entropy Weighted Logits Score Metric. """
+    """Binary Weighted Cross Entropy Weighted Logits Score Metric."""
 
     def __init__(
-            self,
-            positive_class_weight: Optional[Tensor] = None,
-            robust_lambda: int = 0,
-            confidence_penalty: int = 0,
-            **kwargs
+        self,
+        positive_class_weight: Optional[Tensor] = None,
+        robust_lambda: int = 0,
+        confidence_penalty: int = 0,
+        **kwargs,
     ):
         super().__init__()
 
@@ -210,7 +211,7 @@ class BWCEWLMetric(LossMetric):
         return self.loss_function(preds, target)
 
 
-@register_metric('softmax_cross_entropy', [CATEGORY])
+@register_metric("softmax_cross_entropy", [CATEGORY])
 class SoftmaxCrossEntropyMetric(LossMetric):
     def __init__(self, **kwargs):
         super().__init__()
@@ -220,37 +221,7 @@ class SoftmaxCrossEntropyMetric(LossMetric):
         return self.softmax_cross_entropy_function(preds, target)
 
 
-# @register_metric('sampled_softmax_cross_entropy', [CATEGORY])
-# class SampledSoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
-#     def __init__(
-#             self,
-#             decoder_obj=None,
-#             num_classes=0,
-#             feature_loss=None,
-#             name="sampled_softmax_cross_entropy_metric",
-#             **kwargs
-#     ):
-#         super(SampledSoftmaxCrossEntropyMetric, self).__init__(name=name)
-#
-#         self.metric_function = SampledSoftmaxCrossEntropyLoss(
-#             decoder_obj=decoder_obj,
-#             num_classes=num_classes,
-#             feature_loss=feature_loss,
-#         )
-#
-#     def update_state(self, y, y_hat):
-#         super().update_state(self.metric_function(y, y_hat))
-#
-#     @classmethod
-#     def get_objective(cls):
-#         return MINIMIZE
-#
-#     @classmethod
-#     def get_inputs(cls):
-#         return LOGITS
-
-
-@register_metric('sigmoid_cross_entropy', [SET])
+@register_metric("sigmoid_cross_entropy", [SET])
 class SigmoidCrossEntropyMetric(LossMetric):
     def __init__(self, **kwargs):
         super().__init__()
@@ -258,107 +229,6 @@ class SigmoidCrossEntropyMetric(LossMetric):
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         return self.sigmoid_cross_entropy_function(preds, target)
-
-
-# TODO(shreya): After Sequence Losses
-# class SequenceLossMetric(tf.keras.metrics.Mean):
-#     def __init__(self, from_logits=True, name=None, **kwargs):
-#         super().__init__(name=name)
-#
-#         self.loss_function = SequenceSoftmaxCrossEntropyLoss(
-#             from_logits=from_logits
-#         )
-#
-#     def update_state(self, y, y_hat):
-#         loss = self.loss_function(y, y_hat)
-#         super().update_state(loss)
-#
-# 
-# TODO(shreya): After Sequence Losses
-# class SequenceSampledLossMetric(tf.keras.metrics.Mean):
-#     def __init__(
-#             self,
-#             dec_dense_layer=None,
-#             dec_num_layers=None,
-#             num_classes=0,
-#             feature_loss=None,
-#             name=None,
-#             **kwargs
-#     ):
-#         super(SequenceSampledLossMetric, self).__init__(name=name)
-#
-#         self.loss_function = SequenceSampledSoftmaxCrossEntropyLoss(
-#             dec_dense_layer=dec_dense_layer,
-#             dec_num_layers=dec_num_layers,
-#             num_classes=num_classes,
-#             feature_loss=feature_loss,
-#         )
-#
-#     def update_state(self, y, y_hat):
-#         loss = self.loss_function(y, y_hat)
-#         super().update_state(loss)
-#
-# 
-# TODO(shreya): After Sequence Losses
-# class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
-#     """
-#     Sequence accuracy based on last token in the sequence
-#     """
-#
-#     def __init__(self, name=None, **kwargs):
-#         super().__init__(name=name)
-#
-#     def update_state(self, y_true, y_pred, sample_weight=None):
-#         y_true = tf.cast(y_true, dtype=tf.int64)
-#         targets_sequence_length = sequence_length_2D(y_true)
-#         last_targets = tf.gather_nd(
-#             y_true,
-#             tf.stack(
-#                 [
-#                     tf.range(tf.shape(y_true)[0]),
-#                     tf.maximum(targets_sequence_length - 1, 0),
-#                 ],
-#                 axis=1,
-#             ),
-#         )
-#         super().update_state(last_targets, y_pred, sample_weight=sample_weight)
-#
-#
-# TODO(shreya): After Sequence Losses
-# class PerplexityMetric(tf.keras.metrics.Mean):
-#     def __init__(self, name=None, **kwargs):
-#         super().__init__(name=name)
-#         self.loss_function = SequenceSoftmaxCrossEntropyLoss(from_logits=False)
-
-#     def update_state(self, y_true, y_pred, sample_weight=None):
-#         loss = self.loss_function(y_true, y_pred)
-#         super().update_state(loss)
-
-#     def result(self):
-#         mean = super().result()
-#         return np.exp(mean)
-
-
-# TODO(shreya): No PyTorch CUDA implementation available
-# class EditDistanceMetric(tf.keras.metrics.Mean):
-#     def __init__(self, name=None, **kwargs):
-#         super().__init__(name=name)
-
-#     def update_state(self, y_true, y_pred):
-#         # y_true: shape [batch_size, sequence_size]
-#         # y_pred: shape [batch_size, sequence_size]
-
-#         prediction_dtype = y_pred.dtype
-#         prediction_sequence_length = sequence_length_2D(y_pred)
-#         y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
-#         target_sequence_length = sequence_length_2D(y_true_tensor)
-#         edit_distance_val, _ = edit_distance(
-#             y_true_tensor,
-#             target_sequence_length,
-#             y_pred,
-#             prediction_sequence_length,
-#         )
-#         super().update_state(edit_distance_val)
 
 
 @register_metric(TOKEN_ACCURACY, [SEQUENCE, TEXT])
@@ -369,8 +239,7 @@ class TokenAccuracyMetric(MeanMetric):
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
         target_sequence_length = sequence_length_2D(target)
-        masked_correct_preds = masked_correct_predictions(
-            target, preds, target_sequence_length)
+        masked_correct_preds = masked_correct_predictions(target, preds, target_sequence_length)
         return torch.mean(masked_correct_preds)
 
     @classmethod
@@ -383,30 +252,10 @@ class TokenAccuracyMetric(MeanMetric):
         return PREDICTIONS
 
 
-# TODO(shreya): After Sequence Losses
-# class SequenceAccuracyMetric(tf.keras.metrics.Mean):
-#     def __init__(self, name=None, **kwargs):
-#         super().__init__(name=name)
-#
-#     def update_state(self, y_true, y_pred):
-#         # y_true: shape [batch_size, sequence_size]
-#         # y_pred: shape [batch_size, sequence_size]
-#
-#         prediction_dtype = y_pred.dtype
-#         y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
-#         target_sequence_length = sequence_length_2D(y_true_tensor)
-#         masked_sequence_corrected_preds = (
-#             masked_sequence_corrected_predictions(
-#                 y_true_tensor, y_pred, target_sequence_length
-#             )
-#         )
-#
-#         super().update_state(masked_sequence_corrected_preds)
-
-
 @register_metric(ACCURACY, [BINARY])
 class Accuracy(_Accuracy, LudwigMetric):
-    """ R-squared metric. """
+    """R-squared metric."""
+
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -479,7 +328,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
 @register_metric(MEAN_SQUARED_ERROR, [NUMERICAL, VECTOR])
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
-        super(MSEMetric, self).__init__()
+        super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
@@ -497,13 +346,11 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
 class JaccardMetric(MeanMetric):
     def __init__(self, **kwargs):
         super().__init__()
-        self.jaccard_metric = IoU(num_classes=2, reduction='sum')
-        self.add_state(name='loss', default=[], dist_reduce_fx='mean')
+        self.jaccard_metric = IoU(num_classes=2, reduction="sum")
+        self.add_state(name="loss", default=[], dist_reduce_fx="mean")
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
-        return self.jaccard_metric(
-            preds.type(torch.bool), target.type(torch.bool)
-        )
+        return self.jaccard_metric(preds.type(torch.bool), target.type(torch.bool))
 
     @classmethod
     def get_objective(cls):
