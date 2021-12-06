@@ -2,8 +2,10 @@ import pytest
 import torch
 from typing import List
 
-from ludwig.modules.embedding_modules import Embed, EmbedSequence, EmbedSet,\
+from ludwig.modules.embedding_modules import Embed, EmbedSequence, EmbedSet, \
     EmbedWeighted, TokenAndPositionEmbedding
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 @pytest.mark.parametrize('vocab', [['a', 'b', 'c']])
@@ -19,7 +21,7 @@ def test_embed(
         embedding_size=embedding_size,
         representation=representation,
     )
-    inputs = torch.randint(0, 2, size=(2, 1)).bool()
+    inputs = torch.randint(0, 2, size=(2, 1)).bool().to(DEVICE)
     outputs = embed(inputs)
     assert outputs.shape[1:] == embed.output_shape
 
@@ -37,7 +39,7 @@ def test_embed_set(
         embedding_size=embedding_size,
         representation=representation,
     )
-    inputs = torch.randint(0, 2, size=(2, len(vocab))).bool()
+    inputs = torch.randint(0, 2, size=(2, len(vocab))).bool().to(DEVICE)
     outputs = embed(inputs)
     assert outputs.shape[1:] == embed.output_shape
 
@@ -55,7 +57,7 @@ def test_embed_weighted(
         embedding_size=embedding_size,
         representation=representation
     )
-    inputs = torch.randint(0, 2, size=(2, len(vocab))).bool()
+    inputs = torch.randint(0, 2, size=(2, len(vocab))).bool().to(DEVICE)
     outputs = embed_weighted(inputs)
     assert outputs.shape[1:] == embed_weighted.output_shape
 
@@ -74,7 +76,7 @@ def test_embed_sequence(
         max_sequence_length=10,
         representation=representation,
     )
-    inputs = torch.randint(0, 2, size=(2, 10))
+    inputs = torch.randint(0, 2, size=(2, 10)).to(DEVICE)
     outputs = embed(inputs)
     assert outputs.shape[1:] == embed.output_shape
 
@@ -93,7 +95,7 @@ def test_token_and_position_embedding(
         max_sequence_length=10,
         representation=representation,
     )
-    inputs = torch.randint(0, 2, size=(2, 10))
+    inputs = torch.randint(0, 2, size=(2, 10)).to(DEVICE)
     outputs = embed(inputs)
     print(f'embedding_size: {embedding_size}')
     print(f'outputs.size(): {outputs.size()}')
