@@ -380,7 +380,6 @@ class BaseTokenizer:
 
 
 class CharactersToListTokenizer(BaseTokenizer):
-    # TODO: Create a separate characters tokenizer that tokenizes based on characters.
     def __call__(self, text):
         return [char for char in text]
 
