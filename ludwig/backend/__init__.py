@@ -15,6 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import os
+
 from ludwig.backend.base import Backend, LocalBackend
 from ludwig.utils.horovod_utils import has_horovodrun
 
@@ -35,6 +37,11 @@ ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
 
 
 def _has_ray():
+    # Temporary workaround to prevent tests from automatically using the Ray backend. Taken from
+    # https://stackoverflow.com/questions/25188119/test-if-code-is-executed-from-within-a-py-test-session
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return False
+
     if _ray is None:
         return False
 
@@ -52,11 +59,6 @@ def get_local_backend(**kwargs):
     return LocalBackend(**kwargs)
 
 
-def create_dask_backend(**kwargs):
-    from ludwig.backend.dask import DaskBackend
-    return DaskBackend(**kwargs)
-
-
 def create_horovod_backend(**kwargs):
     from ludwig.backend.horovod import HorovodBackend
     return HorovodBackend(**kwargs)
@@ -69,7 +71,6 @@ def create_ray_backend(**kwargs):
 
 backend_registry = {
     LOCAL: get_local_backend,
-    DASK: create_dask_backend,
     HOROVOD: create_horovod_backend,
     RAY: create_ray_backend,
     None: get_local_backend,

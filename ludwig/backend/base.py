@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +19,9 @@ from contextlib import contextmanager
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
-from ludwig.data.dataset import create_dataset_manager
 from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
+from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.torch_utils import initialize_pytorch
@@ -101,8 +100,8 @@ class LocalTrainingMixin:
     def create_trainer(self, **kwargs):
         return Trainer(**kwargs)
 
-    def create_predictor(self, **kwargs):
-        return Predictor(**kwargs)
+    def create_predictor(self, model: ECD, **kwargs):
+        return Predictor(model, **kwargs)
 
     def sync_model(self, model):
         pass

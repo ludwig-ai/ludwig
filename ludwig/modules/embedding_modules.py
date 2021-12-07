@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,7 +106,7 @@ def embedding_matrix_on_device(
     if embeddings_on_cpu:
         embeddings.to("cpu")
     elif not embeddings_on_cpu and torch.cuda.is_available():
-        embeddings.to(device="cuda:0")
+        embeddings.to(device="cuda")
 
     return embeddings, embedding_size
 
@@ -210,6 +209,8 @@ class EmbedSet(LudwigModule):
         else:
             raise ValueError(f"Unsupported aggregation function {aggregation_function}")
 
+        self.register_buffer('vocab_indices', torch.arange(self.vocab_size))
+
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Params:
@@ -217,7 +218,7 @@ class EmbedSet(LudwigModule):
                     inputs[b, i] indicates that token i is present in sample b.
         """
         # Convert multi-hot input to input of indices
-        inputs = inputs.int() * torch.arange(self.vocab_size)
+        inputs = inputs.int() * self.vocab_indices
         embedded = self.embeddings(inputs.long())
         # Mask out the 0th embedding
         mask = torch.unsqueeze(inputs, -1)
@@ -275,6 +276,8 @@ class EmbedWeighted(LudwigModule):
         else:
             self.dropout = None
 
+        self.register_buffer('vocab_indices', torch.arange(self.vocab_size, dtype=torch.int32))
+
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Params:
@@ -283,7 +286,7 @@ class EmbedWeighted(LudwigModule):
         """
         # Convert to multi-hot input
         signed_input = (inputs != 0).type(torch.int32)
-        multiple_hot_indexes = signed_input * torch.arange(self.vocab_size, dtype=torch.int32)
+        multiple_hot_indexes = (signed_input * self.vocab_indices)
         embedded = self.embeddings(multiple_hot_indexes)
         # Mask out the 0th embedding
         mask = torch.unsqueeze(inputs, -1)
@@ -368,12 +371,14 @@ class EmbedWeighted(LudwigModule):
 
 
 class EmbedSequence(LudwigModule):
+
     def __init__(
         self,
         vocab: List[str],
         embedding_size: int,
         max_sequence_length: int,
         representation: str = "dense",
+        representation: str = 'dense',
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
         force_embedding_size: bool = False,
@@ -454,7 +459,6 @@ class TokenAndPositionEmbedding(LudwigModule):
         self.position_embed = nn.Embedding(
             num_embeddings=max_sequence_length, embedding_dim=self.token_embed.embedding_size
         )
-
         self.register_buffer("positions", torch.arange(0, max_sequence_length))
 
     @property

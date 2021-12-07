@@ -41,9 +41,6 @@ except ImportError:
     class RayBackend:
         pass
 
-    class RayRemoteTrainer:
-        pass
-
 
 # TODO: refactor this into an interface
 def _is_ray_backend(backend) -> bool:
@@ -723,7 +720,6 @@ class RayTuneExecutor(HyperoptExecutor):
             keep_checkpoints_num=1,
             resources_per_trial=resources_per_trial,
             time_budget_s=self.time_budget_s,
-            queue_trials=False,
             sync_config=self.sync_config,
             local_dir=output_directory,
             metric=metric,

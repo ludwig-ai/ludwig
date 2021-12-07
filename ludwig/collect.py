@@ -180,7 +180,7 @@ def save_tensors(collected_tensors, output_directory):
             output_directory,
             make_safe_filename(tensor_name) + '.npy'
         )
-        np.save(np_filename, tensor_value.detach().numpy())
+        np.save(np_filename, tensor_value.detach().cpu().numpy())
         filenames.append(np_filename)
     return filenames
 

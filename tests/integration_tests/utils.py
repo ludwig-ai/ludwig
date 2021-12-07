@@ -26,7 +26,6 @@ import uuid
 from distutils.util import strtobool
 
 import cloudpickle
-import numpy as np
 import pandas as pd
 import torch
 
@@ -525,7 +524,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         model_weights = get_weights(model.model)
         loaded_weights = get_weights(loaded_model.model)
         for model_weight, loaded_weight in zip(model_weights, loaded_weights):
-            assert np.allclose(model_weight, loaded_weight)
+            assert torch.allclose(model_weight, loaded_weight)
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
