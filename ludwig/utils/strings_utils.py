@@ -30,10 +30,13 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 UNKNOWN_SYMBOL = "<UNK>"
+UNKNOWN_IDX = 3
 PADDING_SYMBOL = "<PAD>"
+PADDING_IDX = 2
 START_SYMBOL = "<SOS>"
+START_IDX = 1
 STOP_SYMBOL = "<EOS>"
-PADDING_IDX = 0
+STOP_IDX = 0
 
 SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
@@ -162,24 +165,18 @@ def load_vocabulary(vocab_file):
                 line = line.split(" ")[0]
             vocabulary.append(line)
         return vocabulary
-        # return [line.strip() for line in f]
 
 
-def add_or_move_symbol(vocab_list, vocab_set, symbol):
-    """Adds or moves the symbol to the beginning of the list."""
+def add_or_move_symbol(vocab_list, vocab_set, symbol, index):
+    """Inserts or moves the symbol to the specified index."""
     if symbol in vocab_set:
         vocab_list.remove(symbol)
-    vocab_list = [symbol] + vocab_list
-    return vocab_list
+    return vocab_list.insert(symbol, index)
 
 
 def create_vocabulary(
     data,
     tokenizer_type="space",
-    add_unknown=True,
-    add_padding=True,
-    add_start=True,
-    add_stop=True,
     lowercase=True,
     num_most_frequent=None,
     vocab_file=None,
@@ -234,14 +231,11 @@ def create_vocabulary(
 
     vocab_set = set(vocab)
 
-    if add_unknown and tokenizer_type != "hf_tokenizer":
-        vocab = add_or_move_symbol(vocab, vocab_set, unknown_symbol)
-    if add_padding and tokenizer_type != "hf_tokenizer":
-        vocab = add_or_move_symbol(vocab, vocab_set, padding_symbol)
-    if add_start and tokenizer_type != "hf_tokenizer":
-        vocab = add_or_move_symbol(vocab, vocab_set, start_symbol)
-    if add_stop and tokenizer_type != "hf_tokenizer":
-        vocab = add_or_move_symbol(vocab, vocab_set, stop_symbol)
+    if tokenizer_type != "hf_tokenizer":
+        vocab = add_or_move_symbol(vocab, vocab_set, stop_symbol, STOP_IDX)
+        vocab = add_or_move_symbol(vocab, vocab_set, start_symbol, START_IDX)
+        vocab = add_or_move_symbol(vocab, vocab_set, padding_symbol, PADDING_IDX)
+        vocab = add_or_move_symbol(vocab, vocab_set, unknown_symbol, UNKNOWN_IDX)
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}

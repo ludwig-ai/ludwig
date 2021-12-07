@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import torch
@@ -208,58 +208,26 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     max_sequence_length = 0
     num_classes = 0
 
-    def __init__(self, feature):
+    def __init__(self, feature: Dict[str, Any]):
         super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
-    # def _setup_loss(self):
-    #     if self.loss[TYPE] == "softmax_cross_entropy":
-    #         self.train_loss_function = SequenceSoftmaxCrossEntropyLoss(
-    #             num_classes=self.num_classes, feature_loss=self.loss, name="train_loss"
-    #         )
-    #     else:
-    #         # TODO: implement sampled_softmax_cross_entropy.
-    #         raise ValueError(
-    #             "Loss type {} is not supported. Valid values are " "'softmax_cross_entropy'".format(self.loss[TYPE])
-    #         )
-
-    #     self.eval_loss_function = SequenceSoftmaxCrossEntropyLoss(
-    #         num_classes=self.num_classes, feature_loss=self.loss, name="eval_loss"
-    #     )
-
-    # overrides super class OutputFeature.update_metrics() method
-    # def update_metrics(self, targets, predictions):
-    #     for metric, metric_fn in self.metric_functions.items():
-    #         if metric == LOSS or metric == PERPLEXITY:
-    #             metric_fn.update_state(targets, predictions)
-    #         elif metric == LAST_ACCURACY:
-    #             metric_fn.update_state(targets, predictions[LAST_PREDICTIONS])
-    #         else:
-    #             metric_fn.update_state(targets, predictions[PREDICTIONS])
-
     def logits(self, inputs: Dict[str, torch.Tensor], target=None):
-        # if target is not None:
         return self.decoder_obj(inputs, target=target)
-        # else:
-        #     # ?? What does this mean?
-        #     return inputs
 
-    def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
-        logits = output_feature_utils.get_output_feature_tensor(inputs, feature_name, LOGITS)
+    def predictions(self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
+        logits = output_feature_utils.get_output_feature_tensor(all_decoder_outputs, feature_name, LOGITS)
         probabilities = torch.softmax(logits, -1)
         predictions = torch.argmax(logits, -1)
-        predictions = predictions.long()
+        # predictions = predictions.long()
 
-        # EXPECTED SHAPE OF RETURNED TENSORS
         # predictions: [batch_size, sequence_length]
         # probabilities: [batch_size, sequence_length, vocab_size]
         # logits: [batch_size, sequence_length, vocab_size]
         return {PREDICTIONS: predictions, PROBABILITIES: probabilities, LOGITS: logits}
-        # return self.decoder_obj(inputs)
-        # return self.decoder_obj._predictions_eval(inputs)
 
     def get_prediction_set(self):
         return self.decoder_obj.get_prediction_set()

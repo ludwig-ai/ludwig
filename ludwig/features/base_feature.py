@@ -168,11 +168,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_decoder(self, decoder_parameters):
-        # Override input_size. Features input_size may be different if the
-        # output feature has a custom FC.
+        # Override input_size.
+        # Features input_size may be different if the output feature has a custom FC.
         decoder_parameters_copy = copy.copy(decoder_parameters)
         decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
-        print(f"decoder_parameters_copy: {decoder_parameters_copy}")
         return get_decoder_cls(self.type, self.decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
@@ -213,7 +212,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             Dictionary of decoder's output tensors (non-normalized), as well as any additional
             tensors that may be necessary for computing predictions or evaluation metrics.
         """
-        pass
+        raise NotImplementedError("OutputFeature is missing logits() implementation.")
 
     @abstractmethod
     def predictions(
@@ -229,7 +228,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             Dictionary of tensors with predictions as well as any additional tensors that may be
             necessary for computing evaluation metrics.
         """
-        pass
+        raise NotImplementedError("OutputFeature is missing predictions() implementation.")
 
     def loss_kwargs(self):
         return {}

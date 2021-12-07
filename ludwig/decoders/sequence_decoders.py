@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict
+from typing import Dict, Tuple
 
 import torch
 import torch.nn as nn
@@ -21,34 +21,47 @@ import torch.nn as nn
 from ludwig.constants import HIDDEN, LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, hidden_size, vocab_size):
+    def __init__(self, hidden_size: int, vocab_size: int):
         super().__init__()
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
 
         self.embedding = nn.Embedding(vocab_size, hidden_size)
         self.relu = nn.ReLU()
+
+        # TODO: Support other cell types.
         self.gru = nn.GRU(hidden_size, hidden_size, batch_first=True)
         self.out = nn.Linear(hidden_size, vocab_size, bias=False)
 
-    def forward(self, input: torch.Tensor, hidden: torch.Tensor):
-        # Unsqueeze predicted token.
+    def forward(self, input: torch.Tensor, hidden: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Runs a single decoding time step.
+
+        Modeled off of https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html.
+
+        Args:
+            input: [batch_size] tensor with the previous step's predicted symbol.
+            hidden: [batch_size, hidden_size] tensor with the previous step's hidden state.
+
+        Returns:
+            Tuple of two tensors:
+            - output: [batch_size, vocab_size] tensor with the logits.
+            - hidden: [batch_size, hidden_size] tensor with the hidden state for the next time step.
+        """
+        # Unsqueeze predicted tokens.
         input = input.unsqueeze(1).to(torch.int)
 
         output = self.relu(self.embedding(input))
 
         output, hidden = self.gru(output, hidden)
 
-        output = self.out(output)
-        return output, hidden
-
-    def initHidden(self):
-        return torch.zeros(1, 1, self.hidden_size)
+        output_logits = self.out(output)
+        return output_logits, hidden
 
 
 @register_decoder("generator", [SEQUENCE, TEXT])
@@ -60,24 +73,34 @@ class SequenceGeneratorDecoder(Decoder):
         cell_type="gru",
         input_size=256,
         num_layers=1,
+        start_symbol_idx=strings_utils.START_IDX,
         **kwargs,
     ):
         super().__init__()
         self.vocab_size = vocab_size
         self.decoder_rnn = DecoderRNN(input_size, vocab_size)
         self.max_sequence_length = max_sequence_length
+        self.start_symbol_idx = start_symbol_idx
 
-    def forward(self, inputs: Dict[str, torch.Tensor], target=None, mask=None):
+    def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+        """Decodes the inputs into a sequence.
+
+        Args:
+            inputs: Dictionary of tensors from the outputs of the combiner and other output features.
+            target: Tensor [batch_size, max_sequence_length] with target symbols.
+
+        Returns:
+            Dictionary of tensors of decoder outputs like logits [batch_size, max_sequence_length, vocab_size].
+        """
         # inputs[HIDDEN]: [batch_size, seq_size, state_size]
         encoder_output_state = inputs[HIDDEN]
         batch_size = encoder_output_state.size()[0]
 
-        # Tensor to store decoder outputs.
+        # Tensor to store decoder output logits.
         logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
 
-        # TODO: Use real go symbol.
-        # decoder_input = target[:, 0]  # Does't work when there aren't any targets.
-        decoder_input = torch.ones([batch_size])
+        # Initialize the decoder with start symbols.
+        decoder_input = torch.empty(batch_size).fill_(self.start_symbol_idx)
 
         # Unsqueeze to account for extra multilayer dimension.
         decoder_hidden = encoder_output_state.unsqueeze(0)
@@ -92,12 +115,14 @@ class SequenceGeneratorDecoder(Decoder):
             logits[:, di, :] = decoder_output.squeeze(1)
 
             # Determine inputs for next time step.
-            # TODO: Flip a coin for not using teacher forcing during training.
+            # Using teacher forcing causes the model to converge faster but when the trained network is exploited, it
+            # may be unstable: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.378.4095&rep=rep1&type=pdf.
+            # TODO: Use a configurable ratio for how often to use teacher forcing during training.
             if target is None:
                 _, topi = decoder_output.topk(1)
                 decoder_input = topi.squeeze().detach()  # detach from history as input
             else:
-                # Teacher forcing
+                # Teacher forcing.
                 decoder_input = target[:, di]
 
         # TODO: Is projection input necessary?
