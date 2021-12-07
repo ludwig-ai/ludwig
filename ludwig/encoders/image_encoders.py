@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,47 +29,47 @@ logger = logging.getLogger(__name__)
 
 
 # TODO(shreya): Add type hints for missing args
-@register_encoder('stacked_cnn', IMAGE, default=True)
+@register_encoder("stacked_cnn", IMAGE, default=True)
 class Stacked2DCNN(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            conv_layers: Optional[List[Dict]] = None,
-            num_conv_layers: Optional[int] = None,
-            num_channels: int = None,
-            out_channels: int = 32,
-            kernel_size: Union[int, Tuple[int]] = 3,
-            stride: Union[int, Tuple[int]] = 1,
-            padding: Union[int, Tuple[int], str] = 'valid',
-            dilation: Union[int, Tuple[int]] = 1,
-            conv_bias: bool = True,
-            padding_mode: str = 'zeros',
-            conv_norm: Optional[str] = None,
-            conv_norm_params: Optional[Dict[str, Any]] = None,
-            conv_activation: str = 'relu',
-            conv_dropout: int = 0,
-            pool_function: str = 'max',
-            pool_kernel_size: Union[int, Tuple[int]] = 2,
-            pool_stride: Union[int, Tuple[int]] = None,
-            pool_padding: Union[int, Tuple[int]]  = 0,
-            pool_dilation: Union[int, Tuple[int]] = 1,
-            groups: int = 1,
-            fc_layers: Optional[List[Dict]] = None,
-            num_fc_layers: Optional[int] = 1,
-            fc_size: int = 128,
-            fc_use_bias: bool = True,
-            fc_weights_initializer: str = 'xavier_uniform',
-            fc_bias_initializer: str = 'zeros',
-            fc_norm: Optional[str] = None,
-            fc_norm_params: Optional[Dict[str, Any]] = None,
-            fc_activation: str = 'relu',
-            fc_dropout: float = 0,
-            **kwargs
+        self,
+        height: int,
+        width: int,
+        conv_layers: Optional[List[Dict]] = None,
+        num_conv_layers: Optional[int] = None,
+        num_channels: int = None,
+        out_channels: int = 32,
+        kernel_size: Union[int, Tuple[int]] = 3,
+        stride: Union[int, Tuple[int]] = 1,
+        padding: Union[int, Tuple[int], str] = "valid",
+        dilation: Union[int, Tuple[int]] = 1,
+        conv_bias: bool = True,
+        padding_mode: str = "zeros",
+        conv_norm: Optional[str] = None,
+        conv_norm_params: Optional[Dict[str, Any]] = None,
+        conv_activation: str = "relu",
+        conv_dropout: int = 0,
+        pool_function: str = "max",
+        pool_kernel_size: Union[int, Tuple[int]] = 2,
+        pool_stride: Union[int, Tuple[int]] = None,
+        pool_padding: Union[int, Tuple[int]] = 0,
+        pool_dilation: Union[int, Tuple[int]] = 1,
+        groups: int = 1,
+        fc_layers: Optional[List[Dict]] = None,
+        num_fc_layers: Optional[int] = 1,
+        fc_size: int = 128,
+        fc_use_bias: bool = True,
+        fc_weights_initializer: str = "xavier_uniform",
+        fc_bias_initializer: str = "zeros",
+        fc_norm: Optional[str] = None,
+        fc_norm_params: Optional[Dict[str, Any]] = None,
+        fc_activation: str = "relu",
+        fc_dropout: float = 0,
+        **kwargs,
     ):
         super().__init__()
 
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
         # map parameter input feature config names to internal names
         img_height = height
@@ -80,9 +79,9 @@ class Stacked2DCNN(Encoder):
         self._input_shape = (first_in_channels, img_height, img_width)
 
         if first_in_channels is None:
-            raise ValueError('first_in_channels must not be None.')
+            raise ValueError("first_in_channels must not be None.")
 
-        logger.debug('  Conv2DStack')
+        logger.debug("  Conv2DStack")
         self.conv_stack_2d = Conv2DStack(
             img_height=img_height,
             img_width=img_width,
@@ -112,7 +111,7 @@ class Stacked2DCNN(Encoder):
 
         self.flatten = torch.nn.Flatten()
 
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         self.fc_stack = FCStack(
             first_layer_input_size=first_fc_layer_input_size,
             layers=fc_layers,
@@ -129,15 +128,15 @@ class Stacked2DCNN(Encoder):
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-            :param inputs: The inputs fed into the encoder.
-                    Shape: [batch x channels x height x width], type torch.uint8
+        :param inputs: The inputs fed into the encoder.
+                Shape: [batch x channels x height x width], type torch.uint8
         """
 
         hidden = self.conv_stack_2d(inputs)
         hidden = self.flatten(hidden)
         outputs = self.fc_stack(hidden)
 
-        return {'encoder_output': outputs}
+        return {"encoder_output": outputs}
 
     @property
     def output_shape(self) -> torch.Size:
@@ -148,35 +147,35 @@ class Stacked2DCNN(Encoder):
         return torch.Size(self._input_shape)
 
 
-@register_encoder('resnet', IMAGE)
+@register_encoder("resnet", IMAGE)
 class ResNetEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            resnet_size: int = 50,
-            num_channels: int = 3,
-            out_channels: int = 16,
-            kernel_size: Union[int, Tuple[int]] = 3,
-            conv_stride: Union[int, Tuple[int]] = 1,
-            first_pool_kernel_size: Union[int, Tuple[int]] = None,
-            first_pool_stride: Union[int, Tuple[int]] = None,
-            batch_norm_momentum: float = 0.9,
-            batch_norm_epsilon: float = 0.001,
-            fc_layers: Optional[List[Dict]] = None,
-            num_fc_layers: Optional[int] = 1,
-            fc_size: int = 256,
-            use_bias: bool = True,
-            weights_initializer: str = 'xavier_uniform',
-            bias_initializer: str = 'zeros',
-            norm: Optional[str] = None,
-            norm_params: Optional[Dict[str, Any]] = None,
-            activation: str = 'relu',
-            dropout: float = 0,
-            **kwargs
+        self,
+        height: int,
+        width: int,
+        resnet_size: int = 50,
+        num_channels: int = 3,
+        out_channels: int = 16,
+        kernel_size: Union[int, Tuple[int]] = 3,
+        conv_stride: Union[int, Tuple[int]] = 1,
+        first_pool_kernel_size: Union[int, Tuple[int]] = None,
+        first_pool_stride: Union[int, Tuple[int]] = None,
+        batch_norm_momentum: float = 0.9,
+        batch_norm_epsilon: float = 0.001,
+        fc_layers: Optional[List[Dict]] = None,
+        num_fc_layers: Optional[int] = 1,
+        fc_size: int = 256,
+        use_bias: bool = True,
+        weights_initializer: str = "xavier_uniform",
+        bias_initializer: str = "zeros",
+        norm: Optional[str] = None,
+        norm_params: Optional[Dict[str, Any]] = None,
+        activation: str = "relu",
+        dropout: float = 0,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
         img_height = height
         img_width = width
@@ -184,23 +183,23 @@ class ResNetEncoder(Encoder):
 
         self._input_shape = (first_in_channels, img_height, img_width)
 
-        logger.debug('  ResNet')
+        logger.debug("  ResNet")
         self.resnet = ResNet(
             img_height=img_height,
             img_width=img_width,
             first_in_channels=first_in_channels,
             out_channels=out_channels,
-            resnet_size=resnet_size,            
+            resnet_size=resnet_size,
             kernel_size=kernel_size,
             conv_stride=conv_stride,
             first_pool_kernel_size=first_pool_kernel_size,
             first_pool_stride=first_pool_stride,
             batch_norm_momentum=batch_norm_momentum,
-            batch_norm_epsilon=batch_norm_epsilon
+            batch_norm_epsilon=batch_norm_epsilon,
         )
         first_fc_layer_input_size = self.resnet.output_shape[0]
 
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         self.fc_stack = FCStack(
             first_layer_input_size=first_fc_layer_input_size,
             layers=fc_layers,
@@ -221,7 +220,7 @@ class ResNetEncoder(Encoder):
         axes = [2, 3]
         hidden = torch.mean(hidden, axes)
         hidden = self.fc_stack(hidden)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
     @property
     def output_shape(self) -> torch.Size:
@@ -232,35 +231,35 @@ class ResNetEncoder(Encoder):
         return torch.Size(self._input_shape)
 
 
-@register_encoder('mlp_mixer', IMAGE)
+@register_encoder("mlp_mixer", IMAGE)
 class MLPMixerEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            num_channels: int = None,
-            patch_size: int = 16,
-            embed_size: int = 512,
-            token_size: int = 2048,
-            channel_dim: int = 256,
-            num_layers: int = 8,
-            dropout: float = 0.0,
-            avg_pool: bool = True,
-            **kwargs
+        self,
+        height: int,
+        width: int,
+        num_channels: int = None,
+        patch_size: int = 16,
+        embed_size: int = 512,
+        token_size: int = 2048,
+        channel_dim: int = 256,
+        num_layers: int = 8,
+        dropout: float = 0.0,
+        avg_pool: bool = True,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
         img_height = height
         img_width = width
         in_channels = num_channels
 
         if num_channels is None:
-            raise RuntimeError('num_channels must not be None')
+            raise RuntimeError("num_channels must not be None")
 
         self._input_shape = (in_channels, img_height, img_width)
 
-        logger.debug('  MLPMixer')
+        logger.debug("  MLPMixer")
         self.mlp_mixer = MLPMixer(
             img_height=img_height,
             img_width=img_width,
@@ -278,7 +277,7 @@ class MLPMixerEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = self.mlp_mixer(inputs)
-        return {'encoder_output': hidden}
+        return {"encoder_output": hidden}
 
     @property
     def input_shape(self) -> torch.Size:
@@ -289,32 +288,32 @@ class MLPMixerEncoder(Encoder):
         return self._output_shape
 
 
-@register_encoder('vit', IMAGE)
+@register_encoder("vit", IMAGE)
 class ViTEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            num_channels: int = 3,
-            use_pretrained: bool = True,
-            pretrained_model: str = 'google/vit-base-patch16-224',
-            hidden_size: int = 768,
-            num_hidden_layers: int = 12,
-            num_attention_heads: int = 12,
-            intermediate_size: int = 3072,
-            hidden_act: str = 'gelu',
-            hidden_dropout_prob: float = 0.1,
-            attention_probs_dropout_prob: float = 0.1,
-            initializer_range: float = 0.02,
-            layer_norm_eps: float = 1e-12,
-            gradient_checkpointing: bool = False,
-            patch_size: int = 16,
-            trainable: bool = True,
-            **kwargs
+        self,
+        height: int,
+        width: int,
+        num_channels: int = 3,
+        use_pretrained: bool = True,
+        pretrained_model: str = "google/vit-base-patch16-224",
+        hidden_size: int = 768,
+        num_hidden_layers: int = 12,
+        num_attention_heads: int = 12,
+        intermediate_size: int = 3072,
+        hidden_act: str = "gelu",
+        hidden_dropout_prob: float = 0.1,
+        attention_probs_dropout_prob: float = 0.1,
+        initializer_range: float = 0.02,
+        layer_norm_eps: float = 1e-12,
+        gradient_checkpointing: bool = False,
+        patch_size: int = 16,
+        trainable: bool = True,
+        **kwargs,
     ):
-        """ Creates a ViT encoder using transformers.ViTModel.
+        """Creates a ViT encoder using transformers.ViTModel.
 
-        use_pretrained: If True, uses a pretrained transformer based on the 
+        use_pretrained: If True, uses a pretrained transformer based on the
             pretrained_model argument.
         pretrained: If str, expects the path to a pretrained model or the id of
             a model on huggingface.co, and ignores the configuration provided in
@@ -325,9 +324,9 @@ class ViTEncoder(Encoder):
             from transformers import ViTConfig, ViTModel
         except ModuleNotFoundError:
             raise RuntimeError(
-                ' transformers is not installed. '
-                'In order to install all image feature dependencies run '
-                'pip install ludwig[image]'
+                " transformers is not installed. "
+                "In order to install all image feature dependencies run "
+                "pip install ludwig[image]"
             )
 
         # map parameter input feature config names to internal names
@@ -337,7 +336,7 @@ class ViTEncoder(Encoder):
 
         img_width = img_width or img_height
         if img_width != img_height:
-            raise ValueError(f'img_height and img_width should be identical.')
+            raise ValueError("img_height and img_width should be identical.")
         self._input_shape = (in_channels, img_height, img_width)
 
         if use_pretrained:
@@ -358,19 +357,15 @@ class ViTEncoder(Encoder):
                 attention_probs_dropout_prob=attention_probs_dropout_prob,
                 initializer_range=initializer_range,
                 layer_norm_eps=layer_norm_eps,
-                gradient_checkpointing=gradient_checkpointing
+                gradient_checkpointing=gradient_checkpointing,
             )
             self.model = ViTModel(config)
-        
+
         self._output_shape = (self.model.config.hidden_size,)
 
-    def forward(
-            self,
-            inputs: torch.Tensor,
-            head_mask: torch.Tensor = None
-    ) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         output = self.model(inputs, head_mask=head_mask)
-        return {'encoder_output': output.pooler_output}
+        return {"encoder_output": output.pooler_output}
 
     @property
     def input_shape(self) -> torch.Size:

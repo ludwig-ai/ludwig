@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +17,9 @@ import re
 
 import numpy as np
 
-from ludwig.constants import SEQUENCE, PREPROCESSING, NAME
-from ludwig.constants import TEXT
-from ludwig.constants import TIMESERIES
+from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
 from ludwig.utils.misc_utils import hash_dict
-from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
-from ludwig.utils.strings_utils import tokenizer_registry
+from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 
@@ -32,8 +28,7 @@ def should_regularize(regularize_layers):
     regularize = False
     if isinstance(regularize_layers, bool) and regularize_layers:
         regularize = True
-    elif (isinstance(regularize_layers, (list, tuple))
-          and regularize_layers and regularize_layers[-1]):
+    elif isinstance(regularize_layers, (list, tuple)) and regularize_layers and regularize_layers[-1]:
         regularize = True
     return regularize
 
@@ -42,19 +37,18 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
     try:
         tokenizer = tokenizer_registry[tokenizer_name]()
     except ValueError:
-        raise Exception('Tokenizer {} not supported'.format(tokenizer_name))
+        raise Exception(f"Tokenizer {tokenizer_name} not supported")
 
-    out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in
-           tokenizer(set_string)]
+    out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in tokenizer(set_string)]
 
     return np.array(out, dtype=np.int32)
 
 
 def sanitize(name):
     """Replaces invalid id characters."""
-    return re.sub('\W|^(?=\d)', '_', name)
+    return re.sub("\\W|^(?=\\d)", "_", name)
 
 
 def compute_feature_hash(feature: dict) -> str:
     preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
-    return sanitize(feature[NAME]) + "_" + preproc_hash.decode('ascii')
+    return sanitize(feature[NAME]) + "_" + preproc_hash.decode("ascii")

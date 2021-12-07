@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,34 +27,34 @@ from ludwig.modules.fully_connected_modules import FCStack
 logger = logging.getLogger(__name__)
 
 
-@register_encoder('embed', SET, default=True)
+@register_encoder("embed", SET, default=True)
 class SetSparseEncoder(Encoder):
     def __init__(
-            self,
-            vocab: List[str],
-            representation: str = 'dense',
-            embedding_size: int = 50,
-            embeddings_trainable: bool = True,
-            pretrained_embeddings: Optional[str] = None,
-            embeddings_on_cpu: bool = False,
-            fc_layers=None,
-            num_fc_layers: int = 0,
-            fc_size: int = 10,
-            use_bias: bool = True,
-            weights_initializer: str = 'xavier_uniform',
-            bias_initializer: str = 'zeros',
-            norm: Optional[str] = None,
-            norm_params: Optional[Dict[str, Any]] = None,
-            activation: str = 'relu',
-            dropout: float=0.0,
-            **kwargs
+        self,
+        vocab: List[str],
+        representation: str = "dense",
+        embedding_size: int = 50,
+        embeddings_trainable: bool = True,
+        pretrained_embeddings: Optional[str] = None,
+        embeddings_on_cpu: bool = False,
+        fc_layers=None,
+        num_fc_layers: int = 0,
+        fc_size: int = 10,
+        use_bias: bool = True,
+        weights_initializer: str = "xavier_uniform",
+        bias_initializer: str = "zeros",
+        norm: Optional[str] = None,
+        norm_params: Optional[Dict[str, Any]] = None,
+        activation: str = "relu",
+        dropout: float = 0.0,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
         self.vocab_size = len(vocab)
 
-        logger.debug('  Embed')
+        logger.debug("  Embed")
         self.embed = EmbedSet(
             vocab,
             embedding_size,
@@ -67,7 +66,7 @@ class SetSparseEncoder(Encoder):
             embedding_initializer=weights_initializer,
         )
 
-        logger.debug('  FCStack')
+        logger.debug("  FCStack")
         # TODO(shreya): Make sure this is updated when FCStack is updated
         self.fc_stack = FCStack(
             first_layer_input_size=self.embed.output_shape[-1],
