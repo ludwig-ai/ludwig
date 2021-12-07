@@ -216,7 +216,8 @@ class Predictor(BasePredictor):
                 batch = batcher.next_batch()
 
                 inputs = {
-                    i_feat.feature_name: batch[i_feat.proc_column] for i_feat in self.model.input_features.values()
+                    i_feat.feature_name: torch.from_numpy(batch[i_feat.proc_column]).to(self.device)
+                    for i_feat in self.model.input_features.values()
                 }
                 outputs = activation_model(inputs)
                 collected_tensors = [(concat_name, tensor) for concat_name, tensor in outputs.items()]

@@ -18,16 +18,11 @@ from typing import Callable, Optional
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor
-from torchmetrics import (
-    Accuracy as _Accuracy,
-    AUROC,
-    IoU,
-    MeanAbsoluteError,
-    MeanMetric as _MeanMetric,
-    MeanSquaredError,
-    Metric,
-    _R2Score,
-)
+from torchmetrics import Accuracy as _Accuracy
+from torchmetrics import AUROC, IoU, MeanAbsoluteError
+from torchmetrics import MeanMetric as _MeanMetric
+from torchmetrics import MeanSquaredError, Metric
+from torchmetrics import R2Score as _R2Score
 
 from ludwig.constants import (
     ACCURACY,
