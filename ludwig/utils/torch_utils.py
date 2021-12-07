@@ -1,16 +1,14 @@
+import math
 import os
 import warnings
 from abc import abstractmethod
 from functools import lru_cache
+from typing import List, Optional, Tuple, Union
 
-from typing import Optional, List, Tuple, Union
-
-import math
 import torch
 from torch import nn
-from torch.nn import Module, ModuleDict
 from torch.autograd import Function
-
+from torch.nn import Module, ModuleDict
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -33,7 +31,7 @@ def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
 def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
     if maxlen is None:
         maxlen = lengths.max()
-    row_vector = torch.arange(0, maxlen, 1)
+    row_vector = torch.arange(maxlen, device=lengths.device)
     matrix = torch.unsqueeze(lengths, dim=-1)
     mask = row_vector < matrix
 
@@ -81,8 +79,7 @@ def get_activation(activation):
 
 
 def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0.01):
-    """
-    Computes the regularization loss for a given model.
+    """Computes the regularization loss for a given model.
 
     Parameters:
         model: torch.nn.Module object to compute regularization loss for.
@@ -180,7 +177,6 @@ class Dense(LudwigModule):
         return self.dense.input_shape
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        batch_size = input.shape[0]
         output = torch.squeeze(self.dense(input), dim=-1)
         return output
 
@@ -196,8 +192,9 @@ def _make_ix_like(input, dim=0):
 
 
 class SparsemaxFunction(Function):
-    """
-    An implementation of sparsemax (Martins & Astudillo, 2016). See
+    """An implementation of sparsemax (Martins & Astudillo, 2016).
+
+    See
     :cite:`DBLP:journals/corr/MartinsA16` for detailed description.
     By Ben Peters and Vlad Niculae
     """
@@ -270,7 +267,7 @@ sparsemax = SparsemaxFunction.apply
 class Sparsemax(torch.nn.Module):
     def __init__(self, dim=-1):
         self.dim = dim
-        super(Sparsemax, self).__init__()
+        super().__init__()
 
     def forward(self, input):
         return sparsemax(input, self.dim)
@@ -280,7 +277,7 @@ def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    horovod: Optional["horovod.torch"] = None,
+    horovod: Optional["horovod.torch"] = None,  # noqa: F821
 ):
     use_horovod = horovod is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
