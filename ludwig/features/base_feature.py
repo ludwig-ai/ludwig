@@ -31,6 +31,7 @@ from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, sequence_mask
 from ludwig.utils.types import DataFrame
 
@@ -210,19 +211,23 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         for _, metric_fn in self.metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
+            # TODO(shreya): Metrics should ideally just move to the correct device
+            #  and not require the user to do this. This is a temporary fix. See
+            #  if this can be removed before merging the PR.
+            metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 
     def get_metrics(self):
         metric_vals = {}
-        for metric_name, metric_onj in self.metric_functions.items():
+        for metric_name, metric_fn in self.metric_functions.items():
             try:
-                metric_vals[metric_name] = metric_onj.compute().detach().numpy().item()
+                metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
             except Exception as e:
                 logger.error(f"Caught exception computing metric: {metric_name}. Exception: {e}")
         return metric_vals
 
     def reset_metrics(self):
-        for of_name, metric_fn in self.metric_functions.items():
+        for _, metric_fn in self.metric_functions.items():
             if metric_fn is not None:
                 metric_fn.reset()
 

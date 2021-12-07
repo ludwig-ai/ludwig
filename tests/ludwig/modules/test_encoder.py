@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +27,7 @@ from ludwig.encoders.sequence_encoders import ParallelCNN,\
     StackedRNN
 
 DROPOUT = 0.5
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def create_encoder(encoder_type, **encoder_kwargs):
@@ -46,8 +46,7 @@ def generate_images(image_size, num_images):
 def _generate_sentence(vocab_size, max_len):
     sentence = np.zeros(max_len, dtype=np.int32)
     random_length = random.randint(1, max_len)
-    sentence[:random_length] = [random.randint(0, vocab_size - 1) for _ in
-                                range(random_length)]
+    sentence[:random_length] = [random.randint(0, vocab_size - 1) for _ in range(random_length)]
 
     return sentence
 
@@ -56,18 +55,17 @@ def generate_random_sentences(num_sentences=10, max_len=10, vocab_size=10):
     # Generate some random text
     vocab = build_vocab(vocab_size)
 
-    text = np.array([_generate_sentence(vocab_size, max_len)
-                     for _ in range(num_sentences)])
+    text = np.array([_generate_sentence(vocab_size, max_len) for _ in range(num_sentences)])
 
     return text, vocab
 
 
 def encoder_test(
-        encoder,
-        input_data,
-        output_dtype,
-        output_shape,
-        output_data=None,
+    encoder,
+    input_data,
+    output_dtype,
+    output_shape,
+    output_data=None,
 ):
     """
     Helper method to test different kinds of encoders
@@ -78,8 +76,10 @@ def encoder_test(
     :param output_data: expected output data (optional)
     :return: returns the encoder object for the caller to run extra checks
     """
+    encoder = encoder.to(DEVICE)
+
     # Run the encoder
-    input_data = torch.from_numpy(input_data)
+    input_data = torch.from_numpy(input_data).to(DEVICE)
 
     hidden = encoder(input_data)['encoder_output']
 
@@ -94,39 +94,30 @@ def encoder_test(
 
 def test_image_encoders_resnet():
     # Test the resnet encoder for images
-    encoder_kwargs = {
-        'resnet_size': 8, 'num_filters': 8, 'fc_size': 28,
-        'dropout': DROPOUT
-    }
+    encoder_kwargs = {'resnet_size': 8, 'num_filters': 8, 'fc_size': 28, 'dropout': DROPOUT}
     image_size = (3, 10, 10)
 
     output_shape = [1, 28]
     input_image = generate_images(image_size, 1)
 
-    encoder = create_encoder(
-        ResNetEncoder,
-        height=image_size[1],
-        width=image_size[2],
-        **encoder_kwargs
-    )
-    encoder_test(
-        encoder=encoder,
-        input_data=input_image,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None
-    )
+    encoder = create_encoder(ResNetEncoder,
+                             height=image_size[1],
+                             width=image_size[2],
+                             **encoder_kwargs)
+    encoder_test(encoder=encoder,
+                 input_data=input_image,
+                 output_dtype=torch.float32,
+                 output_shape=output_shape,
+                 output_data=None)
 
     output_shape = [5, 28]
     input_images = generate_images(image_size, 5)
 
-    encoder_test(
-        encoder=encoder,
-        input_data=input_images,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None
-    )
+    encoder_test(encoder=encoder,
+                 input_data=input_images,
+                 output_dtype=torch.float32,
+                 output_shape=output_shape,
+                 output_data=None)
 
     assert encoder is not None
     assert encoder.resnet.__class__.__name__ == 'ResNet'
@@ -138,20 +129,14 @@ def test_image_encoders_resnet():
 
 def test_image_encoders_stacked_2dcnn():
     # Test the resnet encoder for images
-    encoder_kwargs = {
-        'num_conv_layers': 2, 'num_filters': 16, 'fc_size': 28,
-        'dropout': DROPOUT
-
-    }
+    encoder_kwargs = {'num_conv_layers': 2, 'num_filters': 16, 'fc_size': 28, 'dropout': DROPOUT}
     image_size = (3, 10, 10)
 
-    encoder = create_encoder(
-        Stacked2DCNN,
-        num_channels=image_size[0],
-        height=image_size[1],
-        width=image_size[2],
-        **encoder_kwargs
-    )
+    encoder = create_encoder(Stacked2DCNN,
+                             num_channels=image_size[0],
+                             height=image_size[1],
+                             width=image_size[2],
+                             **encoder_kwargs)
 
     assert encoder is not None
     assert encoder.conv_stack_2d is not None
@@ -167,31 +152,30 @@ def test_image_encoders_stacked_2dcnn():
     output_shape = [1, 28]
     input_image = generate_images(image_size, 1)
 
-    encoder_test(
-        encoder=encoder,
-        input_data=input_image,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None
-    )
+    encoder_test(encoder=encoder,
+                 input_data=input_image,
+                 output_dtype=torch.float32,
+                 output_shape=output_shape,
+                 output_data=None)
 
     output_shape = [5, 28]
     input_images = generate_images(image_size, 5)
 
-    encoder_test(
-        encoder=encoder,
-        input_data=input_images,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None
-    )
+    encoder_test(encoder=encoder,
+                 input_data=input_images,
+                 output_dtype=torch.float32,
+                 output_shape=output_shape,
+                 output_data=None)
 
 
 def test_image_encoders_mlpmixer():
     # Test the resnet encoder for images
     encoder_kwargs = {
-        'patch_size': 5, 'embed_size': 8, 'token_size': 32,
-        'channel_dim': 16, 'num_layers': 2,
+        'patch_size': 5,
+        'embed_size': 8,
+        'token_size': 32,
+        'channel_dim': 16,
+        'num_layers': 2,
         'dropout': DROPOUT
     }
     image_size = (3, 10, 10)
@@ -199,31 +183,25 @@ def test_image_encoders_mlpmixer():
     output_shape = [1, 8]
     input_image = generate_images(image_size, 1)
 
-    encoder = create_encoder(
-        MLPMixerEncoder,
-        num_channels=image_size[0],
-        height=image_size[1],
-        width=image_size[2],
-        **encoder_kwargs
-    )
-    encoder_test(
-        encoder=encoder,
-        input_data=input_image,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None
-    )
+    encoder = create_encoder(MLPMixerEncoder,
+                             num_channels=image_size[0],
+                             height=image_size[1],
+                             width=image_size[2],
+                             **encoder_kwargs)
+    encoder_test(encoder=encoder,
+                 input_data=input_image,
+                 output_dtype=torch.float32,
+                 output_shape=output_shape,
+                 output_data=None)
 
     output_shape = [5, 8]
     input_images = generate_images(image_size, 5)
 
-    encoder_test(
-        encoder=encoder,
-        input_data=input_images,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None
-    )
+    encoder_test(encoder=encoder,
+                 input_data=input_images,
+                 output_dtype=torch.float32,
+                 output_shape=output_shape,
+                 output_data=None)
 
     assert encoder is not None
     assert encoder.mlp_mixer.__class__.__name__ == 'MLPMixer'
@@ -248,45 +226,32 @@ def test_sequence_encoder_embed():
 
     # Different values for reduce_output and the corresponding expected size
     reduce_outputs = ['sum', None, 'concat']
-    output_shapes = [
-        [num_sentences, embedding_size],
-        [num_sentences, max_len, embedding_size],
-        [num_sentences, max_len * embedding_size]
-    ]
+    output_shapes = [[num_sentences, embedding_size], [num_sentences, max_len, embedding_size],
+                     [num_sentences, max_len * embedding_size]]
 
     for reduce_output, output_shape in zip(reduce_outputs, output_shapes):
         for trainable in [True, False]:
             encoder_kwargs['reduce_output'] = reduce_output
             encoder_kwargs['embeddings_trainable'] = trainable
             encoder_kwargs['dropout'] = DROPOUT
-            encoder = create_encoder(
-                SequenceEmbedEncoder,
-                max_sequence_length=max_len,
-                **encoder_kwargs
-            )
+            encoder = create_encoder(SequenceEmbedEncoder,
+                                     max_sequence_length=max_len,
+                                     **encoder_kwargs)
 
-            encoder_test(
-                encoder=encoder,
-                input_data=text,
-                output_dtype=torch.float32,
-                output_shape=output_shape,
-                output_data=None
-            )
+            encoder_test(encoder=encoder,
+                         input_data=text,
+                         output_dtype=torch.float32,
+                         output_shape=output_shape,
+                         output_data=None)
 
             assert encoder.embed_sequence.dropout is not None
 
 
-@pytest.mark.parametrize(
-    'encoder_type',
-    [ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN]
-)
+@pytest.mark.parametrize('encoder_type',
+                         [ParallelCNN, StackedCNN, StackedParallelCNN, StackedRNN, StackedCNNRNN])
 @pytest.mark.parametrize('trainable', [True, False])
 @pytest.mark.parametrize('reduce_output', ['sum', 'max'])
-def test_sequence_encoders(
-        encoder_type: Encoder,
-        trainable: bool,
-        reduce_output: str
-):
+def test_sequence_encoders(encoder_type: Encoder, trainable: bool, reduce_output: str):
     num_sentences = 4
     embedding_size = 5
     max_len = 7
@@ -317,18 +282,12 @@ def test_sequence_encoders(
     encoder_kwargs['recurrent_dropout'] = DROPOUT
     encoder_kwargs['fc_dropout'] = DROPOUT
     encoder_kwargs['reduce_output'] = reduce_output
-    encoder = create_encoder(
-        encoder_type,
-        max_sequence_length=max_len,
-        **encoder_kwargs
-    )
+    encoder = create_encoder(encoder_type, max_sequence_length=max_len, **encoder_kwargs)
 
-    encoder_test(
-        encoder=encoder,
-        input_data=text,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None
-    )
+    encoder_test(encoder=encoder,
+                 input_data=text,
+                 output_dtype=torch.float32,
+                 output_shape=output_shape,
+                 output_data=None)
 
     assert isinstance(encoder, encoder_type)

@@ -7,13 +7,15 @@ import numpy as np
 import torch
 import torchmetrics
 
+import ludwig.constants as constants
 from ludwig.combiners.combiners import get_combiner_class
-from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
+from ludwig.constants import COMBINED, LOSS, NAME, TYPE
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.utils import output_feature_utils
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import LudwigModule, reg_loss
@@ -102,6 +104,7 @@ class ECD(LudwigModule):
         Returns:
             A dictionary of output {feature name}::{tensor_name} -> output tensor.
         """
+
         if isinstance(inputs, tuple):
             inputs, targets = inputs
             # Convert targets to tensors.
@@ -197,7 +200,20 @@ class ECD(LudwigModule):
         predictions,
         regularization_type: Optional[str] = None,
         regularization_lambda: Optional[float] = None,
-    ):
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        """
+        Computes the training loss for the model.
+
+        Args:
+            targets: A dictionary of target names to target tensors.
+            predictions: A dictionary of output names to output tensors.
+            regularization_type: One of 'l1', 'l2', 'l1_l2'.
+            regularization_lambda: The regularization lambda.
+
+        Returns:
+            A tuple of the loss tensor and a dictionary of loss for every
+            output feature.
+        """
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
@@ -234,7 +250,7 @@ class ECD(LudwigModule):
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
-        all_of_metrics[COMBINED] = {LOSS: self.eval_loss_metric.compute().detach().numpy().item()}
+        all_of_metrics[COMBINED] = {LOSS: get_scalar_from_ludwig_metric(self.eval_loss_metric)}
         return all_of_metrics
 
     def reset_metrics(self):
@@ -258,7 +274,7 @@ class ECD(LudwigModule):
         return [named_param for named_param in self.named_parameters() if named_param[0] in tensor_set]
 
     def get_args(self):
-        return self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed
+        return (self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed)
 
 
 def build_inputs(input_features_def: List[Dict[str, Any]], **kwargs) -> Dict[str, InputFeature]:
@@ -275,8 +291,8 @@ def build_single_input(
     logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
 
     encoder_obj = None
-    if input_feature_def.get(TIED, None) is not None:
-        tied_input_feature_name = input_feature_def[TIED]
+    if input_feature_def.get(constants.TIED, None) is not None:
+        tied_input_feature_name = input_feature_def[constants.TIED]
         if tied_input_feature_name in other_input_features:
             encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 

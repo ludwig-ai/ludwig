@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,16 +21,17 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights, print_model_summary
-from tests.integration_tests.utils import category_feature, generate_data, \
-    sequence_feature, spawn, ENCODERS
+from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature, spawn
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def _prepare_data(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output='sum')]
-    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 
-    input_features[0]['encoder'] = ENCODERS[0]
+    input_features[0]["encoder"] = ENCODERS[0]
 
     # Generate test data
     data_csv = generate_data(input_features, output_features, csv_filename)
@@ -40,17 +40,14 @@ def _prepare_data(csv_filename):
 
 def _train(input_features, output_features, data_csv, **kwargs):
     config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 2}
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+        "training": {"epochs": 2},
     }
 
     model = LudwigModel(config)
-    _, _, output_dir = model.train(
-        dataset=data_csv,
-        **kwargs
-    )
+    _, _, output_dir = model.train(dataset=data_csv, **kwargs)
     return model, output_dir
 
 
@@ -62,16 +59,14 @@ def _get_layers(model_path):
 
 @spawn
 def _collect_activations(model_path, layers, csv_filename, output_directory):
-    return collect_activations(model_path, layers,
-                               dataset=csv_filename,
-                               output_directory=output_directory)
+    return collect_activations(model_path, layers, dataset=csv_filename, output_directory=output_directory)
 
 
 def test_collect_weights(csv_filename):
     output_dir = None
     try:
         model, output_dir = _train(*_prepare_data(csv_filename))
-        model_path = os.path.join(output_dir, 'model')
+        model_path = os.path.join(output_dir, "model")
 
         #  1 for the encoder (embeddings),
         #  2 for the decoder classifier (w and b).
@@ -84,14 +79,12 @@ def test_collect_weights(csv_filename):
         assert len(tensor_names) == 3
 
         with tempfile.TemporaryDirectory() as output_directory:
-            filenames = collect_weights(model_path, tensor_names,
-                                        output_directory)
+            filenames = collect_weights(model_path, tensor_names, output_directory)
             assert len(filenames) == 3
 
             for weight, filename in zip(weights, filenames):
                 saved_weight = np.load(filename)
-                assert torch.allclose(weight, torch.from_numpy(saved_weight),
-                                      rtol=1.e-4), filename
+                assert torch.allclose(weight, torch.from_numpy(saved_weight).to(DEVICE), rtol=1.0e-4), filename
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
@@ -101,15 +94,13 @@ def test_collect_activations(csv_filename):
     output_dir = None
     try:
         model, output_dir = _train(*_prepare_data(csv_filename))
-        model_path = os.path.join(output_dir, 'model')
+        model_path = os.path.join(output_dir, "model")
 
         with tempfile.TemporaryDirectory() as output_directory:
             # [last_hidden, logits, projection_input]
-            filenames = _collect_activations(model_path,
-                                             [name for name,
-                                                 _ in model.model.named_children()],
-                                             csv_filename,
-                                             output_directory)
+            filenames = _collect_activations(
+                model_path, [name for name, _ in model.model.named_children()], csv_filename, output_directory
+            )
             assert len(filenames) == 3
     finally:
         if output_dir:
@@ -119,5 +110,5 @@ def test_collect_activations(csv_filename):
 def test_print_model_summary(csv_filename):
     output_dir = None
     model, output_dir = _train(*_prepare_data(csv_filename))
-    model_path = os.path.join(output_dir, 'model')
+    model_path = os.path.join(output_dir, "model")
     print_model_summary(model_path)

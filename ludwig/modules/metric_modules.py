@@ -59,7 +59,7 @@ from ludwig.utils.torch_utils import sequence_length_2D
 
 class LudwigMetric(ABC):
     @classmethod
-    def can_report(cls, feature: "OutputFeature") -> bool:
+    def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
         return True
 
     @classmethod
@@ -184,7 +184,7 @@ class LossMetric(MeanMetric, ABC):
         return LOGITS
 
     @classmethod
-    def can_report(cls, feature: "OutputFeature") -> bool:
+    def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
         return False
 
 
@@ -275,7 +275,7 @@ class CategoryAccuracy(_Accuracy, LudwigMetric):
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # make sure y_true is tf.int64
-        super().update(preds, target.type(torch.LongTensor))
+        super().update(preds, target.type(torch.long))
 
     @classmethod
     def get_objective(cls):
@@ -304,7 +304,7 @@ class HitsAtKMetric(_Accuracy, LudwigMetric):
         return LOGITS
 
     @classmethod
-    def can_report(cls, feature: "OutputFeature") -> bool:
+    def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
         return feature.decoder_obj.num_classes > feature.top_k
 
 
@@ -331,7 +331,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
         super().__init__()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        super().update(preds.detach(), target)
+        super().update(preds, target)
 
     @classmethod
     def get_objective(cls):

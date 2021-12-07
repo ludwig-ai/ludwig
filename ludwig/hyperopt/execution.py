@@ -41,9 +41,6 @@ except ImportError:
     class RayBackend:
         pass
 
-    class RayRemoteTrainer:
-        pass
-
 
 # TODO: refactor this into an interface
 def _is_ray_backend(backend) -> bool:

@@ -20,6 +20,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import read_csv
@@ -256,13 +257,13 @@ def test_api_training_determinism(csv_filename):
 
         divergence = False
         for weight_1, weight_2 in zip(model_weights_1, model_weights_2):
-            if not np.allclose(weight_1, weight_2):
+            if not torch.allclose(weight_1, weight_2):
                 divergence = True
                 break
         assert divergence, 'model_1 and model_2 have identical weights with different seeds!'
 
         for weight_1, weight_3 in zip(model_weights_1, model_weights_3):
-            assert np.allclose(weight_1, weight_3)
+            assert torch.allclose(weight_1, weight_3)
 
 
 def run_api_commands(
