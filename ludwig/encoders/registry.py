@@ -1,7 +1,7 @@
-from typing import Union, List, Dict, Type
+from typing import Dict, List, Type, Union
 
-from ludwig.encoders import Encoder
-from ludwig.utils.registry import Registry, DEFAULT_KEYS
+from ludwig.encoders.base import Encoder
+from ludwig.utils.registry import DEFAULT_KEYS, Registry
 
 encoder_registry = Registry()
 

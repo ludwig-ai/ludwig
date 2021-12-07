@@ -18,7 +18,7 @@ import logging
 import torch
 
 from ludwig.constants import BINARY, CATEGORY, NUMERICAL, VECTOR
-from ludwig.encoders import Encoder
+from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
 
