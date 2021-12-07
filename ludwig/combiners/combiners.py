@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,34 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import ABC
 import logging
+from abc import ABC
 from functools import lru_cache
-from typing import List, Dict, Optional, Union, Any
-
-from marshmallow import INCLUDE
-from marshmallow_dataclass import dataclass
+from typing import Any, Dict, List, Optional, Union
 
 import torch
-from torch.nn import ModuleList, Linear
-
-from ludwig.utils.registry import Registry
-from ludwig.utils.torch_utils import LudwigModule, sequence_mask as torch_sequence_mask
+from marshmallow import INCLUDE
+from marshmallow_dataclass import dataclass
+from torch.nn import Linear, ModuleList
 
 import ludwig.utils.schema_utils as schema
-from ludwig.constants import NUMERICAL, BINARY
-from ludwig.encoders.sequence_encoders import ParallelCNN
-from ludwig.encoders.sequence_encoders import StackedCNN
-from ludwig.encoders.sequence_encoders import StackedCNNRNN
-from ludwig.encoders.sequence_encoders import StackedParallelCNN
-from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.constants import BINARY, NUMERICAL
+from ludwig.encoders.sequence_encoders import ParallelCNN, StackedCNN, StackedCNNRNN, StackedParallelCNN, StackedRNN
+from ludwig.features.base_feature import InputFeature
 from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import sequence_length_3D
+from ludwig.utils.registry import Registry
+from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
+from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +120,7 @@ class ConcatCombiner(Combiner):
     def __init__(self, input_features: Dict[str, "InputFeature"] = None, config: ConcatCombinerConfig = None, **kwargs):
         super().__init__(input_features)
         self.name = "ConcatCombiner"
-        logger.debug(" {}".format(self.name))
+        logger.debug(f" {self.name}")
 
         self.flatten_inputs = config.flatten_inputs
         self.fc_stack = None
@@ -207,7 +201,7 @@ class SequenceConcatCombiner(Combiner):
     ):
         super().__init__(input_features)
         self.name = "SequenceConcatCombiner"
-        logger.debug(" {}".format(self.name))
+        logger.debug(f" {self.name}")
 
         self.reduce_output = config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
@@ -318,7 +312,7 @@ class SequenceConcatCombiner(Combiner):
                     )
 
         hidden = torch.cat(representations, 2)
-        logger.debug("  concat_hidden: {0}".format(hidden))
+        logger.debug(f"  concat_hidden: {hidden}")
 
         # ================ Mask ================
         # todo future: maybe modify this with TF2 mask mechanics
@@ -357,7 +351,7 @@ class SequenceCombiner(Combiner):
     def __init__(self, input_features: Dict[str, "InputFeature"], config: SequenceCombinerConfig = None, **kwargs):
         super().__init__(input_features)
         self.name = "SequenceCombiner"
-        logger.debug(" {}".format(self.name))
+        logger.debug(f" {self.name}")
 
         self.combiner = SequenceConcatCombiner(
             input_features,
@@ -443,7 +437,7 @@ class TabNetCombiner(Combiner):
     ) -> None:
         super().__init__(input_features)
         self.name = "TabNetCombiner"
-        logger.debug(" {}".format(self.name))
+        logger.debug(f" {self.name}")
 
         self.tabnet = TabNet(
             self.concatenated_shape[-1],
@@ -545,7 +539,7 @@ class TransformerCombiner(Combiner):
     ):
         super().__init__(input_features)
         self.name = "TransformerCombiner"
-        logger.debug(" {}".format(self.name))
+        logger.debug(f" {self.name}")
 
         self.reduce_output = config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
@@ -666,7 +660,7 @@ class TabTransformerCombiner(Combiner):
     ):
         super().__init__(input_features)
         self.name = "TabTransformerCombiner"
-        logger.debug("Initializing {}".format(self.name))
+        logger.debug(f"Initializing {self.name}")
 
         if config.reduce_output is None:
             raise ValueError("TabTransformer requires the `reduce_output` " "parameter")
@@ -806,7 +800,7 @@ class TabTransformerCombiner(Combiner):
             hidden = torch.permute(hidden, (1, 0, 2))  # bs, num_eo, h
 
             if self.embed_input_feature_name:
-                i_f_names_idcs = torch.reshape(self.embeddable_features_indices, [-1, 1])
+                i_f_names_idcs = torch.reshape(torch.arange(0, len(embeddable_encoder_outputs)), [-1, 1])
                 embedded_i_f_names = self.embed_i_f_name_layer(i_f_names_idcs)
                 embedded_i_f_names = torch.unsqueeze(embedded_i_f_names, dim=0)
                 embedded_i_f_names = torch.tile(embedded_i_f_names, [batch_size, 1, 1])
@@ -821,8 +815,8 @@ class TabTransformerCombiner(Combiner):
             # ================ Sequence Reduction ================
             hidden = self.reduce_sequence(hidden)
         else:
-            # create emtpy tensor because there are no cateagory features
-            hidden = torch.tile(self.empty_hidden, [batch_size, 0])
+            # create empty tensor because there are no category features
+            hidden = torch.empty([batch_size, 0])
 
         # ================ Concat Skipped ================
         if len(unembeddable_encoder_outputs) > 0:
@@ -887,7 +881,7 @@ class ComparatorCombiner(Combiner):
     ):
         super().__init__(input_features)
         self.name = "ComparatorCombiner"
-        logger.debug("Entering {}".format(self.name))
+        logger.debug(f"Entering {self.name}")
 
         self.entity_1 = config.entity_1
         self.entity_2 = config.entity_2
