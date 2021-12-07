@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +18,7 @@ import time
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.data.dataset.pandas import PandasDatasetManager
+from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.utils.horovod_utils import initialize_horovod
@@ -39,24 +39,23 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def create_trainer(self, **kwargs):
         return Trainer(horovod=self._horovod, **kwargs)
 
-    def create_predictor(self, **kwargs):
-        return Predictor(horovod=self._horovod, **kwargs)
+    def create_predictor(self, model: ECD, **kwargs):
+        return Predictor(model, horovod=self._horovod, **kwargs)
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
         # to all other ranks
-        self._horovod.broadcast_parameters(model.state_dict(),
-                                           root_rank=0)
+        self._horovod.broadcast_parameters(model.state_dict(), root_rank=0)
 
     def broadcast_return(self, fn):
         """Returns the result of calling `fn` on coordinator, broadcast to all other ranks.
 
-        Specifically, `fn` is only executed on coordinator, but its result is returned by every
-        rank by broadcasting the return value from coordinator.
+        Specifically, `fn` is only executed on coordinator, but its result is returned by every rank by broadcasting the
+        return value from coordinator.
         """
         result = fn() if self.is_coordinator() else None
         if self._horovod:
-            name = f'broadcast_return_{int(time.time())}'
+            name = f"broadcast_return_{int(time.time())}"
             result = self._horovod.broadcast_object(result, name=name)
         return result
 

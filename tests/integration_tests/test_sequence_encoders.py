@@ -53,6 +53,10 @@ def input_sequence() -> torch.Tensor:
     for i in range(input_tensor.shape[0]):
         input_tensor[i, :sequence_lengths[i]] = torch.tensor(
             np.random.randint(2, TEST_VOCAB_SIZE, size=sequence_lengths[i]))
+
+    if torch.cuda.is_available():
+        input_tensor = input_tensor.cuda()
+
     return input_tensor
 
 
@@ -84,6 +88,8 @@ def test_sequence_encoders(
     encoder_obj = get_encoder_cls(SEQUENCE, enc_encoder)(
         **encoder_parameters
     )
+    if torch.cuda.is_available():
+        encoder_obj = encoder_obj.cuda()
 
     encoder_out = encoder_obj(input_sequence)
 
