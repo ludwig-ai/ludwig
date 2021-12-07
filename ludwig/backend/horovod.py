@@ -40,7 +40,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         return Trainer(horovod=self._horovod, **kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
-        return Predictor(horovod=self._horovod, **kwargs)
+        return Predictor(model, horovod=self._horovod, **kwargs)
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
