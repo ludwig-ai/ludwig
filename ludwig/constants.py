@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,7 +65,7 @@ PROBABILITIES = "probabilities"
 TOKEN_ACCURACY = "token_accuracy"
 LAST_ACCURACY = "last_accuracy"
 SEQUENCE_ACCURACY = "sequence_accuracy"
-LAST_PROBABILTIES = "last_probabilities"
+LAST_PROBABILITIES = "last_probabilities"
 LAST_PREDICTIONS = "last_predictions"
 LENGTHS = "lengths"
 TIED = "tied"
@@ -137,12 +136,12 @@ CHECKSUM = "checksum"
 HDF5 = "hdf5"
 PARQUET = "parquet"
 
-SRC = 'dataset_src'
+SRC = "dataset_src"
 
-BATCH_SIZE = 'batch_size'
-EVAL_BATCH_SIZE = 'eval_batch_size'
-LEARNING_RATE = 'learning_rate'
-AUTO = 'auto'
-CONFIG = 'config'
+BATCH_SIZE = "batch_size"
+EVAL_BATCH_SIZE = "eval_batch_size"
+LEARNING_RATE = "learning_rate"
+AUTO = "auto"
+CONFIG = "config"
 
 COMBINER = "combiner"
