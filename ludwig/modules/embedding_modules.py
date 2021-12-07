@@ -209,7 +209,7 @@ class EmbedSet(LudwigModule):
         else:
             raise ValueError(f"Unsupported aggregation function {aggregation_function}")
 
-        self.register_buffer('vocab_indices', torch.arange(self.vocab_size))
+        self.register_buffer("vocab_indices", torch.arange(self.vocab_size))
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
@@ -276,7 +276,7 @@ class EmbedWeighted(LudwigModule):
         else:
             self.dropout = None
 
-        self.register_buffer('vocab_indices', torch.arange(self.vocab_size, dtype=torch.int32))
+        self.register_buffer("vocab_indices", torch.arange(self.vocab_size, dtype=torch.int32))
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
@@ -286,7 +286,7 @@ class EmbedWeighted(LudwigModule):
         """
         # Convert to multi-hot input
         signed_input = (inputs != 0).type(torch.int32)
-        multiple_hot_indexes = (signed_input * self.vocab_indices)
+        multiple_hot_indexes = signed_input * self.vocab_indices
         embedded = self.embeddings(multiple_hot_indexes)
         # Mask out the 0th embedding
         mask = torch.unsqueeze(inputs, -1)
@@ -371,14 +371,12 @@ class EmbedWeighted(LudwigModule):
 
 
 class EmbedSequence(LudwigModule):
-
     def __init__(
         self,
         vocab: List[str],
         embedding_size: int,
         max_sequence_length: int,
         representation: str = "dense",
-        representation: str = 'dense',
         embeddings_trainable: bool = True,
         pretrained_embeddings: Optional[str] = None,
         force_embedding_size: bool = False,
