@@ -37,7 +37,8 @@ class DecoderRNN(nn.Module):
 
         # TODO: Support other cell types.
         self.gru = nn.GRU(hidden_size, hidden_size, batch_first=True)
-        self.out = nn.Linear(hidden_size, vocab_size, bias=False)
+
+        self.out = nn.Linear(hidden_size, vocab_size)
 
     def forward(self, input: torch.Tensor, hidden: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Runs a single decoding time step.
