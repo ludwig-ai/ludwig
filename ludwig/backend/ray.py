@@ -397,7 +397,7 @@ class RayPredictor(BasePredictor):
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
                 dataset = self._prepare_batch(df)
-                predictions = self.predict(model=self.model, batch=dataset)
+                predictions = self.predict(batch=dataset)
 
                 for output_feature in self.model.output_features.values():
                     predictions = output_feature.flatten(predictions)
