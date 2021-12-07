@@ -11,6 +11,7 @@ from torch.autograd import Function
 from torch.nn import Module, ModuleDict
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
@@ -150,10 +151,9 @@ class LudwigModule(Module):
 
     @lru_cache(maxsize=1)
     def _compute_output_shape(self) -> torch.Size:
-
         dummy_input = torch.rand(2, *self.input_shape, device=self.device)
-
         output_tensor = self.forward(dummy_input.type(self.input_dtype))
+
         if isinstance(output_tensor, torch.Tensor):
             return output_tensor.size()[1:]
         elif isinstance(output_tensor, dict) and "encoder_output" in output_tensor:
