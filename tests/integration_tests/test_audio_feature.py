@@ -1,8 +1,4 @@
-import os
-import shutil
 import pytest
-import pandas as pd
-
 import torch
 
 from ludwig.features.audio_feature import AudioInputFeature
@@ -15,23 +11,15 @@ DEFAULT_FC_SIZE = 256
 
 
 @pytest.mark.parametrize(
-    'enc_encoder',
-    [
-        'stacked_cnn', 'parallel_cnn', 'stacked_parallel_cnn', 'rnn', 'cnnrnn',
-        'passthrough'
-    ]
+    "enc_encoder", ["stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "passthrough"]
 )
 def test_audio_feature(enc_encoder):
     # synthetic audio tensor
-    audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE],
-                               dtype=torch.float32)
+    audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32)
 
     # generate audio feature config
     audio_feature_config = audio_feature(
-        folder='.',
-        encoder=enc_encoder,
-        max_sequence_length=SEQ_SIZE,
-        embedding_size=AUDIO_W_SIZE
+        folder=".", encoder=enc_encoder, max_sequence_length=SEQ_SIZE, embedding_size=AUDIO_W_SIZE
     )
 
     # instantiate audio input feature object
@@ -42,11 +30,9 @@ def test_audio_feature(enc_encoder):
 
     # confirm correctness of the the audio encoder output
     assert isinstance(encoder_output, dict)
-    assert 'encoder_output' in encoder_output
-    assert isinstance(encoder_output['encoder_output'], torch.Tensor)
-    if enc_encoder == 'passthrough':
-        assert encoder_output['encoder_output'].shape \
-               == (BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE)
+    assert "encoder_output" in encoder_output
+    assert isinstance(encoder_output["encoder_output"], torch.Tensor)
+    if enc_encoder == "passthrough":
+        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE)
     else:
-        assert encoder_output['encoder_output'].shape \
-               == (BATCH_SIZE, DEFAULT_FC_SIZE)
+        assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_FC_SIZE)

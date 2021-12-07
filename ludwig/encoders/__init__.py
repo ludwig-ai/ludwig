@@ -1,5 +1,3 @@
-from ludwig.encoders.base import Encoder
-
 # register all encoders
 import ludwig.encoders.bag_encoders
 import ludwig.encoders.binary_encoders
@@ -10,4 +8,4 @@ import ludwig.encoders.h3_encoders
 import ludwig.encoders.image_encoders
 import ludwig.encoders.sequence_encoders
 import ludwig.encoders.set_encoders
-import ludwig.encoders.text_encoders
+import ludwig.encoders.text_encoders  # noqa

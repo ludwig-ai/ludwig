@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,19 +24,16 @@ from ludwig.encoders.registry import register_encoder
 logger = logging.getLogger(__name__)
 
 
-@register_encoder('passthrough', BINARY, default=True)
+@register_encoder("passthrough", BINARY, default=True)
 class BinaryPassthroughEncoder(Encoder):
-    def __init__(
-            self,
-            **kwargs
-    ):
+    def __init__(self, **kwargs):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type torch.float32
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1], type torch.float32
         """
         if inputs.dtype == torch.bool:
             inputs = inputs.to(torch.float32)
