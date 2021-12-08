@@ -15,6 +15,7 @@ from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.experiment import experiment_cli
 from ludwig.features.numerical_feature import numeric_transformation_registry
+from ludwig.globals import TRAINING_PREPROC_FILE_NAME
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
@@ -352,7 +353,7 @@ def test_cache_checksum(csv_filename, tmp_path):
     }
 
     backend = LocalTestBackend()
-    cache_fname = replace_file_extension(source_dataset, "training.hdf5")
+    cache_fname = replace_file_extension(source_dataset, TRAINING_PREPROC_FILE_NAME)
 
     # conduct initial training
     output_directory = os.path.join(tmp_path, "results")

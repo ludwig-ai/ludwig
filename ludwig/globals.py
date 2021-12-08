@@ -22,6 +22,13 @@ TRAIN_SET_METADATA_FILE_NAME = "training_set_metadata.json"
 TRAINING_PROGRESS_TRACKER_FILE_NAME = "training_progress.json"
 TRAINING_CHECKPOINTS_DIR_PATH = "training_checkpoints"
 
+TEST_STATISTICS_FILE_NAME = "test_statistics.json"
+
+PREDICTIONS_PARQUET_FILE_NAME = "predictions.parquet"
+PREDICTIONS_SHAPES_FILE_NAME = "predictions.shapes.json"
+
+TRAINING_PREPROC_FILE_NAME = "training.hdf5"
+
 DISABLE_PROGRESSBAR = False
 
 
