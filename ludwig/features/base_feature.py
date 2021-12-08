@@ -153,8 +153,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @abstractmethod
     def get_prediction_set(self):
-        """Returns the set of prediction columns returned by this feature."""
-        pass
+        """Returns the set of prediction keys returned by this feature."""
+        raise NotImplementedError("OutputFeature is missing implementation for get_prediction_set.")
 
     @classmethod
     @abstractmethod

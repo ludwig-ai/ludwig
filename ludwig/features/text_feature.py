@@ -41,7 +41,6 @@ from ludwig.constants import (
 )
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
-from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
@@ -370,19 +369,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         targets,
         train_set_metadata,
     ):
-        overall_stats = {}
-        level_idx2str = "{}_{}".format(train_set_metadata["level"], "idx2str")
-
-        sequences = targets
-        last_elem_sequence = sequences[np.arange(sequences.shape[0]), (sequences != 0).cumsum(1).argmax(1)]
-        confusion_matrix = ConfusionMatrix(
-            last_elem_sequence, predictions[LAST_PREDICTIONS], labels=train_set_metadata[level_idx2str]
-        )
-        overall_stats["confusion_matrix"] = confusion_matrix.cm.tolist()
-        overall_stats["overall_stats"] = confusion_matrix.stats()
-        overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
-
-        return overall_stats
+        return {}
 
     def postprocess_predictions(
         self,

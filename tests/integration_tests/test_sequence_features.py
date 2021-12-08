@@ -144,7 +144,7 @@ def test_sequence_decoders(
         # gather expected components of the shape
         batch_size = combiner_outputs["hidden"].shape[0]
         seq_size = output_features[0]["max_len"]
-        num_classes = model.config["output_features"][0]["num_classes"]
+        vocab_size = model.config["output_features"][0]["vocab_size"]
 
         # confirm output is what is expected
         assert len(decoder_out) == 5
@@ -155,7 +155,7 @@ def test_sequence_decoders(
             assert logits is None
         else:
             assert isinstance(logits, torch.Tensor)
-            assert logits.shape.as_list() == [batch_size, seq_size, num_classes]
+            assert logits.shape.as_list() == [batch_size, seq_size, vocab_size]
 
         assert isinstance(lengths, torch.Tensor)
         assert lengths.shape.as_list() == [batch_size]
@@ -167,7 +167,7 @@ def test_sequence_decoders(
         assert last_preds.shape.as_list() == [batch_size]
 
         assert isinstance(probs, torch.Tensor)
-        assert probs.shape.as_list() == [batch_size, seq_size, num_classes]
+        assert probs.shape.as_list() == [batch_size, seq_size, vocab_size]
 
 
 # todo: refactor test once torch sequence generator work is complete

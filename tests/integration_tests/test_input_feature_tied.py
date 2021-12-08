@@ -85,8 +85,7 @@ TiedUseCase = namedtuple("TiedUseCase", "input_feature output_feature")
     [
         TiedUseCase(numerical_feature, numerical_feature),
         TiedUseCase(text_feature, category_feature),
-        # TODO(#1333): Re-enable.
-        # TiedUseCase(sequence_feature, sequence_feature)
+        TiedUseCase(sequence_feature, sequence_feature),
     ],
 )
 def test_tied_macro_level(tied_use_case: TiedUseCase, csv_filename: str):

@@ -45,7 +45,6 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.utils import output_feature_utils
-from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import (
@@ -327,17 +326,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
-        overall_stats = {}
-        sequences = targets
-        last_elem_sequence = sequences[np.arange(sequences.shape[0]), (sequences != 0).cumsum(1).argmax(1)]
-        confusion_matrix = ConfusionMatrix(
-            last_elem_sequence, predictions[LAST_PREDICTIONS], labels=train_set_metadata["idx2str"]
-        )
-        overall_stats["confusion_matrix"] = confusion_matrix.cm.tolist()
-        overall_stats["overall_stats"] = confusion_matrix.stats()
-        overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
-
-        return overall_stats
+        return {}
 
     def postprocess_predictions(
         self,
@@ -353,7 +342,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
                 def idx2str(row):
                     pred = row[predictions_col]
-                    length = row[lengths_col]
+                    # length = row[lengths_col]
+                    length = metadata["max_sequence_length"]
                     return [
                         metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
                         for token in [pred[i] for i in range(length)]
@@ -392,7 +382,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 # sum log probability for tokens up to sequence length
                 # create mask only tokens for sequence length
                 seq_prob = row[probs_col]
-                length = row[lengths_col]
+                length = metadata["max_sequence_length"]
                 mask = np.arange(seq_prob.shape[-1]) < np.array(length).reshape(-1, 1)
                 return np.sum(np.log(seq_prob) * mask, axis=-1)[0]
 
