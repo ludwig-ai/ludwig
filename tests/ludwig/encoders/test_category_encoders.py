@@ -14,7 +14,7 @@ def test_categorical_dense_encoder(vocab, embedding_size):
     inputs = torch.randint(len(vocab), (10,))  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
     outputs = dense_encoder(inputs)
-    # Ensures that if embedding_size is larger than len(vocab), len(vocab) is used as the embedding size.
+    # In dense mode, the embedding size should be less than or equal to vocab size.
     assert outputs.shape[-1] == min(embedding_size, len(vocab))
     # Ensures output shape matches encoder expected output shape.
     assert outputs.shape[1:] == dense_encoder.output_shape
@@ -28,7 +28,7 @@ def test_categorical_sparse_encoder(vocab):
     inputs = torch.randint(len(vocab), (10,))  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
     outputs = sparse_encoder(inputs)
-    # In sparse mode, embedding_size will always be equal vocab_size.
+    # In sparse mode, embedding_size will always be equal to vocab size.
     assert outputs.shape[-1] == len(vocab)
     # Ensures output shape matches encoder expected output shape.
     assert outputs.shape[1:] == sparse_encoder.output_shape
