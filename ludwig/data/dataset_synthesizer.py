@@ -214,7 +214,7 @@ def generate_sequence(feature):
     if "min_len" in feature:
         length = random.randint(feature["min_len"], length)
     sequence = [random.choice(feature["idx2str"]) for _ in range(length)]
-    feature["vocab_size"] = feature["vocab_size"] + 4
+    feature["vocab_size"] = feature["vocab_size"] + 4  # For special symbols.
     return " ".join(sequence)
 
 
