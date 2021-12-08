@@ -11,19 +11,21 @@ from torch import nn
 from torch.autograd import Function
 from torch.nn import Module, ModuleDict
 
+from ludwig.utils.strings_utils import PADDING_IDX
+
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
-    """Returns the number of non-zero elements per sequence in batch.
+    """Returns the number of non-padding elements per sequence in batch.
 
     :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].
 
     # Return
     :returns: (torch.Tensor) The count on non-zero elements per sequence.
     """
-    used = (sequence != 0).type(torch.int32)
+    used = (sequence != PADDING_IDX).type(torch.int32)
     length = torch.sum(used, 1)
     return length
 

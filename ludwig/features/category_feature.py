@@ -79,7 +79,7 @@ class CategoryFeatureMixin:
             "stripped",
             num_most_frequent=preprocessing_parameters["most_common"],
             lowercase=preprocessing_parameters["lowercase"],
-            add_padding=False,
+            add_special_symbols=False,
             processor=backend.df_engine,
         )
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": len(str2idx)}

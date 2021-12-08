@@ -115,9 +115,8 @@ def assign_vocab(feature):
 def build_feature_parameters(features):
     feature_parameters = {}
     for feature in features:
-        fearure_builder_function = get_from_registry(feature[TYPE], parameters_builders_registry)
-
-        feature_parameters[feature[NAME]] = fearure_builder_function(feature)
+        feature_builder_function = get_from_registry(feature[TYPE], parameters_builders_registry)
+        feature_parameters[feature[NAME]] = feature_builder_function(feature)
     return feature_parameters
 
 
@@ -180,7 +179,7 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict]):
         header.append(feature[NAME])
 
     yield header
-    for _ in range(dataset_size):
+    for _ in range(dataset_size + 1):
         yield generate_datapoint(features)
 
 
@@ -215,6 +214,7 @@ def generate_sequence(feature):
     if "min_len" in feature:
         length = random.randint(feature["min_len"], length)
     sequence = [random.choice(feature["idx2str"]) for _ in range(length)]
+    feature["vocab_size"] = feature["vocab_size"] + 4
     return " ".join(sequence)
 
 

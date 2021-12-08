@@ -74,14 +74,12 @@ class SequenceGeneratorDecoder(Decoder):
         cell_type="gru",
         input_size=256,
         num_layers=1,
-        start_symbol_idx=strings_utils.START_IDX,
         **kwargs,
     ):
         super().__init__()
         self.vocab_size = vocab_size
         self.decoder_rnn = DecoderRNN(input_size, vocab_size)
         self.max_sequence_length = max_sequence_length
-        self.start_symbol_idx = start_symbol_idx
 
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         """Decodes the inputs into a sequence.
@@ -101,7 +99,7 @@ class SequenceGeneratorDecoder(Decoder):
         logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
 
         # Initialize the decoder with start symbols.
-        decoder_input = torch.empty(batch_size).fill_(self.start_symbol_idx)
+        decoder_input = torch.empty(batch_size).fill_(strings_utils.START_IDX)
 
         # Unsqueeze to account for extra multilayer dimension.
         decoder_hidden = encoder_output_state.unsqueeze(0)

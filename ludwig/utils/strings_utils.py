@@ -171,7 +171,7 @@ def add_or_move_symbol(vocab_list, vocab_set, symbol, index):
     """Inserts or moves the symbol to the specified index."""
     if symbol in vocab_set:
         vocab_list.remove(symbol)
-    return vocab_list.insert(symbol, index)
+    vocab_list.insert(index, symbol)
 
 
 def create_vocabulary(
@@ -180,6 +180,7 @@ def create_vocabulary(
     lowercase=True,
     num_most_frequent=None,
     vocab_file=None,
+    add_special_symbols: bool = True,
     unknown_symbol=UNKNOWN_SYMBOL,
     padding_symbol=PADDING_SYMBOL,
     start_symbol=START_SYMBOL,
@@ -231,11 +232,11 @@ def create_vocabulary(
 
     vocab_set = set(vocab)
 
-    if tokenizer_type != "hf_tokenizer":
-        vocab = add_or_move_symbol(vocab, vocab_set, stop_symbol, STOP_IDX)
-        vocab = add_or_move_symbol(vocab, vocab_set, start_symbol, START_IDX)
-        vocab = add_or_move_symbol(vocab, vocab_set, padding_symbol, PADDING_IDX)
-        vocab = add_or_move_symbol(vocab, vocab_set, unknown_symbol, UNKNOWN_IDX)
+    if tokenizer_type != "hf_tokenizer" and add_special_symbols:
+        add_or_move_symbol(vocab, vocab_set, stop_symbol, STOP_IDX)
+        add_or_move_symbol(vocab, vocab_set, start_symbol, START_IDX)
+        add_or_move_symbol(vocab, vocab_set, padding_symbol, PADDING_IDX)
+        add_or_move_symbol(vocab, vocab_set, unknown_symbol, UNKNOWN_IDX)
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}

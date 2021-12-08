@@ -1,7 +1,6 @@
 from typing import Optional
 
 import torch
-import torch.nn.functional as F
 from torch import Tensor
 from torchmetrics.metric import Metric
 
@@ -21,10 +20,13 @@ def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.boo
 
 
 def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int):
-    """Implements tf.dynamic_repartition in torch.
+    """Implements tf.dynamic_partition in torch.
 
     From https://discuss.pytorch.org/t/equivalent-of-tf-dynamic-partition/53735.
     """
+    assert data.size() == partitions.size()
+    data = data.view(-1)
+    partitions = partitions.view(-1)
     res = []
     for i in range(num_partitions):
         res += [data[(partitions == i).nonzero().squeeze(1)]]
@@ -32,14 +34,16 @@ def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int):
 
 
 def masked_correct_predictions(targets: Tensor, preds: Tensor, targets_sequence_lengths: Tensor) -> Tensor:
+    """Masks out special symbols, and returns tensor of correct predictions.
+
+    Args:
+        targets: 2D tensor [batch_size, sequence_length]
+        preds: 2D tensor [batch_size, sequence_length]
+
+    Returns:
+        1D tensor of all correct predictions.
     """
-    Params:
-        targets: 2D tensor
-        preds: 2D tensor
-    """
-    truncated_preds = preds[:, : targets.shape[1]]
-    padded_truncated_preds = F.pad(truncated_preds, pad=[0, targets.shape[1] - truncated_preds.shape[1]])
-    correct_preds = padded_truncated_preds == targets
+    correct_preds = preds == targets
 
     mask = sequence_mask(lengths=targets_sequence_lengths, maxlen=correct_preds.shape[1], dtype=torch.int32)
     _, masked_correct_preds = dynamic_partition(data=correct_preds, partitions=mask, num_partitions=2)

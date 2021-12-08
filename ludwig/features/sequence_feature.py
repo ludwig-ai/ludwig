@@ -222,7 +222,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         logits = output_feature_utils.get_output_feature_tensor(all_decoder_outputs, feature_name, LOGITS)
         probabilities = torch.softmax(logits, -1)
         predictions = torch.argmax(logits, -1)
-        # predictions = predictions.long()
 
         # predictions: [batch_size, sequence_length]
         # probabilities: [batch_size, sequence_length, vocab_size]
