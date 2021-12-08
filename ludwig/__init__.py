@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +34,7 @@ ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.DEBUG)
 
 # Set formatter
-formatter = logging.Formatter('%(message)s')
+formatter = logging.Formatter("%(message)s")
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)

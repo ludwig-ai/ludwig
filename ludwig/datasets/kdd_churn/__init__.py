@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,8 +39,7 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
 
 
 class KDDChurn(KDDCup2009Dataset):
-    """
-    The KDD Cup 2009 Churn dataset
+    """The KDD Cup 2009 Churn dataset.
 
     Additional Details:
 

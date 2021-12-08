@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,31 +18,29 @@ from functools import partial
 
 import torch
 
+from ludwig.constants import BINARY, CATEGORY, LOSS, NUMERICAL, SET, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
-
 from ludwig.utils.torch_utils import Dense, get_activation
-
-from ludwig.constants import LOSS, TYPE, BINARY, CATEGORY, NUMERICAL, SET, VECTOR
 
 logger = logging.getLogger(__name__)
 
 
-@register_decoder('regressor', [BINARY, NUMERICAL], default=True)
+@register_decoder("regressor", [BINARY, NUMERICAL], default=True)
 class Regressor(Decoder):
     def __init__(
-            self,
-            input_size,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            activation=None,
-            **kwargs
+        self,
+        input_size,
+        use_bias=True,
+        weights_initializer="xavier_uniform",
+        bias_initializer="zeros",
+        activation=None,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  Dense')
+        logger.debug("  Dense")
 
         self.dense = Dense(
             input_size=input_size,
@@ -61,23 +58,23 @@ class Regressor(Decoder):
         return self.dense(inputs)
 
 
-@register_decoder('projector', [VECTOR], default=True)
+@register_decoder("projector", [VECTOR], default=True)
 class Projector(Decoder):
     def __init__(
-            self,
-            input_size,
-            output_size,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            activation=None,
-            clip=None,
-            **kwargs
+        self,
+        input_size,
+        output_size,
+        use_bias=True,
+        weights_initializer="xavier_uniform",
+        bias_initializer="zeros",
+        activation=None,
+        clip=None,
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  Dense')
+        logger.debug("  Dense")
         self.dense = Dense(
             input_size=input_size,
             output_size=output_size,
@@ -90,18 +87,11 @@ class Projector(Decoder):
 
         if clip is not None:
             if isinstance(clip, (list, tuple)) and len(clip) == 2:
-                self.clip = partial(
-                    torch.clip,
-                    min=clip[0],
-                    max=clip[1]
-                )
+                self.clip = partial(torch.clip, min=clip[0], max=clip[1])
             else:
                 raise ValueError(
-                    'The clip parameter of {} is {}. '
-                    'It must be a list or a tuple of length 2.'.format(
-                        self.feature_name,
-                        self.clip
-                    )
+                    "The clip parameter of {} is {}. "
+                    "It must be a list or a tuple of length 2.".format(self.feature_name, self.clip)
                 )
         else:
             self.clip = None
@@ -117,21 +107,21 @@ class Projector(Decoder):
         return values
 
 
-@register_decoder('classifier', [CATEGORY, SET], default=True)
+@register_decoder("classifier", [CATEGORY, SET], default=True)
 class Classifier(Decoder):
     def __init__(
-            self,
-            input_size,
-            num_classes,
-            use_bias=True,
-            weights_initializer='xavier_uniform',
-            bias_initializer='zeros',
-            **kwargs
+        self,
+        input_size,
+        num_classes,
+        use_bias=True,
+        weights_initializer="xavier_uniform",
+        bias_initializer="zeros",
+        **kwargs,
     ):
         super().__init__()
-        logger.debug(' {}'.format(self.name))
+        logger.debug(f" {self.name}")
 
-        logger.debug('  Dense')
+        logger.debug("  Dense")
         self.num_classes = num_classes
         self.dense = Dense(
             input_size=input_size,
@@ -143,7 +133,7 @@ class Classifier(Decoder):
 
         self.sampled_loss = False
         if LOSS in kwargs and TYPE in kwargs[LOSS] and kwargs[LOSS][TYPE] is not None:
-            self.sampled_loss = kwargs[LOSS][TYPE].startswith('sampled')
+            self.sampled_loss = kwargs[LOSS][TYPE].startswith("sampled")
 
         # this is needed because TF2 initializes the weights at the first call
         # so the first time we need to compute the full dense,

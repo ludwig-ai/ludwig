@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,62 +14,37 @@
 # ==============================================================================
 import pytest
 
-from ludwig.hyperopt.sampling import GridSampler, RandomSampler, \
-    PySOTSampler
+from ludwig.hyperopt.sampling import GridSampler, PySOTSampler, RandomSampler
 
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
-            "training.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.1,
-                "steps": 4,
-                "space": "log"
-            },
-            "combiner.num_fc_layers": {
-                "type": "int",
-                "low": 1,
-                "high": 4
-            },
-            "utterance.cell_type": {
-                "type": "category",
-                "values": ["rnn", "gru", "lstm"]
-            }
+            "training.learning_rate": {"type": "float", "low": 0.0001, "high": 0.1, "steps": 4, "space": "log"},
+            "combiner.num_fc_layers": {"type": "int", "low": 1, "high": 4},
+            "utterance.cell_type": {"type": "category", "values": ["rnn", "gru", "lstm"]},
         },
         "expected_search_space": {
             "training.learning_rate": [0.0001, 0.001, 0.01, 0.1],
             "combiner.num_fc_layers": [1, 2, 3, 4],
-            "utterance.cell_type": ["rnn", "gru", "lstm"]
+            "utterance.cell_type": ["rnn", "gru", "lstm"],
         },
         "goal": "minimize",
         "expected_len_grids": 48,
-        "num_samples": 10
+        "num_samples": 10,
     },
     "test_2": {
         "parameters": {
-            "training.learning_rate": {
-                "type": "float",
-                "low": 0.001,
-                "high": 0.1,
-                "steps": 4,
-                "space": "linear"
-            },
-            "combiner.num_fc_layers": {
-                "type": "int",
-                "low": 2,
-                "high": 6,
-                "steps": 3
-            }
+            "training.learning_rate": {"type": "float", "low": 0.001, "high": 0.1, "steps": 4, "space": "linear"},
+            "combiner.num_fc_layers": {"type": "int", "low": 2, "high": 6, "steps": 3},
         },
         "expected_search_space": {
             "training.learning_rate": [0.001, 0.034, 0.067, 0.1],
-            "combiner.num_fc_layers": [2, 4, 6]
+            "combiner.num_fc_layers": [2, 4, 6],
         },
         "goal": "maximize",
         "expected_len_grids": 12,
-        "num_samples": 5
-    }
+        "num_samples": 5,
+    },
 }
 
 
@@ -97,10 +71,8 @@ def test_grid_strategy(key):
                 assert value in set(grid_sampler_params[param]["values"])
 
     assert actual_params_keys == expected_params_keys
-    assert grid_sampler.search_space == hyperopt_test_params[
-        "expected_search_space"]
-    assert len(
-        grid_sampler.samples) == hyperopt_test_params["expected_len_grids"]
+    assert grid_sampler.search_space == hyperopt_test_params["expected_search_space"]
+    assert len(grid_sampler.samples) == hyperopt_test_params["expected_len_grids"]
 
 
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
@@ -110,8 +82,7 @@ def test_random_sampler(key):
     random_sampler_params = hyperopt_test_params["parameters"]
     num_samples = hyperopt_test_params["num_samples"]
 
-    random_sampler = RandomSampler(
-        goal=goal, parameters=random_sampler_params, num_samples=num_samples)
+    random_sampler = RandomSampler(goal=goal, parameters=random_sampler_params, num_samples=num_samples)
 
     actual_params_keys = random_sampler.sample().keys()
     expected_params_keys = random_sampler_params.keys()
@@ -138,8 +109,7 @@ def test_pysot_sampler(key):
     pysot_sampler_params = hyperopt_test_params["parameters"]
     num_samples = hyperopt_test_params["num_samples"]
 
-    pysot_sampler = PySOTSampler(
-        goal=goal, parameters=pysot_sampler_params, num_samples=num_samples)
+    pysot_sampler = PySOTSampler(goal=goal, parameters=pysot_sampler_params, num_samples=num_samples)
 
     actual_params_keys = pysot_sampler.sample().keys()
     expected_params_keys = pysot_sampler_params.keys()

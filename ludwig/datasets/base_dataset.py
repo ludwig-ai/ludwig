@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +20,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-DEFAULT_CACHE_LOCATION = str(Path.home().joinpath('.ludwig_cache'))
+DEFAULT_CACHE_LOCATION = str(Path.home().joinpath(".ludwig_cache"))
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -34,8 +33,7 @@ def read_config(dataset_name):
 class BaseDataset:
     """Base class that defines the public interface for the ludwig dataset API.
 
-    This includes the download, transform and converting the final transformed API
-    into a resultant dataframe.
+    This includes the download, transform and converting the final transformed API into a resultant dataframe.
     """
 
     def __init__(self, dataset_name, cache_dir):
@@ -48,16 +46,16 @@ class BaseDataset:
     def download(self) -> None:
         """Download the file from config url that represents the raw unprocessed training data.
 
-        The workflow for this involves unzipping the file and renaming it to raw.csv, which means
-        keep trying to download the file till successful.
+        The workflow for this involves unzipping the file and renaming it to raw.csv, which means keep trying to
+        download the file till successful.
         """
         self.download_raw_dataset()
 
     def process(self) -> None:
         """Process the dataset to get it ready to be plugged into a dataframe.
 
-        Converts into a format to be used by the ludwig training API. To do this we create
-        a new dictionary that contains the KV pairs in the format that we need.
+        Converts into a format to be used by the ludwig training API. To do this we create a new dictionary that
+        contains the KV pairs in the format that we need.
         """
         if not self.is_downloaded():
             self.download()
@@ -74,23 +72,23 @@ class BaseDataset:
 
     @property
     def raw_dataset_path(self):
-        return os.path.join(self.download_dir, 'raw')
+        return os.path.join(self.download_dir, "raw")
 
     @property
     def raw_temp_path(self):
-        return os.path.join(self.download_dir, '_raw')
+        return os.path.join(self.download_dir, "_raw")
 
     @property
     def processed_dataset_path(self):
-        return os.path.join(self.download_dir, 'processed')
+        return os.path.join(self.download_dir, "processed")
 
     @property
     def processed_temp_path(self):
-        return os.path.join(self.download_dir, '_processed')
+        return os.path.join(self.download_dir, "_processed")
 
     @property
     def download_dir(self):
-        return os.path.join(self.cache_dir, f'{self.name}_{self.version}')
+        return os.path.join(self.cache_dir, f"{self.name}_{self.version}")
 
     @abc.abstractmethod
     def download_raw_dataset(self):

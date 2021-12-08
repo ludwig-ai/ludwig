@@ -7,36 +7,34 @@
 # This test runs in an isolated environment to ensure TensorFlow imports are not leaked
 # from previous tests.
 
-# Comet must be imported before the libraries it wraps
-import comet_ml
-
 import argparse
 import os
 import shutil
 import sys
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+# Comet must be imported before the libraries it wraps
+import comet_ml
 
 # Bad key will ensure Comet is initialized, but nothing is uploaded externally.
-os.environ['COMET_API_KEY'] = 'key'
+os.environ["COMET_API_KEY"] = "key"
 
 from ludwig.api import LudwigModel
 from ludwig.contribs.comet import CometCallback
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
-PATH_ROOT = os.path.join(PATH_HERE, '..', '..', '..')
+PATH_ROOT = os.path.join(PATH_HERE, "..", "..", "..")
 sys.path.insert(0, os.path.abspath(PATH_ROOT))
 
-from tests.integration_tests.utils import category_feature
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import image_feature
+from tests.integration_tests.utils import category_feature, generate_data, image_feature
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--csv-filename', required=True)
+parser.add_argument("--csv-filename", required=True)
 
 
 def run(csv_filename):
     # Image Inputs
-    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    image_dest_folder = os.path.join(os.getcwd(), "generated_images")
 
     # Inputs & Outputs
     input_features = [image_feature(folder=image_dest_folder)]
@@ -44,10 +42,10 @@ def run(csv_filename):
     data_csv = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 2}
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+        "training": {"epochs": 2},
     }
 
     callback = CometCallback()
@@ -58,7 +56,7 @@ def run(csv_filename):
     callback.on_train_init = Mock(side_effect=callback.on_train_init)
     callback.on_train_start = Mock(side_effect=callback.on_train_start)
 
-    with patch('comet_ml.Experiment.log_asset_data') as mock_log_asset_data:
+    with patch("comet_ml.Experiment.log_asset_data") as mock_log_asset_data:
         try:
             # Training with csv
             _, _, output_dir = model.train(dataset=data_csv)

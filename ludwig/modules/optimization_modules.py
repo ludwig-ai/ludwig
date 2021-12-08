@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,25 +13,24 @@
 # limitations under the License.
 # ==============================================================================
 from dataclasses import dataclass
-from typing import Optional, Iterable
+from typing import Iterable, Optional
 
 import torch
 
 from ludwig.utils.misc_utils import get_from_registry
 
-
 optimizers_registry = {
-    'sgd': torch.optim.SGD,
-    'stochastic_gradient_descent': torch.optim.SGD,
-    'gd': torch.optim.SGD,
-    'gradient_descent': torch.optim.SGD,
-    'adam': torch.optim.Adam,
-    'adadelta': torch.optim.Adadelta,
-    'adagrad': torch.optim.Adagrad,
-    'adamax': torch.optim.Adamax,
+    "sgd": torch.optim.SGD,
+    "stochastic_gradient_descent": torch.optim.SGD,
+    "gd": torch.optim.SGD,
+    "gradient_descent": torch.optim.SGD,
+    "adam": torch.optim.Adam,
+    "adadelta": torch.optim.Adadelta,
+    "adagrad": torch.optim.Adagrad,
+    "adamax": torch.optim.Adamax,
     #'ftrl': tf.keras.optimizers.Ftrl,
     #'nadam': tf.keras.optimizers.Nadam,
-    'rmsprop': torch.optim.RMSprop,
+    "rmsprop": torch.optim.RMSprop,
 }
 
 
@@ -52,21 +50,11 @@ class Clipper:
 
 
 def create_optimizer_with_clipper(
-    model,
-    type='sgd',
-    clipglobalnorm=5.0,
-    clipnorm=None,
-    clipvalue=None,
-    horovod=None,
-    **kwargs
+    model, type="sgd", clipglobalnorm=5.0, clipnorm=None, clipvalue=None, horovod=None, **kwargs
 ):
     optimizer_cls = get_from_registry(type.lower(), optimizers_registry)
     optimizer = create_optimizer(optimizer_cls, model, horovod, **kwargs)
-    clipper = Clipper(
-        clipglobalnorm=clipglobalnorm,
-        clipnorm=clipnorm,
-        clipvalue=clipvalue
-    )
+    clipper = Clipper(clipglobalnorm=clipglobalnorm, clipnorm=clipnorm, clipvalue=clipvalue)
     return optimizer, clipper
 
 

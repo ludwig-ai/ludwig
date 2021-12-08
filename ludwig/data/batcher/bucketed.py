@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +19,17 @@ from ludwig.data.batcher.base import Batcher
 
 
 class BucketedBatcher(Batcher):
-    def __init__(self, dataset, bucketing_field, batch_size=128, buckets=10,
-                 should_shuffle=True, ignore_last=False,
-                 should_trim=False, trim_side='right'):
+    def __init__(
+        self,
+        dataset,
+        bucketing_field,
+        batch_size=128,
+        buckets=10,
+        should_shuffle=True,
+        ignore_last=False,
+        should_trim=False,
+        trim_side="right",
+    ):
         self.should_shuffle = should_shuffle
         self.bucketing_field = bucketing_field
         self.should_trim = should_trim
@@ -32,15 +39,13 @@ class BucketedBatcher(Batcher):
         self.dataset = dataset
 
         field = dataset.get_dataset()[bucketing_field]
-        field_lengths = np.apply_along_axis(lambda x: np.sign(x).sum(), 1,
-                                            field)
+        field_lengths = np.apply_along_axis(lambda x: np.sign(x).sum(), 1, field)
         sorted_idcs = np.argsort(field_lengths)
         self.buckets_idcs = []
         datapoints_per_bucket = len(field) // buckets
         for b in range(buckets):
             start = datapoints_per_bucket * b
-            end = datapoints_per_bucket * (b + 1) if b < buckets - 1 else len(
-                sorted_idcs)
+            end = datapoints_per_bucket * (b + 1) if b < buckets - 1 else len(sorted_idcs)
             self.buckets_idcs.append(sorted_idcs[start:end])
 
         if should_shuffle:
@@ -69,24 +74,22 @@ class BucketedBatcher(Batcher):
             idcs_below_size = self.indices + self.batch_size < self.bucket_sizes
         else:
             idcs_below_size = self.indices < self.bucket_sizes
-        i = np.random.choice(
-            np.arange(0, len(self.buckets_idcs))[idcs_below_size])
+        i = np.random.choice(np.arange(0, len(self.buckets_idcs))[idcs_below_size])
 
         selected_bucket = self.buckets_idcs[i]
-        selected_idcs = selected_bucket[
-            self.indices[i]:self.indices[i] + self.batch_size]
+        selected_idcs = selected_bucket[self.indices[i] : self.indices[i] + self.batch_size]
 
         sub_batch = {}
         for key in self.dataset.get_dataset():
             if key == self.bucketing_field and self.should_trim:
                 selected_samples = self.dataset.get(key, selected_idcs)
                 max_length = np.sign(selected_samples).sum(axis=1).max()
-                if self.trim_side == 'right':
+                if self.trim_side == "right":
                     sub_batch[key] = selected_samples[:, :max_length]
-                elif self.trim_side == 'left':
+                elif self.trim_side == "left":
                     sub_batch[key] = selected_samples[:, -max_length:]
                 else:
-                    raise ValueError('Invalid trim side:', self.trim_side)
+                    raise ValueError("Invalid trim side:", self.trim_side)
 
             else:
                 sub_batch[key] = self.dataset.get(key, selected_idcs)
@@ -96,11 +99,9 @@ class BucketedBatcher(Batcher):
         return sub_batch
 
     def last_batch(self):
-        return not np.any(self.indices < self.bucket_sizes) \
-            or (self.ignore_last and
-                not np.any(
-                    self.indices + self.batch_size < self.bucket_sizes
-                ))
+        return not np.any(self.indices < self.bucket_sizes) or (
+            self.ignore_last and not np.any(self.indices + self.batch_size < self.bucket_sizes)
+        )
 
     def set_epoch(self, epoch, batch_size):
         self.indices = np.array([0] * len(self.buckets_idcs))
@@ -110,9 +111,8 @@ class BucketedBatcher(Batcher):
         self.steps_per_epoch = self._compute_steps_per_epoch()
 
     def _compute_steps_per_epoch(self) -> int:
-        return int(
-            np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size)))
-        )
+        return int(np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size))))
+
 
 # dynamic_length_encoders = {
 #     'rnn',

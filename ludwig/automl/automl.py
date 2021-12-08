@@ -1,5 +1,4 @@
-"""
-automl.py
+"""automl.py.
 
 Driver script which:
 
@@ -9,36 +8,32 @@ Driver script which:
 (3) Runs hyperparameter optimization experiment
 """
 import argparse
+import copy
 import os
 import warnings
-from typing import Dict, Union, List
+from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
 import yaml
-import copy
 
 from ludwig.api import LudwigModel
-from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info, infer_type
 from ludwig.automl.auto_tune_config import memory_tune_config
+from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info, infer_type
 from ludwig.automl.utils import _ray_init, get_model_name
-from ludwig.constants import COMBINER, TYPE, HYPEROPT, NUMERICAL
+from ludwig.constants import COMBINER, HYPEROPT, NUMERICAL, TYPE
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
-from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.print_utils import print_ludwig
 
 try:
     import dask.dataframe as dd
     import ray
     from ray.tune import ExperimentAnalysis
 except ImportError:
-    raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
-    )
+    raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
 
 
 OUTPUT_DIR = "."
@@ -62,7 +57,7 @@ class AutoTrainResults:
 
     @property
     def best_model(self) -> LudwigModel:
-        return LudwigModel.load(os.path.join(self.path_to_best_model, 'model'))
+        return LudwigModel.load(os.path.join(self.path_to_best_model, "model"))
 
 
 def auto_train(
@@ -72,12 +67,10 @@ def auto_train(
     output_directory: str = OUTPUT_DIR,
     tune_for_memory: bool = False,
     user_config: Dict = None,
-    **kwargs
+    **kwargs,
 ) -> AutoTrainResults:
-    """
-    Main auto train API that first builds configs for each model type
-    (e.g. concat, tabnet, transformer). Then selects model based on dataset
-    attributes. And finally runs a hyperparameter optimization experiment.
+    """Main auto train API that first builds configs for each model type (e.g. concat, tabnet, transformer). Then
+    selects model based on dataset attributes. And finally runs a hyperparameter optimization experiment.
 
     All batch and learning rate tuning is done @ training time.
 
@@ -92,14 +85,8 @@ def auto_train(
     # Returns
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
-    config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, **kwargs)
-    return train_with_config(
-        dataset,
-        config,
-        output_directory=output_directory,
-        **kwargs
-    )
+    config = create_auto_config(dataset, target, time_limit_s, tune_for_memory, user_config, **kwargs)
+    return train_with_config(dataset, config, output_directory=output_directory, **kwargs)
 
 
 def create_auto_config(
@@ -109,10 +96,8 @@ def create_auto_config(
     tune_for_memory: bool,
     user_config: Dict = None,
 ) -> dict:
-    """
-    Returns an auto-generated Ludwig config with the intent of training
-    the best model on given given dataset / target in the given time
-    limit.
+    """Returns an auto-generated Ludwig config with the intent of training the best model on given given dataset /
+    target in the given time limit.
 
     # Inputs
     :param dataset: (str, pd.DataFrame, dd.core.DataFrame, DatasetInfo) data source to train over.
@@ -126,14 +111,10 @@ def create_auto_config(
     :return: (dict) selected model configuration
     """
     default_configs = _create_default_config(dataset, target, time_limit_s)
-    model_config = _model_select(
-        dataset, default_configs, user_config
-    )
+    model_config = _model_select(dataset, default_configs, user_config)
     if tune_for_memory:
         if ray.is_initialized():
-            model_config, _ = ray.get(ray.remote(num_cpus=1)(
-                memory_tune_config
-            ).remote(model_config, dataset))
+            model_config, _ = ray.get(ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset))
         else:
             model_config, _ = memory_tune_config(model_config, dataset)
     return model_config
@@ -145,9 +126,7 @@ def train_with_config(
     output_directory: str = OUTPUT_DIR,
     **kwargs,
 ) -> AutoTrainResults:
-    """
-    Performs hyperparameter optimization with respect to the given config
-    and selects the best model.
+    """Performs hyperparameter optimization with respect to the given config and selects the best model.
 
     # Inputs
     :param dataset: (str) filepath to dataset.
@@ -161,13 +140,7 @@ def train_with_config(
     """
     _ray_init()
     model_name = get_model_name(config)
-    hyperopt_results = _train(
-        config,
-        dataset,
-        output_directory=output_directory,
-        model_name=model_name,
-        **kwargs
-    )
+    hyperopt_results = _train(config, dataset, output_directory=output_directory, model_name=model_name, **kwargs)
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
     # completed
@@ -188,28 +161,25 @@ def _model_select(
     default_configs,
     user_config,
 ):
-    """
-    Performs model selection based on dataset or user specified model.
+    """Performs model selection based on dataset or user specified model.
+
     Note: Current implementation returns tabnet by default.
     """
 
-    dataset_info = get_dataset_info(dataset) if not isinstance(
-        dataset, DatasetInfo) else dataset
+    dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
     fields = dataset_info.fields
 
     base_config = default_configs["base_config"]
 
     # tabular dataset heuristics
     if len(fields) > 3:
-        base_config = merge_dict(
-            base_config, default_configs["combiner"]["tabnet"])
+        base_config = merge_dict(base_config, default_configs["combiner"]["tabnet"])
 
         # override combiner heuristic if explicitly provided by user
         if user_config is not None:
             if "combiner" in user_config.keys():
                 model_type = user_config["combiner"]["type"]
-                base_config = merge_dict(
-                    base_config, default_configs["combiner"][model_type])
+                base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
         # text heuristics
         for input_feature in base_config["input_features"]:
@@ -217,8 +187,7 @@ def _model_select(
             # TODO (ASN): add more robust heuristics
             if input_feature["type"] == "text":
                 input_feature["encoder"] = "bert"
-                base_config = merge_dict(
-                    base_config, default_configs["text"]["bert"])
+                base_config = merge_dict(base_config, default_configs["text"]["bert"])
 
             # TODO (ASN): add image heuristics
 
@@ -230,8 +199,7 @@ def _model_select(
         # provided explicit values for
         hyperopt_params = copy.deepcopy(base_config["hyperopt"]["parameters"])
         for hyperopt_params in hyperopt_params.keys():
-            config_section, param = hyperopt_params.split(
-                ".")[0], hyperopt_params.split(".")[1]
+            config_section, param = hyperopt_params.split(".")[0], hyperopt_params.split(".")[1]
             if config_section in user_config.keys():
                 if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
@@ -240,19 +208,10 @@ def _model_select(
 
 
 def _train(
-    config: Dict,
-    dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
-    output_directory: str,
-    model_name: str,
-    **kwargs
+    config: Dict, dataset: Union[str, pd.DataFrame, dd.core.DataFrame], output_directory: str, model_name: str, **kwargs
 ):
     hyperopt_results = hyperopt(
-        config,
-        dataset=dataset,
-        output_directory=output_directory,
-        model_name=model_name,
-        backend='local',
-        **kwargs
+        config, dataset=dataset, output_directory=output_directory, model_name=model_name, backend="local", **kwargs
     )
     return hyperopt_results
 
@@ -264,7 +223,7 @@ def init_config(
     tune_for_memory: bool,
     hyperopt: bool = False,
     output: str = None,
-    **kwargs
+    **kwargs,
 ):
     config = create_auto_config(
         dataset=dataset,
@@ -279,55 +238,55 @@ def init_config(
     if output is None:
         print(yaml.safe_dump(config, None, sort_keys=False))
     else:
-        with open(output, 'w') as f:
+        with open(output, "w") as f:
             yaml.safe_dump(config, f, sort_keys=False)
 
 
 def cli_init_config(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script initializes a valid config from a dataset.',
-        prog='ludwig init_config',
-        usage='%(prog)s [options]'
+        description="This script initializes a valid config from a dataset.",
+        prog="ludwig init_config",
+        usage="%(prog)s [options]",
     )
     parser.add_argument(
-        '-d',
-        '--dataset',
+        "-d",
+        "--dataset",
         type=str,
-        help='input data file path',
+        help="input data file path",
     )
     parser.add_argument(
-        '-t',
-        '--target',
+        "-t",
+        "--target",
         type=str,
-        help='target(s) to predict as output features of the model',
-        action='append',
+        help="target(s) to predict as output features of the model",
+        action="append",
         required=False,
     )
     parser.add_argument(
-        '--time_limit_s',
+        "--time_limit_s",
         type=int,
-        help='time limit to train the model in seconds when using hyperopt',
+        help="time limit to train the model in seconds when using hyperopt",
         required=False,
     )
     parser.add_argument(
-        '--tune_for_memory',
+        "--tune_for_memory",
         type=bool,
-        help='refine hyperopt search space based on available host / GPU memory',
+        help="refine hyperopt search space based on available host / GPU memory",
         default=False,
         required=False,
     )
     parser.add_argument(
-        '--hyperopt',
+        "--hyperopt",
         type=bool,
-        help='include automl hyperopt config',
+        help="include automl hyperopt config",
         default=False,
         required=False,
     )
     parser.add_argument(
-        '-o',
-        '--output',
+        "-o",
+        "--output",
         type=str,
-        help='output initialized YAML config path',
+        help="output initialized YAML config path",
         required=False,
     )
 
@@ -336,7 +295,7 @@ def cli_init_config(sys_argv):
 
     args.callbacks = args.callbacks or []
     for callback in args.callbacks:
-        callback.on_cmdline('init_config', *sys_argv)
+        callback.on_cmdline("init_config", *sys_argv)
 
-    print_ludwig('Init Config', LUDWIG_VERSION)
+    print_ludwig("Init Config", LUDWIG_VERSION)
     init_config(**vars(args))

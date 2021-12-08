@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,42 +18,42 @@ from ludwig.utils.data_utils import add_sequence_feature_column, get_abs_path
 
 
 def test_add_sequence_feature_column():
-    df = pd.DataFrame([1, 2, 3, 4, 5], columns=['x'])
+    df = pd.DataFrame([1, 2, 3, 4, 5], columns=["x"])
 
-    add_sequence_feature_column(df, 'x', 2)
+    add_sequence_feature_column(df, "x", 2)
     assert df.equals(
         pd.DataFrame(
             [
-                [1, '1 2'],
-                [2, '1 2'],
-                [3, '1 2'],
-                [4, '2 3'],
-                [5, '3 4'],
+                [1, "1 2"],
+                [2, "1 2"],
+                [3, "1 2"],
+                [4, "2 3"],
+                [5, "3 4"],
             ],
-            columns=['x', 'x_feature']
+            columns=["x", "x_feature"],
         )
     )
 
-    add_sequence_feature_column(df, 'x', 1)
+    add_sequence_feature_column(df, "x", 1)
     assert df.equals(
         pd.DataFrame(
             [
-                [1, '1'],
-                [2, '1'],
-                [3, '2'],
-                [4, '3'],
-                [5, '4'],
+                [1, "1"],
+                [2, "1"],
+                [3, "2"],
+                [4, "3"],
+                [5, "4"],
             ],
-            columns=['x', 'x_feature']
+            columns=["x", "x_feature"],
         )
     )
 
-    df = pd.DataFrame([1, 2, 3, 4, 5], columns=['x'])
+    df = pd.DataFrame([1, 2, 3, 4, 5], columns=["x"])
 
-    add_sequence_feature_column(df, 'y', 2)
-    assert df.equals(pd.DataFrame([1, 2, 3, 4, 5], columns=['x']))
+    add_sequence_feature_column(df, "y", 2)
+    assert df.equals(pd.DataFrame([1, 2, 3, 4, 5], columns=["x"]))
 
 
 def test_get_abs_path():
-    assert get_abs_path('a', 'b.jpg') == 'a/b.jpg'
-    assert get_abs_path(None, 'b.jpg') == 'b.jpg'
+    assert get_abs_path("a", "b.jpg") == "a/b.jpg"
+    assert get_abs_path(None, "b.jpg") == "b.jpg"

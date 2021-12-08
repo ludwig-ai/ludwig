@@ -201,8 +201,7 @@ class ECD(LudwigModule):
         regularization_type: Optional[str] = None,
         regularization_lambda: Optional[float] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-        """
-        Computes the training loss for the model.
+        """Computes the training loss for the model.
 
         Args:
             targets: A dictionary of target names to target tensors.

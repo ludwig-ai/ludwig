@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""
-All contrib classes must have the following methods:
+"""All contrib classes must have the following methods:
 
 - import_call: Run on import.
 
@@ -43,8 +41,8 @@ from .whylogs import WhyLogsCallback
 
 contrib_registry = {
     # Contributors, add your class here:
-    'comet': CometCallback,
-    'wandb': WandbCallback,
-    'mlflow': MlflowCallback,
-    'whylogs': WhyLogsCallback,
+    "comet": CometCallback,
+    "wandb": WandbCallback,
+    "mlflow": MlflowCallback,
+    "whylogs": WhyLogsCallback,
 }

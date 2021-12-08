@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,10 +19,10 @@ import random
 import shutil
 import sys
 import traceback
-from typing import List
 import unittest
 import uuid
 from distutils.util import strtobool
+from typing import List
 
 import cloudpickle
 import pandas as pd
@@ -31,9 +30,8 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import VECTOR, COLUMN, NAME, PROC_COLUMN
-from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
-from ludwig.data.dataset_synthesizer import build_synthetic_dataset
+from ludwig.constants import COLUMN, NAME, PROC_COLUMN, VECTOR
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils.data_utils import read_csv, replace_file_extension
@@ -42,36 +40,28 @@ logger = logging.getLogger(__name__)
 
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
 # TODO(justin): Check for missing encoders.
-ENCODERS = [
-    'embed',
-    'rnn',
-    'parallel_cnn',
-    'cnnrnn',
-    'stacked_parallel_cnn',
-    'stacked_cnn',
-    'transformer'
-]
+ENCODERS = ["embed", "rnn", "parallel_cnn", "cnnrnn", "stacked_parallel_cnn", "stacked_cnn", "transformer"]
 
-HF_ENCODERS_SHORT = ['distilbert']
+HF_ENCODERS_SHORT = ["distilbert"]
 
 HF_ENCODERS = [
-    'bert',
-    'gpt',
-    'gpt2',
+    "bert",
+    "gpt",
+    "gpt2",
     # 'transformer_xl',
-    'xlnet',
-    'xlm',
-    'roberta',
-    'distilbert',
-    'ctrl',
-    'camembert',
-    'albert',
-    't5',
-    'xlmroberta',
-    'longformer',
-    'flaubert',
-    'electra',
-    'mt5'
+    "xlnet",
+    "xlm",
+    "roberta",
+    "distilbert",
+    "ctrl",
+    "camembert",
+    "albert",
+    "t5",
+    "xlmroberta",
+    "longformer",
+    "flaubert",
+    "electra",
+    "mt5",
 ]
 
 
@@ -93,7 +83,7 @@ def parse_flag_from_env(key, default=False):
             _value = strtobool(value)
         except ValueError:
             # More values are supported, but let's keep the message simple.
-            raise ValueError("If set, {} must be yes or no.".format(key))
+            raise ValueError(f"If set, {key} must be yes or no.")
     return _value
 
 
@@ -101,12 +91,9 @@ _run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
 
 
 def slow(test_case):
-    """
-    Decorator marking a test as slow.
+    """Decorator marking a test as slow.
 
-    Slow tests are skipped by default. Set the RUN_SLOW environment variable
-    to a truth value to run them.
-
+    Slow tests are skipped by default. Set the RUN_SLOW environment variable to a truth value to run them.
     """
     if not _run_slow_tests:
         test_case = unittest.skip("Skipping: this test is too slow")(test_case)
@@ -114,14 +101,13 @@ def slow(test_case):
 
 
 def generate_data(
-        input_features,
-        output_features,
-        filename='test_csv.csv',
-        num_examples=25,
+    input_features,
+    output_features,
+    filename="test_csv.csv",
+    num_examples=25,
 ):
-    """
-    Helper method to generate synthetic data based on input, output feature
-    specs
+    """Helper method to generate synthetic data based on input, output feature specs.
+
     :param num_examples: number of examples to generate
     :param input_features: schema
     :param output_features: schema
@@ -143,13 +129,7 @@ def random_string(length=5):
 
 
 def numerical_feature(normalization=None, **kwargs):
-    feature = {
-        'name': 'num_' + random_string(),
-        'type': 'numerical',
-        'preprocessing': {
-            'normalization': normalization
-        }
-    }
+    feature = {"name": "num_" + random_string(), "type": "numerical", "preprocessing": {"normalization": normalization}}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -157,12 +137,7 @@ def numerical_feature(normalization=None, **kwargs):
 
 
 def category_feature(**kwargs):
-    feature = {
-        'type': 'category',
-        'name': 'category_' + random_string(),
-        'vocab_size': 10,
-        'embedding_size': 5
-    }
+    feature = {"type": "category", "name": "category_" + random_string(), "vocab_size": 10, "embedding_size": 5}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -171,14 +146,14 @@ def category_feature(**kwargs):
 
 def text_feature(**kwargs):
     feature = {
-        'name': 'text_' + random_string(),
-        'type': 'text',
-        'reduce_input': None,
-        'vocab_size': 5,
-        'min_len': 7,
-        'max_len': 7,
-        'embedding_size': 8,
-        'state_size': 8
+        "name": "text_" + random_string(),
+        "type": "text",
+        "reduce_input": None,
+        "vocab_size": 5,
+        "min_len": 7,
+        "max_len": 7,
+        "embedding_size": 8,
+        "state_size": 8,
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
@@ -187,13 +162,7 @@ def text_feature(**kwargs):
 
 
 def set_feature(**kwargs):
-    feature = {
-        'type': 'set',
-        'name': 'set_' + random_string(),
-        'vocab_size': 10,
-        'max_len': 5,
-        'embedding_size': 5
-    }
+    feature = {"type": "set", "name": "set_" + random_string(), "vocab_size": 10, "max_len": 5, "embedding_size": 5}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -202,16 +171,16 @@ def set_feature(**kwargs):
 
 def sequence_feature(**kwargs):
     feature = {
-        'type': 'sequence',
-        'name': 'sequence_' + random_string(),
-        'vocab_size': 10,
-        'max_len': 7,
-        'encoder': 'embed',
-        'embedding_size': 8,
-        'fc_size': 8,
-        'state_size': 8,
-        'num_filters': 8,
-        'hidden_size': 8
+        "type": "sequence",
+        "name": "sequence_" + random_string(),
+        "vocab_size": 10,
+        "max_len": 7,
+        "encoder": "embed",
+        "embedding_size": 8,
+        "fc_size": 8,
+        "state_size": 8,
+        "num_filters": 8,
+        "hidden_size": 8,
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
@@ -221,19 +190,14 @@ def sequence_feature(**kwargs):
 
 def image_feature(folder, **kwargs):
     feature = {
-        'type': 'image',
-        'name': 'image_' + random_string(),
-        'encoder': 'resnet',
-        'preprocessing': {
-            'in_memory': True,
-            'height': 12,
-            'width': 12,
-            'num_channels': 3
-        },
-        'resnet_size': 8,
-        'destination_folder': folder,
-        'fc_size': 8,
-        'num_filters': 8
+        "type": "image",
+        "name": "image_" + random_string(),
+        "encoder": "resnet",
+        "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
+        "resnet_size": 8,
+        "destination_folder": folder,
+        "fc_size": 8,
+        "num_filters": 8,
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
@@ -243,35 +207,25 @@ def image_feature(folder, **kwargs):
 
 def audio_feature(folder, **kwargs):
     feature = {
-        'name': 'audio_' + random_string(),
-        'type': 'audio',
-        'preprocessing': {
-            'audio_feature': {
-                'type': 'fbank',
-                'window_length_in_s': 0.04,
-                'window_shift_in_s': 0.02,
-                'num_filter_bands': 80
+        "name": "audio_" + random_string(),
+        "type": "audio",
+        "preprocessing": {
+            "audio_feature": {
+                "type": "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
             },
-            'audio_file_length_limit_in_s': 3.0
+            "audio_file_length_limit_in_s": 3.0,
         },
-        'encoder': 'stacked_cnn',
-        'should_embed': False,
-        'conv_layers': [
-            {
-                'filter_size': 400,
-                'pool_size': 16,
-                'num_filters': 32,
-                'regularize': 'false'
-            },
-            {
-                'filter_size': 40,
-                'pool_size': 10,
-                'num_filters': 64,
-                'regularize': 'false'
-            }
+        "encoder": "stacked_cnn",
+        "should_embed": False,
+        "conv_layers": [
+            {"filter_size": 400, "pool_size": 16, "num_filters": 32, "regularize": "false"},
+            {"filter_size": 40, "pool_size": 10, "num_filters": 64, "regularize": "false"},
         ],
-        'fc_size': 256,
-        'destination_folder': folder
+        "fc_size": 256,
+        "destination_folder": folder,
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
@@ -280,11 +234,7 @@ def audio_feature(folder, **kwargs):
 
 
 def timeseries_feature(**kwargs):
-    feature = {
-        'name': 'timeseries_' + random_string(),
-        'type': 'timeseries',
-        'max_len': 7
-    }
+    feature = {"name": "timeseries_" + random_string(), "type": "timeseries", "max_len": 7}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -292,10 +242,7 @@ def timeseries_feature(**kwargs):
 
 
 def binary_feature(**kwargs):
-    feature = {
-        'name': 'binary_' + random_string(),
-        'type': 'binary'
-    }
+    feature = {"name": "binary_" + random_string(), "type": "binary"}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -303,13 +250,7 @@ def binary_feature(**kwargs):
 
 
 def bag_feature(**kwargs):
-    feature = {
-        'name': 'bag_' + random_string(),
-        'type': 'bag',
-        'max_len': 5,
-        'vocab_size': 10,
-        'embedding_size': 5
-    }
+    feature = {"name": "bag_" + random_string(), "type": "bag", "max_len": 5, "vocab_size": 10, "embedding_size": 5}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -318,11 +259,9 @@ def bag_feature(**kwargs):
 
 def date_feature(**kwargs):
     feature = {
-        'name': 'date_' + random_string(),
-        'type': 'date',
-        'preprocessing': {
-            'datetime_format': random.choice(list(DATETIME_FORMATS.keys()))
-        }
+        "name": "date_" + random_string(),
+        "type": "date",
+        "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
     }
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
@@ -331,10 +270,7 @@ def date_feature(**kwargs):
 
 
 def h3_feature(**kwargs):
-    feature = {
-        'name': 'h3_' + random_string(),
-        'type': 'h3'
-    }
+    feature = {"name": "h3_" + random_string(), "type": "h3"}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -342,11 +278,7 @@ def h3_feature(**kwargs):
 
 
 def vector_feature(**kwargs):
-    feature = {
-        'type': VECTOR,
-        'vector_size': 5,
-        'name': 'vector_' + random_string()
-    }
+    feature = {"type": VECTOR, "vector_size": 5, "name": "vector_" + random_string()}
     feature.update(kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -354,16 +286,11 @@ def vector_feature(**kwargs):
 
 
 def run_experiment(
-        input_features,
-        output_features,
-        skip_save_processed_input=True,
-        config=None,
-        backend=None,
-        **kwargs
+    input_features, output_features, skip_save_processed_input=True, config=None, backend=None, **kwargs
 ):
-    """
-    Helper method to avoid code repetition in running an experiment. Deletes
-    the data saved to disk after running the experiment
+    """Helper method to avoid code repetition in running an experiment. Deletes the data saved to disk after
+    running the experiment.
+
     :param input_features: list of input feature dictionaries
     :param output_features: list of output feature dictionaries
     **kwargs you may also pass extra parameters to the experiment as keyword
@@ -374,29 +301,26 @@ def run_experiment(
         # This if is necessary so that the caller can call with
         # config_file (and not config)
         config = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {
-                'type': 'concat',
-                'fc_size': 14
-            },
-            'training': {'epochs': 2}
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "fc_size": 14},
+            "training": {"epochs": 2},
         }
 
     args = {
-        'config': config,
-        'backend': backend or LocalTestBackend(),
-        'skip_save_training_description': True,
-        'skip_save_training_statistics': True,
-        'skip_save_processed_input': skip_save_processed_input,
-        'skip_save_progress': True,
-        'skip_save_unprocessed_output': True,
-        'skip_save_model': True,
-        'skip_save_predictions': True,
-        'skip_save_eval_stats': True,
-        'skip_collect_predictions': True,
-        'skip_collect_overall_stats': True,
-        'skip_save_log': True
+        "config": config,
+        "backend": backend or LocalTestBackend(),
+        "skip_save_training_description": True,
+        "skip_save_training_statistics": True,
+        "skip_save_processed_input": skip_save_processed_input,
+        "skip_save_progress": True,
+        "skip_save_unprocessed_output": True,
+        "skip_save_model": True,
+        "skip_save_predictions": True,
+        "skip_save_eval_stats": True,
+        "skip_collect_predictions": True,
+        "skip_collect_overall_stats": True,
+        "skip_save_log": True,
     }
     args.update(kwargs)
 
@@ -414,27 +338,25 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     #  generate_output_features_with_dependencies('feat2', ['feat1', 'feat3'])
 
     output_features = [
-        category_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input="sum"),
         sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature()
+        numerical_feature(),
     ]
 
     # value portion of dictionary is a tuple: (position, feature_name)
     #   position: location of output feature in the above output_features list
     #   feature_name: Ludwig generated feature name
     feature_names = {
-        'feat1': (0, output_features[0]['name']),
-        'feat2': (1, output_features[1]['name']),
-        'feat3': (2, output_features[2]['name'])
+        "feat1": (0, output_features[0]["name"]),
+        "feat2": (1, output_features[1]["name"]),
+        "feat3": (2, output_features[2]["name"]),
     }
 
     # generate list of dependencies with real feature names
-    generated_dependencies = [feature_names[feat_name][1]
-                              for feat_name in dependencies]
+    generated_dependencies = [feature_names[feat_name][1] for feat_name in dependencies]
 
     # specify dependencies for the main_feature
-    output_features[feature_names[main_feature][0]]['dependencies'] = \
-        generated_dependencies
+    output_features[feature_names[main_feature][0]]["dependencies"] = generated_dependencies
 
     return output_features
 
@@ -451,21 +373,18 @@ def _subproc_wrapper(fn, queue, *args, **kwargs):
 
 def spawn(fn):
     def wrapped_fn(*args, **kwargs):
-        ctx = multiprocessing.get_context('spawn')
+        ctx = multiprocessing.get_context("spawn")
         queue = ctx.Queue()
 
-        p = ctx.Process(
-            target=_subproc_wrapper,
-            args=(cloudpickle.dumps(fn), queue, *args),
-            kwargs=kwargs)
+        p = ctx.Process(target=_subproc_wrapper, args=(cloudpickle.dumps(fn), queue, *args), kwargs=kwargs)
 
         p.start()
         p.join()
         results = queue.get()
         if isinstance(results, Exception):
             raise RuntimeError(
-                f'Spawned subprocess raised {type(results).__name__}, '
-                f'check log output above for stack trace.')
+                f"Spawned subprocess raised {type(results).__name__}, " f"check log output above for stack trace."
+            )
         return results
 
     return wrapped_fn
@@ -476,30 +395,28 @@ def get_weights(model: torch.nn.Module) -> List[torch.Tensor]:
 
 
 def is_all_close(list_tensors_1, list_tensors_2):
-    '''Returns whether all of list_tensors_1 is close to list_tensors_2.'''
+    """Returns whether all of list_tensors_1 is close to list_tensors_2."""
     assert len(list_tensors_1) == len(list_tensors_2)
     for i in range(len(list_tensors_1)):
         assert list_tensors_1[i].size() == list_tensors_2[i].size()
 
-    is_close_values = [torch.isclose(
-        list_tensors_1[i], list_tensors_2[i]) for i in range(len(list_tensors_1))]
-    return torch.all(torch.Tensor(
-        [torch.all(is_close_value) for is_close_value in is_close_values]))
+    is_close_values = [torch.isclose(list_tensors_1[i], list_tensors_2[i]) for i in range(len(list_tensors_1))]
+    return torch.all(torch.Tensor([torch.all(is_close_value) for is_close_value in is_close_values]))
 
 
 def run_api_experiment(input_features, output_features, data_csv):
-    """
-    Helper method to avoid code repetition in running an experiment
+    """Helper method to avoid code repetition in running an experiment.
+
     :param input_features: input schema
     :param output_features: output schema
     :param data_csv: path to data
     :return: None
     """
     config = {
-        'input_features': input_features,
-        'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 2}
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "fc_size": 14},
+        "training": {"epochs": 2},
     }
 
     model = LudwigModel(config)
@@ -508,14 +425,11 @@ def run_api_experiment(input_features, output_features, data_csv):
     try:
         # Training with csv
         _, _, output_dir = model.train(
-            dataset=data_csv,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            dataset=data_csv, skip_save_processed_input=True, skip_save_progress=True, skip_save_unprocessed_output=True
         )
         model.predict(dataset=data_csv)
 
-        model_dir = os.path.join(output_dir, 'model')
+        model_dir = os.path.join(output_dir, "model")
         loaded_model = LudwigModel.load(model_dir)
 
         # Necessary before call to get_weights() to materialize the weights
@@ -533,10 +447,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         # Training with dataframe
         data_df = read_csv(data_csv)
         _, _, output_dir = model.train(
-            dataset=data_df,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True
+            dataset=data_df, skip_save_processed_input=True, skip_save_progress=True, skip_save_unprocessed_output=True
         )
         model.predict(dataset=data_df)
     finally:
@@ -554,115 +465,81 @@ def create_data_set_to_use(data_format, raw_data):
     from tabulate import tabulate
 
     def to_fwf(df, fname):
-        content = tabulate(df.values.tolist(), list(df.columns),
-                           tablefmt="plain")
+        content = tabulate(df.values.tolist(), list(df.columns), tablefmt="plain")
         open(fname, "w").write(content)
 
     pd.DataFrame.to_fwf = to_fwf
 
     dataset_to_use = None
 
-    if data_format == 'csv':
+    if data_format == "csv":
         dataset_to_use = raw_data
 
-    elif data_format in {'df', 'dict'}:
+    elif data_format in {"df", "dict"}:
         dataset_to_use = pd.read_csv(raw_data)
-        if data_format == 'dict':
-            dataset_to_use = dataset_to_use.to_dict(orient='list')
+        if data_format == "dict":
+            dataset_to_use = dataset_to_use.to_dict(orient="list")
 
-    elif data_format == 'excel':
-        dataset_to_use = replace_file_extension(raw_data, 'xlsx')
-        pd.read_csv(raw_data).to_excel(
-            dataset_to_use,
-            index=False
-        )
+    elif data_format == "excel":
+        dataset_to_use = replace_file_extension(raw_data, "xlsx")
+        pd.read_csv(raw_data).to_excel(dataset_to_use, index=False)
 
-    elif data_format == 'excel_xls':
-        dataset_to_use = replace_file_extension(raw_data, 'xls')
-        pd.read_csv(raw_data).to_excel(
-            dataset_to_use,
-            index=False
-        )
+    elif data_format == "excel_xls":
+        dataset_to_use = replace_file_extension(raw_data, "xls")
+        pd.read_csv(raw_data).to_excel(dataset_to_use, index=False)
 
-    elif data_format == 'feather':
-        dataset_to_use = replace_file_extension(raw_data, 'feather')
-        pd.read_csv(raw_data).to_feather(
-            dataset_to_use
-        )
+    elif data_format == "feather":
+        dataset_to_use = replace_file_extension(raw_data, "feather")
+        pd.read_csv(raw_data).to_feather(dataset_to_use)
 
-    elif data_format == 'fwf':
-        dataset_to_use = replace_file_extension(raw_data, 'fwf')
-        pd.read_csv(raw_data).to_fwf(
-            dataset_to_use
-        )
+    elif data_format == "fwf":
+        dataset_to_use = replace_file_extension(raw_data, "fwf")
+        pd.read_csv(raw_data).to_fwf(dataset_to_use)
 
-    elif data_format == 'html':
-        dataset_to_use = replace_file_extension(raw_data, 'html')
-        pd.read_csv(raw_data).to_html(
-            dataset_to_use,
-            index=False
-        )
+    elif data_format == "html":
+        dataset_to_use = replace_file_extension(raw_data, "html")
+        pd.read_csv(raw_data).to_html(dataset_to_use, index=False)
 
-    elif data_format == 'json':
-        dataset_to_use = replace_file_extension(raw_data, 'json')
-        pd.read_csv(raw_data).to_json(
-            dataset_to_use,
-            orient='records'
-        )
+    elif data_format == "json":
+        dataset_to_use = replace_file_extension(raw_data, "json")
+        pd.read_csv(raw_data).to_json(dataset_to_use, orient="records")
 
-    elif data_format == 'jsonl':
-        dataset_to_use = replace_file_extension(raw_data, 'jsonl')
-        pd.read_csv(raw_data).to_json(
-            dataset_to_use,
-            orient='records',
-            lines=True
-        )
+    elif data_format == "jsonl":
+        dataset_to_use = replace_file_extension(raw_data, "jsonl")
+        pd.read_csv(raw_data).to_json(dataset_to_use, orient="records", lines=True)
 
-    elif data_format == 'parquet':
-        dataset_to_use = replace_file_extension(raw_data, 'parquet')
-        pd.read_csv(raw_data).to_parquet(
-            dataset_to_use,
-            index=False
-        )
+    elif data_format == "parquet":
+        dataset_to_use = replace_file_extension(raw_data, "parquet")
+        pd.read_csv(raw_data).to_parquet(dataset_to_use, index=False)
 
-    elif data_format == 'pickle':
-        dataset_to_use = replace_file_extension(raw_data, 'pickle')
-        pd.read_csv(raw_data).to_pickle(
-            dataset_to_use
-        )
+    elif data_format == "pickle":
+        dataset_to_use = replace_file_extension(raw_data, "pickle")
+        pd.read_csv(raw_data).to_pickle(dataset_to_use)
 
-    elif data_format == 'stata':
-        dataset_to_use = replace_file_extension(raw_data, 'stata')
-        pd.read_csv(raw_data).to_stata(
-            dataset_to_use
-        )
+    elif data_format == "stata":
+        dataset_to_use = replace_file_extension(raw_data, "stata")
+        pd.read_csv(raw_data).to_stata(dataset_to_use)
 
-    elif data_format == 'tsv':
-        dataset_to_use = replace_file_extension(raw_data, 'tsv')
-        pd.read_csv(raw_data).to_csv(
-            dataset_to_use,
-            sep='\t',
-            index=False
-        )
+    elif data_format == "tsv":
+        dataset_to_use = replace_file_extension(raw_data, "tsv")
+        pd.read_csv(raw_data).to_csv(dataset_to_use, sep="\t", index=False)
 
     else:
-        ValueError(
-            "'{}' is an unrecognized data format".format(data_format)
-        )
+        ValueError(f"'{data_format}' is an unrecognized data format")
 
     return dataset_to_use
 
 
 def train_with_backend(
-        backend,
-        config,
-        dataset=None,
-        training_set=None,
-        validation_set=None,
-        test_set=None,
-        predict=True,
-        evaluate=True,
-        callbacks=None,
+    backend,
+    config,
+    dataset=None,
+    training_set=None,
+    validation_set=None,
+    test_set=None,
+    predict=True,
+    evaluate=True,
+    callbacks=None,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None

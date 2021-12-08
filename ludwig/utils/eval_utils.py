@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,8 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConfusionMatrix:
-    def __init__(self, conditions, predictions, labels=None,
-                 sample_weight=None):
+    def __init__(self, conditions, predictions, labels=None, sample_weight=None):
         # assert (len(predictions) == len(conditions))
         min_length = min(len(predictions), len(conditions))
         self.predictions = predictions[:min_length]
@@ -37,16 +35,13 @@ class ConfusionMatrix:
             self.idx2label = {idx: label for idx, label in enumerate(labels)}
             labels = list(range(len(labels)))
         else:
-            self.label2idx = {str(label): idx for idx, label in
-                              enumerate(np.unique(
-                                  [self.predictions, self.conditions]))}
-            self.idx2label = {idx: str(label) for idx, label in
-                              enumerate(np.unique(
-                                  [self.predictions, self.conditions]))}
-        self.cm = confusion_matrix(self.conditions,
-                                   self.predictions,
-                                   labels=labels,
-                                   sample_weight=sample_weight)
+            self.label2idx = {
+                str(label): idx for idx, label in enumerate(np.unique([self.predictions, self.conditions]))
+            }
+            self.idx2label = {
+                idx: str(label) for idx, label in enumerate(np.unique([self.predictions, self.conditions]))
+            }
+        self.cm = confusion_matrix(self.conditions, self.predictions, labels=labels, sample_weight=sample_weight)
 
         # if labels is not None:
         #     self.labels_dict = {label: idx for idx, label in enumerate(labels)}
@@ -71,8 +66,7 @@ class ConfusionMatrix:
         return self.cm[idx, idx]
 
     def true_negatives(self, idx):
-        return self.all - self.sum_predictions[idx] - self.sum_conditions[
-            idx] + self.true_positives(idx)
+        return self.all - self.sum_predictions[idx] - self.sum_conditions[idx] + self.true_positives(idx)
 
     def false_positives(self, idx):
         return self.sum_predictions[idx] - self.true_positives(idx)
@@ -183,59 +177,52 @@ class ConfusionMatrix:
         return self.true_positive_rate(idx) + self.true_negative_rate(idx) - 1
 
     def markedness(self, idx):
-        return self.positive_predictive_value(
-            idx) + self.negative_predictive_value(idx) - 1
+        return self.positive_predictive_value(idx) + self.negative_predictive_value(idx) - 1
 
     def token_accuracy(self):
         return metrics.accuracy_score(self.conditions, self.predictions)
 
-    def avg_precision(self, average='macro'):
-        return metrics.precision_score(self.conditions, self.predictions,
-                                       average=average)
+    def avg_precision(self, average="macro"):
+        return metrics.precision_score(self.conditions, self.predictions, average=average)
 
-    def avg_recall(self, average='macro'):
-        return metrics.recall_score(self.conditions, self.predictions,
-                                    average=average)
+    def avg_recall(self, average="macro"):
+        return metrics.recall_score(self.conditions, self.predictions, average=average)
 
-    def avg_f1_score(self, average='macro'):
-        return metrics.f1_score(self.conditions, self.predictions,
-                                average=average)
+    def avg_f1_score(self, average="macro"):
+        return metrics.f1_score(self.conditions, self.predictions, average=average)
 
-    def avg_fbeta_score(self, beta, average='macro'):
-        return metrics.fbeta_score(self.conditions, self.predictions,
-                                   beta=beta,
-                                   average=average)
+    def avg_fbeta_score(self, beta, average="macro"):
+        return metrics.fbeta_score(self.conditions, self.predictions, beta=beta, average=average)
 
     def kappa_score(self):
         return metrics.cohen_kappa_score(self.conditions, self.predictions)
 
     def class_stats(self, idx):
         return {
-            'true_positives': self.true_positives(idx),
-            'true_negatives': self.true_negatives(idx),
-            'false_positives': self.false_positives(idx),
-            'false_negatives': self.false_negatives(idx),
-            'true_positive_rate': self.true_positive_rate(idx),
-            'true_negative_rate': self.true_negative_rate(idx),
-            'positive_predictive_value': self.positive_predictive_value(idx),
-            'negative_predictive_value': self.negative_predictive_value(idx),
-            'false_negative_rate': self.false_negative_rate(idx),
-            'false_positive_rate': self.false_positive_rate(idx),
-            'false_discovery_rate': self.false_discovery_rate(idx),
-            'false_omission_rate': self.false_omission_rate(idx),
-            'accuracy': self.accuracy(idx),
-            'precision': self.precision(idx),
-            'recall': self.recall(idx),
-            'f1_score': self.f1_score(idx),
-            'sensitivity': self.sensitivity(idx),
-            'specificity': self.specificity(idx),
-            'hit_rate': self.hit_rate(idx),
-            'miss_rate': self.miss_rate(idx),
-            'fall_out': self.fall_out(idx),
-            'matthews_correlation_coefficient': self.matthews_correlation_coefficient(
-                idx),
-            'informedness': self.informedness(idx),
-            'markedness': self.markedness(idx)
+            "true_positives": self.true_positives(idx),
+            "true_negatives": self.true_negatives(idx),
+            "false_positives": self.false_positives(idx),
+            "false_negatives": self.false_negatives(idx),
+            "true_positive_rate": self.true_positive_rate(idx),
+            "true_negative_rate": self.true_negative_rate(idx),
+            "positive_predictive_value": self.positive_predictive_value(idx),
+            "negative_predictive_value": self.negative_predictive_value(idx),
+            "false_negative_rate": self.false_negative_rate(idx),
+            "false_positive_rate": self.false_positive_rate(idx),
+            "false_discovery_rate": self.false_discovery_rate(idx),
+            "false_omission_rate": self.false_omission_rate(idx),
+            "accuracy": self.accuracy(idx),
+            "precision": self.precision(idx),
+            "recall": self.recall(idx),
+            "f1_score": self.f1_score(idx),
+            "sensitivity": self.sensitivity(idx),
+            "specificity": self.specificity(idx),
+            "hit_rate": self.hit_rate(idx),
+            "miss_rate": self.miss_rate(idx),
+            "fall_out": self.fall_out(idx),
+            "matthews_correlation_coefficient": self.matthews_correlation_coefficient(idx),
+            "informedness": self.informedness(idx),
+            "markedness": self.markedness(idx),
         }
 
     def per_class_stats(self):
@@ -246,44 +233,37 @@ class ConfusionMatrix:
 
     def stats(self):
         return {
-            'token_accuracy': self.token_accuracy(),
-            'avg_precision_macro': self.avg_precision(average='macro'),
-            'avg_recall_macro': self.avg_recall(average='macro'),
-            'avg_f1_score_macro': self.avg_f1_score(average='macro'),
-            'avg_precision_micro': self.avg_precision(average='micro'),
-            'avg_recall_micro': self.avg_recall(average='micro'),
-            'avg_f1_score_micro': self.avg_f1_score(average='micro'),
-            'avg_precision_weighted': self.avg_precision(average='micro'),
-            'avg_recall_weighted': self.avg_recall(average='micro'),
-            'avg_f1_score_weighted': self.avg_f1_score(average='weighted'),
-            'kappa_score': self.kappa_score()
+            "token_accuracy": self.token_accuracy(),
+            "avg_precision_macro": self.avg_precision(average="macro"),
+            "avg_recall_macro": self.avg_recall(average="macro"),
+            "avg_f1_score_macro": self.avg_f1_score(average="macro"),
+            "avg_precision_micro": self.avg_precision(average="micro"),
+            "avg_recall_micro": self.avg_recall(average="micro"),
+            "avg_f1_score_micro": self.avg_f1_score(average="micro"),
+            "avg_precision_weighted": self.avg_precision(average="micro"),
+            "avg_recall_weighted": self.avg_recall(average="micro"),
+            "avg_f1_score_weighted": self.avg_f1_score(average="weighted"),
+            "kappa_score": self.kappa_score(),
         }
 
 
-def roc_curve(conditions, prediction_scores, pos_label=None,
-              sample_weight=None):
-    return metrics.roc_curve(conditions, prediction_scores, pos_label=pos_label,
-                             sample_weight=sample_weight)
+def roc_curve(conditions, prediction_scores, pos_label=None, sample_weight=None):
+    return metrics.roc_curve(conditions, prediction_scores, pos_label=pos_label, sample_weight=sample_weight)
 
 
-def roc_auc_score(conditions, prediction_scores, average='micro',
-                  sample_weight=None):
+def roc_auc_score(conditions, prediction_scores, average="micro", sample_weight=None):
     try:
-        return metrics.roc_auc_score(conditions, prediction_scores, average=average,
-                                     sample_weight=sample_weight)
+        return metrics.roc_auc_score(conditions, prediction_scores, average=average, sample_weight=sample_weight)
     except ValueError as ve:
         logger.info(ve)
 
 
-def precision_recall_curve(conditions, prediction_scores, pos_label=None,
-                           sample_weight=None):
-    return metrics.precision_recall_curve(conditions, prediction_scores,
-                                          pos_label=pos_label, sample_weight=sample_weight)
+def precision_recall_curve(conditions, prediction_scores, pos_label=None, sample_weight=None):
+    return metrics.precision_recall_curve(
+        conditions, prediction_scores, pos_label=pos_label, sample_weight=sample_weight
+    )
 
 
-def average_precision_score(conditions, prediction_scores, average='micro',
-                            sample_weight=None):
+def average_precision_score(conditions, prediction_scores, average="micro", sample_weight=None):
     # average == [micro, macro, sampled, weidhted]
-    return metrics.average_precision_score(conditions, prediction_scores,
-                                           average=average,
-                                           sample_weight=sample_weight)
+    return metrics.average_precision_score(conditions, prediction_scores, average=average, sample_weight=sample_weight)

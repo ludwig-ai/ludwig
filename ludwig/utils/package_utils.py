@@ -16,7 +16,7 @@ class LazyLoader(types.ModuleType):
         self._local_name = local_name
         self._parent_module_globals = parent_module_globals
 
-        super(LazyLoader, self).__init__(name)
+        super().__init__(name)
 
     def _load(self):
         # Import the target module and insert it into the parent's namespace

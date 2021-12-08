@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,11 +32,11 @@ def set_bits(v, start_bit, slice_length, x):
 
 def components_to_h3(components):
     h3 = 18446744073709551615
-    h3 = set_bits(h3, 64 - 5, 4, components['mode'])
-    h3 = set_bits(h3, 64 - 8, 3, components['edge'])
-    h3 = set_bits(h3, 64 - 12, 4, components['resolution'])
-    h3 = set_bits(h3, 64 - 19, 7, components['base_cell'])
-    for i, cell in enumerate(components['cells']):
+    h3 = set_bits(h3, 64 - 5, 4, components["mode"])
+    h3 = set_bits(h3, 64 - 8, 3, components["edge"])
+    h3 = set_bits(h3, 64 - 12, 4, components["resolution"])
+    h3 = set_bits(h3, 64 - 19, 7, components["base_cell"])
+    for i, cell in enumerate(components["cells"]):
         h3 = set_bits(h3, 64 - 19 - (i + 1) * 3, 3, cell)
     h3 = set_bits(h3, 64 - 1, 4, 0)
     return h3
@@ -66,8 +65,7 @@ def h3_base_cell(h3_long):
 
 def h3_octal_components(h3_long):
     res = h3_resolution(h3_long)
-    return "{0:0{w}o}".format(
-        bitslice(h3_long + 2 ** 63, 64 - 19 - 3 * res, 3 * res), w=res)
+    return "{0:0{w}o}".format(bitslice(h3_long + 2 ** 63, 64 - 19 - 3 * res, 3 * res), w=res)
 
 
 def h3_component(h3_long, i):
@@ -75,27 +73,25 @@ def h3_component(h3_long, i):
 
 
 def h3_components(h3_long):
-    return [h3_component(h3_long, i) for i in
-            range(1, h3_resolution(h3_long) + 1)]
+    return [h3_component(h3_long, i) for i in range(1, h3_resolution(h3_long) + 1)]
 
 
 def h3_to_components(h3_value):
-    '''
-    Extract the values from an H3 hexadecimal value
-    Refer to this for the bit layout:
+    """Extract the values from an H3 hexadecimal value Refer to this for the bit layout:
+
     https://uber.github.io/h3/#/documentation/core-library/h3-index-representations
-    '''
+    """
     # lat_long = (0, 0)  # h3ToGeo(h3_value)
     return {
-        'mode': h3_index_mode(h3_value),
-        'edge': h3_edge(h3_value),
-        'resolution': h3_resolution(h3_value),
-        'base_cell': h3_base_cell(h3_value),
-        'cells': h3_components(h3_value)
+        "mode": h3_index_mode(h3_value),
+        "edge": h3_edge(h3_value),
+        "resolution": h3_resolution(h3_value),
+        "base_cell": h3_base_cell(h3_value),
+        "cells": h3_components(h3_value),
     }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     value = 622236723497533439
     components = h3_to_components(value)
     h3 = components_to_h3(components)

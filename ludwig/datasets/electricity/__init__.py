@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,15 +24,14 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
-class Electricity(UncompressedFileDownloadMixin, IdentityProcessMixin,
-                  CSVLoadMixin, BaseDataset):
-    """Electricity demand dataset. Half-hourly electricity demand
-    in Victoria, Australia during 2014, along with Melbourne
-    temperatures.
+class Electricity(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
+    """Electricity demand dataset. Half-hourly electricity demand in Victoria, Australia during 2014, along with
+    Melbourne temperatures.
 
     Source textbook:
     Forecasting: Principles and Practice
         Rob J Hyndman and George Athanasopoulos
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="electricity", cache_dir=cache_dir)

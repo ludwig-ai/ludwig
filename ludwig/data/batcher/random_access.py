@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,9 +19,7 @@ from ludwig.data.batcher.base import Batcher
 
 
 class RandomAccessBatcher(Batcher):
-    def __init__(self, dataset, sampler,
-                 batch_size=128,
-                 ignore_last=False):
+    def __init__(self, dataset, sampler, batch_size=128, ignore_last=False):
         # store our dataset as well
         self.dataset = dataset
         self.sampler = sampler
@@ -49,18 +46,13 @@ class RandomAccessBatcher(Batcher):
 
         sub_batch = {}
         for features_name in self.dataset.features:
-            sub_batch[features_name] = self.dataset.get(
-                features_name,
-                indices
-            )
+            sub_batch[features_name] = self.dataset.get(features_name, indices)
 
         self.step += 1
         return sub_batch
 
     def last_batch(self):
-        return self.index >= self.total_size or (
-                self.ignore_last and
-                self.index + self.batch_size >= self.total_size)
+        return self.index >= self.total_size or (self.ignore_last and self.index + self.batch_size >= self.total_size)
 
     def set_epoch(self, epoch, batch_size):
         self.batch_size = batch_size
@@ -71,6 +63,4 @@ class RandomAccessBatcher(Batcher):
         self.sample_it = iter(self.sampler)
 
     def _compute_steps_per_epoch(self):
-        return int(
-            math.ceil(self.total_size / self.batch_size)
-        )
+        return int(math.ceil(self.total_size / self.batch_size))

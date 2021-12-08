@@ -7,39 +7,40 @@ import ray
 try:
     import GPUtil
 except ImportError:
-    raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
-    )
+    raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
 
 from ludwig.api import LudwigModel
 from ludwig.automl.utils import get_available_resources, get_model_name
+from ludwig.constants import BATCH_SIZE, COMBINER, HYPEROPT, PREPROCESSING, SPACE, TRAINING, TYPE
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.constants import COMBINER, HYPEROPT, BATCH_SIZE, TRAINING, TYPE, PREPROCESSING, SPACE
 
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
-    'tabnet': OrderedDict({
-        'training.batch_size': 32,
-        'combiner.size': 8,
-        'combiner.output_size': 8,
-    }),
-    'concat': OrderedDict({
-        'training.batch_size': 32,
-        'combiner.fc_size': 64,
-        'combiner.num_fc_layers': 1,
-
-    }),
-    'tabtransformer': OrderedDict({
-        'training.batch_size': 32,
-        'combiner.num_heads:': 4,
-        'combiner.output_size': 8,
-        'combiner.num_layers': 4,
-        'combiner.num_fc_layers': 1,
-    }),
+    "tabnet": OrderedDict(
+        {
+            "training.batch_size": 32,
+            "combiner.size": 8,
+            "combiner.output_size": 8,
+        }
+    ),
+    "concat": OrderedDict(
+        {
+            "training.batch_size": 32,
+            "combiner.fc_size": 64,
+            "combiner.num_fc_layers": 1,
+        }
+    ),
+    "tabtransformer": OrderedDict(
+        {
+            "training.batch_size": 32,
+            "combiner.num_heads:": 4,
+            "combiner.output_size": 8,
+            "combiner.num_layers": 4,
+            "combiner.num_fc_layers": 1,
+        }
+    ),
 }
 
 
@@ -48,15 +49,15 @@ BYTES_PER_MiB = 1048576
 
 def get_trainingset_metadata(config, dataset):
     (_, _, _, training_set_metadata) = preprocess_for_training(
-        config,
-        dataset=dataset,
-        preprocessing_params=config[PREPROCESSING])
+        config, dataset=dataset, preprocessing_params=config[PREPROCESSING]
+    )
     return training_set_metadata
 
 
 def get_machine_memory():
 
     if ray.is_initialized():  # using ray cluster
+
         @ray.remote(num_gpus=1)
         def get_remote_gpu():
             gpus = GPUtil.getGPUs()
@@ -70,7 +71,7 @@ def get_machine_memory():
 
         resources = get_available_resources()  # check if cluster has GPUS
 
-        if resources['gpu'] > 0:
+        if resources["gpu"] > 0:
             machine_mem = ray.get(get_remote_gpu.remote())
         else:
             machine_mem = ray.get(get_remote_cpu.remote())
@@ -107,9 +108,9 @@ def sub_new_params(config: dict, new_param_vals: dict):
 def get_new_params(current_param_values, hyperparam_search_space, params_to_modify):
     for param, _ in params_to_modify.items():
         if hyperparam_search_space[param][SPACE] == "choice":
-            current_param_values[param] = hyperparam_search_space[param]['categories'][-1]
+            current_param_values[param] = hyperparam_search_space[param]["categories"][-1]
         else:
-            current_param_values[param] = hyperparam_search_space[param]['upper']
+            current_param_values[param] = hyperparam_search_space[param]["upper"]
     return current_param_values
 
 
@@ -117,8 +118,7 @@ def memory_tune_config(config, dataset):
     fits_in_memory = False
     raw_config = merge_with_defaults(config)
     training_set_metadata = get_trainingset_metadata(raw_config, dataset)
-    modified_hyperparam_search_space = copy.deepcopy(
-        raw_config[HYPEROPT]['parameters'])
+    modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     params_to_modify = RANKED_MODIFIABLE_PARAM_LIST[get_model_name(raw_config)]
     param_list = list(params_to_modify.keys())
     current_param_values = {}
@@ -126,28 +126,32 @@ def memory_tune_config(config, dataset):
 
     while param_list is not None:
         # compute memory utilization
-        current_param_values = get_new_params(
-            current_param_values, modified_hyperparam_search_space, params_to_modify)
+        current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
         if compute_memory_usage(temp_config, training_set_metadata) < max_memory:
             fits_in_memory = True
             break
         # check if we have exhausted tuning of current param (e.g. we can no longer reduce the param value)
-        param, min_value = param_list[0],  params_to_modify[param_list[0]]
+        param, min_value = param_list[0], params_to_modify[param_list[0]]
 
         if param in modified_hyperparam_search_space.keys():
             param_space = modified_hyperparam_search_space[param]["space"]
             if param_space == "choice":
-                if len(modified_hyperparam_search_space[param]['categories']) > 2 and \
-                        modified_hyperparam_search_space[param]['categories'][-2] > min_value:
-                    modified_hyperparam_search_space[param][
-                        'categories'] = modified_hyperparam_search_space[param]['categories'][:-1]
+                if (
+                    len(modified_hyperparam_search_space[param]["categories"]) > 2
+                    and modified_hyperparam_search_space[param]["categories"][-2] > min_value
+                ):
+                    modified_hyperparam_search_space[param]["categories"] = modified_hyperparam_search_space[param][
+                        "categories"
+                    ][:-1]
                 else:
                     param_list.pop(0)  # exhausted reduction of this parameter
             else:
                 # reduce by 10%
-                upper_bound, lower_bound = modified_hyperparam_search_space[param][
-                    "upper"], modified_hyperparam_search_space[param]["lower"]
+                upper_bound, lower_bound = (
+                    modified_hyperparam_search_space[param]["upper"],
+                    modified_hyperparam_search_space[param]["lower"],
+                )
                 reduction_val = (upper_bound - lower_bound) * 0.1
                 new_upper_bound = upper_bound - reduction_val
                 if (new_upper_bound) > lower_bound and new_upper_bound > min_value:

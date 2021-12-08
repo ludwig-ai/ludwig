@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,13 +24,12 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     return dataset.load(split=split)
 
 
-class Irony(UncompressedFileDownloadMixin, IdentityProcessMixin,
-            CSVLoadMixin, BaseDataset):
+class Irony(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
     """The Reddit Irony dataset.
 
-    Source Paper: 
-    Humans Require Context to Infer Ironic Intent (so Computers Probably do, too)
-        Byron C Wallace, Do Kook Choe, Laura Kertz, and Eugene Charniak
+    Source Paper: Humans Require Context to Infer Ironic Intent (so Computers Probably do, too)     Byron C Wallace, Do
+    Kook Choe, Laura Kertz, and Eugene Charniak
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="irony", cache_dir=cache_dir)

@@ -1,15 +1,13 @@
 from typing import Tuple
-from numpy.core.defchararray import mod
+
 import torch
+from numpy.core.defchararray import mod
 
 from ludwig.utils.torch_utils import LudwigModule
 
 
-def assert_output_shapes(
-        module: LudwigModule,
-        input_shape: Tuple[int]
-):
-    """ Runs a unit test to confirm that the out shape matches expected output.
+def assert_output_shapes(module: LudwigModule, input_shape: Tuple[int]):
+    """Runs a unit test to confirm that the out shape matches expected output.
 
     module: Module to be tested.
     input_shape: List of integers of the expected input shape (w/o batch dim).

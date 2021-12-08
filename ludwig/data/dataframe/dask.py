@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,8 +24,7 @@ from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
 
-
-TMP_COLUMN = '__TMP_COLUMN__'
+TMP_COLUMN = "__TMP_COLUMN__"
 
 
 logger = logging.getLogger(__name__)
@@ -71,23 +69,23 @@ class DaskEngine(DataFrameEngine):
         return dd.from_pandas(df, npartitions=parallelism).reset_index()
 
     def map_objects(self, series, map_fn, meta=None):
-        meta = meta or ('data', 'object')
+        meta = meta or ("data", "object")
         return series.map(map_fn, meta=meta)
 
     def apply_objects(self, df, apply_fn, meta=None):
-        meta = meta or ('data', 'object')
+        meta = meta or ("data", "object")
         return df.apply(apply_fn, axis=1, meta=meta)
 
     def reduce_objects(self, series, reduce_fn):
-        return series.reduction(reduce_fn, aggregate=reduce_fn, meta=('data', 'object')).compute()[0]
+        return series.reduction(reduce_fn, aggregate=reduce_fn, meta=("data", "object")).compute()[0]
 
     def to_parquet(self, df, path):
         with ProgressBar():
             df.to_parquet(
                 path,
-                engine='pyarrow',
+                engine="pyarrow",
                 write_index=False,
-                schema='infer',
+                schema="infer",
             )
 
     @property
