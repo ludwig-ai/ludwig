@@ -1,20 +1,19 @@
-import os
-import yaml
 import logging
-
+import os
 import shutil
 
 import mlflow
+import yaml
 from mlflow import pyfunc
+from mlflow.exceptions import MlflowException
 from mlflow.models import Model
 from mlflow.models.model import MLMODEL_FILE_NAME
 from mlflow.models.signature import ModelSignature
-from mlflow.models.utils import ModelInputExample, _save_example
+from mlflow.models.utils import _save_example, ModelInputExample
+from mlflow.tracking._model_registry import DEFAULT_AWAIT_MAX_SLEEP_SECONDS
 from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 from mlflow.utils.environment import _mlflow_conda_env
 from mlflow.utils.model_utils import _get_flavor_configuration
-from mlflow.exceptions import MlflowException
-from mlflow.tracking._model_registry import DEFAULT_AWAIT_MAX_SLEEP_SECONDS
 
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_json
@@ -47,8 +46,7 @@ def save_model(
     signature: ModelSignature = None,
     input_example: ModelInputExample = None,
 ):
-    """
-    Save a Ludwig model to a path on the local file system.
+    """Save a Ludwig model to a path on the local file system.
 
     :param ludwig_model: Ludwig model (an instance of `ludwig.api.LudwigModel`_) to be saved.
     :param path: Local path where the model is to be saved.
@@ -83,8 +81,9 @@ def save_model(
                       .. code-block:: python
 
                         from mlflow.models.signature import infer_signature
+
                         train = df.drop_column("target_label")
-                        predictions = ... # compute model predictions
+                        predictions = ...  # compute model predictions
                         signature = infer_signature(train, predictions)
     :param input_example: (Experimental) Input example provides one or several instances of valid
                           model input. The example can be used as a hint of what data to feed the
@@ -114,7 +113,7 @@ def save_model(
     if conda_env is None:
         conda_env = get_default_conda_env()
     elif not isinstance(conda_env, dict):
-        with open(conda_env, "r") as f:
+        with open(conda_env) as f:
             conda_env = yaml.safe_load(f)
     with open(os.path.join(path, conda_env_subpath), "w") as f:
         yaml.safe_dump(conda_env, stream=f, default_flow_style=False)
@@ -126,21 +125,19 @@ def save_model(
         env=conda_env_subpath,
     )
 
-    schema_keys = {'name', 'column', 'type'}
+    schema_keys = {"name", "column", "type"}
     config = ludwig_model.config
 
     mlflow_model.add_flavor(
         FLAVOR_NAME,
         ludwig_version=ludwig.__version__,
         ludwig_schema={
-            'input_features': [
-                {k: v for k, v in feature.items() if k in schema_keys}
-                for feature in config['input_features']
+            "input_features": [
+                {k: v for k, v in feature.items() if k in schema_keys} for feature in config["input_features"]
             ],
-            'output_features': [
-                {k: v for k, v in feature.items() if k in schema_keys}
-                for feature in config['output_features']
-            ]
+            "output_features": [
+                {k: v for k, v in feature.items() if k in schema_keys} for feature in config["output_features"]
+            ],
         },
         data=model_data_subpath,
     )
@@ -156,8 +153,7 @@ def log_model(
     input_example: ModelInputExample = None,
     await_registration_for=DEFAULT_AWAIT_MAX_SLEEP_SECONDS,
 ):
-    """
-    Log a Ludwig model as an MLflow artifact for the current run.
+    """Log a Ludwig model as an MLflow artifact for the current run.
 
     :param ludwig_model: Ludwig model (an instance of `ludwig.api.LudwigModel`_) to be saved.
     :param artifact_path: Run-relative artifact path.
@@ -193,8 +189,9 @@ def log_model(
                       .. code-block:: python
 
                         from mlflow.models.signature import infer_signature
+
                         train = df.drop_column("target_label")
-                        predictions = ... # compute model predictions
+                        predictions = ...  # compute model predictions
                         signature = infer_signature(train, predictions)
     :param input_example: (Experimental) Input example provides one or several instances of valid
                           model input. The example can be used as a hint of what data to feed the
@@ -222,12 +219,11 @@ def log_model(
 def _load_model(path):
     from ludwig.api import LudwigModel
 
-    return LudwigModel.load(path, backend='local')
+    return LudwigModel.load(path, backend="local")
 
 
 def _load_pyfunc(path):
-    """
-    Load PyFunc implementation. Called by ``pyfunc.load_pyfunc``.
+    """Load PyFunc implementation. Called by ``pyfunc.load_pyfunc``.
 
     :param path: Local filesystem path to the MLflow Model with the ``ludwig`` flavor.
     """
@@ -235,8 +231,7 @@ def _load_pyfunc(path):
 
 
 def load_model(model_uri):
-    """
-    Load a Ludwig model from a local file or a run.
+    """Load a Ludwig model from a local file or a run.
 
     :param model_uri: The location, in URI format, of the MLflow model. For example:
 
@@ -268,10 +263,10 @@ class _LudwigModelWrapper:
 
 def export_model(model_path, output_path, registered_model_name=None):
     if registered_model_name:
-        if not model_path.startswith('runs:/') or output_path is not None:
+        if not model_path.startswith("runs:/") or output_path is not None:
             # No run specified, so in order to register the model in mlflow, we need
             # to create a new run and upload the model as an artifact first
-            output_path = output_path or 'model'
+            output_path = output_path or "model"
             log_model(
                 _CopyModel(model_path),
                 artifact_path=output_path,
@@ -294,7 +289,7 @@ def export_model(model_path, output_path, registered_model_name=None):
 def log_saved_model(lpath):
     log_model(
         _CopyModel(lpath),
-        artifact_path='model',
+        artifact_path="model",
     )
 
 
@@ -309,6 +304,4 @@ class _CopyModel:
 
     @property
     def config(self):
-        return load_json(os.path.join(
-            self.lpath, MODEL_HYPERPARAMETERS_FILE_NAME
-        ))
+        return load_json(os.path.join(self.lpath, MODEL_HYPERPARAMETERS_FILE_NAME))

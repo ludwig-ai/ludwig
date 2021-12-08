@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2021 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+
 import pandas as pd
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
@@ -27,28 +27,21 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
     dataset = PokerHand(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class PokerHand(UncompressedFileDownloadMixin, MultifileJoinProcessMixin,
-            CSVLoadMixin, BaseDataset):
-    """
-    The Poker Hand dataset
+
+class PokerHand(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
+    """The Poker Hand dataset.
 
     Additional Details:
 
     http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand.names
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="poker_hand", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         super().process_downloaded_dataset(header=None)
-        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
-                                                self.csv_filename))
-        columns = [
-        "S1", "C1", "S2", "C2", "S3", "C3", "S4", "C4", "S5", "C5", "hand", "split"
-        ]
+        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path, self.csv_filename))
+        columns = ["S1", "C1", "S2", "C2", "S3", "C3", "S4", "C4", "S5", "C5", "hand", "split"]
         processed_df.columns = columns
-        processed_df.to_csv(
-            os.path.join(self.processed_dataset_path, self.csv_filename),
-            index=False
-        )
-        
+        processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)

@@ -36,11 +36,11 @@ from tqdm import tqdm
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
+    is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
     MODEL_WEIGHTS_FILE_NAME,
     TRAINING_CHECKPOINTS_DIR_PATH,
     TRAINING_PROGRESS_TRACKER_FILE_NAME,
-    is_progressbar_disabled,
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
@@ -92,9 +92,7 @@ class BaseTrainer(ABC):
 
 
 class Trainer(BaseTrainer):
-    """
-    Trainer is a class that trains a model.
-    """
+    """Trainer is a class that trains a model."""
 
     def __init__(
         self,
@@ -138,7 +136,8 @@ class Trainer(BaseTrainer):
         device=None,
         **kwargs,
     ):
-        """Trains a model with a set of hyperparameters listed below. Customizable
+        """Trains a model with a set of hyperparameters listed below. Customizable.
+
                 :param training_set: The training set
         :param validation_set: The validation dataset
         :param test_set: The test dataset
@@ -293,8 +292,7 @@ class Trainer(BaseTrainer):
     def train_step(
         self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
-        """
-        Performs a single training step.
+        """Performs a single training step.
 
         Params:
             inputs: A dictionary of input data, from feature name to tensor.
@@ -381,7 +379,7 @@ class Trainer(BaseTrainer):
         batch_size: int,
         total_steps: int = 3,
     ):
-        """Function to be used by tune_batch_size"""
+        """Function to be used by tune_batch_size."""
         with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
 
             step_count = 0
@@ -573,7 +571,8 @@ class Trainer(BaseTrainer):
         return batch_size
 
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
-        """Trains a model with a set of hyperparameters listed below. Customizable
+        """Trains a model with a set of hyperparameters listed below. Customizable.
+
         :param training_set: The training set
         :param validation_set: The validation dataset
         :param test_set: The test dataset

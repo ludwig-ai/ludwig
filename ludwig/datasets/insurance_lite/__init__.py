@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import pandas as pd
-from tqdm import tqdm
 from typing import List
 from urllib.request import urlretrieve
 
-from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
+import pandas as pd
+from tqdm import tqdm
+
+from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import KaggleDatasetDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.utils.fs_utils import makedirs, rename
@@ -34,9 +34,8 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
 class InsuranceLite(CSVLoadMixin, KaggleDatasetDownloadMixin, BaseDataset):
     """The InsuranceLite dataset.
 
-    This pulls in an array of mixins for different types of functionality
-    which belongs in the workflow for ingesting and transforming training data into a destination
-    dataframe that can fit into Ludwig's training API.
+    This pulls in an array of mixins for different types of functionality which belongs in the workflow for ingesting
+    and transforming training data into a destination dataframe that can fit into Ludwig's training API.
     """
 
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
@@ -45,27 +44,41 @@ class InsuranceLite(CSVLoadMixin, KaggleDatasetDownloadMixin, BaseDataset):
     def process_downloaded_dataset(self):
         makedirs(self.processed_temp_path, exist_ok=True)
 
-        dataset_name = self.config['kaggle_dataset_name']
-        for url in self.config['kaggle_dataset_files']:
+        dataset_name = self.config["kaggle_dataset_name"]
+        for url in self.config["kaggle_dataset_files"]:
             file_name = os.path.join(self.raw_dataset_path, dataset_name, url)
             # TODO(shreya): DataFrame created twice: here + CSVMixin. Figure out
             # options for using it once.
             df = pd.read_csv(
-                file_name, header=0,
-                names=['image_path', 'insurance_company', 'cost_of_vehicle',
-                       'min_coverage', 'expiry_date', 'max_coverage',
-                       'condition', 'amount']
-                )
-            df['image_path'] = df['image_path'].apply(
-                lambda x: os.path.join(
-                    self.raw_dataset_path, dataset_name, 'trainImages',
-                    os.path.basename(x)
-                )
+                file_name,
+                header=0,
+                names=[
+                    "image_path",
+                    "insurance_company",
+                    "cost_of_vehicle",
+                    "min_coverage",
+                    "expiry_date",
+                    "max_coverage",
+                    "condition",
+                    "amount",
+                ],
             )
-            df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
-                    columns=['image_path', 'insurance_company',
-                            'cost_of_vehicle', 'min_coverage', 'expiry_date',
-                            'max_coverage', 'condition', 'amount'])
+            df["image_path"] = df["image_path"].apply(
+                lambda x: os.path.join(self.raw_dataset_path, dataset_name, "trainImages", os.path.basename(x))
+            )
+            df.to_csv(
+                os.path.join(self.processed_temp_path, self.csv_filename),
+                columns=[
+                    "image_path",
+                    "insurance_company",
+                    "cost_of_vehicle",
+                    "min_coverage",
+                    "expiry_date",
+                    "max_coverage",
+                    "condition",
+                    "amount",
+                ],
+            )
 
         # Note: csv is stored in /processed while images are stored in /raw
         rename(self.processed_temp_path, self.processed_dataset_path)

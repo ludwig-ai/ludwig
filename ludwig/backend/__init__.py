@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,10 +27,10 @@ except:
 
 LOCAL_BACKEND = LocalBackend()
 
-LOCAL = 'local'
-DASK = 'dask'
-HOROVOD = 'horovod'
-RAY = 'ray'
+LOCAL = "local"
+DASK = "dask"
+HOROVOD = "horovod"
+RAY = "ray"
 
 ALL_BACKENDS = [LOCAL, DASK, HOROVOD, RAY]
 
@@ -49,7 +48,7 @@ def _has_ray():
         return True
 
     try:
-        _ray.init('auto', ignore_reinit_error=True)
+        _ray.init("auto", ignore_reinit_error=True)
         return True
     except:
         return False
@@ -61,11 +60,13 @@ def get_local_backend(**kwargs):
 
 def create_horovod_backend(**kwargs):
     from ludwig.backend.horovod import HorovodBackend
+
     return HorovodBackend(**kwargs)
 
 
 def create_ray_backend(**kwargs):
     from ludwig.backend.ray import RayBackend
+
     return RayBackend(**kwargs)
 
 

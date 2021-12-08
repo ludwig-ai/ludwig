@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +15,9 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from typing import Dict
 
 import numpy as np
-from typing import Dict
 
 
 class Batcher(ABC):

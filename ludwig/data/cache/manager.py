@@ -4,17 +4,17 @@ import re
 import uuid
 from pathlib import Path
 
-from ludwig.constants import CHECKSUM, META, TRAINING, TEST, VALIDATION
+from ludwig.constants import CHECKSUM, META, TEST, TRAINING, VALIDATION
 from ludwig.data.cache.util import calculate_checksum
 from ludwig.utils import data_utils
-from ludwig.utils.fs_utils import path_exists, delete
+from ludwig.utils.fs_utils import delete, path_exists
 
 logger = logging.getLogger(__name__)
 
 
 def alphanum(v):
     """Filters a string to only its alphanumeric characters."""
-    return re.sub(r'\W+', '', v)
+    return re.sub(r"\W+", "", v)
 
 
 class DatasetCache:
@@ -29,30 +29,20 @@ class DatasetCache:
         if not path_exists(training_set_metadata_fp):
             return None
 
-        cache_training_set_metadata = data_utils.load_json(
-            training_set_metadata_fp
-        )
+        cache_training_set_metadata = data_utils.load_json(training_set_metadata_fp)
 
-        cached_training_set = self.cache_map[TRAINING] \
-            if path_exists(self.cache_map[TRAINING]) else None
+        cached_training_set = self.cache_map[TRAINING] if path_exists(self.cache_map[TRAINING]) else None
 
-        cached_test_set = self.cache_map[TEST] \
-            if path_exists(self.cache_map[TEST]) else None
+        cached_test_set = self.cache_map[TEST] if path_exists(self.cache_map[TEST]) else None
 
-        cached_validation_set = self.cache_map[VALIDATION] \
-            if path_exists(self.cache_map[VALIDATION]) else None
+        cached_validation_set = self.cache_map[VALIDATION] if path_exists(self.cache_map[VALIDATION]) else None
 
-        valid = self.checksum == cache_training_set_metadata.get(CHECKSUM) and \
-            cached_training_set is not None
+        valid = self.checksum == cache_training_set_metadata.get(CHECKSUM) and cached_training_set is not None
 
-        return valid, \
-            cache_training_set_metadata, \
-            cached_training_set, \
-            cached_test_set, \
-            cached_validation_set
+        return valid, cache_training_set_metadata, cached_training_set, cached_test_set, cached_validation_set
 
     def put(self, training_set, test_set, validation_set, training_set_metadata):
-        logger.info('Writing preprocessed training set cache')
+        logger.info("Writing preprocessed training set cache")
         training_set = self.dataset_manager.save(
             self.cache_map[TRAINING],
             training_set,
@@ -62,7 +52,7 @@ class DatasetCache:
         )
 
         if test_set is not None:
-            logger.info('Writing preprocessed test set cache')
+            logger.info("Writing preprocessed test set cache")
             test_set = self.dataset_manager.save(
                 self.cache_map[TEST],
                 test_set,
@@ -72,7 +62,7 @@ class DatasetCache:
             )
 
         if validation_set is not None:
-            logger.info('Writing preprocessed validation set cache')
+            logger.info("Writing preprocessed validation set cache")
             validation_set = self.dataset_manager.save(
                 self.cache_map[VALIDATION],
                 validation_set,
@@ -81,11 +71,8 @@ class DatasetCache:
                 VALIDATION,
             )
 
-        logger.info('Writing train set metadata')
-        data_utils.save_json(
-            self.cache_map[META],
-            training_set_metadata
-        )
+        logger.info("Writing train set metadata")
+        data_utils.save_json(self.cache_map[META], training_set_metadata)
 
         return training_set, test_set, validation_set, training_set_metadata
 
@@ -104,7 +91,7 @@ class CacheManager:
         if dataset is not None:
             key = self.get_cache_key(dataset, config)
             cache_map = {
-                META: self.get_cache_path(dataset, key, META, 'json'),
+                META: self.get_cache_path(dataset, key, META, "json"),
                 TRAINING: self.get_cache_path(dataset, key, TRAINING),
                 TEST: self.get_cache_path(dataset, key, TEST),
                 VALIDATION: self.get_cache_path(dataset, key, VALIDATION),
@@ -113,7 +100,7 @@ class CacheManager:
         else:
             key = self.get_cache_key(training_set, config)
             cache_map = {
-                META: self.get_cache_path(training_set, key, META, 'json'),
+                META: self.get_cache_path(training_set, key, META, "json"),
                 TRAINING: self.get_cache_path(training_set, key, TRAINING),
                 TEST: self.get_cache_path(test_set, key, TEST),
                 VALIDATION: self.get_cache_path(validation_set, key, VALIDATION),
@@ -139,14 +126,14 @@ class CacheManager:
             stem = alphanum(key)
 
         ext = ext or self.data_format
-        cache_fname = f'{stem}.{tag}.{ext}'
+        cache_fname = f"{stem}.{tag}.{ext}"
         return os.path.join(self.get_cache_directory(dataset), cache_fname)
 
     def get_cache_directory(self, input_fname):
         if self._cache_dir is None:
             if input_fname is not None:
                 return os.path.dirname(input_fname)
-            return '.'
+            return "."
         return self._cache_dir
 
     def can_cache(self, skip_save_processed_input):

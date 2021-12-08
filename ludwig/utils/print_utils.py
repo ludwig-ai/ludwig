@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,40 +18,43 @@ from collections import OrderedDict
 from pprint import pformat
 
 logging_level_registry = {
-    'critical': logging.CRITICAL,
-    'error': logging.ERROR,
-    'warning': logging.WARNING,
-    'info': logging.INFO,
-    'debug': logging.DEBUG,
-    'notset': logging.NOTSET
+    "critical": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warning": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+    "notset": logging.NOTSET,
 }
 
 logger = logging.getLogger(__name__)
 
 
 def print_ludwig(message, ludwig_version):
-    logger.info('\n'.join([
-        '███████████████████████',
-        '█ █ █ █  ▜█ █ █ █ █   █',
-        '█ █ █ █ █ █ █ █ █ █ ███',
-        '█ █   █ █ █ █ █ █ █ ▌ █',
-        '█ █████ █ █ █ █ █ █ █ █',
-        '█     █  ▟█     █ █   █',
-        '███████████████████████',
-        'ludwig v{0} - {1}'.format(ludwig_version, message),
-        ''
-    ]))
+    logger.info(
+        "\n".join(
+            [
+                "███████████████████████",
+                "█ █ █ █  ▜█ █ █ █ █   █",
+                "█ █ █ █ █ █ █ █ █ █ ███",
+                "█ █   █ █ █ █ █ █ █ ▌ █",
+                "█ █████ █ █ █ █ █ █ █ █",
+                "█     █  ▟█     █ █   █",
+                "███████████████████████",
+                f"ludwig v{ludwig_version} - {message}",
+                "",
+            ]
+        )
+    )
 
 
 def print_boxed(text, print_fun=logger.info):
     box_width = len(text) + 2
-    print_fun('')
-    print_fun('╒{}╕'.format('═' * box_width))
-    print_fun('│ {} │'.format(text.upper()))
-    print_fun('╘{}╛'.format('═' * box_width))
-    print_fun('')
+    print_fun("")
+    print_fun("╒{}╕".format("═" * box_width))
+    print_fun(f"│ {text.upper()} │")
+    print_fun("╘{}╛".format("═" * box_width))
+    print_fun("")
 
 
 def repr_ordered_dict(d: OrderedDict):
-    return '{' + ',\n  '.join('{}: {}'.format(x, pformat(y, indent=4))
-                              for x, y in d.items()) + '}'
+    return "{" + ",\n  ".join(f"{x}: {pformat(y, indent=4)}" for x, y in d.items()) + "}"

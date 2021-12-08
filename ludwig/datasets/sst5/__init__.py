@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +17,8 @@ from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION
 from ludwig.datasets.sst2 import SST
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False,
-         include_subtrees=False, convert_parentheses=True):
-    dataset = SST5(cache_dir=cache_dir, include_subtrees=include_subtrees,
-                   convert_parentheses=convert_parentheses)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, include_subtrees=False, convert_parentheses=True):
+    dataset = SST5(cache_dir=cache_dir, include_subtrees=include_subtrees, convert_parentheses=convert_parentheses)
     return dataset.load(split=split)
 
 
@@ -29,10 +26,10 @@ class SST5(SST):
     """The SST5 dataset.
 
     This dataset is constructed using the Stanford Sentiment Treebank Dataset.
-    This dataset contains five labels (very negative, negative, neutral, 
+    This dataset contains five labels (very negative, negative, neutral,
     positive, very positive) for each sample.
 
-    In the original dataset, the  5 labels: very negative, negative, neutral, positive, 
+    In the original dataset, the  5 labels: very negative, negative, neutral, positive,
     and very positive have the following cutoffs:
     [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
 
@@ -41,25 +38,31 @@ class SST5(SST):
     training data into a destination dataframe that can be use by Ludwig.
     """
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION,
-                 include_subtrees=False, 
-                 convert_parentheses=True,
-                 remove_duplicates=False):
-        super().__init__(dataset_name='sst5', cache_dir=cache_dir,
-                         include_subtrees=include_subtrees,
-                         convert_parentheses=convert_parentheses,
-                         remove_duplicates=False)
+    def __init__(
+        self,
+        cache_dir=DEFAULT_CACHE_LOCATION,
+        include_subtrees=False,
+        convert_parentheses=True,
+        remove_duplicates=False,
+    ):
+        super().__init__(
+            dataset_name="sst5",
+            cache_dir=cache_dir,
+            include_subtrees=include_subtrees,
+            convert_parentheses=convert_parentheses,
+            remove_duplicates=False,
+        )
 
     def get_sentiment_label(self, id2sent, phrase_id):
         sentiment = id2sent[phrase_id]
         if sentiment <= 0.2:
-            return 'very_negative'
+            return "very_negative"
         elif sentiment <= 0.4:
-            return 'negative'
+            return "negative"
         elif sentiment <= 0.6:
-            return 'neutral'
+            return "neutral"
         elif sentiment <= 0.8:
-            return 'positive'
+            return "positive"
         elif sentiment <= 1.0:
-            return 'very_positive'
-        return 'neutral'
+            return "very_positive"
+        return "neutral"

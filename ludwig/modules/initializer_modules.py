@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,24 +28,18 @@ def _create_and_init(init_fn, init_kwargs, *args, **kwargs):
 
 def get_initializer(parameters):
     if parameters is None:
-        return lambda *args, **kwargs: _create_and_init(
-            initializer_registry[parameters], {}, *args, **kwargs
-        )
+        return lambda *args, **kwargs: _create_and_init(initializer_registry[parameters], {}, *args, **kwargs)
     elif isinstance(parameters, str):
         initializer_fun = get_from_registry(parameters, initializer_registry)
-        return lambda *args, **kwargs: _create_and_init(
-            initializer_fun, {}, *args, **kwargs
-        )
+        return lambda *args, **kwargs: _create_and_init(initializer_fun, {}, *args, **kwargs)
     elif isinstance(parameters, dict):
         initializer_fun = get_from_registry(parameters[TYPE], initializer_registry)
         init_kwargs = parameters.copy()
         del init_kwargs[TYPE]
-        return lambda *args, **kwargs: _create_and_init(
-            initializer_fun, init_kwargs, *args, **kwargs
-        )
+        return lambda *args, **kwargs: _create_and_init(initializer_fun, init_kwargs, *args, **kwargs)
     else:
         raise ValueError(
-            f'Initializers parameters should be either strings or dictionaries, '
-            f'but the provided parameters are a {type(parameters)}. '
-            f'Parameters values: {parameters}'
+            f"Initializers parameters should be either strings or dictionaries, "
+            f"but the provided parameters are a {type(parameters)}. "
+            f"Parameters values: {parameters}"
         )

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,17 +27,28 @@ from ludwig.constants import *
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
-from tests.integration_tests.utils import category_feature, binary_feature, \
-    numerical_feature, text_feature, vector_feature, image_feature, \
-    audio_feature, timeseries_feature, date_feature, h3_feature, set_feature, \
-    bag_feature, LocalTestBackend
 from tests.integration_tests import utils
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import (
+    audio_feature,
+    bag_feature,
+    binary_feature,
+    category_feature,
+    date_feature,
+    generate_data,
+    h3_feature,
+    image_feature,
+    LocalTestBackend,
+    numerical_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    timeseries_feature,
+    vector_feature,
+)
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize('should_load_model', [True, False])
+@pytest.mark.parametrize("should_load_model", [True, False])
 def test_torchscript(csv_filename, should_load_model):
     #######
     # Setup
@@ -46,8 +56,8 @@ def test_torchscript(csv_filename, should_load_model):
     with tempfile.TemporaryDirectory() as tmpdir:
         dir_path = tmpdir
         data_csv_path = os.path.join(tmpdir, csv_filename)
-        image_dest_folder = os.path.join(tmpdir, 'generated_images')
-        audio_dest_folder = os.path.join(tmpdir, 'generated_audio')
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
+        audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
         # Single sequence input, single category output
         input_features = [
@@ -73,28 +83,21 @@ def test_torchscript(csv_filename, should_load_model):
             numerical_feature(),
             set_feature(vocab_size=3),
             vector_feature()
-
             # TODO(#1333): Re-enable.
             # sequence_feature(vocab_size=3),
             # text_feature(vocab_size=3),
         ]
 
-        predictions_column_name = '{}_predictions'.format(
-            output_features[0]['name'])
+        predictions_column_name = "{}_predictions".format(output_features[0]["name"])
 
         # Generate test data
-        data_csv_path = generate_data(input_features, output_features,
-                                      data_csv_path)
+        data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
         #############
         # Train model
         #############
         backend = LocalTestBackend()
-        config = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'training': {'epochs': 2}
-        }
+        config = {"input_features": input_features, "output_features": output_features, "training": {"epochs": 2}}
         ludwig_model = LudwigModel(config, backend=backend)
         ludwig_model.train(
             dataset=data_csv_path,
@@ -109,7 +112,7 @@ def test_torchscript(csv_filename, should_load_model):
         ###################
         # save Ludwig model
         ###################
-        ludwigmodel_path = os.path.join(dir_path, 'ludwigmodel')
+        ludwigmodel_path = os.path.join(dir_path, "ludwigmodel")
         shutil.rmtree(ludwigmodel_path, ignore_errors=True)
         ludwig_model.save(ludwigmodel_path)
 
@@ -122,14 +125,13 @@ def test_torchscript(csv_filename, should_load_model):
         ##############################
         # collect weight tensors names
         ##############################
-        original_predictions_df, _ = ludwig_model.predict(
-            dataset=data_csv_path)
+        original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
         original_weights = deepcopy(list(ludwig_model.model.parameters()))
 
         #################
         # save torchscript
         #################
-        torchscript_path = os.path.join(dir_path, 'torchscript')
+        torchscript_path = os.path.join(dir_path, "torchscript")
         shutil.rmtree(torchscript_path, ignore_errors=True)
         ludwig_model.model.save_torchscript(torchscript_path)
 
@@ -143,10 +145,7 @@ def test_torchscript(csv_filename, should_load_model):
         #####################################################
         # restore torchscript, obtain predictions and weights
         #####################################################
-        training_set_metadata_json_fp = os.path.join(
-            ludwigmodel_path,
-            TRAIN_SET_METADATA_FILE_NAME
-        )
+        training_set_metadata_json_fp = os.path.join(ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME)
 
         dataset, training_set_metadata = preprocess_for_prediction(
             ludwig_model.config,
@@ -169,10 +168,10 @@ def test_torchscript(csv_filename, should_load_model):
         # Get predictions from restored torchscript.
         logits = restored_model(data_to_predict)
         restored_predictions = torch.argmax(
-            output_feature_utils.get_output_feature_tensor(logits, of_name, 'logits'), -1)
+            output_feature_utils.get_output_feature_tensor(logits, of_name, "logits"), -1
+        )
 
-        restored_predictions = [training_set_metadata[of_name]
-                                ['idx2str'][idx] for idx in restored_predictions]
+        restored_predictions = [training_set_metadata[of_name]["idx2str"][idx] for idx in restored_predictions]
 
         restored_weights = deepcopy(list(restored_model.parameters()))
 
@@ -191,12 +190,6 @@ def test_torchscript(csv_filename, should_load_model):
         assert utils.is_all_close(original_weights, restored_weights)
 
         # Check that predictions are identical to the original model.
-        assert np.all(
-            original_predictions_df[predictions_column_name] ==
-            loaded_prediction_df[predictions_column_name]
-        )
+        assert np.all(original_predictions_df[predictions_column_name] == loaded_prediction_df[predictions_column_name])
 
-        assert np.all(
-            original_predictions_df[predictions_column_name] ==
-            restored_predictions
-        )
+        assert np.all(original_predictions_df[predictions_column_name] == restored_predictions)

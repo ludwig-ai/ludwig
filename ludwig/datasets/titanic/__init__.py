@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,45 +16,33 @@
 import os
 
 import pandas as pd
-from ludwig.datasets.base_dataset import DEFAULT_CACHE_LOCATION, BaseDataset
+
+from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.utils.fs_utils import makedirs, rename
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None,
-         kaggle_key=None):
-    dataset = Titanic(
-        cache_dir=cache_dir,
-        kaggle_username=kaggle_username,
-        kaggle_key=kaggle_key
-    )
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
+    dataset = Titanic(cache_dir=cache_dir, kaggle_username=kaggle_username, kaggle_key=kaggle_key)
     return dataset.load(split=split)
 
 
 class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     """The Titanic dataset.
 
-    This pulls in an array of mixins for different types of functionality
-    which belongs in the workflow for ingesting and transforming
-    training data into a destination dataframe that can
-    be loaded by Ludwig's training API.
+    This pulls in an array of mixins for different types of functionality which belongs in the workflow for ingesting
+    and transforming training data into a destination dataframe that can be loaded by Ludwig's training API.
     """
 
-    def __init__(
-            self,
-            cache_dir=DEFAULT_CACHE_LOCATION,
-            kaggle_username=None,
-            kaggle_key=None
-    ):
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, kaggle_username=None, kaggle_key=None):
         self.kaggle_username = kaggle_username
         self.kaggle_key = kaggle_key
         self.is_kaggle_competition = True
-        super().__init__(dataset_name='titanic', cache_dir=cache_dir)
+        super().__init__(dataset_name="titanic", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
-        """The final method where we create a concatenated CSV file
-        with both training ant dest data"""
+        """The final method where we create a concatenated CSV file with both training ant dest data."""
         train_file = self.config["split_filenames"]["train_file"]
         test_file = self.config["split_filenames"]["test_file"]
 
@@ -68,6 +55,5 @@ class Titanic(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
         df = pd.concat([train_df, test_df])
 
         makedirs(self.processed_temp_path, exist_ok=True)
-        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename),
-                  index=False)
+        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename), index=False)
         rename(self.processed_temp_path, self.processed_dataset_path)

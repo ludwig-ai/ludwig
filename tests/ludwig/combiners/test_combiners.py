@@ -1,26 +1,27 @@
 import logging
 from collections import OrderedDict
+from typing import Dict, List, Optional, Tuple, Union
+
 import numpy as np
-from typing import Optional, Union, List, Tuple, Dict
 import pytest
 import torch
 
 from ludwig.combiners.combiners import (
-    ConcatCombiner,
-    SequenceConcatCombiner,
-    SequenceCombiner,
-    TabNetCombiner,
     ComparatorCombiner,
-    TransformerCombiner,
-    TabTransformerCombiner,
-    ConcatCombinerConfig,
-    SequenceConcatCombinerConfig,
-    SequenceCombinerConfig,
-    TabNetCombinerConfig,
     ComparatorCombinerConfig,
-    TransformerCombinerConfig,
-    TabTransformerCombinerConfig,
+    ConcatCombiner,
+    ConcatCombinerConfig,
     sequence_encoder_registry,
+    SequenceCombiner,
+    SequenceCombinerConfig,
+    SequenceConcatCombiner,
+    SequenceConcatCombinerConfig,
+    TabNetCombiner,
+    TabNetCombinerConfig,
+    TabTransformerCombiner,
+    TabTransformerCombinerConfig,
+    TransformerCombiner,
+    TransformerCombinerConfig,
 )
 from ludwig.utils.schema_utils import load_config
 

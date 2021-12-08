@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2020 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,7 +49,7 @@ class PandasEngine(DataFrameEngine):
         return reduce_fn(series)
 
     def to_parquet(self, df, path):
-        df.to_parquet(path, engine='pyarrow')
+        df.to_parquet(path, engine="pyarrow")
 
     @property
     def array_lib(self):

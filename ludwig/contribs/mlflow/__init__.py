@@ -5,7 +5,7 @@ from ludwig.callbacks import Callback
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
 
-mlflow = LazyLoader('mlflow', globals(), 'mlflow')
+mlflow = LazyLoader("mlflow", globals(), "mlflow")
 
 logger = logging.getLogger(__name__)
 
@@ -30,31 +30,22 @@ class MlflowCallback(Callback):
 
     def on_hyperopt_trial_start(self, parameters):
         # Filter out mlflow params like tracking URI, experiment ID, etc.
-        params = {k: v for k, v in parameters.items() if k != 'mlflow'}
-        self._log_params({'hparam': params})
+        params = {k: v for k, v in parameters.items() if k != "mlflow"}
+        self._log_params({"hparam": params})
 
-    def on_train_init(
-            self,
-            base_config,
-            experiment_name,
-            output_directory,
-            **kwargs
-    ):
+    def on_train_init(self, base_config, experiment_name, output_directory, **kwargs):
         # Experiment may already have been set during hyperopt init, in
         # which case we don't want to create a new experiment / run, as
         # this should be handled by the executor.
         if self.experiment_id is None:
             self.experiment_id = _get_or_create_experiment_id(experiment_name)
             run_name = os.path.basename(output_directory)
-            self.run = mlflow.start_run(
-                experiment_id=self.experiment_id,
-                run_name=run_name
-            )
+            self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
 
-        mlflow.log_dict(to_json_dict(base_config), 'config.yaml')
+        mlflow.log_dict(to_json_dict(base_config), "config.yaml")
 
     def on_train_start(self, config, **kwargs):
-        self._log_params({'training': config['training']})
+        self._log_params({"training": config["training"]})
 
     def on_train_end(self, output_directory):
         _log_artifacts(output_directory)
@@ -62,10 +53,7 @@ class MlflowCallback(Callback):
             mlflow.end_run()
 
     def on_epoch_end(self, trainer, progress_tracker, save_path):
-        mlflow.log_metrics(
-            progress_tracker.log_metrics(),
-            step=progress_tracker.epoch
-        )
+        mlflow.log_metrics(progress_tracker.log_metrics(), step=progress_tracker.epoch)
         _log_model(save_path)
 
     def on_visualize_figure(self, fig):
@@ -78,10 +66,10 @@ class MlflowCallback(Callback):
 
         return mlflow_mixin(train_fn), {
             **tune_config,
-            'mlflow': {
-                'experiment_id': self.experiment_id,
-                'tracking_uri': mlflow.get_tracking_uri(),
-            }
+            "mlflow": {
+                "experiment_id": self.experiment_id,
+                "tracking_uri": mlflow.get_tracking_uri(),
+            },
         }
 
     def _log_params(self, params):
@@ -98,7 +86,7 @@ class MlflowCallback(Callback):
 def _log_artifacts(output_directory):
     for fname in os.listdir(output_directory):
         lpath = os.path.join(output_directory, fname)
-        if fname == 'model':
+        if fname == "model":
             _log_model(lpath)
         else:
             mlflow.log_artifact(lpath)
@@ -107,4 +95,5 @@ def _log_artifacts(output_directory):
 def _log_model(lpath):
     # Lazy import to avoid requiring this package
     from ludwig.contribs.mlflow.model import log_saved_model
+
     log_saved_model(lpath)

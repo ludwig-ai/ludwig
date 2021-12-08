@@ -1,8 +1,8 @@
 import logging
-
-from typing import List
 from dataclasses import dataclass, field
-from dataclasses_json import LetterCase, dataclass_json
+from typing import List
+
+from dataclasses_json import dataclass_json, LetterCase
 from pandas import Series
 
 from ludwig.constants import COMBINER, TYPE
@@ -11,11 +11,7 @@ from ludwig.utils.defaults import default_combiner_type
 try:
     import ray
 except ImportError:
-    raise ImportError(
-        ' ray is not installed. '
-        'In order to use auto_train please run '
-        'pip install ludwig[ray]'
-    )
+    raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
 
 
 logger = logging.getLogger(__name__)
@@ -64,12 +60,9 @@ def avg_num_tokens(field: Series) -> int:
 def get_available_resources() -> dict:
     # returns total number of gpus and cpus
     resources = ray.cluster_resources()
-    gpus = resources.get('GPU', 0)
-    cpus = resources.get('CPU', 0)
-    resources = {
-        'gpu': gpus,
-        'cpu': cpus
-    }
+    gpus = resources.get("GPU", 0)
+    cpus = resources.get("CPU", 0)
+    resources = {"gpu": gpus, "cpu": cpus}
     return resources
 
 
@@ -84,7 +77,7 @@ def _ray_init():
         return
 
     try:
-        ray.init('auto', ignore_reinit_error=True)
+        ray.init("auto", ignore_reinit_error=True)
     except ConnectionError:
-        logger.info('Initializing new Ray cluster...')
+        logger.info("Initializing new Ray cluster...")
         ray.init()

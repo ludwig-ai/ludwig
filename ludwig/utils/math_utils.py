@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,16 +36,15 @@ def int_type(number):
 
 def convert_size(size_bytes):
     if size_bytes == 0:
-        return '0B'
-    size_name = ('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
-    return '{} {}'.format(s, size_name[i])
+    return f"{s} {size_name[i]}"
 
 
-def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step,
-                      staircase=False):
+def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step, staircase=False):
     decay_rate = float(decay_rate)
     decay_steps = float(decay_steps)
     step = float(step)
@@ -56,14 +54,7 @@ def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step,
     return initial_learning_rate * math.pow(decay_rate, exponent)
 
 
-def learning_rate_warmup_distributed(
-        learning_rate,
-        epoch,
-        warmup_epochs,
-        num_workers,
-        curr_step,
-        steps_per_epoch
-):
+def learning_rate_warmup_distributed(learning_rate, epoch, warmup_epochs, num_workers, curr_step, steps_per_epoch):
     """Implements gradual learning rate warmup:
     `lr = initial_lr / hvd.size()` ---> `lr = initial_lr`
      `initial_lr` is the learning rate of the model optimizer at the start
@@ -89,17 +80,10 @@ def learning_rate_warmup_distributed(
         return learning_rate
     else:
         epoch_adjusted = float(epoch) + (curr_step / steps_per_epoch)
-        return learning_rate / num_workers * (
-                epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
+        return learning_rate / num_workers * (epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
 
 
-def learning_rate_warmup(
-        learning_rate,
-        epoch,
-        warmup_epochs,
-        curr_step,
-        steps_per_epoch
-):
+def learning_rate_warmup(learning_rate, epoch, warmup_epochs, curr_step, steps_per_epoch):
     if epoch >= warmup_epochs:
         return learning_rate
     else:
@@ -110,20 +94,17 @@ def learning_rate_warmup(
         warmup_learning_rate = learning_rate * warmup_percent_done
 
         is_warmup = int(global_curr_step < warmup_steps)
-        interpolated_learning_rate = (
-                (1.0 - is_warmup) * learning_rate +
-                is_warmup * warmup_learning_rate
-        )
+        interpolated_learning_rate = (1.0 - is_warmup) * learning_rate + is_warmup * warmup_learning_rate
 
         return interpolated_learning_rate
 
 
-def round2precision(val, precision: int = 0, which: str = ''):
+def round2precision(val, precision: int = 0, which: str = ""):
     assert precision >= 0
     val *= 10 ** precision
     round_callback = round
-    if which.lower() == 'up':
+    if which.lower() == "up":
         round_callback = math.ceil
-    if which.lower() == 'down':
+    if which.lower() == "down":
         round_callback = math.floor
-    return '{1:.{0}f}'.format(precision, round_callback(val) / 10 ** precision)
+    return "{1:.{0}f}".format(precision, round_callback(val) / 10 ** precision)

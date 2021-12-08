@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,30 +18,28 @@ from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin
 from ludwig.datasets.mixins.load import CSVLoadMixin
 from ludwig.datasets.mixins.process import *
 
+
 def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
     dataset = EthosBinary(cache_dir=cache_dir)
     return dataset.load(split=split)
 
-class EthosBinary(UncompressedFileDownloadMixin, IdentityProcessMixin,
-            CSVLoadMixin, BaseDataset):
+
+class EthosBinary(UncompressedFileDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
     """The Ethos Hate Speech Dataset.
 
-    Source Paper: 
+    Source Paper:
         ETHOS: an Online Hate Speech Detection Dataset
             Ioannis Mollas and Zoe Chrysopoulou and Stamatis Karlos and
             Grigorios Tsoumakas
     """
+
     def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
         super().__init__(dataset_name="ethos_binary", cache_dir=cache_dir)
 
     def process_downloaded_dataset(self):
         super().process_downloaded_dataset()
         # replace ; sperator to ,
-        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path,
-                                                self.csv_filename), sep=";")
+        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path, self.csv_filename), sep=";")
         # convert float labels (0.0, 1.0) to binary labels
-        processed_df['isHate'] = processed_df['isHate'].astype(int) 
-        processed_df.to_csv(
-            os.path.join(self.processed_dataset_path, self.csv_filename),
-            index=False, sep=","
-        )
+        processed_df["isHate"] = processed_df["isHate"].astype(int)
+        processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False, sep=",")

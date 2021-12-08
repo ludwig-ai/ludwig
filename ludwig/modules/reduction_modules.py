@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,30 +18,25 @@ import torch
 
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import sequence_length_3D, LudwigModule
+from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
 
 class SequenceReducer(torch.nn.Module):
-
     def __init__(self, reduce_mode=None, **kwargs):
         super().__init__()
         # save as private variable for debugging
         self._reduce_mode = reduce_mode
 
         # use registry to find required reduction function
-        self._reduce_obj = get_from_registry(
-            reduce_mode,
-            reduce_mode_registry
-        )(**kwargs)
+        self._reduce_obj = get_from_registry(reduce_mode, reduce_mode_registry)(**kwargs)
 
     def forward(self, inputs, mask=None):
         return self._reduce_obj(inputs, mask=mask)
 
 
 class ReduceLast(torch.nn.Module):
-
     def forward(self, inputs, mask=None):
         # inputs: [batch_size, seq_size, hidden_size]
         batch_size = inputs.shape[0]
@@ -50,31 +44,26 @@ class ReduceLast(torch.nn.Module):
         # todo: review for generality
         sequence_length = sequence_length_3D(inputs) - 1
         sequence_length[sequence_length < 0] = 0
-        gathered = inputs[
-            torch.arange(batch_size), sequence_length.type(torch.int64)]
+        gathered = inputs[torch.arange(batch_size), sequence_length.type(torch.int64)]
         return gathered
 
 
 class ReduceSum(torch.nn.Module):
-
     def forward(self, inputs, mask=None):
         return torch.sum(inputs, dim=1)
 
 
 class ReduceMean(torch.nn.Module):
-
     def forward(self, inputs, mask=None):
         return torch.mean(inputs, dim=1)
 
 
 class ReduceMax(torch.nn.Module):
-
     def forward(self, inputs, mask=None):
         return torch.amax(inputs, dim=1)
 
 
 class ReduceConcat(torch.nn.Module):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.reduce_last = ReduceLast()
@@ -84,21 +73,20 @@ class ReduceConcat(torch.nn.Module):
 
 
 class ReduceNone(torch.nn.Module):
-
     def forward(self, inputs, mask=None):
         return inputs
 
 
 reduce_mode_registry = {
-    'last': ReduceLast,
-    'sum': ReduceSum,
-    'mean': ReduceMean,
-    'avg': ReduceMean,
-    'max': ReduceMax,
-    'concat': ReduceConcat,
-    'attention': FeedForwardAttentionReducer,
+    "last": ReduceLast,
+    "sum": ReduceSum,
+    "mean": ReduceMean,
+    "avg": ReduceMean,
+    "max": ReduceMax,
+    "concat": ReduceConcat,
+    "attention": FeedForwardAttentionReducer,
     # TODO: Simplify this.
-    'none': ReduceNone,
-    'None': ReduceNone,
-    None: ReduceNone
+    "none": ReduceNone,
+    "None": ReduceNone,
+    None: ReduceNone,
 }
