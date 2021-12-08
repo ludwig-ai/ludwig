@@ -200,7 +200,7 @@ class ImageFeatureMixin:
     @staticmethod
     def _finalize_preprocessing_parameters(
         preprocessing_parameters: dict,
-        first_img_entry: Union[str, torch.Tensor],
+        first_img_entry: Optional[Union[str, torch.Tensor]],
         src_path: str,
         input_feature_col: np.array,
     ) -> Tuple:
@@ -211,8 +211,12 @@ class ImageFeatureMixin:
         expected be of the same size with the same number of channels
         """
 
-        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
-        explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
+        explicit_height_width = (
+            HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        ) and first_img_entry is not None
+        explicit_num_channels = (
+            NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
+        ) and first_img_entry is not None
 
         if explicit_num_channels:
             first_image = read_image(first_img_entry, preprocessing_parameters[NUM_CHANNELS])
@@ -320,7 +324,10 @@ class ImageFeatureMixin:
                 "expect either string for file path or numpy array.".format(type(first_img_entry))
             )
 
-        first_img_entry = get_image_from_path(src_path, first_img_entry, ret_bytes=True)
+        try:
+            first_img_entry = get_image_from_path(src_path, first_img_entry, ret_bytes=True)
+        except requests.exceptions.HTTPError:
+            first_img_entry = None
 
         (
             should_resize,

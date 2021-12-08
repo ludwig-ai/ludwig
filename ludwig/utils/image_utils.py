@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import copy
 import functools
 import logging
 import os
@@ -58,7 +57,6 @@ def get_image_from_http_bytes(img_entry) -> BytesIO:
     return BytesIO(data.raw.read())
 
 
-# TODO(shreya): Confirm output type.
 def get_image_from_path(
     src_path: Union[str, torch.Tensor], img_entry: Union[str, bytes], ret_bytes: bool = False
 ) -> Union[BytesIO, BinaryIO, TextIO, bytes, str]:
@@ -87,7 +85,7 @@ def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
         if isinstance(img, bytes):
             return imghdr.what(None, img) is not None
         return imghdr.what(img) is not None
-    except:
+    except:  # noqa: E722
         return False
 
 
