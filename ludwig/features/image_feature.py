@@ -20,6 +20,7 @@ from multiprocessing import Pool
 from typing import Optional, Tuple, Union
 
 import numpy as np
+import requests
 import torch
 import torchvision
 
@@ -221,10 +222,12 @@ class ImageFeatureMixin:
         inferred_sample = None
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
             sample_size = min(len(input_feature_col), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
-            sample = [
-                read_image(get_image_from_path(src_path, img, ret_bytes=True))
-                for img in input_feature_col.head(sample_size)
-            ]
+            sample = []
+            for img in input_feature_col.head(sample_size):
+                try:
+                    sample.append(read_image(get_image_from_path(src_path, img, ret_bytes=True)))
+                except requests.exceptions.HTTPError:
+                    pass
             inferred_sample = [img for img in sample if img is not None]
             if not inferred_sample:
                 raise ValueError("No readable images in sample, image dimensions cannot be inferred")
