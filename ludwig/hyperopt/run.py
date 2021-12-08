@@ -381,7 +381,7 @@ def hyperopt(
 def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, SAMPLER, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
-    set_default_value(hyperopt_params, "split", VALIDATION)
+    set_default_value(hyperopt_params, "split", TEST)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
     set_default_value(hyperopt_params, "metric", LOSS)
     set_default_value(hyperopt_params, "goal", MINIMIZE)
