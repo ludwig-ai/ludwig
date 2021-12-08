@@ -128,8 +128,9 @@ class SequenceRNNDecoder(nn.Module):
         """Runs max_sequence_length RNN decoding time steps.
 
         Args:
-            inputs: Dictionary of tensors from the outputs of the combiner and other output features.
-            target: Tensor [batch_size, max_sequence_length] with target symbols.
+            input: [batch_size] tensor with the previous step's predicted symbol.
+            hidden_state: [batch_size, hidden_size] tensor with the previous step's hidden state.
+            cell_state: [batch_size, hidden_size] tensor with the previous step's cell state.
 
         Returns:
             Tensor of logits [batch_size, max_sequence_length, vocab_size].
