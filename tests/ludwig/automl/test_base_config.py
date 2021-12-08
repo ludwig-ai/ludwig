@@ -16,6 +16,7 @@ TARGET_NAME = 'target'
     (2, ['1.5', '3.7'], 0, 0, 0.1, NUMERICAL),
     (ROW_COUNT, [], 3, 0, 0.0, TEXT),
     (ROW_COUNT, [], 1, ROW_COUNT, 0.0, IMAGE),
+    (0, [], 0, 0, 0.0, CATEGORY),
 ])
 def test_infer_type(num_distinct_values, distinct_values, avg_words, img_values, missing_vals, expected):
     field = FieldInfo(
@@ -36,6 +37,7 @@ def test_infer_type(num_distinct_values, distinct_values, avg_words, img_values,
     (0, ROW_COUNT, TEXT, 'name', False),
     (0, ROW_COUNT, NUMERICAL, TARGET_NAME, False),
     (0, ROW_COUNT - 1, NUMERICAL, 'id', False),
+    (0, 0, CATEGORY, 'empty_col', True),
 ])
 def test_should_exclude(idx, num_distinct_values, dtype, name, expected):
     field = FieldInfo(
