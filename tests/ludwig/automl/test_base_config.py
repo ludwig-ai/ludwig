@@ -42,7 +42,7 @@ def test_infer_type(num_distinct_values, distinct_values, avg_words, img_values,
         (0, ROW_COUNT, TEXT, "name", False),
         (0, ROW_COUNT, NUMERICAL, TARGET_NAME, False),
         (0, ROW_COUNT - 1, NUMERICAL, "id", False),
-        (0, 0, CATEGORY, 'empty_col', True),
+        (0, 0, CATEGORY, "empty_col", True),
     ],
 )
 def test_should_exclude(idx, num_distinct_values, dtype, name, expected):
