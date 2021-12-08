@@ -292,6 +292,8 @@ def infer_type(
     :return: (str) feature type
     """
     num_distinct_values = field.num_distinct_values
+    if num_distinct_values == 0:
+        return CATEGORY
     distinct_values = field.distinct_values
     if num_distinct_values <= 2 and missing_value_percent == 0:
         # Check that all distinct values are conventional bools.
@@ -333,6 +335,9 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
 
     if field.name in targets:
         return False
+
+    if field.num_distinct_values == 0:
+        return True
 
     distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
