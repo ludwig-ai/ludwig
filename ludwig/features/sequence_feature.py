@@ -244,10 +244,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["vocab_size"]
+        output_feature["vocab_size"] = feature_metadata["vocab_size"]
         output_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature["vocab_size"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -255,7 +255,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
                         len(output_feature[LOSS]["class_weights"]),
-                        output_feature["num_classes"],
+                        output_feature["vocab_size"],
                         output_feature[COLUMN],
                     )
                 )
@@ -297,14 +297,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         )
                     )
 
-                if all_rows_length != output_feature["num_classes"]:
+                if all_rows_length != output_feature["vocab_size"]:
                     raise ValueError(
                         "The size of the class_similarities matrix of {} is "
                         "{}, different from the number of classes ({}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
                         "consider <UNK> and <PAD> class too.".format(
-                            output_feature[COLUMN], all_rows_length, output_feature["num_classes"]
+                            output_feature[COLUMN], all_rows_length, output_feature["vocab_size"]
                         )
                     )
 

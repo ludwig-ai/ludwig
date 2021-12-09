@@ -179,7 +179,7 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict]):
         header.append(feature[NAME])
 
     yield header
-    for _ in range(dataset_size + 1):
+    for _ in range(dataset_size):
         yield generate_datapoint(features)
 
 
@@ -214,6 +214,8 @@ def generate_sequence(feature):
     if "min_len" in feature:
         length = random.randint(feature["min_len"], length)
     sequence = [random.choice(feature["idx2str"]) for _ in range(length)]
+    if "vocab_size" not in feature:
+        feature["vocab_size"] = len(feature["idx2str"])
     feature["vocab_size"] = feature["vocab_size"] + 4  # For special symbols.
     return " ".join(sequence)
 
@@ -453,7 +455,9 @@ def cli_synthesize_dataset(dataset_size: int, features: List[dict], output_path:
     ]
     """
     if dataset_size is None or features is None or output_path is None:
-        raise ValueError("Missing one or more required parameters: '--daset_size', " "'--features' or '--output_path'")
+        raise ValueError(
+            "Missing one or more required parameters: '--dataset_size', " "'--features' or '--output_path'"
+        )
     dataset = build_synthetic_dataset(dataset_size, features)
     save_csv(output_path, dataset)
 

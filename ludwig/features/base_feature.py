@@ -173,9 +173,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def initialize_decoder(self, decoder_parameters):
         decoder_parameters_copy = copy.copy(decoder_parameters)
-        # Use the FC's output size if it's defined.
-        if self.num_fc_layers:
-            decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
+        # Input to the decoder is the output feature's FC hidden layer.
+        decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
         return get_decoder_cls(self.type, self.decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
@@ -374,12 +373,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         # flatten inputs
         if len(original_feature_hidden.shape) > 2:
-            """
-            feature_hidden = tf.reshape(
-                feature_hidden,
-                [-1, feature_hidden.shape[-1]]
-            )
-            """
             feature_hidden = torch.reshape(feature_hidden, (-1, list(feature_hidden.shape)[-1]))
 
         # pass it through fc_stack
@@ -389,12 +382,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # reshape back to original first and second dimension
         if len(original_feature_hidden.shape) > 2:
             sequence_length = original_feature_hidden.shape[1]
-            """
-            feature_hidden = tf.reshape(
-                feature_hidden,
-                [-1, sequence_length, feature_hidden_size]
-            )
-            """
             feature_hidden = torch.reshape(feature_hidden, (-1, sequence_length, feature_hidden_size))
 
         return feature_hidden

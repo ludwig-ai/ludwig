@@ -336,11 +336,11 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
             # [0, 0] for UNK and PAD
             output_feature[LOSS]["class_weights"] = [0, 0] + output_feature[LOSS]["class_weights"]
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature["vocab_size"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({})".format(
-                        len(output_feature[LOSS]["class_weights"]), output_feature["num_classes"]
+                        len(output_feature[LOSS]["class_weights"]), output_feature["vocab_size"]
                     )
                 )
 
