@@ -25,7 +25,8 @@ def save_hyperopt_stats(hyperopt_stats, hyperopt_dir_name):
 def load_json_value(v):
     try:
         return json.loads(v)
-    except:
+    except Exception as e:
+        logger.warning(f"While loading json, encountered exception: {e}")
         return v
 
 

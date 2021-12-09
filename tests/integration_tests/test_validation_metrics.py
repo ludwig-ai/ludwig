@@ -4,14 +4,8 @@ from collections import namedtuple
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import *
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    generate_data,
-    numerical_feature,
-    text_feature,
-)
+from ludwig.constants import COLUMN
+from tests.integration_tests.utils import binary_feature, category_feature, generate_data, numerical_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -122,21 +122,21 @@ class CometCallback(Callback):
         self._save_config(config)
 
     def _save_config(self, config, directory="."):
-        ## save the .comet.config here:
+        # save the .comet.config here:
         config["comet.experiment_key"] = self.cometml_experiment.id
         config.save(directory=directory)
 
     def _log_html(self, text):
-        ## log the text to the html tab:
+        # log the text to the html tab:
         now = datetime.now()
         timestamp = now.strftime("%m/%d/%Y %H:%M:%S")
         self.cometml_experiment.log_html(f"<p><b>{timestamp}</b>: {text}</p>")
 
     def _make_command_line(self, cmd, args):
-        ## put the commet flag back in:
+        # put the commet flag back in:
         arg_str = " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
         return f"ludwig {cmd} {arg_str}"
 
     @staticmethod
     def preload():
-        import comet_ml
+        import comet_ml  # noqa

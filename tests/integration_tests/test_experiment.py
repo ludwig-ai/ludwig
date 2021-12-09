@@ -15,7 +15,6 @@
 import logging
 import os
 import shutil
-import sys
 import uuid
 from collections import namedtuple
 
@@ -23,7 +22,6 @@ import pandas as pd
 import pytest
 import torchvision
 import yaml
-from skimage.io import imread
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
@@ -32,7 +30,6 @@ from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
 from ludwig.experiment import experiment_cli
-from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
@@ -57,7 +54,6 @@ from tests.integration_tests.utils import (
     sequence_feature,
     set_feature,
     slow,
-    spawn,
     text_feature,
     timeseries_feature,
     vector_feature,
@@ -592,7 +588,8 @@ def test_experiment_sequence_combiner_with_embed_encoder_fails(csv_filename):
     # Generate test data
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
 
-    # Encoding sequence features with 'embed' should fail with SequenceConcatCombiner, since at least one sequence feature should be rank 3.
+    # Encoding sequence features with 'embed' should fail with SequenceConcatCombiner, since at least one sequence
+    # feature should be rank 3.
     with pytest.raises(ValueError):
         exp_dir_name = experiment_cli(
             config,

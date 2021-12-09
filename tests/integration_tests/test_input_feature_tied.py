@@ -8,7 +8,6 @@ from tests.integration_tests.utils import (
     generate_data,
     numerical_feature,
     run_experiment,
-    sequence_feature,
     text_feature,
 )
 

@@ -7,7 +7,6 @@ import torch
 
 from ludwig.constants import SEQUENCE
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.utils.misc_utils import get_from_registry
 from tests.integration_tests.utils import ENCODERS
 
 logger = logging.getLogger(__name__)
@@ -193,7 +192,7 @@ def test_sequence_embed_encoder(enc_embedding_size: int, input_sequence: torch.T
     # retrieve encoder to test
     encoder_obj = get_encoder_cls(SEQUENCE, "embed")(**encoder_parameters)
 
-    encoder_out = encoder_obj(input_sequence)
+    # encoder_out = encoder_obj(input_sequence)
 
     # check to make sure shape is correct depending on relationship
     # of vocab_size and embedding_size

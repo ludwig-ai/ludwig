@@ -82,7 +82,7 @@ def test_grid_strategy(key):
     expected_params_keys = expected_search_space.keys()
 
     for param in search_space:
-        assert type(search_space[param]) is type(expected_search_space[param])
+        assert isinstance(type(search_space[param]), type(expected_search_space[param]))
 
     assert actual_params_keys == expected_params_keys
     assert tune_sampler.num_samples == num_samples

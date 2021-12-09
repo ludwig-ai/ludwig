@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
-
 import pytest
 
 from tests.integration_tests.utils import (
@@ -26,16 +24,6 @@ from tests.integration_tests.utils import (
     set_feature,
     text_feature,
 )
-
-
-@contextlib.contextmanager
-def graph_mode():
-    prev_mode = tf.config.experimental_functions_run_eagerly()
-    try:
-        tf.config.experimental_run_functions_eagerly(False)
-        yield
-    finally:
-        tf.config.experimental_run_functions_eagerly(prev_mode)
 
 
 @pytest.mark.skip(reason="Issue #1333: Sequence output features.")
@@ -68,18 +56,17 @@ def graph_mode():
     ],
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
-    with graph_mode():
-        input_features = [
-            text_feature(vocab_size=100, min_len=1, encoder="stacked_cnn"),
-            numerical_feature(normalization="zscore"),
-            category_feature(vocab_size=10, embedding_size=5),
-            set_feature(),
-            sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
-        ]
-        output_features = output_features
+    input_features = [
+        text_feature(vocab_size=100, min_len=1, encoder="stacked_cnn"),
+        numerical_feature(normalization="zscore"),
+        category_feature(vocab_size=10, embedding_size=5),
+        set_feature(),
+        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+    ]
+    output_features = output_features
 
-        rel_path = generate_data(input_features, output_features, csv_filename)
-        run_experiment(input_features, output_features, dataset=rel_path)
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.skip(reason="Issue #1333: Sequence output features.")
@@ -90,28 +77,25 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
 @pytest.mark.parametrize("enc_cell_type", ["lstm"])
 @pytest.mark.parametrize("enc_encoder", ["embed"])
 def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, dec_attention, dec_beam_width, csv_filename):
-    tfa.options.TF_ADDONS_PY_OPS = True
+    # Define input and output features
+    input_features = [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
+    output_features = [
+        sequence_feature(
+            min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
+        )
+    ]
 
-    with graph_mode():
-        # Define input and output features
-        input_features = [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
-        output_features = [
-            sequence_feature(
-                min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
-            )
-        ]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
-        # Generate test data
-        rel_path = generate_data(input_features, output_features, csv_filename)
+    # setup encoder specification
+    input_features[0]["encoder"] = enc_encoder
+    input_features[0]["cell_type"] = enc_cell_type
 
-        # setup encoder specification
-        input_features[0]["encoder"] = enc_encoder
-        input_features[0]["cell_type"] = enc_cell_type
+    # setup decoder specification
+    output_features[0]["cell_type"] = dec_cell_type
+    output_features[0]["attention"] = dec_attention
+    output_features[0]["beam_width"] = dec_beam_width
 
-        # setup decoder specification
-        output_features[0]["cell_type"] = dec_cell_type
-        output_features[0]["attention"] = dec_attention
-        output_features[0]["beam_width"] = dec_beam_width
-
-        # run the experiment
-        run_experiment(input_features, output_features, dataset=rel_path)
+    # run the experiment
+    run_experiment(input_features, output_features, dataset=rel_path)

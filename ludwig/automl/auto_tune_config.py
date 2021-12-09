@@ -11,7 +11,7 @@ except ImportError:
 
 from ludwig.api import LudwigModel
 from ludwig.automl.utils import get_available_resources, get_model_name
-from ludwig.constants import BATCH_SIZE, COMBINER, HYPEROPT, PREPROCESSING, SPACE, TRAINING, TYPE
+from ludwig.constants import BATCH_SIZE, HYPEROPT, PREPROCESSING, SPACE, TRAINING
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.defaults import merge_with_defaults

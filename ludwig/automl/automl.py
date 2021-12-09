@@ -19,9 +19,9 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
-from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info, infer_type
+from ludwig.automl.base_config import _create_default_config, DatasetInfo, get_dataset_info
 from ludwig.automl.utils import _ray_init, get_model_name
-from ludwig.constants import COMBINER, HYPEROPT, NUMERICAL, TYPE
+from ludwig.constants import HYPEROPT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt

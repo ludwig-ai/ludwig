@@ -68,7 +68,7 @@ res_post = [
     (re.compile(r"([\<\>\{\}\[\]\(\)\-\+\=:;,\./\?\!\$%&£#@\'₹ ])\1+"), r"\1"),
     (
         re.compile(
-            r"[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890\<\>\{\}\[\]\(\)\-\+\=:;,\./\?\!\$%&£#@\'₹ ]"
+            r"[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890\<\>\{\}\[\]\(\)\-\+\=:;,\./\?\!\$%&£#@\'₹ ]"  # noqa
         ),
         r" ",
     ),

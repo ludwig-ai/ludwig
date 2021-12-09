@@ -119,8 +119,8 @@ def deserialize_payload(json_string: str) -> pd.DataFrame:
     return df
 
 
-def deserialize_request(form: "multi-part form") -> tuple:
-    """This function will desearlize the REST API request packet to create a pandas dataframe that is input to the
+def deserialize_request(form) -> tuple:
+    """This function will deserialize the REST API request packet to create a pandas dataframe that is input to the
     Ludwig predict method and a list of files that will be cleaned up at the end of processing.
 
     Args:
@@ -138,7 +138,7 @@ def deserialize_request(form: "multi-part form") -> tuple:
     df = deserialize_payload(form["payload"])
 
     # insert files paths of the temporary files in place of the original
-    # file paths specifed by the user.
+    # file paths specified by the user.
     # pd.DataFrame.replace() method is used to replace file path string
     # specified by the user context with the file path string where a
     # temporary file containing the same content.

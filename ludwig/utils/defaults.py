@@ -16,11 +16,10 @@
 import argparse
 import copy
 import logging
-import sys
 
 import yaml
 
-from ludwig.constants import *
+from ludwig.constants import BINARY, CATEGORY, COLUMN, COMBINED, LOSS, NAME, PROC_COLUMN, TRAINING, TYPE
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
@@ -82,15 +81,15 @@ default_optimizer_params_registry = {
     "gradient_descent": {"lr": 0.001},
     "adam": {
         "betas": (0.9, 0.999),
-        #'beta_1': 0.9,
-        #'beta_2': 0.999,
-        #'epsilon': 1e-08
+        # 'beta_1': 0.9,
+        # 'beta_2': 0.999,
+        # 'epsilon': 1e-08
         "eps": 1e-08,
     },
     "adadelta": {
         "rho": 0.95,
         "eps": 1e-08
-        #'epsilon': 1e-08
+        # 'epsilon': 1e-08
     },
     "adagrad": {"initial_accumulator_value": 0.1},
     "adamax": {},
@@ -104,7 +103,7 @@ default_optimizer_params_registry = {
     "rmsprop": {
         "weight_decay": 0.9,
         "momentum": 0.0,
-        #'epsilon': 1e-10,
+        # 'epsilon': 1e-10,
         "eps": 1e-10,
         "centered": False,
     },
@@ -298,7 +297,3 @@ def cli_render_config(sys_argv):
 
     print_ludwig("Render Config", LUDWIG_VERSION)
     render_config(**vars(args))
-
-
-if __name__ == "__main__":
-    cli(sys.argv[1:])

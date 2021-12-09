@@ -20,20 +20,13 @@
 # ==============================================================================
 import glob
 import json
-import logging
 import os
 import shutil
 import subprocess
-import tempfile
 
-import numpy as np
-import pandas as pd
-
-from ludwig.api import LudwigModel
-from ludwig.constants import *
 from ludwig.experiment import experiment_cli
-from ludwig.utils.data_utils import get_split_path, split_dataset_ttv
-from ludwig.visualize import _extract_ground_truth_values, compare_classifiers_performance_from_prob
+from ludwig.utils.data_utils import get_split_path
+from ludwig.visualize import _extract_ground_truth_values
 from tests.integration_tests.test_visualization_api import obtain_df_splits
 from tests.integration_tests.utils import (
     bag_feature,
