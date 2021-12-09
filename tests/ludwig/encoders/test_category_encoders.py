@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 import torch
 
@@ -6,7 +8,7 @@ from ludwig.encoders.category_encoders import CategoricalEmbedEncoder, Categoric
 
 @pytest.mark.parametrize("vocab", [["red", "orange", "yellow", "green", "blue", "violet"], ["a", "b", "c"]])
 @pytest.mark.parametrize("embedding_size", [4, 6, 10])
-def test_categorical_dense_encoder(vocab, embedding_size):
+def test_categorical_dense_encoder(vocab: List[str], embedding_size: int):
     dense_encoder = CategoricalEmbedEncoder(vocab=vocab, embedding_size=embedding_size)
     inputs = torch.randint(len(vocab), (10,))  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
@@ -18,7 +20,7 @@ def test_categorical_dense_encoder(vocab, embedding_size):
 
 
 @pytest.mark.parametrize("vocab", [["red", "orange", "yellow", "green", "blue", "violet"], ["a", "b", "c"]])
-def test_categorical_sparse_encoder(vocab):
+def test_categorical_sparse_encoder(vocab: List[str]):
     sparse_encoder = CategoricalSparseEncoder(vocab=vocab)
     inputs = torch.randint(len(vocab), (10,))  # Chooses 10 items from vocab with replacement.
     inputs = torch.unsqueeze(inputs, 1)
