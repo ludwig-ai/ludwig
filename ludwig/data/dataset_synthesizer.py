@@ -179,7 +179,7 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict]):
         header.append(feature[NAME])
 
     yield header
-    for _ in range(dataset_size + 1):
+    for _ in range(dataset_size):
         yield generate_datapoint(features)
 
 
