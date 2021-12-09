@@ -14,10 +14,8 @@ def test_generic_passthrough_encoder(input_size: int, categorical: bool):
     else:
         inputs = torch.rand((10, input_size))
     outputs = passthrough_encoder(inputs)
-    assert "encoder_output" in outputs
-    encoder_output = outputs["encoder_output"]
     # Ensures output shape matches encoder expected output shape.
-    assert encoder_output.shape[1:] == passthrough_encoder.output_shape
+    assert outputs["encoder_output"].shape[1:] == passthrough_encoder.output_shape
 
 
 @pytest.mark.parametrize("input_size", [1, 2, 10])
@@ -27,7 +25,5 @@ def test_generic_dense_encoder(input_size: int, num_layers: int, fc_size: int):
     dense_encoder = DenseEncoder(input_size, num_layers=num_layers, fc_size=fc_size)
     inputs = torch.rand((10, input_size))
     outputs = dense_encoder(inputs)
-    assert "encoder_output" in outputs
-    encoder_output = outputs["encoder_output"]
     # Ensures output shape matches encoder expected output shape.
-    assert encoder_output.shape[1:] == dense_encoder.output_shape
+    assert outputs["encoder_output"].shape[1:] == dense_encoder.output_shape
