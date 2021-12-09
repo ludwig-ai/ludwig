@@ -172,10 +172,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_decoder(self, decoder_parameters):
-        # Override input_size.
-        # Features input_size may be different if the output feature has a custom FC.
         decoder_parameters_copy = copy.copy(decoder_parameters)
-        decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
+        # Use the FC's output size if it's defined.
+        if self.num_fc_layers:
+            decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
         return get_decoder_cls(self.type, self.decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
