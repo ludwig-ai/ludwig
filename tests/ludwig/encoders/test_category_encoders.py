@@ -1,14 +1,11 @@
 import pytest
-
 import torch
 
-from ludwig.encoders.category_encoders import CategoricalEmbedEncoder
-from ludwig.encoders.category_encoders import CategoricalSparseEncoder
+from ludwig.encoders.category_encoders import CategoricalEmbedEncoder, CategoricalSparseEncoder
 
 
-@pytest.mark.parametrize('vocab', [['red', 'orange', 'yellow', 'green', 'blue', 'violet'],
-                                   ['a', 'b', 'c']])
-@pytest.mark.parametrize('embedding_size', [4, 6, 10])
+@pytest.mark.parametrize("vocab", [["red", "orange", "yellow", "green", "blue", "violet"], ["a", "b", "c"]])
+@pytest.mark.parametrize("embedding_size", [4, 6, 10])
 def test_categorical_dense_encoder(vocab, embedding_size):
     dense_encoder = CategoricalEmbedEncoder(vocab=vocab, embedding_size=embedding_size)
     inputs = torch.randint(len(vocab), (10,))  # Chooses 10 items from vocab with replacement.
@@ -20,9 +17,7 @@ def test_categorical_dense_encoder(vocab, embedding_size):
     assert outputs.shape[1:] == dense_encoder.output_shape
 
 
-@pytest.mark.parametrize('vocab', [['red', 'orange', 'yellow', 'green', 'blue', 'violet'],
-                                   ['a', 'b', 'c']]
-)
+@pytest.mark.parametrize("vocab", [["red", "orange", "yellow", "green", "blue", "violet"], ["a", "b", "c"]])
 def test_categorical_sparse_encoder(vocab):
     sparse_encoder = CategoricalSparseEncoder(vocab=vocab)
     inputs = torch.randint(len(vocab), (10,))  # Chooses 10 items from vocab with replacement.
