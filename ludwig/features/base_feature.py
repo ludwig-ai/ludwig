@@ -118,7 +118,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.dependencies = []
 
         self.fc_layers = None
-        self.num_fc_layers = 1
+        self.num_fc_layers = 0
         self.fc_size = 256
         self.use_bias = True
         self.weights_initializer = "xavier_uniform"
