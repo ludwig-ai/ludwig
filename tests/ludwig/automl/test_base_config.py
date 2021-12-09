@@ -20,7 +20,8 @@ TARGET_NAME = "target"
         (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT - 1)] + ["NaN"], 0, 0.0, NUMERICAL),
         # Finite list of numbers.
         (10, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], 0, 0.0, CATEGORY),
-        (2, ["1.5", "3.7"], 0, 0.1, CATEGORY),
+        (2, ["1.5", "3.7"], 0, 0.1, NUMERICAL),
+        (2, ["1.5", "3.7", "nan"], 0, 0.1, NUMERICAL),
         # Bool-like values.
         (2, ["0", "1"], 0, 0.0, BINARY),
         # Mostly bool-like values.
