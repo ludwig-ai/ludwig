@@ -259,6 +259,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     def logits(self, inputs, **kwargs):  # hidden
         hidden = inputs[HIDDEN]
+        print(f"hidden.size(): {hidden.size()}")
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):
