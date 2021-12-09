@@ -329,13 +329,15 @@ def run_experiment(
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):
-    # helper function to generate multiple output features specifications
-    # with dependencies, support for 'test_experiment_multiple_seq_seq` unit test
-    # Parameters:
-    # main_feature: feature identifier, valid values 'feat1', 'feat2', 'feat3'
-    # dependencies: list of dependencies for 'main_feature', do not li
-    # Example:
-    #  generate_output_features_with_dependencies('feat2', ['feat1', 'feat3'])
+    """Generates multiple output features specifications with dependencies.
+
+    Example usage:
+        generate_output_features_with_dependencies('sequence_feature', ['category_feature', 'numerical_feature'])
+
+    Args:
+        main_feature: feature identifier, valid values 'category_feature', 'sequence_feature', 'numerical_feature'
+        dependencies: list of dependencies for 'main_feature', do not li
+    """
 
     output_features = [
         category_feature(vocab_size=2, reduce_input="sum"),
