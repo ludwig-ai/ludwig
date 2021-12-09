@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 
 from ludwig.combiners.combiners import Combiner, get_combiner_class
-from ludwig.constants import COMBINED, LOSS, NAME, TYPE, TIED
+from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.utils import output_feature_utils
@@ -150,6 +150,9 @@ class ECD(LudwigModule):
                 output_feature_utils.set_output_feature_tensor(
                     output_logits, output_feature_name, decoder_output_name, tensor
                 )
+
+            # Save the hidden state of the output feature (for feature dependencies).
+            output_last_hidden[output_feature_name] = decoder_outputs["last_hidden"]
         return output_logits
 
     def predictions(self, inputs, output_features=None):
@@ -311,17 +314,17 @@ def build_outputs(output_features_def: List[Dict[str, Any]], combiner: Combiner)
         # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns for
         # seq2seq.
         output_feature_def["input_size"] = combiner.output_shape[-1]
-        output_feature = build_single_output(output_feature_def)
+        output_feature = build_single_output(output_feature_def, output_features)
         output_features[output_feature_def[NAME]] = output_feature
 
     return output_features
 
 
-def build_single_output(output_feature_def: Dict[str, Any]) -> OutputFeature:
+def build_single_output(output_feature_def: Dict[str, Any], output_features: Dict[str, OutputFeature]) -> OutputFeature:
     """Builds a single output feature from the output feature definition."""
     logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
 
     output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
-    output_feature_obj = output_feature_class(output_feature_def)
+    output_feature_obj = output_feature_class(output_feature_def, output_features)
 
     return output_feature_obj

@@ -248,9 +248,10 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     default_validation_metric = MEAN_SQUARED_ERROR
     clip = None
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
+
         feature["input_size"] = self.input_shape[-1]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
@@ -258,6 +259,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     def logits(self, inputs, **kwargs):  # hidden
         hidden = inputs[HIDDEN]
+        print(f"hidden.size(): {hidden.size()}")
         return self.decoder_obj(hidden)
 
     def predictions(self, inputs: Dict[str, torch.Tensor], feature_name: str, **kwargs):

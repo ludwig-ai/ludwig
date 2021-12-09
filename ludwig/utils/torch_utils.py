@@ -146,7 +146,8 @@ class LudwigModule(Module):
                 collected_losses.extend(child.losses())
             elif isinstance(child, ModuleDict):
                 for c in child.values():
-                    collected_losses.extend(c.losses())
+                    if hasattr(c, "losses"):  # Some modules, i.e. SequenceReducers, don't have losses.
+                        collected_losses.extend(c.losses())
             elif isinstance(child, Module):
                 pass
             else:

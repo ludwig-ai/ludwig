@@ -165,8 +165,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     num_classes = 0
     top_k = 3
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()

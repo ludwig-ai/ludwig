@@ -217,13 +217,13 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
             numerical_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
-        generate_output_features_with_dependencies("feat3", ["feat1"]),
+        generate_output_features_with_dependencies("numerical_feature", ["category_feature"]),
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies("feat3", ["feat1", "feat2"]),
+        generate_output_features_with_dependencies("numerical_feature", ["category_feature", "sequence_feature"]),
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies("feat2", ["feat1", "feat3"]),
+        generate_output_features_with_dependencies("sequence_feature", ["category_feature", "numerical_feature"]),
         # output features with dependencies
-        generate_output_features_with_dependencies("feat1", ["feat2"]),
+        generate_output_features_with_dependencies("category_feature", ["sequence_feature"]),
     ],
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):

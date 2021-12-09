@@ -232,10 +232,12 @@ def create_vocabulary(
 
     vocab_set = set(vocab)
 
-    if tokenizer_type != "hf_tokenizer" and add_special_symbols:
-        add_or_move_symbol(vocab, vocab_set, stop_symbol, STOP_IDX)
-        add_or_move_symbol(vocab, vocab_set, start_symbol, START_IDX)
-        add_or_move_symbol(vocab, vocab_set, padding_symbol, PADDING_IDX)
+    if tokenizer_type != "hf_tokenizer":
+        if add_special_symbols:
+            add_or_move_symbol(vocab, vocab_set, stop_symbol, STOP_IDX)
+            add_or_move_symbol(vocab, vocab_set, start_symbol, START_IDX)
+            add_or_move_symbol(vocab, vocab_set, padding_symbol, PADDING_IDX)
+        # Always add the UNKNOWN symbol if we're using our own tokenizer.
         add_or_move_symbol(vocab, vocab_set, unknown_symbol, UNKNOWN_IDX)
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}

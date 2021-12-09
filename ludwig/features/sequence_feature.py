@@ -207,8 +207,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     max_sequence_length = 0
     num_classes = 0
 
-    def __init__(self, feature: Dict[str, Any]):
-        super().__init__(feature)
+    def __init__(self, feature: Dict[str, Any], output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
