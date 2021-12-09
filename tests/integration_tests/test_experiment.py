@@ -187,7 +187,7 @@ def test_experiment_multiclass_with_class_weights(csv_filename):
 def test_experiment_multilabel_with_class_weights(csv_filename):
     # Multiple inputs, Single category output
     input_features = [category_feature(vocab_size=10)]
-    output_features = [set_feature(vocab_size=3, loss={"class_weights": [0, 0, 1, 2, 3]})]
+    output_features = [set_feature(vocab_size=3, loss={"class_weights": [0, 1, 2, 3]})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

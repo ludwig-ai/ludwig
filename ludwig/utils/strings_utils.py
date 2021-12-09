@@ -267,8 +267,11 @@ def _get_sequence_vector(
                 unit_indices_vector[i] = unit_to_id[unknown_symbol]
 
     # Add start and stop symbols.
-    unit_indices_vector = np.append(unit_indices_vector, unit_to_id[STOP_SYMBOL])
-    unit_indices_vector = np.insert(unit_indices_vector, 0, unit_to_id[START_SYMBOL])
+    # Huggingface's pretrained tokenizers take care of this implicitly:
+    # https://huggingface.co/docs/transformers/preprocessing
+    if tokenizer_type != "hf_tokenizer":
+        unit_indices_vector = np.append(unit_indices_vector, unit_to_id[STOP_SYMBOL])
+        unit_indices_vector = np.insert(unit_indices_vector, 0, unit_to_id[START_SYMBOL])
     return unit_indices_vector
 
 

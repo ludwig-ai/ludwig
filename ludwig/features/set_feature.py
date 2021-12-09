@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict
 
 import numpy as np
 import torch
@@ -77,6 +78,7 @@ class SetFeatureMixin:
             preprocessing_parameters["tokenizer"],
             num_most_frequent=preprocessing_parameters["most_common"],
             lowercase=preprocessing_parameters["lowercase"],
+            add_special_symbols=False,
             processor=backend.df_engine,
         )
         return {
@@ -156,8 +158,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
 
         self.num_classes = 0
         self.threshold = 0.5

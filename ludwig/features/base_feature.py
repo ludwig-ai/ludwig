@@ -17,7 +17,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-import numpy as np
 import torch
 from torch import Tensor
 
@@ -32,7 +31,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import merge_dict
-from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, sequence_mask
+from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -112,7 +111,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.dependencies = []
 
         self.fc_layers = None
-        self.num_fc_layers = 1
+        self.num_fc_layers = 0
         self.fc_size = 256
         self.use_bias = True
         self.weights_initializer = "xavier_uniform"
@@ -348,73 +347,26 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def populate_defaults(input_feature):
         pass
 
-    def get_input_size_with_dependencies(self, combiner_output_size, dependencies: List[str], output_features: Dict):
+    def get_input_size_with_dependencies(
+        self, combiner_output_size: int, dependencies: List[str], output_features: Dict
+    ):
+        """Returns the input size for the first layer of the output feature's FC stack, accounting for
+        dependencies.
+
+        In the forward pass, the hidden states of dependent features are concatenated with the combiner's output. To
+        get the right sizes of the hidden states of dependent features, we use the output shape for each of the
+        dependent output feature's FCStack.
+
+        If the dependent feature's FCStack doesn't use an FCStack (num_fc_layers = 0), then we use the output feature's
+        input size.
+        """
         input_size_with_dependencies = combiner_output_size
         for feature_name in dependencies:
-            input_size_with_dependencies += output_features[feature_name].fc_stack.output_shape[-1]
-        return input_size_with_dependencies
-
-    def concat_dependencies(self, hidden, other_features_hidden):
-        # No dependencies.
-        if not self.dependencies:
-            return hidden
-
-        dependency_hidden_states = []
-        for feature_name in self.dependencies:
-            # The dependent feature should be present since ECD does a topological sort over output features.
-            feature_hidden_state = other_features_hidden[feature_name]
-
-            # This feature is sequential.
-            if len(hidden.shape) > 2:
-                if len(feature_hidden_state.shape) > 2:
-                    # The dependent feature is also sequential.
-                    # matrix matrix -> concat
-                    assert hidden.shape[1] == feature_hidden_state.shape[1]
-                    dependency_hidden_states.append(feature_hidden_state)
-                else:
-                    # The dependent feature is not sequential.
-                    # matrix vector -> tile concat
-                    sequence_max_length = hidden.shape[1]
-                    multipliers = (1, sequence_max_length, 1)
-                    tiled_representation = torch.tile(torch.unsqueeze(feature_hidden_state, 1), multipliers)
-
-                    # todo future: maybe modify this with TF2 mask mechanics
-                    sequence_length = sequence_length_3D(hidden)
-                    mask = sequence_mask(sequence_length, sequence_max_length)
-                    tiled_representation = torch.mul(
-                        tiled_representation,
-                        mask[:, :, np.newaxis].type(torch.float32),
-                    )
-
-                    dependency_hidden_states.append(tiled_representation)
-
+            if output_features[feature_name].num_fc_layers:
+                input_size_with_dependencies += output_features[feature_name].fc_stack.output_shape[-1]
             else:
-                # This feature is not sequential.
-                if len(feature_hidden_state.shape) > 2:
-                    # The dependent feature is sequential.
-                    # vector matrix -> reduce concat
-                    reducer = self.dependency_reducers[feature_name]
-                    dependency_hidden_states.append(reducer(feature_hidden_state))
-                else:
-                    # The dependent feature is not sequential.
-                    # vector vector -> concat
-                    dependency_hidden_states.append(feature_hidden_state)
-
-        try:
-            hidden = torch.cat([hidden] + dependency_hidden_states, dim=-1)
-        except Exception as e:
-            raise ValueError(
-                f"Shape mismatch {e} while concatenating dependent features of {self.column}: "
-                f"{self.dependencies}. Concatenating the feature activations tensor {hidden} "
-                f"with activation tensors of dependencies: {dependency_hidden_states}. The error is "
-                "likely due to a mismatch of the second dimension (sequence length) or a "
-                "difference in ranks. Likely solutions are setting the maximum_sequence_length "
-                "of all sequential features to be the same,  or reduce the output of some "
-                "features, or disabling the bucketing setting bucketing_field to None / null, "
-                "as activating it will reduce the length of the field the bucketing is "
-                "performed on."
-            )
-        return hidden
+                input_size_with_dependencies += output_features[feature_name].input_size
+        return input_size_with_dependencies
 
     def output_specific_fully_connected(self, inputs, mask=None):
         feature_hidden = inputs
@@ -447,16 +399,18 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         return feature_hidden
 
-    def prepare_decoder_inputs(self, combiner_output, other_output_features, mask=None):
+    def prepare_decoder_inputs(
+        self, combiner_output: Tensor, other_output_features: Dict[str, Tensor], mask=None
+    ) -> Tensor:
         """Takes the combiner output and the outputs of other outputs features computed so far and performs:
 
         - reduction of combiner outputs (if needed)
         - concatenating the outputs of dependent features (if needed)
         - output_specific fully connected layers (if needed)
 
-        :param combiner_output: output tensor of the combiner
-        :param other_output_features: output tensors from other features
-        :return: tensor
+        Args:
+            combiner_output: output tensor of the combiner
+            other_output_features: output tensors from other output features
         """
         feature_hidden = combiner_output
 
@@ -465,8 +419,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             feature_hidden = self.reduce_sequence_input(feature_hidden)
 
         # ================ Concat Dependencies ================
-        print(f"other_output_features.keys(): {other_output_features.keys()}")
-        feature_hidden = self.concat_dependencies(feature_hidden, other_output_features)
+        if self.dependencies:
+            feature_hidden = output_feature_utils.concat_dependencies(
+                self.column, self.dependencies, self.dependency_reducers, feature_hidden, other_output_features
+            )
 
         # ================ Output-wise Fully Connected ================
         feature_hidden = self.output_specific_fully_connected(feature_hidden, mask=mask)

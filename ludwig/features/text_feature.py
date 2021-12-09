@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict
 
 import numpy as np
 import torch
@@ -40,6 +41,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.encoders.registry import get_encoder_cls
+from ludwig.features.base_feature import OutputFeature
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -311,8 +313,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     vocab_size = 0
     level = "word"
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
 
     @classmethod
     def get_output_dtype(cls):

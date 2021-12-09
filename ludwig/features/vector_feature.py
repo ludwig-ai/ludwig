@@ -155,8 +155,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     default_validation_metric = MEAN_SQUARED_ERROR
     vector_size = 0
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
         self._input_shape = feature["input_size"]
         feature["output_size"] = feature["vector_size"]
