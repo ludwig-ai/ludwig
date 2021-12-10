@@ -9,9 +9,8 @@ from ludwig.modules import reduction_modules
 logger = logging.getLogger(__name__)
 
 
-# @pytest.mark.parametrize("reduce_mode", ["last", "sum", "mean", "avg", "max", "concat", None])
-@pytest.mark.parametrize("reduce_mode", ["last", "concat"])
-@pytest.mark.parametrize("test_input_shape", [(16, 1, 4), (8, 10, 16)])
+@pytest.mark.parametrize("reduce_mode", ["last", "sum", "mean", "avg", "max", "concat", None])
+@pytest.mark.parametrize("test_input_shape", [(16, 1, 4), (4, 10, 16)])
 def test_sequence_reducer(reduce_mode: str, test_input_shape: Tuple[int, ...]):
     batch_size = test_input_shape[0]
     max_sequence_length = test_input_shape[1]
