@@ -29,7 +29,7 @@ from sklearn.metrics import brier_score_loss
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import *
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPLIT, TRAINING, TYPE, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
@@ -1769,8 +1769,8 @@ def compare_classifiers_multiclass_multimetric(
             model_name_name = model_names_list[i] if model_names_list is not None and i < len(model_names_list) else ""
             if "per_class_stats" not in test_statistics[output_feature_name]:
                 logging.warning(
-                    'The output_feature_name {} in test statistics does not contain "{}", '
-                    "skipping it".format(output_feature_name, per_class_stats)
+                    f"The output_feature_name {output_feature_name} in test statistics does not contain "
+                    + "per_class_stats, skipping it."
                 )
                 break
             per_class_stats = test_statistics[output_feature_name]["per_class_stats"]
@@ -1835,8 +1835,10 @@ def compare_classifiers_multiclass_multimetric(
                     [p_np[lower_f1s], r_np[lower_f1s], f1_np[lower_f1s]],
                     ["precision", "recall", "f1 score"],
                     labels=labels_np[lower_f1s].tolist(),
-                    title="{} Multiclass Precision / Recall / F1 Score worst "
-                    "k classes {}".format(model_name_name, k, output_feature_name),
+                    title=(
+                        f"{model_name_name} Multiclass Precision / Recall / F1 Score worst "
+                        + f"{k} classes {output_feature_name}"
+                    ),
                     filename=filename,
                 )
 
@@ -1847,8 +1849,7 @@ def compare_classifiers_multiclass_multimetric(
                     [p_np[sorted_indices[::-1]], r_np[sorted_indices[::-1]], f1_np[sorted_indices[::-1]]],
                     ["precision", "recall", "f1 score"],
                     labels=labels_np[sorted_indices[::-1]].tolist(),
-                    title="{} Multiclass Precision / Recall / F1 Score "
-                    "{} sorted".format(model_name_name, output_feature_name),
+                    title=f"{model_name_name} Multiclass Precision / Recall / F1 Score {output_feature_name} sorted",
                     filename=filename,
                 )
 

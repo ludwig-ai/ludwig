@@ -18,6 +18,7 @@ import re
 import unicodedata
 from abc import abstractmethod
 from collections import Counter
+from typing import List, Union
 
 import numpy as np
 
@@ -62,11 +63,11 @@ def strip_accents(s):
     return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
 
-def str2bool(v, fallback_true_label=None):
+def str2bool(v: str, fallback_true_label=None) -> bool:
     """Returns bool representation of the given value v.
 
     Check the value against global bool string lists.
-    Fallback to using fallback_true_label as True if the value isn't in the global bool string lists.
+    Fallback to using fallback_true_label as True if the value isn't in the global bool lists.
 
     args:
         v: Value to get the bool representation for.
@@ -82,7 +83,7 @@ def str2bool(v, fallback_true_label=None):
     return v == fallback_true_label
 
 
-def are_conventional_bools(values):
+def are_conventional_bools(values: List[Union[str, bool]]) -> bool:
     """Returns whether all values are conventional booleans."""
     for value in values:
         lower_value = str(value).lower()
@@ -91,8 +92,10 @@ def are_conventional_bools(values):
     return True
 
 
-def is_numerical(s):
+def is_numerical(s: Union[str, int, float]):
     """Returns whether specified value is numerical."""
+    if isinstance(s, str) and s.lower() == "nan":
+        return True
     try:
         float(s)
         return True
@@ -100,7 +103,7 @@ def is_numerical(s):
         return False
 
 
-def are_all_numericals(values):
+def are_all_numericals(values: List[Union[str, int, float]]):
     """Returns whether all values are numericals."""
     for value in values:
         if not is_numerical(value):
@@ -108,7 +111,7 @@ def are_all_numericals(values):
     return True
 
 
-def is_integer(s):
+def is_integer(s: Union[str, int, float]):
     """Returns whether specified value is an integer."""
     try:
         float(s)
@@ -118,7 +121,7 @@ def is_integer(s):
         return float(s).is_integer() and not np.isnan(float(s))
 
 
-def are_sequential_integers(values):
+def are_sequential_integers(values: List[Union[str, int, float]]):
     """Returns whether distinct values form sequential integer list."""
     int_list = []
     for value in values:
@@ -942,7 +945,9 @@ class ChineseLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
 
 class MultiTokenizer(BaseTokenizer):
     def __call__(self, text):
-        return process_text(text, load_nlp_pipeline("xx"))
+        return process_text(
+            text, load_nlp_pipeline("xx"), filter_numbers=True, filter_punctuation=True, filter_short_tokens=True
+        )
 
 
 class MultiFilterTokenizer(BaseTokenizer):

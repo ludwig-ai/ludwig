@@ -1,6 +1,3 @@
-from typing import List
-
-import pytest
 import torch
 
 from ludwig.encoders.binary_encoders import BinaryPassthroughEncoder

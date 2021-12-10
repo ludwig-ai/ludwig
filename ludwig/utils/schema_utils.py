@@ -2,7 +2,6 @@ from dataclasses import field
 
 import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
-from torch.nn import init
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
@@ -136,7 +135,7 @@ class InitializerOptionsOrCustomDictField(fields.Field):
 
         if isinstance(value, dict):
             if "type" not in value:
-                raise ValidationError(f"Dict must contain 'type'")
+                raise ValidationError("Dict must contain 'type'")
             if value["type"] not in initializers:
                 raise ValidationError(f"Dict expected key 'type' to be one of: {initializers}, found: {value}")
             return value

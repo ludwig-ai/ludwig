@@ -21,12 +21,13 @@ import pytest
 import ray
 from mlflow.tracking import MlflowClient
 
+from ludwig.constants import ACCURACY
 from ludwig.contribs import MlflowCallback
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.results import RayTuneResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
-from ludwig.utils.defaults import ACCURACY, merge_with_defaults
+from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, spawn, text_feature
 
 logger = logging.getLogger(__name__)

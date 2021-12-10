@@ -1,7 +1,6 @@
 from typing import Tuple
 
 import torch
-from numpy.core.defchararray import mod
 
 from ludwig.utils.torch_utils import LudwigModule
 

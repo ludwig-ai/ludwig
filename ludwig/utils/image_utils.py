@@ -85,7 +85,8 @@ def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
         if isinstance(img, bytes):
             return imghdr.what(None, img) is not None
         return imghdr.what(img) is not None
-    except:  # noqa: E722
+    except Exception as e:
+        logger.warning(f"While assessing potential image in is_image(), encountered exception: {e}")
         return False
 
 

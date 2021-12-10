@@ -14,19 +14,18 @@ import sys
 from unittest.mock import Mock, patch
 
 # Comet must be imported before the libraries it wraps
-import comet_ml
+import comet_ml  # noqa
+
+from ludwig.api import LudwigModel
+from ludwig.contribs.comet import CometCallback
+from tests.integration_tests.utils import category_feature, generate_data, image_feature
 
 # Bad key will ensure Comet is initialized, but nothing is uploaded externally.
 os.environ["COMET_API_KEY"] = "key"
 
-from ludwig.api import LudwigModel
-from ludwig.contribs.comet import CometCallback
-
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, "..", "..", "..")
 sys.path.insert(0, os.path.abspath(PATH_ROOT))
-
-from tests.integration_tests.utils import category_feature, generate_data, image_feature
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--csv-filename", required=True)

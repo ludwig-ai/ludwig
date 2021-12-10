@@ -15,7 +15,6 @@
 # ==============================================================================
 import os
 
-import h5py
 import pandas as pd
 
 from ludwig.utils.fs_utils import makedirs, rename

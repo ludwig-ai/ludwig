@@ -44,8 +44,8 @@ except ImportError:
 
 
 def ray_resource_allocation_function(
-    trial_runner: "trial_runner.TrialRunner",
-    trial: "Trial",
+    trial_runner: "trial_runner.TrialRunner",  # noqa
+    trial: "Trial",  # noqa
     result: Dict[str, Any],
     scheduler: "ResourceChangingScheduler",
 ):

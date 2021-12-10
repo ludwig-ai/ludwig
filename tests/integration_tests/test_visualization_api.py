@@ -15,7 +15,6 @@
 import glob
 import logging
 import os
-import shutil
 from tempfile import TemporaryDirectory
 
 import numpy as np
@@ -24,8 +23,7 @@ import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel
-from ludwig.constants import *
-from ludwig.constants import SPLIT
+from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, SPLIT
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import (

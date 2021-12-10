@@ -27,9 +27,7 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     numerical_feature,
-    sequence_feature,
     set_feature,
-    text_feature,
     vector_feature,
 )
 

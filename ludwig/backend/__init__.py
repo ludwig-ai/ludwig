@@ -21,7 +21,7 @@ from ludwig.utils.horovod_utils import has_horovodrun
 
 try:
     import ray as _ray
-except:
+except Exception:
     _ray = None
 
 
@@ -50,7 +50,7 @@ def _has_ray():
     try:
         _ray.init("auto", ignore_reinit_error=True)
         return True
-    except:
+    except Exception:
         return False
 
 

@@ -21,12 +21,12 @@ import sys
 import horovod.torch as hvd
 import numpy as np
 
+import ludwig.utils.horovod_utils
+from ludwig.api import LudwigModel
+
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, "..", "..", "..")
 sys.path.insert(0, os.path.abspath(PATH_ROOT))
-
-import ludwig.utils.horovod_utils
-from ludwig.api import LudwigModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--rel-path", required=True)

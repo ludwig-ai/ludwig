@@ -58,4 +58,4 @@ class WandbCallback(Callback):
 
     @staticmethod
     def preload():
-        import wandb
+        import wandb  # noqa

@@ -15,17 +15,7 @@
 import pytest
 import torch
 
-from ludwig.utils.image_utils import (
-    crop,
-    crop_or_pad,
-    get_image_from_path,
-    grayscale,
-    is_image,
-    num_channels_in_image,
-    pad,
-    read_image,
-    resize_image,
-)
+from ludwig.utils.image_utils import crop, crop_or_pad, grayscale, num_channels_in_image, pad, resize_image
 
 
 @pytest.mark.parametrize(

@@ -14,11 +14,9 @@
 # ==============================================================================
 import os
 import os.path
-import re
 import shutil
 import subprocess
 import tempfile
-from io import StringIO
 
 import pytest
 import yaml
