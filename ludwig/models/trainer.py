@@ -1256,9 +1256,8 @@ class Trainer(BaseTrainer):
                 if not is_improved and (
                     # learning rate reduction happened more than N epochs ago
                     progress_tracker.last_learning_rate_reduction >= reduce_learning_rate_on_plateau_patience
-                    and
                     # No improvement of the evaluation metric since more than N epochs ago
-                    progress_tracker.last_reduce_learning_rate_eval_metric_improvement
+                    and progress_tracker.last_reduce_learning_rate_eval_metric_improvement
                     >= reduce_learning_rate_on_plateau_patience
                 ):
                     progress_tracker.learning_rate *= reduce_learning_rate_on_plateau_rate
@@ -1325,10 +1324,11 @@ class Trainer(BaseTrainer):
                 if not is_improved and (
                     # Batch size increase happened more than N epochs ago
                     progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience
-                    and
-                    # No improvement of the evaluation metric since more than N epochs ago
-                    progress_tracker.last_increase_batch_size_eval_metric_improvement
-                    >= increase_batch_size_on_plateau_patience
+                    and (
+                        # No improvement of the evaluation metric since more than N epochs ago
+                        progress_tracker.last_increase_batch_size_eval_metric_improvement
+                        >= increase_batch_size_on_plateau_patience
+                    )
                 ):
                     progress_tracker.batch_size = min(
                         (increase_batch_size_on_plateau_rate * progress_tracker.batch_size),

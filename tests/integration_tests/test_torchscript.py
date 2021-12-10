@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import collections
 import os
 import shutil
 import tempfile
@@ -23,7 +22,6 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import *
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils

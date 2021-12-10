@@ -4,7 +4,8 @@
 # Download and prepare training data set
 # Create Ludwig config file
 #
-# Based on the [UCI Wisconsin Breast Cancer data set](https://archive.ics.uci.edu/ml/datasets/breast+cancer+wisconsin+(original))
+# Based on the
+# [UCI Wisconsin Breast Cancer data set](https://archive.ics.uci.edu/ml/datasets/breast+cancer+wisconsin+(original))
 #
 import os.path
 import shutil

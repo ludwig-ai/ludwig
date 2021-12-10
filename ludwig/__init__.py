@@ -17,7 +17,7 @@ import sys
 
 import absl.logging
 
-from ludwig.globals import LUDWIG_VERSION as __version__
+from ludwig.globals import LUDWIG_VERSION as __version__  # noqa
 
 # Tensorflow 1.14 has compatibility issues with python native logging
 # This was one of the suggested solutions to continue using native logging

@@ -83,9 +83,7 @@ class FCLayer(LudwigModule):
         if dropout > 0:
             self.layers.append(Dropout(dropout))
 
-    def forward(self, inputs, training=None, mask=None):
-        self.training = training
-        batch_size = inputs.shape[0]
+    def forward(self, inputs, mask=None):
         hidden = inputs
 
         for i, layer in enumerate(self.layers):

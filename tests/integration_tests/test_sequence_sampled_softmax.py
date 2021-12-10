@@ -120,7 +120,7 @@ def test_sequence_generator(
     df = generate_deterministic_sequence
 
     # run the experiment
-    results = experiment_cli(dataset=df, **args)
+    experiment_cli(dataset=df, **args)
 
 
 @pytest.mark.skip(reason="Issue #1333: Sequence output generation.")

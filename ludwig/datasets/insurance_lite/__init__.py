@@ -14,11 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import List
-from urllib.request import urlretrieve
 
 import pandas as pd
-from tqdm import tqdm
 
 from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
 from ludwig.datasets.mixins.download import KaggleDatasetDownloadMixin

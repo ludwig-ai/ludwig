@@ -28,8 +28,8 @@ optimizers_registry = {
     "adadelta": torch.optim.Adadelta,
     "adagrad": torch.optim.Adagrad,
     "adamax": torch.optim.Adamax,
-    #'ftrl': tf.keras.optimizers.Ftrl,
-    #'nadam': tf.keras.optimizers.Nadam,
+    # 'ftrl': tf.keras.optimizers.Ftrl,
+    # 'nadam': tf.keras.optimizers.Nadam,
     "rmsprop": torch.optim.RMSprop,
 }
 

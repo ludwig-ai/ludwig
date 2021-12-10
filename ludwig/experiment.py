@@ -178,7 +178,8 @@ def experiment_cli(
      :param logging_level: (int) Log level that will be sent to stderr.
 
      # Return
-     :return: (Tuple[LudwigModel, dict, dict, tuple, str)) `(model, evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
+     :return: (Tuple[LudwigModel, dict, dict, tuple, str)):
+        `(model, evaluation_statistics, training_statistics, preprocessed_data, output_directory)`
          `model` LudwigModel instance
          `evaluation_statistics` dictionary with evaluation performance
              statistics on the test_set,

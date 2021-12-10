@@ -16,12 +16,9 @@
 import os
 
 import numpy as np
-import pandas as pd
 
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import BINARY
-from ludwig.features.feature_utils import SEQUENCE_TYPES
-from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS, normalize_numpy, to_numpy_dataset
+from ludwig.utils.data_utils import DATAFRAME_FORMATS, DICT_FORMATS, to_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
 
 

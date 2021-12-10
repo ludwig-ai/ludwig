@@ -13,7 +13,7 @@ from typing import Optional, Tuple, Union
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
-from ludwig.constants import *
+from ludwig.constants import COLUMN, MAXIMIZE, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, RayTuneResults, TrialResults
 from ludwig.hyperopt.sampling import HyperoptSampler, logger, RayTuneSampler
 from ludwig.hyperopt.utils import load_json_values

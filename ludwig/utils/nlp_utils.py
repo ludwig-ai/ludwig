@@ -195,7 +195,10 @@ def process_text(
 
 
 if __name__ == "__main__":
-    text = "Hello John, how are you doing my good old friend? Are you still number 732 in the list? Did you pay $32.43 or 54.21 for the book?"
+    text = (
+        "Hello John, how are you doing my good old friend? Are you still number 732 in the list? Did you pay $32.43 or "
+        "54.21 for the book?"
+    )
     print(process_text(text, load_nlp_pipeline()))
     print(
         process_text(text, load_nlp_pipeline(), filter_numbers=True, filter_punctuation=True, filter_short_tokens=True)

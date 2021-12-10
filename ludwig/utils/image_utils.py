@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import copy
 import functools
 import logging
 import os
@@ -87,7 +86,8 @@ def is_image(src_path: str, img_entry: Union[bytes, str]) -> bool:
         if isinstance(img, bytes):
             return imghdr.what(None, img) is not None
         return imghdr.what(img) is not None
-    except:
+    except Exception as e:
+        logger.warning(f"While assessing potential image in is_image(), encountered exception: {e}")
         return False
 
 
