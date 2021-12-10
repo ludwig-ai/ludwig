@@ -17,6 +17,7 @@ def test_is_numerical():
 def test_str_to_bool():
     # Global bool mappings are used.
     assert strings_utils.str2bool("True")
+    assert strings_utils.str2bool(True)
     assert strings_utils.str2bool("true")
     assert not strings_utils.str2bool("0")
 
@@ -36,6 +37,8 @@ def test_str_to_bool():
 
 def test_are_conventional_bools():
     assert strings_utils.are_conventional_bools(["True", "False"])
+    assert strings_utils.are_conventional_bools([True, False])
+    assert strings_utils.are_conventional_bools(["True", False, True])
     assert strings_utils.are_conventional_bools(["T", "F"])
     assert strings_utils.are_conventional_bools(["t", "f"])
     assert not strings_utils.are_conventional_bools(["True", "Fails"])
