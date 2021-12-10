@@ -35,4 +35,4 @@ def test_bag_input_feature(bag_config: Dict, encoder: str) -> None:
     bag_input_feature = BagInputFeature(bag_config)
     bag_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, BAG_W_SIZE], dtype=torch.float32)
     encoder_output = bag_input_feature(bag_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_FC_SIZE, EMBEDDING_SIZE)
+    assert encoder_output["encoder_output"].shape[1:][1:] == bag_input_feature.encoder_obj.output_shape
