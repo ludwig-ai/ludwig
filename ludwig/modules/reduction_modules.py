@@ -35,6 +35,21 @@ class SequenceReducer(torch.nn.Module):
     def forward(self, inputs, mask=None):
         return self._reduce_obj(inputs, mask=mask)
 
+    def infer_output_shape(self, input_shape):
+        """Infers output shape from input using the specified reduction mode.
+        :param input_shape: The shape of the input, which is typically [batch x sequence length x embedding size].
+
+        :param return: The output shape after reduction.
+        """
+        if self._reduce_mode in {None, "none", "None"}:
+            return input_shape
+        elif self._reduce_mode == "concat":
+            if len(input_shape) > 2:
+                return input_shape[:-2] + (input_shape[-1] * input_shape[-2],)
+            return input_shape
+        else:
+            return input_shape[:1] + input_shape[2:]  # Reduce sequence dimension (axis 1).
+
 
 class ReduceLast(torch.nn.Module):
     def forward(self, inputs, mask=None):
@@ -64,12 +79,10 @@ class ReduceMax(torch.nn.Module):
 
 
 class ReduceConcat(torch.nn.Module):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.reduce_last = ReduceLast()
-
     def forward(self, inputs, mask=None):
-        return inputs.reshape(-1, inputs.shape[-1] * inputs.shape[-2])
+        if inputs.dim() > 2:
+            return inputs.reshape(-1, inputs.shape[-1] * inputs.shape[-2])
+        return inputs
 
 
 class ReduceNone(torch.nn.Module):

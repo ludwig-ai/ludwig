@@ -15,13 +15,26 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
-    """Returns the number of non-zero elements per sequence."""
+    """Returns the number of non-zero elements per sequence in batch.
+
+    :param sequence: (torch.Tensor) A 2D tensor of shape [batch size x max sequence length].
+
+    # Return
+    :returns: (torch.Tensor) The count on non-zero elements per sequence.
+    """
     used = (sequence != 0).type(torch.int32)
     length = torch.sum(used, 1)
     return length
 
 
 def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
+    """Returns the number of non-zero elements per sequence in batch.
+
+    :param sequence: (torch.Tensor) A 3D tensor of shape [batch size x max sequence length x hidden size].
+
+    # Return
+    :returns: (torch.Tensor) The count on non-zero elements per sequence.
+    """
     used = torch.sign(torch.amax(torch.abs(sequence), dim=2))
     length = torch.sum(used, 1)
     length = length.int()
@@ -29,13 +42,21 @@ def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
 
 
 def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
+    """Returns a boolean mask.
+
+    :param lengths: (torch.Tensor) A 1d integer tensor of shape [batch size].
+    :param maxlen: (Optional[int]) The maximum sequence length.  If not specified, the max(lengths) is used.
+    :param dtype: (type) The type to output.
+
+    # Return
+    :returns: (torch.Tensor) A mask which .
+    """
     if maxlen is None:
         maxlen = lengths.max()
     matrix = torch.unsqueeze(lengths, dim=-1)
     row_vector = torch.arange(0, maxlen, 1, device=lengths.device)
     mask = row_vector < matrix
-
-    mask.type(dtype)
+    mask = mask.type(dtype)
     return mask
 
 
