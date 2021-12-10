@@ -18,6 +18,7 @@ import re
 import unicodedata
 from abc import abstractmethod
 from collections import Counter
+from typing import Union
 
 import numpy as np
 
@@ -91,9 +92,9 @@ def are_conventional_bools(values):
     return True
 
 
-def is_numerical(s):
+def is_numerical(s: Union[str, int, float]):
     """Returns whether specified value is numerical."""
-    if s.lower() == "nan":
+    if isinstance(s, str) and s.lower() == "nan":
         return True
     try:
         float(s)

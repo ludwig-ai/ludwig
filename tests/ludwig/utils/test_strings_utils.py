@@ -9,6 +9,8 @@ def test_is_numerical():
     assert strings_utils.is_numerical("1000001")
     assert strings_utils.is_numerical("Nan")
     assert strings_utils.is_numerical("NaN")
+    assert strings_utils.is_numerical(1)
+    assert strings_utils.is_numerical(1.1)
     assert not strings_utils.is_numerical("NaNaaa")
 
 
