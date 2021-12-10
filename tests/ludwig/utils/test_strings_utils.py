@@ -74,32 +74,8 @@ def test_create_vocabulary():
         padding_symbol=preprocessing_parameters["padding_symbol"],
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
-    assert char_idx2str == [
-        "<EOS>",
-        "<SOS>",
-        "<PAD>",
-        "<UNK>",
-        "e",
-        " ",
-        "n",
-        "a",
-        "t",
-        "l",
-        "s",
-        "h",
-        "o",
-        "r",
-        "i",
-        "c",
-        "d",
-        "v",
-        "y",
-        ",",
-        "'",
-        "m",
-        "g",
-        "!",
-    ]
+
+    assert len(char_idx2str) == 24
 
     (
         word_idx2str,
@@ -120,27 +96,7 @@ def test_create_vocabulary():
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
 
-    assert word_idx2str == [
-        "<EOS>",
-        "<SOS>",
-        "<PAD>",
-        "<UNK>",
-        "sentence",
-        "and",
-        "very",
-        "hello",
-        ",",
-        "i",
-        "'",
-        "m",
-        "a",
-        "single",
-        "!",
-        "another",
-        "the",
-        "last",
-        "one",
-    ]
+    assert len(word_idx2str) == 19
 
 
 def test_build_sequence_matrix():
