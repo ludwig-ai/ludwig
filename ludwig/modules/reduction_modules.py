@@ -37,6 +37,7 @@ class SequenceReducer(torch.nn.Module):
 
     def infer_output_shape(self, input_shape):
         """Infers output shape from input using the specified reduction mode.
+
         :param input_shape: The shape of the input, which is typically [batch x sequence length x embedding size].
 
         :param return: The output shape after reduction.
