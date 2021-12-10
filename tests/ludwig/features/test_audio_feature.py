@@ -43,4 +43,4 @@ def test_audio_input_feature(audio_config: Dict, encoder: str) -> None:
     audio_input_feature = AudioInputFeature(audio_config)
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32)
     encoder_output = audio_input_feature(audio_tensor)
-    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, DEFAULT_FC_SIZE)
+    assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.encoder_obj.output_shape
