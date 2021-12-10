@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Optional
 
 import torch
 from torch import nn
@@ -85,17 +86,15 @@ class SequenceEmbedEncoder(Encoder):
         reduce_output="sum",
         **kwargs,
     ):
-        # todo: fixup docstring
         """
-        :param should_embed: If True the input sequence is expected
-               to be made of integers and will be mapped into embeddings
-        :type should_embed: Boolean
         :param vocab: Vocabulary of the input feature to encode
         :type vocab: List
+        :param max_sequence_length: The maximum sequence length.
+        :type max_sequence_length: int
         :param representation: the possible values are `dense` and `sparse`.
                `dense` means the embeddings are initialized randomly,
                `sparse` means they are initialized to be one-hot encodings.
-        :type representation: Str (one of 'dense' or 'sparse')
+        :type representation: str (one of 'dense' or 'sparse')
         :param embedding_size: it is the maximum embedding size, the actual
                size will be `min(vocabulary_size, embedding_size)`
                for `dense` representations and exactly `vocabulary_size`
@@ -125,12 +124,10 @@ class SequenceEmbedEncoder(Encoder):
                on GPU memory if a GPU is used, as it allows
                for faster access, but in some cases the embedding matrix
                may be really big and this parameter forces the placement
-               of the embedding matrix in regular memroy and the CPU is used
+               of the embedding matrix in regular memory and the CPU is used
                to resolve them, slightly slowing down the process
                as a result of data transfer between CPU and GPU memory.
-        :param dropout: determines if there should be a dropout layer before
-               returning the encoder output.
-        :type dropout: Boolean
+        :type embeddings_on_cpu: Boolean
         :param weights_initializer: the initializer to use. If `None`, the default
                initialized of each variable is used (`xavier_uniform`
                in most cases). Options are: `constant`, `identity`, `zeros`,
@@ -145,6 +142,8 @@ class SequenceEmbedEncoder(Encoder):
                 To know the parameters of each initializer, please refer to
                 TensorFlow's documentation.
         :type weights_initializer: str
+        :param dropout: Tensor (torch.float) The dropout probability.
+        :type dropout: Tensor
         :param reduce_output: defines how to reduce the output tensor along
                the `s` sequence length dimension if the rank of the tensor
                is greater than 2. Available values are: `sum`,
@@ -153,9 +152,6 @@ class SequenceEmbedEncoder(Encoder):
                first dimension) and `None` or `null` (which does not reduce
                and returns the full tensor).
         :type reduce_output: str
-        :param dropout: Tensor (torch.float) of the probability of dropout
-        :type dropout: Tensor
-
         """
         super().__init__()
         logger.debug(f" {self.name}")
@@ -184,16 +180,14 @@ class SequenceEmbedEncoder(Encoder):
             reduction_kwargs = {"input_size": self.embed_sequence.output_shape[-1]}
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output, **reduction_kwargs)
 
-    def forward(self, inputs: torch.Tensor, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor]=None):
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
         :type inputs: Tensor
-        :param training: specifying if in training mode
-               (important for dropout)
-        :type training: Boolean
+        :param mask: Input mask (unused, not yet implemented in EmbedSequence)
+        :type mask: Optional[torch.Tensor]
         """
-        # ================ Embeddings ================
         embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
         return {"encoder_output": hidden}
