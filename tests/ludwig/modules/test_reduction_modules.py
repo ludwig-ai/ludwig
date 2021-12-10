@@ -21,4 +21,4 @@ def test_sequence_reducer(reduce_mode: str, test_input_shape: Tuple[int, ...]):
         sequence_length = torch.randint(max_sequence_length, (1,))
         inputs[batch_index, :sequence_length] = torch.rand((sequence_length,) + test_input_shape[2:])
     outputs = sequence_reducer(inputs)
-    assert outputs.shape == sequence_reducer.infer_output_shape(test_input_shape)
+    assert outputs.shape[1:] == sequence_reducer.infer_output_shape(test_input_shape[1:])

@@ -38,18 +38,19 @@ class SequenceReducer(torch.nn.Module):
     def infer_output_shape(self, input_shape):
         """Infers output shape from input using the specified reduction mode.
 
-        :param input_shape: The shape of the input, which is typically [batch x sequence length x embedding size].
+        :param input_shape: The shape of the input omitting any batch dimensions,
+                            which is typically [sequence length x embedding size].
 
         :param return: The output shape after reduction.
         """
         if self._reduce_mode in {None, "none", "None"}:
             return input_shape
         elif self._reduce_mode == "concat":
-            if len(input_shape) > 2:
+            if len(input_shape) > 1:
                 return input_shape[:-2] + (input_shape[-1] * input_shape[-2],)
             return input_shape
         else:
-            return input_shape[:1] + input_shape[2:]  # Reduce sequence dimension (axis 1).
+            return input_shape[1:]  # Reduce sequence dimension).
 
 
 class ReduceLast(torch.nn.Module):
