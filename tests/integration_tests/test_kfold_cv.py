@@ -16,6 +16,8 @@ from tests.integration_tests.utils import (
     create_data_set_to_use,
     generate_data,
     numerical_feature,
+    sequence_feature,
+    text_feature,
 )
 
 logger = logging.getLogger(__name__)
