@@ -66,7 +66,7 @@ def str2bool(v, fallback_true_label=None):
     """Returns bool representation of the given value v.
 
     Check the value against global bool string lists.
-    Fallback to using fallback_true_label as True if the value isn't in the global bool string lists.
+    Fallback to using fallback_true_label as True if the value isn't in the global bool lists.
 
     args:
         v: Value to get the bool representation for.
@@ -93,6 +93,8 @@ def are_conventional_bools(values):
 
 def is_numerical(s):
     """Returns whether specified value is numerical."""
+    if s.lower() == "nan":
+        return True
     try:
         float(s)
         return True
@@ -942,7 +944,9 @@ class ChineseLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
 
 class MultiTokenizer(BaseTokenizer):
     def __call__(self, text):
-        return process_text(text, load_nlp_pipeline("xx"))
+        return process_text(
+            text, load_nlp_pipeline("xx"), filter_numbers=True, filter_punctuation=True, filter_short_tokens=True
+        )
 
 
 class MultiFilterTokenizer(BaseTokenizer):
