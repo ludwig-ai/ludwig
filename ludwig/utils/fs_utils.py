@@ -75,7 +75,7 @@ def rename(src, tgt):
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
-    if not path_exists(path):
+    if not path_exists(url):
         with fsspec.open(url, mode="wb"):
             pass
 
