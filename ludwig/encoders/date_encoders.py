@@ -471,7 +471,7 @@ class DateWave(DateEncoder):
         return {'encoder_output': hidden}
 
 @register(name='circular')
-class DateWave(DateEncoder):
+class DateCircular(DateEncoder):
 
     def __init__(
             self,
@@ -587,22 +587,29 @@ class DateWave(DateEncoder):
             training=training,
             mask=mask
         )
-        periodic_month = tf.sin(input_vector[:, 1:2] * (2 * math.pi / 12))
-        periodic_day = tf.sin(input_vector[:, 2:3] * (2 * math.pi / 31))
-        periodic_weekday = tf.sin(input_vector[:, 3:4] * (2 * math.pi / 7))
-        periodic_yearday = tf.sin(input_vector[:, 4:5] * (2 * math.pi / 366))
-        periodic_hour = tf.sin(input_vector[:, 5:6] * (2 * math.pi / 24))
-        periodic_minute = tf.sin(input_vector[:, 6:7] * (2 * math.pi / 60))
-        periodic_second = tf.sin(input_vector[:, 7:8] * (2 * math.pi / 60))
-        periodic_second_of_day = tf.sin(
-            input_vector[:, 8:9] * (2 * math.pi / 86400)
-        )
+        circular_month_x = tf.cos(input_vector[:, 1:2] * (2 * math.pi / 12))
+        circular_month_y = tf.sin(input_vector[:, 1:2] * (2 * math.pi / 12))
+        circular_day_x = tf.cos(input_vector[:, 2:3] * (2 * math.pi / 31))
+        circular_day_y = tf.sin(input_vector[:, 2:3] * (2 * math.pi / 31))
+        circular_weekday_x = tf.cos(input_vector[:, 3:4] * (2 * math.pi / 7))
+        circular_weekday_y = tf.sin(input_vector[:, 3:4] * (2 * math.pi / 7))
+        circular_yearday_x = tf.cos(input_vector[:, 4:5] * (2 * math.pi / 366))
+        circular_yearday_y = tf.sin(input_vector[:, 4:5] * (2 * math.pi / 366))
+        circular_hour_x = tf.cos(input_vector[:, 5:6] * (2 * math.pi / 24))
+        circular_hour_y = tf.sin(input_vector[:, 5:6] * (2 * math.pi / 24))
+        circular_minute_x = tf.cos(input_vector[:, 6:7] * (2 * math.pi / 60))
+        circular_minute_y = tf.sin(input_vector[:, 6:7] * (2 * math.pi / 60))
+        circular_second_x = tf.cos(input_vector[:, 7:8] * (2 * math.pi / 60))
+        circular_second_y = tf.sin(input_vector[:, 7:8] * (2 * math.pi / 60))
+        circular_second_of_day_x = tf.cos(input_vector[:, 8:9] * (2 * math.pi / 86400))
+        circular_second_of_day_y = tf.sin(input_vector[:, 8:9] * (2 * math.pi / 86400))
 
         hidden = tf.concat(
-            [scaled_year, periodic_month, periodic_day,
-             periodic_weekday, periodic_yearday,
-             periodic_hour, periodic_minute, periodic_second,
-             periodic_second_of_day],
+            [scaled_year, circular_month_x,circular_month_y, circular_day_x,circular_day_y,
+             circular_weekday_x,circular_weekday_y, circular_yearday_x,circular_yearday_y,
+             circular_hour_x,circular_hour_y, circular_minute_x,circular_minute_y,
+             circular_second_x,circular_second_y,
+             circular_second_of_day_x,circular_second_of_day_y],
             axis=1)
 
         # ================ FC Stack ================
