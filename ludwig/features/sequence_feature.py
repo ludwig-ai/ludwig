@@ -44,7 +44,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.utils import output_feature_utils
+from ludwig.utils import output_feature_utils, strings_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import (
@@ -161,9 +161,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.int8, inputs.dtype, torch.int16, torch.int32, torch.int64]
         assert len(inputs.shape) == 2
-
         inputs_exp = inputs.type(torch.int32)
-        inputs_mask = torch.not_equal(inputs, 0)
+        inputs_mask = torch.not_equal(inputs, strings_utils.PADDING_IDX)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
         encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
         encoder_output[LENGTHS] = lengths

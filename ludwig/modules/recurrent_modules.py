@@ -41,7 +41,7 @@ class RecurrentStack(LudwigModule):
         bidirectional: bool = False,
         use_bias: bool = True,
         dropout: float = 0.0,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.supports_masking = True
@@ -69,6 +69,7 @@ class RecurrentStack(LudwigModule):
         return torch.Size([self.hidden_size])
 
     def forward(self, inputs: torch.Tensor, mask=None):
+        print(f"RNN inputs.size(): {inputs.size()}")
         hidden, final_state = self.layers(inputs)
 
         if isinstance(final_state, tuple):

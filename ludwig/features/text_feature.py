@@ -43,6 +43,7 @@ from ludwig.constants import (
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
+from ludwig.utils import strings_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
@@ -248,10 +249,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
-        if "pad_idx" in feature.keys():
-            self.pad_idx = feature["pad_idx"]
-        else:
-            self.pad_idx = None
         self._input_shape = [feature["max_sequence_length"]]
 
     def forward(self, inputs, mask=None):
@@ -264,10 +261,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         )
         assert len(inputs.shape) == 2
 
-        if self.pad_idx is not None:
-            inputs_mask = torch.not_equal(inputs, self.pad_idx)
-        else:
-            inputs_mask = torch.not_equal(inputs, 0)
+        inputs_mask = torch.not_equal(inputs, strings_utils.PADDING_IDX)
 
         inputs_exp = inputs.type(torch.int32)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)

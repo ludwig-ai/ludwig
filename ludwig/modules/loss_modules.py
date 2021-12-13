@@ -182,7 +182,7 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
             target: Tensor of shape [batch x sequence_length], where each element is integral between 0 and vocab_size.
         """
         target = target.long()
-        return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
+        return self.loss_fn(preds.view(-1, preds.size(-1)), target.view(-1))
 
 
 @register_loss("sigmoid_cross_entropy", [SET])

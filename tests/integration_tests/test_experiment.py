@@ -103,7 +103,7 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
 
 
-@pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
+# @pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 def test_experiment_seq_seq(csv_filename):
     # Single Sequence input, single sequence output
     # Only the following encoders are working
@@ -113,7 +113,8 @@ def test_experiment_seq_seq(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    encoders2 = ["cnnrnn", "stacked_cnn"]
+    # encoders2 = ["cnnrnn", "stacked_cnn"]
+    encoders2 = ["rnn"]
     for encoder in encoders2:
         logger.info(f"seq to seq test, Encoder: {encoder}")
         input_features[0]["encoder"] = encoder
