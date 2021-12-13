@@ -201,7 +201,7 @@ def read_stata(data_fp, df_lib):
     return df_lib.read_stata(data_fp)
 
 
-def read_hdf5(data_fp):
+def read_hdf5(data_fp, **kwargs):
     return load_hdf5(data_fp, clean_cols=True)
 
 
