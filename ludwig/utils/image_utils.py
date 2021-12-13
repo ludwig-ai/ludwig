@@ -57,7 +57,6 @@ def get_image_from_http_bytes(img_entry) -> BytesIO:
     return BytesIO(data.raw.read())
 
 
-# TODO(shreya): Confirm output type.
 def get_image_from_path(
     src_path: Union[str, torch.Tensor], img_entry: Union[str, bytes], ret_bytes: bool = False
 ) -> Union[BytesIO, BinaryIO, TextIO, bytes, str]:
