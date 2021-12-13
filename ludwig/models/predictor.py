@@ -13,8 +13,12 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
-from ludwig.globals import is_progressbar_disabled, PREDICTIONS_PARQUET_FILE_NAME, PREDICTIONS_SHAPES_FILE_NAME, \
-    TEST_STATISTICS_FILE_NAME
+from ludwig.globals import (
+    is_progressbar_disabled,
+    PREDICTIONS_PARQUET_FILE_NAME,
+    PREDICTIONS_SHAPES_FILE_NAME,
+    TEST_STATISTICS_FILE_NAME,
+)
 from ludwig.models.ecd import ECD
 from ludwig.utils.data_utils import flatten_df, from_numpy_dataset, save_json
 from ludwig.utils.horovod_utils import initialize_horovod, return_first
