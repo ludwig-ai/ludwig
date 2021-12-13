@@ -53,7 +53,9 @@ _PREDICTIONS_SUFFIX = "_predictions"
 _PROBABILITIES_SUFFIX = "_probabilities"
 
 
-def _vectorize_ground_truth(ground_truth: pd.Series, str2idx: np.array, ground_truth_apply_idx: bool = True) -> np.array:
+def _vectorize_ground_truth(
+    ground_truth: pd.Series, str2idx: np.array, ground_truth_apply_idx: bool = True
+) -> np.array:
     # raw hdf5 files generated during preprocessing don't need to be converted with str2idx
     if not ground_truth_apply_idx:
         return np.vectorize(lambda x, y: x)(ground_truth, str2idx)
