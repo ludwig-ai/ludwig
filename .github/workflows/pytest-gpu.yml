@@ -2,9 +2,9 @@ name: pytest-gpu
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   start-runner:
@@ -14,7 +14,6 @@ jobs:
       github.event_name == 'push' && github.repository == 'ludwig-ai/ludwig' ||
       github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
-
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -53,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7]
-        test-markers: [ "not distributed", "distributed" ]
+        test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.7
             pytorch-version: 1.10.0
@@ -102,10 +101,10 @@ jobs:
           if [ $PYTORCH == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
-            pip install --pre torch torchvision -f https://download.pytorch.org/whl/cu112/torch_stable.html
+            pip install --pre torch torchvision -f https://download.pytorch.org/whl/torch_stable.html
             pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
           else
-            pip install torch==$PYTORCH -f https://download.pytorch.org/whl/cu112/torch_stable.html
+            pip install torch==${PYTORCH}+cu111 -f https://download.pytorch.org/whl/torch_stable.html
           fi
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]'
@@ -126,6 +125,10 @@ jobs:
           fi
           horovodrun --check-build
         shell: bash
+
+      - name: Check CUDA is available
+        run: |
+          python -c "import torch; assert torch.cuda.is_available()"
 
       - name: Tests
         run: |
