@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.features.image_feature import ImageInputFeature
+from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.models.ecd import build_single_input
 
 BATCH_SIZE = 2
@@ -39,7 +39,7 @@ def test_category_input_feature(
     category_def["encoder"] = encoder
 
     # pickup any other missing parameters
-    ImageInputFeature.populate_defaults(category_def)
+    CategoryInputFeature.populate_defaults(category_def)
 
     # ensure no exceptions raised during build
     input_feature_obj = build_single_input(category_def, None)
