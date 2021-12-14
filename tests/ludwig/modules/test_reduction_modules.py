@@ -13,9 +13,8 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 def test_sequence_reducer(reduce_mode: str, test_input_shape: Tuple[int, ...]):
     (batch_size, max_sequence_length, embedding_size) = test_input_shape
     sequence_reducer = reduction_modules.SequenceReducer(
-        reduce_mode=reduce_mode,
-        max_sequence_length=max_sequence_length,
-        embedding_size=embedding_size).to(DEVICE)
+        reduce_mode=reduce_mode, max_sequence_length=max_sequence_length, embedding_size=embedding_size
+    ).to(DEVICE)
     inputs = torch.zeros(test_input_shape)
     # Generates random sequence of random length for each instance in batch.
     for batch_index in range(batch_size):
