@@ -80,19 +80,6 @@ class SequenceReducer(LudwigModule):
         else:
             return input_shape[1:]  # Reduce sequence dimension.
 
-    @property
-    def output_shape(self) -> torch.Size:
-        """Returns size of the output tensor without the batch dimension."""
-        input_shape = self.input_shape
-        if self._reduce_mode in {None, "none", "None"}:
-            return input_shape
-        elif self._reduce_mode == "concat":
-            if len(input_shape) > 1:
-                return input_shape[:-2] + (input_shape[-1] * input_shape[-2],)
-            return input_shape
-        else:
-            return input_shape[1:]  # Reduce sequence dimension.
-
 
 class ReduceLast(torch.nn.Module):
     def forward(self, inputs, mask=None):
