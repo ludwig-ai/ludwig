@@ -31,11 +31,12 @@ class SequenceReducer(LudwigModule):
     A sequence is a tensor of 2 or more dimensions, where the shape is [batch size x sequence length x ...].
 
     :param reduce_mode: The reduction mode, one of {"last", "sum", "mean", "max", "concat", "attention", "none"}
-    :param max_sequence_length The maximum sequence length.
+    :param max_sequence_length The maximum sequence length.  Only used for computation of shapes - inputs passed
+                               at runtime may have a smaller sequence length.
     :param encoding_size The size of each sequence element/embedding vector, or None if input is a sequence of scalars.
     """
 
-    def __init__(self, reduce_mode: str = None, max_sequence_length: int = None, encoding_size: int = None, **kwargs):
+    def __init__(self, reduce_mode: str = None, max_sequence_length: int = 256, encoding_size: int = None, **kwargs):
         super().__init__()
         # save as private variable for debugging
         self._reduce_mode = reduce_mode
@@ -61,11 +62,7 @@ class SequenceReducer(LudwigModule):
     @property
     def input_shape(self) -> torch.Size:
         """Returns size of the input tensor without the batch dimension."""
-        if self._max_sequence_length is None:
-            raise RuntimeError(
-                "SequenceReducer must be initialized with max_sequence_length to get input_shape or output_shape."
-            )
-        elif self._encoding_size is None:
+        if self._encoding_size is None:
             return torch.Size([self._max_sequence_length])
         else:
             return torch.Size([self._max_sequence_length, self._encoding_size])
