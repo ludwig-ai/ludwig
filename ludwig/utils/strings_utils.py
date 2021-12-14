@@ -18,8 +18,9 @@ import re
 import unicodedata
 from abc import abstractmethod
 from collections import Counter
-from typing import List, Union
+from typing import List, Set, Union
 
+import dask as dd
 import numpy as np
 import pandas as pd
 
@@ -167,7 +168,7 @@ def load_vocabulary(vocab_file):
         return vocabulary
 
 
-def add_or_move_symbol(vocab_list, vocab_set, symbol, index):
+def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, index: int):
     """Inserts or moves the symbol to the specified index."""
     if symbol in vocab_set:
         vocab_list.remove(symbol)
@@ -276,7 +277,7 @@ def _get_sequence_vector(
 
 
 def build_sequence_matrix(
-    sequences: pd.core.series.Series,
+    sequences: Union[pd.core.series.Series, dd.core.series.Series],
     inverse_vocabulary,
     tokenizer_type,
     length_limit,

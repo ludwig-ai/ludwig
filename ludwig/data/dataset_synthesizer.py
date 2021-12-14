@@ -216,7 +216,7 @@ def generate_sequence(feature):
     sequence = [random.choice(feature["idx2str"]) for _ in range(length)]
     if "vocab_size" not in feature:
         feature["vocab_size"] = len(feature["idx2str"])
-    feature["vocab_size"] = feature["vocab_size"] + 4  # For special symbols.
+    feature["vocab_size"] = feature["vocab_size"] + 4  # For special symbols: START, STOP, PAD, UNK.
     return " ".join(sequence)
 
 
