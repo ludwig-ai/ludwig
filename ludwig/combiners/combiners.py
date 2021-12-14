@@ -204,9 +204,11 @@ class SequenceConcatCombiner(Combiner):
         logger.debug(f" {self.name}")
 
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output,
-                                               max_sequence_length=self.concatenated_shape[0],
-                                               encoding_size=self.concatenated_shape[1])
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output,
+            max_sequence_length=self.concatenated_shape[0],
+            encoding_size=self.concatenated_shape[1],
+        )
         if self.reduce_output is None:
             self.supports_masking = True
         self.main_sequence_feature = config.main_sequence_feature
@@ -544,9 +546,11 @@ class TransformerCombiner(Combiner):
         logger.debug(f" {self.name}")
 
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output,
-                                               max_sequence_length=len(self.input_features),
-                                               encoding_size=config.hidden_size)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output,
+            max_sequence_length=len(self.input_features),
+            encoding_size=config.hidden_size,
+        )
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -669,9 +673,9 @@ class TabTransformerCombiner(Combiner):
         if config.reduce_output is None:
             raise ValueError("TabTransformer requires the `reduce_output` " "parameter")
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output,
-                                               max_sequence_length=len(input_features),
-                                               encoding_size=config.hidden_size)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output, max_sequence_length=len(input_features), encoding_size=config.hidden_size
+        )
         self.supports_masking = True
 
         self.embed_input_feature_name = config.embed_input_feature_name
