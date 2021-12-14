@@ -201,6 +201,10 @@ def read_stata(data_fp, df_lib):
     return df_lib.read_stata(data_fp)
 
 
+def read_hdf5(data_fp, **kwargs):
+    return load_hdf5(data_fp, clean_cols=True)
+
+
 def save_csv(data_fp, data):
     with open_file(data_fp, "w", encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
@@ -327,13 +331,15 @@ def save_hdf5(data_fp, data):
             h5_file.create_dataset(column, data=numpy_dataset[column])
 
 
-def load_hdf5(data_fp):
+def load_hdf5(data_fp, clean_cols: bool = False):
     with download_h5(data_fp) as hdf5_data:
         columns = [s.decode("utf-8") for s in hdf5_data[HDF5_COLUMNS_KEY][()].tolist()]
 
         numpy_dataset = {}
         for column in columns:
-            numpy_dataset[column] = hdf5_data[column][()]
+            # Column names from training hdf5 will be in the form 'Survived_a2fv4'
+            np_col = column.rsplit("_", 1)[0] if clean_cols else column
+            numpy_dataset[np_col] = hdf5_data[column][()]
 
     return from_numpy_dataset(numpy_dataset)
 
@@ -783,6 +789,7 @@ external_data_reader_registry = {
     **{fmt: read_sas for fmt in SAS_FORMATS},
     **{fmt: read_spss for fmt in SPSS_FORMATS},
     **{fmt: read_stata for fmt in STATA_FORMATS},
+    **{fmt: read_hdf5 for fmt in HDF5_FORMATS},
 }
 
 

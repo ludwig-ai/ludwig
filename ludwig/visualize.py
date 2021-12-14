@@ -53,6 +53,20 @@ _PREDICTIONS_SUFFIX = "_predictions"
 _PROBABILITIES_SUFFIX = "_probabilities"
 
 
+def _vectorize_ground_truth(
+    ground_truth: pd.Series, str2idx: np.array, ground_truth_apply_idx: bool = True
+) -> np.array:
+    # raw hdf5 files generated during preprocessing don't need to be converted with str2idx
+    if not ground_truth_apply_idx:
+        return np.vectorize(lambda x, y: x)(ground_truth, str2idx)
+
+    try:
+        return np.vectorize(_encode_categorical_feature)(ground_truth, str2idx)
+    except KeyError as e:
+        logger.info(f"Unable to vectorize using str2idx with exception {e}. Falling back to ignoring str2idx")
+        return np.vectorize(lambda x, y: x)(ground_truth, str2idx)
+
+
 def validate_conf_treshholds_and_probabilities_2d_3d(probabilities, treshhold_output_feature_names):
     """Ensure probabilities and treshhold output_feature_names arrays have two members each.
 
@@ -1033,6 +1047,7 @@ def calibration_1_vs_all_cli(
     ground_truth_metadata: str,
     output_feature_name: str,
     output_directory: str,
+    ground_truth_apply_idx: bool = True,
     **kwargs: dict,
 ) -> None:
     """Load model data from files to be shown by calibration_1_vs_all_cli.
@@ -1052,6 +1067,8 @@ def calibration_1_vs_all_cli(
     :param output_directory: (str) name of output directory containing training
          results.
     :param kwargs: (dict) parameters for the requested visualizations.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -1064,8 +1081,7 @@ def calibration_1_vs_all_cli(
     # retrieve ground truth from source data set
     ground_truth = _extract_ground_truth_values(ground_truth, output_feature_name, ground_truth_split, split_file)
     feature_metadata = metadata[output_feature_name]
-    vfunc = np.vectorize(_encode_categorical_feature)
-    ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+    ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     col = f"{output_feature_name}{_PROBABILITIES_SUFFIX}"
     probabilities_per_model = _get_cols_from_predictions(probabilities, [col], metadata)
@@ -1350,6 +1366,7 @@ def compare_classifiers_performance_from_prob(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Produces model comparison barplot visualization from probabilities.
@@ -1376,6 +1393,8 @@ def compare_classifiers_performance_from_prob(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -1385,8 +1404,7 @@ def compare_classifiers_performance_from_prob(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
@@ -1443,6 +1461,7 @@ def compare_classifiers_performance_from_pred(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Produces model comparison barplot visualization from predictions.
@@ -1466,6 +1485,8 @@ def compare_classifiers_performance_from_pred(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -1475,8 +1496,7 @@ def compare_classifiers_performance_from_pred(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     predictions_per_model = [np.ndarray.flatten(np.array(pred)) for pred in predictions_per_model]
 
@@ -1529,6 +1549,7 @@ def compare_classifiers_performance_subset(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Produces model comparison barplot visualization from train subset.
@@ -1559,6 +1580,8 @@ def compare_classifiers_performance_subset(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -1567,8 +1590,7 @@ def compare_classifiers_performance_subset(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
@@ -1648,6 +1670,7 @@ def compare_classifiers_performance_changing_k(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Produce lineplot that show Hits@K metric while k goes from 1 to `top_k`.
@@ -1674,6 +1697,8 @@ def compare_classifiers_performance_changing_k(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -1682,8 +1707,7 @@ def compare_classifiers_performance_changing_k(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     k = top_k
     if labels_limit > 0:
@@ -1880,6 +1904,7 @@ def compare_classifiers_predictions(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show two models comparison of their output_feature_name predictions.
@@ -1900,6 +1925,8 @@ def compare_classifiers_predictions(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -1908,8 +1935,7 @@ def compare_classifiers_predictions(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     model_names_list = convert_to_list(model_names)
     name_c1 = model_names_list[0] if model_names is not None and len(model_names) > 0 else "c1"
@@ -2018,6 +2044,7 @@ def compare_classifiers_predictions_distribution(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show comparision of models predictions distribution for 10 output_feature_name classes.
@@ -2042,6 +2069,8 @@ def compare_classifiers_predictions_distribution(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -2050,8 +2079,7 @@ def compare_classifiers_predictions_distribution(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
@@ -2089,6 +2117,7 @@ def confidence_thresholding(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show models accuracy and data coverage while increasing treshold.
@@ -2113,6 +2142,8 @@ def confidence_thresholding(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -2121,8 +2152,7 @@ def confidence_thresholding(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
@@ -2178,6 +2208,7 @@ def confidence_thresholding_data_vs_acc(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show models comparison of confidence threshold data vs accuracy.
@@ -2205,6 +2236,8 @@ def confidence_thresholding_data_vs_acc(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
     :return: (None)
@@ -2212,8 +2245,7 @@ def confidence_thresholding_data_vs_acc(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
@@ -2275,6 +2307,7 @@ def confidence_thresholding_data_vs_acc_subset(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show models comparison of confidence threshold data vs accuracy on a subset of data.
@@ -2317,6 +2350,8 @@ def confidence_thresholding_data_vs_acc_subset(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -2325,8 +2360,7 @@ def confidence_thresholding_data_vs_acc_subset(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
@@ -2409,6 +2443,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show models comparison of confidence threshold data vs accuracy on a subset of data per class in top n
@@ -2458,6 +2493,8 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
     :return: (None)
@@ -2465,8 +2502,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     filename_template = "confidence_thresholding_data_vs_acc_subset_per_class_{}." + file_format
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
@@ -2867,6 +2903,7 @@ def binary_threshold_vs_metric(
     model_names: List[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show confidence of the model against metric for the specified output_feature_name.
@@ -2898,6 +2935,8 @@ def binary_threshold_vs_metric(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -2907,8 +2946,7 @@ def binary_threshold_vs_metric(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
@@ -2979,6 +3017,7 @@ def roc_curves(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show the roc curves for output features in the specified models.
@@ -3006,6 +3045,8 @@ def roc_curves(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -3014,8 +3055,7 @@ def roc_curves(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
@@ -3089,6 +3129,7 @@ def calibration_1_vs_all(
     model_names: List[str] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show models probability of predictions for the specified output_feature_name.
@@ -3124,6 +3165,8 @@ def calibration_1_vs_all(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # String
 
@@ -3132,8 +3175,7 @@ def calibration_1_vs_all(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
@@ -3219,6 +3261,7 @@ def calibration_multiclass(
     model_names: Union[str, List[str]] = None,
     output_directory: str = None,
     file_format: str = "pdf",
+    ground_truth_apply_idx: bool = True,
     **kwargs,
 ) -> None:
     """Show models probability of predictions for each class of the specified output_feature_name.
@@ -3239,6 +3282,8 @@ def calibration_multiclass(
         plots. If not specified, plots will be displayed in a window
     :param file_format: (str, default: `'pdf'`) file format of output plots -
         `'pdf'` or `'png'`.
+    :param ground_truth_apply_idx: (bool, default: `True`) whether to use
+        metadata['str2idx'] in np.vectorize
 
     # Return
 
@@ -3247,8 +3292,7 @@ def calibration_multiclass(
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
         feature_metadata = metadata[output_feature_name]
-        vfunc = np.vectorize(_encode_categorical_feature)
-        ground_truth = vfunc(ground_truth, feature_metadata["str2idx"])
+        ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     probs = probabilities_per_model
     model_names_list = convert_to_list(model_names)
