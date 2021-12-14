@@ -204,7 +204,11 @@ class SequenceConcatCombiner(Combiner):
         logger.debug(f" {self.name}")
 
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output,
+            max_sequence_length=self.concatenated_shape[0],
+            encoding_size=self.concatenated_shape[1],
+        )
         if self.reduce_output is None:
             self.supports_masking = True
         self.main_sequence_feature = config.main_sequence_feature
@@ -542,7 +546,11 @@ class TransformerCombiner(Combiner):
         logger.debug(f" {self.name}")
 
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output,
+            max_sequence_length=len(self.input_features),
+            encoding_size=config.hidden_size,
+        )
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -665,7 +673,9 @@ class TabTransformerCombiner(Combiner):
         if config.reduce_output is None:
             raise ValueError("TabTransformer requires the `reduce_output` " "parameter")
         self.reduce_output = config.reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=config.reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=config.reduce_output, max_sequence_length=len(input_features), encoding_size=config.hidden_size
+        )
         self.supports_masking = True
 
         self.embed_input_feature_name = config.embed_input_feature_name
@@ -740,14 +750,12 @@ class TabTransformerCombiner(Combiner):
         )
 
         logger.debug("  FCStack")
-        transformer_hidden_size = self.transformer_stack.layers[-1].output_shape[-1]
 
         # determine input size to fully connected layer based on reducer
         if config.reduce_output == "concat":
-            num_embeddable_features = len(self.embeddable_features)
-            fc_input_size = num_embeddable_features * transformer_hidden_size
+            fc_input_size = len(self.embeddable_features) * config.hidden_size
         else:
-            fc_input_size = transformer_hidden_size if len(self.embeddable_features) > 0 else 0
+            fc_input_size = self.reduce_sequence.output_shape[-1] if len(self.embeddable_features) > 0 else 0
         self.fc_stack = FCStack(
             fc_input_size + concatenated_unembeddable_encoders_size,
             layers=config.fc_layers,
