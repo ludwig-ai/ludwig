@@ -20,9 +20,7 @@ from abc import abstractmethod
 from collections import Counter
 from typing import List, Set, Union
 
-import dask as dd
 import numpy as np
-import pandas as pd
 
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
@@ -277,7 +275,7 @@ def _get_sequence_vector(
 
 
 def build_sequence_matrix(
-    sequences: Union[pd.core.series.Series, dd.dataframe.Series],
+    sequences,  # pd.core.series.Series
     inverse_vocabulary,
     tokenizer_type,
     length_limit,
