@@ -32,19 +32,19 @@ class SequenceReducer(LudwigModule):
 
     :param reduce_mode: The reduction mode, one of {"last", "sum", "mean", "max", "concat", "attention", "none"}
     :param max_sequence_length The maximum sequence length.
-    :param embedding_size The size of each sequence element/embedding vector, or None if input is a sequence of scalars.
+    :param encoding_size The size of each sequence element/embedding vector, or None if input is a sequence of scalars.
     """
 
-    def __init__(self, reduce_mode: str = None, max_sequence_length: int = None, embedding_size: int = None, **kwargs):
+    def __init__(self, reduce_mode: str = None, max_sequence_length: int = None, encoding_size: int = None, **kwargs):
         super().__init__()
         # save as private variable for debugging
         self._reduce_mode = reduce_mode
         self._max_sequence_length = max_sequence_length
-        self._embedding_size = embedding_size
+        self._encoding_size = encoding_size
         # If embedding size specified and mode is attention, use embedding size as attention module input size
         # unless the input_size kwarg is provided.
-        if reduce_mode == "attention" and embedding_size and "input_size" not in kwargs:
-            kwargs["input_size"] = embedding_size
+        if reduce_mode == "attention" and encoding_size and "input_size" not in kwargs:
+            kwargs["input_size"] = encoding_size
         # use registry to find required reduction function
         self._reduce_obj = get_from_registry(reduce_mode, reduce_mode_registry)(**kwargs)
 
@@ -65,10 +65,10 @@ class SequenceReducer(LudwigModule):
             raise RuntimeError(
                 "SequenceReducer must be initialized with max_sequence_length to get input_shape or output_shape."
             )
-        elif self._embedding_size is None:
+        elif self._encoding_size is None:
             return torch.Size([self._max_sequence_length])
         else:
-            return torch.Size([self._max_sequence_length, self._embedding_size])
+            return torch.Size([self._max_sequence_length, self._encoding_size])
 
     @property
     def output_shape(self) -> torch.Size:
