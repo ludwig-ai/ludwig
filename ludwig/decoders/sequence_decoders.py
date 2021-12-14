@@ -34,12 +34,16 @@ class RNNDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
         self.embedding = nn.Embedding(vocab_size, hidden_size)
-        self.relu = nn.ReLU()
         if cell_type == "gru":
             self.rnn = nn.GRU(hidden_size, hidden_size, batch_first=True)
         else:
             self.rnn = nn.RNN(hidden_size, hidden_size, batch_first=True)
         self.out = nn.Linear(hidden_size, vocab_size)
+
+        # Have the embedding and projection share weights.
+        # This is a trick used by the Transformer, and seems to attain better loss.
+        # See section 3.4 of https://arxiv.org/pdf/1706.03762.pdf.
+        self.out.weight = self.embedding.weight
 
     def forward(self, input: torch.Tensor, hidden: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Runs a single decoding time step.
@@ -57,7 +61,7 @@ class RNNDecoder(nn.Module):
         """
         # Unsqueeze predicted tokens.
         input = input.unsqueeze(1).to(torch.int)
-        output = self.relu(self.embedding(input))
+        output = self.embedding(input)
         output, hidden = self.rnn(output, hidden)
         output_logits = self.out(output)
         return output_logits, hidden
@@ -71,9 +75,13 @@ class LSTMDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
         self.embedding = nn.Embedding(vocab_size, hidden_size)
-        self.relu = nn.ReLU()
         self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True)
         self.out = nn.Linear(hidden_size, vocab_size)
+
+        # Have the embedding and projection share weights.
+        # This is a trick used by the Transformer, and seems to attain better loss.
+        # See section 3.4 of https://arxiv.org/pdf/1706.03762.pdf.
+        self.out.weight = self.embedding.weight
 
     def forward(
         self, input: torch.Tensor, hidden_state: torch.Tensor, cell_state: torch.Tensor
@@ -95,7 +103,7 @@ class LSTMDecoder(nn.Module):
         """
         # Unsqueeze predicted tokens.
         input = input.unsqueeze(1).to(torch.int)
-        output = self.relu(self.embedding(input))
+        output = self.embedding(input)
         output, (hidden_state, cell_state) = self.lstm(output, (hidden_state, cell_state))
         output_logits = self.out(output)
         return output_logits, hidden_state, cell_state

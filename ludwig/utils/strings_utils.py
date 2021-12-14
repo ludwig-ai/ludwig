@@ -277,7 +277,7 @@ def _get_sequence_vector(
 
 
 def build_sequence_matrix(
-    sequences: Union[pd.core.series.Series, dd.core.series.Series],
+    sequences: Union[pd.core.series.Series, dd.dataframe.Series],
     inverse_vocabulary,
     tokenizer_type,
     length_limit,
