@@ -122,7 +122,7 @@ class SequenceRNNDecoder(nn.Module):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
 
         self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
-        self.register_buffer("decoder_input", torch.Tensor([strings_utils.START_IDX]))
+        self.register_buffer("decoder_input", torch.Tensor([strings_utils.SpecialSymbol.START.value]))
 
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor):
         """Runs max_sequence_length RNN decoding time steps.
@@ -217,7 +217,7 @@ class SequenceLSTMDecoder(nn.Module):
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
 
         self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
-        self.register_buffer("decoder_input", torch.Tensor([strings_utils.START_IDX]))
+        self.register_buffer("decoder_input", torch.Tensor([strings_utils.SpecialSymbol.START.value]))
 
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor) -> torch.Tensor:
         """Runs max_sequence_length LSTM decoding time steps.

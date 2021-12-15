@@ -18,6 +18,7 @@ import re
 import unicodedata
 from abc import abstractmethod
 from collections import Counter
+from enum import Enum
 from typing import List, Set, Union
 
 import numpy as np
@@ -28,15 +29,6 @@ from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
-UNKNOWN_SYMBOL = "<UNK>"
-UNKNOWN_IDX = 3
-PADDING_SYMBOL = "<PAD>"
-PADDING_IDX = 2
-START_SYMBOL = "<SOS>"
-START_IDX = 1
-STOP_SYMBOL = "<EOS>"
-STOP_IDX = 0
-
 SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
@@ -46,6 +38,21 @@ BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
 BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0"}
 # Update the following if BOOL_TRUE_STRS or BOOL_FALSE_STRS changes
 MAX_DISTINCT_BOOL_PERMUTATIONS = 70
+
+# Special symbols.
+STOP_SYMBOL = "<EOS>"
+START_SYMBOL = "<SOS>"
+PADDING_SYMBOL = "<PAD>"
+UNKNOWN_SYMBOL = "<UNK>"
+
+
+class SpecialSymbol(Enum):
+    """Special symbols used for text features."""
+
+    STOP = 0
+    START = 1
+    PADDING = 2
+    UNKNOWN = 3
 
 
 def all_bool_strs():
@@ -233,11 +240,11 @@ def create_vocabulary(
 
     if tokenizer_type != "hf_tokenizer":
         if add_special_symbols:
-            add_or_move_symbol(vocab, vocab_set, stop_symbol, STOP_IDX)
-            add_or_move_symbol(vocab, vocab_set, start_symbol, START_IDX)
-            add_or_move_symbol(vocab, vocab_set, padding_symbol, PADDING_IDX)
+            add_or_move_symbol(vocab, vocab_set, stop_symbol, SpecialSymbol.STOP.value)
+            add_or_move_symbol(vocab, vocab_set, start_symbol, SpecialSymbol.START.value)
+            add_or_move_symbol(vocab, vocab_set, padding_symbol, SpecialSymbol.PADDING.value)
         # Always add the UNKNOWN symbol if we're using our own tokenizer.
-        add_or_move_symbol(vocab, vocab_set, unknown_symbol, UNKNOWN_IDX)
+        add_or_move_symbol(vocab, vocab_set, unknown_symbol, SpecialSymbol.UNKNOWN.value)
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}
