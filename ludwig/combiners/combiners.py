@@ -60,8 +60,8 @@ class ConcatCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='glorot_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
     activity_regularizer: Optional[str] = schema.RegularizerOptions()
@@ -488,8 +488,8 @@ class TransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='glorot_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
     activity_regularizer: Optional[str] = schema.RegularizerOptions()
@@ -619,8 +619,8 @@ class TabTransformerCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=0)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='glorot_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
     activity_regularizer: Optional[str] = schema.RegularizerOptions()
@@ -809,8 +809,8 @@ class ComparatorCombinerConfig:
     num_fc_layers: int = schema.NonNegativeInteger(default=1)
     fc_size: int = schema.PositiveInteger(default=256)
     use_bias: bool = True
-    weights_initializer: str = schema.InitializerOptions(default='glorot_uniform')
-    bias_initializer: str = schema.InitializerOptions(default='zeros')
+    weights_initializer: Union[str, Dict] = schema.InitializerOrDict(default='glorot_uniform')
+    bias_initializer: Union[str, Dict] = schema.InitializerOrDict(default='zeros')
     weights_regularizer: Optional[str] = schema.RegularizerOptions()
     bias_regularizer: Optional[str] = schema.RegularizerOptions()
     activity_regularizer: Optional[str] = schema.RegularizerOptions()

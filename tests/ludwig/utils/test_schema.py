@@ -263,7 +263,15 @@ def test_config_bad_combiner_types_enums():
     config['combiner']['weights_initializer'] = 'fail'
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
         validate_config(config)
-    
+    config['combiner']['weights_initializer'] = {}
+    with pytest.raises(ValidationError, match=r"Failed validating 'type'"):
+        validate_config(config)
+    config['combiner']['weights_initializer'] = {'type':'fail'}
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)  
+    config['combiner']['weights_initializer'] = {'type':'normal', 'stddev': 0}
+    validate_config(config)
+
     # Test bias initializer:
     del config['combiner']['weights_initializer']
     config['combiner']['bias_initializer'] = 'variance_scaling'
@@ -271,7 +279,15 @@ def test_config_bad_combiner_types_enums():
     config['combiner']['bias_initializer'] = 'fail'
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
         validate_config(config)
-    
+    config['combiner']['bias_initializer'] = {}
+    with pytest.raises(ValidationError, match=r"Failed validating 'type'"):
+        validate_config(config)
+    config['combiner']['bias_initializer'] = {'type':'fail'}
+    with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
+        validate_config(config)  
+    config['combiner']['bias_initializer'] = {'type':'zeros', 'stddev': 0}
+    validate_config(config)
+
     # Test weights regularizer:
     del config['combiner']['bias_initializer']
     config['combiner']['weights_regularizer'] = 'l1'
