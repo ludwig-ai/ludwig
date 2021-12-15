@@ -21,6 +21,7 @@ import torch.nn as nn
 from ludwig.constants import HIDDEN, LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
@@ -110,14 +111,29 @@ class LSTMDecoder(nn.Module):
 
 
 class SequenceRNNDecoder(nn.Module):
-    def __init__(self, hidden_size: int, vocab_size: int, max_sequence_length: int, cell_type: str):
+    """RNN-based decoder over multiple time steps."""
+
+    def __init__(self, hidden_size: int, vocab_size: int, max_sequence_length: int, cell_type: str, reduce_input="sum"):
         super().__init__()
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
         self.rnn_decoder = RNNDecoder(hidden_size, vocab_size, cell_type)
         self.max_sequence_length = max_sequence_length
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
 
-    def forward(self, encoder_output_state: torch.Tensor, target: torch.Tensor):
+    def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor):
+        """Runs max_sequence_length RNN decoding time steps.
+
+        Args:
+            inputs: Dictionary of tensors from the outputs of the combiner and other output features.
+            target: Tensor [batch_size, max_sequence_length] with target symbols.
+
+        Returns:
+            Tensor of logits [batch_size, max_sequence_length, vocab_size].
+        """
+        # Prepare the encoder output state.
+        encoder_output_state = self.prepare_encoder_output_state(inputs)
+
         batch_size = encoder_output_state.size()[0]
 
         # Tensor to store decoder output logits.
@@ -150,29 +166,78 @@ class SequenceRNNDecoder(nn.Module):
 
         return logits
 
+    def prepare_encoder_output_state(self, inputs: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """Computes the hidden state that the RNN decoder should start with.
+
+        Args:
+            inputs: Dictionary of tensors from the outputs of the combiner and other output features.
+
+        Returns:
+            Tensor of [batch_size, hidden_size].
+        """
+        if "encoder_output_state" not in inputs:
+            hidden = inputs[HIDDEN]
+            if len(hidden.size()) == 3:
+                # Reduce to [batch_size, hidden_size]
+                return self.reduce_sequence(hidden)
+            if len(hidden.size()) == 2:
+                return hidden
+            raise ValueError("Only works for 1d or 2d encoder_output")
+
+        encoder_output_state = inputs["encoder_output_state"]
+        if not isinstance(encoder_output_state, tuple):
+            # RNN encoder.
+            return encoder_output_state
+        if len(encoder_output_state) == 2:
+            # LSTM encoder. Use the hidden state and ignore the cell state.
+            return encoder_output_state[0]
+        if len(encoder_output_state) == 4:
+            # Bi-directional LSTM encoder. Use the average of hidden states and ignore cell state.
+            return torch.mean([encoder_output_state[0], encoder_output_state[2]])
+
+        raise ValueError(
+            f"Invalid sequence decoder inputs with keys: {inputs.keys()} with extracted encoder state: "
+            + f"{encoder_output_state} that was invalid. Please double check the compatibility of your encoder and "
+            + "decoder."
+        )
+
 
 class SequenceLSTMDecoder(nn.Module):
-    def __init__(self, hidden_size: int, vocab_size: int, max_sequence_length: int):
+    """LSTM-based decoder over multiple time steps."""
+
+    def __init__(self, hidden_size: int, vocab_size: int, max_sequence_length: int, reduce_input="sum"):
         super().__init__()
         self.hidden_size = hidden_size
         self.vocab_size = vocab_size
         self.lstm_decoder = LSTMDecoder(hidden_size, vocab_size)
         self.max_sequence_length = max_sequence_length
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
 
-    def forward(self, encoder_output_state: torch.Tensor, target: torch.Tensor):
-        batch_size = encoder_output_state.size()[0]
+    def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor) -> torch.Tensor:
+        """Runs max_sequence_length LSTM decoding time steps.
+
+        Args:
+            inputs: Dictionary of tensors from the outputs of the combiner and other output features.
+            target: Tensor [batch_size, max_sequence_length] with target symbols.
+
+        Returns:
+            Tensor of logits [batch_size, max_sequence_length, vocab_size].
+        """
+        # Prepare the encoder output state.
+        decoder_hidden, decoder_cell_state = self.prepare_encoder_output_state(inputs)
+
+        batch_size = decoder_hidden.size()[0]
+
+        # Unsqueeze to account for extra multilayer dimension.
+        # TODO(Justin): Support multi-layer LSTM decoders.
+        decoder_hidden = decoder_hidden.unsqueeze(0)
+        decoder_cell_state = decoder_cell_state.unsqueeze(0)
 
         # Tensor to store decoder output logits.
         logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
 
         # Initialize the decoder with start symbols.
         decoder_input = torch.empty(batch_size).fill_(strings_utils.START_IDX)
-
-        # Unsqueeze to account for extra multilayer dimension.
-        decoder_hidden = encoder_output_state.unsqueeze(0)
-
-        # Initialize the cell state to the encoder's output state.
-        decoder_cell_state = decoder_hidden
 
         # Decode until max length.
         for di in range(self.max_sequence_length):
@@ -197,25 +262,72 @@ class SequenceLSTMDecoder(nn.Module):
 
         return logits
 
+    def prepare_encoder_output_state(self, inputs: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Returns the states that the LSTM decoder should start with.
+
+        Args:
+            inputs: Dictionary of tensors from the outputs of the combiner and other output features.
+
+        Returns:
+            Tuple of 2 tensors (decoder hidden state, decoder cell state), each [batch_size, hidden_size].
+        """
+        if "encoder_output_state" not in inputs:
+            hidden = inputs[HIDDEN]
+            if len(hidden.size()) > 3:
+                raise ValueError(
+                    f"Encoder hidden state passed to LSTM decoder has {len(hidden.size())} dimensions, which is too "
+                    + "many. Please check that the encoder returns 1d or 2d output."
+                )
+            encoder_output_state = hidden
+            if len(hidden.size()) == 3:
+                encoder_output_state = self.reduce_sequence(hidden)
+            return (encoder_output_state, encoder_output_state)
+
+        encoder_output_state = inputs["encoder_output_state"]
+        if not isinstance(encoder_output_state, tuple):
+            return (encoder_output_state, encoder_output_state)
+
+        if len(encoder_output_state) == 2:
+            # The encoder was probably an LSTM.
+            return encoder_output_state
+
+        if len(encoder_output_state) == 4:
+            # The encoder was probably a bi-LSTM.
+            # Use the average of the encoder's hidden states for hidden state.
+            # Use the average of the encoder's cell states for cell state.
+            return (
+                torch.mean([encoder_output_state[0], encoder_output_state[2]]),
+                torch.mean([encoder_output_state[1], encoder_output_state[3]]),
+            )
+
+        raise ValueError(
+            f"Invalid sequence decoder inputs with keys: {inputs.keys()} with extracted encoder state: "
+            + f"{encoder_output_state} that was invalid. Please double check the compatibility of your encoder and "
+            + "decoder."
+        )
+
 
 @register_decoder("generator", [SEQUENCE, TEXT])
 class SequenceGeneratorDecoder(Decoder):
+    """Dispatcher for different sequence generator decoders."""
+
     def __init__(
         self,
         vocab_size,
         max_sequence_length=100,
         cell_type="gru",
         input_size=256,
-        num_layers=1,
+        reduce_input="sum",
         **kwargs,
     ):
         super().__init__()
         self.vocab_size = vocab_size
-        if cell_type == "lstm":
-            self.rnn_decoder = SequenceLSTMDecoder(input_size, vocab_size, max_sequence_length)
-        else:
-            self.rnn_decoder = SequenceRNNDecoder(input_size, vocab_size, max_sequence_length, cell_type)
+        self.input_size = input_size
         self.max_sequence_length = max_sequence_length
+        if cell_type == "lstm":
+            self.rnn_decoder = SequenceLSTMDecoder(input_size, vocab_size, max_sequence_length, reduce_input)
+        else:
+            self.rnn_decoder = SequenceRNNDecoder(input_size, vocab_size, max_sequence_length, cell_type, reduce_input)
 
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         """Decodes the inputs into a sequence.
@@ -225,10 +337,9 @@ class SequenceGeneratorDecoder(Decoder):
             target: Tensor [batch_size, max_sequence_length] with target symbols.
 
         Returns:
-            Dictionary of tensors of decoder outputs like logits [batch_size, max_sequence_length, vocab_size].
+            Dictionary of tensors of logits [batch_size, max_sequence_length, vocab_size].
         """
-        encoder_output_state = inputs[HIDDEN]
-        logits = self.rnn_decoder(encoder_output_state, target)
+        logits = self.rnn_decoder(inputs, target)
         return {LOGITS: logits}
 
     def get_prediction_set(self):
@@ -242,8 +353,3 @@ class SequenceGeneratorDecoder(Decoder):
     @property
     def output_shape(self):
         return torch.Size([self.max_sequence_length, self.vocab_size])
-
-
-@register_decoder("tagger", [SEQUENCE, TEXT])
-class SequenceTaggerDecoder(Decoder):
-    pass

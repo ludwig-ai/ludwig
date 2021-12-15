@@ -194,7 +194,6 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-# @pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize(
     "output_features",
     [

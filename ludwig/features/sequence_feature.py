@@ -326,6 +326,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
+        # TODO(Justin): Add a confusion matrix, see
+        # https://github.com/ludwig-ai/ludwig/blob/tf-legacy/ludwig/features/sequence_feature.py#L411
         return {}
 
     def postprocess_predictions(

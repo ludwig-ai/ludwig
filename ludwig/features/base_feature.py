@@ -15,7 +15,7 @@
 import copy
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import torch
 from torch import Tensor
@@ -101,7 +101,14 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
-    def __init__(self, feature, output_features: Dict, *args, **kwargs):
+    def __init__(self, feature: Dict[str, Any], other_output_features: Dict[str, "OutputFeature"], *args, **kwargs):
+        """Defines defaults, overwrites them based on the feature dictionary, and sets up dependencies.
+
+        Any output feature can depend on one or more other output features. The `other_output_features` input dictionary
+        should contain entries for any dependent output features, which is accomplished by constructing output features
+        in topographically sorted order. Attributes of any dependent output features are used to properly initialize
+        this feature's sizes.
+        """
         super().__init__(*args, feature=feature, **kwargs)
 
         self.reduce_input = None
@@ -127,7 +134,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
-        self.input_size = self.get_input_size_with_dependencies(self.input_size, self.dependencies, output_features)
+        self.input_size = self.get_input_size_with_dependencies(
+            self.input_size, self.dependencies, other_output_features
+        )
 
         self.fc_stack = FCStack(
             first_layer_input_size=self.input_size,
@@ -347,24 +356,24 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def get_input_size_with_dependencies(
-        self, combiner_output_size: int, dependencies: List[str], output_features: Dict
+        self, combiner_output_size: int, dependencies: List[str], other_output_features: Dict[str, "OutputFeature"]
     ):
-        """Returns the input size for the first layer of the output feature's FC stack, accounting for
-        dependencies.
+        """Returns the input size for the first layer of this output feature's FC stack, accounting for
+        dependencies on other output features.
 
-        In the forward pass, the hidden states of dependent features are concatenated with the combiner's output. To
-        get the right sizes of the hidden states of dependent features, we use the output shape for each of the
-        dependent output feature's FCStack.
+        In the forward pass, the hidden states of any dependent output features get concatenated with the combiner's
+        output.
 
-        If the dependent feature's FCStack doesn't use an FCStack (num_fc_layers = 0), then we use the output feature's
-        input size.
+        If this output feature depends on other output features, then the input size for this feature's FCStack is the
+        sum of the output sizes of other output features + the combiner's output size.
         """
         input_size_with_dependencies = combiner_output_size
         for feature_name in dependencies:
-            if output_features[feature_name].num_fc_layers:
-                input_size_with_dependencies += output_features[feature_name].fc_stack.output_shape[-1]
+            if other_output_features[feature_name].num_fc_layers:
+                input_size_with_dependencies += other_output_features[feature_name].fc_stack.output_shape[-1]
             else:
-                input_size_with_dependencies += output_features[feature_name].input_size
+                # 0-layer FCStack. Use the output feature's input size.
+                input_size_with_dependencies += other_output_features[feature_name].input_size
         return input_size_with_dependencies
 
     def output_specific_fully_connected(self, inputs, mask=None):
