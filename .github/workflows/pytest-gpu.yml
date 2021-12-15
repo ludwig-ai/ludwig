@@ -73,7 +73,44 @@ jobs:
       - name: Setup Linux
         if: runner.os == 'linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 ccache build-essential g++
+          sudo apt-get update && sudo apt-get install -y cmake libsndfile1 ccache build-essential g++-8 gcc-8
+
+      - name: Install CUDA drivers
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+          sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          wget https://developer.download.nvidia.com/compute/cuda/11.5.1/local_installers/cuda-repo-ubuntu2004-11-5-local_11.5.1-495.29.05-1_amd64.deb
+          sudo dpkg -i cuda-repo-ubuntu2004-11-5-local_11.5.1-495.29.05-1_amd64.deb
+          sudo apt-key add /var/cuda-repo-ubuntu2004-11-5-local/7fa2af80.pub
+          sudo apt-get update
+          sudo apt-get -y install cuda
+        shell: bash
+
+      # - name: Install CUDA
+      #   run: |
+      #     wget https://developer.download.nvidia.com/compute/cuda/11.5.1/local_installers/cuda_11.5.1_495.29.05_linux.run
+      #     sudo sh cuda_11.5.1_495.29.05_linux.run
+      #   shell: bash
+
+      - name: GCC-Compatible Compiler
+        run: |
+          gcc --version
+        shell: bash
+
+      - name: CUDA-Capable GPU
+        run: |
+          lspci | grep -i nvidia
+        shell: bash
+
+      # - name: CUDA version
+      #   run: |
+      #     nvcc --version
+      #   shell: bash
+
+      - name: Output of NVIDIA-SMI
+        run: |
+          nvidia-smi
+        shell: bash
 
       - name: Setup macOS
         if: runner.os == 'macOS'
@@ -125,6 +162,11 @@ jobs:
           fi
           horovodrun --check-build
         shell: bash
+
+      # - name: Set CUDA visible devices
+      #   run: |
+      #     export CUDA_VISIBLE_DEVICES=0
+      #   shell: bash
 
       - name: Check CUDA is available
         run: |

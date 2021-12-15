@@ -1,126 +1,126 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: pytest
+# name: pytest
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+# on:
+#   push:
+#     branches: [ master ]
+#   pull_request:
+#     branches: [ master ]
 
-# we want an ongoing run of this workflow to be canceled by a later commit
-# so that there is only one concurrent run of this workflow for each branch
-concurrency:
-  group: pytest-${{ github.head_ref || github.sha }}
-  cancel-in-progress: true
+# # we want an ongoing run of this workflow to be canceled by a later commit
+# # so that there is only one concurrent run of this workflow for each branch
+# concurrency:
+#   group: pytest-${{ github.head_ref || github.sha }}
+#   cancel-in-progress: true
 
-jobs:
-  pytest:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest ]
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
-        test-markers: [ "not distributed", "distributed" ]
-        include:
-          - python-version: 3.6
-            pytorch-version: 1.10.0
-          - python-version: 3.7
-            pytorch-version: 1.10.0
-          - python-version: 3.8
-            pytorch-version: 1.10.0
-          - python-version: 3.9
-            pytorch-version: nightly
-    env:
-      PYTORCH: ${{ matrix.pytorch-version }}
-      MARKERS: ${{ matrix.test-markers }}
+# jobs:
+#   pytest:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ ubuntu-latest ]
+#         python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+#         test-markers: [ "not distributed", "distributed" ]
+#         include:
+#           - python-version: 3.6
+#             pytorch-version: 1.10.0
+#           - python-version: 3.7
+#             pytorch-version: 1.10.0
+#           - python-version: 3.8
+#             pytorch-version: 1.10.0
+#           - python-version: 3.9
+#             pytorch-version: nightly
+#     env:
+#       PYTORCH: ${{ matrix.pytorch-version }}
+#       MARKERS: ${{ matrix.test-markers }}
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
+#     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
-    timeout-minutes: 50
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
+#     timeout-minutes: 50
+#     steps:
+#     - uses: actions/checkout@v2
+#     - name: Set up Python ${{ matrix.python-version }}
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: ${{ matrix.python-version }}
 
-    - name: Setup Linux
-      if: runner.os == 'linux'
-      run: |
-        sudo apt-get install -y cmake libsndfile1
+#     - name: Setup Linux
+#       if: runner.os == 'linux'
+#       run: |
+#         sudo apt-get install -y cmake libsndfile1
 
-    - name: Setup macOS
-      if: runner.os == 'macOS'
-      run: |
-        brew install libuv
+#     - name: Setup macOS
+#       if: runner.os == 'macOS'
+#       run: |
+#         brew install libuv
 
-    - name: pip cache
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
+#     - name: pip cache
+#       uses: actions/cache@v2
+#       with:
+#         path: ~/.cache/pip
+#         key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ hashFiles('requirements*.txt') }}
+#         restore-keys: |
+#           ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-
 
-    - name: Install dependencies
-      env:
-        HOROVOD_WITH_PYTORCH: 1
-        HOROVOD_WITHOUT_MPI: 1
-        HOROVOD_WITHOUT_TENSORFLOW: 1
-        HOROVOD_WITHOUT_MXNET: 1
-      run: |
-        python --version
-        pip --version
-        python -m pip install -U pip
-        if [ $PYTORCH == "nightly" ]; then
-          cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
-          cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
-          pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-          pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
-        else
-          pip install torch==$PYTORCH
-        fi
-        pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
-        pip install '.[test]'
-        pip list
-      shell: bash
+#     - name: Install dependencies
+#       env:
+#         HOROVOD_WITH_PYTORCH: 1
+#         HOROVOD_WITHOUT_MPI: 1
+#         HOROVOD_WITHOUT_TENSORFLOW: 1
+#         HOROVOD_WITHOUT_MXNET: 1
+#       run: |
+#         python --version
+#         pip --version
+#         python -m pip install -U pip
+#         if [ $PYTORCH == "nightly" ]; then
+#           cat requirements.txt | sed '/^torch[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
+#           cat requirements_horovod.txt | sed 's/\[torch\]//g' > requirements-temp && mv requirements-temp requirements_horovod.txt
+#           pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+#           pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+#         else
+#           pip install torch==$PYTORCH
+#         fi
+#         pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
+#         pip install '.[test]'
+#         pip list
+#       shell: bash
 
-    - name: Reinstall Horovod if necessary
-      env:
-        HOROVOD_WITH_PYTORCH: 1
-        HOROVOD_WITHOUT_MPI: 1
-        HOROVOD_WITHOUT_TENSORFLOW: 1
-        HOROVOD_WITHOUT_MXNET: 1
-      run: |
-        HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
-        if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
-          pip uninstall -y horovod
-          pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
-        fi
-        horovodrun --check-build
-      shell: bash
+#     - name: Reinstall Horovod if necessary
+#       env:
+#         HOROVOD_WITH_PYTORCH: 1
+#         HOROVOD_WITHOUT_MPI: 1
+#         HOROVOD_WITHOUT_TENSORFLOW: 1
+#         HOROVOD_WITHOUT_MXNET: 1
+#       run: |
+#         HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
+#         if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
+#           pip uninstall -y horovod
+#           pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
+#         fi
+#         horovodrun --check-build
+#       shell: bash
 
-    - name: Tests
-      run: |
-        pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+#     - name: Tests
+#       run: |
+#         pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
 
-    - name: Upload Unit Test Results
-      if: always()
-      uses: actions/upload-artifact@v2
-      with:
-        name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
-        path: pytest.xml
+#     - name: Upload Unit Test Results
+#       if: always()
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+#         path: pytest.xml
 
-  event_file:
-    name: "Event File"
-    runs-on: ubuntu-latest
+#   event_file:
+#     name: "Event File"
+#     runs-on: ubuntu-latest
 
-    steps:
-    - name: Upload
-      uses: actions/upload-artifact@v2
-      with:
-        name: Event File
-        path: ${{ github.event_path }}
+#     steps:
+#     - name: Upload
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: Event File
+#         path: ${{ github.event_path }}
