@@ -13,10 +13,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 @pytest.fixture(scope="module")
 def numerical_config():
-    return {
-        "name": "numerical_column_name",
-        "type": "numerical"
-    }
+    return {"name": "numerical_column_name", "type": "numerical"}
 
 
 def test_numerical_input_feature(
