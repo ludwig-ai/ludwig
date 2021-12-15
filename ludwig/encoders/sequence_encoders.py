@@ -187,7 +187,7 @@ class SequenceEmbedEncoder(Encoder):
             encoding_size=self.embed_sequence.output_shape[-1]
         )
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor]=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
