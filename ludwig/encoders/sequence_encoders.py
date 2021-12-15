@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", [AUDIO, SEQUENCE, TEXT, TIMESERIES], default=True)
 class SequencePassthroughEncoder(Encoder):
-    def __init__(self, reduce_output=None, **kwargs):
+    def __init__(self, reduce_output: str = None, max_sequence_length: int = 256, encoding_size: int = None, **kwargs):
         """
         :param reduce_output: defines how to reduce the output tensor along
                the `s` sequence length dimension if the rank of the tensor
@@ -43,24 +43,30 @@ class SequencePassthroughEncoder(Encoder):
                the first dimension), `last` (returns the last vector of the
                first dimension) and `None` or `null` (which does not reduce
                and returns the full tensor).
-        :type reduce_output: str
+        :param max_sequence_length: The maximum sequence length.
+        :param encoding_size: The size of the encoding vector, or None if sequence elements are scalars.
         """
         super().__init__()
         logger.debug(f" {self.name}")
 
         self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=max_sequence_length,
+            encoding_size=encoding_size
+        )
         if self.reduce_output is None:
             self.supports_masking = True
 
     def forward(self, input_sequence, mask=None):
         """
         :param input_sequence: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int32
+               Shape: [batch x sequence length], type torch.int32 or
+                      [batch x sequence length x encoding size], type torch.float32
         :type input_sequence: Tensor
-        :param is_training: Tensor (torch.bool) specifying if training
-               (important for dropout)
-        :type is_training: Tensor
+        :param mask: Sequence mask (not yet implemented).
+               Shape: [batch x sequence length]
+        :type mask: Tensor
         """
         input_sequence = input_sequence.type(torch.float32)
         while len(input_sequence.shape) < 3:
@@ -166,7 +172,7 @@ class SequenceEmbedEncoder(Encoder):
         self.embed_sequence = EmbedSequence(
             vocab,
             embedding_size,
-            max_sequence_length=self.max_sequence_length,
+            max_sequence_length=max_sequence_length,
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -175,10 +181,11 @@ class SequenceEmbedEncoder(Encoder):
             embedding_initializer=weights_initializer,
         )
 
-        reduction_kwargs = {}
-        if reduce_output == "attention":
-            reduction_kwargs = {"input_size": self.embed_sequence.output_shape[-1]}
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output, **reduction_kwargs)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=max_sequence_length,
+            encoding_size=self.embed_sequence.output_shape[-1]
+        )
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor]=None):
         """
@@ -196,15 +203,9 @@ class SequenceEmbedEncoder(Encoder):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
-    # TODO(shreya): Add general module for getting output shapes post reduction.
     @property
     def output_shape(self) -> torch.Size:
-        if self.reduce_output in ["none", "None", None]:
-            self.embed_sequence.output_shape
-        elif self.reduce_output == "concat":
-            embed_shape = self.embed_sequence.output_shape
-            return torch.Size([embed_shape[-1] * embed_shape[-2]])
-        return torch.Size([self.embed_sequence.output_shape[-1]])
+        return self.reduce_sequence.output_shape
 
 
 @register_encoder("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
@@ -400,7 +401,9 @@ class ParallelCNN(Encoder):
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
 
         self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output,
+                                               max_sequence_length=max_sequence_length,
+                                               encoding_size=embedding_size)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -409,7 +412,7 @@ class ParallelCNN(Encoder):
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
-                max_sequence_length=self.max_sequence_length,
+                max_sequence_length=max_sequence_length,
                 representation=representation,
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
@@ -1541,7 +1544,11 @@ class StackedCNNRNN(Encoder):
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=max_sequence_length,
+            encoding_size=state_size
+        )
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1625,7 +1632,7 @@ class StackedCNNRNN(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is not None:
-            return self.recurrent_stack.output_shape[1:]
+            return self.fc_stack.output_shape
         return self.recurrent_stack.output_shape
 
     def forward(self, inputs, mask=None):
@@ -1821,7 +1828,11 @@ class StackedTransformer(Encoder):
         self.max_sequence_length = max_sequence_length
 
         self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=max_sequence_length,
+            embedding_size=hidden_size
+        )
         if self.reduce_output is None:
             self.supports_masking = True
 
