@@ -121,6 +121,9 @@ class SequenceRNNDecoder(nn.Module):
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
 
+        self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
+        self.register_buffer("decoder_input", torch.Tensor([strings_utils.START_IDX]))
+
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor):
         """Runs max_sequence_length RNN decoding time steps.
 
@@ -137,10 +140,10 @@ class SequenceRNNDecoder(nn.Module):
         batch_size = encoder_output_state.size()[0]
 
         # Tensor to store decoder output logits.
-        logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
+        logits = self.logits.unsqueeze(0).repeat(batch_size, 1, 1)
 
         # Initialize the decoder with start symbols.
-        decoder_input = torch.empty(batch_size).fill_(strings_utils.START_IDX)
+        decoder_input = self.decoder_input.repeat(batch_size)
 
         # Unsqueeze to account for extra multilayer dimension.
         decoder_hidden = encoder_output_state.unsqueeze(0)
@@ -213,6 +216,9 @@ class SequenceLSTMDecoder(nn.Module):
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
 
+        self.register_buffer("logits", torch.zeros([max_sequence_length, vocab_size]))
+        self.register_buffer("decoder_input", torch.Tensor([strings_utils.START_IDX]))
+
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor) -> torch.Tensor:
         """Runs max_sequence_length LSTM decoding time steps.
 
@@ -234,10 +240,10 @@ class SequenceLSTMDecoder(nn.Module):
         decoder_cell_state = decoder_cell_state.unsqueeze(0)
 
         # Tensor to store decoder output logits.
-        logits = torch.zeros(batch_size, self.max_sequence_length, self.vocab_size)
+        logits = self.logits.unsqueeze(0).repeat(batch_size, 1, 1)
 
         # Initialize the decoder with start symbols.
-        decoder_input = torch.empty(batch_size).fill_(strings_utils.START_IDX)
+        decoder_input = self.decoder_input.repeat(batch_size)
 
         # Decode until max length.
         for di in range(self.max_sequence_length):
