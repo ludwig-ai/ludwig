@@ -14,6 +14,7 @@ DEFAULT_FC_SIZE = 256
 
 CHARS = ascii_uppercase + ascii_lowercase + digits
 VOCAB = ["".join(choice(CHARS) for _ in range(2)) for _ in range(256)]
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 @pytest.fixture(scope="module")
@@ -41,6 +42,6 @@ def audio_config():
 def test_audio_input_feature(audio_config: Dict, encoder: str) -> None:
     audio_config.update({"encoder": encoder})
     audio_input_feature = AudioInputFeature(audio_config)
-    audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32)
+    audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = audio_input_feature(audio_tensor)
-    assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.encoder_obj.output_shape
+    assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.output_shape
