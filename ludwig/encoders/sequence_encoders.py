@@ -30,6 +30,7 @@ from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
 
 logger = logging.getLogger(__name__)
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 @register_encoder("passthrough", [AUDIO, SEQUENCE, TEXT, TIMESERIES], default=True)
@@ -177,7 +178,7 @@ class SequenceEmbedEncoder(Encoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-        )
+        ).to(DEVICE)
 
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
@@ -411,7 +412,7 @@ class ParallelCNN(Encoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-            )
+            ).to(DEVICE)
 
         logger.debug("  ParallelConv1D")
         in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
@@ -431,7 +432,7 @@ class ParallelCNN(Encoder):
             default_pool_function=pool_function,
             default_pool_size=pool_size,
             default_pool_padding="same",
-        )
+        ).to(DEVICE)
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
@@ -453,7 +454,7 @@ class ParallelCNN(Encoder):
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
-            )
+            ).to(DEVICE)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
@@ -734,7 +735,7 @@ class StackedCNN(Encoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-            )
+            ).to(DEVICE)
 
         logger.debug("  Conv1DStack")
         in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
@@ -758,7 +759,7 @@ class StackedCNN(Encoder):
             default_pool_size=pool_size,
             default_pool_strides=pool_strides,
             default_pool_padding=pool_padding,
-        )
+        ).to(DEVICE)
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
@@ -780,7 +781,7 @@ class StackedCNN(Encoder):
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
-            )
+            ).to(DEVICE)
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1043,7 +1044,7 @@ class StackedParallelCNN(Encoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
-            )
+            ).to(DEVICE)
 
         in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
         logger.debug("  ParallelConv1DStack")
@@ -1062,7 +1063,7 @@ class StackedParallelCNN(Encoder):
             default_dropout=dropout,
             default_pool_function=pool_function,
             default_pool_size=pool_size,
-        )
+        ).to(DEVICE)
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
@@ -1084,7 +1085,7 @@ class StackedParallelCNN(Encoder):
                 default_norm_params=norm_params,
                 default_activation=activation,
                 default_dropout=dropout,
-            )
+            ).to(DEVICE)
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1304,7 +1305,7 @@ class StackedRNN(Encoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
-            )
+            ).to(DEVICE)
 
         logger.debug("  RecurrentStack")
         input_size = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
@@ -1324,7 +1325,7 @@ class StackedRNN(Encoder):
             bias_initializer=bias_initializer,
             dropout=dropout,
             recurrent_dropout=recurrent_dropout,
-        )
+        ).to(DEVICE)
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
@@ -1348,7 +1349,7 @@ class StackedRNN(Encoder):
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
-            )
+            ).to(DEVICE)
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1559,7 +1560,7 @@ class StackedCNNRNN(Encoder):
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
-            )
+            ).to(DEVICE)
 
         logger.debug("  Conv1DStack")
         in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else embedding_size
@@ -1583,7 +1584,7 @@ class StackedCNNRNN(Encoder):
             default_pool_size=pool_size,
             default_pool_strides=pool_strides,
             default_pool_padding=pool_padding,
-        )
+        ).to(DEVICE)
 
         logger.debug("  RecurrentStack")
         self.recurrent_stack = RecurrentStack(
@@ -1602,7 +1603,7 @@ class StackedCNNRNN(Encoder):
             bias_initializer=bias_initializer,
             dropout=dropout,
             recurrent_dropout=recurrent_dropout,
-        )
+        ).to(DEVICE)
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
@@ -1624,7 +1625,7 @@ class StackedCNNRNN(Encoder):
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
-            )
+            ).to(DEVICE)
 
     @property
     def input_shape(self) -> torch.Size:
