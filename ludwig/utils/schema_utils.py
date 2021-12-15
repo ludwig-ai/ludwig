@@ -125,7 +125,7 @@ class EmbedInputFeatureNameField(fields.Field):
 
 class InitializerOptionsOrCustomDictField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
-        initializers = list(initializer_registry.keys())
+        initializers = list(initializers_registry.keys())
         if isinstance(value, str):
             if value not in initializers:
                 raise ValidationError(
@@ -147,7 +147,7 @@ class InitializerOptionsOrCustomDictField(fields.Field):
         raise ValidationError('Field should be str or dict')
 
     def _jsonschema_type_mapping(self):
-        initializers = list(initializer_registry.keys())
+        initializers = list(initializers_registry.keys())
         return {
             'oneOf': [
                 {'type': 'string', 'enum': initializers},
