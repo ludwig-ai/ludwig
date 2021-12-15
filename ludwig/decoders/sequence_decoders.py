@@ -248,9 +248,15 @@ class SequenceLSTMDecoder(nn.Module):
 
         # Decode until max length.
         for di in range(self.max_sequence_length):
+            print(f"Incoming decoder_input: {decoder_input.size()}")
+            print(f"Incoming decoder_hidden: {decoder_hidden.size()}")
+            print(f"Incoming decoder_cell_state: {decoder_cell_state.size()}")
             decoder_output, decoder_hidden, decoder_cell_state = self.lstm_decoder(
                 decoder_input, decoder_hidden, decoder_cell_state
             )
+            print(f"Outgoing decoder_input: {decoder_input.size()}")
+            print(f"Outgoing decoder_hidden: {decoder_hidden.size()}")
+            print(f"Outgoing decoder_cell_state: {decoder_cell_state.size()}")
 
             # decoder_output: [batch_size, 1, vocab_size]
             # Squeeze out the multilayer dimension and save logits.

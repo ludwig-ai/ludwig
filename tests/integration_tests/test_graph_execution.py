@@ -26,7 +26,6 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.skip(reason="Issue #1333: Sequence output features.")
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "output_features",
@@ -69,33 +68,17 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-@pytest.mark.skip(reason="Issue #1333: Sequence output features.")
 @pytest.mark.distributed
-@pytest.mark.parametrize("dec_beam_width", [3])
-@pytest.mark.parametrize("dec_attention", ["bahdanau"])
-@pytest.mark.parametrize("dec_cell_type", ["lstm"])
-@pytest.mark.parametrize("enc_cell_type", ["lstm"])
+@pytest.mark.parametrize("dec_cell_type", ["rnn"])
+@pytest.mark.parametrize("enc_cell_type", ["rnn"])
 @pytest.mark.parametrize("enc_encoder", ["embed"])
-def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, dec_attention, dec_beam_width, csv_filename):
+def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, csv_filename):
     # Define input and output features
-    input_features = [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
-    output_features = [
-        sequence_feature(
-            min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
-        )
-    ]
+    input_features = [sequence_feature(min_len=5, max_len=10, encoder=enc_encoder, cell_type=enc_cell_type)]
+    output_features = [sequence_feature(min_len=5, max_len=10, decoder="generator", cell_type=dec_cell_type)]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-
-    # setup encoder specification
-    input_features[0]["encoder"] = enc_encoder
-    input_features[0]["cell_type"] = enc_cell_type
-
-    # setup decoder specification
-    output_features[0]["cell_type"] = dec_cell_type
-    output_features[0]["attention"] = dec_attention
-    output_features[0]["beam_width"] = dec_beam_width
 
     # run the experiment
     run_experiment(input_features, output_features, dataset=rel_path)
