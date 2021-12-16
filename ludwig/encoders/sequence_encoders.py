@@ -439,7 +439,7 @@ class ParallelCNN(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=max_sequence_length,
-            encoding_size=self.parallel_conv1d.output_shape[-1]
+            encoding_size=self.parallel_conv1d.output_shape[-1],
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
@@ -768,7 +768,7 @@ class StackedCNN(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=self.conv1d_stack.output_shape[-2],
-            encoding_size=self.conv1d_stack.output_shape[-1]
+            encoding_size=self.conv1d_stack.output_shape[-1],
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
@@ -1073,7 +1073,7 @@ class StackedParallelCNN(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=self.parallel_conv1d_stack.output_shape[-2],
-            encoding_size=self.parallel_conv1d_stack.output_shape[-1]
+            encoding_size=self.parallel_conv1d_stack.output_shape[-1],
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
@@ -1338,7 +1338,7 @@ class StackedRNN(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=self.recurrent_stack.output_shape[-2],
-            encoding_size=self.recurrent_stack.output_shape[-1]  # state_size
+            encoding_size=self.recurrent_stack.output_shape[-1],  # state_size
         )
         if self.reduce_output is None:
             self.supports_masking = True
@@ -1618,7 +1618,7 @@ class StackedCNNRNN(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=self.recurrent_stack.output_shape[-2],
-            encoding_size=self.recurrent_stack.output_shape[-1]  # State size
+            encoding_size=self.recurrent_stack.output_shape[-1],  # State size
         )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
@@ -1881,7 +1881,7 @@ class StackedTransformer(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=self.transformer_stack.output_shape[-2],
-            encoding_size=self.transformer_stack.output_shape[-1]  # hidden_size
+            encoding_size=self.transformer_stack.output_shape[-1],  # hidden_size
         )
         if self.reduce_output is None:
             self.supports_masking = True
