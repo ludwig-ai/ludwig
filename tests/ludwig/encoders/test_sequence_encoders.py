@@ -39,9 +39,9 @@ def test_sequence_passthrough_encoder(reduce_output: str):
 def test_sequence_encoders(encoder_type: Type, reduce_output: str, vocab_size: int):
     batch_size = 10
     sequence_length = 32
-    sequence_embed_encoder = encoder_type(
+    sequence_encoder = encoder_type(
         vocab=list(range(1, vocab_size + 1)), max_sequence_length=sequence_length, reduce_output=reduce_output
     ).to(DEVICE)
     inputs = torch.randint(2, (batch_size, sequence_length)).to(DEVICE)
-    outputs = sequence_embed_encoder(inputs)
-    assert outputs["encoder_output"].shape[1:] == sequence_embed_encoder.output_shape
+    outputs = sequence_encoder(inputs)
+    assert outputs["encoder_output"].shape[1:] == sequence_encoder.output_shape
