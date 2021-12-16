@@ -86,32 +86,6 @@ jobs:
           sudo apt-get -y install cuda
         shell: bash
 
-      # - name: Install CUDA
-      #   run: |
-      #     wget https://developer.download.nvidia.com/compute/cuda/11.5.1/local_installers/cuda_11.5.1_495.29.05_linux.run
-      #     sudo sh cuda_11.5.1_495.29.05_linux.run
-      #   shell: bash
-
-      - name: GCC-Compatible Compiler
-        run: |
-          gcc --version
-        shell: bash
-
-      - name: CUDA-Capable GPU
-        run: |
-          lspci | grep -i nvidia
-        shell: bash
-
-      # - name: CUDA version
-      #   run: |
-      #     nvcc --version
-      #   shell: bash
-
-      - name: Output of NVIDIA-SMI
-        run: |
-          nvidia-smi
-        shell: bash
-
       - name: Setup macOS
         if: runner.os == 'macOS'
         run: |
@@ -162,11 +136,6 @@ jobs:
           fi
           horovodrun --check-build
         shell: bash
-
-      # - name: Set CUDA visible devices
-      #   run: |
-      #     export CUDA_VISIBLE_DEVICES=0
-      #   shell: bash
 
       - name: Check CUDA is available
         run: |
