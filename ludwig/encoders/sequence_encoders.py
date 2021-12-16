@@ -51,9 +51,7 @@ class SequencePassthroughEncoder(Encoder):
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
-            reduce_mode=reduce_output,
-            max_sequence_length=max_sequence_length,
-            encoding_size=encoding_size
+            reduce_mode=reduce_output, max_sequence_length=max_sequence_length, encoding_size=encoding_size
         )
         if self.reduce_output is None:
             self.supports_masking = True
@@ -184,7 +182,7 @@ class SequenceEmbedEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=max_sequence_length,
-            encoding_size=self.embed_sequence.output_shape[-1]
+            encoding_size=self.embed_sequence.output_shape[-1],
         )
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
@@ -401,9 +399,9 @@ class ParallelCNN(Encoder):
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
 
         self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output,
-                                               max_sequence_length=max_sequence_length,
-                                               encoding_size=embedding_size)
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output, max_sequence_length=max_sequence_length, encoding_size=embedding_size
+        )
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1545,9 +1543,7 @@ class StackedCNNRNN(Encoder):
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
-            reduce_mode=reduce_output,
-            max_sequence_length=max_sequence_length,
-            encoding_size=state_size
+            reduce_mode=reduce_output, max_sequence_length=max_sequence_length, encoding_size=state_size
         )
         self.should_embed = should_embed
         self.embed_sequence = None
@@ -1829,9 +1825,7 @@ class StackedTransformer(Encoder):
 
         self.reduce_output = reduce_output
         self.reduce_sequence = SequenceReducer(
-            reduce_mode=reduce_output,
-            max_sequence_length=max_sequence_length,
-            encoding_size=hidden_size
+            reduce_mode=reduce_output, max_sequence_length=max_sequence_length, encoding_size=hidden_size
         )
         if self.reduce_output is None:
             self.supports_masking = True
