@@ -1831,7 +1831,7 @@ class StackedTransformer(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=reduce_output,
             max_sequence_length=max_sequence_length,
-            embedding_size=hidden_size
+            encoding_size=hidden_size
         )
         if self.reduce_output is None:
             self.supports_masking = True
