@@ -1297,11 +1297,6 @@ class StackedRNN(Encoder):
         self.hidden_size = state_size
         self.embedding_size = embedding_size
 
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        if self.reduce_output is None:
-            self.supports_masking = True
-
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1339,10 +1334,18 @@ class StackedRNN(Encoder):
             recurrent_dropout=recurrent_dropout,
         )
 
-        if self.reduce_output is not None:
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=self.recurrent_stack.output_shape[-2],
+            encoding_size=self.recurrent_stack.output_shape[-1]  # state_size
+        )
+        if self.reduce_output is None:
+            self.supports_masking = True
+        else:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.recurrent_stack.output_shape[-1],  # state_size,
+                self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1551,10 +1554,6 @@ class StackedCNNRNN(Encoder):
             raise ValueError("Invalid layer parametrization, use either conv_layers or " "num_conv_layers")
 
         self.max_sequence_length = max_sequence_length
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(
-            reduce_mode=reduce_output, max_sequence_length=max_sequence_length, encoding_size=state_size
-        )
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1615,10 +1614,16 @@ class StackedCNNRNN(Encoder):
             recurrent_dropout=recurrent_dropout,
         )
 
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=self.recurrent_stack.output_shape[-2],
+            encoding_size=self.recurrent_stack.output_shape[-1]  # State size
+        )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.recurrent_stack.output_shape[-1],
+                self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
@@ -1833,13 +1838,6 @@ class StackedTransformer(Encoder):
 
         self.max_sequence_length = max_sequence_length
 
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(
-            reduce_mode=reduce_output, max_sequence_length=max_sequence_length, encoding_size=hidden_size
-        )
-        if self.reduce_output is None:
-            self.supports_masking = True
-
         self.should_embed = should_embed
         self.should_project = False
         self.embed_sequence = None
@@ -1857,10 +1855,11 @@ class StackedTransformer(Encoder):
                 dropout=dropout,
                 embedding_initializer=weights_initializer,
             )
-
-            if embedding_size != hidden_size:
+            # If vocab size is smaller than embedding size, embedding layer will use len(vocab) as embedding_size.
+            used_embedding_size = self.embed_sequence.output_shape[-1]
+            if used_embedding_size != hidden_size:
                 logger.debug("  project_to_embed_size")
-                self.project_to_hidden_size = nn.Linear(self.embed_sequence.output_shape[1], hidden_size)
+                self.project_to_hidden_size = nn.Linear(self.embed_sequence.output_shape[-1], hidden_size)
                 self.should_project = True
         else:
             logger.debug("  project_to_embed_size")
@@ -1878,10 +1877,18 @@ class StackedTransformer(Encoder):
             dropout=dropout,
         )
 
-        if self.reduce_output is not None:
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=self.transformer_stack.output_shape[-2],
+            encoding_size=self.transformer_stack.output_shape[-1]  # hidden_size
+        )
+        if self.reduce_output is None:
+            self.supports_masking = True
+        else:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.transformer_stack.output_shape[-1],  # hidden_size,
+                self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
