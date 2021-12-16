@@ -189,9 +189,7 @@ class SequenceEmbedEncoder(Encoder):
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
-        :type inputs: Tensor
         :param mask: Input mask (unused, not yet implemented in EmbedSequence)
-        :type mask: Optional[torch.Tensor]
         """
         embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
@@ -457,13 +455,11 @@ class ParallelCNN(Encoder):
                 default_dropout=dropout,
             )
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
         :param inputs: The input sequence fed into the encoder.
-               Shape: [batch x sequence length], type torch.int
-        :type inputs: Tensor
-        :param training: bool specifying if in training mode (important for dropout)
-        :type training: bool
+               Shape: [batch x sequence length], type torch.int32
+        :param mask: Input mask (unused, not yet implemented)
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -796,12 +792,11 @@ class StackedCNN(Encoder):
             return self.conv1d_stack.output_shape
         return self.fc_stack.output_shape
 
-    def forward(self, inputs, mask=None):
-        # todo: fixup docstring
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
-        :type input_sequence: Tensor
+        :param mask: Input mask (unused, not yet implemented)
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1101,14 +1096,11 @@ class StackedParallelCNN(Encoder):
             return self.fc_stack.output_shape
         return self.parallel_conv1d_stack.output_shape
 
-    def forward(self, inputs, mask=None):
-        # todo: fixup docstring
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
         :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
-        :type inputs: Tensor
-        :param dropout: Tensor (torch.float) of the probability of dropout
-        :type dropout: Tensor
+        :param mask: Input mask (unused, not yet implemented)
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1371,13 +1363,11 @@ class StackedRNN(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
-        :param input_sequence: The input sequence fed into the encoder.
+        :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
-        :type input_sequence: Tensor
-        :param dropout: Tensor (torch.float) of the probability of dropout
-        :type dropout: Tensor
+        :param mask: Input mask (unused, not yet implemented)
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1646,13 +1636,11 @@ class StackedCNNRNN(Encoder):
             return self.fc_stack.output_shape
         return self.recurrent_stack.output_shape
 
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
-        :param input_sequence: The input sequence fed into the encoder.
+        :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
-        :type input_sequence: Tensor
-        :param dropout: Tensor (torch.float) of the probability of dropout
-        :type dropout: Tensor
+        :param mask: Input mask (unused, not yet implemented)
         """
         # ================ Embeddings ================
         if self.should_embed:
@@ -1911,14 +1899,12 @@ class StackedTransformer(Encoder):
             return self.fc_stack.output_shape
         return self.transformer_stack.output_shape
 
-    def forward(self, inputs, mask=None):
-        # todo: review docstring for updates
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None):
         """
-        :param input_sequence: The input sequence fed into the encoder.
+        :param inputs: The input sequence fed into the encoder.
                Shape: [batch x sequence length], type torch.int32
-        :type input_sequence: Tensor
+        :param mask: Input mask (unused, not yet implemented)
         """
-
         # ================ Embeddings ================
         if self.should_embed:
             embedded_sequence = self.embed_sequence(inputs, mask=mask)
