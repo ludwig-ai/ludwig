@@ -488,7 +488,7 @@ class ParallelCNN(Encoder):
 
         return {"encoder_output": hidden}
 
-    @prgioperty
+    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
 
