@@ -6,6 +6,10 @@ training:
 hyperopt:
   sampler:
     type: ray
+    search_alg:
+      type: hyperopt
+      # Specify seed to get sample sequence repeatability
+      random_state_seed: 42
     scheduler:
       type: async_hyperband
       time_attr: time_total_s
