@@ -143,7 +143,6 @@ class YeoJohnsonTransformer:
         if abs(self.lmbda - 2) > np.spacing(1.):
             out[~pos] = 1 - np.power(((x[~pos] - 1 / (2 - self.lmbda)) * (-2 + self.lmbda)), 1 / (2 - self.lmbda))
         else:  # lmbda == 2
-            out[~pos] = -np.log1p(-x[~pos])
             out[~pos] = np.exp(-x[~pos]) * (np.exp(x[~pos]) - 1)
 
         return out
