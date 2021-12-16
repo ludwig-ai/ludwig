@@ -126,11 +126,32 @@ class YeoJohnsonTransformer:
         return x
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
-        print("YeoJohnson inverse function not implemented.")
-        return x
+        """Returns `x`  transformed by the INVERSE Yeo-Johnson power transform with given
+        parameter `lmbda`.
+        """
+        out = np.zeros_like(x)
+        pos = x >= 0  # binary mask
+
+        # when x >= 0
+        if abs(self.lmbda) < np.spacing(1.):
+            out[pos] = np.exp(x[pos]) - 1
+
+        else:  # lmbda != 0
+            out[pos] = np.power((x[pos] + 1 / self.lmbda) * self.lmbda, 1 / self.lmbda) - 1
+
+        # when x < 0
+        if abs(self.lmbda - 2) > np.spacing(1.):
+            out[~pos] = 1 - np.power(((x[~pos] - 1 / (2 - self.lmbda)) * (-2 + self.lmbda)), 1 / (2 - self.lmbda))
+        else:  # lmbda == 2
+            out[~pos] = -np.log1p(-x[~pos])
+            out[~pos] = np.exp(-x[~pos]) * (np.exp(x[~pos]) - 1)
+
+        return out
+
 
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+        # not sure if possible use: return {"lmbda": self.lmbda}
         return {}
 
 
@@ -146,6 +167,7 @@ class IdentityTransformer:
 
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:
+
         return {}
 
 

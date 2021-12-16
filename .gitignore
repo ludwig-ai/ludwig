@@ -145,3 +145,4 @@ examples/*/visualizations/
 /bank/
 /insurance/
 !/.gitignore
+/yeo_inv1.py
