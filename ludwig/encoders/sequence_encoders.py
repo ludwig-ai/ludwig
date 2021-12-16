@@ -1033,8 +1033,6 @@ class StackedParallelCNN(Encoder):
         elif fc_layers is not None and num_fc_layers is not None:
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
 
-        self.reduce_output = reduce_output
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1071,10 +1069,16 @@ class StackedParallelCNN(Encoder):
             default_pool_size=pool_size,
         )
 
+        self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(
+            reduce_mode=reduce_output,
+            max_sequence_length=self.parallel_conv1d_stack.output_shape[-2],
+            encoding_size=self.parallel_conv1d_stack.output_shape[-1]
+        )
         if self.reduce_output is not None:
             logger.debug("  FCStack")
             self.fc_stack = FCStack(
-                self.parallel_conv1d_stack.output_shape[-1],
+                self.reduce_sequence.output_shape[-1],
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
