@@ -4,6 +4,8 @@ import torch
 from torch import Tensor
 from torchmetrics.metric import Metric
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
     """Implements tf.sequence_mask in torch.
@@ -12,7 +14,7 @@ def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.boo
     """
     if maxlen is None:
         maxlen = lengths.max()
-    row_vector = torch.arange(0, maxlen, 1)
+    row_vector = torch.arange(0, maxlen, 1).to(DEVICE)
     matrix = torch.unsqueeze(lengths, dim=-1)
     mask = row_vector < matrix
 
