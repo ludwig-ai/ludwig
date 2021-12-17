@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import List, Optional
 
 import torch
 from torch import Tensor
 from torchmetrics.metric import Metric
 
 
-def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool):
+def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
     """Implements tf.sequence_mask in torch.
 
     From https://discuss.pytorch.org/t/pytorch-equivalent-for-tf-sequence-mask/39036/2.
@@ -19,7 +19,7 @@ def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.boo
     return mask.type(dtype)
 
 
-def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int):
+def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int) -> List[Tensor]:
     """Implements tf.dynamic_partition in torch.
 
     From https://discuss.pytorch.org/t/equivalent-of-tf-dynamic-partition/53735.
@@ -29,10 +29,13 @@ def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int):
     # Flatten data into 1D vectors to do partitioning correctly.
     data = data.view(-1)
     partitions = partitions.view(-1)
-    res = []
+    result = []
     for i in range(num_partitions):
-        res += [data[(partitions == i).nonzero().squeeze(1)]]
-    return res
+        print(f"(partitions == i): {(partitions == i)}")
+        print(f"(partitions == i).nonzero(): {(partitions == i).nonzero()}")
+        print(f"((partitions == i).nonzero().squeeze(1): {(partitions == i).nonzero().squeeze(1)}")
+        result += [data[(partitions == i).nonzero().squeeze(1)]]
+    return result
 
 
 def masked_correct_predictions(targets: Tensor, preds: Tensor, targets_sequence_lengths: Tensor) -> Tensor:
