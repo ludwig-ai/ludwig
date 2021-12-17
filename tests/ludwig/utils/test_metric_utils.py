@@ -21,8 +21,8 @@ def test_dynamic_partition_2D():
             [1, 2, 3, 4, 5, 6, 7, 8, 9],
             [10, 11, 12, 13, 14, 15, 16, 17, 18],
         ]
-    ).to(DEVICE)
-    partitions = torch.Tensor([[1, 1, 1, 1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1, 0]]).to(DEVICE)
+    )
+    partitions = torch.Tensor([[1, 1, 1, 1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1, 1, 1, 0]])
 
     partitioned_data = metric_utils.dynamic_partition(data, partitions, 2)
 
@@ -34,9 +34,9 @@ def test_dynamic_partition_2D():
 
 
 def test_masked_correct_predictions():
-    preds = torch.tensor([[1, 5, 1, 5, 1, 5, 12, 12, 12], [10, 1, 5, 1, 5, 12, 12, 12, 12]]).to(DEVICE)
-    targets = torch.tensor([[1, 9, 5, 7, 5, 9, 13, 6, 0], [1, 9, 7, 13, 4, 7, 7, 7, 0]]).to(DEVICE)
-    targets_sequence_length = torch.tensor([8, 8]).to(DEVICE)
+    preds = torch.tensor([[1, 5, 1, 5, 1, 5, 12, 12, 12], [10, 1, 5, 1, 5, 12, 12, 12, 12]])
+    targets = torch.tensor([[1, 9, 5, 7, 5, 9, 13, 6, 0], [1, 9, 7, 13, 4, 7, 7, 7, 0]])
+    targets_sequence_length = torch.tensor([8, 8])
 
     result = metric_utils.masked_correct_predictions(targets, preds, targets_sequence_length)
 

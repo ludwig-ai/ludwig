@@ -31,9 +31,6 @@ def dynamic_partition(data: Tensor, partitions: Tensor, num_partitions: int) -> 
     partitions = partitions.view(-1)
     result = []
     for i in range(num_partitions):
-        print(f"(partitions == i): {(partitions == i)}")
-        print(f"(partitions == i).nonzero(): {(partitions == i).nonzero()}")
-        print(f"((partitions == i).nonzero().squeeze(1): {(partitions == i).nonzero().squeeze(1)}")
         result += [data[(partitions == i).nonzero().squeeze(1)]]
     return result
 
