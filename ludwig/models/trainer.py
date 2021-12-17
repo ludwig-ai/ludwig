@@ -96,7 +96,7 @@ class BaseTrainer(ABC):
 
 @dataclass
 class TrainerConfig:
-    optimizier: Dict = schema.OptimizerOptions(default={TYPE: "adam"})
+    optimizer: Dict = schema.Dict()  # schema.OptimizerOptions(default={TYPE: "adam"})
     epochs: int = schema.PositiveInteger(default=100)
     regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
     regularization_type: Optional[str] = schema.StringOptions(
