@@ -25,7 +25,6 @@ from ludwig.modules.embedding_modules import EmbedWeighted
 from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 @register_encoder("embed", BAG, default=True)
@@ -65,7 +64,7 @@ class BagEmbedWeightedEncoder(Encoder):
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             embedding_initializer=weights_initializer,
-        ).to(DEVICE)
+        )
         logger.debug("  FCStack")
         self.fc_stack = FCStack(
             self.embed_weighted.output_shape[-1],

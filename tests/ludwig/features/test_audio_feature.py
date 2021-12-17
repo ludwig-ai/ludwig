@@ -41,7 +41,7 @@ def audio_config():
 @pytest.mark.parametrize("encoder", ["rnn", "stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn"])
 def test_audio_input_feature(audio_config: Dict, encoder: str) -> None:
     audio_config.update({"encoder": encoder})
-    audio_input_feature = AudioInputFeature(audio_config)
+    audio_input_feature = AudioInputFeature(audio_config).to(DEVICE)
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = audio_input_feature(audio_tensor)
     assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.output_shape
