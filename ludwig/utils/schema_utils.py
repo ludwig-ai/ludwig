@@ -3,6 +3,8 @@ from dataclasses import field
 import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
 
+from ludwig.constants import TYPE
+from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
 
@@ -106,6 +108,10 @@ def InitializerOrDict(default="xavier_uniform"):
     return field(metadata={"marshmallow_field": InitializerOptionsOrCustomDictField(allow_none=False)}, default=default)
 
 
+def OptimizerOptions(default={TYPE: "adam"}):
+    return field(metadata={"marshmallow_field": OptimizerOptionsField(allow_none=False)}, default=default)
+
+
 class EmbedInputFeatureNameField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
@@ -156,6 +162,30 @@ class InitializerOptionsOrCustomDictField(fields.Field):
                     "additionalProperties": True,
                 },
             ]
+        }
+
+
+class OptimizerOptionsField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        optimizers = list(optimizers_registry.keys())
+        if isinstance(value, dict):
+            if TYPE not in value:
+                raise ValidationError(f"Dict must contain '{TYPE}' as key")
+            if value[TYPE] not in optimizers:
+                raise ValidationError(f"Dict expected key 'type' to be one of: {optimizers}, found: {value}")
+            return value
+
+        raise ValidationError(f"Field should be dict with '{TYPE}' property")
+
+    def _jsonschema_type_mapping(self):
+        optimizers = list(optimizers_registry.keys())
+        return {
+            "type": "object",
+            "properties": {
+                TYPE: {"type": "string", "enum": optimizers},
+            },
+            "required": ["type"],
+            "additionalProperties": True,
         }
 
 

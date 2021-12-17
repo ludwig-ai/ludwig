@@ -24,15 +24,18 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import psutil
 import torch
+from marshmallow import INCLUDE
+from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+import ludwig.utils.schema_utils as schema
 from ludwig.constants import COMBINED, LOSS, TEST, TRAINING, TYPE, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -91,40 +94,78 @@ class BaseTrainer(ABC):
         self.shutdown()
 
 
+@dataclass
+class TrainerConfig:
+    optimizier: Dict = schema.OptimizerOptions(default={TYPE: "adam"})
+    epochs: int = schema.PositiveInteger(default=100)
+    regularization_lambda: float = schema.FloatRange(default=0.0, min=0)
+    regularization_type: Optional[str] = schema.StringOptions(
+        options=["l1", "l2", "l1_l2"], default="l2", nullable=True
+    )
+    learning_rate: float = schema.FloatRange(default=0.001, min=0.0, max=1.0)
+    batch_size: int = schema.PositiveInteger(default=128)
+    eval_batch_size: Optional[int] = schema.PositiveInteger(None)
+    early_stop: int = schema.PositiveInteger(5)
+    reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
+    reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(5)
+    reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)
+    increase_batch_size_on_plateau: int = schema.NonNegativeInteger(default=0)
+    increase_batch_size_on_plateau_patience: int = schema.NonNegativeInteger(default=5)
+    increase_batch_size_on_plateau_rate: float = schema.FloatRange(default=2.0, min=0.0)
+    increase_batch_size_on_plateau_max: int = schema.PositiveInteger(default=512)
+    decay: bool = False
+    decay_steps: int = schema.PositiveInteger(default=10000)
+    decay_rate: float = schema.FloatRange(default=0.96, min=0.0, max=1.0)
+    staircase: bool = False
+    # "gradient_clipping": None, # TODO: What is this?
+    # TODO: Need some more logic here for validating against output features
+    validation_field: str = COMBINED
+    validation_metric: str = LOSS
+    # "bucketing_field": None, # TODO: What is this?
+    learning_rate_warmup_epochs: float = schema.FloatRange(default=1.0, min=0.0)
+
+    class Meta:
+        unknown = INCLUDE
+
+
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
+
+    @staticmethod
+    def get_schema_cls():
+        return TrainerConfig
 
     def __init__(
         self,
         model: ECD,
-        optimizer=None,
-        epochs=100,
-        regularization_lambda=0.0,
-        regularization_type=None,
-        learning_rate=0.001,
-        decay=False,
-        decay_rate=0.96,
-        decay_steps=10000,
-        staircase=False,
-        batch_size=128,
-        eval_batch_size=None,
+        # optimizer=None,
+        # epochs=100,
+        # regularization_lambda=0.0,
+        # regularization_type=None,
+        # learning_rate=0.001,
+        # decay=False,
+        # decay_rate=0.96,
+        # decay_steps=10000,
+        # staircase=False,
+        # batch_size=128,
+        # eval_batch_size=None,
         should_shuffle=True,
         bucketing_field=None,
-        validation_field="combined",
-        validation_metric="loss",
-        early_stop=20,
-        reduce_learning_rate_on_plateau=0,
-        reduce_learning_rate_on_plateau_patience=5,
-        reduce_learning_rate_on_plateau_rate=0.5,
+        # validation_field="combined",
+        # validation_metric="loss",
+        # early_stop=20,
+        # reduce_learning_rate_on_plateau=0,
+        # reduce_learning_rate_on_plateau_patience=5,
+        # reduce_learning_rate_on_plateau_rate=0.5,
         reduce_learning_rate_eval_metric=LOSS,
         reduce_learning_rate_eval_split=TRAINING,
-        increase_batch_size_on_plateau=0,
-        increase_batch_size_on_plateau_patience=5,
-        increase_batch_size_on_plateau_rate=2,
-        increase_batch_size_on_plateau_max=512,
+        # increase_batch_size_on_plateau=0,
+        # increase_batch_size_on_plateau_patience=5,
+        # increase_batch_size_on_plateau_rate=2,
+        # increase_batch_size_on_plateau_max=512,
         increase_batch_size_eval_metric=LOSS,
         increase_batch_size_eval_split=TRAINING,
-        learning_rate_warmup_epochs=1,
+        # learning_rate_warmup_epochs=1,
         resume=False,
         skip_save_model=False,
         skip_save_progress=False,
@@ -134,11 +175,12 @@ class Trainer(BaseTrainer):
         horovod=None,
         debug=False,
         device=None,
+        config: TrainerConfig = None,
         **kwargs,
     ):
         """Trains a model with a set of hyperparameters listed below. Customizable.
 
-                :param training_set: The training set
+        :param training_set: The training set
         :param validation_set: The validation dataset
         :param test_set: The test dataset
         :param validation_field: The first output feature, by default it is set
@@ -238,33 +280,33 @@ class Trainer(BaseTrainer):
         :param device: The device to load the model on from a saved checkpoint.
         :type device: str
         """
-        self.epochs = epochs
-        self.regularization_lambda = regularization_lambda
-        self.regularization_type = regularization_type
-        self.learning_rate = learning_rate
-        self.decay = decay
-        self.decay_rate = decay_rate
-        self.decay_steps = decay_steps
-        self.staircase = staircase
-        self.batch_size = batch_size
-        self.eval_batch_size = batch_size if eval_batch_size is None else eval_batch_size
+        self.epochs = config.epochs
+        self.regularization_lambda = config.regularization_lambda
+        self.regularization_type = config.regularization_type
+        self.learning_rate = config.learning_rate
+        self.decay = config.decay
+        self.decay_rate = config.decay_rate
+        self.decay_steps = config.decay_steps
+        self.staircase = config.staircase
+        self.batch_size = config.batch_size
+        self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = should_shuffle
         self.bucketing_field = bucketing_field
-        self._validation_field = validation_field
-        self._validation_metric = validation_metric
-        self.early_stop = early_stop
-        self.reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
-        self.reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
-        self.reduce_learning_rate_on_plateau_rate = reduce_learning_rate_on_plateau_rate
+        self._validation_field = config.validation_field
+        self._validation_metric = config.validation_metric
+        self.early_stop = config.early_stop
+        self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
+        self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
+        self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
         self.reduce_learning_rate_eval_metric = reduce_learning_rate_eval_metric
         self.reduce_learning_rate_eval_split = reduce_learning_rate_eval_split
-        self.increase_batch_size_on_plateau = increase_batch_size_on_plateau
-        self.increase_batch_size_on_plateau_patience = increase_batch_size_on_plateau_patience
-        self.increase_batch_size_on_plateau_rate = increase_batch_size_on_plateau_rate
-        self.increase_batch_size_on_plateau_max = increase_batch_size_on_plateau_max
+        self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
+        self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
+        self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
+        self.increase_batch_size_on_plateau_max = config.increase_batch_size_on_plateau_max
         self.increase_batch_size_eval_metric = increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = increase_batch_size_eval_split
-        self.learning_rate_warmup_epochs = learning_rate_warmup_epochs
+        self.learning_rate_warmup_epochs = config.learning_rate_warmup_epochs
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
@@ -285,7 +327,7 @@ class Trainer(BaseTrainer):
         self.model = self.model.to(self.device)
 
         # ================ Optimizer ================
-        if optimizer is None:
+        if config.optimizer is None:
             optimizer = {TYPE: "Adam"}
         self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
 
@@ -1380,7 +1422,8 @@ class Trainer(BaseTrainer):
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         horovod = initialize_horovod()
-        super().__init__(horovod=horovod, **kwargs)
+        config, kwargs = schema.load_config_with_kwargs(Trainer, kwargs)
+        super().__init__(horovod=horovod, config=config, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
         self.train = return_first(self.train)
