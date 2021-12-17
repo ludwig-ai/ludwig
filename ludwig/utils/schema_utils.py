@@ -109,7 +109,7 @@ def InitializerOrDict(default="xavier_uniform"):
 
 
 def OptimizerOptions(default={TYPE: "adam"}):
-    return field(metadata={"marshmallow_field": OptimizerOptionsField(allow_none=False)}, default=default)
+    return field(metadata={"marshmallow_field": OptimizerOptionsField(allow_none=False)}, default_factory=default)
 
 
 class EmbedInputFeatureNameField(fields.Field):
