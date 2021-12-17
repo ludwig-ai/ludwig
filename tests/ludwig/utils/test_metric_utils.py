@@ -2,8 +2,6 @@ import torch
 
 from ludwig.utils import metric_utils
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 def test_dynamic_partition():
     data = torch.Tensor([10, 20, 30, 40, 50])
