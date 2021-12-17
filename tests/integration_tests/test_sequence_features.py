@@ -7,6 +7,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.constants import LOGITS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
@@ -20,7 +21,7 @@ from tests.integration_tests.utils import generate_data, run_experiment, sequenc
 
 TEST_VOCAB_SIZE = 132
 TEST_HIDDEN_SIZE = 32
-TEST_STATE_SIZE = 16
+TEST_STATE_SIZE = 8
 TEST_EMBEDDING_SIZE = 64
 TEST_NUM_FILTERS = 24
 
@@ -39,7 +40,6 @@ def generate_sequence_training_data():
             max_len=10,
             encoder="rnn",
             cell_type="lstm",
-            reduce_output=None,
         )
     ]
 
@@ -77,25 +77,26 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
         yield model, batcher
 
 
-# TODO(#1333): refactor test once torch sequence generator work is complete
+# TODO(#1333): Refactor this test once torch sequence generator work is complete.
+# - Tests may be covered by other smaller scoped unit tests.
 #
 # tests output feature sequence with `Generator` decoder
 # pytest parameters
 #   dec_cell_type: decoder cell type
-#   dec_attention: decoder's attention mechanism
-#   dec_beam_width: decoder's beam search width
 #   combiner_output_shapes: is a 2-tuple specifies the possible types of
 #     tensors that the combiner may generate for sequences.
 #     combiner_output_shapes[0]: specifies shape for hidden key
 #     combiner_output_shapes[1]: is either None or 1 or 2-tuple representing
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
-#
-# @pytest.mark.skip(reason="Issue #1333: Sequence output generation.")
 @pytest.mark.parametrize("dec_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize(
     "combiner_output_shapes",
-    [((128, 10, 8), None), ((128, 10, 32), None), ((128, 10, 8), ((128, 8), (128, 8))), ((128, 10, 8), ((128, 8),))],
+    [
+        ((128, 10, TEST_STATE_SIZE), None),
+        ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE), (128, TEST_STATE_SIZE))),
+        ((128, 10, TEST_STATE_SIZE), ((128, TEST_STATE_SIZE),)),
+    ],
 )
 def test_sequence_decoders(
     dec_cell_type,
@@ -118,10 +119,10 @@ def test_sequence_decoders(
 
         if combiner_output_shapes[1] is not None:
             if len(combiner_output_shapes[1]) > 1:
-                encoder_output_state = [
+                encoder_output_state = (
                     torch.randn(combiner_output_shapes[1][0]),
                     torch.randn(combiner_output_shapes[1][1]),
-                ]
+                )
             else:
                 encoder_output_state = torch.randn(combiner_output_shapes[1][0])
 
@@ -132,28 +133,11 @@ def test_sequence_decoders(
 
         # gather expected components of the shape
         batch_size = combiner_outputs["hidden"].shape[0]
-        seq_size = output_features[0]["max_len"]
+        seq_size = output_features[0]["max_len"] + 2  # For start and stop symbols.
         vocab_size = model.config["output_features"][0]["vocab_size"]
 
-        # confirm output is what is expected
-        assert len(decoder_out) == 5
-        logits, lengths, preds, last_preds, probs = decoder_out
-
         # confirm shape and format of decoder output
-        assert isinstance(logits, torch.Tensor)
-        assert logits.shape.as_list() == [batch_size, seq_size, vocab_size]
-
-        assert isinstance(lengths, torch.Tensor)
-        assert lengths.shape.as_list() == [batch_size]
-
-        assert isinstance(preds, torch.Tensor)
-        assert preds.shape.as_list() == [batch_size, seq_size]
-
-        assert isinstance(last_preds, torch.Tensor)
-        assert last_preds.shape.as_list() == [batch_size]
-
-        assert isinstance(probs, torch.Tensor)
-        assert probs.shape.as_list() == [batch_size, seq_size, vocab_size]
+        assert list(decoder_out[LOGITS].size()) == [batch_size, seq_size, vocab_size]
 
 
 # final sanity test.  Checks a subset of sequence parameters
