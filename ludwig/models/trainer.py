@@ -327,7 +327,8 @@ class Trainer(BaseTrainer):
         self.model = self.model.to(self.device)
 
         # ================ Optimizer ================
-        if config.optimizer is None:
+        optimizer = config.optimizer
+        if optimizer is None:
             optimizer = {TYPE: "Adam"}
         self.optimizer, self.clipper = create_optimizer_with_clipper(model, horovod=horovod, **optimizer)
 
@@ -1422,7 +1423,7 @@ class Trainer(BaseTrainer):
 class RemoteTrainer(Trainer):
     def __init__(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, **kwargs):
         horovod = initialize_horovod()
-        config, kwargs = schema.load_config_with_kwargs(Trainer, kwargs)
+        config, kwargs = schema.load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
         super().__init__(horovod=horovod, config=config, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead

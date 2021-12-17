@@ -38,7 +38,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         initialize_pytorch(*args, horovod=self._horovod, **kwargs)
 
     def create_trainer(self, **kwargs):
-        config, kwargs = load_config_with_kwargs(Trainer, kwargs)
+        config, kwargs = load_config_with_kwargs(Trainer.get_schema_cls(), kwargs)
         return Trainer(config=config, **kwargs)
 
     def create_predictor(self, model: ECD, **kwargs):
