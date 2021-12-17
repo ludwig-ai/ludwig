@@ -102,9 +102,9 @@ class TrainerConfig:
     regularization_type: Optional[str] = schema.StringOptions(
         options=["l1", "l2", "l1_l2"], default="l2", nullable=True
     )
-    learning_rate: float = schema.FloatRange(default=0.001, min=0.0, max=1.0)
-    batch_size: int = schema.PositiveInteger(default=128)
-    eval_batch_size: Optional[int] = schema.PositiveInteger(None)
+    learning_rate: float = schema.FloatRange(default=0.001)  # , min=0.0, max=1.0) # TODO: What are the bounds here?
+    batch_size: int = schema.NonNegativeInteger(default=128)
+    eval_batch_size: Optional[int] = schema.NonNegativeInteger(None)
     early_stop: int = schema.PositiveInteger(5)
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
     reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(5)
