@@ -28,6 +28,7 @@ from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
+from ludwig.utils.types import DataFrame
 
 SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
@@ -181,19 +182,54 @@ def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, 
 
 
 def create_vocabulary(
-    data,
-    tokenizer_type="space",
-    lowercase=True,
-    num_most_frequent=None,
-    vocab_file=None,
+    data: DataFrame,
+    tokenizer_type: str = "space",
+    lowercase: bool = True,
+    num_most_frequent: int = None,
+    vocab_file: str = None,
     add_special_symbols: bool = True,
-    unknown_symbol=UNKNOWN_SYMBOL,
-    padding_symbol=PADDING_SYMBOL,
-    start_symbol=START_SYMBOL,
-    stop_symbol=STOP_SYMBOL,
-    pretrained_model_name_or_path=None,
-    processor=PANDAS,
+    unknown_symbol: str = UNKNOWN_SYMBOL,
+    padding_symbol: str = PADDING_SYMBOL,
+    start_symbol: str = START_SYMBOL,
+    stop_symbol: str = STOP_SYMBOL,
+    pretrained_model_name_or_path: str = None,
+    processor: str = PANDAS,
 ):
+    """Computes a vocabulary over the provided data frame.
+
+    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data provided,
+    producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer', then a pre-trained
+    huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is used directly.
+
+    The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+    STOP) are added if add_special_symbols=True.
+
+    Args:
+        data: DataFrame of string data.
+        tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
+        lowercase: Whether to lowercase all strings.
+        num_most_frequent: Upper limit on vocabulary size.,
+        add_special_symbols: If True, START, STOP, PADDING special symbols are added to the vocabulary. UNKNOWN is
+            always added.
+        unknown_symbol: String representation for the UNKNOWN symbol.
+        padding_symbol: String representation for the PADDING symbol.
+        start_symbol: String representation for the START symbol.
+        stop_symbol: String representation for the STOP symbol.
+        pretrained_model_name_or_path: Name/path to huggingface model.
+        processor: Which processor to use to process data.
+
+    Returns:
+        Tuple of:
+            vocab: List of strings representing the computed vocabulary.
+            str2idx: Map of symbol to index.
+            str2freq: Map of symbol to frequency.
+            max_line_length: (int) maximum sequence length.
+            pad_idx: Index to padding symbol.
+            padding_symbol: Actual padding symbol.
+            unknown_symbol: Actual unknown symbol.
+
+    TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
+    """
     vocab = None
 
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
@@ -201,6 +237,7 @@ def create_vocabulary(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
 
+    # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
     if tokenizer_type == "hf_tokenizer":
         try:
             vocab = tokenizer.tokenizer.get_vocab()
@@ -219,7 +256,7 @@ def create_vocabulary(
         else:
             unknown_symbol = unk_token
 
-        if pad_token is None:
+        if pad_token is None and add_special_symbols:
             vocab = [padding_symbol] + vocab
         else:
             padding_symbol = pad_token

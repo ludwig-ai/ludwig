@@ -236,6 +236,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
+        # Dummy implementation.
         return torch.Size([1])
 
     @property
@@ -344,7 +345,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
                 def idx2str(row):
                     pred = row[predictions_col]
-                    # length = row[lengths_col]
                     length = metadata["max_sequence_length"]
                     return [
                         metadata["idx2str"][token] if token < len(metadata["idx2str"]) else UNKNOWN_SYMBOL
