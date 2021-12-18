@@ -254,7 +254,6 @@ class TokenAccuracyMetric(MeanMetric):
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
         target_sequence_length = sequence_length_2D(target)
-        print(f"target_sequence_length: {target_sequence_length}")
         masked_correct_preds = masked_correct_predictions(target, preds, target_sequence_length)
         return torch.mean(masked_correct_preds)
 

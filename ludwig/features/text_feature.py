@@ -43,13 +43,13 @@ from ludwig.constants import (
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
-from ludwig.utils import strings_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
+    SpecialSymbol,
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
@@ -261,7 +261,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         )
         assert len(inputs.shape) == 2
 
-        inputs_mask = torch.not_equal(inputs, strings_utils.PADDING_IDX)
+        inputs_mask = torch.not_equal(inputs, SpecialSymbol.PADDING.value)
 
         inputs_exp = inputs.type(torch.int32)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)

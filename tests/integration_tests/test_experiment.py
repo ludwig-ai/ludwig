@@ -103,10 +103,11 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
 
 
-def test_experiment_seq_seq(csv_filename):
+@pytest.mark.parametrize("encoder", ["rnn", "cnnrnn", "stacked_cnn"])
+def test_experiment_seq_seq(csv_filename, encoder):
     # Single Sequence input, single sequence output
-    input_features = [text_feature(reduce_output=None, encoder="rnn")]
-    output_features = [text_feature(reduce_input=None, decoder="tagger")]
+    input_features = [text_feature(reduce_output=None, encoder=encoder)]
+    output_features = [text_feature(reduce_input=None, decoder="generator")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
