@@ -141,9 +141,9 @@ jobs:
         run: |
           python -c "import torch; assert torch.cuda.is_available()"
 
-      - name: Tests
-        run: |
-          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+      # - name: Tests
+      #   run: |
+      #     pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()
