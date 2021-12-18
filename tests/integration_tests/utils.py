@@ -329,13 +329,15 @@ def run_experiment(
 
 
 def generate_output_features_with_dependencies(main_feature, dependencies):
-    # helper function to generate multiple output features specifications
-    # with dependencies, support for 'test_experiment_multiple_seq_seq` unit test
-    # Parameters:
-    # main_feature: feature identifier, valid values 'feat1', 'feat2', 'feat3'
-    # dependencies: list of dependencies for 'main_feature', do not li
-    # Example:
-    #  generate_output_features_with_dependencies('feat2', ['feat1', 'feat3'])
+    """Generates multiple output features specifications with dependencies.
+
+    Example usage:
+        generate_output_features_with_dependencies('sequence_feature', ['category_feature', 'numerical_feature'])
+
+    Args:
+        main_feature: feature identifier, valid values 'category_feature', 'sequence_feature', 'numerical_feature'
+        dependencies: list of dependencies for 'main_feature', do not li
+    """
 
     output_features = [
         category_feature(vocab_size=2, reduce_input="sum"),
@@ -347,9 +349,9 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     #   position: location of output feature in the above output_features list
     #   feature_name: Ludwig generated feature name
     feature_names = {
-        "feat1": (0, output_features[0]["name"]),
-        "feat2": (1, output_features[1]["name"]),
-        "feat3": (2, output_features[2]["name"]),
+        "category_feature": (0, output_features[0]["name"]),
+        "sequence_feature": (1, output_features[1]["name"]),
+        "numerical_feature": (2, output_features[2]["name"]),
     }
 
     # generate list of dependencies with real feature names

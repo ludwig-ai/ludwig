@@ -68,8 +68,8 @@ def test_collect_weights(csv_filename):
         model, output_dir = _train(*_prepare_data(csv_filename))
         model_path = os.path.join(output_dir, "model")
 
-        #  1 for the encoder (embeddings),
-        #  2 for the decoder classifier (w and b).
+        # 1 for the encoder (embeddings).
+        # 2 for the decoder classifier (w and b).
         weights = [w for _, w in model.model.collect_weights()]
         assert len(weights) == 3
 

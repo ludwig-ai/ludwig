@@ -57,7 +57,7 @@ Available sub-commands:
    export_neuropod       Exports Ludwig models to Neuropod
    export_mlflow         Exports Ludwig models to MLflow
    preprocess            Preprocess data and saves it into HDF5 and JSON format
-   synthesize_dataset    Creates synthetic data for tesing purposes
+   synthesize_dataset    Creates synthetic data for testing purposes
    init_config           Initialize a user config from a dataset and targets
    render_config         Renders the fully populated config with all defaults set
 """,

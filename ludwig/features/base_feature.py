@@ -15,9 +15,8 @@
 import copy
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Any, Dict, List
 
-import numpy as np
 import torch
 from torch import Tensor
 
@@ -32,7 +31,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils import output_feature_utils
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import merge_dict
-from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D, sequence_mask
+from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -102,11 +101,20 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
-    def __init__(self, feature, *args, **kwargs):
+    def __init__(self, feature: Dict[str, Any], other_output_features: Dict[str, "OutputFeature"], *args, **kwargs):
+        """Defines defaults, overwrites them based on the feature dictionary, and sets up dependencies.
+
+        Any output feature can depend on one or more other output features. The `other_output_features` input dictionary
+        should contain entries for any dependent output features, which is accomplished by constructing output features
+        in topographically sorted order. Attributes of any dependent output features are used to properly initialize
+        this feature's sizes.
+        """
         super().__init__(*args, feature=feature, **kwargs)
 
         self.reduce_input = None
         self.reduce_dependencies = None
+
+        # List of feature names that this output feature is depdendent on.
         self.dependencies = []
 
         self.fc_layers = None
@@ -125,6 +133,11 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
+
+        self.input_size = self.get_input_size_with_dependencies(
+            self.input_size, self.dependencies, other_output_features
+        )
+
         self.fc_stack = FCStack(
             first_layer_input_size=self.input_size,
             layers=self.fc_layers,
@@ -153,8 +166,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @abstractmethod
     def get_prediction_set(self):
-        """Returns the set of prediction columns returned by this feature."""
-        pass
+        """Returns the set of prediction keys returned by this feature."""
+        raise NotImplementedError("OutputFeature is missing implementation for get_prediction_set.")
 
     @classmethod
     @abstractmethod
@@ -168,14 +181,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_decoder(self, decoder_parameters):
-        # Override input_size. Features input_size may be different if the
-        # output feature has a custom FC.
         decoder_parameters_copy = copy.copy(decoder_parameters)
+        # Input to the decoder is the output feature's FC hidden layer.
         decoder_parameters_copy["input_size"] = self.fc_stack.output_shape[-1]
         return get_decoder_cls(self.type, self.decoder)(**decoder_parameters_copy)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
-        # TODO(shreya): Add exceptions here.
         loss_class = type(self.train_loss_function)
         prediction_key = output_feature_utils.get_feature_concat_name(feature_name, loss_class.get_loss_inputs())
         return self.train_loss_function(predictions[prediction_key], targets)
@@ -200,6 +211,36 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 if cls.can_report(self)
             },
         }
+
+    @abstractmethod
+    def logits(self, combiner_outputs: Dict[str, torch.Tensor], target=None, **kwargs) -> Dict[str, torch.Tensor]:
+        """Unpacks and feeds combiner_outputs to the decoder. Invoked as part of the output feature's forward pass.
+
+        If target is not None, then we are in training.
+
+        Args:
+            combiner_outputs: Dictionary of tensors from the combiner's forward pass.
+        Returns:
+            Dictionary of decoder's output tensors (non-normalized), as well as any additional
+            tensors that may be necessary for computing predictions or evaluation metrics.
+        """
+        raise NotImplementedError("OutputFeature is missing logits() implementation.")
+
+    @abstractmethod
+    def predictions(
+        self, all_decoder_outputs: Dict[str, torch.Tensor], feature_name: str, **kwargs
+    ) -> Dict[str, torch.Tensor]:
+        """Computes actual predictions from the outputs of feature decoders.
+
+        TODO(Justin): Consider refactoring this to accept feature-specific decoder outputs.
+
+        Args:
+            all_decoder_outputs: A dictionary of {feature name}::{tensor_name} -> output tensor.
+        Returns:
+            Dictionary of tensors with predictions as well as any additional tensors that may be
+            necessary for computing evaluation metrics.
+        """
+        raise NotImplementedError("OutputFeature is missing predictions() implementation.")
 
     def loss_kwargs(self):
         return {}
@@ -232,10 +273,14 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 metric_fn.reset()
 
     def forward(self, inputs, mask=None):
-        # account for output feature target
+        # Account for output feature target. inputs is either:
+        # - [evaluation]    (dict[str, tensor], tensor)
+        # - [training]      ((dict[str, tensor], tensor), targets)
         if isinstance(inputs[0], tuple):
+            # Training.
             local_inputs, target = inputs
         else:
+            # Not training.
             local_inputs = inputs
             target = None
 
@@ -252,6 +297,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             logits_input["encoder_output_state"] = combiner_outputs["encoder_output_state"]
         if LENGTHS in combiner_outputs:
             logits_input[LENGTHS] = combiner_outputs[LENGTHS]
+
         logits = self.logits(logits_input, target=target)
 
         # For binary and numerical features, self.logits() is a tensor.
@@ -262,7 +308,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         #       keys: logits, projection_input
         #   sequence feature with Tagger Decoder
         #       keys: logits, lengths, projection_input
-
         if isinstance(logits, Tensor):
             logits = {"logits": logits}
 
@@ -310,74 +355,33 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def populate_defaults(input_feature):
         pass
 
-    def concat_dependencies(self, hidden, other_features_hidden):
-        if len(self.dependencies) > 0:
-            dependencies_hidden = []
-            for dependency in self.dependencies:
-                # the dependent feature is ensured to be present in final_hidden
-                # because we did the topological sort of the features before
-                dependency_final_hidden = other_features_hidden[dependency]
+    def get_input_size_with_dependencies(
+        self, combiner_output_size: int, dependencies: List[str], other_output_features: Dict[str, "OutputFeature"]
+    ):
+        """Returns the input size for the first layer of this output feature's FC stack, accounting for
+        dependencies on other output features.
 
-                if len(hidden.shape) > 2:
-                    if len(dependency_final_hidden.shape) > 2:
-                        # matrix matrix -> concat
-                        assert hidden.shape[1] == dependency_final_hidden.shape[1]
-                        dependencies_hidden.append(dependency_final_hidden)
-                    else:
-                        # matrix vector -> tile concat
-                        sequence_max_length = hidden.shape[1]
-                        multipliers = (1, sequence_max_length, 1)
-                        tiled_representation = torch.tile(torch.unsqueeze(dependency_final_hidden, 1), multipliers)
+        In the forward pass, the hidden states of any dependent output features get concatenated with the combiner's
+        output.
 
-                        # todo future: maybe modify this with TF2 mask mechanics
-                        sequence_length = sequence_length_3D(hidden)
-                        mask = sequence_mask(sequence_length, sequence_max_length)
-                        tiled_representation = torch.mul(
-                            tiled_representation, mask[:, :, np.newaxis].type(torch.float32)
-                        )
+        If this output feature depends on other output features, then the input size for this feature's FCStack is the
+        sum of the output sizes of other output features + the combiner's output size.
+        """
+        input_size_with_dependencies = combiner_output_size
+        for feature_name in dependencies:
+            if other_output_features[feature_name].num_fc_layers:
+                input_size_with_dependencies += other_output_features[feature_name].fc_stack.output_shape[-1]
+            else:
+                # 0-layer FCStack. Use the output feature's input size.
+                input_size_with_dependencies += other_output_features[feature_name].input_size
+        return input_size_with_dependencies
 
-                        dependencies_hidden.append(tiled_representation)
-
-                else:
-                    if len(dependency_final_hidden.shape) > 2:
-                        # vector matrix -> reduce concat
-                        reducer = self.dependency_reducers[dependency]
-                        dependencies_hidden.append(reducer(dependency_final_hidden))
-                    else:
-                        # vector vector -> concat
-                        dependencies_hidden.append(dependency_final_hidden)
-
-            try:
-                hidden = torch.cat([hidden] + dependencies_hidden, dim=-1)
-            except Exception as e:
-                raise ValueError(
-                    "Shape mismatch while concatenating dependent features of "
-                    "{}: {}, with exception {}. Concatenating the feature activations tensor {} "
-                    "with activation tensors of dependencies: {}. The error is "
-                    "likely due to a mismatch of the second dimension (sequence"
-                    " length) or a difference in ranks. Likely solutions are "
-                    "setting the maximum_sequence_length of all sequential "
-                    "features to be the same,  or reduce the output of some "
-                    "features, or disabling the bucketing setting "
-                    "bucketing_field to None / null, as activating it will "
-                    "reduce the length of the field the bucketing is performed "
-                    "on.".format(self.column, self.dependencies, e, hidden, dependencies_hidden)
-                )
-
-        return hidden
-
-    def output_specific_fully_connected(self, inputs, mask=None):  # feature_hidden
+    def output_specific_fully_connected(self, inputs, mask=None):
         feature_hidden = inputs
         original_feature_hidden = inputs
 
         # flatten inputs
         if len(original_feature_hidden.shape) > 2:
-            """
-            feature_hidden = tf.reshape(
-                feature_hidden,
-                [-1, feature_hidden.shape[-1]]
-            )
-            """
             feature_hidden = torch.reshape(feature_hidden, (-1, list(feature_hidden.shape)[-1]))
 
         # pass it through fc_stack
@@ -387,26 +391,22 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         # reshape back to original first and second dimension
         if len(original_feature_hidden.shape) > 2:
             sequence_length = original_feature_hidden.shape[1]
-            """
-            feature_hidden = tf.reshape(
-                feature_hidden,
-                [-1, sequence_length, feature_hidden_size]
-            )
-            """
             feature_hidden = torch.reshape(feature_hidden, (-1, sequence_length, feature_hidden_size))
 
         return feature_hidden
 
-    def prepare_decoder_inputs(self, combiner_output, other_output_features, mask=None):
+    def prepare_decoder_inputs(
+        self, combiner_output: Tensor, other_output_features: Dict[str, Tensor], mask=None
+    ) -> Tensor:
         """Takes the combiner output and the outputs of other outputs features computed so far and performs:
 
         - reduction of combiner outputs (if needed)
         - concatenating the outputs of dependent features (if needed)
         - output_specific fully connected layers (if needed)
 
-        :param combiner_output: output tensor of the combiner
-        :param other_output_features: output tensors from other features
-        :return: tensor
+        Args:
+            combiner_output: output tensor of the combiner
+            other_output_features: output tensors from other output features
         """
         feature_hidden = combiner_output
 
@@ -415,7 +415,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             feature_hidden = self.reduce_sequence_input(feature_hidden)
 
         # ================ Concat Dependencies ================
-        feature_hidden = self.concat_dependencies(feature_hidden, other_output_features)
+        if self.dependencies:
+            feature_hidden = output_feature_utils.concat_dependencies(
+                self.column, self.dependencies, self.dependency_reducers, feature_hidden, other_output_features
+            )
 
         # ================ Output-wise Fully Connected ================
         feature_hidden = self.output_specific_fully_connected(feature_hidden, mask=mask)

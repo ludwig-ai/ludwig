@@ -80,10 +80,9 @@ def test_torchscript(csv_filename, should_load_model):
             binary_feature(),
             numerical_feature(),
             set_feature(vocab_size=3),
-            vector_feature()
-            # TODO(#1333): Re-enable.
-            # sequence_feature(vocab_size=3),
-            # text_feature(vocab_size=3),
+            vector_feature(),
+            sequence_feature(vocab_size=3),
+            text_feature(vocab_size=3),
         ]
 
         predictions_column_name = "{}_predictions".format(output_features[0]["name"])

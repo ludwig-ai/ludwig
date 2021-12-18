@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict
 
 import numpy as np
 import torch
@@ -40,8 +41,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.encoders.registry import get_encoder_cls
+from ludwig.features.base_feature import OutputFeature
 from ludwig.features.sequence_feature import SequenceInputFeature, SequenceOutputFeature
-from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
@@ -183,7 +184,7 @@ class TextFeatureMixin:
             "char_str2idx": char_str2idx,
             "char_str2freq": char_str2freq,
             "char_vocab_size": len(char_idx2str),
-            "char_max_sequence_length": char_max_len,
+            "char_max_sequence_length": char_max_len + 2,  # For start and stop symbols.
             "char_pad_idx": char_pad_idx,
             "char_pad_symbol": char_pad_symbol,
             "char_unk_symbol": char_unk_symbol,
@@ -191,7 +192,7 @@ class TextFeatureMixin:
             "word_str2idx": word_str2idx,
             "word_str2freq": word_str2freq,
             "word_vocab_size": len(word_idx2str),
-            "word_max_sequence_length": word_max_len,
+            "word_max_sequence_length": word_max_len + 2,  # For start and stop symbols.
             "word_pad_idx": word_pad_idx,
             "word_pad_symbol": word_pad_symbol,
             "word_unk_symbol": word_unk_symbol,
@@ -309,11 +310,11 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
     max_sequence_length = 0
-    num_classes = 0
+    vocab_size = 0
     level = "word"
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
 
     @classmethod
     def get_output_dtype(cls):
@@ -328,18 +329,18 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["{}_vocab_size".format(output_feature["level"])]
+        output_feature["vocab_size"] = feature_metadata["{}_vocab_size".format(output_feature["level"])]
         output_feature["max_sequence_length"] = feature_metadata[
             "{}_max_sequence_length".format(output_feature["level"])
         ]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
             # [0, 0] for UNK and PAD
             output_feature[LOSS]["class_weights"] = [0, 0] + output_feature[LOSS]["class_weights"]
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature["vocab_size"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({})".format(
-                        len(output_feature[LOSS]["class_weights"]), output_feature["num_classes"]
+                        len(output_feature[LOSS]["class_weights"]), output_feature["vocab_size"]
                     )
                 )
 
@@ -370,19 +371,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         targets,
         train_set_metadata,
     ):
-        overall_stats = {}
-        level_idx2str = "{}_{}".format(train_set_metadata["level"], "idx2str")
-
-        sequences = targets
-        last_elem_sequence = sequences[np.arange(sequences.shape[0]), (sequences != 0).cumsum(1).argmax(1)]
-        confusion_matrix = ConfusionMatrix(
-            last_elem_sequence, predictions[LAST_PREDICTIONS], labels=train_set_metadata[level_idx2str]
-        )
-        overall_stats["confusion_matrix"] = confusion_matrix.cm.tolist()
-        overall_stats["overall_stats"] = confusion_matrix.stats()
-        overall_stats["per_class_stats"] = confusion_matrix.per_class_stats()
-
-        return overall_stats
+        return {}
 
     def postprocess_predictions(
         self,
@@ -392,7 +381,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         backend,
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
-        level_idx2str = "{}_{}".format(self.level, "idx2str")
+        level_idx2str = f"{self.level}_idx2str"
 
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:

@@ -21,7 +21,7 @@ from ludwig.utils.torch_utils import LudwigModule
 
 class Decoder(LudwigModule, ABC):
     @abstractmethod
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         raise NotImplementedError
 
     @property

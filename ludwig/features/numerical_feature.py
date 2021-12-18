@@ -248,9 +248,10 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     default_validation_metric = MEAN_SQUARED_ERROR
     clip = None
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
+        super().__init__(feature, output_features)
         self.overwrite_defaults(feature)
+
         feature["input_size"] = self.input_shape[-1]
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()

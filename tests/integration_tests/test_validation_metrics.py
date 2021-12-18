@@ -5,7 +5,13 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN
-from tests.integration_tests.utils import binary_feature, category_feature, generate_data, numerical_feature
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    numerical_feature,
+    text_feature,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -34,12 +40,10 @@ TestCase = namedtuple("TestCase", "output_features validation_metrics")
         ),
         TestCase([binary_feature()], ["loss", "accuracy"]),
         TestCase([category_feature()], ["loss", "accuracy", "hits_at_k"]),
-        # TODO(#1333): Re-enable.
-        # TestCase(
-        #     [text_feature()],
-        #     ['loss', 'token_accuracy', 'last_accuracy', 'edit_distance',
-        #      'perplexity']
-        # )
+        TestCase(
+            [text_feature()],
+            ["loss", "token_accuracy"],
+        ),
     ],
 )
 def test_validation_metrics(test_case: TestCase, csv_filename: str):

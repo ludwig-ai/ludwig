@@ -50,7 +50,12 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.loss_modules import BWCEWLoss, SigmoidCrossEntropyLoss, SoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import (
+    BWCEWLoss,
+    SequenceSoftmaxCrossEntropyLoss,
+    SigmoidCrossEntropyLoss,
+    SoftmaxCrossEntropyLoss,
+)
 from ludwig.modules.metric_registry import metric_registry, register_metric
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
@@ -221,6 +226,16 @@ class SoftmaxCrossEntropyMetric(LossMetric):
         return self.softmax_cross_entropy_function(preds, target)
 
 
+@register_metric("sequence_softmax_cross_entropy", [SEQUENCE, TEXT])
+class SequenceSoftmaxCrossEntropyMetric(LossMetric):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.sequence_softmax_cross_entropy_function = SequenceSoftmaxCrossEntropyLoss(**kwargs)
+
+    def get_current_value(self, preds: Tensor, target: Tensor):
+        return self.sequence_softmax_cross_entropy_function(preds, target)
+
+
 @register_metric("sigmoid_cross_entropy", [SET])
 class SigmoidCrossEntropyMetric(LossMetric):
     def __init__(self, **kwargs):
@@ -248,7 +263,6 @@ class TokenAccuracyMetric(MeanMetric):
 
     @classmethod
     def get_inputs(cls):
-        # TODO: double check
         return PREDICTIONS
 
 

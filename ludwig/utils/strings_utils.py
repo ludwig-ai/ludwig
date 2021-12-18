@@ -18,7 +18,8 @@ import re
 import unicodedata
 from abc import abstractmethod
 from collections import Counter
-from typing import List, Union
+from enum import Enum
+from typing import List, Set, Union
 
 import numpy as np
 
@@ -27,10 +28,7 @@ from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
-
-UNKNOWN_SYMBOL = "<UNK>"
-PADDING_SYMBOL = "<PAD>"
-PADDING_IDX = 0
+from ludwig.utils.types import DataFrame
 
 SPLIT_REGEX = re.compile(r"\s+")
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
@@ -41,6 +39,21 @@ BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
 BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0"}
 # Update the following if BOOL_TRUE_STRS or BOOL_FALSE_STRS changes
 MAX_DISTINCT_BOOL_PERMUTATIONS = 70
+
+# Special symbols.
+STOP_SYMBOL = "<EOS>"
+START_SYMBOL = "<SOS>"
+PADDING_SYMBOL = "<PAD>"
+UNKNOWN_SYMBOL = "<UNK>"
+
+
+class SpecialSymbol(Enum):
+    """Special symbols used for text features."""
+
+    STOP = 0
+    START = 1
+    PADDING = 2
+    UNKNOWN = 3
 
 
 def all_bool_strs():
@@ -159,22 +172,64 @@ def load_vocabulary(vocab_file):
                 line = line.split(" ")[0]
             vocabulary.append(line)
         return vocabulary
-        # return [line.strip() for line in f]
+
+
+def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, index: int):
+    """Inserts or moves the symbol to the specified index."""
+    if symbol in vocab_set:
+        vocab_list.remove(symbol)
+    vocab_list.insert(index, symbol)
 
 
 def create_vocabulary(
-    data,
-    tokenizer_type="space",
-    add_unknown=True,
-    add_padding=True,
-    lowercase=True,
-    num_most_frequent=None,
-    vocab_file=None,
-    unknown_symbol=UNKNOWN_SYMBOL,
-    padding_symbol=PADDING_SYMBOL,
-    pretrained_model_name_or_path=None,
-    processor=PANDAS,
+    data: DataFrame,
+    tokenizer_type: str = "space",
+    lowercase: bool = True,
+    num_most_frequent: int = None,
+    vocab_file: str = None,
+    add_special_symbols: bool = True,
+    unknown_symbol: str = UNKNOWN_SYMBOL,
+    padding_symbol: str = PADDING_SYMBOL,
+    start_symbol: str = START_SYMBOL,
+    stop_symbol: str = STOP_SYMBOL,
+    pretrained_model_name_or_path: str = None,
+    processor: str = PANDAS,
 ):
+    """Computes a vocabulary over the provided data frame.
+
+    A tokenizer is specified using the `tokenizer_type`. The tokenizer will be used to process all of the data provided,
+    producing an indexed vocabulary with frequency counts. If the `tokenizer_type` is 'hf_tokenizer', then a pre-trained
+    huggingface tokenizer is loaded from `pretrained_model_name_or_path` and that vocabulary is used directly.
+
+    The UNKNOWN special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
+    STOP) are added if add_special_symbols=True.
+
+    Args:
+        data: DataFrame of string data.
+        tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
+        lowercase: Whether to lowercase all strings.
+        num_most_frequent: Upper limit on vocabulary size.,
+        add_special_symbols: If True, START, STOP, PADDING special symbols are added to the vocabulary. UNKNOWN is
+            always added.
+        unknown_symbol: String representation for the UNKNOWN symbol.
+        padding_symbol: String representation for the PADDING symbol.
+        start_symbol: String representation for the START symbol.
+        stop_symbol: String representation for the STOP symbol.
+        pretrained_model_name_or_path: Name/path to huggingface model.
+        processor: Which processor to use to process data.
+
+    Returns:
+        Tuple of:
+            vocab: List of strings representing the computed vocabulary.
+            str2idx: Map of symbol to index.
+            str2freq: Map of symbol to frequency.
+            max_line_length: (int) maximum sequence length.
+            pad_idx: Index to padding symbol.
+            padding_symbol: Actual padding symbol.
+            unknown_symbol: Actual unknown symbol.
+
+    TODO(Justin): Clean up pad_idx, padding_symbol, unknown_symbol return, as no one seems to be using it.
+    """
     vocab = None
 
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
@@ -182,6 +237,7 @@ def create_vocabulary(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
 
+    # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
     if tokenizer_type == "hf_tokenizer":
         try:
             vocab = tokenizer.tokenizer.get_vocab()
@@ -200,7 +256,7 @@ def create_vocabulary(
         else:
             unknown_symbol = unk_token
 
-        if pad_token is None:
+        if pad_token is None and add_special_symbols:
             vocab = [padding_symbol] + vocab
         else:
             padding_symbol = pad_token
@@ -219,14 +275,13 @@ def create_vocabulary(
 
     vocab_set = set(vocab)
 
-    if add_unknown and tokenizer_type != "hf_tokenizer":
-        if unknown_symbol in vocab_set:
-            vocab.remove(unknown_symbol)
-        vocab = [unknown_symbol] + vocab
-    if add_padding and tokenizer_type != "hf_tokenizer":
-        if padding_symbol in vocab_set:
-            vocab.remove(padding_symbol)
-        vocab = [padding_symbol] + vocab
+    if tokenizer_type != "hf_tokenizer":
+        if add_special_symbols:
+            add_or_move_symbol(vocab, vocab_set, stop_symbol, SpecialSymbol.STOP.value)
+            add_or_move_symbol(vocab, vocab_set, start_symbol, SpecialSymbol.START.value)
+            add_or_move_symbol(vocab, vocab_set, padding_symbol, SpecialSymbol.PADDING.value)
+        # Always add the UNKNOWN symbol if we're using our own tokenizer.
+        add_or_move_symbol(vocab, vocab_set, unknown_symbol, SpecialSymbol.UNKNOWN.value)
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for unit in vocab}
@@ -238,16 +293,9 @@ def create_vocabulary(
     return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
 
 
-def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)()
-
-    format_dtype = int_type(len(unit_to_id) - 1)
-    return _get_sequence_vector(sequence, tokenizer, tokenizer_type, format_dtype, unit_to_id, lowercase=lowercase)
-
-
 def _get_sequence_vector(
     sequence, tokenizer, tokenizer_type, format_dtype, unit_to_id, lowercase=True, unknown_symbol=UNKNOWN_SYMBOL
-):
+) -> np.ndarray:
     unit_sequence = tokenizer(sequence.lower() if lowercase else sequence)
 
     unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)
@@ -260,22 +308,29 @@ def _get_sequence_vector(
                 unit_indices_vector[i] = unit_to_id[curr_unit]
             else:
                 unit_indices_vector[i] = unit_to_id[unknown_symbol]
+
+    # Add start and stop symbols.
+    # Huggingface's pretrained tokenizers take care of this implicitly:
+    # https://huggingface.co/docs/transformers/preprocessing
+    if tokenizer_type != "hf_tokenizer":
+        unit_indices_vector = np.append(unit_indices_vector, unit_to_id[STOP_SYMBOL])
+        unit_indices_vector = np.insert(unit_indices_vector, 0, unit_to_id[START_SYMBOL])
     return unit_indices_vector
 
 
 def build_sequence_matrix(
-    sequences,
+    sequences,  # pd.core.series.Series
     inverse_vocabulary,
     tokenizer_type,
     length_limit,
-    padding_symbol,
+    padding_symbol=PADDING_SYMBOL,
     padding="right",
     unknown_symbol=UNKNOWN_SYMBOL,
     lowercase=True,
     tokenizer_vocab_file=None,
     pretrained_model_name_or_path=None,
     processor=PANDAS,
-):
+) -> np.ndarray:
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
@@ -313,6 +368,7 @@ def build_sequence_matrix(
     return padded
 
 
+# TODO: Move to separate tokenizers.py file.
 class BaseTokenizer:
     @abstractmethod
     def __init__(self, **kwargs):
@@ -325,7 +381,7 @@ class BaseTokenizer:
 
 class CharactersToListTokenizer(BaseTokenizer):
     def __call__(self, text):
-        return text
+        return [char for char in text]
 
 
 class SpaceStringToListTokenizer(BaseTokenizer):
