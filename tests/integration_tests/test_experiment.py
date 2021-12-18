@@ -560,7 +560,7 @@ def test_sequence_tagger_text(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-def test_experiment_sequence_combiner_with_embed_encoder_fails(csv_filename):
+def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
     config = {
         "input_features": [
             sequence_feature(
@@ -569,9 +569,16 @@ def test_experiment_sequence_combiner_with_embed_encoder_fails(csv_filename):
                 max_len=5,
                 encoder="embed",
                 cell_type="lstm",
-                reduce_output=None,
+                reduce_output="sum",
             ),
-            sequence_feature(name="seq2", min_len=5, max_len=5, encoder="embed", cell_type="lstm", reduce_output=None),
+            sequence_feature(
+                name="seq2",
+                min_len=5,
+                max_len=5,
+                encoder="embed",
+                cell_type="lstm",
+                reduce_output="sum",
+            ),
             category_feature(vocab_size=5),
         ],
         "output_features": [category_feature(reduce_input="sum", vocab_size=5)],
