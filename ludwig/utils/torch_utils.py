@@ -308,7 +308,7 @@ def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    horovod=None,  # Optional["horovod.torch"]. TODO(Justin): Add back when horovod installs on ARM64.
+    horovod=None,  # Optional["horovod.torch"]
 ):
     use_horovod = horovod is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
