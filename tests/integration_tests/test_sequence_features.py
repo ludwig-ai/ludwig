@@ -89,6 +89,8 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
 #     combiner_output_shapes[1]: is either None or 1 or 2-tuple representing
 #       the encoder_output_state key. None: no encoder_output_state key,
 #       1-tuple: generate tf.Tensor, 2-tuple: generate list with 2 tf.Tensors
+# TODO(Justin): Move these to test_sequence_generator unit tests, and reintroduce decoder attention, beam_width, and
+# num_layers when these are reimplemented.
 @pytest.mark.parametrize("dec_cell_type", ["lstm", "rnn", "gru"])
 @pytest.mark.parametrize(
     "combiner_output_shapes",

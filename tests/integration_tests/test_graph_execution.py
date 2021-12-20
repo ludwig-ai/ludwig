@@ -66,19 +66,3 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)
-
-
-@pytest.mark.distributed
-@pytest.mark.parametrize("dec_cell_type", ["rnn"])
-@pytest.mark.parametrize("enc_cell_type", ["rnn"])
-@pytest.mark.parametrize("enc_encoder", ["embed"])
-def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, csv_filename):
-    # Define input and output features
-    input_features = [sequence_feature(min_len=5, max_len=10, encoder=enc_encoder, cell_type=enc_cell_type)]
-    output_features = [sequence_feature(min_len=5, max_len=10, decoder="generator", cell_type=dec_cell_type)]
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    # run the experiment
-    run_experiment(input_features, output_features, dataset=rel_path)
