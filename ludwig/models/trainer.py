@@ -111,7 +111,7 @@ class TrainerConfig:
     eval_batch_size: Optional[int] = schema.IntegerOrStringOptionsField(
         default=None, options=["auto"], nullable=True, exclusiveMin=0
     )
-    early_stop: int = schema.PositiveInteger(5)
+    early_stop: int = schema.NonNegativeInteger(5)
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
     reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(5)
     reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)
