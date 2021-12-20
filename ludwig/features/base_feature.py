@@ -15,7 +15,7 @@
 import copy
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import torch
 from torch import Tensor
@@ -272,23 +272,28 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             if metric_fn is not None:
                 metric_fn.reset()
 
-    def forward(self, inputs, mask=None):
-        # Account for output feature target. inputs is either:
-        # - [evaluation]    (dict[str, tensor], tensor)
-        # - [training]      ((dict[str, tensor], tensor), targets)
-        if isinstance(inputs[0], tuple):
-            # Training.
-            local_inputs, target = inputs
-        else:
-            # Not training.
-            local_inputs = inputs
-            target = None
+    def forward(
+        self,
+        combiner_outputs: Dict[str, torch.Tensor],
+        other_output_feature_outputs: Dict[str, torch.Tensor],
+        mask: Optional[torch.Tensor] = None,
+        target: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        """Forward pass that takes in output from the combiner, and passes it through to the decoder.
 
-        combiner_outputs, other_output_hidden = local_inputs
+        Args:
+            combiner_outputs: Dict of outputs from the combiner.
+            other_output_feature_outputs: Dict of tensors from other output features. Used for resolving dependencies.
+            mask: (Unused). Tensor for masking.
+            target: Tensor with targets. During training, targets != None. During prediction, targets = None.
 
+        Returns:
+            Dict of output tensors, with at least 'last_hidden' and 'logits' as keys, as well as any additional tensor
+            results from the decoder.
+        """
         # extract the combined hidden layer
-        combiner_output = combiner_outputs["combiner_output"]
-        hidden = self.prepare_decoder_inputs(combiner_output, other_output_hidden, mask=mask)
+        combiner_hidden = combiner_outputs["combiner_output"]
+        hidden = self.prepare_decoder_inputs(combiner_hidden, other_output_feature_outputs, mask=mask)
 
         # ================ Predictions ================
         logits_input = {HIDDEN: hidden}
@@ -301,13 +306,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         logits = self.logits(logits_input, target=target)
 
         # For binary and numerical features, self.logits() is a tensor.
-        # There are three special cases where self.logits() is a dict:
+        # There are two special cases where self.logits() is a dict:
         #   categorical
         #       keys: logits, projection_input
-        #   sequence feature with Generator Decoder
-        #       keys: logits, projection_input
-        #   sequence feature with Tagger Decoder
-        #       keys: logits, lengths, projection_input
+        #   sequence
+        #       keys: logits
+        # TODO(Justin): Clean this up.
         if isinstance(logits, Tensor):
             logits = {"logits": logits}
 
@@ -396,7 +400,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return feature_hidden
 
     def prepare_decoder_inputs(
-        self, combiner_output: Tensor, other_output_features: Dict[str, Tensor], mask=None
+        self, combiner_hidden: Tensor, other_output_features: Dict[str, Tensor], mask=None
     ) -> Tensor:
         """Takes the combiner output and the outputs of other outputs features computed so far and performs:
 
@@ -405,14 +409,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         - output_specific fully connected layers (if needed)
 
         Args:
-            combiner_output: output tensor of the combiner
+            combiner_hidden: hidden state of the combiner
             other_output_features: output tensors from other output features
         """
-        feature_hidden = combiner_output
-
         # ================ Reduce Inputs ================
-        if self.reduce_input is not None and len(feature_hidden.shape) > 2:
-            feature_hidden = self.reduce_sequence_input(feature_hidden)
+        feature_hidden = combiner_hidden
+        if self.reduce_input is not None and len(combiner_hidden.shape) > 2:
+            feature_hidden = self.reduce_sequence_input(combiner_hidden)
 
         # ================ Concat Dependencies ================
         if self.dependencies:
