@@ -24,7 +24,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import psutil
@@ -102,10 +102,16 @@ class TrainerConfig:
     regularization_type: Optional[str] = schema.StringOptions(
         options=["l1", "l2", "l1_l2"], default="l2", nullable=True
     )
-    learning_rate: float = schema.FloatRange(default=0.001)  # , min=0.0, max=1.0) # TODO: What are the bounds here?
-    batch_size: int = schema.NonNegativeInteger(default=128)
-    eval_batch_size: Optional[int] = schema.NonNegativeInteger(None)
-    early_stop: int = schema.NonNegativeInteger(5)
+    learning_rate: float = schema.NumericOrStringOptionsField(
+        default=0.001, min=0.0, max=1.0, options=["auto"], nullable=False
+    )
+    batch_size: Union[int, str] = schema.IntegerOrStringOptionsField(
+        default=128, options=["auto"], nullable=False, exclusiveMin=0
+    )
+    eval_batch_size: Optional[int] = schema.IntegerOrStringOptionsField(
+        default=None, options=["auto"], nullable=True, exclusiveMin=0
+    )
+    early_stop: int = schema.PositiveInteger(5)
     reduce_learning_rate_on_plateau: float = schema.FloatRange(default=0.0, min=0.0, max=1.0)
     reduce_learning_rate_on_plateau_patience: int = schema.NonNegativeInteger(5)
     reduce_learning_rate_on_plateau_rate: float = schema.FloatRange(default=0.5, min=0.0, max=1.0)

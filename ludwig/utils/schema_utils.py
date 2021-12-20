@@ -114,6 +114,10 @@ def OptimizerOptions(default={TYPE: "adam"}):
     )
 
 
+def IntegerOrStringOptions(options, nullable, default, min, max):
+    return field(metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable)}, default=default)
+
+
 class EmbedInputFeatureNameField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
@@ -189,6 +193,59 @@ class OptimizerOptionsField(fields.Field):
             "required": ["type"],
             "additionalProperties": True,
         }
+
+
+def IntegerOrStringOptionsField(
+    options, nullable, default, isIntegeric=False, min=None, max=None, exclusiveMin=None, exclusiveMax=None
+):
+    return NumericOrStringOptionsField(options, nullable, default, True, min, max, exclusiveMin, exclusiveMax)
+
+
+def NumericOrStringOptionsField(
+    options, nullable, default, isIntegeric=False, min=None, max=None, exclusiveMin=None, exclusiveMax=None
+):
+    class IntegerOrStringOptionsField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            msgType = "integer" if isIntegeric else "numeric"
+            if (isIntegeric and isinstance(value, int)) or isinstance(value, float):
+                if (
+                    (min is not None and value < min)
+                    or (exclusiveMin is not None and value <= exclusiveMin)
+                    or (max is not None and value > max)
+                    or (exclusiveMax is not None and value >= exclusiveMax)
+                ):
+                    errMinR, errMinN = "(", exclusiveMin if exclusiveMin is not None else "[", min
+                    errMaxR, errMaxN = ")", exclusiveMax if exclusiveMax is not None else "]", max
+                    raise ValidationError(
+                        f"If value is {msgType} should be in range: {errMinR}{errMinN},{errMaxN}{errMaxR}"
+                    )
+                return value
+            if isinstance(value, str):
+                if value not in options:
+                    raise ValidationError(f"String value should be one of {options}")
+                return value
+
+            raise ValidationError(f"Field should be either a {msgType} or string")
+
+        def _jsonschema_type_mapping(self):
+            jsonType = "integer" if isIntegeric else "number"
+            tmp = {"type": jsonType}
+            if min is not None:
+                tmp["minimum"] = min
+            if exclusiveMin is not None:
+                tmp["exclusiveMinimum"] = exclusiveMin
+            if max is not None:
+                tmp["maximum"] = max
+            if exclusiveMax is not None:
+                tmp["exclusiveMaximum"] = exclusiveMax
+            return {
+                "oneOf": [
+                    tmp,
+                    {"type": "string", "enum": options},
+                ]
+            }
+
+    return field(metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable)}, default=default)
 
 
 def load_config(cls, **kwargs):
