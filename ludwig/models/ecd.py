@@ -137,8 +137,8 @@ class ECD(LudwigModule):
         output_last_hidden = {}
         for output_feature_name, output_feature in self.output_features.items():
             # Use the presence or absence of targets to signal training or prediction.
-            targets = targets[output_feature_name] if targets is not None else None
-            decoder_outputs = output_feature(combiner_outputs, output_last_hidden, mask=mask, target=targets)
+            target = targets[output_feature_name] if targets is not None else None
+            decoder_outputs = output_feature(combiner_outputs, output_last_hidden, mask=mask, target=target)
 
             # Add decoder outputs to overall output dictionary.
             for decoder_output_name, tensor in decoder_outputs.items():
