@@ -1,4 +1,5 @@
 from dataclasses import field
+from typing import Any, List, Union
 
 import marshmallow_dataclass
 from marshmallow import fields, validate, ValidationError
@@ -9,11 +10,11 @@ from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.utils.torch_utils import initializer_registry
 
 
-def InitializerOptions(default=None):
+def InitializerOptions(default: Union[None, str] = None):
     return StringOptions(list(initializer_registry.keys()), default=default, nullable=True)
 
 
-def ReductionOptions(default=None):
+def ReductionOptions(default: Union[None, str] = None):
     return StringOptions(
         list(reduce_mode_registry.keys()),
         default=default,
@@ -21,11 +22,11 @@ def ReductionOptions(default=None):
     )
 
 
-def RegularizerOptions(nullable=True):
+def RegularizerOptions(nullable: bool = True):
     return StringOptions(["l1", "l2", "l1_l2"], nullable=nullable)
 
 
-def StringOptions(options, default=None, nullable=True):
+def StringOptions(options: List[str], default: Union[None, str] = None, nullable: bool = True):
     return field(
         metadata={
             "marshmallow_field": fields.String(
@@ -37,7 +38,7 @@ def StringOptions(options, default=None, nullable=True):
     )
 
 
-def PositiveInteger(default=None):
+def PositiveInteger(default: Union[None, int] = None):
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
@@ -49,7 +50,7 @@ def PositiveInteger(default=None):
     )
 
 
-def NonNegativeInteger(default=None):
+def NonNegativeInteger(default: Union[None, int] = None):
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
@@ -61,7 +62,7 @@ def NonNegativeInteger(default=None):
     )
 
 
-def IntegerRange(default=None, **kwargs):
+def IntegerRange(default: Union[None, int] = None, **kwargs):
     return field(
         metadata={
             "marshmallow_field": fields.Integer(
@@ -73,7 +74,7 @@ def IntegerRange(default=None, **kwargs):
     )
 
 
-def FloatRange(default=None, **kwargs):
+def FloatRange(default: Union[None, float] = None, **kwargs):
     return field(
         metadata={
             "marshmallow_field": fields.Float(
@@ -116,18 +117,14 @@ def Embed():
 _embed_options = ["add"]
 
 
-def InitializerOrDict(default="xavier_uniform"):
+def InitializerOrDict(default: str = "xavier_uniform"):
     return field(metadata={"marshmallow_field": InitializerOptionsOrCustomDictField(allow_none=False)}, default=default)
 
 
-def OptimizerOptions(default={TYPE: "adam"}):
+def OptimizerOptions(default: Any = {TYPE: "adam"}):
     return field(
         metadata={"marshmallow_field": OptimizerOptionsField(allow_none=False)}, default_factory=lambda: default
     )
-
-
-def IntegerOrStringOptions(options, nullable, default, min, max):
-    return field(metadata={"marshmallow_field": IntegerOrStringOptionsField(allow_none=nullable)}, default=default)
 
 
 class EmbedInputFeatureNameField(fields.Field):
@@ -208,13 +205,27 @@ class OptimizerOptionsField(fields.Field):
 
 
 def IntegerOrStringOptionsField(
-    options, nullable, default, isIntegeric=False, min=None, max=None, exclusiveMin=None, exclusiveMax=None
+    options: List[str],
+    nullable: bool,
+    default: Union[None, int],
+    isIntegeric: bool = True,
+    min: Union[None, int] = None,
+    max: Union[None, int] = None,
+    exclusiveMin: Union[None, int] = None,
+    exclusiveMax: Union[None, int] = None,
 ):
-    return NumericOrStringOptionsField(options, nullable, default, True, min, max, exclusiveMin, exclusiveMax)
+    return NumericOrStringOptionsField(**locals())
 
 
 def NumericOrStringOptionsField(
-    options, nullable, default, isIntegeric=False, min=None, max=None, exclusiveMin=None, exclusiveMax=None
+    options: List[str],
+    nullable: bool,
+    default: Union[None, int, float],
+    isIntegeric: bool = False,
+    min: Union[None, int] = None,
+    max: Union[None, int] = None,
+    exclusiveMin: Union[None, int] = None,
+    exclusiveMax: Union[None, int] = None,
 ):
     class IntegerOrStringOptionsField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
