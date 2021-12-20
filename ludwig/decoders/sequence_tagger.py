@@ -16,26 +16,28 @@ logger = logging.getLogger(__name__)
 class SequenceTaggerDecoder(Decoder):
     def __init__(
         self,
-        vocab_size,
-        max_sequence_length=100,
-        use_attention=False,
-        use_bias=True,
-        attention_embedding_size=256,
-        attention_num_heads=8,
+        input_size: int,
+        vocab_size: int,
+        max_sequence_length: int,
+        use_attention: bool = False,
+        use_bias: bool = True,
+        attention_embedding_size: int = 256,
+        attention_num_heads: int = 8,
         **kwargs,
     ):
         super().__init__()
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length
-        print(f"max_sequence_length: {max_sequence_length}")
+        self.input_size = input_size
         self.use_attention = use_attention
         if use_attention:
             logger.debug("  MultiHeadSelfAttention")
             self.self_attention = MultiHeadSelfAttention(
-                hidden_size=attention_embedding_size, num_heads=attention_num_heads
+                input_size=input_size, hidden_size=attention_embedding_size, num_heads=attention_num_heads
             )
-        # self.projection_layer = Dense(input_size=max_sequence_length, output_size=vocab_size, use_bias=use_bias)
-        self.projection_layer = Dense(input_size=kwargs["embedding_size"], output_size=vocab_size, use_bias=use_bias)
+            # Adjust the input size to the final projection layer.
+            input_size = self.self_attention.output_shape[0]
+        self.projection_layer = Dense(input_size=input_size, output_size=vocab_size, use_bias=use_bias)
 
     def forward(self, inputs: Dict[str, torch.Tensor], target: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         """Decodes the inputs into a sequence.
@@ -47,26 +49,25 @@ class SequenceTaggerDecoder(Decoder):
         Returns:
             Dictionary of tensors with logits [batch_size, max_sequence_length, vocab_size].
         """
-        print(f"Called forward with inputs.keys(): {inputs.keys()}")
-        # Shape [batch_size, seq_size, state_size]
         hidden = inputs[HIDDEN]
-        if len(hidden.shape) != 3:
+        if len(hidden.size()) != 3:
             raise ValueError(
-                "Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] "
-                "when using a tagger sequential decoder. "
-                "Consider setting reduce_output to null / None if a sequential encoder / combiner is used.".format(
-                    len(hidden.shape)
-                )
+                f"Decoder inputs rank is {len(hidden.size())}, but should be 3: "
+                + "[batch_size x max_sequence_length x hidden_size] in when using a tagger sequential decoder. "
+                + "Consider setting reduce_output to None if a sequential encoder / combiner is used."
+            )
+        if list(hidden.shape[1:]) != [self.max_sequence_length, self.input_size]:
+            raise ValueError(
+                "Sequence tagger decoder inputs (hidden) should be [batch_size, self.max_sequence_length, "
+                + f"input_size], or [batch_size, {self.max_sequence_length}, {self.input_size}]. However, the "
+                + f"inputs (hidden) was instead: {list(hidden.size())}. "
+                + "The encoder is not length preserving. Please check its configuration."
             )
 
-        print(f"hidden.size(), before attention: {hidden.size()}")
         if self.use_attention:
-            print(f"hidden.size(), before attention: {hidden.size()}")
             hidden = self.self_attention(hidden)
-            print(f"hidden.size(), before attention: {hidden.size()}")
 
         logits = self.projection_layer(hidden)
-        print(f"logits: {logits.size()}")
         return {LOGITS: logits}
 
     def get_prediction_set(self):

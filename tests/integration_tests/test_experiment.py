@@ -103,16 +103,32 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
     run_experiment_with_encoder(encoder, csv_filename)
 
 
-@pytest.mark.parametrize("encoder", ["rnn", "cnnrnn", "stacked_cnn"])
-def test_experiment_seq_seq(csv_filename, encoder):
-    # Single Sequence input, single sequence output
+@pytest.mark.parametrize("encoder", ENCODERS)
+def test_experiment_seq_seq_generator(csv_filename, encoder):
     input_features = [text_feature(reduce_output=None, encoder=encoder)]
-    output_features = [text_feature(reduce_input=None, decoder="generator")]
-
-    # Generate test data
+    output_features = [text_feature(decoder="generator")]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
+
+
+@pytest.mark.parametrize("encoder", ["embed", "rnn", "parallel_cnn", "stacked_parallel_cnn", "transformer"])
+def test_experiment_seq_seq_tagger(csv_filename, encoder):
+    input_features = [text_feature(reduce_output=None, encoder=encoder)]
+    output_features = [text_feature(decoder="tagger")]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    run_experiment(input_features, output_features, dataset=rel_path)
+
+
+@pytest.mark.parametrize("encoder", ["cnnrnn", "stacked_cnn"])
+def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_filename, encoder):
+    input_features = [text_feature(reduce_output=None, encoder=encoder)]
+    output_features = [text_feature(decoder="tagger")]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    with pytest.raises(ValueError):
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):

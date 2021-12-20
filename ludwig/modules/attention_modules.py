@@ -82,6 +82,10 @@ class MultiHeadSelfAttention(LudwigModule):
         projected_outputs = self.combine_heads(concat_outputs)  # (batch_size, seq_len, h)
         return projected_outputs
 
+    @property
+    def output_shape(self):
+        return torch.Size([self.embedding_size])
+
 
 class TransformerBlock(LudwigModule):
     def __init__(self, input_size, sequence_size, hidden_size, num_heads, fc_size, dropout=0.1):
