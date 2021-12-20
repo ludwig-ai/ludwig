@@ -61,6 +61,18 @@ def NonNegativeInteger(default=None):
     )
 
 
+def IntegerRange(default=None, **kwargs):
+    return field(
+        metadata={
+            "marshmallow_field": fields.Integer(
+                validate=validate.Range(**kwargs),
+                allow_none=default is None,
+            )
+        },
+        default=default,
+    )
+
+
 def FloatRange(default=None, **kwargs):
     return field(
         metadata={
