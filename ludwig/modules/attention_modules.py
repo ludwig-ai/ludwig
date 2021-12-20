@@ -67,7 +67,7 @@ class MultiHeadSelfAttention(LudwigModule):
         inputs = torch.reshape(inputs, (batch_size, -1, self.num_heads, self.projection_dim))
         return torch.permute(inputs, (0, 2, 1, 3))
 
-    def forward(self, inputs: torch.Tensor, training=None, mask=None):
+    def forward(self, inputs: torch.Tensor, mask=None):
         # inputs.shape = [batch_size, seq_len, embedding_dim]
         batch_size = inputs.shape[0]
         query = self.query_dense(inputs)  # (batch_size, seq_len, h)
@@ -81,6 +81,10 @@ class MultiHeadSelfAttention(LudwigModule):
         concat_outputs = torch.reshape(outputs, (batch_size, -1, self.embedding_size))  # (batch_size, seq_len, h)
         projected_outputs = self.combine_heads(concat_outputs)  # (batch_size, seq_len, h)
         return projected_outputs
+
+    @property
+    def output_shape(self):
+        return torch.Size([self.embedding_size])
 
 
 class TransformerBlock(LudwigModule):
@@ -103,7 +107,7 @@ class TransformerBlock(LudwigModule):
     def input_shape(self) -> torch.Size:
         return torch.Size([self.sequence_size, self.input_size])
 
-    def forward(self, inputs, training=None, mask=None):
+    def forward(self, inputs, mask=None):
         # inputs [b, s, h]
         attn_output = self.self_attention(inputs)  # [b, s, h]
         attn_output = self.dropout1(attn_output)  # [b, s, h]

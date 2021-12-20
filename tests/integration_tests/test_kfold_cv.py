@@ -56,28 +56,12 @@ FEATURES_TO_TEST = [
             )
         ],
     ),
-    # TODO(#1333): re-enable this test case after output sequence tagging re-implemented.
-    # FeaturesToUse(
-    #     # input feature
-    #     [
-    #         sequence_feature(
-    #             min_len=5,
-    #             max_len=10,
-    #             encoder='rnn',
-    #             cell_type='lstm',
-    #             reduce_output=None
-    #         )
-    #
-    #     ],
-    #     # output feature
-    #     [
-    #         sequence_feature(
-    #             max_len=10,
-    #             decoder='tagger',
-    #             reduce_input=None
-    #         )
-    #     ]
-    # ),
+    FeaturesToUse(
+        # input feature
+        [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)],
+        # output feature
+        [sequence_feature(max_len=10, decoder="tagger", reduce_input=None)],
+    ),
     FeaturesToUse(
         # input feature
         [numerical_feature(normalization="zscore"), numerical_feature(normalization="zscore")],

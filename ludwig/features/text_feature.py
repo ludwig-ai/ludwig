@@ -49,6 +49,7 @@ from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     PADDING_SYMBOL,
+    SpecialSymbol,
     tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
@@ -248,10 +249,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
-        if "pad_idx" in feature.keys():
-            self.pad_idx = feature["pad_idx"]
-        else:
-            self.pad_idx = None
         self._input_shape = [feature["max_sequence_length"]]
 
     def forward(self, inputs, mask=None):
@@ -264,10 +261,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         )
         assert len(inputs.shape) == 2
 
-        if self.pad_idx is not None:
-            inputs_mask = torch.not_equal(inputs, self.pad_idx)
-        else:
-            inputs_mask = torch.not_equal(inputs, 0)
+        inputs_mask = torch.not_equal(inputs, SpecialSymbol.PADDING.value)
 
         inputs_exp = inputs.type(torch.int32)
         lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)

@@ -200,8 +200,9 @@ class Dense(LudwigModule):
         weights_initializer = initializer_registry[weights_initializer]
         weights_initializer(self.dense.weight)
 
-        bias_initializer = initializer_registry[bias_initializer]
-        bias_initializer(self.dense.bias)
+        if use_bias:
+            bias_initializer = initializer_registry[bias_initializer]
+            bias_initializer(self.dense.bias)
 
     @property
     def input_shape(self) -> torch.Size:

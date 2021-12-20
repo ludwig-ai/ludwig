@@ -39,7 +39,7 @@ from ludwig.utils.data_utils import read_csv, replace_file_extension
 logger = logging.getLogger(__name__)
 
 # Used in sequence-related unit tests (encoders, features) as well as end-to-end integration tests.
-# TODO(justin): Check for missing encoders.
+# Missing: passthrough encoder.
 ENCODERS = ["embed", "rnn", "parallel_cnn", "cnnrnn", "stacked_parallel_cnn", "stacked_cnn", "transformer"]
 
 HF_ENCODERS_SHORT = ["distilbert"]
@@ -148,7 +148,6 @@ def text_feature(**kwargs):
     feature = {
         "name": "text_" + random_string(),
         "type": "text",
-        "reduce_input": None,
         "vocab_size": 5,
         "min_len": 7,
         "max_len": 7,
